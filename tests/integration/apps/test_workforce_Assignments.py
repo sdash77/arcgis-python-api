@@ -529,7 +529,17 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
                 dispatcher=self.dispatcher,
                 assignment_type=self.inspection,
             )
-            assignments = self.project.assignments.batch_add([assignment, assignment2])
+            assignment3 = Assignment(
+                self.project,
+                geometry={"x": 123, "y": 456},
+                status="assigned",
+                location="A location",
+                description="Do some work",
+                dispatcher=self.dispatcher,
+                assignment_type=self.inspection,
+                worker=self.worker
+            )
+            assignments = self.project.assignments.batch_add([assignment, assignment2, assignment3])
             # test fetching the new assignment
             downloaded_assignment1 = self.project.assignments.search()[0]
             downloaded_assignment2 = self.project.assignments.search()[1]
@@ -649,17 +659,6 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
                     dispatcher=self.dispatcher,
                     assignment_type=self.inspection
                 )
-            # assigned without date
-            with self.assertRaises(ValidationError):
-                self.project.assignments.add(
-                    geometry={"x": 123, "y": 456},
-                    status="assigned",
-                    location="A location",
-                    description="Do some work",
-                    dispatcher=self.dispatcher,
-                    assignment_type=self.inspection,
-                    worker=self.worker
-                )
             # assigned without worker
             with self.assertRaises(ValidationError):
                 self.project.assignments.add(
@@ -671,44 +670,6 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
                     assignment_type=self.inspection,
                     assigned_date=datetime.datetime.now()
                 )
-            # in progress no progress date
-            with self.assertRaises(ValidationError):
-                self.project.assignments.add(
-                    geometry={"x": 123, "y": 456},
-                    status="inprogress",
-                    location="A location",
-                    description="Do some work",
-                    dispatcher=self.dispatcher,
-                    assignment_type=self.inspection,
-                    worker=self.worker,
-                    assigned_date=datetime.datetime.now()
-                )
-            # completed no completed date
-            with self.assertRaises(ValidationError):
-                self.project.assignments.add(
-                    geometry={"x": 123, "y": 456},
-                    status="completed",
-                    location="A location",
-                    description="Do some work",
-                    dispatcher=self.dispatcher,
-                    assignment_type=self.inspection,
-                    worker=self.worker,
-                    assigned_date=datetime.datetime.now(),
-                    in_progress_date=datetime.datetime.now()
-                )
-            # paused no paused date
-            with self.assertRaises(ValidationError):
-                self.project.assignments.add(
-                    geometry={"x": 123, "y": 456},
-                    status="paused",
-                    location="A location",
-                    description="Do some work",
-                    dispatcher=self.dispatcher,
-                    assignment_type=self.inspection,
-                    worker=self.worker,
-                    assigned_date=datetime.datetime.now(),
-                    in_progress_date=datetime.datetime.now()
-                )
             # declined no comment
             with self.assertRaises(ValidationError):
                 self.project.assignments.add(
@@ -719,19 +680,6 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
                     dispatcher=self.dispatcher,
                     assignment_type=self.inspection,
                     worker=self.worker,
-                    declined_date=datetime.datetime.now()
-                )
-            # declined no date
-            with self.assertRaises(ValidationError):
-                self.project.assignments.add(
-                    geometry={"x": 123, "y": 456},
-                    status="declined",
-                    location="A location",
-                    description="Do some work",
-                    dispatcher=self.dispatcher,
-                    assignment_type=self.inspection,
-                    worker=self.worker,
-                    assigned_date=datetime.datetime.now(),
                     declined_date=datetime.datetime.now()
                 )
 
