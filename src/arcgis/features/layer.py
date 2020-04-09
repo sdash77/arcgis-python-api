@@ -2764,7 +2764,8 @@ class FeatureLayerCollection(_GISResource):
                         data_format="json",
                         replica_options=None,
                         wait=False,
-                        out_path=None):
+                        out_path=None,
+                        transformations=None):
         """
         The createReplica operation is performed on a feature service
         resource. This operation creates the replica between the feature
@@ -2870,6 +2871,9 @@ class FeatureLayerCollection(_GISResource):
             createReplica response will be esriReplicaResponseTypeInfo.
            wait - if async, wait to pause the process until the async operation is completed.
            out_path - folder path to save the file
+           transformations - optional List. Introduced at 10.8. This parameter applies a datum 
+                             transformation on each layer when the spatial reference used in 
+                             geometry is different than the layer's spatial reference.
         """
         if not self.properties.syncEnabled and "Extract" not in self.properties.capabilities:
             return None
@@ -2886,6 +2890,8 @@ class FeatureLayerCollection(_GISResource):
             "targetType" : target_type,
 
         }
+        if transformations:
+            params['datumTransformations'] = transformations
         if attachments_sync_direction:
             params["attachmentsSyncDirection"] = attachments_sync_direction
         if sync_direction:

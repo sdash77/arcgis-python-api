@@ -456,7 +456,8 @@ class SyncManager(object):
                wait=False,
                out_path=None,
                sync_direction=None,
-               target_type="client"):
+               target_type="client",
+               transformations=None):
         """
             The create operation is performed on a feature layer collection resource. This operation
             creates the replica between the feature dataset and a client based on a client-supplied
@@ -571,6 +572,10 @@ class SyncManager(object):
         ------------------     --------------------------------------------------------------------
         targetType             Can be set to either server or client. If not set, the default is
                                client. This option was added at 10.5.1.
+        ------------------     --------------------------------------------------------------------
+        transformations        Optional List. Introduced at 10.8. This parameter applies a datum 
+                               transformation on each layer when the spatial reference used in 
+                               geometry is different than the layer's spatial reference.
         ==================     ====================================================================
 
 
@@ -623,7 +628,8 @@ class SyncManager(object):
                                         data_format=data_format,
                                         replica_options=replica_options,
                                         wait=wait,
-                                        out_path=out_path)
+                                        out_path=out_path,
+                                        transformations=transformations)
     # ----------------------------------------------------------------------
     def cleanup_change_tracking(self, 
                                 layers,
