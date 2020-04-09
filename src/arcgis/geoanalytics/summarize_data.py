@@ -62,7 +62,7 @@ def build_multivariable_grid(input_layers,
     **Argument**                                                                                    **Description**
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     input_layers                                                           Required list of layers. A list of input layers that will be used in analysis.
-                                                                           See :ref:`Feature Input<FeatureInput>`.
+                                                                           See :ref:`Feature Input<gaxFeatureInput>`.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     variable_calculations                                                  Required list of dicts. A dict containing objects that describe
                                                                            the variables that will be calculated for each layer in ``input_layers``.
@@ -314,7 +314,7 @@ def aggregate_points(point_layer,
     -------------------------------------------------     ------------------------------------------------------------------------
     point_layer                                           Required point feature layer. The point features that will be aggregated
                                                           into the polygons in the ``polygon_layer`` or bins of the specified ``bin_size``.
-                                                          See :ref:`Feature Input<FeatureInput>`.
+                                                          See :ref:`Feature Input<gaxFeatureInput>`.
     -------------------------------------------------     ------------------------------------------------------------------------
     bin_type                                              Optional string. If ``polygon_layer`` is not defined, it is required.
 
@@ -344,7 +344,7 @@ def aggregate_points(point_layer,
                                                           If ``bin_type`` is chosen, ``bin_size`` and ``bin_size_unit`` specifying the size of the bins must be included.
     -------------------------------------------------     ------------------------------------------------------------------------
     polygon_layer                                         Optional polygon feature layer. The polygon features (areas) into which the input points will be aggregated.
-                                                          See :ref:`Feature Input<FeatureInput>`.
+                                                          See :ref:`Feature Input<gaxFeatureInput>`.
 
                                                           One of ``polygon_layer`` or bins ``bin_size`` and  ``bin_size_unit`` is required.
     -------------------------------------------------     ------------------------------------------------------------------------
@@ -524,7 +524,7 @@ def describe_dataset(input_layer,
     ----------------  ---------------------------------------------------------------
     input_layer       Required feature layer. The table, point, line, or polygon feature 
                       layer that will be described, summarized, and sampled. 
-                      See :ref:`Feature Input<FeatureInput>`.
+                      See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------  ---------------------------------------------------------------
     extent_output     Optional boolean. The task will output a single rectangle
                       feature representing the extent of the ``input_layer`` if this value
@@ -694,10 +694,10 @@ def join_features(target_layer,
     ==========================================================================================================  =============================================================================================
     **Argument**                                                                                                **Description**
     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    target_layer                                                                                                Required layer. The table, point, line, or polygon features to be joined to. See :ref:`Feature Input<FeatureInput>`.
+    target_layer                                                                                                Required layer. The table, point, line, or polygon features to be joined to. See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
     join_layer                                                                                                  Required layer. The point, line, or polygon features that will be joined to the ``target_layer``. 
-                                                                                                                See :ref:`Feature Input<FeatureInput>`.
+                                                                                                                See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
     join_operation                                                                                              Optional string. A string representing the type of join that will be applied. 
                                       
@@ -947,7 +947,7 @@ def reconstruct_tracks(input_layer,
     **Argument**                                                                            **Description**
     --------------------------------------------------------------------------------------  ---------------------------------------------------------------
     input_layer                                                                             Required layer. The point or polygon features from which tracks 
-                                                                                            will be constructed. See :ref:`Feature Input<FeatureInput>`.
+                                                                                            will be constructed. See :ref:`Feature Input<gaxFeatureInput>`.
     --------------------------------------------------------------------------------------  ---------------------------------------------------------------
     track_fields                                                                            Required string. The fields used to identify distinct tracks. There can 
                                                                                             be multiple ``track_fields``.
@@ -1141,7 +1141,7 @@ def summarize_attributes(input_layer,
     ===========================================================================  ===============================================================
     **Argument**                                                                 **Description**
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
-    input_layer                                                                  Required layer. The features that will be summarized. See :ref:`Feature Input<FeatureInput>`.
+    input_layer                                                                  Required layer. The features that will be summarized. See :ref:`Feature Input<gaxFeatureInput>`.
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
     fields                                                                       Optional string. The fields that will be used to summarize like features. For example, 
                                                                                  if you chose a field called property type with the values of commercial and residential, 
@@ -1293,13 +1293,13 @@ def summarize_within(summarized_layer,
     **Argument**                                                                 **Description**
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
     summarized_layer                                                             Required layer. Point, line, or polygon features that will be summarized for each 
-                                                                                 polygon in ``summary_polygons`` or bins. See :ref:`Feature Input<FeatureInput>`.
+                                                                                 polygon in ``summary_polygons`` or bins. See :ref:`Feature Input<gaxFeatureInput>`.
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
     summary_polygons                                                             Optional layer. The polygon features. Features, or portions of features, 
                                                                                  in ``summarized_layer`` that fall within the boundaries of these polygons 
                                                                                  will be summarized. You can choose to summarize within a polygon layer that you 
                                                                                  provide or within square or hexagon bins that are generated when the tool runs.
-                                                                                 See :ref:`Feature Input<FeatureInput>`.
+                                                                                 See :ref:`Feature Input<gaxFeatureInput>`.
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
     bin_type (Required if ``summary_polygons`` is not specified)                 Optional string. The type of bin that will be generated and ``summarized_layer`` will be summarized into. 
 

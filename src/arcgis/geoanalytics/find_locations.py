@@ -43,7 +43,7 @@ def geocode_locations(input_layer,
     ==========================   ===============================================================
     **Argument**                 **Description**
     --------------------------   ---------------------------------------------------------------
-    input_layer                  Required layer. The tabular input that will be geocoded. See :ref:`Feature Input<FeatureInput>`.
+    input_layer                  Required layer. The tabular input that will be geocoded. See :ref:`Feature Input<gaxFeatureInput>`.
     --------------------------   ---------------------------------------------------------------
     country                      Optional string. If all your data is in one country, this helps
                                  improve performance for locators that accept that variable.
@@ -280,7 +280,7 @@ def detect_incidents(input_layer,
     **Argument**                 **Description**
     --------------------------   ---------------------------------------------------------------
     input_layer                  Required layer. The table, point, line or polygon features 
-                                 containing potential incidents. See :ref:`Feature Input<FeatureInput>`.
+                                 containing potential incidents. See :ref:`Feature Input<gaxFeatureInput>`.
     --------------------------   ---------------------------------------------------------------
     track_fields                 Required string. The fields used to identify distinct tracks.
                                  There can be multiple ``track_fields``.
@@ -650,7 +650,7 @@ def find_similar_locations(
     input_layer                  Required layer. The ``input_layer`` contains one or more reference locations 
                                  against which features in the ``search_layer`` will be evaluated for similarity. 
                                  For example, the ``input_layer`` might contain your top performing stores or the 
-                                 villages hardest hit by a disease. See :ref:`Feature Input<FeatureInput>`.
+                                 villages hardest hit by a disease. See :ref:`Feature Input<gaxFeatureInput>`.
                                   
                                  It is not uncommon for ``input_layer`` and ``search_layer`` to be the same feature service. 
                                  For example, the feature service contains locations of all stores, one of which 
@@ -674,7 +674,7 @@ def find_similar_locations(
                                  population for either of the reference locations. 
     --------------------------   ---------------------------------------------------------------  
     search_layer                 Required layer. The layer containing candidate locations that will be 
-                                 evaluated against the reference locations.  See :ref:`Feature Input<FeatureInput>`.
+                                 evaluated against the reference locations.  See :ref:`Feature Input<gaxFeatureInput>`.
     --------------------------   ---------------------------------------------------------------      
     analysis_fields              Required string. A list of fields whose values are used to determine similarity. 
                                  They must be numeric fields, and the fields must exist on both the ``input_layer`` 
