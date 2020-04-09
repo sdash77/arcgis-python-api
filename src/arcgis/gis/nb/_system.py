@@ -66,6 +66,21 @@ class SystemManager(object):
             self._init()
         return self._properties
     #----------------------------------------------------------------------
+    @property
+    def recent_statistics(self):
+        """
+        returns statistics about the current state of the notebook server
+        
+        :returns: Dictionary
+        """
+        try:
+            url = self._url + "/statistics/mostRecent"
+            params = {'f' : 'json' }
+            return self._con.get(url, params)
+        except:
+            raise Exception(("Recent Statistics is not supported on your cur"
+                            "rent version of Notebook Server, please use v10.8.1+"))
+    #----------------------------------------------------------------------
     @properties.setter
     def properties(self, value):
         """
