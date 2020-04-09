@@ -820,6 +820,8 @@ class MapView(widgets.DOMWidget):
         if _js_cdn_override_global != "":
             # If the user had previously set this global property, use it
             self._js_cdn_override = _js_cdn_override_global
+        elif os.environ.get("JSAPI_CDN", ""):
+            self._js_cdn_override = os.environ.get("JSAPI_CDN", "")
         else:
             # Else, test default CDNs and portal CDNs
             default_cdn_unreachable = not self._is_reachable(_DEFAULT_JS_CDN)
