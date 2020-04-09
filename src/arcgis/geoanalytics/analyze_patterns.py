@@ -73,7 +73,7 @@ def forest(input_layer,
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     input_layer                                                                 Required layer. The features that will be used to train the dataset. 
                                                                                 This layer must include fields representing the variable to predict 
-                                                                                and the explanatory variables. See :ref:`Feature Input<FeatureInput>`.
+                                                                                and the explanatory variables. See :ref:`Feature Input<gaxFeatureInput>`.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     var_prediction                                                              Required dict. The variable from the ``input_layer`` parameter
                                                                                 containing the values to be used to train the model, and a
@@ -155,7 +155,7 @@ def forest(input_layer,
     features_to_predict (Required if using ``TrainAndPredict``)                 Optional layer. A feature layer representing locations where predictions will be made. 
                                                                                 This layer must include explanatory variable fields that correspond to fields used in ``input_layer``. 
                                                                                 This parameter is only used when the ``prediction_type`` is ``TrainAndPredict`` and is required in that case. 
-                                                                                See :ref:`Feature Input<FeatureInput>`.
+                                                                                See :ref:`Feature Input<gaxFeatureInput>`.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     validation                                                                  Optional integer. Specifies the percentage (between 10 percent
                                                                                 and 50 percent) of inFeatures to reserve as the test dataset
@@ -363,7 +363,7 @@ def glr(input_layer,
     **Argument**                 **Description**
     --------------------------   ---------------------------------------------------------------
     input_layer                  Required layer. The layer containing the dependent and
-                                 independent variables. See :ref:`Feature Input<FeatureInput>`.
+                                 independent variables. See :ref:`Feature Input<gaxFeatureInput>`.
     --------------------------   ---------------------------------------------------------------
     var_dependent                Required string. The numeric field containing the observed
                                  values you want to model.
@@ -395,7 +395,7 @@ def glr(input_layer,
                                  this dataset should contain values for all the explanatory
                                  variables specified. The dependent variable for these features
                                  will be estimated using the model calibrated for the input
-                                 layer data. See :ref:`Feature Input<FeatureInput>`.
+                                 layer data. See :ref:`Feature Input<gaxFeatureInput>`.
     --------------------------   ---------------------------------------------------------------
     gen_coeff_table              Optional boolean. Determines if a table with coefficient values
                                  will be returned. By default, the coefficient table is not
@@ -752,7 +752,7 @@ def calculate_density(
                                                           system is not specified when running analysis, the World Cylindrical Equal
                                                           Area (WKID 54034) projection will be used. At 10.7 or later, if a projected coordinate system
                                                           is not specified when running analysis, a projection will be picked based on the extent of the data.
-                                                          See :ref:`Feature Input<FeatureInput>`.
+                                                          See :ref:`Feature Input<gaxFeatureInput>`.
     -------------------------------------------------     ------------------------------------------------------------------------
     fields                                                Optional string. Provides one or more field specifying the number of incidents at each location.
                                                           You can calculate the density on multiple fields, and the count of points will always have the density calculated.
@@ -966,7 +966,7 @@ def find_hot_spots(
     **Argument**                                                                                    **Description**
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
     point_layer                                                                                     Required feature layer. The point feature layer for which hot spots will be calculated.
-                                                                                                    See :ref:`Feature Input<FeatureInput>`.
+                                                                                                    See :ref:`Feature Input<gaxFeatureInput>`.
 
                                                                                                     .. Note::
                                                                                                         Analysis using bins requires a projected coordinate system. When aggregating layers into bins,
@@ -1150,7 +1150,7 @@ def create_space_time_cube(point_layer: _FeatureSet,
                                                                                      aggregated into the bins specified in geographical size by the ``bin_size`` 
                                                                                      and ``bin_size_unit`` parameters and temporal size by 
                                                                                      the ``time_step_interval`` and ``time_step_interval_unit`` parameters. 
-                                                                                     See :ref:`Feature Input<FeatureInput>`.
+                                                                                     See :ref:`Feature Input<gaxFeatureInput>`.
                                                                                      Analysis using bins requires a projected coordinate system. 
                                                                                      When aggregating layers into bins, the input layer or processing 
                                                                                      extent (``processSR``) must have a projected coordinate system. 

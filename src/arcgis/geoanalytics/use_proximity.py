@@ -43,7 +43,7 @@ def create_buffers(input_layer,
     **Parameter**                                       **Description**
     ------------------------------------------------    ---------------------------------------------------------
     input_layer                                         Required layer. The point, line, or polygon features to be buffered. 
-                                                        See :ref:`Feature Input<FeatureInput>`.
+                                                        See :ref:`Feature Input<gaxFeatureInput>`.
     ------------------------------------------------    ---------------------------------------------------------
     distance (Required if field is not provided)        Optional float. A float value used to buffer the input features. 
                                                         You must supply a value for either the distance or field parameter. 
