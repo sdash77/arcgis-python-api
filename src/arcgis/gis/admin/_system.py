@@ -6,6 +6,144 @@ from .. import GIS
 from ._base import BasePortalAdmin
 from ..._impl.common._mixins import PropertyMap
 ########################################################################
+class EmailManager(BasePortalAdmin):
+    #----------------------------------------------------------------------
+    def __init__(self, url, gis=None, **kwargs):
+        super(EmailManager, self).__init__(url=url, gis=gis, **kwargs)
+        initialize = kwargs.pop("initialize", False)
+        if isinstance(gis, Connection):
+            self._con = gis
+        elif isinstance(gis, GIS):
+            self._gis = gis
+            self._con = gis._con
+        else:
+            raise ValueError(
+                    "connection must be of type GIS or Connection")
+        if initialize:
+            self._init(self._gis)
+    #----------------------------------------------------------------------
+    def _init(self, connection=None):
+        """loads the properties into the class"""
+        if connection is None:
+            connection = self._con
+        params = {"f":"json"}
+        result = connection.get(path=self._url,
+                                params=params)
+        try:
+            if 'status' in result and result['status'] == 'error':
+                self._properties = None
+                self._json_dict = None
+            else:
+                self._json_dict = result
+                self._properties = PropertyMap(self._json_dict)
+        except:
+            self._json_dict = {}
+            self._properties = PropertyMap({})
+    #----------------------------------------------------------------------
+    def test(self, email):
+        """
+        Sends a test email to a provided email account to ensure the
+        configuration is correct.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        email                           Required String. The test email to send to.
+        ===========================     ====================================================================
+
+        :returns: Bool
+        """
+        params = {
+            "mailTo" : email,
+            "f" : "json"
+        }
+        url = self._url + "/test"
+        res = self._con.post(url, params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return False
+    #----------------------------------------------------------------------
+    def update(self,
+               server,
+               from_email,
+               require_auth,
+               email_label=None,
+               port=25,
+               encryption="SSL",
+               username=None,
+               password=None):
+        """
+        Configures the Email Server for Portal
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        server                          Required String. The email address
+        ---------------------------     --------------------------------------------------------------------
+        from_email                      Required String.  The email address the email originates from.
+        ---------------------------     --------------------------------------------------------------------
+        require_auth                    Required Boolean.  If True, the smtp requires authentication and
+                                        the username and password must be provided.  If False, no
+                                        authentication is needed for the smtp server.
+        ---------------------------     --------------------------------------------------------------------
+        email_label                     Optional String. The email label.
+        ---------------------------     --------------------------------------------------------------------
+        port                            Optional Integer.  The port number for the smtp server.
+        ---------------------------     --------------------------------------------------------------------
+        encryption                      Optional String. The encryption method used for the email server. The
+                                        allowed values are: SSL, TLS, or NONE.
+        ---------------------------     --------------------------------------------------------------------
+        username                        Optional String. The username to use to login to the smtp server.
+        ---------------------------     --------------------------------------------------------------------
+        Password                        Optional String. The password to use to login to the smtp server.
+        ===========================     ====================================================================
+
+        :returns: boolean
+        """
+        allowed_encrypt = ['none', 'tls', 'ssl']
+        if email_label is None:
+            email_label = from_email
+        if require_auth:
+            require_auth = "yes"
+            if username is None or \
+               password is None:
+                raise ValueError("`username` and `password` are required when require_auth=True")
+        else:
+            require_auth = "no"
+
+        params = {
+            "smtpServer": server,
+            "fromEmailAddress": from_email,
+            "fromEmailAddressLabel": email_label,
+            "authRequired": require_auth,
+            "username": username,
+            "password": password,
+            "smtpPort": 25,
+            "encryptionMethod": str(encryption).upper(),
+            "f": "json"
+        }
+        url = self._url + "/update"
+        res = self._con.post(url, params)
+        if 'status' in res:
+            self._properties = None
+            return res['status'] == 'success'
+        return False
+    #----------------------------------------------------------------------
+    def delete(self):
+        """
+        Deletes the current email configuration
+
+        :returns: Boolean
+        """
+        url = self._url + "/delete"
+        params = {'f' : 'json'}
+        res = self._con.post(url, params)
+        if 'status' in res:
+            self._properties = None
+            return res['status'] == "success"
+        else:
+            return False
+########################################################################
 class System(BasePortalAdmin):
     """
     This resource is an umbrella for a collection of system-wide resources
@@ -17,6 +155,7 @@ class System(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+    _email = None
     #----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -34,6 +173,22 @@ class System(BasePortalAdmin):
                     "connection must be of type GIS or Connection")
         if initialize:
             self._init(self._gis)
+    #----------------------------------------------------------------------
+    @property
+    def email(self):
+        """
+        Provides access to the email configuration setting on enterprise.
+
+        :returns: EmailManager
+        """
+        #if "supportsEmail" in self._gis.properties and self._properties.supportsEmail:
+        if self._gis.version >= [7,3] or "supportsEmail" in self._gis.properties:
+            if self._email is None:
+                self._email = EmailManager(url=self._url + "/emailSettings",
+                                           gis=self._gis)
+        else:
+            raise Exception("Configuring Email Servers is not supported on this enterprise configuration.")
+        return self._email
     #----------------------------------------------------------------------
     @property
     def properties(self):
