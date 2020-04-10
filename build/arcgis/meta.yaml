@@ -6,7 +6,7 @@ build:
   number: '0'
 package:
   name: arcgis
-  version: 1.8.0
+  version: 1.8.1
 requirements:
   build:
   - python
@@ -15,7 +15,7 @@ requirements:
   - notebook
   - ipywidgets >=7
   - widgetsnbextension >=3
-  - pandas >=0.25
+  - pandas >=1
   - numpy >=1.16.2
   - matplotlib
   - keyring >=19
@@ -34,7 +34,7 @@ requirements:
   - notebook
   - ipywidgets >=7
   - widgetsnbextension >=3
-  - pandas >=0.25
+  - pandas >=1
   - numpy >=1.16.2
   - pyshp >=2
   - matplotlib
