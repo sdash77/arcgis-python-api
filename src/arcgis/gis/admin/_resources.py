@@ -60,7 +60,7 @@ class PortalResourceManager(object):
             key = os.path.basename(path)
         elif key is None and path is None:
             raise ValueError("key must be populated is path is null")
-        url = "portals/self/addresource"
+        url = "portals/self/addResource"
         postdata = {
             "f" : "json",
             "key" : key,
