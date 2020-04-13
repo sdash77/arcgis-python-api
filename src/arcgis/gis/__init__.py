@@ -3698,7 +3698,12 @@ class ContentManager(object):
                     raise RuntimeError('Specify type in item_properties')
             if not 'title' in item_properties:
                 item_properties['title'] = title
-
+        if 'type' in item_properties and \
+           item_properties['type'] == "WMTS" and \
+           'text' not in item_properties:
+            from arcgis.gis._ogc import WMTS
+            item_properties['text'] = json.dumps(WMTS(item_properties['url'], gis=self._gis).__text__)
+            
         owner_name = owner
         if isinstance(owner, User):
             owner_name = owner.username
@@ -3748,6 +3753,7 @@ class ContentManager(object):
         else:
             if filetype:
                 item_properties['fileName'] = os.path.basename(data)
+            
             itemid = self._portal.add_item(item_properties, data,
                                            thumbnail, metadata,
                                            owner_name, folder)
