@@ -248,7 +248,7 @@ class DeepLab(ArcGISModel):
             model_accuracy = np.max(self.learn.recorder.metrics)             
         return float(model_accuracy)
 
-    def _deeplab_loss(self, outputs, targets):
+    def _deeplab_loss(self, outputs, targets, **kwargs):
         targets = targets.squeeze(1).detach()
 
         if self.class_balancing and self._data.class_weight is not None:

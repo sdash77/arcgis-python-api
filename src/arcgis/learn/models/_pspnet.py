@@ -209,7 +209,7 @@ class PSPNetClassifier(ArcGISModel):
 
         return cls(data, **model_params, pretrained_path=str(model_file))
 
-    def _psp_loss(self, outputs, targets):
+    def _psp_loss(self, outputs, targets, **kwargs):
         targets = targets.squeeze(1).detach()
 
         if self.class_balancing and self._data.class_weight is not None:

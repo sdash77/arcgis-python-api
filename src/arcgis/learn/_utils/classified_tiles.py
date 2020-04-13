@@ -13,6 +13,7 @@ def calculate_precision_recall(all_y, all_pred, false_positives, true_positives,
     precision, recall, f_1 = calculate_metrics(false_positives, true_positives, false_negatives)
     data = [precision, recall, f_1]
     index = ['precision', 'recall', 'f1_score']
+    class_mapping = {z+1:v for z, v in enumerate(class_mapping.values())}
     df = pd.DataFrame(data, columns=['background']+[class_mapping[i] for i in range(1, len(false_negatives))], index=index) 
     return df        
 
