@@ -377,7 +377,7 @@ def prepare_data(path,
         _raise_fastai_import_error()
 
     if isinstance(path, str) and not os.path.exists(path):
-        raise Exception("Invalid input path.")
+        raise Exception("Invalid input path. Please ensure that the input path is correct.")
 
     if type(path) is str:
         path = Path(path)
@@ -409,7 +409,7 @@ def prepare_data(path,
     _show_batch_multispectral = None
 
     if dataset_type is None and not has_esri_files:
-        raise Exception("Could not infer dataset type.")
+        raise Exception("Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid esri files")
     
     stats_file = path / 'esri_accumulated_stats.json'
     if dataset_type != "Imagenet" and has_esri_files:

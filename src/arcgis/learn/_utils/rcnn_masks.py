@@ -23,7 +23,7 @@ def show_batch_rcnn_masks(self, rows=3, alpha=0.5, **kwargs): # parameters adjus
     elif type_data_loader == 'testing':
         data_loader = self.test_dl
     else:
-        e = Exception(f'could not find {type_data_loader} in data.')
+        e = Exception(f'could not find {type_data_loader} in data. Please ensure that the data loader type is traininig, validation or testing ')
         raise(e)
 
     imsize = 5
@@ -41,14 +41,7 @@ def show_batch_rcnn_masks(self, rows=3, alpha=0.5, **kwargs): # parameters adjus
         nrows = math.ceil(n_items/ncols)
     n_items = min(n_items, len(self.x))
 
-    x_batch, y_batch = [], []
-    i = 0
-    dl_iterater = iter(data_loader)
-    while i < n_items:
-        x, y = next(dl_iterater)
-        x_batch.append(x)
-        y_batch.append(y)
-        i+=self.batch_size
+    x_batch, y_batch = get_nbatches(data_loader, n_items)
     x_batch = torch.cat(x_batch)
     y_batch = torch.cat(y_batch)
 

@@ -340,7 +340,7 @@ class MaskRCNN(ArcGISModel):
         elif type_data_loader == 'testing':
             data_loader = self._data.test_dl
         else:
-            e = Exception(f'could not find {type_data_loader} in data.')
+            e = Exception(f'could not find {type_data_loader} in data. Please ensure that the data loader type is traininig, validation or testing ')
             raise(e)
 
         statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`

@@ -44,7 +44,7 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
     elif type_data_loader == 'testing':
         data_loader = self.test_dl
     else:
-        e = Exception(f'could not find {type_data_loader} in data.')
+        e = Exception(f'could not find {type_data_loader} in data. Please ensure that the data loader type is traininig, validation or testing ')
         raise(e)
 
     rgb_bands = self._symbology_rgb_bands

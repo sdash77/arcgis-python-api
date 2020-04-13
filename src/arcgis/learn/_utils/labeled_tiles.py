@@ -19,7 +19,7 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs): # parameters adjusted in k
     elif type_data_loader == 'testing':
         data_loader = self.test_dl
     else:
-        e = Exception(f'could not find {type_data_loader} in data.')
+        e = Exception(f'could not find {type_data_loader} in data. Please ensure that the data loader type is traininig, validation or testing ')
         raise(e)
 
     rgb_bands = kwargs.get('rgb_bands', self._symbology_rgb_bands)
@@ -43,14 +43,7 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs): # parameters adjusted in k
         symbology_bands.append(b_index)
 
     # Get Batch
-    x_batch, y_batch = [], []
-    i = 0
-    dl_iterater = iter(data_loader)
-    while i < n_items:
-        x, y = next(dl_iterater)
-        x_batch.append(x)
-        y_batch.append(y)
-        i+=self.batch_size
+    x_batch, y_batch = get_nbatches(data_loader, n_items)
     x_batch = torch.cat(x_batch)
     # Denormalize X
     x_batch = (self._scaled_std_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._scaled_mean_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)

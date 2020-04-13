@@ -279,6 +279,8 @@ class RetinaNetFocalLoss(nn.Module):
         try:
             matches = match_anchors(self.anchors, bbox_tgt)
         except:
+            logger = logging.getLogger()
+            logger.debug("Returning zero tensors as there is no overlap between ground truth and anchors.")
             return torch.tensor(0., requires_grad=True).to(self._device)
 
         bbox_mask = matches>=0

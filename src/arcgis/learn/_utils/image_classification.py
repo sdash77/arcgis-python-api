@@ -39,7 +39,7 @@ def IC_show_results(self, nrows=5, **kwargs):
     elif type_data_loader == 'testing':
         data_loader = self._data.test_dl
     else:
-        e = Exception(f'could not find {type_data_loader} in data.')
+        e = Exception(f'could not find {type_data_loader} in data. Please ensure that the data loader type is traininig, validation or testing ')
         raise(e)
 
 
@@ -56,18 +56,7 @@ def IC_show_results(self, nrows=5, **kwargs):
     statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
 
     # Get Batch
-    x_batch, y_batch = [], []
-    i = 0
-    dl_iterater = iter(data_loader)
-    get_next = True
-    while i < nrows*ncols and get_next:
-        try:
-            x, y = next(dl_iterater)
-            x_batch.append(x)
-            y_batch.append(y)
-            i+=self._data.batch_size
-        except StopIteration:
-            get_next = False
+    x_batch, y_batch = get_nbatches(data_loader, n_items)
         
     x_batch = torch.cat(x_batch)
     # Denormalize X

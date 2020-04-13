@@ -106,7 +106,7 @@ class SSDHead(nn.Module):
             
             if stride is None:
                 print(grids[i-1], ' --> ', grids[i])
-                raise Exception('cannot create model for specified grids')
+                raise Exception('cannot create model for specified grids.')
                 
             self.sconvs.append(StdConv(256, 256, filter_size, stride=stride, padding=pad, drop=drop))
             self.oconvs.append(OutConv(self._k, 256, num_classes=num_classes, bias=bias))
@@ -459,7 +459,7 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
     elif type_data_loader == 'testing':
         data_loader = self._data.test_dl
     else:
-        e = Exception(f'could not find {type_data_loader} in data.')
+        e = Exception(f'could not find {type_data_loader} in data. Please ensure that the data loader type is traininig, validation or testing ')
         raise(e)
 
     nodata = kwargs.get('nodata', 0)
