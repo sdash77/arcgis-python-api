@@ -9007,6 +9007,570 @@ class _RasterAnalysisTools(BaseAnalytics):
             return gpjob
         return gpjob.result()
 
+    def optimal_path_as_line(self,
+                             input_destination_raster_or_features,
+                             input_distance_accumulation_raster,
+                             input_back_direction_raster,
+                             output_polyline_name,
+                             destination_field=None,
+                             path_type=None,
+                             context=None,
+                             future=False,
+                             **kwargs):
+        """
+        Parameters
+        ----------
+        input_destination_raster_or_features: inputDestinationRasterOrFeatures (str). Required parameter.  
+
+        input_distance_accumulation_raster: inputDistanceAccumulationRaster (str). Required parameter.  
+
+        input_back_direction_raster: inputBackDirectionRaster (str). Required parameter.  
+
+        output_polyline_name: outputPolylineName (str). Required parameter.  
+
+        destination_field: destinationField (str). Optional parameter.  
+
+        path_type: pathType (str). Optional parameter.  
+          Choice list:BEST_SINGLE,EACH_CELL,EACH_ZONE
+
+        context: context (str). Optional parameter.  
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        future: Optional, If True, a future object will be returns and the process will not wait for 
+                the task to complete. The default is False, which means wait for results.
+        Returns
+        -------
+        output_raster : Image layer item
+        """
+        task = "OptimalPathAsLine"
+        gis =  self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        if isinstance(input_destination_raster_or_features, _FEATURE_INPUTS):
+            input_destination_raster_or_features = self._feature_input(input_destination_raster_or_features)
+        elif isinstance(input_destination_raster_or_features, Item):
+            input_destination_raster_or_features = {"itemId": input_destination_raster_or_features.itemid }
+        else:
+            input_destination_raster_or_features = self._layer_input(input_destination_raster_or_features)
+
+        input_distance_accumulation_raster = self._layer_input(input_layer=input_distance_accumulation_raster)
+
+        input_back_direction_raster = self._layer_input(input_layer=input_back_direction_raster)
+
+        path_type_allowed_values = ["BEST_SINGLE","EACH_CELL","EACH_ZONE"]
+        path_type_val = path_type
+        if path_type is not None:
+            if [element.lower() for element in path_type_allowed_values].count(path_type.lower()) <= 0 :
+                raise RuntimeError("path_type can only be one of the following: "+ str(path_type_allowed_values))
+            for element in path_type_allowed_values:
+                if path_type.lower() == element.lower():
+                    path_type_val = element
+
+
+        if output_polyline_name is None:
+            output_polyline_service_name  = 'Output Polyline_' + _id_generator()
+            output_polyline_name = output_polyline_service_name .replace(' ', '_')
+        else:
+            output_polyline_service_name  = output_polyline_name.replace(' ', '_')
+
+        folderId = None
+        folder = None
+        if kwargs is not None:
+            if "folder" in kwargs:
+                    folder = kwargs["folder"]
+            if folder is not None:
+                if isinstance(folder, dict):
+                    if "id" in folder:
+                        folderId = folder["id"]
+                        folder=folder["title"]
+                else:
+                    owner = gis.properties.user.username
+                    folderId = gis._portal.get_folder_id(owner, folder)
+                if folderId is None:
+                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder = folder_dict["title"]
+                    folderId = folder_dict["id"]
+
+        output_polyline_service  = self._create_output_feature_service(output_name=output_polyline_name,
+                                                             output_service_name=output_polyline_service_name ,
+                                                             task='OptimalPathAsLine',
+                                                             folder=folder)
+        if folderId is not None:
+            output_polyline_name = json.dumps({"serviceProperties": {"name": output_polyline_service_name , "serviceUrl": output_polyline_service.url},
+                                           "itemProperties": {"itemId": output_polyline_service.itemid}, "folderId":folderId})
+        else:
+            output_polyline_name = json.dumps({"serviceProperties": {"name": output_polyline_service_name , "serviceUrl": output_polyline_service.url},
+                                           "itemProperties": {"itemId": output_polyline_service.itemid}})
+
+
+        gpjob = self._tbx.optimal_path_as_line(input_destination_raster_or_features=input_destination_raster_or_features,
+                                               input_distance_accumulation_raster=input_distance_accumulation_raster,
+                                               input_back_direction_raster=input_back_direction_raster,
+                                               output_polyline_name=output_polyline_name,
+                                               path_type=path_type_val,
+                                               destination_field=destination_field,
+                                               context=context,
+                                               gis=self._gis,
+                                               future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    def optimal_region_connections(self,
+                                   input_region_raster_or_features,
+                                   input_barrier_raster_or_features=None,
+                                   input_cost_raster=None,
+                                   distance_method="PLANAR",
+                                   connections_within_regions="GENERATE_CONNECTIONS",
+                                   output_optimal_lines_name=None,
+                                   output_neighbor_connections_name=None,
+                                   context=None,
+                                   future=False,
+                                   **kwargs):
+        """
+        Parameters
+        ----------
+        input_region_raster_or_features: inputRegionsRasterOrFeatures (str). Required parameter.  
+
+        output_optimal_lines_name: outputOptimalLinesName (str). Required parameter.  
+
+        input_barrier_raster_or_features: inputBarrierData (str). Optional parameter.  
+
+        input_cost_raster: inputCostRaster (str). Optional parameter.  
+
+        output_neighbor_connections_name: outputNeighborConnectionsName (str). Optional parameter.  
+
+        distance_method: distanceMethod (str). Optional parameter.  
+            Choice list:PLANAR,GEODESIC
+
+        connections_within_regions: connectionsWithinRegions (str). Optional parameter.  
+            Choice list:GENERATE_CONNECTIONS,NO_CONNECTIONS
+
+        context: context (str). Optional parameter.  
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        future: Optional, If True, a future object will be returns and the process will not wait for 
+                the task to complete. The default is False, which means wait for results.
+        Returns
+        -------
+        output_raster : Image layer item
+        """
+        task = "OptimalRegionConnections"
+        gis =  self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        if isinstance(input_region_raster_or_features, _FEATURE_INPUTS):
+            input_region_raster_or_features = self._feature_input(input_region_raster_or_features)
+        elif isinstance(input_region_raster_or_features, Item):
+            input_region_raster_or_features = {"itemId": input_region_raster_or_features.itemid }
+        else:
+            input_region_raster_or_features = self._layer_input(input_region_raster_or_features)
+
+        if input_barrier_raster_or_features is not None:
+            if isinstance(input_barrier_raster_or_features, _FEATURE_INPUTS):
+                input_barrier_raster_or_features = self._feature_input(input_barrier_raster_or_features)
+            elif isinstance(input_barrier_raster_or_features, Item):
+                input_barrier_raster_or_features = {"itemId": input_barrier_raster_or_features.itemid }
+            else:
+                input_barrier_raster_or_features = self._layer_input(input_barrier_raster_or_features)
+
+        if input_cost_raster is not None:
+            input_cost_raster = self._layer_input(input_layer=input_cost_raster)
+
+        distance_method_allowed_values = ["PLANAR","GEODESIC"]
+        distance_method_val = distance_method
+        if distance_method is not None:
+            if [element.lower() for element in distance_method_allowed_values].count(distance_method.lower()) <= 0 :
+                raise RuntimeError("distance_method can only be one of the following: "+ str(distance_method_allowed_values))
+            for element in distance_method_allowed_values:
+                if distance_method.lower() == element.lower():
+                    distance_method_val = element
+
+        connections_within_regions_allowed_values = ["GENERATE_CONNECTIONS","NO_CONNECTIONS"]
+        connections_within_regions_val = connections_within_regions
+        if connections_within_regions is not None:
+            if [element.lower() for element in connections_within_regions_allowed_values].count(connections_within_regions.lower()) <= 0 :
+                raise RuntimeError("connections_within_regions can only be one of the following: "+ str(connections_within_regions_allowed_values))
+            for element in connections_within_regions_allowed_values:
+                if connections_within_regions.lower() == element.lower():
+                    connections_within_regions_val = element
+
+
+        if output_optimal_lines_name is None:
+            output_optimal_lines_service_name  = 'Output Optimal Lines' + _id_generator()
+            output_optimal_lines_name = output_optimal_lines_service_name .replace(' ', '_')
+        else:
+            output_optimal_lines_service_name  = output_optimal_lines_name.replace(' ', '_')
+
+        if output_neighbor_connections_name is None:
+            output_neighbor_connections_service_name  = 'Output Neighbor Connections' + _id_generator()
+            output_neighbor_connections_name = output_neighbor_connections_service_name .replace(' ', '_')
+        else:
+            output_neighbor_connections_service_name  = output_neighbor_connections_name.replace(' ', '_')
+
+        folderId = None
+        folder = None
+        if kwargs is not None:
+            if "folder" in kwargs:
+                    folder = kwargs["folder"]
+            if folder is not None:
+                if isinstance(folder, dict):
+                    if "id" in folder:
+                        folderId = folder["id"]
+                        folder=folder["title"]
+                else:
+                    owner = gis.properties.user.username
+                    folderId = gis._portal.get_folder_id(owner, folder)
+                if folderId is None:
+                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder = folder_dict["title"]
+                    folderId = folder_dict["id"]
+
+        output_optimal_lines_service  = self._create_output_feature_service(output_name=output_optimal_lines_name,
+                                                             output_service_name=output_optimal_lines_service_name ,
+                                                             task='OptimalRegionConnections',
+                                                             folder=folder)
+        if folderId is not None:
+            output_optimal_lines_name = json.dumps({"serviceProperties": {"name": output_optimal_lines_service_name , "serviceUrl": output_optimal_lines_service.url},
+                                           "itemProperties": {"itemId": output_optimal_lines_service.itemid}, "folderId":folderId})
+        else:
+            output_optimal_lines_name = json.dumps({"serviceProperties": {"name": output_optimal_lines_service_name , "serviceUrl": output_optimal_lines_service.url},
+                                           "itemProperties": {"itemId": output_optimal_lines_service.itemid}})
+
+        output_neighbor_connections_service  = self._create_output_feature_service(output_name=output_neighbor_connections_name,
+                                                             output_service_name=output_neighbor_connections_service_name ,
+                                                             task='OptimalRegionConnections',
+                                                             folder=folder)
+        if folderId is not None:
+            output_neighbor_connections_name = json.dumps({"serviceProperties": {"name": output_neighbor_connections_service_name , "serviceUrl": output_neighbor_connections_service.url},
+                                           "itemProperties": {"itemId": output_neighbor_connections_service.itemid}, "folderId":folderId})
+        else:
+            output_neighbor_connections_name = json.dumps({"serviceProperties": {"name": output_neighbor_connections_service_name , "serviceUrl": output_neighbor_connections_service.url},
+                                           "itemProperties": {"itemId": output_neighbor_connections_service.itemid}})
+
+        gpjob = self._tbx.optimal_region_connections(input_region_raster_or_features=input_region_raster_or_features,
+                                                     input_barrier_raster_or_features=input_barrier_raster_or_features,
+                                                     input_cost_raster=input_cost_raster,
+                                                     distance_method=distance_method_val,
+                                                     connections_within_regions=connections_within_regions_val,
+                                                     output_optimal_lines_name=output_optimal_lines_name,
+                                                     output_neighbor_connections_name=output_neighbor_connections_name,
+                                                     context=context,
+                                                     gis=self._gis,
+                                                     future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    def distance_accumulation(self,
+                               input_source_raster_or_features,
+                               output_distance_accumulation_raster_name=None,
+                               input_barrier_raster_or_features=None,
+                               input_surface_raster=None,
+                               input_cost_raster=None,
+                               input_vertical_raster=None,
+                               vertical_factor='BINARY 1 -30 30',
+                               input_horizontal_raster=None,
+                               horizontal_factor='BINARY 1 45',
+                               source_initial_accumulation=None,
+                               source_maximum_accumulation=None,
+                               source_cost_multiplier=None,
+                               source_direction=None,
+                               distance_method='PLANAR',
+                               output_back_direction_raster_name=None, 
+                               output_source_direction_raster_name=None, 
+                               output_source_location_raster_name=None,
+                               context=None, 
+                               future=False, 
+                               **kwargs):
+
+        """
+        Parameters
+        ----------
+           input_source_raster_or_features: inputSourceRasterOrFeatures (str). Required parameter.  
+
+           output_distance_accumulation_raster_name: outputDistanceAccumulationRasterName (str). Required parameter.  
+
+           input_barrier_raster_or_features: inputBarrierRasterOrFeatures (str). Optional parameter.  
+
+           input_surface_raster: inputSurfaceRaster (str). Optional parameter.  
+
+           input_cost_raster: inputCostRaster (str). Optional parameter.  
+
+           input_vertical_raster: inputVerticalRaster (str). Optional parameter.  
+
+           vertical_factor: verticalFactor (str). Optional parameter.  
+
+           input_horizontal_raster: inputHorizontalRaster (str). Optional parameter.  
+
+           horizontal_factor: horizontalFactor (str). Optional parameter.  
+
+           output_back_direction_raster_name: outputBackDirectionRasterName (str). Optional parameter.  
+
+           output_source_direction_raster_name: outputSourceDirectionRasterName (str). Optional parameter.  
+
+           output_source_location_raster_name: outputSourceLocationRasterName (str). Optional parameter.  
+
+           source_initial_accumulation: sourceInitialAccumulation (str). Optional parameter.  
+
+           source_maximum_accumulation: sourceMaximumAccumulation (str). Optional parameter.  
+
+           source_cost_multiplier: sourceCostMultiplier (str). Optional parameter.  
+
+           source_direction: sourceDirection (str). Optional parameter.  
+
+           distance_method: distanceMethod (str). Optional parameter.  
+              Choice list:PLANAR,GEODESIC
+
+        context: context (str). Optional parameter.  
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        future: Optional, If True, a future object will be returns and the process will not wait for 
+                the task to complete. The default is False, which means wait for results.
+        Returns
+        -------
+        output_raster : Image layer item
+        """
+
+        task = "DistanceAccumulation"
+        gis = self._gis
+
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        if isinstance(input_source_raster_or_features, _FEATURE_INPUTS):
+            input_source_raster_or_features = self._feature_input(input_source_raster_or_features)
+        elif isinstance(input_source_raster_or_features, Item):
+            input_source_raster_or_features = {"itemId": input_source_raster_or_features.itemid}
+        else:
+            input_source_raster_or_features = self._layer_input(input_source_raster_or_features)
+
+        if input_barrier_raster_or_features:
+            if isinstance(input_barrier_raster_or_features, _FEATURE_INPUTS):
+                input_barrier_raster_or_features = self._feature_input(input_barrier_raster_or_features)
+            elif isinstance(input_barrier_raster_or_features, Item):
+                input_barrier_raster_or_features = {"itemId": input_source_raster_or_features.itemid}
+            else:
+                input_barrier_raster_or_features = self._layer_input(input_barrier_raster_or_features)
+
+        if input_surface_raster is not None:
+            input_surface_raster = self._layer_input(input_layer=input_surface_raster)
+
+        if input_cost_raster is not None:
+            input_cost_raster = self._layer_input(input_layer=input_cost_raster)
+
+        if input_vertical_raster is not None:
+            input_vertical_raster = self._layer_input(input_layer=input_vertical_raster)
+
+        if input_horizontal_raster is not None:
+            input_horizontal_raster = self._layer_input(input_layer=input_horizontal_raster)
+
+
+        output_distance_accumulation_raster, output_distance_accumulation_service = self._set_output_raster(output_name=output_distance_accumulation_raster_name, task=task, output_properties=kwargs)
+
+        output_source_direction_raster=None
+        if output_source_direction_raster_name is not None:
+            output_source_direction_raster, output_source_direction_service = self._set_output_raster(output_name=output_source_direction_raster_name, task=task, output_properties=kwargs)
+
+        output_source_location_raster=None
+        if output_source_location_raster_name is not None:
+            output_source_location_raster, out_allocation_service = self._set_output_raster(output_name=output_source_location_raster_name, task=task,  output_properties=kwargs)
+
+        output_back_direction_raster=None
+        if output_back_direction_raster_name is not None:
+            output_back_direction_raster, out_back_direction_service = self._set_output_raster(output_name=output_back_direction_raster_name, task=task,  output_properties=kwargs)
+
+        
+        gpjob = self._tbx.distance_accumulation(input_source_raster_or_features=input_source_raster_or_features,
+                                                 output_distance_accumulation_raster_name=output_distance_accumulation_raster,
+                                                 input_barrier_raster_or_features=input_barrier_raster_or_features,
+                                                 input_surface_raster=input_surface_raster,
+                                                 input_cost_raster=input_cost_raster,
+                                                 input_vertical_raster=input_vertical_raster,
+                                                 vertical_factor=vertical_factor,
+                                                 input_horizontal_raster=input_horizontal_raster,
+                                                 horizontal_factor=horizontal_factor,
+                                                 source_initial_accumulation=source_initial_accumulation,
+                                                 source_maximum_accumulation=source_maximum_accumulation,
+                                                 source_cost_multiplier=source_cost_multiplier,
+                                                 source_direction=source_direction,
+                                                 distance_method=distance_method,
+                                                 output_back_direction_raster_name=output_back_direction_raster, 
+                                                 output_source_direction_raster_name=output_source_direction_raster, 
+                                                 output_source_location_raster_name=output_source_location_raster,
+                                                 context=context,
+                                                 gis=self._gis,
+                                                 future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    def distance_allocation(self,
+                               input_source_raster_or_features,
+                               output_distance_allocation_raster_name=None,
+                               input_barrier_raster_or_features=None,
+                               input_surface_raster=None,
+                               input_cost_raster=None,
+                               input_vertical_raster=None,
+                               vertical_factor='BINARY 1 -30 30',
+                               input_horizontal_raster=None,
+                               horizontal_factor='BINARY 1 45',
+                               source_initial_accumulation=None,
+                               source_maximum_accumulation=None,
+                               source_cost_multiplier=None,
+                               source_direction=None,
+                               distance_method='PLANAR',
+                               output_distance_accumulation_raster_name=None,
+                               output_back_direction_raster_name=None, 
+                               output_source_direction_raster_name=None, 
+                               output_source_location_raster_name=None,
+                               context=None, 
+                               future=False, 
+                               **kwargs):
+
+        """
+        Parameters
+        ----------
+           input_source_raster_or_features: inputSourceRasterOrFeatures (str). Required parameter.  
+
+           output_distance_allocation_raster_name: outputDistanceAccumulationRasterName (str). Required parameter.  
+
+           input_barrier_raster_or_features: inputBarrierRasterOrFeatures (str). Optional parameter.  
+
+           input_surface_raster: inputSurfaceRaster (str). Optional parameter.  
+
+           input_cost_raster: inputCostRaster (str). Optional parameter.  
+
+           input_vertical_raster: inputVerticalRaster (str). Optional parameter.  
+
+           vertical_factor: verticalFactor (str). Optional parameter.  
+
+           input_horizontal_raster: inputHorizontalRaster (str). Optional parameter.  
+
+           horizontal_factor: horizontalFactor (str). Optional parameter.  
+
+           output_back_direction_raster_name: outputBackDirectionRasterName (str). Optional parameter.  
+
+           output_source_direction_raster_name: outputSourceDirectionRasterName (str). Optional parameter.  
+
+           output_source_location_raster_name: outputSourceLocationRasterName (str). Optional parameter.  
+
+           source_initial_accumulation: sourceInitialAccumulation (str). Optional parameter.  
+
+           source_maximum_accumulation: sourceMaximumAccumulation (str). Optional parameter.  
+
+           source_cost_multiplier: sourceCostMultiplier (str). Optional parameter.  
+
+           source_direction: sourceDirection (str). Optional parameter.  
+
+           distance_method: distanceMethod (str). Optional parameter.  
+              Choice list:PLANAR,GEODESIC
+
+        context: context (str). Optional parameter.  
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        future: Optional, If True, a future object will be returns and the process will not wait for 
+                the task to complete. The default is False, which means wait for results.
+        Returns
+        -------
+        output_raster : Image layer item
+        """
+
+        task = "DistanceAllocation"
+        gis = self._gis
+
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        if isinstance(input_source_raster_or_features, _FEATURE_INPUTS):
+            input_source_raster_or_features = self._feature_input(input_source_raster_or_features)
+        elif isinstance(input_source_raster_or_features, Item):
+            input_source_raster_or_features = {"itemId": input_source_raster_or_features.itemid}
+        else:
+            input_source_raster_or_features = self._layer_input(input_source_raster_or_features)
+
+        if input_barrier_raster_or_features:
+            if isinstance(input_barrier_raster_or_features, _FEATURE_INPUTS):
+                input_barrier_raster_or_features = self._feature_input(input_barrier_raster_or_features)
+            elif isinstance(input_barrier_raster_or_features, Item):
+                input_barrier_raster_or_features = {"itemId": input_source_raster_or_features.itemid}
+            else:
+                input_barrier_raster_or_features = self._layer_input(input_barrier_raster_or_features)
+
+        if input_surface_raster is not None:
+            input_surface_raster = self._layer_input(input_layer=input_surface_raster)
+
+        if input_cost_raster is not None:
+            input_cost_raster = self._layer_input(input_layer=input_cost_raster)
+
+        if input_vertical_raster is not None:
+            input_vertical_raster = self._layer_input(input_layer=input_vertical_raster)
+
+        if input_horizontal_raster is not None:
+            input_horizontal_raster = self._layer_input(input_layer=input_horizontal_raster)
+
+
+        output_distance_allocation_raster, output_distance_accumulation_service = self._set_output_raster(output_name=output_distance_allocation_raster_name, task=task, output_properties=kwargs)
+
+        output_distance_accumulation_raster=None
+        if output_distance_accumulation_raster_name is not None:
+            output_distance_accumulation_raster, output_distance_accumulation_service = self._set_output_raster(output_name=output_distance_accumulation_raster_name, task=task, output_properties=kwargs)
+
+        output_source_direction_raster=None
+        if output_source_direction_raster_name is not None:
+            output_source_direction_raster, output_source_direction_service = self._set_output_raster(output_name=output_source_direction_raster_name, task=task, output_properties=kwargs)
+
+        output_source_location_raster=None
+        if output_source_location_raster_name is not None:
+            output_source_location_raster, out_allocation_service = self._set_output_raster(output_name=output_source_location_raster_name, task=task,  output_properties=kwargs)
+
+        output_back_direction_raster=None
+        if output_back_direction_raster_name is not None:
+            output_back_direction_raster, out_back_direction_service = self._set_output_raster(output_name=output_back_direction_raster_name, task=task,  output_properties=kwargs)
+
+        
+        gpjob = self._tbx.distance_allocation(input_source_raster_or_features=input_source_raster_or_features,
+                                             output_distance_allocation_raster_name=output_distance_allocation_raster,
+                                             input_barrier_raster_or_features=input_barrier_raster_or_features,
+                                             input_surface_raster=input_surface_raster,
+                                             input_cost_raster=input_cost_raster,
+                                             input_vertical_raster=input_vertical_raster,
+                                             vertical_factor=vertical_factor,
+                                             input_horizontal_raster=input_horizontal_raster,
+                                             horizontal_factor=horizontal_factor,
+                                             source_initial_accumulation=source_initial_accumulation,
+                                             source_maximum_accumulation=source_maximum_accumulation,
+                                             source_cost_multiplier=source_cost_multiplier,
+                                             source_direction=source_direction,
+                                             distance_method=distance_method,
+                                             output_distance_accumulation_raster_name=output_distance_accumulation_raster,
+                                             output_back_direction_raster_name=output_back_direction_raster, 
+                                             output_source_direction_raster_name=output_source_direction_raster, 
+                                             output_source_location_raster_name=output_source_location_raster,
+                                             context=context,
+                                             gis=self._gis,
+                                             future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
 
 ###########################################################################
 class _GeoanalyticsTools(_AsyncService):

@@ -242,6 +242,191 @@ def _calculate_distance_analytics_converter(raster_function,output_name=None, ot
                                future=future, 
                                **kwargs)
 
+def _distance_accumulation_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None, **kwargs):
+    in_source_data=None
+    in_barrier_data=None
+    in_surface_raster=None
+    in_cost_raster=None
+    in_vertical_raster=None
+    vertical_factor=None
+    in_horizontal_raster=None
+    horizontal_factor=None
+    source_initial_accumulation=None
+    source_maximum_accumulation=None
+    source_cost_multiplier=None
+    source_direction=None
+    distance_method=None
+    output_back_direction_raster_name=None
+    output_source_direction_raster_name=None
+    output_source_location_raster_name=None
+
+    if 'in_source_data' in raster_function['rasterFunctionArguments'].keys():
+        in_source_data = raster_function['rasterFunctionArguments']['in_source_data']
+    if 'in_barrier_data' in raster_function['rasterFunctionArguments'].keys():
+        in_barrier_data = raster_function['rasterFunctionArguments']['in_barrier_data']
+    if 'in_surface_raster' in raster_function['rasterFunctionArguments'].keys():
+        in_surface_raster = raster_function['rasterFunctionArguments']['in_surface_raster']
+    if 'in_cost_raster' in raster_function['rasterFunctionArguments'].keys():
+        in_cost_raster = raster_function['rasterFunctionArguments']['in_cost_raster']
+    if 'in_vertical_raster' in raster_function['rasterFunctionArguments'].keys():
+        in_vertical_raster = raster_function['rasterFunctionArguments']['in_vertical_raster']
+    if 'vertical_factor' in raster_function['rasterFunctionArguments'].keys():
+        vertical_factor = raster_function['rasterFunctionArguments']['vertical_factor']
+    if 'in_horizontal_raster' in raster_function['rasterFunctionArguments'].keys():
+        in_horizontal_raster = raster_function['rasterFunctionArguments']['in_horizontal_raster']
+    if 'horizontal_factor' in raster_function['rasterFunctionArguments'].keys():
+        horizontal_factor = raster_function['rasterFunctionArguments']['horizontal_factor']
+    if 'source_initial_accumulation' in raster_function['rasterFunctionArguments'].keys():
+        source_initial_accumulation = raster_function['rasterFunctionArguments']['source_initial_accumulation']
+    if 'source_maximum_accumulation' in raster_function['rasterFunctionArguments'].keys():
+        source_maximum_accumulation = raster_function['rasterFunctionArguments']['source_maximum_accumulation']
+    if 'source_cost_multiplier' in raster_function['rasterFunctionArguments'].keys():
+        source_cost_multiplier = raster_function['rasterFunctionArguments']['source_cost_multiplier']
+    if 'source_direction' in raster_function['rasterFunctionArguments'].keys():
+        source_direction = raster_function['rasterFunctionArguments']['source_direction']
+    if 'distance_method' in raster_function['rasterFunctionArguments'].keys():
+        distance_method = raster_function['rasterFunctionArguments']['distance_method']
+
+    output_distance_accumulation_raster_name = output_name
+
+    if "output_back_direction_raster_name" in other_outputs.keys():
+        if isinstance(other_outputs["output_back_direction_raster_name"], bool):
+            if other_outputs["output_back_direction_raster_name"] is True:
+                output_back_direction_raster_name = "output_back_direction_raster" + '_' + _id_generator()
+        else:
+            output_back_direction_raster_name = other_outputs["output_back_direction_raster_name"]
+
+    if "output_source_direction_raster_name" in other_outputs.keys():
+        if isinstance(other_outputs["output_source_direction_raster_name"], bool):
+            if other_outputs["output_source_direction_raster_name"] is True:
+                output_source_direction_raster_name = "output_source_direction_raster" + '_' + _id_generator()
+        else:
+            output_source_direction_raster_name = other_outputs["output_source_direction_raster_name"]
+
+    if "output_source_location_raster_name" in other_outputs.keys():
+        if isinstance(other_outputs["output_source_location_raster_name"], bool):
+            if other_outputs["output_source_location_raster_name"] is True:
+                output_source_location_raster_name = "output_source_location_raster" + '_' + _id_generator()
+        else:
+            output_source_location_raster_name = other_outputs["output_source_location_raster_name"]
+
+    return _distance_accumulation(input_source_raster_or_features=in_source_data,
+                                  input_barrier_raster_or_features=in_barrier_data,
+                                  input_surface_raster=in_surface_raster,
+                                  input_cost_raster=in_cost_raster,
+                                  input_vertical_raster=in_vertical_raster,
+                                  vertical_factor=vertical_factor,
+                                  input_horizontal_raster=in_horizontal_raster,
+                                  horizontal_factor=horizontal_factor,
+                                  source_initial_accumulation=source_initial_accumulation,
+                                  source_maximum_accumulation=source_maximum_accumulation,
+                                  source_cost_multiplier=source_cost_multiplier,
+                                  source_direction=source_direction,
+                                  distance_method=distance_method,
+                                  output_distance_accumulation_raster_name=output_distance_accumulation_raster_name,
+                                  output_back_direction_raster_name=output_back_direction_raster_name, 
+                                  output_source_direction_raster_name=output_source_direction_raster_name, 
+                                  output_source_location_raster_name=output_source_location_raster_name,
+                                  gis=gis,  
+                                  **kwargs)
+
+def _distance_allocation_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None, **kwargs):
+
+    in_source_data=None
+    in_barrier_data=None
+    in_surface_raster=None
+    in_cost_raster=None
+    in_vertical_raster=None
+    vertical_factor=None
+    in_horizontal_raster=None
+    horizontal_factor=None
+    source_initial_accumulation=None
+    source_maximum_accumulation=None
+    source_cost_multiplier=None
+    source_direction=None
+    distance_method=None
+    output_back_direction_raster_name=None 
+    output_source_direction_raster_name=None
+    output_source_location_raster_name=None
+    output_distance_accumulation_raster_name=None
+
+    if 'in_source_data' in raster_function['rasterFunctionArguments'].keys():
+        in_source_data = raster_function['rasterFunctionArguments']['in_source_data']
+    if 'in_barrier_data' in raster_function['rasterFunctionArguments'].keys():
+        in_barrier_data = raster_function['rasterFunctionArguments']['in_barrier_data']
+    if 'in_surface_raster' in raster_function['rasterFunctionArguments'].keys():
+        in_surface_raster = raster_function['rasterFunctionArguments']['in_surface_raster']
+    if 'in_cost_raster' in raster_function['rasterFunctionArguments'].keys():
+        in_cost_raster = raster_function['rasterFunctionArguments']['in_cost_raster']
+    if 'in_vertical_raster' in raster_function['rasterFunctionArguments'].keys():
+        in_vertical_raster = raster_function['rasterFunctionArguments']['in_vertical_raster']
+    if 'vertical_factor' in raster_function['rasterFunctionArguments'].keys():
+        vertical_factor = raster_function['rasterFunctionArguments']['vertical_factor']
+    if 'in_horizontal_raster' in raster_function['rasterFunctionArguments'].keys():
+        in_horizontal_raster = raster_function['rasterFunctionArguments']['in_horizontal_raster']
+    if 'horizontal_factor' in raster_function['rasterFunctionArguments'].keys():
+        horizontal_factor = raster_function['rasterFunctionArguments']['horizontal_factor']
+    if 'source_initial_accumulation' in raster_function['rasterFunctionArguments'].keys():
+        source_initial_accumulation = raster_function['rasterFunctionArguments']['source_initial_accumulation']
+    if 'source_maximum_accumulation' in raster_function['rasterFunctionArguments'].keys():
+        source_maximum_accumulation = raster_function['rasterFunctionArguments']['source_maximum_accumulation']
+    if 'source_cost_multiplier' in raster_function['rasterFunctionArguments'].keys():
+        source_cost_multiplier = raster_function['rasterFunctionArguments']['source_cost_multiplier']
+    if 'source_direction' in raster_function['rasterFunctionArguments'].keys():
+        source_direction = raster_function['rasterFunctionArguments']['source_direction']
+    if 'distance_method' in raster_function['rasterFunctionArguments'].keys():
+        distance_method = raster_function['rasterFunctionArguments']['distance_method']
+
+    output_distance_allocation_raster_name = output_name
+
+    if "output_distance_accumulation_raster_name" in other_outputs.keys():
+        if isinstance(other_outputs["output_distance_accumulation_raster_name"], bool):
+            if other_outputs["output_distance_accumulation_raster_name"] is True:
+                output_distance_accumulation_raster_name = "output_distance_accumulation_raster" + '_' + _id_generator()
+        else:
+            output_distance_accumulation_raster_name = other_outputs["output_distance_accumulation_raster_name"]
+
+    if "output_back_direction_raster_name" in other_outputs.keys():
+        if isinstance(other_outputs["output_back_direction_raster_name"], bool):
+            if other_outputs["output_back_direction_raster_name"] is True:
+                output_back_direction_raster_name = "output_back_direction_raster" + '_' + _id_generator()
+        else:
+            output_back_direction_raster_name = other_outputs["output_back_direction_raster_name"]
+
+    if "output_source_direction_raster_name" in other_outputs.keys():
+        if isinstance(other_outputs["output_source_direction_raster_name"], bool):
+            if other_outputs["output_source_direction_raster_name"] is True:
+                output_source_direction_raster_name = "output_source_direction_raster" + '_' + _id_generator()
+        else:
+            output_source_direction_raster_name = other_outputs["output_source_direction_raster_name"]
+
+    if "output_source_location_raster_name" in other_outputs.keys():
+        if isinstance(other_outputs["output_source_location_raster_name"], bool):
+            if other_outputs["output_source_location_raster_name"] is True:
+                output_source_location_raster_name = "output_source_location_raster" + '_' + _id_generator()
+        else:
+            output_source_location_raster_name = other_outputs["output_source_location_raster_name"]
+
+    return _distance_allocation(input_source_raster_or_features=in_source_data,
+                                  input_barrier_raster_or_features=in_barrier_data,
+                                  input_surface_raster=in_surface_raster,
+                                  input_cost_raster=in_cost_raster,
+                                  input_vertical_raster=in_vertical_raster,
+                                  vertical_factor=vertical_factor,
+                                  input_horizontal_raster=in_horizontal_raster,
+                                  horizontal_factor=horizontal_factor,
+                                  source_initial_accumulation=source_initial_accumulation,
+                                  source_maximum_accumulation=source_maximum_accumulation,
+                                  source_cost_multiplier=source_cost_multiplier,
+                                  source_direction=source_direction,
+                                  distance_method=distance_method,
+                                  output_distance_allocation_raster_name = output_distance_allocation_raster_name,
+                                  output_distance_accumulation_raster_name=output_distance_accumulation_raster_name,
+                                  output_back_direction_raster_name=output_back_direction_raster_name, 
+                                  output_source_direction_raster_name=output_source_direction_raster_name, 
+                                  output_source_location_raster_name=output_source_location_raster_name,
+                                  gis=gis,  
+                                  **kwargs)
 
 def _return_output(num_returns, output_dict ,return_value_names):
     if num_returns == 1:
@@ -308,6 +493,11 @@ def _save_ra(raster_function,output_name=None, other_outputs=None,gis=None, futu
         return _calculate_travel_cost_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis,future=future, **kwargs)
     if raster_function['rasterFunctionArguments']['toolName'] is "CalculateDistance_sa":
         return _calculate_distance_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis,future=future, **kwargs)
+    if raster_function['rasterFunctionArguments']['toolName'] is "DistanceAccumulation_sa":
+        return _distance_accumulation_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, **kwargs)
+    if raster_function['rasterFunctionArguments']['toolName'] is "DistanceAllocation_sa":
+        return _distance_allocation_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, **kwargs)
+
 
 def _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster_type_params = None, image_collection_properties = None, use_input_rasters_by_ref = False):
     
@@ -4776,3 +4966,342 @@ def define_nodata(input_raster,
                                                     future=future,
                                                     **kwargs)
 
+def optimal_path_as_line(input_destination_data,
+                         input_distance_accumulation_raster,
+                         input_back_direction_raster,
+                         destination_field=None, 
+                         path_type="EACH_ZONE", 
+                         output_feature_name=None, 
+                         context=None, 
+                         *, 
+                         gis=None, 
+                         future=False, 
+                         **kwargs):
+
+    """
+    Calculates the optimal path from a source to a destination as a feature.
+    Function available in ArcGIS Image Server 10.81 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_destination_data                   Required ImageryLayer or Feature Layer object. Portal Item can be passed.
+                                             A dataset that identifies locations from which the optimal path is 
+                                             determined to the least costly source.
+
+                                             If the input is a raster, it must consist of cells that have valid values 
+                                             for the destinations, and the remaining cells must be assigned NoData. 
+                                             Zero is a valid value.
+    ------------------------------------     --------------------------------------------------------------------
+    input_distance_accumulation_raster       Required ImageryLayer object. Portal Item can be passed.
+                                             The distance accumulation raster is used 
+                                             to determine the optimal path from the sources to the destinations. 
+
+                                             The distance accumulation raster is usually created with the 
+                                             arcgis.raster.functions.gbl.distance_accumulation or 
+                                             arcgis.raster.functions.gbl.distance_allocation functions.  Each cell 
+                                             in the distance accumulation raster represents the minimum 
+                                             accumulative cost distance over a surface from each cell to a set of source cells.
+    ------------------------------------     --------------------------------------------------------------------
+    input_back_direction_raster              Required ImageryLayer object. Portal Item can be passed.
+                                             The back direction raster contains calculated directions in degrees. 
+                                             The direction identifies the next cell along the optimal path back to 
+                                             the least accumulative cost source while avoiding barriers.
+
+                                             The range of values is from 0 degrees to 360 degrees, with 0 
+                                             reserved for the source cells. Due east (right) is 90, and the 
+                                             values increase clockwise (180 is south, 270 is west, and 360 is north)
+    ------------------------------------     --------------------------------------------------------------------
+    destination_field                        Optional string. The field to be used to obtain values for the destination locations. 
+    ------------------------------------     --------------------------------------------------------------------
+    path_type                                Optional string. A keyword defining the manner in which the values and zones on the input destination
+                                             data will be interpreted in the cost path calculations.
+
+                                              - EACH_ZONE - For each zone on the input destination data, a least-cost path is determined
+                                                             and saved on the output raster. With this option, the least-cost path for each zone 
+                                                             begins at the cell with the lowest cost distance weighting in the zone.
+
+                                                             This is the default.
+
+                                              - BEST_SINGLE - For all cells on the input destination data, the least-cost path is derived 
+                                                              from the cell with the minimum of the least-cost paths to source cells.
+
+                                              - EACH_CELL - For each cell with valid values on the input destination data, a least-cost
+                                                            path is determined and saved on the output raster. With this option, each cell of the 
+                                                            input destination data is treated separately, and a least-cost path is determined for 
+                                                            each from cell.
+    ------------------------------------     --------------------------------------------------------------------
+    output_feature_name                      Optional. If not provided, a feature layer is created by the method 
+                                             and used as the output.
+
+                                             You can pass in an existing feature layer Item from your GIS to use 
+                                             that instead.
+
+                                             Alternatively, you can pass in the name of the output feature layer  that should be created by this method to be used as the output for the tool.
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS object. If not speficied, the currently active connection
+                                             is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    :return: Output Feature Layer Item
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.optimal_path_as_line(input_destination_raster_or_features=input_destination_data,  
+                                                          input_distance_accumulation_raster=input_distance_accumulation_raster, 
+                                                          input_back_direction_raster=input_back_direction_raster, 
+                                                          output_polyline_name=output_feature_name,  
+                                                          destination_field=destination_field, 
+                                                          path_type=path_type, 
+                                                          context=context,
+                                                          future=future,
+                                                          **kwargs)
+
+
+def optimal_region_connections(input_region_data,
+                               input_barrier_data=None,
+                               input_cost_raster=None,
+                               distance_method="PLANAR",
+                               connections_within_regions="GENERATE_CONNECTIONS",
+                               output_optimal_lines_name=None,
+                               output_neighbor_connections_name=None,
+                               context=None, 
+                               *, 
+                               gis=None, 
+                               future=False, 
+                               **kwargs):
+
+    """
+    Calculates the optimal connectivity network between two or more input regions.
+    Function available in ArcGIS Image Server 10.81 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_region_data                       Required ImageryLayer or Feature Layer object. Portal Item can be passed.
+                                             The input regions to be connected by the optimal network.
+
+                                             If the region input is a raster, the regions are defined by groups 
+                                             of contiguous (adjacent) cells of the same value. Each region must 
+                                             be uniquely numbered. The cells that are not part of any region must 
+                                             be NoData. The raster type must be integer, and the values can be 
+                                             either positive or negative.
+
+                                             If the region input is a feature dataset, it can be polygons, 
+                                             lines, or points. Polygon feature regions cannot be composed 
+                                             of multipart polygons.
+    ------------------------------------     --------------------------------------------------------------------
+    input_barrier_data                       Required ImageryLayer or Feature Layer object. Portal Item can be passed.
+                                             The dataset that defines the barriers.
+
+                                             The barriers can be defined by an integer or a floating-point raster, 
+                                             or by a feature layer.
+    ------------------------------------     --------------------------------------------------------------------
+    input_cost_raster                        Required ImageryLayer object. Portal Item can be passed. A raster 
+                                             defining the impedance or cost to move planimetrically through each 
+                                             cell.
+
+                                             The value at each cell location represents the cost-per-unit 
+                                             distance for moving through the cell. Each cell location value 
+                                             is multiplied by the cell resolution while also compensating 
+                                             for diagonal movement to obtain the total cost of passing through the cell.
+
+                                             The values of the cost raster can be integer or floating point, 
+                                             but they cannot be negative or zero (you cannot have a negative or zero cost).
+    ------------------------------------     --------------------------------------------------------------------
+    distance_method                          Optional String. Specifies whether to calculate the distance using a 
+                                             planar (flat earth) or a geodesic (ellipsoid) method.
+
+                                             - PLANAR - The distance calculation will be performed on a projected 
+                                                        flat plane using a 2D Cartesian coordinate system. This is the default.
+
+                                             - GEODESIC - The distance calculation will be performed on the ellipsoid. 
+                                                          Therefore, regardless of input or output projection, the results 
+                                                          do not change.
+    ------------------------------------     --------------------------------------------------------------------
+    connections_within_regions               Optional string. Default - GENERATE_CONNECTIONS
+                                             Possible options: GENERATE_CONNECTIONS, NO_CONNECTIONS
+    ------------------------------------     --------------------------------------------------------------------
+    output_optimal_lines_name                Optional. If not provided, a feature layer is created by the method 
+                                             and used as the output.
+                                             You can pass in an existing feature layer Item from your GIS to use 
+                                             that instead.
+                                             Alternatively, you can pass in the name of the output feature layer  
+                                             that should be created by this method to be used as the output for the tool.
+                                             A RuntimeError is raised if a service by that name already exists
+
+                                             This is the output polyline feature class of the optimal network of 
+                                             paths necessary to connect each of the input regions.
+
+                                             Each path (or line) is uniquely numbered, and additional fields in the 
+                                             attribute table store specific information about the path. 
+                                             Those fields are the following:
+                                              
+                                              - PATHID—Unique identifier for the path
+
+                                              - PATHCOST—Total accumulative distance or cost for the path
+
+                                              - REGION1—The first region the path connects
+
+                                              - REGION2—The other region the path connects
+
+                                             This information provides insight into the paths within the network.
+
+                                             Since each path is represented by a unique line, there will be
+                                             multiple lines in locations where paths travel the same route.
+    ------------------------------------     --------------------------------------------------------------------
+    output_neighbor_connections_name         Optional. If not provided, a feature layer is created by the method 
+                                             and used as the output.
+                                             You can pass in an existing feature layer Item from your GIS to use 
+                                             that instead.
+                                             Alternatively, you can pass in the name of the output feature layer  
+                                             that should be created by this method to be used as the output for the tool.
+                                             A RuntimeError is raised if a service by that name already exists
+
+                                             This is the output polyline feature class identifying all paths from 
+                                             each region to each of its closest or cost neighbors.
+
+                                             Each path (or line) is uniquely numbered, and additional fields in the 
+                                             attribute table store specific information about the path. 
+                                             Those fields are the following:
+
+                                              - PATHID—Unique identifier for the path
+
+                                              - PATHCOST—Total accumulative distance or cost for the path
+
+                                              - REGION1—The first region the path connects
+
+                                              - REGION2—The other region the path connects
+
+                                             This information provides insight into the paths within the 
+                                             network and is particularly useful when deciding which paths 
+                                             should be removed if necessary.
+
+                                             Since each path is represented by a unique line, there will be 
+                                             multiple lines in locations where paths travel the same route.
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS object. If not speficied, the currently active connection
+                                             is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    :return: Returns the following as a named tuple - 
+             - output_optimum_network_features
+             - output_neighbor_network_features
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.optimal_region_connections(input_region_raster_or_features=input_region_data,  
+                                                                input_barrier_raster_or_features=input_barrier_data, 
+                                                                input_cost_raster=input_cost_raster, 
+                                                                distance_method=distance_method,  
+                                                                connections_within_regions=connections_within_regions, 
+                                                                output_optimal_lines_name=output_optimal_lines_name, 
+                                                                output_neighbor_connections_name=output_neighbor_connections_name,
+                                                                context=context,
+                                                                future=future,
+                                                                **kwargs)
+
+
+def _distance_accumulation(input_source_raster_or_features,
+                           input_barrier_raster_or_features=None,
+                           input_surface_raster=None,
+                           input_cost_raster=None,
+                           input_vertical_raster=None,
+                           vertical_factor='BINARY 1 -30 30',
+                           input_horizontal_raster=None,
+                           horizontal_factor='BINARY 1 45',
+                           source_initial_accumulation=None,
+                           source_maximum_accumulation=None,
+                           source_cost_multiplier=None,
+                           source_direction=None,
+                           distance_method='PLANAR',
+                           output_distance_accumulation_raster_name=None,
+                           output_back_direction_raster_name=None, 
+                           output_source_direction_raster_name=None, 
+                           output_source_location_raster_name=None,
+                           context=None, 
+                           *, 
+                           gis=None, 
+                           future=False, 
+                           **kwargs):
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.distance_accumulation(input_source_raster_or_features=input_source_raster_or_features,  
+                                                           input_barrier_raster_or_features=input_barrier_raster_or_features, 
+                                                           input_surface_raster=input_surface_raster, 
+                                                           input_cost_raster=input_cost_raster,  
+                                                           input_vertical_raster=input_vertical_raster,
+                                                           vertical_factor=vertical_factor,
+                                                           input_horizontal_raster=input_horizontal_raster,
+                                                           horizontal_factor=horizontal_factor,
+                                                           source_initial_accumulation=source_initial_accumulation,
+                                                           source_maximum_accumulation=source_maximum_accumulation,
+                                                           source_cost_multiplier=source_cost_multiplier,
+                                                           source_direction=source_direction,
+                                                           distance_method=distance_method,
+                                                           output_distance_accumulation_raster_name=output_distance_accumulation_raster_name,
+                                                           output_back_direction_raster_name=output_back_direction_raster_name, 
+                                                           output_source_direction_raster_name=output_source_direction_raster_name, 
+                                                           output_source_location_raster_name=output_source_location_raster_name,
+                                                           context=context,
+                                                           future=future,
+                                                           **kwargs)
+
+
+def _distance_allocation(input_source_raster_or_features,
+                           input_barrier_raster_or_features=None,
+                           input_surface_raster=None,
+                           input_cost_raster=None,
+                           input_vertical_raster=None,
+                           vertical_factor='BINARY 1 -30 30',
+                           input_horizontal_raster=None,
+                           horizontal_factor='BINARY 1 45',
+                           source_initial_accumulation=None,
+                           source_maximum_accumulation=None,
+                           source_cost_multiplier=None,
+                           source_direction=None,
+                           distance_method='PLANAR',
+                           output_distance_allocation_raster_name=None,
+                           output_distance_accumulation_raster_name=None,
+                           output_back_direction_raster_name=None, 
+                           output_source_direction_raster_name=None, 
+                           output_source_location_raster_name=None,
+                           context=None, 
+                           *, 
+                           gis=None, 
+                           future=False, 
+                           **kwargs):
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.distance_allocation(input_source_raster_or_features=input_source_raster_or_features,  
+                                                           input_barrier_raster_or_features=input_barrier_raster_or_features, 
+                                                           input_surface_raster=input_surface_raster, 
+                                                           input_cost_raster=input_cost_raster,  
+                                                           input_vertical_raster=input_vertical_raster,
+                                                           vertical_factor=vertical_factor,
+                                                           input_horizontal_raster=input_horizontal_raster,
+                                                           horizontal_factor=horizontal_factor,
+                                                           source_initial_accumulation=source_initial_accumulation,
+                                                           source_maximum_accumulation=source_maximum_accumulation,
+                                                           source_cost_multiplier=source_cost_multiplier,
+                                                           source_direction=source_direction,
+                                                           distance_method=distance_method,
+                                                           output_distance_allocation_raster_name=output_distance_allocation_raster_name,
+                                                           output_distance_accumulation_raster_name=output_distance_accumulation_raster_name,
+                                                           output_back_direction_raster_name=output_back_direction_raster_name, 
+                                                           output_source_direction_raster_name=output_source_direction_raster_name, 
+                                                           output_source_location_raster_name=output_source_location_raster_name,
+                                                           context=context,
+                                                           future=future,
+                                                           **kwargs)

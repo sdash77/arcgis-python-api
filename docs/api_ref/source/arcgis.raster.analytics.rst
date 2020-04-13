@@ -151,3 +151,11 @@ costpath_as_polyline
 define_nodata
 -------------
 .. automethod:: arcgis.raster.analytics.define_nodata
+
+optimal_path_as_line
+--------------------
+.. automethod:: arcgis.raster.analytics.optimal_path_as_line
+
+optimal_region_connections
+--------------------------
+.. automethod:: arcgis.raster.analytics.optimal_region_connections
