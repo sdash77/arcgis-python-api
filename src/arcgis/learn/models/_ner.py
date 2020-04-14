@@ -46,7 +46,7 @@ class EntityRecognizer(ArcGISModel):
     :returns: ``EntityRecognizer`` Object
     """
     
-    def __init__(self, data=None,lang='en'):
+    def __init__(self, data=None, lang='en', *args, **kwargs):
         if not HAS_SPACY:
             _raise_spacy_import_error()
         super().__init__(data)

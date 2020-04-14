@@ -83,7 +83,7 @@ class PSPNetClassifier(ArcGISModel):
     :returns: `PSPNetClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, use_unet=True, pyramid_sizes=[1, 2, 3, 6], pretrained_path=None, unet_aux_loss=False, **kwargs):
+    def __init__(self, data, backbone=None, use_unet=True, pyramid_sizes=[1, 2, 3, 6], pretrained_path=None, unet_aux_loss=False, *args, **kwargs):
 
         # Set default backbone to be 'resnet50'
         if backbone is None: 

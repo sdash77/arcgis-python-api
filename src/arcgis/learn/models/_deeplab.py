@@ -101,7 +101,7 @@ class DeepLab(ArcGISModel):
 
     :returns: ``DeepLab`` Object
     """
-    def __init__(self, data, backbone=None, pretrained_path=None, **kwargs):
+    def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
         # Set default backbone to be 'resnet101'
         if backbone is None:
             backbone = models.resnet101

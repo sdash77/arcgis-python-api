@@ -105,7 +105,7 @@ class FeatureClassifier(ArcGISModel):
     :returns: `FeatureClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, pretrained_path=None, mixup=False, oversample=False, backend='pytorch', **kwargs):
+    def __init__(self, data, backbone=None, pretrained_path=None, mixup=False, oversample=False, backend='pytorch', *args, **kwargs):
         
         self._backend = backend
         if self._backend == 'tensorflow':

@@ -77,7 +77,7 @@ class RetinaNet(ArcGISModel):
     :returns: `RetinaNet` Object
     """
 
-    def __init__(self, data, scales=None, ratios=None, backbone=None, pretrained_path=None):
+    def __init__(self, data, scales=None, ratios=None, backbone=None, pretrained_path=None, *args, **kwargs):
 
         # Set default backbone to be 'resnet50'
         if backbone is None: 

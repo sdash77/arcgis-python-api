@@ -60,7 +60,7 @@ class MaskRCNN(ArcGISModel):
 
     :returns: ``MaskRCNN`` Object
     """
-    def __init__(self, data, backbone=None, pretrained_path=None):
+    def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
 
         # Set default backbone to be 'resnet50'
         if backbone is None:

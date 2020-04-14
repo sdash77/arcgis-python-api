@@ -71,7 +71,7 @@ class UnetClassifier(ArcGISModel):
     :returns: `UnetClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, pretrained_path=None, backend='pytorch', **kwargs):
+    def __init__(self, data, backbone=None, pretrained_path=None, backend='pytorch', *args, **kwargs):
 
         self._backend = backend
         if self._backend == 'tensorflow':
