@@ -37,33 +37,35 @@ def create_uid():
 def inspect_function_inputs(fn, **params):
     """
     Given any function and a set of key/value pairs, where the ```params``` is a dictionary,
-    the code inspects the input method and then returns a list of accepted inputs as 
+    the code inspects the input method and then returns a list of accepted inputs as
     a new dictionary.  This method is used primarily to validate GP services and ensure
     that the parameters given are supported in the current version of the tool.
-    
+
     :returns: dictionary
-    
+
     Example:
-    
+
     >>> def add(x,y):
     >>>    return x+y
-       
+
     >>> valid_inputs = inspect_function_inputs(fn=add, **{'x' : 1, 'y': 2, 'cat' : 3})
     >>> print(valid_inputs)
     {'x' : 1, 'y': 2}
-    
+
     """
     import inspect
     try:
-        
+
         args = inspect.getargspec(func=fn).args
     except ValueError:
         args = inspect.getfullargspec(func=fn).args
-        
+    if 'gis' in args:
+        args.pop(args.index("gis"))
     valid = {}
     for key in params.keys():
         if key in args and params[key] is not None:
             valid[key] = params[key]
+
     return valid
 #----------------------------------------------------------------------
 def _date_handler(obj):
