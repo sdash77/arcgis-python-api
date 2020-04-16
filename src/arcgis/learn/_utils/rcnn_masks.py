@@ -4,6 +4,7 @@ import torch
 import matplotlib.pyplot as plt
 import matplotlib
 from ..models._maskrcnn_utils import ArcGISImageSegment
+from .common import get_nbatches
 
 def show_batch_rcnn_masks(self, rows=3, alpha=0.5, **kwargs): # parameters adjusted in kwargs 
     nrows = rows

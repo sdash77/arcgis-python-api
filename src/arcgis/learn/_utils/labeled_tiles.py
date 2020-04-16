@@ -1,6 +1,7 @@
 import torch
 import matplotlib.pyplot as plt
 import math
+from .common import get_nbatches
 
 def show_batch_labeled_tiles(self, rows=3, **kwargs): # parameters adjusted in kwargs   
     nrows = rows
