@@ -1117,6 +1117,10 @@ class FeatureLayer(Layer):
             return self._query(url, params, raw=as_raw)
 
         result = None
+        i = 0
+        count = 0
+        df = None
+        dfs = []
         if not supports_pagination:
             params['returnIdsOnly'] = True
             oid_info = self._query(url, params, raw=as_raw)
@@ -1125,23 +1129,23 @@ class FeatureLayer(Layer):
                 ids = [str(i) for i in ids]
                 sql = "%s in (%s)" % (oid_info['objectIdFieldName'], ",".join(ids))
                 params['where'] = sql
-                records = self._query(url, params, raw=as_raw)
-                if result:
-                    if 'features' in result:
-                        result['features'].append(records['features'])
+                if not as_df:
+                    records = self._query(url, params, raw=as_raw)
+                    if result:
+                        if 'features' in result:
+                            result['features'].append(records['features'])
+                        else:
+                            result.features.extend(records.features)
                     else:
-                        result.features.extend(records.features)
+                        result = records
                 else:
-                    result = records
+                    df = self._query_df(url, params)
+                    dfs.append(df)
         else:
-            i = 0
-            count = 0
-            df = None
-            dfs = []
             while True:
                 params['resultRecordCount'] = max_records
                 params['resultOffset'] = max_records * i
-                if as_df == False:
+                if not as_df:
                     records = self._query(url, params, raw=as_raw)
 
                     if result:
