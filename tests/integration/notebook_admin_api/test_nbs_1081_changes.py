@@ -1,12 +1,15 @@
 """
 This is 10.8.1+ Functionality Tests for Notebook Server
 """
+import sys
+sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_3584\src")
 import unittest
 import os, json
 import arcgis
 from arcgis.gis import GIS
 from arcgis.gis.nb import NotebookServer, NotebookManager
-
+from arcgis.gis._impl._schedule import UserTasks, Task
+from arcgis.gis._impl._schedule import Run
 try:
     url = "https://datasciencedev.esri.com/portal"
     username = "portaladmin"
@@ -15,12 +18,87 @@ try:
     SKIP_TESTS = False
 except:
     SKIP_TESTS = True
-
-@unittest.skipIf(SKIP_TESTS == True, 
+###########################################################################
+@unittest.skipIf(SKIP_TESTS == True,
                  "Cannot connect to Testing Server and/or Portal")
+class TestGISAdminAllTasks1081(unittest.TestCase):
+    #----------------------------------------------------------------------
+    def test_list_all_tasks(self):
+        """tests listing all the tasks"""
+        st = gis.admin.scheduled_tasks
+        assert st
+        assert isinstance(st, list)
+###########################################################################
+@unittest.skipIf(SKIP_TESTS == True,
+                 "Cannot connect to Testing Server and/or Portal")
+#@unittest.skip(reason='said so')
+class TestUserScheduleTasks1081(unittest.TestCase):
+    #----------------------------------------------------------------------
+    def test_task_properties(self):
+        """tests the task's properties"""
+        user = gis.users.me
+        st = user.tasks
+        isinstance(st, UserTasks)
+        if len(st.all) > 0:
+            task = st.all[0]
+            assert task.properties
+        else:
+            items = gis.content.search("owner: %s" % gis.users.me.username, item_type='Notebook')
+            if len(items) > 0:
+                task = st.create(title='props_test', task_type="ExecuteNotebook", item=items[0], cron='2 2 2 2 ?')
+                assert task.properties
+                task.delete()
+    #----------------------------------------------------------------------
+    def test_update(self):
+        """test the Task's update method"""
+        user = gis.users.me
+        items = gis.content.search("owner: %s" % user.username, item_type='Notebook')
+        st = user.tasks
+        if len(items) > 0:
+            item = items[0]
+            itemid = item.itemid
+            t1 = st.create(task_type="ExecuteNotebook", item=item, cron='* * * * ?')
+            assert isinstance(t1, Task)
+            t1.update(title='TESTUPDATE')
+            assert t1.properties.title == 'TESTUPDATE'
+            assert t1.delete()
+    #----------------------------------------------------------------------
+    def test_create_delete(self):
+        """tests creating and deleting a scheduled task"""
+        user = gis.users.me
+        st = user.tasks
+        isinstance(st, UserTasks)
+        item = gis.content.get("de1ac4a070e74bd7ad61e0cb3e1174b1")
+        itemid = item.itemid
+        t1 = st.create(title='t1', task_type="ExecuteNotebook", item=item, cron='* * * * ?')
+        assert isinstance(t1, Task)
+        assert t1.delete()
+        t2 = st.create(title='t2', task_type="ExecuteNotebook", item=itemid, cron='0 1 2 12 ?')
+        assert isinstance(t2, Task)
+        assert t2.delete()
+    #----------------------------------------------------------------------
+    def test_isinstance(self):
+        """tests the isinstance checks for the scheduling"""
+        user = gis.users.me
+        assert user.tasks
+        assert isinstance(user.tasks, UserTasks)
+        assert isinstance(user.tasks.count, int)
+        assert isinstance(user.tasks.all, list)
+        if len(user.tasks.all) > 0:
+            task_list = user.tasks.all
+            task = task_list[0]
+            assert isinstance(task, Task)
+            runs = task.runs
+            assert isinstance(runs, list)
+            if len(runs) > 0:
+                assert isinstance(runs[0], Run)
+                runs[0].properties
+#@unittest.skipIf(SKIP_TESTS == True,
+#                 "Cannot connect to Testing Server and/or Portal")
+@unittest.skip(reason='said so')
 class TestNotebookServer1081(unittest.TestCase):
     """Tests New 10.8.1 Functionality"""
-    
+    #----------------------------------------------------------------------
     def test_recent_stats(self):
         """tests the recent statistics"""
         servers = gis.admin.servers.list()
@@ -29,6 +107,6 @@ class TestNotebookServer1081(unittest.TestCase):
                 break
         assert server.system.recent_statistics
         assert isinstance(server.system.recent_statistics, dict)
-        
+
 if __name__ == "__main__":
     unittest.main()

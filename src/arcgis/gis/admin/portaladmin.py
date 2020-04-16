@@ -152,6 +152,29 @@ class PortalAdminManager(BasePortalAdmin):
         return self._servers
     #----------------------------------------------------------------------
     @property
+    def scheduled_tasks(self):
+        """
+        This property allows `org_admins` to be able to see all scheduled tasks on the enterprise
+
+        :returns: List of Tasks
+        """
+        _tasks = []
+        num = 100
+        url = f"{self._gis._portal.resturl}portals/self/allScheduledTasks"
+        res = self._con.get(url, {'f' : 'json', 'start' : 1, 'num' : num })
+        start = res['nextStart']
+        _tasks.extend(res['tasks'])
+        while start != -1:
+            res = self._con.get(url, {'f' : 'json',
+                                      'start' : start,
+                                      'num' : num})
+            if len(res['tasks']) == 0:
+                break
+            _tasks.extend(res['tasks'])
+            start = res['nextStart']
+        return _tasks
+    #----------------------------------------------------------------------
+    @property
     def machines(self):
         """
         This resource lists all the portal machines in a site. Each portal

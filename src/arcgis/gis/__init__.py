@@ -21,8 +21,8 @@ from datetime import datetime
 import logging
 
 from urllib.error import  HTTPError
-
-#from ._impl import _portalpy as portalpy#import arcgis.gis._impl._portalpy as portalpy
+from functools import lru_cache
+from ._impl import _portalpy as portalpy#import arcgis.gis._impl._portalpy as portalpy
 import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
@@ -740,17 +740,17 @@ class GIS(object):
     @property
     def org_settings(self):
         """
-        The portal settings resource is used to return a view of the 
-        portal's configuration as seen by the current users, either 
-        anonymous or logged in. Information returned by this resource 
-        includes helper services, allowed redirect URIs, and the current 
+        The portal settings resource is used to return a view of the
+        portal's configuration as seen by the current users, either
+        anonymous or logged in. Information returned by this resource
+        includes helper services, allowed redirect URIs, and the current
         configuration for any access notices or information banners.
-        
+
         ======================     ===============================================================
         **Parameters**             **Description**
         ----------------------     ---------------------------------------------------------------
         settings                   Required Dict.  A dictionary of the settings
-        
+
                                     ==========================    =============================================
                                     **Fields**                    **Description**
                                     --------------------------    ---------------------------------------------
@@ -765,35 +765,35 @@ class GIS(object):
                                     --------------------------    ---------------------------------------------
                                     clearEmptyFields              Bool.  If True, any empty dictionary will be set to null.
                                     ==========================    =============================================
-                                    
+
         ======================     ===============================================================
-        
+
         :returns: Dictionary
-        
+
         """
         if self.version >= [7,4]:
             url = "portals/self/settings"
             params = {'f' : 'json'}
             return self._con.post(url, params)
-        return    
+        return
     #----------------------------------------------------------------------
     @org_settings.setter
     def org_settings(self, settings):
         """
-        This operation allows you to enable and customize an access notice 
-        and informational banner for your organization. The access notice, 
-        for authenticated and anonymous access, acts as a terms of service 
-        that users must agree to before being able to access the portal 
-        site. The informational banner allows you to alert members of your 
-        organization about your site's current status and content, such as 
-        a notice that the site is currently in read-only mode or 
-        containing content of a specific classification level. 
-        
+        This operation allows you to enable and customize an access notice
+        and informational banner for your organization. The access notice,
+        for authenticated and anonymous access, acts as a terms of service
+        that users must agree to before being able to access the portal
+        site. The informational banner allows you to alert members of your
+        organization about your site's current status and content, such as
+        a notice that the site is currently in read-only mode or
+        containing content of a specific classification level.
+
         ======================     ===============================================================
         **Parameters**             **Description**
         ----------------------     ---------------------------------------------------------------
         settings                   Required Dict.  A dictionary of the settings
-        
+
                                     ==========================    =============================================
                                     **Fields**                    **Description**
                                     --------------------------    ---------------------------------------------
@@ -808,9 +808,9 @@ class GIS(object):
                                     --------------------------    ---------------------------------------------
                                     clearEmptyFields              Bool.  If True, any empty dictionary will be set to null.
                                     ==========================    =============================================
-                                    
+
         ======================     ===============================================================
-        
+
         """
         if self.version >= [7,4] and \
            isinstance(settings, dict):
@@ -1596,50 +1596,50 @@ class UserManager(object):
     def user_settings(self):
         """
         Gets/sets the user's settings
-        
-        The `user_settings` allows administrators to set, and edit, new 
+
+        The `user_settings` allows administrators to set, and edit, new
         member defaults. Members who create their own built-in accounts and
-        members added by an administrator or through automatic account 
-        creation will be automatically assigned the new member defaults. 
-        
+        members added by an administrator or through automatic account
+        creation will be automatically assigned the new member defaults.
+
         Passing in `None` to the property will delete all the user settings.
-        
+
         **Settings Key/Value Dictionary**
-        
+
         ================  ===============================================================================
         **Keys**          **Description**
         ----------------  -------------------------------------------------------------------------------
-        role	          String/Role. The role ID. To assign a custom role as the new member default, 
-                          provide a Role object.  
-                          
-                          Values: `administrator`, `publisher`, `editor`, `viewer` or custom `Role` object 
+        role	          String/Role. The role ID. To assign a custom role as the new member default,
+                          provide a Role object.
+
+                          Values: `administrator`, `publisher`, `editor`, `viewer` or custom `Role` object
         ----------------  -------------------------------------------------------------------------------
-        userLicenseType   String. The ID of a user type licensed with your organization. To see which 
-                          user types are included with your organization's licensing, see the License 
+        userLicenseType   String. The ID of a user type licensed with your organization. To see which
+                          user types are included with your organization's licensing, see the License
                           resource in the Portal Admin API.
-                          
-                          Values: `creator`, `editor`, `Advanced GIS`, `Basic GIS`, `Standard GIS`, 
+
+                          Values: `creator`, `editor`, `Advanced GIS`, `Basic GIS`, `Standard GIS`,
                           `viewer`, or `fieldWorker`
         ----------------  -------------------------------------------------------------------------------
-        groups            List of String/Groups. An array of group ID numbers or `Group` objects that 
+        groups            List of String/Groups. An array of group ID numbers or `Group` objects that
                           specify the groups new members will be added to.
         ----------------  -------------------------------------------------------------------------------
-        userType          String.  This key only applies to `ArcGIS Online`. If new members will have 
-                          Esri access (both) or if Esri access will be disabled (arcgisonly). The default 
+        userType          String.  This key only applies to `ArcGIS Online`. If new members will have
+                          Esri access (both) or if Esri access will be disabled (arcgisonly). The default
                           value is `arcgisonly`.
-                          
+
                           Values: `arcgisonly` or `both`
         ----------------  -------------------------------------------------------------------------------
         apps              List of dictionaries.  An array of an app's itemID and, when applicable, entitlement.
                           Example: `{"apps" :[{"itemId": "f761dd0f298944dcab22d1e888c60293","entitlements": ["Insights"]}]}`
         ----------------  -------------------------------------------------------------------------------
         appBundles        List of dictionaries. An array of an app bundle's ID.
-        
+
                           Example: `{"appBundles":[{"itemId": "99d7956c7e824ff4ab27422e2a26c2b7}]}`
         ================  ===============================================================================
-        
+
         :returns: Dictionary
-        
+
         """
         if self._gis.version >= [7,3]:
             url = f"{self._gis._portal.resturl}portals/self/userDefaultSettings"
@@ -1651,50 +1651,50 @@ class UserManager(object):
     def user_settings(self, settings):
         """
         Gets/sets the user's settings
-        
-        The `user_settings` allows administrators to set, and edit, new 
+
+        The `user_settings` allows administrators to set, and edit, new
         member defaults. Members who create their own built-in accounts and
-        members added by an administrator or through automatic account 
-        creation will be automatically assigned the new member defaults. 
-        
+        members added by an administrator or through automatic account
+        creation will be automatically assigned the new member defaults.
+
         Passing in `None` to the property will delete all the user settings.
-        
+
         **Settings Key/Value Dictionary**
-        
+
         ================  ===============================================================================
         **Keys**          **Description**
         ----------------  -------------------------------------------------------------------------------
-        role	          String/Role. The role ID. To assign a custom role as the new member default, 
-                          provide a Role object.  
-                          
-                          Values: `administrator`, `publisher`, `editor`, `viewer` or custom `Role` object 
+        role	          String/Role. The role ID. To assign a custom role as the new member default,
+                          provide a Role object.
+
+                          Values: `administrator`, `publisher`, `editor`, `viewer` or custom `Role` object
         ----------------  -------------------------------------------------------------------------------
-        userLicenseType   String. The ID of a user type licensed with your organization. To see which 
-                          user types are included with your organization's licensing, see the License 
+        userLicenseType   String. The ID of a user type licensed with your organization. To see which
+                          user types are included with your organization's licensing, see the License
                           resource in the Portal Admin API.
-                          
-                          Values: `creator`, `editor`, `Advanced GIS`, `Basic GIS`, `Standard GIS`, 
+
+                          Values: `creator`, `editor`, `Advanced GIS`, `Basic GIS`, `Standard GIS`,
                           `viewer`, or `fieldWorker`
         ----------------  -------------------------------------------------------------------------------
-        groups            List of String/Groups. An array of group ID numbers or `Group` objects that 
+        groups            List of String/Groups. An array of group ID numbers or `Group` objects that
                           specify the groups new members will be added to.
         ----------------  -------------------------------------------------------------------------------
-        userType          String.  This key only applies to `ArcGIS Online`. If new members will have 
-                          Esri access (both) or if Esri access will be disabled (arcgisonly). The default 
+        userType          String.  This key only applies to `ArcGIS Online`. If new members will have
+                          Esri access (both) or if Esri access will be disabled (arcgisonly). The default
                           value is `arcgisonly`.
-                          
+
                           Values: `arcgisonly` or `both`
         ----------------  -------------------------------------------------------------------------------
         apps              List of dictionaries.  An array of an app's itemID and, when applicable, entitlement.
                           Example: `{"apps" :[{"itemId": "f761dd0f298944dcab22d1e888c60293","entitlements": ["Insights"]}]}`
         ----------------  -------------------------------------------------------------------------------
         appBundles        List of dictionaries. An array of an app bundle's ID.
-        
+
                           Example: `{"appBundles":[{"itemId": "99d7956c7e824ff4ab27422e2a26c2b7}]}`
         ================  ===============================================================================
-        
+
         :returns: Dictionary
-        
+
         """
         user_li_lu = {
             "creatorUT" : "creatorUT",
@@ -1723,7 +1723,7 @@ class UserManager(object):
              "viewer" : "iAAAAAAAAAAAAAAA",
              "iAAAAAAAAAAAAAAA" : "iAAAAAAAAAAAAAAA"
         }
-        if self._gis.version > [7, 3]:            
+        if self._gis.version > [7, 3]:
             if settings is None or \
                (isinstance(settings, dict) and \
                len(settings) == 0):
@@ -1753,13 +1753,13 @@ class UserManager(object):
     #----------------------------------------------------------------------
     def _delete_user_settings(self):
         """
-        This operation allows administrators to clear the previously 
-        configured new member defaults set either through the Set User 
-        Default Settings operation or from the New Member Defaults tab in 
+        This operation allows administrators to clear the previously
+        configured new member defaults set either through the Set User
+        Default Settings operation or from the New Member Defaults tab in
         the Organization Settings of the portal.
-        
+
         :returns: Boolean
-        
+
         """
         if self._gis.version > [7, 3]:
             url = f"{self._gis._portal.resturl}portals/self/userDefaultSettings/delete"
@@ -2488,7 +2488,7 @@ class UserManager(object):
         try:
             with _DisableLogger():
                 user = self._portal.get_user(username)
-        
+
         except RuntimeError as re:
             if re.args[0].__contains__("User does not exist or is inaccessible"):
                 return None
@@ -2498,7 +2498,7 @@ class UserManager(object):
             if e.args[0].__contains__("User does not exist or is inaccessible"):
                 return None
             else:
-                raise e            
+                raise e
         if user is not None:
             return User(self._gis, user['username'], user)
         return None
@@ -2579,32 +2579,32 @@ class UserManager(object):
                 raise ValueError('Invalid input: must be of type list.')
         return False
     #----------------------------------------------------------------------
-    def advanced_search(self, query, 
-                        return_count=False, max_users=10, 
-                        start=1, sort_field="username", 
+    def advanced_search(self, query,
+                        return_count=False, max_users=10,
+                        start=1, sort_field="username",
                         sort_order="asc", as_dict=False):
         """
         The `advanced_search` method allows for the full control of the query operations
-        by any given user.  The searches are performed against a high performance 
-        index that indexes the most popular fields of an user. See the Search 
+        by any given user.  The searches are performed against a high performance
+        index that indexes the most popular fields of an user. See the Search
         reference page for information on the fields and the syntax of the query.
 
-        The search index is updated whenever users is added, updated, or deleted. There 
-        can be a lag between the time that the user is updated and the time when it's 
+        The search index is updated whenever users is added, updated, or deleted. There
+        can be a lag between the time that the user is updated and the time when it's
         reflected in the search results.
 
         The results of a search only contain items that the user has permission to access.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         query                  Required String.  The search query.
         ------------------     --------------------------------------------------------------------
-        return_count           Optional Boolean.  If True, the number of users found by the query 
+        return_count           Optional Boolean.  If True, the number of users found by the query
                                string is returned.
         ------------------     --------------------------------------------------------------------
-        max_users              Optional Integer. Limits the total number of users returned in a 
-                               a query.  The default is `10` users.  If all users is needed, `-1` 
+        max_users              Optional Integer. Limits the total number of users returned in a
+                               a query.  The default is `10` users.  If all users is needed, `-1`
                                should be used.
         ------------------     --------------------------------------------------------------------
         start                  Optional Int. The starting position to search from.  This is
@@ -2617,7 +2617,7 @@ class UserManager(object):
                                records are arranged after they have been sorted. The allowed
                                values are: asc for ascending and desc for descending.
         ------------------     --------------------------------------------------------------------
-        as_dict                Required Boolean. If True, the response comes back as a dictionary. 
+        as_dict                Required Boolean. If True, the response comes back as a dictionary.
         ==================     ====================================================================
 
         :returns: dictionary if `return_count` is False, else an integer
@@ -2643,7 +2643,7 @@ class UserManager(object):
             max_items = 0
         if max_items <= 10:
             res = _search(gis=self._gis, query=query, stype=stype,
-                          max_items=max_items, 
+                          max_items=max_items,
                           start=start, sort_field=sort_field,
                           sort_order=sort_order, group_id=group_id, as_dict=as_dict)
             if 'total' in res and \
@@ -2653,9 +2653,9 @@ class UserManager(object):
                 return res['aggregations']
             return res
         else:
-            allowed_keys = [ 'query', 'return_count', 'max_users', 
+            allowed_keys = [ 'query', 'return_count', 'max_users',
                              'bbox','categories', 'category_filter',
-                             'start', 'sort_field', 'sort_order', 
+                             'start', 'sort_field', 'sort_order',
                              'count_fields','count_size', 'as_dict']
             inputs = locals()
             kwargs = {}
@@ -2687,7 +2687,7 @@ class UserManager(object):
                         items['results'].extend(data['results'])
             if len(items['results']) > max_items:
                 items['results'] = items['results'][:max_items]
-            return items       
+            return items
         return None
     #----------------------------------------------------------------------
     def search(self, query=None, sort_field='username', sort_order='asc',
@@ -3405,7 +3405,7 @@ class ContentManager(object):
         # If owner isn't specified, use the logged in user
         if not owner_name:
             owner_name = self._gis.users.me.username
-        
+
         # Setup the item path, including the folder
         path = 'content/users/' + owner_name
         if folder and folder != '/':
@@ -3582,12 +3582,12 @@ class ContentManager(object):
         ---------------     --------------------------------------------------------------------
         folder              Optional string. Name of the folder where placing item.
         ---------------     --------------------------------------------------------------------
-        item_id             Optionl String. **Available in Enterprise/AGOL 10.8.1+**.  A string 
-                            of 32 character UID without any special characters.  
-                            
-                            If the `item_id` is already being used, an error will be raised 
+        item_id             Optionl String. **Available in Enterprise/AGOL 10.8.1+**.  A string
+                            of 32 character UID without any special characters.
+
+                            If the `item_id` is already being used, an error will be raised
                             during the `add` process.
-                            
+
                             Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
         ===============     ====================================================================
 
@@ -3649,7 +3649,7 @@ class ContentManager(object):
             raise ValueError("`item_properties` must be  dictionary.")
         if item_id and isinstance(item_id, str) and len(item_id) == 32:
             item_properties['itemIdToCreate'] = item_id
-            
+
         if data is not None:
             title = os.path.splitext(os.path.basename(data))[0]
             extn = os.path.splitext(os.path.basename(data))[1].upper()
@@ -3703,7 +3703,7 @@ class ContentManager(object):
            'text' not in item_properties:
             from arcgis.gis._ogc import WMTS
             item_properties['text'] = json.dumps(WMTS(item_properties['url'], gis=self._gis).__text__)
-            
+
         owner_name = owner
         if isinstance(owner, User):
             owner_name = owner.username
@@ -3753,7 +3753,7 @@ class ContentManager(object):
         else:
             if filetype:
                 item_properties['fileName'] = os.path.basename(data)
-            
+
             itemid = self._portal.add_item(item_properties, data,
                                            thumbnail, metadata,
                                            owner_name, folder)
@@ -3878,11 +3878,11 @@ class ContentManager(object):
                        wkid=102100,
                        create_params=None,
                        service_type="featureService",
-                       owner=None, folder=None, 
-                       item_properties=None, 
+                       owner=None, folder=None,
+                       item_properties=None,
                        is_view=False,
                        tags=None,
-                       snippet=None, 
+                       snippet=None,
                        item_id=None):
         """ Creates a service in the Portal.
 
@@ -3928,12 +3928,12 @@ class ContentManager(object):
         -----------------------    -------------------------------------------------------------
         is_view                    Optional boolean. Indicating if the service is a hosted feature layer view
         -----------------------    -------------------------------------------------------------
-        item_id                    Optionl String. **Available in Enterprise/AGOL 10.8.1+**.  A string 
-                                   of 32 character UID without any special characters.  
-                                   
-                                   If the `item_id` is already being used, an error will be raised 
+        item_id                    Optionl String. **Available in Enterprise/AGOL 10.8.1+**.  A string
+                                   of 32 character UID without any special characters.
+
+                                   If the `item_id` is already being used, an error will be raised
                                    during the `add` process.
-                                   
+
                                    Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
         -----------------------    -------------------------------------------------------------
         tags                       Optional string. Tags listed as comma-separated values, or a list of strings.
@@ -4007,7 +4007,7 @@ class ContentManager(object):
                                              wkid,
                                              service_type,
                                              create_params,
-                                             owner, folder, item_properties, 
+                                             owner, folder, item_properties,
                                              is_view, item_id, tags, snippet)
         if itemid is not None:
             item = Item(self._gis, itemid)
@@ -4467,12 +4467,12 @@ class ContentManager(object):
         ----------------  --------------------------------------------------------------------------
         tags              Optional string. Tags listed as comma-separated values, or a list of strings. Provide tags when publishing a spatial dataframe to the the GIS.
         ----------------  --------------------------------------------------------------------------
-        item_id           Optionl String. **Available in Enterprise/AGOL 10.8.1+**.  A string 
-                          of 32 character UID without any special characters.  
-                            
-                          If the `item_id` is already being used, an error will be raised 
+        item_id           Optionl String. **Available in Enterprise/AGOL 10.8.1+**.  A string
+                          of 32 character UID without any special characters.
+
+                          If the `item_id` is already being used, an error will be raised
                           during the `add` process.
-                          
+
                           Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
         ================  ==========================================================================
 
@@ -4565,7 +4565,7 @@ class ContentManager(object):
         """
         if item_id and self._gis.version <= [7,1]:
             item_id = None
-            import warnings 
+            import warnings
             warnings.warn("`item_id` is not allowed at this version of Portal, please use Enterprise 10.8.1+")
         from arcgis.features import FeatureCollection, SpatialDataFrame, FeatureSet
 
@@ -6451,7 +6451,18 @@ class User(dict):
         url = "%s/community/users/%s/userLicenseType" % (self._portal.resturl, self.username)
         params = {'f' : 'json'}
         return self._portal.con.post(url, params)
-
+    #----------------------------------------------------------------------
+    @property
+    def tasks(self):
+        """provides access to the schedule tasks"""
+        if str(self.role).lower() == 'org_admin' or \
+           self._gis.properties['user']:
+            url = f"{self._gis._portal.resturl}community/users/{self.username}/tasks"
+            from ._impl._schedule import UserTasks
+            return UserTasks(url=url,
+                             user=self,
+                             gis=self._gis)
+        return None
     #----------------------------------------------------------------------
     @property
     def provisions(self):
@@ -6647,9 +6658,9 @@ class User(dict):
     def delete_thumbnail(self):
         """
         Removes the thumbnail from the user's profile.
-        
+
         :returns: Boolean
-        
+
         """
         if self._gis.version >= [7,3]:
             url = self._gis._portal.resturl + "community/users/%s/deleteThumbnail" % self.username
@@ -7799,8 +7810,8 @@ class Item(dict):
             else:
                 return download_path
 
-    def export(self, title, export_format, 
-               parameters=None, wait=True, enforce_fld_vis=None, 
+    def export(self, title, export_format,
+               parameters=None, wait=True, enforce_fld_vis=None,
                tags=None, snippet=None, overwrite=False):
         """
         Exports a service item to the specified export format.
@@ -7837,7 +7848,7 @@ class Item(dict):
         ---------------     --------------------------------------------------------------------
         snippet             Optional String. A short descriptive piece of text.
         ---------------     --------------------------------------------------------------------
-        overwrite           Optional Boolean. If the export Item exists, the item will be 
+        overwrite           Optional Boolean. If the export Item exists, the item will be
                             replaced with the new one.
         ===============     ====================================================================
 
@@ -9164,12 +9175,12 @@ class Item(dict):
                                and applicable for the file_type, the value will built cache
                                for the service.
         -------------------    ---------------------------------------------------------------
-        item_id                Optionl String. **Available in Enterprise/AGOL 10.8.1+**.  A string 
-                               of 32 character UID without any special characters.  
-                            
-                               If the `item_id` is already being used, an error will be raised 
+        item_id                Optionl String. **Available in Enterprise/AGOL 10.8.1+**.  A string
+                               of 32 character UID without any special characters.
+
+                               If the `item_id` is already being used, an error will be raised
                                during the `publish` process.
-                               
+
                                Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
         ===================    ===============================================================
 
@@ -9184,7 +9195,7 @@ class Item(dict):
         params = {
             "f" : "json"
         }
-        
+
         buildInitialCache = build_initial_cache
         if file_type is None:
             if self['type'] == "GeoPackage":
@@ -10045,7 +10056,7 @@ class Item(dict):
             if item.url and item.url.find(item.id) > -1:
                 new_item.update({"url" : item.url.replace(item.id, new_item.id)})
             return new_item
-                
+
         else:
             raise ValueError("Item of type: %s is not supported by copy" % (item.type))
         return
@@ -10431,7 +10442,7 @@ class _GISResource(object):
                 params["Raster"] = self._uri
 
         if type(self).__name__ == 'VectorTileLayer': # VectorTileLayer is GET only
-            dictdata = self._con.get(self.url, params, token=self._lazy_token)        
+            dictdata = self._con.get(self.url, params, token=self._lazy_token)
         else:
             try:
                 dictdata = self._con.post(self.url, params, token=self._lazy_token)
@@ -10499,7 +10510,7 @@ class _GISResource(object):
                     # try as a public server
                     self._lazy_token = None
                     self._refresh()
-            
+
                 except HTTPError as httperror:
                     _log.error(httperror)
                     err = httperror
@@ -10507,7 +10518,7 @@ class _GISResource(object):
                     if 'Token Required' in e.args[0]:
                         # try token in the provided gis
                         self._lazy_token = self._con.token
-                        self._refresh()                
+                        self._refresh()
 
         if err is not None:
             raise RuntimeError('HTTPError: this service url encountered an HTTP Error: ' + self.url)
