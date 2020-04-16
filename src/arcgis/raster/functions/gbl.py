@@ -1907,32 +1907,68 @@ def region_group(in_raster,
                  add_link = "ADD_LINK",
                  excluded_value = 0):
     """
-    For each cell in the output, the identity of the connected region to which that cell
-    belongs is recorded. A unique number is assigned to each region.
+    Records, for each cell in the output, the identity of the connected region to which that cell
+    belongs. A unique number is assigned to each region.
 
     Parameters
     ----------
-    :param in_raster:  Required, the input raster whose unique connected regions will be identified.
-                       It must be of integer type.
+    :param in_raster:  Required. The input raster for which unique connected regions of 
+                       cells will be identified. It must be of integer type.
 
-    :param number_of_neighbor_cells: Optional. The number of neighboring cells to use in evaluating connectivity between cells.
-                                     Possible values - FOUR, EIGHT. Default is FOUR
+    :param number_of_neighbor_cells: Optional. The number of neighboring cells to use when evaluating 
+                                     connectivity between cells that define a region.
+                                     The default is FOUR.
+
+                                      FOUR - Connectivity is evaluated for the four nearest (orthogonal) 
+                                      neighbors of each input cell.
+
+                                      EIGHT - Connectivity is evaluated for the eight nearest neighbors 
+                                      (both orthogonal and diagonal) of each input cell.
+
 
     :param zone_connectivity:  Optional. Defines which cell values should be considered when testing for connectivity.
-                               Possible values - WITHIN, CROSS. Default is WITHIN
+                               The default is WITHIN.
 
-    :param add_link: Optional, Specifies whether a link field is added to the table of the output.
-                     Possible values - ADD_LINK, NO_LINK. Default is ADD_LINK
+                                WITHIN - Connectivity for a region is evaluated for input cells that are part of 
+                                the same zone (cell value). The only cells that can be grouped are cells 
+                                from the same zone that meet the spatial requirements of connectivity 
+                                specified by the number_of_neighbor_cells parameter (four or eight).
 
-    :param excluded_value: Optional. Identifies a value such that if a cell location contains the value, no spatial
-                           connectivity will be evaluated regardless how the number of neighbors is specified (FOUR or EIGHT).
+                                CROSS - Connectivity for a region is evaluated between cells of any value, 
+                                except for the zone cells identified to be excluded by the 
+                                excluded_value parameter, and subject to the spatial requirements 
+                                specified by the number_of_neighbor_cells parameter.
 
-                           Cells with the excluded value will be treated as NoData and are eliminated from calculations.
-                           Cell locations that contain the excluded value will receive 0 on the output raster.
+    :param add_link: Optional. Specifies whether a link field will be added to the table of the output 
+                     when the zone_connectivity parameter is set to WITHIN. It is ignored if that 
+                     parameter is set to CROSS.
 
-                           The excluded value is similar to the concept of a background value,
-                           or setting a mask in the environment for a single run of the tool.
-                           A value must be specified for this parameter if the CROSS keyword is specified
+                      ADD_LINK - A LINK field will be added to the table of the output raster. 
+                      This field stores the value of the zone to which the cells of each region 
+                      in the output belong, according to the connectivity rule defined in 
+                      the number_of_neighbor_cells parameter. This is the default.
+
+                      NO_LINK - A LINK field will not be added. The attribute table for the output 
+                      raster will only contain the Value and Count fields.
+
+    :param excluded_value: Optional. A value that excludes all cells of that zone value from the 
+                           connectivity evaluation. If a cell location contains the value, no 
+                           spatial connectivity will be evaluated, regardless of how the number 
+                           of neighbors is specified.
+
+                           Cells with the excluded value will be treated in a similar way 
+                           to NoData cells, and are eliminated from consideration in the 
+                           operation. Input cells that contain the excluded value 
+                           will receive 0 on the output raster. The excluded value is 
+                           similar to the concept of a background value.
+
+                           If a zone in the input raster has a value of 0, to have 
+                           that zone be included in the operation, specify a value for 
+                           this parameter that is not present in the input. For example, 
+                           if an input raster has values of 0, 1, 2, and 3, specify an 
+                           excluded_value of 99. Otherwise, all cells of value 0 in 
+                           the input will be 0 in the output, and will also not have 
+                           their individual regions determined.
 
     :return: output raster with function applied
     """
