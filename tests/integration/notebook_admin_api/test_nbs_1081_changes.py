@@ -2,7 +2,7 @@
 This is 10.8.1+ Functionality Tests for Notebook Server
 """
 import sys
-sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_3584\src")
+#sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_3584\src")
 import unittest
 import os, json
 import arcgis
@@ -93,9 +93,8 @@ class TestUserScheduleTasks1081(unittest.TestCase):
             if len(runs) > 0:
                 assert isinstance(runs[0], Run)
                 runs[0].properties
-#@unittest.skipIf(SKIP_TESTS == True,
-#                 "Cannot connect to Testing Server and/or Portal")
-@unittest.skip(reason='said so')
+@unittest.skipIf(SKIP_TESTS == True,
+                 "Cannot connect to Testing Server and/or Portal")
 class TestNotebookServer1081(unittest.TestCase):
     """Tests New 10.8.1 Functionality"""
     #----------------------------------------------------------------------
