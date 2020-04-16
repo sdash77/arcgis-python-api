@@ -164,7 +164,6 @@ def extract_data(
         clip=False,
         data_format=None,
         output_name=None,
-        context=None,
         gis=None,
         estimate=False,
         future=False):
@@ -189,26 +188,38 @@ def extract_data(
     -----------------------------------    ---------------------------------------------------------
     data_format                            Optional string. A keyword defining the output data format for your extracted data.
 
-                                           Choice list: ['FileGeodatabase', 'ShapeFile', 'KML', 'CSV']
+                                           Choice list: ``['FileGeodatabase', 'ShapeFile', 'KML', 'CSV']``
 
                                            The default is 'CSV'.
 
-                                           If FILEGEODATABASE is specified, and the input layer has `attachments <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-layers.htm#ESRI_SECTION2_EF4F7A72F7B74E47B5CBCC1F343445E2>`_ , the attachments will be extracted
-                                           to the output file geodatabase if clip is false. If clip is true, attachments will not be extracted.
-    -----------------------------------    ---------------------------------------------------------
-    output_name                            Optional string or dict. ``output_name`` is used to name the item in your My contents page. For more information on these item properties, see the Item resource page in the `ArcGIS REST API <https://developers.arcgis.com/rest/users-groups-and-items/item.htm>`_
-                                           Syntax when ``output_name`` is dict: {
-                                                                                "title": "<title>",
-                                                                                "tag": "<tags>",
-                                                                                "snippet": "<snippet>",
-                                                                                "description": "<description>"
-                                                                                }
-    -----------------------------------    ---------------------------------------------------------
-    context                                Optional string. Context contains additional settings that affect method execution. For ``extract_data``, there is one setting.
+                                           If *FileGeodatase* is specified *and* the input layer has `attachments: <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-layers.htm#ESRI_SECTION2_EF4F7A72F7B74E47B5CBCC1F343445E2>`_
 
-                                           #. Output Spatial Reference (outSR) the extracted features will be projected into the output spatial reference.
+                                            * if *clip=False*, the attachments will be extracted to the output file
+                                            * if *clip=True*, the attachments will not be extracted
+    -----------------------------------    ---------------------------------------------------------
+    output_name                            Optional string or dict.
+
+                                           When ``output_name`` is a string, the output item in your My contents page
+                                           will be named by the value. Other item properties will receive default values.
+
+                                           .. code-block:: python
+
+                                               output_name = "my_extracted_item"
+
+                                           To explicitly provide other item properties, use a dict with the following Syntax.
+
+                                           .. code-block:: python
+
+                                               output_name = {"title": "<title>",
+                                                              "tag": "<tags>",
+                                                              "snippet": "<snippet>",
+                                                              "description": "<description>"}
+
+                                           For more information on these and other item properties, see the Item resource page in the `ArcGIS REST API. <https://developers.arcgis.com/rest/users-groups-and-items/item.htm>`_
     -----------------------------------    ---------------------------------------------------------
     gis                                    Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    -----------------------------------    ---------------------------------------------------------
+    estimate                               Optional boolean. If True, the number of credits to run the operation will be returned.
     -----------------------------------    ---------------------------------------------------------
     future                                 Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ===================================    =========================================================
@@ -220,8 +231,9 @@ def extract_data(
         ext_state_highway = extract_data(input_layers=[highways.layers[0]],
                                  extent=state_area_boundary.layers[0],
                                  clip=True,
-                                 data_format='shapefile',
-                                 output_name='state highway extracted')
+                                 data_format='ShapeFile',
+                                 output_name='state highway extracted',
+                                 context={'outSR':{'wkid':3857}})
     """
     kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
