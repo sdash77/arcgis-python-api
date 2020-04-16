@@ -279,6 +279,10 @@ INT
 ___
 .. autofunction:: arcgis.raster.functions.INT
 
+interpolate_irregular_data
+__________________________
+.. autofunction:: arcgis.raster.functions.interpolate_irregular_data
+
 iron_oxide
 __________
 .. autofunction:: arcgis.raster.functions.iron_oxide

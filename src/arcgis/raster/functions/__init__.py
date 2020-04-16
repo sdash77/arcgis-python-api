@@ -4600,6 +4600,99 @@ def s1_thermal_noise_removal(raster, calibration_type=None):
 
     return _clone_layer(layer, template_dict, raster_ra)
 
+def interpolate_irregular_data(point_feature, value_field=None, cell_size=0, interpolation_method = 0, radius=3, gis=None):
+    """
+    Interpolates from point clouds or irregular grids. (Supported from 10.8.1)
+
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    point_feature_class                  Rquired. The input point feature layer.
+    --------------------------------     --------------------------------------------------------------------
+    value_field                          Optional string. The name of the field that contains the value of the points to be interpolated.
+    --------------------------------     --------------------------------------------------------------------
+    cell_size                            Optional int. The cell size for the output raster dataset. 
+    --------------------------------     --------------------------------------------------------------------
+    interpolation_method                 Optional int or string. The resampling method to use for interpolation:
+
+                                          -  0 or NEAREST_NEIGBOR : Calculates pixel value using the nearest pixel. If no source pixel 
+                                             exists, no new pixel can be created in the output. This is the default.
+
+                                          -  2 or LINEAR_TINNING : Uses a triangular irregular network from the center 
+                                             points of each cell in the irregular raster to interpolate a surface 
+                                             that is then converted to a regular raster.
+
+                                          -  3 or NATURAL_NEIGHBOR : Finds the closest subset of input samples to a 
+                                             query point and applies weights to them based on proportionate 
+                                             areas to interpolate a value.
+
+                                          -  4 or INVERSE_DISTANCE_WEIGHTED : Determines cell values using a 
+                                             linearly weighted combination of a set of sample points or cells. 
+                                             The weight is a function of the inverse of the distance from the known points or cells.
+    --------------------------------     --------------------------------------------------------------------
+    radius                               Optional int. The number of pixels to be included for resampling. The default value is 3 pixels.
+    --------------------------------     --------------------------------------------------------------------
+    gis                                  Optional gis. gis parameter can be specified to render the output raster 
+                                         dynamically using the raster rendering service of the gis.
+                                         If not provided, active gis will be used to do this.
+                                         If gis parameter is not specified the output of interpolate_irregular_data() cannot be displayed. 
+    ================================     ====================================================================
+
+    :returns: output raster with function applied
+
+    """
+    from arcgis.geoprocessing._support import _layer_input
+    point_feature = _layer_input(point_feature)
+    template_dict = {
+        "rasterFunction" : "InterpolateIrregularData",
+        "rasterFunctionArguments": {"PointFeatureClass":point_feature,
+                                    "RasterInfo":{"blockWidth" : 2048,
+                                                "blockHeight" : 256,
+                                                "bandCount" : 0,
+                                                "pixelType" : -1,
+                                                "pixelSizeX" : cell_size,
+                                                "pixelSizeY" : cell_size,
+                                                "format" : "",
+                                                "compressionType" : "",
+                                                "firstPyramidLevel" : 1,
+                                                "maximumPyramidLevel" : 30,
+                                                "packetSize" : 4,
+                                                "compressionQuality" : 0,
+                                                "pyramidResamplingType" : -1,
+                                                "type" : "RasterInfo"}
+                                 }
+                 }
+
+    interpolation_methods = {
+        'NEAREST_NEIGBOR': 0,
+        'LINEAR_TINNING': 2,
+        'NATURAL_NEIGHBOR' : 3,
+        'INVERSE_DISTANCE_WEIGHTED': 4
+    }
+
+
+    if interpolation_method is not None:
+        if isinstance(interpolation_method, str):
+            interpolation_method = interpolation_methods[interpolation_method.upper()]
+        else:
+            interpolation_method = interpolation_method
+        template_dict["rasterFunctionArguments"]["InterpolationMethod"] = interpolation_method
+
+    if value_field is not None:
+        template_dict["rasterFunctionArguments"]["ValueField"] = value_field
+
+    if radius is not None:
+        template_dict["rasterFunctionArguments"]["Radius"] = radius
+
+    if gis is not None:
+        newlyr = ImageryLayer(template_dict, gis)
+    else:
+        newlyr = ImageryLayer(template_dict,None)
+    #_LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
+    newlyr._fn = template_dict
+    newlyr._fnra = template_dict
+    return newlyr
+
 class RFT:
     def __init__(self, raster_function_template,gis=None):
         try:
