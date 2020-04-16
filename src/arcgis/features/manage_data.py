@@ -232,8 +232,7 @@ def extract_data(
                                  extent=state_area_boundary.layers[0],
                                  clip=True,
                                  data_format='ShapeFile',
-                                 output_name='state highway extracted',
-                                 context={'outSR':{'wkid':3857}})
+                                 output_name='state highway extracted')
     """
     kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
