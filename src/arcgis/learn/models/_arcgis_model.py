@@ -33,7 +33,6 @@ try:
     import torch.distributed as dist
     from fastai.torch_core import get_model
     from torch.nn.parallel import DistributedDataParallel
-
     from .._utils.common import get_post_processed_model
 except ImportError as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))

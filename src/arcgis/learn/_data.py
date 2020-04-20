@@ -79,12 +79,8 @@ imagery_type_lib = {
 }
 
 def get_installation_command():
-    installation_steps = "Install them using 'conda install -c esri -c fastai -c pytorch arcgis pillow scikit-image fastai=1.0.54 pytorch=1.1.0'"
-    if sys.platform == 'win32':
-        installation_steps = "Install them using 'conda install -c esri arcgis fastai pillow scikit-image'"
-    elif sys.platform in ['linux', 'darwin']:
-        pass
-            
+    installation_steps = "Install them using 'conda install -c fastai -c pytorch scikit-image fastai=1.0.60 pytorch=1.4.0 \nconda install pillow=6.1.0 --no-deps'"
+
     return installation_steps 
 
 def _raise_fastai_import_error(import_exception=import_exception):

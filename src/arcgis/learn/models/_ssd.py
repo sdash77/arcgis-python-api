@@ -17,7 +17,6 @@ HAS_ARCPY = True
 try:
     import torch
     import numpy as np
-    from fastprogress import progress_bar
     from fastai.vision.learner import cnn_learner
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body, cnn_config
@@ -39,6 +38,7 @@ try:
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
     from .._video_utils import VideoUtils
     from .._utils.common import get_multispectral_data_params_from_emd
+    from fastprogress.fastprogress import progress_bar
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     class NnModule():
@@ -338,6 +338,7 @@ class SingleShotDetector(ArcGISModel):
             data = get_multispectral_data_params_from_emd(data, emd)
 
         data.resize_to = resize_to
+
         ssd = cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backend=backend, backbone=backbone, ssd_version=ssd_version)
 
         if not data_passed:
@@ -350,7 +351,7 @@ class SingleShotDetector(ArcGISModel):
 
         self.grids = anc_grids
         self.zooms = anc_zooms
-        self.ratios =  anc_ratios
+        self.ratios = anc_ratios
 
         anchor_scales = [(anz*i, anz*j) for anz in anc_zooms for (i,j) in anc_ratios]
 
@@ -414,10 +415,10 @@ class SingleShotDetector(ArcGISModel):
         gt_clas = clas[gt_idx]
         pos = gt_overlap > 0.4
         pos_idx = torch.nonzero(pos)[:,0]
-        gt_clas[1-pos] = 0
+        gt_clas[~pos] = 0
         gt_bbox = bbox[gt_idx]
         loc_loss = ((a_ic[pos_idx] - gt_bbox[pos_idx]).abs()).mean()
-        clas_loss  = self._loss_f(b_c, gt_clas)
+        clas_loss = self._loss_f(b_c, gt_clas)
         return loc_loss, clas_loss
 
     def _ssd_loss(self, pred, targ1, targ2, print_it=False):
@@ -873,6 +874,7 @@ class SingleShotDetector(ArcGISModel):
 
             # find grid size
             grids = list(map(int, map(round, data.chip_size/np.sort(np.max(centroid, axis=1)))))
+
             grids = list(set(grids))
             grids.sort(reverse = True)
             if grids[-1] == 0:
@@ -922,6 +924,7 @@ class SingleShotDetector(ArcGISModel):
             _localization_loss, _classification_loss = tf_loss_function_single_image(self, image_y_bboxes, image_y_calsses, image_p_bboxes, image_p_classes )
             classification_loss += _classification_loss
             localization_loss += _localization_loss
+
         if self.location_loss_factor is None:
             return localization_loss + classification_loss
         else:

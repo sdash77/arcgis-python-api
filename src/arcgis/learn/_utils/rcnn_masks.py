@@ -105,7 +105,7 @@ def show_batch_rcnn_masks(self, rows=3, alpha=0.5, **kwargs): # parameters adjus
         for c in range(ncols):
             ax_i  = ax[r][c]
             if idx < symbology_x_batch.shape[0]:
-                ax_i.imshow(symbology_x_batch[idx])
+                ax_i.imshow(symbology_x_batch[idx].cpu().numpy())
                 n_instance = y_batch[idx].unique().shape[0]
                 y_merged = y_batch[idx].max(dim=0)[0].cpu().numpy()
                 cmap_fn = getattr(matplotlib.cm, cmap)

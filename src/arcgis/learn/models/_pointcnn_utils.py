@@ -3,7 +3,7 @@ from torch import nn
 import math
 import numpy as np
 import torch.nn.functional as F
-from fastai.callbacks import LearnerCallback
+from fastai.basic_train import LearnerCallback
 from torch_geometric.nn import fps, knn
 
 # For AverageMetric callback.
@@ -27,7 +27,7 @@ def farthest_point_sample(pts, npoint):
     pts = pts.view(-1, C).float().contiguous()
     indices = fps(pts, batch, ratio=(npoint/N))
     pts = pts[indices].view(B, npoint, C)
-    return pts
+    return pts.contiguous()
 
 def find_k_neighbor(rep_pts, pts, K, D):
     """
@@ -51,7 +51,7 @@ def find_k_neighbor(rep_pts, pts, K, D):
     rand_col = torch.randint(K * D, (K,))
     group_pts = group_pts[:, :, rand_col, :]
 
-    return group_pts, knn_indices, rand_col
+    return group_pts.contiguous(), knn_indices.contiguous(), rand_col.contiguous()
 
 class DepthwiseConv2D(nn.Module):
     def __init__(self, in_channels, depth_multiplier, kernel_size, final_reshape=False, point_wise=None):
@@ -92,7 +92,7 @@ class DepthwiseConv2D(nn.Module):
         
     def forward(self, inp):
         if self.point_wise:
-            out = self.module(inp)
+            out = self.module(inp.contiguous())
             if self.final_reshape:
                 return out.squeeze(3).permute(0, 2 ,1).contiguous()
             else:
@@ -101,7 +101,7 @@ class DepthwiseConv2D(nn.Module):
             B, C, P, K = inp.shape
             C = int(C ** 0.5)
             inp = inp.view(B, P, C, C).permute(0, 3, 1, 2).contiguous()
-            out = self.module(inp)
+            out = self.module(inp.contiguous())
             return out.view(B, P, self.depth_multiplier, C).permute(0, 3, 1, 2).contiguous() if self.final_reshape else out
 
 class XConvDepthwise(nn.Module):
@@ -180,18 +180,18 @@ class XConvDepthwise(nn.Module):
         group_pts = group_pts - center_pts       # (B, P, K, 3)
         
         # fts_lifted
-        group_pts = group_pts.permute(0,3,1,2)
-        fts_lifted = self.MLP_delta(group_pts)      # (B, C_delta, P, K)
+        group_pts = group_pts.permute(0,3,1,2).contiguous()
+        fts_lifted = self.MLP_delta(group_pts.contiguous())      # (B, C_delta, P, K)
         
         if fts is not None:
             _, _, nf = fts.shape
             group_fts = fts.contiguous().view(-1, nf)
             group_fts = group_fts[k_ind].view(B, self.P, self.K * self.D, nf)
             group_fts = group_fts[:, :, rand_col, :]
-            group_fts = group_fts.permute(0, 3, 1, 2)
-            feat = torch.cat((fts_lifted, group_fts), 1)  # (B, C_delta + C_in, P, K)
+            group_fts = group_fts.permute(0, 3, 1, 2).contiguous()
+            feat = torch.cat((fts_lifted, group_fts), 1).contiguous()  # (B, C_delta + C_in, P, K)
         else:
-            feat = fts_lifted
+            feat = fts_lifted.contiguous()
             
         # XConv operation
         X = self.MLP_X(group_pts).permute(0,2,3,1)  # (B, P, K, K)
@@ -200,18 +200,18 @@ class XConvDepthwise(nn.Module):
         feat = feat.permute(0,2,3,1).contiguous().view(B*self.P, self.K, -1)
         feat = torch.bmm(X, feat).view(B, self.P, self.K, -1).permute(0,3,1,2)  # (B, C_delta + C_in, P, K)
         
-        feat = self.seperable_conv(feat)           # (B, self.P, C_out)
+        feat = self.seperable_conv(feat.contiguous())           # (B, self.P, C_out)
         
         if self.with_global:
-            feat_global = self.MLP_g(represent_pts.unsqueeze(dim=2).permute(0,3,1,2)).squeeze(3).permute(0,2,1).contiguous()
-            return represent_pts, torch.cat([feat, feat_global], dim=-1) # (B, P, 3), (B, P, C_out + C_out / 4)
+            feat_global = self.MLP_g(represent_pts.unsqueeze(dim=2).permute(0,3,1,2).contiguous()).squeeze(3).permute(0,2,1).contiguous()
+            return represent_pts.contiguous(), torch.cat([feat, feat_global], dim=-1).contiguous() # (B, P, 3), (B, P, C_out + C_out / 4)
         else:
-            return represent_pts, feat      # (B, P, 3), (B, P, C_out)
+            return represent_pts.contiguous(), feat.contiguous()      # (B, P, 3), (B, P, C_out)
 
 
 def get_indices(batch_size, sample_num, point_num, pool_setting=None):
     if not isinstance(point_num, np.ndarray):
-        point_nums = np.full((batch_size), point_num)
+        point_nums = np.full((batch_size), point_num.cpu())
     else:
         point_nums = point_num
 
@@ -265,7 +265,7 @@ class SamplePointsCallback(LearnerCallback):
         if self.learn.data.transform_fn is not None and self.learn.model.training:
             last_input[:, :, :3] = self.learn.data.transform_fn(last_input)  
         
-        return {'last_input':last_input, 'last_target':last_target} 
+        return {'last_input':last_input.contiguous(), 'last_target':last_target.contiguous()}
 
 
 class PointCNNSeg(nn.Module):
@@ -385,7 +385,7 @@ class PointCNNSeg(nn.Module):
             else:
                 dc_module = self.densecat_layers[i-1]
                 ## Here we are performing the densecat operation with the earlier features of the pointcnn model.
-                fts_final = dc_module(torch.cat((fts_final, rep_pts_fts[-(i+1)][1]), dim=-1).permute(0,2,1)).permute(0,2,1)
+                fts_final = dc_module(torch.cat((fts_final, rep_pts_fts[-(i+1)][1]), dim=-1).permute(0,2,1).contiguous()).permute(0,2,1).contiguous()
                 ## The concatenated features from are then passed throught the XConv module.
                 _, fts_final = module(rep_pts_fts[-(i+1)][0], fts_final, represent_pts=rep_pts_fts[-(i+2)][0])
         
@@ -405,7 +405,7 @@ class CrossEntropyPC(nn.Module):
         target = target.contiguous()
         inp = inp.view(-1, self.num_classes).contiguous()
         target = target.view(-1).contiguous()
-        return F.cross_entropy(inp, target)
+        return F.cross_entropy(inp, target).contiguous()
 
 def accuracy(pred, target):
     pred = pred.contiguous()

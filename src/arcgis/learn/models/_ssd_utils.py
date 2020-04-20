@@ -5,6 +5,7 @@ from fastai.vision import imagenet_stats
 from fastai.vision.image import ImageBBox
 from fastai.vision.data import ObjectCategoryList, ObjectItemList
 from fastprogress.fastprogress import progress_bar
+
 import numpy as np
 import random
 import math

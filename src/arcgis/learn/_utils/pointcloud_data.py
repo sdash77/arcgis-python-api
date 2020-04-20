@@ -43,10 +43,7 @@ try:
     from mpl_toolkits.mplot3d import Axes3D
     import arcgis
     from fastai.data_block import ItemList
-    try:
-        from fastprogress import master_bar, progress_bar
-    except ImportError:
-        from fastprogress.fastprogress import master_bar, progress_bar
+    from fastprogress.fastprogress import master_bar, progress_bar
     from transforms3d.euler import euler2mat
 except ImportError:
     # To avoid breaking builds.
