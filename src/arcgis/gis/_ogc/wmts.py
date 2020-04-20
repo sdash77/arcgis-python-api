@@ -1,7 +1,8 @@
 import json
+import uuid
 from arcgis.gis import GIS
 from arcgis import env as _env
-from urllib.parse import (urlencode, urlparse, urlunparse, 
+from urllib.parse import (urlencode, urlparse, urlunparse,
                           parse_qs, ParseResult)
 import xml.etree.cElementTree as ET
 from io import BytesIO, StringIO
@@ -9,8 +10,8 @@ from io import BytesIO, StringIO
 class WMTS(object):
     """
     Represents a Web Map Tile Service, which is an OGC web service endpoint.
-    
-    
+
+
     """
     _gis = None
     _con = None
@@ -19,7 +20,7 @@ class WMTS(object):
     _cap_reader = None
     _properties = None
     #----------------------------------------------------------------------
-    def __init__(self, url, version='1.0.0', gis=None):
+    def __init__(self, url, version='1.0.0', gis=None, **kwargs):
         if gis:
             gis = gis
         elif gis is None and _env.active_gis:
@@ -29,6 +30,7 @@ class WMTS(object):
         assert isinstance(gis, GIS)
         self._version = version
         self._con = gis._con
+        self._title = kwargs.pop("title", "WMTS Layer")
         self._gis = gis
         if url[-1] == "/":
             url = url[:-1]
@@ -55,7 +57,7 @@ class WMTS(object):
                 text = self._con.get(url, {}, try_json=False, add_token=False)
             elif text.lower().find("<html>") > -1:
                 url = self._capabilities_url(service_url=self._url)
-                text = self._con.get(url, {}, try_json=False, add_token=False)                
+                text = self._con.get(url, {}, try_json=False, add_token=False)
             else:
                 raise Exception("Could not connect to the WebMap Tile Service")
             sss = BytesIO()
@@ -122,6 +124,21 @@ class WMTS(object):
         for remove in removals:
             d = d.replace(remove, "")
         return json.loads(d)
+    #----------------------------------------------------------------------
+    @property
+    def _esri_json(self):
+        """
+        represents the map widget's JSON format
+
+        :returns: dict
+        """
+        return {
+            "id" : uuid.uuid4().hex,
+            "title" : self._title or "WMTS Layer",
+            "url" : self._url,
+            "version" : self._version
+        }
+    #----------------------------------------------------------------------
     @property
     def __text__(self):
         """creates the item's text properties"""
@@ -135,7 +152,7 @@ class WMTS(object):
                         .replace("{Style}", self.properties.Capabilities.Contents.Layer.Style.Identifier)
                         .replace("{TileRow}", "{row}")
                         .replace("{TileCol}", "{col}")
-                        .replace("{TileMatrixSet}", 
+                        .replace("{TileMatrixSet}",
                                  self.properties.Capabilities.Contents.TileMatrixSet.Identifier)
                         )
         fullExtent = [float(coord) for coord in \
@@ -149,7 +166,7 @@ class WMTS(object):
                 "levelValue": l.Identifier,
                 "resolution": float(l.ScaleDenominator) * 0.00028,
                 "scale": float(l.ScaleDenominator) * WMTS_DPI / 96
-            })            
+            })
         return {
             "templateUrl": url_template,
             "copyright": "",
@@ -183,4 +200,4 @@ class WMTS(object):
                 "layerIdentifier": self.properties.Capabilities.Contents.Layer.Title,
                 "tileMatrixSet": self.properties.Capabilities.Contents.TileMatrixSet.Identifier
             }
-        }   
+        }

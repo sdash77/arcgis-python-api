@@ -146,7 +146,8 @@ class GeoRSSLayer(object):
         else:
             self._polygon_symbol = InsensitiveDict(value)
     #----------------------------------------------------------------------
-    def __webmap__(self):
+    @property
+    def _esri_json(self):
         """creates a dictionary for web map item."""
         add_layer =  {
             "type" : "geo-rss",
