@@ -22,7 +22,8 @@ class GeoJSONLayer(object):
         self._copyright = kwargs.pop("copyright", "")
         self._title = kwargs.pop("title", "GeoJSON Layer")
         self._id = kwargs.pop('id', uuid.uuid4().hex)
-        self._minScale, self._maxScale = kwargs.pop('scale', (0,0))
+        self._min_scale, self._max_scale = kwargs.pop('scale', (0,0))
+        self._opacity = kwargs.pop("opacity", 0)
         if 'renderer' in kwargs:
             r = kwargs.pop('renderer', None)
             if isinstance(r, dict):
