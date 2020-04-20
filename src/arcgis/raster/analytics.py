@@ -9,6 +9,7 @@ import random as _random
 import collections
 from arcgis.gis import Item
 from arcgis.raster._util import _set_context, _id_generator
+from .._impl.common._deprecate import deprecated
 
 
 def get_datastores(gis=None):
@@ -2785,7 +2786,7 @@ def _calculate_travel_cost(input_source,
                                                            **kwargs)
 
 
-
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.analytics.optimal_region_connections() instead. ")
 def optimum_travel_cost_network(input_regions_raster,
                                 input_cost_raster,
                                 output_optimum_network_name=None,
@@ -3106,7 +3107,8 @@ def calculate_statistics(image_collection,
                                                           **kwargs)
 
 
-
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.gbl.distance_accumulation()"
+            "followed by arcgis.raster.analytics.optimal_path_as_line(), instead.")
 def determine_travel_costpath_as_polyline(input_source_data,
                                           input_cost_raster,
                                           input_destination_data,
@@ -4772,7 +4774,7 @@ def subset_multidimensional_raster(input_multidimensional_raster,
                                                                     future=future,
                                                                     **kwargs)
 
-
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.analytics.optimal_path_as_line() instead. ")
 def costpath_as_polyline(input_destination_data,
                          input_cost_distance_raster,
                          input_cost_backlink_raster,
