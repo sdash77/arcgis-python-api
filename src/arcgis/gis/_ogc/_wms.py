@@ -1,0 +1,209 @@
+import json
+import uuid
+from arcgis.gis import GIS
+from arcgis import env as _env
+from urllib.parse import (urlencode, urlparse, urlunparse,
+                          parse_qs, ParseResult)
+import xml.etree.cElementTree as ET
+from io import BytesIO, StringIO
+from arcgis._impl.common._mixins import PropertyMap
+
+url = "http://ows.mundialis.de/services/service?"
+capability = "request=getcapabilities&service=wms&version=1.3.0"
+
+class WMS():
+    """
+    Represents a Web Map Service, which is an OGC web service endpoint.
+
+
+    """
+    _gis = None
+    _con = None
+    _url = None
+    _reader = None
+    _cap_reader = None
+    _properties = None
+    #----------------------------------------------------------------------
+    def __init__(self, url, version='1.3.0', gis=None, **kwargs):
+        if gis:
+            gis = gis
+        elif gis is None and _env.active_gis:
+            gis = _env.active_gis
+        else:
+            gis = GIS()
+        assert isinstance(gis, GIS)
+        self._version = version
+        self._con = gis._con
+        self._title = kwargs.pop("title", "WMTS Layer")
+        self._gis = gis
+        if url[-1] == "/":
+            url = url[:-1]
+        self._url = url
+        self._add_token = str(self._con._auth).lower() == "builtin"
+        self._opacity = kwargs.pop('opacity', 0)
+        self._min_scale, self._max_scale = kwargs.pop('scale', (0,0))
+    #----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return f"<WMS @ {self._url}>"
+    #----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return f"<WMS @ {self._url}>"
+    #----------------------------------------------------------------------
+    @property
+    def properties(self) -> PropertyMap:
+        if self._properties is None:
+
+            if self._add_token:
+                url = self._capabilities_url(service_url=self._url, vendor_kwargs={'token' : self._con.token})
+            else:
+                url = self._capabilities_url(service_url=self._url)
+            text = self._con.get(url, {}, try_json=False, add_token=False)
+            if text.find("Invalid Token") > -1 or text.find("Get Token") > -1:
+                url = self._capabilities_url(service_url=self._url)
+                text = self._con.get(url, {}, try_json=False, add_token=False)
+            elif text.lower().find("<html>") > -1:
+                url = self._capabilities_url(service_url=self._url)
+                text = self._con.get(url, {}, try_json=False, add_token=False)
+            elif text.lower().find("<?xml version=\"1.0\" ?>") > -1:
+                pass
+            else:
+                raise Exception("Could not connect to the Web Map Service")
+            sss = BytesIO()
+            sss.write(text.encode())
+            sss.seek(0)
+            tree = ET.XML(text=sss.read())
+            d = self._xml_to_dictionary(tree)
+            self._properties = PropertyMap(d)
+        return self._properties
+    #----------------------------------------------------------------------
+    @property
+    def layers(self) -> list:
+        """returns the layers of the WMS Layer"""
+        try:
+            return self.properties.WMS_Capabilities.Capability.Layer.Layer
+        except:
+            return self.properties.WMS_Capabilities.Capability.Layer
+    #----------------------------------------------------------------------
+    def _capabilities_url(self, service_url:str, vendor_kwargs:dict=None) -> str:
+        """Return a capabilities url
+        """
+        pieces = urlparse(service_url)
+        args = parse_qs(pieces.query)
+        if 'service' not in args:
+            args['service'] = 'WMS'
+        if 'request' not in args:
+            args['request'] = 'GetCapabilities'
+        if 'version' not in args:
+            args['version'] = self._version
+        if vendor_kwargs:
+            args.update(vendor_kwargs)
+        query = urlencode(args, doseq=True)
+        pieces = ParseResult(pieces.scheme, pieces.netloc,
+                             pieces.path, pieces.params,
+                             query, pieces.fragment)
+        return urlunparse(pieces)
+    #----------------------------------------------------------------------
+    def _format_tags(self, tag:str) -> str:
+        """attempts to format tags by stripping out the {text} from the keys"""
+        import re
+        regex = r".*\}(.*)"
+        matches = re.search(regex,tag)
+        if matches:
+            return matches.groups()[0]
+        return tag
+    #----------------------------------------------------------------------
+    def _xml_to_dictionary(self, t) -> dict:
+        """ converts the xml to a dictionary object (recursivly)"""
+        import json
+        from collections import defaultdict
+        d = {self._format_tags(t.tag): {} if t.attrib else None}
+        children = list(t)
+        if children:
+            dd = defaultdict(list)
+            for dc in map(self._xml_to_dictionary, children):
+                for k, v in dc.items():
+                    dd[self._format_tags(k)].append(v)
+            d = {self._format_tags(t.tag): {self._format_tags(k): v[0] if len(v) == 1 else v for k, v in dd.items()}}
+        if t.attrib:
+            d[self._format_tags(t.tag)].update([('@' + self._format_tags(k), v) for k, v in t.attrib.items()])
+        if t.text:
+            text = t.text.strip()
+            if children or t.attrib:
+                if text:
+                    d[self._format_tags(t.tag)]['#text'] = text
+            else:
+                d[self._format_tags(t.tag)] = text
+        removals = ["{http://www.opengis.net/wmts/1.0}",
+                    "{http://www.opengis.net/ows/1.1}",
+                    "{http://www.w3.org/1999/xlink}"]
+        d = json.dumps(d)
+        for remove in removals:
+            d = d.replace(remove, "")
+        return json.loads(d)
+    #----------------------------------------------------------------------
+    @property
+    def title(self) -> str:
+        """
+        The title of the layer used to identify it in places such as the Legend and LayerList widgets.
+
+        :returns: String
+        """
+        return self._title
+    #----------------------------------------------------------------------
+    @title.setter
+    def title(self, value:str):
+        """
+        The title of the layer used to identify it in places such as the Legend and LayerList widgets.
+
+        :returns: String
+        """
+        if self._title != value:
+            self._title = value
+    #----------------------------------------------------------------------
+    @property
+    def opacity(self) -> float:
+        """
+        This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
+
+        :returns: Float
+        """
+        return self._opacity
+    #----------------------------------------------------------------------
+    @opacity.setter
+    def opacity(self, value:float):
+        """
+        This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
+
+        :returns: Float
+        """
+        if isinstance(value, (float, int)):
+            self._opacity = value
+    #----------------------------------------------------------------------
+    @property
+    def scale(self):
+        """Gets/Sets the Min/Max Scale for the layer"""
+        return self._min_scale, self._max_scale
+    #----------------------------------------------------------------------
+    @scale.setter
+    def scale(self, scale:tuple):
+        """Gets/Sets the Min/Max Scale for the layer"""
+        if isinstance(scale, (tuple, list)) and len(scale) == 2:
+            self._min_scale, self._max_scale = scale
+    #----------------------------------------------------------------------
+    @property
+    def _esri_json(self) -> dict:
+        """
+        represents the map widget's JSON format
+
+        :returns: dict
+        """
+        return {
+            "id" : uuid.uuid4().hex,
+            "title" : self._title or "WMTS Layer",
+            "url" : self._url,
+            "version" : self._version,
+            "sublayers" : [{'name' : lyr.Name} for lyr in self.layers],
+            "minScale" : self.scale[0],
+            "maxScale" : self.scale[1],
+            "opacity" : self.opacity
+        }
