@@ -1,3 +1,3 @@
 from .wmts import WMTS
-
-__all__ = ['WMTS']
+from ._csv import CSVLayer
+__all__ = ['WMTS', 'CSVLayer']
