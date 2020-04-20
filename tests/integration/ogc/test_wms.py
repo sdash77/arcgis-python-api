@@ -4,15 +4,15 @@ import unittest
 import pytest
 import pandas as pd
 from arcgis.gis import GIS
-from arcgis.gis._ogc import KMLLayer
-geo_rss_url = "http://quickmap.dot.ca.gov/data/lcs.kml"
+from arcgis.gis._ogc import WMS
+geo_rss_url = "http://ows.mundialis.de/services/service"
 
-class TestKMLLayer(unittest.TestCase):
-    """Tests working with a KML Layer"""
-    def test_kml(self):
-        """tests the KML Layer methods and properties"""
-        georss = KMLLayer(url=geo_rss_url)
-        assert isinstance(georss, KMLLayer)
+class TestWMSLayer(unittest.TestCase):
+    """Tests working with a WMS Layer"""
+    def test_wms(self):
+        """tests the WMS Layer methods and properties"""
+        georss = WMS(url=geo_rss_url)
+        assert isinstance(georss, WMS)
         assert georss.opacity == 0
         georss.opacity = .5
         assert georss.opacity == .5

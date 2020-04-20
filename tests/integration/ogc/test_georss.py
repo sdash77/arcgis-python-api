@@ -25,7 +25,7 @@ class TestGeoRSSLayer(unittest.TestCase):
         assert isinstance(georss.title, str)
         georss.title = 'test'
         assert georss.title == 'test'
-        assert georss.__webmap__
+        assert georss._esri_json
 
 if __name__ == "__main__":
     unittest.main()

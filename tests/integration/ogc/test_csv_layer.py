@@ -25,7 +25,7 @@ class TestCSVLayer(unittest.TestCase):
         assert csv.renderer
         assert str(csv).find("<CSV") > -1
         assert csv.title
-        assert csv.__webmap__
+        assert csv._esri_json
     def test_csv_layer_item(self):
         gis = GIS()
         items = [gis.content.get("3f0f20ae77c0447cb5fa2a15038d0520")]
@@ -44,7 +44,7 @@ class TestCSVLayer(unittest.TestCase):
             assert csv.renderer
             assert str(csv).find("<CSV") > -1
             assert csv.title
-            assert csv.__webmap__
+            assert csv._esri_json
 
 
 
