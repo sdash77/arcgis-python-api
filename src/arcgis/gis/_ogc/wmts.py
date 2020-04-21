@@ -11,6 +11,17 @@ class WMTS(object):
     """
     Represents a Web Map Tile Service, which is an OGC web service endpoint.
 
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    url                 Required string. The administration URL for the ArcGIS Server.
+    ---------------     --------------------------------------------------------------------
+    gis                 Optional GIS. The `GIS` connection object
+    ---------------     --------------------------------------------------------------------
+    version             Optional String. The version number of the WMTS service.  The default is `1.0.0`
+    ---------------     --------------------------------------------------------------------
+    title               Optional String. The title of the layer used to identify it in places such as the Legend and LayerList widgets.
+    ===============     ====================================================================
 
     """
     _gis = None

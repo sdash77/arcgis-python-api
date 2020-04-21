@@ -2,7 +2,6 @@ import json
 import uuid
 from arcgis.gis import GIS
 from arcgis._impl.common._isd import InsensitiveDict
-url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson"
 
 class GeoJSONLayer(object):
     """
@@ -10,8 +9,30 @@ class GeoJSONLayer(object):
     GeoJSON is a format for encoding a variety of geographic data
     structures. The GeoJSON data must comply with the RFC 7946
     specification which states that the coordinates are in
-    SpatialReference.WGS84.
+    spatial reference: WGS84 (wkid 4326).
 
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    url                 Required string. The administration URL for the ArcGIS Server.
+    ---------------     --------------------------------------------------------------------
+    gis                 Optional GIS. The `GIS` connection object
+    ---------------     --------------------------------------------------------------------
+    version             Optional String. The version number of the WMS service.  The default is `1.3.0`.
+    ---------------     --------------------------------------------------------------------
+    title               Optional String. The title of the layer used to identify it in places such as the Legend and Layer List widgets.
+    ---------------     --------------------------------------------------------------------
+    id                  Optional String. The unique ID of the layer.
+    ---------------     --------------------------------------------------------------------
+    copyright           Optional String. Describes limitations and usage of the data.
+    ---------------     --------------------------------------------------------------------
+    scale               Optional Tuple. The min/max scale of the layer where the positions are: (min, max) as float values.
+    ---------------     --------------------------------------------------------------------
+    opacity             Optional Float.  This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
+    ---------------     --------------------------------------------------------------------
+    renderer            Optional Dictionary. A custom set of symbology for the given geojson dataset.
+    ===============     ====================================================================
 
 
     """

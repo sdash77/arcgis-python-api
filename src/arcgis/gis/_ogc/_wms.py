@@ -8,13 +8,26 @@ import xml.etree.cElementTree as ET
 from io import BytesIO, StringIO
 from arcgis._impl.common._mixins import PropertyMap
 
-url = "http://ows.mundialis.de/services/service?"
-capability = "request=getcapabilities&service=wms&version=1.3.0"
 
 class WMS():
     """
     Represents a Web Map Service, which is an OGC web service endpoint.
 
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    url                 Required string. The administration URL for the ArcGIS Server.
+    ---------------     --------------------------------------------------------------------
+    gis                 Optional GIS. The `GIS` connection object
+    ---------------     --------------------------------------------------------------------
+    version             Optional String. The version number of the WMS service.  The default is `1.3.0`.
+    ---------------     --------------------------------------------------------------------
+    title               Optional String. The title of the layer used to identify it in places such as the Legend and Layer List widgets.
+    ---------------     --------------------------------------------------------------------
+    scale               Optional Tuple. The min/max scale of the layer where the positions are: (min, max) as float values.
+    ---------------     --------------------------------------------------------------------
+    opacity             Optional Float.  This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
+    ===============     ====================================================================
 
     """
     _gis = None
@@ -34,7 +47,7 @@ class WMS():
         assert isinstance(gis, GIS)
         self._version = version
         self._con = gis._con
-        self._title = kwargs.pop("title", "WMTS Layer")
+        self._title = kwargs.pop("title", "WMS Layer")
         self._gis = gis
         if url[-1] == "/":
             url = url[:-1]

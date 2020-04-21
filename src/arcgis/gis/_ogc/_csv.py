@@ -11,6 +11,28 @@ _PD_LESS_THAN1 = [int(v) for v in pd.__version__.split(".")] < [1,0,0]
 class CSVLayer(object):
     """
     Represents a CSV File Hosted on a Server.
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    url                 Required string. The administration URL for the ArcGIS Server.
+    ---------------     --------------------------------------------------------------------
+    gis                 Optional GIS. The `GIS` connection object
+    ---------------     --------------------------------------------------------------------
+    title               Optional String. The title of the layer used to identify it in places such as the Legend and LayerList widgets.
+    ---------------     --------------------------------------------------------------------
+    copyright           Optional String. Describes limitations and usage of the data.
+    ---------------     --------------------------------------------------------------------
+    id                  Optional String. The unique ID of the layer.
+    ---------------     --------------------------------------------------------------------
+    delimiter           Optional String. The separator value. This can be the following:
+                        `,` (comma), ` ` (space), `|` (pipe), `\r` (tab), or `;` (semicolon).
+    ---------------     --------------------------------------------------------------------
+    sql_expression      Optional String. Optional query string to apply to the layer when displayed on the widget or web map.
+    ---------------     --------------------------------------------------------------------
+    fields              Optional List. An array of dictionarys containing the field information.
+    ===============     ====================================================================
+
     """
     _url = None
     _gis = None
@@ -22,6 +44,7 @@ class CSVLayer(object):
     _longitude = None
     #----------------------------------------------------------------------
     def __init__(self, url_or_item, gis=None, **kwargs):
+        """initializer"""
         if isinstance(url_or_item, str):
             self._url = url_or_item
             self._item = None
@@ -35,8 +58,8 @@ class CSVLayer(object):
         self._delimiter = kwargs.pop('delimiter', ',')
         self._fields = kwargs.pop('fields', None)
         self._sql = kwargs.pop('sql_expression', None)
-        self._id = uuid.uuid4().hex
-        self._title = None
+        self._id = kwargs.pop('id', uuid.uuid4().hex)
+        self._title = kwargs.pop('title', None)
     #----------------------------------------------------------------------
     def __str__(self):
         if self._item:
