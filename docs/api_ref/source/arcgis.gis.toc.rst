@@ -127,40 +127,40 @@ CertificateManager
     :undoc-members:
     :show-inheritance:
 
-OGC Support
+arcgis.gis.ogc module
 =================
 
 CSV Layer
 ---------------------------
-.. autoclass:: arcgis.gis._ogc.CSVLayer
+.. autoclass:: arcgis.gis.ogc.CSVLayer
     :members:
     :undoc-members:
     :show-inheritance:
 
 GeoJSON Layer
 ---------------------------
-.. autoclass:: arcgis.gis._ogc.GeoJSONLayer
+.. autoclass:: arcgis.gis.ogc.GeoJSONLayer
     :members:
     :undoc-members:
     :show-inheritance:
 
 GeoRSS Layer
 ---------------------------
-.. autoclass:: arcgis.gis._ogc.GeoRSSLayer
+.. autoclass:: arcgis.gis.ogc.GeoRSSLayer
     :members:
     :undoc-members:
     :show-inheritance:
 
 WMS Layer
 ---------------------------
-.. autoclass:: arcgis.gis._ogc.WMSLayer
+.. autoclass:: arcgis.gis.ogc.WMSLayer
     :members:
     :undoc-members:
     :show-inheritance:
 
 WMTS Layer
 ---------------------------
-.. autoclass:: arcgis.gis._ogc.WMTSLayer
+.. autoclass:: arcgis.gis.ogc.WMTSLayer
     :members:
     :undoc-members:
     :show-inheritance:

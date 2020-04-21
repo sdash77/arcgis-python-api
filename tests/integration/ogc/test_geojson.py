@@ -4,7 +4,7 @@ import unittest
 import pytest
 import pandas as pd
 from arcgis.gis import GIS
-from arcgis.gis._ogc import GeoJSONLayer
+from arcgis.gis.ogc import GeoJSONLayer
 geo_rss_url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson"
 
 class TestGeoRSSLayer(unittest.TestCase):

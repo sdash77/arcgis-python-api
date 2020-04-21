@@ -4,7 +4,7 @@ import unittest
 import pytest
 import pandas as pd
 from arcgis.gis import GIS
-from arcgis.gis._ogc import WMSLayer
+from arcgis.gis.ogc import WMSLayer
 geo_rss_url = "http://ows.mundialis.de/services/service"
 
 class TestWMSLayer(unittest.TestCase):

@@ -4,7 +4,7 @@ import unittest
 import pytest
 import pandas as pd
 from arcgis.gis import GIS
-from arcgis.gis._ogc import CSVLayer
+from arcgis.gis.ogc import CSVLayer
 
 csv_url = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.csv'
 
