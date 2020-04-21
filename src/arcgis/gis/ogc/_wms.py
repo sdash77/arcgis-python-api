@@ -9,7 +9,7 @@ from io import BytesIO, StringIO
 from arcgis._impl.common._mixins import PropertyMap
 
 
-class WMSLayer():
+class WMSLayer(object):
     """
     Represents a Web Map Service, which is an OGC web service endpoint.
 

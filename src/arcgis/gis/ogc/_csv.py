@@ -9,8 +9,9 @@ import pandas as pd
 _PD_LESS_THAN1 = [int(v) for v in pd.__version__.split(".")] < [1,0,0]
 ###########################################################################
 class CSVLayer(object):
-    """
+    r"""
     Represents a CSV File Hosted on a Server.
+
 
     ===============     ====================================================================
     **Argument**        **Description**
@@ -19,14 +20,14 @@ class CSVLayer(object):
     ---------------     --------------------------------------------------------------------
     gis                 Optional GIS. The `GIS` connection object
     ---------------     --------------------------------------------------------------------
-    title               Optional String. The title of the layer used to identify it in places such as the Legend and LayerList widgets.
+    title               Optional String. The title of the layer used to identify it in places such as the Legend and Layer List widgets.
     ---------------     --------------------------------------------------------------------
     copyright           Optional String. Describes limitations and usage of the data.
     ---------------     --------------------------------------------------------------------
     id                  Optional String. The unique ID of the layer.
     ---------------     --------------------------------------------------------------------
     delimiter           Optional String. The separator value. This can be the following:
-                        `,` (comma), ` ` (space), `|` (pipe), `\r` (tab), or `;` (semicolon).
+                        , (comma), ' ' (space), | (pipe), \\r (tab), or ; (semicolon).
     ---------------     --------------------------------------------------------------------
     sql_expression      Optional String. Optional query string to apply to the layer when displayed on the widget or web map.
     ---------------     --------------------------------------------------------------------

@@ -11,6 +11,7 @@ class WMTSLayer(object):
     """
     Represents a Web Map Tile Service, which is an OGC web service endpoint.
 
+
     ===============     ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
