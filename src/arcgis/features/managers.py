@@ -573,8 +573,8 @@ class SyncManager(object):
         targetType             Can be set to either server or client. If not set, the default is
                                client. This option was added at 10.5.1.
         ------------------     --------------------------------------------------------------------
-        transformations        Optional List. Introduced at 10.8. This parameter applies a datum 
-                               transformation on each layer when the spatial reference used in 
+        transformations        Optional List. Introduced at 10.8. This parameter applies a datum
+                               transformation on each layer when the spatial reference used in
                                geometry is different than the layer's spatial reference.
         ==================     ====================================================================
 
@@ -621,8 +621,8 @@ class SyncManager(object):
                                         return_attachments=return_attachments,
                                         return_attachments_data_by_url=return_attachments_databy_url,
                                         asynchronous=asynchronous,
-                                        sync_direction=sync_direction, 
-                                        target_type=target_type, 
+                                        sync_direction=sync_direction,
+                                        target_type=target_type,
                                         attachments_sync_direction=attachments_sync_direction,
                                         sync_model=sync_model,
                                         data_format=data_format,
@@ -631,7 +631,7 @@ class SyncManager(object):
                                         out_path=out_path,
                                         transformations=transformations)
     # ----------------------------------------------------------------------
-    def cleanup_change_tracking(self, 
+    def cleanup_change_tracking(self,
                                 layers,
                                 retention_period,
                                 period_unit='days',
@@ -639,55 +639,55 @@ class SyncManager(object):
                                 replica_id=None,
                                 future=False):
         """
-        
-        Change tracking information stored in each feature service layer 
-        (enabled for Change Tracking) might grow very large. The change 
-        tracking info used by the feature service to determine the change 
-        generation number and the features that have changed for a 
-        particular generation. Clients can purge the change tracking 
+
+        Change tracking information stored in each feature service layer
+        (enabled for Change Tracking) might grow very large. The change
+        tracking info used by the feature service to determine the change
+        generation number and the features that have changed for a
+        particular generation. Clients can purge the change tracking
         content if the changes are already synced-up to all clients and the
         changes are no longer needed.
 
-        Only the owner or the organization administrator can cleanup change 
+        Only the owner or the organization administrator can cleanup change
         tracking information.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         layers                 Required list. A list of layers and tables to include in the replica.
         ------------------     --------------------------------------------------------------------
-        retention_period       Optional Integer. The retention period to use when cleaning up the 
-                               change tracking information. Change tracking information will be 
+        retention_period       Optional Integer. The retention period to use when cleaning up the
+                               change tracking information. Change tracking information will be
                                cleaned up if they are older than the retention period.
         ------------------     --------------------------------------------------------------------
-        period_unit            Optional String.  The units of the retention period.  
-        
+        period_unit            Optional String.  The units of the retention period.
+
                                Values: `days`, `seconds`, `minutes`, or `hours`
-                               
+
         ------------------     --------------------------------------------------------------------
-        min_server_gen         Optional String.  In addition to the retention period, the change 
-                               tracking can be cleaned by its generation numbers. Older tracking 
-                               information that has older generation number than the 
+        min_server_gen         Optional String.  In addition to the retention period, the change
+                               tracking can be cleaned by its generation numbers. Older tracking
+                               information that has older generation number than the
                                `min_server_gen` will be cleaned.
         ------------------     --------------------------------------------------------------------
-        replica_id             Optional String.  The change tracking can also be cleaned by the 
-                               `replica_id` in addition to the `retention_period` and the 
+        replica_id             Optional String.  The change tracking can also be cleaned by the
+                               `replica_id` in addition to the `retention_period` and the
                                `min_server_gen`.
         ------------------     --------------------------------------------------------------------
-        future                 Optional Boolean.  Support options for asynchronous processing. The 
+        future                 Optional Boolean.  Support options for asynchronous processing. The
                                default format is false.
         ==================     ====================================================================
-        
-        
+
+
         :returns: Boolean when future is False and Future object when future is True
-        
+
         """
         return self._fs._cleanup_change_tracking(layers=layers,
                                                  retention_period=retention_period,
                                                  period_unit=period_unit,
                                                  min_server_gen=min_server_gen,
                                                  replica_id=replica_id,
-                                                 future=future)    
+                                                 future=future)
     # ----------------------------------------------------------------------
     def synchronize(self,
                     replica_id,
@@ -975,7 +975,7 @@ class FeatureLayerCollectionManager(_GISResource):
                                  that you want in the view.
         --------------------     --------------------------------------------------------------------
         view_tables              Optional list. Specify list of tables present in the FeatureLayerCollection
-                                 that you want in the view.                                 
+                                 that you want in the view.
         ====================     ====================================================================
 
         .. code-block:: python  (optional)
@@ -1119,7 +1119,7 @@ class FeatureLayerCollectionManager(_GISResource):
                             })
                     else:
                         _log.error('Unable to parse the view_layers parameter')
-                        
+
 
             # when view_tables is specified
             if view_tables:
@@ -1139,7 +1139,7 @@ class FeatureLayerCollectionManager(_GISResource):
                 else:
                     import logging
                     _log = logging.getLogger(__name__)
-                    
+
                     from arcgis.features.layer import Table
                     if isinstance(view_tables, dict):
                         if 'tables' in view_tables:
@@ -1161,14 +1161,21 @@ class FeatureLayerCollectionManager(_GISResource):
 
         fs_view.manager.add_to_definition(add_def)
         if view_layers:
-            item_upd_dict = {
-                'layers': [ilyr
-                           for ilyr in item.get_data()['layers']
-                           for lyr in view_layers
-                           if int(lyr.url[-1]) == ilyr['id']]}
-            view.update(data=item_upd_dict)
+            data = item.get_data()
+            if 'layers' in data:
+                item_upd_dict = {
+                    'layers': [ilyr
+                               for ilyr in item.get_data()['layers']
+                               for lyr in view_layers
+                               if int(lyr.url[-1]) == ilyr['id']]}
+                view.update(data=item_upd_dict)
         else:
             view.update(data=item.get_data())
+        view.update({
+            "tags" : ",".join(item.tags),
+            "description" : item.description or "",
+            "snippet" : item.snippet or ""
+        })
         return content.get(res['itemId'])
     # ----------------------------------------------------------------------
     def add_to_definition(self, json_dict):
