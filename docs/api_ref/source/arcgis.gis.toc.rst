@@ -127,6 +127,47 @@ CertificateManager
     :undoc-members:
     :show-inheritance:
 
+OGC Support Module
+=================
+
+CSVLayer
+---------------------------
+.. autoclass:: arcgis.gis._ogc.CSVLayer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+GeoJSONLayer
+---------------------------
+.. autoclass:: arcgis.gis._ogc.GeoJSONLayer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+GeoRSSLayer
+---------------------------
+.. autoclass:: arcgis.gis._ogc.GeoRSSLayer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+WMS
+---------------------------
+.. autoclass:: arcgis.gis._ogc.WMS
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+WMTS
+---------------------------
+.. autoclass:: arcgis.gis._ogc.WMTS
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+
 Submodules
 --------------
 .. toctree::
@@ -136,5 +177,4 @@ Submodules
    arcgis.gis.server
    arcgis.gis.mission
    arcgis.gis.nb
-   
-   
+
