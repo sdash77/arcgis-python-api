@@ -53,7 +53,7 @@ class GeoRSSLayer(object):
         self._opacity = kwargs.pop('opacity', 0)
     #----------------------------------------------------------------------
     @property
-    def title(self):
+    def title(self) -> str:
         """
         The title of the layer used to identify it in places such as the Legend and LayerList widgets.
 
@@ -72,7 +72,7 @@ class GeoRSSLayer(object):
             self._title = value
     #----------------------------------------------------------------------
     @property
-    def opacity(self):
+    def opacity(self) -> float:
         """
         This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
 
@@ -91,7 +91,7 @@ class GeoRSSLayer(object):
             self._opacity = value
     #----------------------------------------------------------------------
     @property
-    def scale(self):
+    def scale(self) -> tuple:
         """Gets/Sets the Min/Max Scale for the layer"""
         return self._min_scale, self._max_scale
     #----------------------------------------------------------------------
@@ -102,13 +102,13 @@ class GeoRSSLayer(object):
             self._min_scale, self._max_scale = scale
     #----------------------------------------------------------------------
     @property
-    def point_symbol(self):
+    def point_symbol(self) -> InsensitiveDict:
         if self._point_symbol is None:
             self._point_symbol = InsensitiveDict(dict(create_symbol(geometry_type="point")))
         return self._point_symbol
     #----------------------------------------------------------------------
     @point_symbol.setter
-    def point_symbol(self, value):
+    def point_symbol(self, value:dict):
         if isinstance(value, dict):
             self._point_symbol = InsensitiveDict(value)
         elif value is None:
@@ -117,13 +117,13 @@ class GeoRSSLayer(object):
             self._point_symbol = InsensitiveDict(value)
     #----------------------------------------------------------------------
     @property
-    def line_symbol(self):
+    def line_symbol(self) -> InsensitiveDict:
         if self._line_symbol is None:
             self._line_symbol = InsensitiveDict(dict(create_symbol(geometry_type="polyline")))
         return self._line_symbol
     #----------------------------------------------------------------------
     @line_symbol.setter
-    def line_symbol(self, value):
+    def line_symbol(self, value:dict):
         if isinstance(value, dict):
             self._line_symbol = InsensitiveDict(value)
         elif value is None:
@@ -132,13 +132,13 @@ class GeoRSSLayer(object):
             self._line_symbol = InsensitiveDict(value)
     #----------------------------------------------------------------------
     @property
-    def polygon_symbol(self):
+    def polygon_symbol(self) -> InsensitiveDict:
         if self._polygon_symbol is None:
             self._polygon_symbol = InsensitiveDict(dict(create_symbol(geometry_type="polygon")))
         return self._polygon_symbol
     #----------------------------------------------------------------------
     @polygon_symbol.setter
-    def polygon_symbol(self, value):
+    def polygon_symbol(self, value:dict):
         if isinstance(value, dict):
             self._polygon_symbol = InsensitiveDict(value)
         elif value is None:
@@ -147,7 +147,7 @@ class GeoRSSLayer(object):
             self._polygon_symbol = InsensitiveDict(value)
     #----------------------------------------------------------------------
     @property
-    def _esri_json(self):
+    def _esri_json(self) -> dict:
         """creates a dictionary for web map item."""
         add_layer =  {
             "type" : "geo-rss",

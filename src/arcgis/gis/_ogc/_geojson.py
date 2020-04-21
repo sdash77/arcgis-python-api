@@ -104,7 +104,7 @@ class GeoJSONLayer(object):
             self._min_scale, self._max_scale = scale
     #----------------------------------------------------------------------
     @property
-    def renderer(self):
+    def renderer(self) -> InsensitiveDict:
         """Gets/Sets the renderer for the layer"""
         return self._renderer
     #----------------------------------------------------------------------

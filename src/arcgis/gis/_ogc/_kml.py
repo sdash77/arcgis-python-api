@@ -43,7 +43,7 @@ class KMLLayer(object):
         self._id = kwargs.pop('id', uuid.uuid4().hex)
     #----------------------------------------------------------------------
     @property
-    def title(self):
+    def title(self) -> str:
         """
         The title of the layer used to identify it in places such as the Legend and LayerList widgets.
 
@@ -62,7 +62,7 @@ class KMLLayer(object):
             self._title = value
     #----------------------------------------------------------------------
     @property
-    def opacity(self):
+    def opacity(self) -> float:
         """
         This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
 
@@ -81,7 +81,7 @@ class KMLLayer(object):
             self._opacity = value
     #----------------------------------------------------------------------
     @property
-    def scale(self):
+    def scale(self) -> tuple:
         """Gets/Sets the Min/Max Scale for the layer"""
         return self._min_scale, self._max_scale
     #----------------------------------------------------------------------
@@ -92,7 +92,7 @@ class KMLLayer(object):
             self._min_scale, self._max_scale = scale
     #----------------------------------------------------------------------
     @property
-    def _esri_json(self):
+    def _esri_json(self) -> dict:
         """creates a dictionary for web map item."""
         add_layer =  {
             "type" : "kml",

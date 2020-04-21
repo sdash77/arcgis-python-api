@@ -60,6 +60,8 @@ class CSVLayer(object):
         self._sql = kwargs.pop('sql_expression', None)
         self._id = kwargs.pop('id', uuid.uuid4().hex)
         self._title = kwargs.pop('title', None)
+        self._min_scale, self._max_scale = kwargs.pop('scale', (0,0))
+        self._opacity = kwargs.pop('opacity', 0)
     #----------------------------------------------------------------------
     def __str__(self):
         if self._item:
@@ -91,6 +93,36 @@ class CSVLayer(object):
         """
         if value != self.title:
             self._title = value
+    #----------------------------------------------------------------------
+    @property
+    def opacity(self) -> float:
+        """
+        This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
+
+        :returns: Float
+        """
+        return self._opacity
+    #----------------------------------------------------------------------
+    @opacity.setter
+    def opacity(self, value:float):
+        """
+        This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
+
+        :returns: Float
+        """
+        if isinstance(value, (float, int)):
+            self._opacity = value
+    #----------------------------------------------------------------------
+    @property
+    def scale(self):
+        """Gets/Sets the Min/Max Scale for the layer"""
+        return self._min_scale, self._max_scale
+    #----------------------------------------------------------------------
+    @scale.setter
+    def scale(self, scale:tuple):
+        """Gets/Sets the Min/Max Scale for the layer"""
+        if isinstance(scale, (tuple, list)) and len(scale) == 2:
+            self._min_scale, self._max_scale = scale
     #----------------------------------------------------------------------
     @property
     def latitude(self):
@@ -340,7 +372,10 @@ class CSVLayer(object):
             "latitudeField" :self.latitude,
             'renderer' : self.renderer._json,
             'id' : self._id,
-            'title' : self.title
+            'title' : self.title,
+            'opacity' : self.opacity,
+            'maxScale' : self.scale[1],
+            'minScale' : self.scale[0]
         }
         if self._item:
             add_layer["portalItem"] = { "id" : self._item.itemid }

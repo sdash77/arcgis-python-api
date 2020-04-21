@@ -9,7 +9,7 @@ from io import BytesIO, StringIO
 from arcgis._impl.common._mixins import PropertyMap
 
 
-class WMS():
+class WMSLayer():
     """
     Represents a Web Map Service, which is an OGC web service endpoint.
 
@@ -193,7 +193,7 @@ class WMS():
             self._opacity = value
     #----------------------------------------------------------------------
     @property
-    def scale(self):
+    def scale(self) -> tuple:
         """Gets/Sets the Min/Max Scale for the layer"""
         return self._min_scale, self._max_scale
     #----------------------------------------------------------------------
