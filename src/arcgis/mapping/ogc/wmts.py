@@ -157,7 +157,7 @@ class WMTSLayer(BaseOGC):
         :returns: dict
         """
         return {
-            "id" : uuid.uuid4().hex,
+            "id" : self._id,
             "title" : self._title or "WMTS Layer",
             "url" : self._url,
             "version" : self._version,
