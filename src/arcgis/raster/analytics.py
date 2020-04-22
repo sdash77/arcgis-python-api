@@ -3330,6 +3330,7 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
                                       ignore_nodata=True,
                                       output_name=None,
                                       context=None,
+                                      reference_mean_raster=None,
                                       *,
                                       gis=None,
                                       future=False,
@@ -3388,6 +3389,8 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
                                              - RECURRING_DAILY : Calculates the daily mean for each pixel.
 
                                              - HOURLY : Calculates the hourly mean for each pixel.
+
+                                             - EXTERNAL_RASTER : An existing raster dataset that contains the mean or median value for each pixel is referenced.
     ------------------------------------     --------------------------------------------------------------------
     ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored in
                                              the analysis.
@@ -3450,6 +3453,8 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
+    reference_mean_raster                    Optional Imagery Layer object representing the reference mean raster.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -3492,6 +3497,7 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
                                                                        calculation_interval=calculation_interval, 
                                                                        ignore_nodata=ignore_nodata, 
                                                                        context=context,
+                                                                       reference_mean_raster=reference_mean_raster,
                                                                        future=future,
                                                                        **kwargs)
 
@@ -3884,6 +3890,11 @@ def generate_trend_raster(input_multidimensional_raster,
                           ignore_nodata=True,
                           output_name=None,
                           context=None,
+                          cycle_length=None, 
+                          cycle_unit='YEARS',
+                          rmse=True, 
+                          r2=False, 
+                          slope_p_value=False,
                           *,
                           gis=None,
                           future=False,
@@ -3914,7 +3925,7 @@ def generate_trend_raster(input_multidimensional_raster,
 
                                              - HARMONIC : Fits the pixel values for a variable along a harmonic trend line.
     ------------------------------------     --------------------------------------------------------------------
-    frequency                                Optional long. 
+    frequency                                Optional Integer. 
 
                                              If the line_type parameter is set to HARMONIC, the default value is 1 ,or one harmonic cycle per year.
 
@@ -3982,6 +3993,26 @@ def generate_trend_raster(input_multidimensional_raster,
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
+    cycle_length                             Optional Float.
+                                             The length of periodic variation to model. This parameter is required 
+                                             when the Trend Line Type is set to Harmonic. For example, 
+                                             leaf greenness often has one strong cycle of variation in a 
+                                             single year, so the cycle length is 1 year. Hourly temperature 
+                                             data has one strong cycle of variation throughout a single day, 
+                                             so the cycle length is 1 day.
+    ------------------------------------     --------------------------------------------------------------------
+    cycle_unit                               Optional String. Default is "YEARS". Specifies the time unit to be 
+                                             used for the length of harmonic cycle.
+    ------------------------------------     --------------------------------------------------------------------
+    rmse                                     Optional Boolean. Default value is True. Specifies whether the root 
+                                             mean square error (RMSE) of the trend fit line will be calculated.
+    ------------------------------------     --------------------------------------------------------------------
+    r2                                       Optional Boolean. Default value is False. Specifies whether the 
+                                             R-squared goodness-of-fit statistic for the trend fit line will be calculated.
+    ------------------------------------     --------------------------------------------------------------------
+    slope_p_value                            Optional Boolean. Default value is False. Specifies whether the 
+                                             p-value statistic for the slope coefficient of the trend line will be calculated.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -4026,6 +4057,11 @@ def generate_trend_raster(input_multidimensional_raster,
                                                           frequency=frequency, 
                                                           ignore_nodata=ignore_nodata,
                                                           context=context,
+                                                          cycle_length=cycle_length, 
+                                                          cycle_unit=cycle_unit,
+                                                          rmse=rmse, 
+                                                          r2=r2, 
+                                                          slope_p_value=slope_p_value,
                                                           future=future,
                                                           **kwargs)
 
@@ -4291,7 +4327,7 @@ def find_argument_statistics(input_raster,
     ------------------------------------     --------------------------------------------------------------------
     max_value                                Optional Float. The maximum variable value to be used to extract the duration.
     ------------------------------------     --------------------------------------------------------------------
-    multiple_occurrence_value                Optional Long. Specifies the pixel value to use to indicate that a given argument 
+    multiple_occurrence_value                Optional Integer. Specifies the pixel value to use to indicate that a given argument 
                                              statistic was reached more than once in the input raster dataset. If not specified,
                                              the pixel value will be the value of the dimension the first time the argument 
                                              statistic was reached.
@@ -4942,7 +4978,7 @@ def define_nodata(input_raster,
                                              num_of_bands=3,
                                              query_filter="OBJECTID < 12",
                                              future=False,
-                                             gis=gis,
+                                             gis=gis
                                             )
 
     .. code-block:: python
@@ -4954,7 +4990,7 @@ def define_nodata(input_raster,
                                              num_of_bands=3,
                                              query_filter="OBJECTID > 7",
                                              future=True,
-                                             gis=gis,
+                                             gis=gis
                                             )
 
     """
@@ -4982,7 +5018,7 @@ def optimal_path_as_line(input_destination_data,
 
     """
     Calculates the optimal path from a source to a destination as a feature.
-    Function available in ArcGIS Image Server 10.81 and higher.
+    Function available in ArcGIS Image Server 10.8.1 and higher.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -5080,7 +5116,7 @@ def optimal_region_connections(input_region_data,
 
     """
     Calculates the optimal connectivity network between two or more input regions.
-    Function available in ArcGIS Image Server 10.81 and higher.
+    Function available in ArcGIS Image Server 10.8.1 and higher.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -5307,3 +5343,290 @@ def _distance_allocation(input_source_raster_or_features,
                                                            context=context,
                                                            future=future,
                                                            **kwargs)
+
+def analyze_changes_using_ccdc(input_multidimensional_raster=None,
+                               bands_for_detecting_change=[],
+                               bands_for_temporal_masking=[],
+                               chi_squared_threshold=0.99,
+                               min_anomaly_observations=6,
+                               update_frequency=1,
+                               output_name=None,
+                               context=None,
+                               *,
+                               gis=None,
+                               future=False,
+                               **kwargs):
+
+    """
+    Function evaluates changes in pixel values over time using the CCDC algorithm, 
+    and generates a multidimensional raster containing the model results.
+    Function available in ArcGIS Image Server 10.8.1 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
+                                             Portal Item can be passed.
+    ------------------------------------     --------------------------------------------------------------------
+    bands_for_detecting_change               Optional List. The band IDs to use for change detection.
+                                             If no band IDs are provided, all the bands from the input raster dataset will be used.
+
+                                             Example:
+                                                  [0,1,2,3,4,6]
+    ------------------------------------     --------------------------------------------------------------------
+    bands_for_temporal_masking               Optional List. The band IDs of the green band and the SWIR band, to be used to 
+                                             mask for cloud, cloud shadow and snow. If band IDs are not provided, no 
+                                             masking will occur.
+
+                                             Example:
+                                                [0,1,2]
+    ------------------------------------     --------------------------------------------------------------------
+    chi_squared_threshold                    Optional Float. The chi-square change probability threshold. If an 
+                                             observation has a calculated change probability that is above this 
+                                             threshold, it is flagged as an anomaly, which is a potential change 
+                                             event. The default value is 0.99. 
+
+                                             Example:
+                                                0.99
+    ------------------------------------     --------------------------------------------------------------------
+    min_anomaly_observations                 Optional Integer. The minimum number of consecutive anomaly observations 
+                                             that must occur before an event is considered a change. A pixel must 
+                                             be flagged as an anomaly for the specified number of consecutive 
+                                             time slices before it is considered a true change. The default value is 6. 
+    ------------------------------------     --------------------------------------------------------------------
+    update_frequency                         Optional Float. The value that represents the update frequency.
+                                             The default value is 1. 
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional. If not provided, an Image Service is created by the method and used as the output raster. 
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution. 
+
+                                             context parameter overwrites values set through arcgis.env parameter
+                                         
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+                                            
+                                                Example: 
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6, 
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be 
+                                                projected into the output spatial reference.
+                                                
+                                                Example: 
+                                                    {"outSR": {spatial reference}}
+
+                                              - Snap Raster (snapRaster): The output raster will have its 
+                                                cells aligned with the specified snap raster.
+                                                        
+                                                Example: 
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                                specified by cell size.
+
+                                                Example:
+                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total 
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS object. If not speficied, the currently active connection
+                                             is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    :return: Imagery layer item
+
+    .. code-block:: python
+
+            # Usage Example 1: This example performs continuous change detection where only one band is used in the change detection 
+            # and the chi-squared probability threshold is 0.90.
+            analyze_changes_using_ccdc_op = analyze_changes_using_ccdc(input_multidimensional_raster=input_multidimensional_raster,
+                                                                       bands_for_detecting_change=[0],
+                                                                       bands_for_temporal_masking=[],
+                                                                       chi_squared_threshold=0.99,
+                                                                       min_anomaly_observations=6,
+                                                                       update_frequency=1,
+                                                                       future=False,
+                                                                       gis=gis
+                                                                      )
+
+    .. code-block:: python
+
+            # Usage Example 2: This example performs continuous change detection where bands 3 and 7 (indexed at 2 and 6) 
+            # are used as snow, cloud, and cloud shadow mask.
+            analyze_changes_using_ccdc_op = analyze_changes_using_ccdc(input_multidimensional_raster=input_multidimensional_raster,
+                                                                       bands_for_detecting_change=[0,1,2,3,4,5,6],
+                                                                       bands_for_temporal_masking=[2,6],
+                                                                       chi_squared_threshold=0.99,
+                                                                       min_anomaly_observations=3,
+                                                                       update_frequency=1,
+                                                                       future=False,
+                                                                       gis=gis
+                                                                      )
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.analyze_changes_using_ccdc(input_multidimensional_raster=input_multidimensional_raster, 
+                                            bands_for_detecting_change=bands_for_detecting_change, 
+                                            bands_for_temporal_masking=bands_for_temporal_masking, 
+                                            chi_squared_threshold=chi_squared_threshold, 
+                                            min_anomaly_observations=min_anomaly_observations, 
+                                            update_frequency=update_frequency, 
+                                            output_name=output_name,
+                                            context=context,
+                                            future=future,
+                                            **kwargs)
+
+
+def detect_change_using_change_analysis_raster(input_change_analysis_raster=None, 
+                                               change_type="TIME_OF_LATEST_CHANGE", 
+                                               max_number_of_changes=1, 
+                                               output_name=None,
+                                               context=None,
+                                               *,
+                                               gis=None,
+                                               future=False,
+                                               **kwargs):
+
+    """
+    Function generates a raster containing pixel change information using the 
+    output change analysis raster from the arcgis.raster.analytics.analyze_changes_using_ccdc function.
+    Function available in ArcGIS Image Server 10.8.1 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_change_analysis_raster             Required ImageryLayer object. The raster generated from the analyze_changes_using_ccdc .
+                                             Portal Item can be passed.
+    ------------------------------------     --------------------------------------------------------------------
+    change_type                              Optional String. Specifies the change information to calculate.
+
+                                                - TIME_OF_LATEST_CHANGE - Each pixel will contain the date of the most recent change for that pixel in the time series.
+                                                - TIME_OF_EARLIEST_CHANGE - Each pixel will contain the date of the earliest change for that pixel in the time series.
+                                                - TIME_OF_LARGEST_CHANGE - Each pixel will contain the date of the most significant change for that pixel in the time series.
+                                                - NUM_OF_CHANGES - Each pixel will contain the total number of times the pixel changed in the time series.
+
+                                             Example:
+                                                  "TIME_OF_LATEST_CHANGE"
+    ------------------------------------     --------------------------------------------------------------------
+    max_number_of_changes                    Optional Integer. The maximum number of changes per pixel that will 
+                                             be calculated when the change_type parameter is set to 
+                                             TIME_OF_LATEST_CHANGE, TIME_OF_EARLIEST_CHANGE, or TIME_OF_LARGEST_CHANGE. 
+                                             This number corresponds to the number of bands in the output raster. 
+                                             The default is 1, meaning only one change date will be calculated, 
+                                             and the output raster will contain only one band.
+
+                                             Example:
+                                                3
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional. If not provided, an Image Service is created by the method and used as the output raster. 
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution. 
+
+                                             context parameter overwrites values set through arcgis.env parameter
+                                         
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+                                            
+                                                Example: 
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6, 
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be 
+                                                projected into the output spatial reference.
+                                                
+                                                Example: 
+                                                    {"outSR": {spatial reference}}
+
+                                              - Snap Raster (snapRaster): The output raster will have its 
+                                                cells aligned with the specified snap raster.
+                                                        
+                                                Example: 
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                                specified by cell size.
+
+                                                Example:
+                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total 
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS object. If not speficied, the currently active connection
+                                             is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    :return: Imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1: This example returns the most recent date at which pixels changed in the input time series.
+
+        detect_change_op = detect_change_using_change_analysis_raster(input_change_analysis_raster=input_change_analysis_raster,
+                                                                      change_type="TIME_OF_LATEST_CHANGE", 
+                                                                      max_number_of_changes=1,
+                                                                      gis=gis)
+
+    .. code-block:: python
+
+        # Usage Example 2: This example returns the total number of times the pixels changed in the input time series.
+
+        detect_change_op = detect_change_using_change_analysis_raster(input_change_analysis_raster=input_change_analysis_raster,
+                                                                      change_type="NUM_OF_CHANGES",
+                                                                      gis=gis)
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.detect_change_using_change_analysis_raster(input_change_analysis_raster=input_change_analysis_raster,
+                                                                                change_type=change_type,
+                                                                                max_number_of_changes=max_number_of_changes,
+                                                                                output_name=output_name,
+                                                                                context=context,
+                                                                                future=future,
+                                                                                **kwargs)
+
