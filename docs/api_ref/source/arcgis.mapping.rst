@@ -87,3 +87,40 @@ visual_variables
 -----------
 .. autofunction:: arcgis.mapping.renderer.visual_variables
 
+arcgis.mapping.ogc module
+=================
+
+CSV Layer
+---------------------------
+.. autoclass:: arcgis.mapping.ogc.CSVLayer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+GeoJSON Layer
+---------------------------
+.. autoclass:: arcgis.mapping.ogc.GeoJSONLayer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+GeoRSS Layer
+---------------------------
+.. autoclass:: arcgis.mapping.ogc.GeoRSSLayer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+WMS Layer
+---------------------------
+.. autoclass:: arcgis.mapping.ogc.WMSLayer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+WMTS Layer
+---------------------------
+.. autoclass:: arcgis.mapping.ogc.WMTSLayer
+    :members:
+    :undoc-members:
+    :show-inheritance:

@@ -7,9 +7,9 @@ from urllib.parse import (urlencode, urlparse, urlunparse,
 import xml.etree.cElementTree as ET
 from io import BytesIO, StringIO
 from arcgis._impl.common._mixins import PropertyMap
-
-
-class WMSLayer(object):
+from ._base import BaseOGC
+###########################################################################
+class WMSLayer(BaseOGC):
     """
     Represents a Web Map Service, which is an OGC web service endpoint.
 
@@ -22,11 +22,13 @@ class WMSLayer(object):
     ---------------     --------------------------------------------------------------------
     version             Optional String. The version number of the WMS service.  The default is `1.3.0`.
     ---------------     --------------------------------------------------------------------
-    title               Optional String. The title of the layer used to identify it in places such as the Legend and Layer List widgets.
+    copyright           Optional String. Describes limitations and usage of the data.
     ---------------     --------------------------------------------------------------------
     scale               Optional Tuple. The min/max scale of the layer where the positions are: (min, max) as float values.
     ---------------     --------------------------------------------------------------------
     opacity             Optional Float.  This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
+    ---------------     --------------------------------------------------------------------
+    title               Optional String. The title of the layer used to identify it in places such as the Legend and Layer List widgets.
     ===============     ====================================================================
 
     """
@@ -38,6 +40,7 @@ class WMSLayer(object):
     _properties = None
     #----------------------------------------------------------------------
     def __init__(self, url, version='1.3.0', gis=None, **kwargs):
+        super(WMSLayer, self)
         if gis:
             gis = gis
         elif gis is None and _env.active_gis:
@@ -55,12 +58,6 @@ class WMSLayer(object):
         self._add_token = str(self._con._auth).lower() == "builtin"
         self._opacity = kwargs.pop('opacity', 0)
         self._min_scale, self._max_scale = kwargs.pop('scale', (0,0))
-    #----------------------------------------------------------------------
-    def __str__(self) -> str:
-        return f"<WMS @ {self._url}>"
-    #----------------------------------------------------------------------
-    def __repr__(self) -> str:
-        return f"<WMS @ {self._url}>"
     #----------------------------------------------------------------------
     @property
     def properties(self) -> PropertyMap:
@@ -153,55 +150,6 @@ class WMSLayer(object):
         for remove in removals:
             d = d.replace(remove, "")
         return json.loads(d)
-    #----------------------------------------------------------------------
-    @property
-    def title(self) -> str:
-        """
-        The title of the layer used to identify it in places such as the Legend and LayerList widgets.
-
-        :returns: String
-        """
-        return self._title
-    #----------------------------------------------------------------------
-    @title.setter
-    def title(self, value:str):
-        """
-        The title of the layer used to identify it in places such as the Legend and LayerList widgets.
-
-        :returns: String
-        """
-        if self._title != value:
-            self._title = value
-    #----------------------------------------------------------------------
-    @property
-    def opacity(self) -> float:
-        """
-        This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
-
-        :returns: Float
-        """
-        return self._opacity
-    #----------------------------------------------------------------------
-    @opacity.setter
-    def opacity(self, value:float):
-        """
-        This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
-
-        :returns: Float
-        """
-        if isinstance(value, (float, int)):
-            self._opacity = value
-    #----------------------------------------------------------------------
-    @property
-    def scale(self) -> tuple:
-        """Gets/Sets the Min/Max Scale for the layer"""
-        return self._min_scale, self._max_scale
-    #----------------------------------------------------------------------
-    @scale.setter
-    def scale(self, scale:tuple):
-        """Gets/Sets the Min/Max Scale for the layer"""
-        if isinstance(scale, (tuple, list)) and len(scale) == 2:
-            self._min_scale, self._max_scale = scale
     #----------------------------------------------------------------------
     @property
     def _esri_json(self) -> dict:

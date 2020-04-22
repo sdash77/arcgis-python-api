@@ -5,8 +5,9 @@ import uuid
 from arcgis.gis import GIS
 from arcgis.mapping import create_symbol
 from arcgis._impl.common._isd import InsensitiveDict
+from ._base import BaseOGC
 ###########################################################################
-class GeoRSSLayer(object):
+class GeoRSSLayer(BaseOGC):
     """
     The GeoRSSLayer class is used to create a layer based on GeoRSS. GeoRSS is a
     way to add geographic information to an RSS feed. The GeoRSSLayer supports
@@ -22,11 +23,9 @@ class GeoRSSLayer(object):
     ---------------     --------------------------------------------------------------------
     gis                 Optional GIS. The `GIS` connection object
     ---------------     --------------------------------------------------------------------
-    title               Optional String. The title of the layer used to identify it in places such as the Legend and LayerList widgets.
+    copyright           Optional String. Describes limitations and usage of the data.
     ---------------     --------------------------------------------------------------------
-    id                  Optional String. The unique ID of the layer.
-    ---------------     --------------------------------------------------------------------
-    scale               Optional Tuple. The min/max scale of the layer where the positions are: (min, max) as float values.
+    line_symbol         Optionl Dict. The symbol for the polyline data in the GeoRSS.
     ---------------     --------------------------------------------------------------------
     opacity             Optional Float.  This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
     ---------------     --------------------------------------------------------------------
@@ -34,72 +33,32 @@ class GeoRSSLayer(object):
     ---------------     --------------------------------------------------------------------
     polygon_symbol      Optionl Dict. The symbol for the polygon data in the GeoRSS.
     ---------------     --------------------------------------------------------------------
-    polyline_symbol     Optionl Dict. The symbol for the polyline data in the GeoRSS.
+    title               Optional String. The title of the layer used to identify it in places such as the Legend and LayerList widgets.
+    ---------------     --------------------------------------------------------------------
+    scale               Optional Tuple. The min/max scale of the layer where the positions are: (min, max) as float values.
     ===============     ====================================================================
 
     """
     _line_symbol = None
     _point_symbol = None
     _polygon_symbol = None
+    _type = "geo-rss"
     #----------------------------------------------------------------------
-    def __init__(self, url, gis=None, **kwargs):
+    def __init__(self, url, **kwargs):
+        super(GeoRSSLayer, self)
         self._title = kwargs.pop("title", "GeoRSS Feed")
         self._id = kwargs.pop("id", uuid.uuid4().hex)
         self._url = url
-        scale = kwargs.pop("scale", (-1, 1000000000))
+        scale = kwargs.pop("scale", (0,0))
         assert isinstance(scale, (list, tuple)) and len(scale) == 2
         self._min_scale = scale[0]
         self._max_scale = scale[1]
         self._opacity = kwargs.pop('opacity', 0)
-    #----------------------------------------------------------------------
-    @property
-    def title(self) -> str:
-        """
-        The title of the layer used to identify it in places such as the Legend and LayerList widgets.
-
-        :returns: String
-        """
-        return self._title
-    #----------------------------------------------------------------------
-    @title.setter
-    def title(self, value:str):
-        """
-        The title of the layer used to identify it in places such as the Legend and LayerList widgets.
-
-        :returns: String
-        """
-        if self._title != value:
-            self._title = value
-    #----------------------------------------------------------------------
-    @property
-    def opacity(self) -> float:
-        """
-        This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
-
-        :returns: Float
-        """
-        return self._opacity
-    #----------------------------------------------------------------------
-    @opacity.setter
-    def opacity(self, value:float):
-        """
-        This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
-
-        :returns: Float
-        """
-        if isinstance(value, (float, int)):
-            self._opacity = value
-    #----------------------------------------------------------------------
-    @property
-    def scale(self) -> tuple:
-        """Gets/Sets the Min/Max Scale for the layer"""
-        return self._min_scale, self._max_scale
-    #----------------------------------------------------------------------
-    @scale.setter
-    def scale(self, scale:tuple):
-        """Gets/Sets the Min/Max Scale for the layer"""
-        if isinstance(scale, (tuple, list)) and len(scale) == 2:
-            self._min_scale, self._max_scale = scale
+        self._copyright = kwargs.pop('copyright', None)
+        self._title = kwargs.pop('title', None)
+        self.point_symbol = kwargs.pop('point_symbol', None)
+        self.polygon_symbol = kwargs.pop('polygon_symbol', None)
+        self.line_symbol = kwargs.pop('line_symbol', None)
     #----------------------------------------------------------------------
     @property
     def point_symbol(self) -> InsensitiveDict:

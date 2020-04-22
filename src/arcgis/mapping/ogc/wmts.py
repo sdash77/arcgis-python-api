@@ -6,8 +6,9 @@ from urllib.parse import (urlencode, urlparse, urlunparse,
                           parse_qs, ParseResult)
 import xml.etree.cElementTree as ET
 from io import BytesIO, StringIO
+from ._base import BaseOGC
 ###########################################################################
-class WMTSLayer(object):
+class WMTSLayer(BaseOGC):
     """
     Represents a Web Map Tile Service, which is an OGC web service endpoint.
 
@@ -15,18 +16,22 @@ class WMTSLayer(object):
     ===============     ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
-    url                 Required string. The administration URL for the ArcGIS Server.
-    ---------------     --------------------------------------------------------------------
-    gis                 Optional GIS. The `GIS` connection object
+    url                 Required string. The web address of the endpoint.
     ---------------     --------------------------------------------------------------------
     version             Optional String. The version number of the WMTS service.  The default is `1.0.0`
     ---------------     --------------------------------------------------------------------
-    title               Optional String. The title of the layer used to identify it in places such as the Legend and Layer List widgets.
+    gis                 Optional GIS. The `GIS` connection object
+    ---------------     --------------------------------------------------------------------
+    copyright           Optional String. Describes limitations and usage of the data.
+    ---------------     --------------------------------------------------------------------
+    opacity             Optional Float.  This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
     ---------------     --------------------------------------------------------------------
     scale               Optional Tuple. The min/max scale of the layer where the positions are: (min, max) as float values.
     ---------------     --------------------------------------------------------------------
-    opacity             Optional Float.  This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
+    title               Optional String. The title of the layer used to identify it in places such as the Legend and Layer List widgets.
     ===============     ====================================================================
+
+
 
     """
     _gis = None
@@ -37,6 +42,7 @@ class WMTSLayer(object):
     _properties = None
     #----------------------------------------------------------------------
     def __init__(self, url, version='1.0.0', gis=None, **kwargs):
+        super(WMTSLayer,self)
         if gis:
             gis = gis
         elif gis is None and _env.active_gis:
@@ -54,61 +60,7 @@ class WMTSLayer(object):
         self._add_token = str(self._con._auth).lower() == "builtin"
         self._min_scale, self._max_scale = kwargs.pop('scale', (0,0))
         self._opacity = kwargs.pop('opacity', 0)
-    #----------------------------------------------------------------------
-    def __str__(self):
-        return f"<WMTS @ {self._url}>"
-    #----------------------------------------------------------------------
-    def __repr__(self):
-        return f"<WMTS @ {self._url}>"
-    #----------------------------------------------------------------------
-    @property
-    def title(self) -> str:
-        """
-        The title of the layer used to identify it in places such as the Legend and LayerList widgets.
-
-        :returns: String
-        """
-        return self._title
-    #----------------------------------------------------------------------
-    @title.setter
-    def title(self, value:str):
-        """
-        The title of the layer used to identify it in places such as the Legend and LayerList widgets.
-
-        :returns: String
-        """
-        if self._title != value:
-            self._title = value
-    #----------------------------------------------------------------------
-    @property
-    def opacity(self) -> float:
-        """
-        This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
-
-        :returns: Float
-        """
-        return self._opacity
-    #----------------------------------------------------------------------
-    @opacity.setter
-    def opacity(self, value:float):
-        """
-        This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
-
-        :returns: Float
-        """
-        if isinstance(value, (float, int)):
-            self._opacity = value
-    #----------------------------------------------------------------------
-    @property
-    def scale(self):
-        """Gets/Sets the Min/Max Scale for the layer"""
-        return self._min_scale, self._max_scale
-    #----------------------------------------------------------------------
-    @scale.setter
-    def scale(self, scale:tuple):
-        """Gets/Sets the Min/Max Scale for the layer"""
-        if isinstance(scale, (tuple, list)) and len(scale) == 2:
-            self._min_scale, self._max_scale = scale
+        self._type = "wms"
     #----------------------------------------------------------------------
     @property
     def properties(self):
@@ -206,7 +158,8 @@ class WMTSLayer(object):
             "version" : self._version,
             "minScale" : self.scale[0],
             "maxScale" : self.scale[1],
-            "opacity" : self.opacity
+            "opacity" : self.opacity,
+            "type" : self._type
         }
     #----------------------------------------------------------------------
     @property

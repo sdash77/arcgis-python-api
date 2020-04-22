@@ -6,9 +6,10 @@ import tempfile
 from arcgis.gis import GIS, Item
 from arcgis import env as _env
 import pandas as pd
+from ._base import BaseOpenData
 _PD_LESS_THAN1 = [int(v) for v in pd.__version__.split(".")] < [1,0,0]
 ###########################################################################
-class CSVLayer(object):
+class CSVLayer(BaseOpenData):
     r"""
     Represents a CSV File Hosted on a Server.
 
@@ -16,22 +17,24 @@ class CSVLayer(object):
     ===============     ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
-    url                 Required string. The administration URL for the ArcGIS Server.
+    url_or_item         Required String or Item. The web address or `Item` to the CSV resource.
     ---------------     --------------------------------------------------------------------
     gis                 Optional GIS. The `GIS` connection object
     ---------------     --------------------------------------------------------------------
-    title               Optional String. The title of the layer used to identify it in places such as the Legend and Layer List widgets.
-    ---------------     --------------------------------------------------------------------
     copyright           Optional String. Describes limitations and usage of the data.
-    ---------------     --------------------------------------------------------------------
-    id                  Optional String. The unique ID of the layer.
     ---------------     --------------------------------------------------------------------
     delimiter           Optional String. The separator value. This can be the following:
                         , (comma), ' ' (space), | (pipe), \\r (tab), or ; (semicolon).
     ---------------     --------------------------------------------------------------------
+    fields              Optional List. An array of dictionarys containing the field information.
+    ---------------     --------------------------------------------------------------------
+    opacity             Optional Float.  This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
+    ---------------     --------------------------------------------------------------------
+    scale               Optional Tuple. The min/max scale of the layer where the positions are: (min, max) as float values.
+    ---------------     --------------------------------------------------------------------
     sql_expression      Optional String. Optional query string to apply to the layer when displayed on the widget or web map.
     ---------------     --------------------------------------------------------------------
-    fields              Optional List. An array of dictionarys containing the field information.
+    title               Optional String. The title of the layer used to identify it in places such as the Legend and Layer List widgets.
     ===============     ====================================================================
 
     """
@@ -43,18 +46,18 @@ class CSVLayer(object):
     _renderer = None
     _latitude = None
     _longitude = None
+    _type = "csv"
     #----------------------------------------------------------------------
     def __init__(self, url_or_item, gis=None, **kwargs):
         """initializer"""
+        super(CSVLayer, self)
         if isinstance(url_or_item, str):
             self._url = url_or_item
             self._item = None
         elif isinstance(url_or_item, Item):
             self._item = url_or_item
             self._url = None
-            if gis is None:
-                gis = self._item._gis
-        self._gis = gis or _env.active_gis or GIS()
+        self._gis = gis or _env.active_gis or self._item._gis or GIS()
         self._copyright = kwargs.pop('copyright', None)
         self._delimiter = kwargs.pop('delimiter', ',')
         self._fields = kwargs.pop('fields', None)
@@ -68,62 +71,6 @@ class CSVLayer(object):
         if self._item:
             return f"<CSV @ {self._item.itemid}>"
         return f"<CSV @ {self._url}>"
-    #----------------------------------------------------------------------
-    def __repr__(self):
-        return self.__str__()
-    #----------------------------------------------------------------------
-    @property
-    def title(self):
-        """
-        Gets/Sets the Title of the Layer
-
-        :returns: String
-        """
-        if self._title is None and self._url:
-            self._title = os.path.basename(self._url)
-        elif self._title is None and self._item:
-            self._title = self._item.title
-        return self._title
-    #----------------------------------------------------------------------
-    @title.setter
-    def title(self, value):
-        """
-        Gets/Sets the Title of the Layer
-
-        :returns: String
-        """
-        if value != self.title:
-            self._title = value
-    #----------------------------------------------------------------------
-    @property
-    def opacity(self) -> float:
-        """
-        This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
-
-        :returns: Float
-        """
-        return self._opacity
-    #----------------------------------------------------------------------
-    @opacity.setter
-    def opacity(self, value:float):
-        """
-        This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
-
-        :returns: Float
-        """
-        if isinstance(value, (float, int)):
-            self._opacity = value
-    #----------------------------------------------------------------------
-    @property
-    def scale(self):
-        """Gets/Sets the Min/Max Scale for the layer"""
-        return self._min_scale, self._max_scale
-    #----------------------------------------------------------------------
-    @scale.setter
-    def scale(self, scale:tuple):
-        """Gets/Sets the Min/Max Scale for the layer"""
-        if isinstance(scale, (tuple, list)) and len(scale) == 2:
-            self._min_scale, self._max_scale = scale
     #----------------------------------------------------------------------
     @property
     def latitude(self):
@@ -260,16 +207,6 @@ class CSVLayer(object):
             self._delimiter = value
     #----------------------------------------------------------------------
     @property
-    def copyright(self):
-        """Copyright information for the layer."""
-        return self._copyright
-    #----------------------------------------------------------------------
-    @copyright.setter
-    def copyright(self):
-        """Copyright information for the layer."""
-        return self._copyright
-    #----------------------------------------------------------------------
-    @property
     def fields(self):
         """
         Returns the fields values for the CSV source.
@@ -328,37 +265,6 @@ class CSVLayer(object):
                     })
             self._fields = fields
         return self._fields
-    #----------------------------------------------------------------------
-    @property
-    def sql_expression(self):
-        """
-        The SQL where clause used to filter features on the client. Only
-        the features that satisfy the definition expression are displayed
-        in the widget. Setting a definition expression is useful when the
-        dataset is large and you don't want to bring all features to the
-        client for analysis. The `sql_expressions` may be set when a
-        layer is constructed prior to it loading in the view or after it
-        has been loaded into the class.
-
-        :return: String
-        """
-        return self._sql
-    #----------------------------------------------------------------------
-    @sql_expression.setter
-    def sql_expression(self, value):
-        """
-        The SQL where clause used to filter features on the client. Only
-        the features that satisfy the definition expression are displayed
-        in the widget. Setting a definition expression is useful when the
-        dataset is large and you don't want to bring all features to the
-        client for analysis. The `sql_expressions` may be set when a
-        layer is constructed prior to it loading in the view or after it
-        has been loaded into the class.
-
-        :return: String
-        """
-        if self._sql != value:
-            self._sql = value
     #----------------------------------------------------------------------
     @property
     def _esri_json(self):

@@ -4,7 +4,7 @@ import unittest
 import pytest
 import pandas as pd
 from arcgis.gis import GIS
-from arcgis.gis.ogc import GeoRSSLayer
+from arcgis.mapping.ogc import GeoRSSLayer
 geo_rss_url = "https://arcgis.github.io/arcgis-samples-javascript/sample-data/layers-georss/sample-georss.xml"
 
 class TestGeoRSSLayer(unittest.TestCase):

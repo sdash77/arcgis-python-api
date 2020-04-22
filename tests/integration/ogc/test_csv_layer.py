@@ -4,7 +4,7 @@ import unittest
 import pytest
 import pandas as pd
 from arcgis.gis import GIS
-from arcgis.gis.ogc import CSVLayer
+from arcgis.mapping.ogc import CSVLayer
 
 csv_url = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.csv'
 
@@ -24,7 +24,9 @@ class TestCSVLayer(unittest.TestCase):
         assert csv.sql_expression is None
         assert csv.renderer
         assert str(csv).find("<CSV") > -1
-        assert csv.title
+        assert csv.title is None
+        csv.title = "test"
+        assert csv.title == 'test'
         assert csv._esri_json
     def test_csv_layer_item(self):
         gis = GIS()
@@ -43,7 +45,9 @@ class TestCSVLayer(unittest.TestCase):
             assert csv.sql_expression is None
             assert csv.renderer
             assert str(csv).find("<CSV") > -1
-            assert csv.title
+            assert csv.title is None
+            csv.title = "test"
+            assert csv.title == 'test'
             assert csv._esri_json
 
 
