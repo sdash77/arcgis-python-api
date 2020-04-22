@@ -3,7 +3,9 @@ from fastai.vision.image import open_image, show_image, pil2tensor
 from fastai.vision.data import SegmentationProcessor, ImageList
 from fastai.layers import CrossEntropyFlat
 from fastai.basic_train import LearnerCallback
-from .._utils.common import ArcGISMSImage, get_top_padding, kwarg_fill_none, find_data_loader, get_nbatches, dynamic_range_adjustment, image_tensor_checks_plotting, predict_batch, denorm_x
+from .._utils.common import ArcGISMSImage, get_top_padding, kwarg_fill_none, \
+    find_data_loader, get_nbatches, dynamic_range_adjustment, image_tensor_checks_plotting, \
+    get_symbology_bands, predict_batch, denorm_x
 from .._utils.pixel_classification import analyze_pred_pixel_classification
 import torch
 import warnings
@@ -330,16 +332,21 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
     color_array[1:, 3] = alpha
 
     # Size for plotting
-    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
+    nrows = min(nrows, symbology_x_batch.shape[0])
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
+    plt.subplots_adjust(top=top)
     fig.suptitle('Ground Truth / Predictions', fontsize=title_font_size)
     for r in range(nrows):
-        ax[r][0].imshow(symbology_x_batch[r])
-        y_rgb = color_array[y_batch[r][0]]
-        ax[r][0].imshow(y_rgb, alpha=alpha)
-        ax[r][0].axis('off')
-        ax[r][1].imshow(symbology_x_batch[r])
-        p_rgb = color_array[predictions[r]]
-        ax[r][1].imshow(p_rgb, alpha=alpha)
-        ax[r][1].axis('off')
-        plt.subplots_adjust(top=top)
-    return ax
+        if nrows==1:
+            axi = axs
+        else:
+            axi  = axs[r]
+        if r < symbology_x_batch.shape[0]:
+            axi[0].imshow(symbology_x_batch[r])
+            y_rgb = color_array[y_batch[r][0]]
+            axi[0].imshow(y_rgb, alpha=alpha)
+            axi[1].imshow(symbology_x_batch[r])
+            p_rgb = color_array[predictions[r]]
+            axi[1].imshow(p_rgb, alpha=alpha)
+        axi[0].axis('off')
+        axi[1].axis('off')
