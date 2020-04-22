@@ -46,7 +46,6 @@ class GeoRSSLayer(BaseOGC):
     #----------------------------------------------------------------------
     def __init__(self, url, **kwargs):
         super(GeoRSSLayer, self)
-        self._title = kwargs.pop("title", "GeoRSS Feed")
         self._id = kwargs.pop("id", uuid.uuid4().hex)
         self._url = url
         scale = kwargs.pop("scale", (0,0))
@@ -59,6 +58,7 @@ class GeoRSSLayer(BaseOGC):
         self.point_symbol = kwargs.pop('point_symbol', None)
         self.polygon_symbol = kwargs.pop('polygon_symbol', None)
         self.line_symbol = kwargs.pop('line_symbol', None)
+        self.title = kwargs.pop("title", "GeoRSS Feed")
     #----------------------------------------------------------------------
     @property
     def point_symbol(self) -> InsensitiveDict:
@@ -114,9 +114,9 @@ class GeoRSSLayer(BaseOGC):
             'opacity' : self.opacity,
             'minScale' : self.scale[0],
             'maxScale' : self.scale[1],
-            'pointSymbol' : self.point_symbol._json,
-            'polygonSymbol' :self.polygon_symbol._json,
-            'lineSymbol' : self.line_symbol._json,
+            'pointSymbol' : self.point_symbol._json(),
+            'polygonSymbol' :self.polygon_symbol._json(),
+            'lineSymbol' : self.line_symbol._json(),
             'id' : self._id,
             'title' : self.title
         }

@@ -26,6 +26,8 @@ class TestGeoRSSLayer(unittest.TestCase):
         georss.title = 'test'
         assert georss.title == 'test'
         assert georss._esri_json
+        assert georss.properties
+        print(georss.properties)
 
 if __name__ == "__main__":
     unittest.main()

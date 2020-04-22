@@ -28,12 +28,11 @@ class TestCSVLayer(unittest.TestCase):
         csv.title = "test"
         assert csv.title == 'test'
         assert csv._esri_json
+        assert csv.properties
     def test_csv_layer_item(self):
         gis = GIS()
         items = [gis.content.get("3f0f20ae77c0447cb5fa2a15038d0520")]
         if len(items) > 0:
-
-
             csv = CSVLayer(items[0])
             assert isinstance(csv, CSVLayer)
             assert csv.fields
@@ -49,6 +48,8 @@ class TestCSVLayer(unittest.TestCase):
             csv.title = "test"
             assert csv.title == 'test'
             assert csv._esri_json
+            assert csv.properties
+            print(csv.properties)
 
 
 

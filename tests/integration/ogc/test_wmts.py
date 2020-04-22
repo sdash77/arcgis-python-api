@@ -23,6 +23,7 @@ class TestwmtsLayer(unittest.TestCase):
         wmts.title = 'test'
         assert wmts.title == 'test'
         assert wmts._esri_json
+        assert wmts.properties
 
 if __name__ == "__main__":
     unittest.main()

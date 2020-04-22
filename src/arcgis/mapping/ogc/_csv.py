@@ -277,7 +277,7 @@ class CSVLayer(BaseOpenData):
             "fields" : self.fields,
             "longitudeField" : self.longitude,
             "latitudeField" :self.latitude,
-            'renderer' : self.renderer._json,
+            'renderer' : self.renderer._json(),
             'id' : self._id,
             'title' : self.title,
             'opacity' : self.opacity,

@@ -13,7 +13,6 @@ class TestGeoRSSLayer(unittest.TestCase):
         """tests the georss methods and properties"""
         georss = GeoJSONLayer(url=geo_rss_url)
         assert isinstance(georss, GeoJSONLayer)
-
         assert georss.opacity == 0
         georss.opacity = .5
         assert georss.opacity == .5
@@ -24,6 +23,7 @@ class TestGeoRSSLayer(unittest.TestCase):
         georss.title = 'test'
         assert georss.title == 'test'
         assert georss._esri_json
+        assert georss.properties
 
 if __name__ == "__main__":
     unittest.main()
