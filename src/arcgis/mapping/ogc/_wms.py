@@ -48,6 +48,7 @@ class WMSLayer(BaseOGC):
         else:
             gis = GIS()
         assert isinstance(gis, GIS)
+        self._id = kwargs.pop('id', uuid.uuid4().hex)
         self._version = version
         self._con = gis._con
         self._title = kwargs.pop("title", "WMS Layer")
@@ -164,7 +165,7 @@ class WMSLayer(BaseOGC):
         :returns: dict
         """
         return {
-            "id" : uuid.uuid4().hex,
+            "id" : self._id,
             "title" : self._title or "WMTS Layer",
             "url" : self._url,
             "version" : self._version,
