@@ -45,6 +45,11 @@ class BaseOGC(object):
     #----------------------------------------------------------------------
     @property
     def properties(self):
+        """
+        Returns the properties of the Layer.
+        
+        :returns: PropertyMap
+        """
         return PropertyMap(self._esri_json)
     #----------------------------------------------------------------------
     def __str__(self):

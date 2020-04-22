@@ -61,6 +61,11 @@ class WMSLayer(BaseOGC):
     #----------------------------------------------------------------------
     @property
     def properties(self) -> PropertyMap:
+        """
+        Returns the properties of the Layer.
+        
+        :returns: PropertyMap
+        """        
         if self._properties is None:
 
             if self._add_token:

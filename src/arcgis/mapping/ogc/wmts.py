@@ -64,6 +64,11 @@ class WMTSLayer(BaseOGC):
     #----------------------------------------------------------------------
     @property
     def properties(self):
+        """
+        Returns the properties of the Layer.
+        
+        :returns: PropertyMap
+        """        
         if self._properties is None:
             from arcgis._impl.common._mixins import PropertyMap
             if self._add_token:

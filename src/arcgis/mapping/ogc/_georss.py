@@ -62,12 +62,22 @@ class GeoRSSLayer(BaseOGC):
     #----------------------------------------------------------------------
     @property
     def point_symbol(self) -> InsensitiveDict:
+        """
+        Gets/Sets the Point Symbol for Point Geometries
+        
+        :returns: InsensitiveDict
+        """
         if self._point_symbol is None:
             self._point_symbol = InsensitiveDict(dict(create_symbol(geometry_type="point")))
         return self._point_symbol
     #----------------------------------------------------------------------
     @point_symbol.setter
     def point_symbol(self, value:dict):
+        """
+        Gets/Sets the Point Symbol for Point Geometries
+        
+        :returns: InsensitiveDict
+        """        
         if isinstance(value, dict):
             self._point_symbol = InsensitiveDict(value)
         elif value is None:
@@ -77,12 +87,22 @@ class GeoRSSLayer(BaseOGC):
     #----------------------------------------------------------------------
     @property
     def line_symbol(self) -> InsensitiveDict:
+        """
+        Gets/Sets the Line Symbol for Polyline Geometries
+        
+        :returns: InsensitiveDict
+        """        
         if self._line_symbol is None:
             self._line_symbol = InsensitiveDict(dict(create_symbol(geometry_type="polyline")))
         return self._line_symbol
     #----------------------------------------------------------------------
     @line_symbol.setter
     def line_symbol(self, value:dict):
+        """
+        Gets/Sets the Line Symbol for Polyline Geometries
+        
+        :returns: InsensitiveDict
+        """                
         if isinstance(value, dict):
             self._line_symbol = InsensitiveDict(value)
         elif value is None:
@@ -92,12 +112,22 @@ class GeoRSSLayer(BaseOGC):
     #----------------------------------------------------------------------
     @property
     def polygon_symbol(self) -> InsensitiveDict:
+        """
+        Gets/Sets the Polygon Symbol for Polygon Geometries
+        
+        :returns: InsensitiveDict
+        """                
         if self._polygon_symbol is None:
             self._polygon_symbol = InsensitiveDict(dict(create_symbol(geometry_type="polygon")))
         return self._polygon_symbol
     #----------------------------------------------------------------------
     @polygon_symbol.setter
     def polygon_symbol(self, value:dict):
+        """
+        Gets/Sets the Polygon Symbol for Polygon Geometries
+        
+        :returns: InsensitiveDict
+        """                        
         if isinstance(value, dict):
             self._polygon_symbol = InsensitiveDict(value)
         elif value is None:
