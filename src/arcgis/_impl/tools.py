@@ -8321,6 +8321,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                                           calculation_interval=None,
                                           ignore_nodata=True,
                                           context=None,
+                                          reference_mean_raster=None,
                                           future=False,
                                           **kwargs):
         """
@@ -8370,7 +8371,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         calculation_interval_val = calculation_interval
         if calculation_interval is not None:
-            interval_keyword_allowed_values = ['ALL', 'HOURLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY', 'RECURRING_MONTHLY', 'YEARLY']
+            interval_keyword_allowed_values = ['ALL', 'HOURLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY', 'RECURRING_MONTHLY', 'YEARLY', 'EXTERNAL_RASTER']
             if [element.lower() for element in interval_keyword_allowed_values].count(calculation_interval.lower()) <= 0 :
                 raise RuntimeError('calculation_interval can only be one of the following: '+str(interval_keyword_allowed_values))
 
@@ -8380,15 +8381,33 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
-        gpjob = self._tbx.generate_multidimensional_anomaly(input_multidimensional_raster=input_multidimensional_raster,
-                                                            output_name=output_raster,
-                                                            variables=variables,
-                                                            method=method_val,
-                                                            calculation_interval=calculation_interval_val,
-                                                            ignore_nodata=ignore_nodata,
-                                                            context=context,
-                                                            gis=self._gis,
-                                                            future=True)
+        if reference_mean_raster is not None:
+            reference_mean_raster = self._layer_input(input_layer=reference_mean_raster)
+
+        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]<=10.8):
+            gpjob = self._tbx.generate_multidimensional_anomaly(input_multidimensional_raster=input_multidimensional_raster,
+                                                                output_name=output_raster,
+                                                                variables=variables,
+                                                                method=method_val,
+                                                                calculation_interval=calculation_interval_val,
+                                                                ignore_nodata=ignore_nodata,
+                                                                context=context,
+                                                                gis=self._gis,
+                                                                future=True)
+
+        else:
+            gpjob = self._tbx.generate_multidimensional_anomaly(input_multidimensional_raster=input_multidimensional_raster,
+                                                                        output_name=output_raster,
+                                                                        variables=variables,
+                                                                        method=method_val,
+                                                                        calculation_interval=calculation_interval_val,
+                                                                        ignore_nodata=ignore_nodata,
+                                                                        reference_mean_raster=reference_mean_raster,
+                                                                        context=context,
+                                                                        gis=self._gis,
+                                                                        future=True)
+
+
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
@@ -8442,6 +8461,11 @@ class _RasterAnalysisTools(BaseAnalytics):
                               frequency=None,
                               ignore_nodata=True,
                               context=None,
+                              cycle_length=None, 
+                              cycle_unit='YEARS',
+                              rmse=True, 
+                              r2=False, 
+                              slope_p_value=False,
                               future=False,
                               **kwargs):
         """
@@ -8492,16 +8516,45 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
-        gpjob = self._tbx.generate_trend_raster(input_multidimensional_raster=input_multidimensional_raster,
-                                                output_name=output_raster,
-                                                dimension=dimension,
-                                                variables=variables,
-                                                trend_line_type=trend_line_type_val,
-                                                frequency=frequency,
-                                                ignore_nodata=ignore_nodata,
-                                                context=context,
-                                                gis=self._gis,
-                                                future=True)
+
+
+        if cycle_unit is not None:
+            if "cycle_unit" in self._tbx.choice_list.generate_trend_raster.keys():
+                cycle_unit_allowed_values = self._tbx.choice_list.generate_trend_raster["cycle_unit"]
+                if [element.lower() for element in cycle_unit_allowed_values].count(cycle_unit.lower()) <= 0 :
+                    raise RuntimeError('cycle_unit can only be one of the following:  '+str(cycle_unit_allowed_values))
+                for element in cycle_unit_allowed_values:
+                    if cycle_unit.lower() == element.lower():
+                        cycle_unit = element
+
+        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]<=10.8):
+            gpjob = self._tbx.generate_trend_raster(input_multidimensional_raster=input_multidimensional_raster,
+                                                    output_name=output_raster,
+                                                    dimension=dimension,
+                                                    variables=variables,
+                                                    trend_line_type=trend_line_type_val,
+                                                    frequency=frequency,
+                                                    ignore_nodata=ignore_nodata,
+                                                    context=context,
+                                                    gis=self._gis,
+                                                    future=True)
+        else:
+            gpjob = self._tbx.generate_trend_raster(input_multidimensional_raster=input_multidimensional_raster,
+                                        output_name=output_raster,
+                                        dimension=dimension,
+                                        variables=variables,
+                                        trend_line_type=trend_line_type_val,
+                                        frequency=frequency,
+                                        ignore_nodata=ignore_nodata,
+                                        cycle_length=cycle_length, 
+                                        cycle_unit=cycle_unit,
+                                        rmse=rmse, 
+                                        r2=r2, 
+                                        slope_p_value=slope_p_value,
+                                        context=context,
+                                        gis=self._gis,
+                                        future=True)
+
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
@@ -9778,6 +9831,134 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             return gpjob
         return gpjob.result()
+
+    def analyze_changes_using_ccdc(self,
+                                   input_multidimensional_raster,
+                                   bands_for_detecting_change=[], 
+                                   bands_for_temporal_masking=[], 
+                                   chi_squared_threshold=0.99, 
+                                   min_anomaly_observations=6, 
+                                   update_frequency=1, 
+                                   output_name=None,
+                                   context=None,
+                                   future=False,
+                                   **kwargs):
+        """
+       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.  
+
+       output_name: outputName (str). Required parameter.  
+
+       bands_for_detecting_change: bandsForDetectingChange (str). Optional parameter.  
+
+       bands_for_temporal_masking: bandsForTemporalMasking (str). Optional parameter.  
+
+       chi_squared_threshold: chiSquaredThreshold (float). Optional parameter.  
+
+       min_anomaly_observations: minAnomalyObservations (int). Optional parameter.  
+
+       update_frequency: updateFrequency (float). Optional parameter.  
+
+       context: context (str). Optional parameter.
+
+       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        task = "AnalyzeChangesUsingCCDC"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
+
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.analyze_changes_using_ccdc(input_multidimensional_raster=input_multidimensional_raster, 
+                                                     bands_for_detecting_change=bands_for_detecting_change, 
+                                                     bands_for_temporal_masking=bands_for_temporal_masking, 
+                                                     chi_squared_threshold=chi_squared_threshold, 
+                                                     min_anomaly_observations=min_anomaly_observations, 
+                                                     update_frequency=update_frequency, 
+                                                     output_name=output_raster,
+                                                     context=context,
+                                                     gis=self._gis,
+                                                     future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    def detect_change_using_change_analysis_raster(self,
+                                                  input_change_analysis_raster,
+                                                  change_type="TIME_OF_LATEST_CHANGES",
+                                                  max_number_of_changes=1,
+                                                  output_name=None,
+                                                  context=None,
+                                                  future=False,
+                                                  **kwargs):
+        """
+       input_change_analysis_raster: inputChangeAnalysisRaster (str). Required parameter.  
+
+       output_name: outputName (str). Optional parameter.  
+
+       change_type: changeType (str). Optional parameter.  
+          Choice list:TIME_OF_LATEST_CHANGES,TIME_OF_EARLIEST_CHANGES,TIME_OF_LARGEST_CHANGES,NUM_OF_CHANGES,ALL_CHANGES
+
+       max_number_of_changes: maxNumberChanges (int). Optional parameter.  
+
+       context: context (str). Optional parameter.
+
+       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        task = "DetectChangeByCCDC"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_change_analysis_raster = self._layer_input(input_layer=input_change_analysis_raster)
+
+        if change_type is not None:
+            change_type_allowed_values = self._tbx.choice_list.detect_change_using_change_analysis_raster["change_type"]
+            if [element.lower() for element in change_type_allowed_values].count(change_type.lower()) <= 0 :
+                raise RuntimeError('change_type can only be one of the following: '+str(change_type_allowed_values))
+            for element in change_type_allowed_values:
+                if change_type.lower() == element.lower():
+                    change_type = element
+
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.detect_change_using_change_analysis_raster(input_change_analysis_raster=input_change_analysis_raster, 
+                                                                    change_type=change_type, 
+                                                                    max_number_of_changes=max_number_of_changes, 
+                                                                    output_name=output_raster,
+                                                                    context=context,
+                                                                    gis=self._gis,
+                                                                    future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
 
 ###########################################################################
 class _GeoanalyticsTools(_AsyncService):
