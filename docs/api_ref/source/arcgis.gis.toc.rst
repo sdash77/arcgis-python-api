@@ -127,6 +127,7 @@ CertificateManager
     :undoc-members:
     :show-inheritance:
 
+
 Submodules
 --------------
 .. toctree::
@@ -136,5 +137,4 @@ Submodules
    arcgis.gis.server
    arcgis.gis.mission
    arcgis.gis.nb
-   
-   
+

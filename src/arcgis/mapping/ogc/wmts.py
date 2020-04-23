@@ -1,16 +1,38 @@
 import json
+import uuid
 from arcgis.gis import GIS
 from arcgis import env as _env
-from urllib.parse import (urlencode, urlparse, urlunparse, 
+from urllib.parse import (urlencode, urlparse, urlunparse,
                           parse_qs, ParseResult)
 import xml.etree.cElementTree as ET
 from io import BytesIO, StringIO
+from ._base import BaseOGC
 ###########################################################################
-class WMTS(object):
+class WMTSLayer(BaseOGC):
     """
     Represents a Web Map Tile Service, which is an OGC web service endpoint.
-    
-    
+
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    url                 Required string. The web address of the endpoint.
+    ---------------     --------------------------------------------------------------------
+    version             Optional String. The version number of the WMTS service.  The default is `1.0.0`
+    ---------------     --------------------------------------------------------------------
+    gis                 Optional GIS. The GIS used to reference the service by. The arcgis.env.active_gis is used if not specified.
+    ---------------     --------------------------------------------------------------------
+    copyright           Optional String. Describes limitations and usage of the data.
+    ---------------     --------------------------------------------------------------------
+    opacity             Optional Float.  This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
+    ---------------     --------------------------------------------------------------------
+    scale               Optional Tuple. The min/max scale of the layer where the positions are: (min, max) as float values.
+    ---------------     --------------------------------------------------------------------
+    title               Optional String. The title of the layer used to identify it in places such as the Legend and Layer List widgets.
+    ===============     ====================================================================
+
+
+
     """
     _gis = None
     _con = None
@@ -19,7 +41,8 @@ class WMTS(object):
     _cap_reader = None
     _properties = None
     #----------------------------------------------------------------------
-    def __init__(self, url, version='1.0.0', gis=None):
+    def __init__(self, url, version='1.0.0', gis=None, **kwargs):
+        super(WMTSLayer,self)
         if gis:
             gis = gis
         elif gis is None and _env.active_gis:
@@ -29,20 +52,23 @@ class WMTS(object):
         assert isinstance(gis, GIS)
         self._version = version
         self._con = gis._con
+        self._title = kwargs.pop("title", "WMTS Layer")
         self._gis = gis
         if url[-1] == "/":
             url = url[:-1]
         self._url = url
         self._add_token = str(self._con._auth).lower() == "builtin"
-    #----------------------------------------------------------------------
-    def __str__(self):
-        return f"<WMTS @ {self._url}>"
-    #----------------------------------------------------------------------
-    def __repr__(self):
-        return f"<WMTS @ {self._url}>"
+        self._min_scale, self._max_scale = kwargs.pop('scale', (0,0))
+        self._opacity = kwargs.pop('opacity', 0)
+        self._type = "wms"
     #----------------------------------------------------------------------
     @property
     def properties(self):
+        """
+        Returns the properties of the Layer.
+        
+        :returns: PropertyMap
+        """        
         if self._properties is None:
             from arcgis._impl.common._mixins import PropertyMap
             if self._add_token:
@@ -55,7 +81,7 @@ class WMTS(object):
                 text = self._con.get(url, {}, try_json=False, add_token=False)
             elif text.lower().find("<html>") > -1:
                 url = self._capabilities_url(service_url=self._url)
-                text = self._con.get(url, {}, try_json=False, add_token=False)                
+                text = self._con.get(url, {}, try_json=False, add_token=False)
             else:
                 raise Exception("Could not connect to the WebMap Tile Service")
             sss = BytesIO()
@@ -122,6 +148,25 @@ class WMTS(object):
         for remove in removals:
             d = d.replace(remove, "")
         return json.loads(d)
+    #----------------------------------------------------------------------
+    @property
+    def _esri_json(self):
+        """
+        represents the map widget's JSON format
+
+        :returns: dict
+        """
+        return {
+            "id" : self._id,
+            "title" : self._title or "WMTS Layer",
+            "url" : self._url,
+            "version" : self._version,
+            "minScale" : self.scale[0],
+            "maxScale" : self.scale[1],
+            "opacity" : self.opacity,
+            "type" : self._type
+        }
+    #----------------------------------------------------------------------
     @property
     def __text__(self):
         """creates the item's text properties"""
@@ -135,7 +180,7 @@ class WMTS(object):
                         .replace("{Style}", self.properties.Capabilities.Contents.Layer.Style.Identifier)
                         .replace("{TileRow}", "{row}")
                         .replace("{TileCol}", "{col}")
-                        .replace("{TileMatrixSet}", 
+                        .replace("{TileMatrixSet}",
                                  self.properties.Capabilities.Contents.TileMatrixSet.Identifier)
                         )
         fullExtent = [float(coord) for coord in \
@@ -149,7 +194,7 @@ class WMTS(object):
                 "levelValue": l.Identifier,
                 "resolution": float(l.ScaleDenominator) * 0.00028,
                 "scale": float(l.ScaleDenominator) * WMTS_DPI / 96
-            })            
+            })
         return {
             "templateUrl": url_template,
             "copyright": "",
@@ -183,4 +228,4 @@ class WMTS(object):
                 "layerIdentifier": self.properties.Capabilities.Contents.Layer.Title,
                 "tileMatrixSet": self.properties.Capabilities.Contents.TileMatrixSet.Identifier
             }
-        }   
+        }

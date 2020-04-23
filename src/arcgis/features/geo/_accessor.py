@@ -69,7 +69,7 @@ class GeoSeriesAccessor:
         :returns: float in a series
         """
         return pd.Series(self._data.area, name='area', index=self._index)
-        
+
     #----------------------------------------------------------------------
     @property
     def as_arcpy(self):
@@ -152,7 +152,7 @@ class GeoSeriesAccessor:
 
         :returns: Series of Boolean
         """
-        return pd.Series(self._data.has_z, name='has_z', index=self._index)    
+        return pd.Series(self._data.has_z, name='has_z', index=self._index)
     #----------------------------------------------------------------------
     @property
     def has_m(self):
@@ -161,7 +161,7 @@ class GeoSeriesAccessor:
 
         :returns: Series of Boolean
         """
-        return pd.Series(self._data.has_m, name='has_m', index=self._index)    
+        return pd.Series(self._data.has_m, name='has_m', index=self._index)
     #----------------------------------------------------------------------
     @property
     def is_empty(self):
@@ -320,8 +320,8 @@ class GeoSeriesAccessor:
 
         :returns: arcgis.geometry.Polyline
         """
-        return pd.Series(self._data.boundary(), 
-                         index=self._index, 
+        return pd.Series(self._data.boundary(),
+                         index=self._index,
                          name='boundary')
     #----------------------------------------------------------------------
     def buffer(self, distance):
@@ -338,8 +338,8 @@ class GeoSeriesAccessor:
 
         :returns: arcgis.geometry.Polygon
         """
-        return pd.Series(self._data.buffer(**{'distance' : distance}), 
-                         index=self._index, 
+        return pd.Series(self._data.buffer(**{'distance' : distance}),
+                         index=self._index,
                          name='buffer')
     #----------------------------------------------------------------------
     def clip(self, envelope):
@@ -356,8 +356,8 @@ class GeoSeriesAccessor:
         :returns: output geometry clipped to extent
 
         """
-        return pd.Series(self._data.clip(**{'envelope' : envelope}), 
-                         index=self._index, 
+        return pd.Series(self._data.clip(**{'envelope' : envelope}),
+                         index=self._index,
                          name='clip')
     #----------------------------------------------------------------------
     def contains(self, second_geometry, relation=None):
@@ -379,18 +379,18 @@ class GeoSeriesAccessor:
         :returns: boolean
         """
         return pd.Series(self._data.contains(**{'second_geometry' : second_geometry,
-                                                'relation' : relation}), 
-                         name='contains', 
+                                                'relation' : relation}),
+                         name='contains',
                          index=self._index)
-        
+
     #----------------------------------------------------------------------
     def convex_hull(self):
         """
         Constructs the geometry that is the minimal bounding polygon such
         that all outer angles are convex.
         """
-        return pd.Series(self._data.convex_hull(), 
-                         index=self._index, 
+        return pd.Series(self._data.convex_hull(),
+                         index=self._index,
                          name='convex_hull')
     #----------------------------------------------------------------------
     def crosses(self, second_geometry):
@@ -407,8 +407,8 @@ class GeoSeriesAccessor:
         :returns: boolean
 
         """
-        return pd.Series(self._data.crosses(**{'second_geometry' : second_geometry}), 
-                         name='crosses', 
+        return pd.Series(self._data.crosses(**{'second_geometry' : second_geometry}),
+                         name='crosses',
                          index=self._index)
     #----------------------------------------------------------------------
     def cut(self, cutter):
@@ -425,8 +425,8 @@ class GeoSeriesAccessor:
         :returns: a list of two geometries
 
         """
-        return pd.Series(self._data.cut(**{'cutter' : cutter}), 
-                         index=self._index, 
+        return pd.Series(self._data.cut(**{'cutter' : cutter}),
+                         index=self._index,
                          name='cut')
     #----------------------------------------------------------------------
     def densify(self, method, distance, deviation):
@@ -458,8 +458,8 @@ class GeoSeriesAccessor:
         """
         return pd.Series(self._data.densify(**{'method' : method,
                                                'distance' : distance,
-                                               'deviation' : deviation}), 
-                         index=self._index, 
+                                               'deviation' : deviation}),
+                         index=self._index,
                          name='densify')
     #----------------------------------------------------------------------
     def difference(self, second_geometry):
@@ -478,8 +478,8 @@ class GeoSeriesAccessor:
         :returns: arcgis.geometry.Geometry
 
         """
-        return pd.Series(self._data.difference(**{'second_geometry' : second_geometry}), 
-                         index=self._index, 
+        return pd.Series(self._data.difference(**{'second_geometry' : second_geometry}),
+                         index=self._index,
                          name='difference')
     #----------------------------------------------------------------------
     def disjoint(self, second_geometry):
@@ -515,8 +515,8 @@ class GeoSeriesAccessor:
 
         """
         res = self._data.distance_to(**{'second_geometry' : second_geometry})
-        return pd.Series(res, 
-                         index=self._index, 
+        return pd.Series(res,
+                         index=self._index,
                          name='distance_to')
     #----------------------------------------------------------------------
     def equals(self, second_geometry):
@@ -535,8 +535,8 @@ class GeoSeriesAccessor:
 
 
         """
-        return pd.Series(self._data.equals(**{'second_geometry' : second_geometry}), 
-                         name='equals', 
+        return pd.Series(self._data.equals(**{'second_geometry' : second_geometry}),
+                         name='equals',
                          index=self._index)
     #----------------------------------------------------------------------
     def generalize(self, max_offset):
@@ -554,8 +554,8 @@ class GeoSeriesAccessor:
 
         """
         res = self._data.generalize(**{'max_offset' : max_offset})
-        return pd.Series(res, 
-                         index=self._index, 
+        return pd.Series(res,
+                         index=self._index,
                          name='generalize')
     #----------------------------------------------------------------------
     def get_area(self, method, units=None):
@@ -582,8 +582,8 @@ class GeoSeriesAccessor:
         """
         res = self._data.get_area(**{'method' : method,
                                       'units' : units})
-        return pd.Series(res, 
-                         index=self._index, 
+        return pd.Series(res,
+                         index=self._index,
                          name='get_area')
     #----------------------------------------------------------------------
     def get_length(self, method, units):
@@ -609,8 +609,8 @@ class GeoSeriesAccessor:
         """
         res = self._data.get_length(**{'method' : method,
                                        'units' : units})
-        return pd.Series(res, 
-                         index=self._index, 
+        return pd.Series(res,
+                         index=self._index,
                          name='get_length')
     #----------------------------------------------------------------------
     def get_part(self, index=None):
@@ -630,9 +630,9 @@ class GeoSeriesAccessor:
 
         """
         res = self._data.get_part(**{'index' : index})
-        return pd.Series(res, 
-                         index=self._index, 
-                         name='get_part')        
+        return pd.Series(res,
+                         index=self._index,
+                         name='get_part')
     #----------------------------------------------------------------------
     def intersect(self, second_geometry, dimension=1):
         """
@@ -660,8 +660,8 @@ class GeoSeriesAccessor:
 
         """
         return pd.Series(self._data.intersect(**{'second_geometry' : second_geometry,
-                                                'dimension' : dimension}), 
-                         name='intersect', 
+                                                'dimension' : dimension}),
+                         name='intersect',
                          index=self._index)
     #----------------------------------------------------------------------
     def measure_on_line(self, second_geometry, as_percentage=False):
@@ -682,8 +682,8 @@ class GeoSeriesAccessor:
         """
         res = self._data.measure_on_line(**{'second_geometry' : second_geometry,
                                             'as_percentage' : as_percentage})
-        return pd.Series(res, 
-                         index=self._index, 
+        return pd.Series(res,
+                         index=self._index,
                          name='measure_on_line')
     #----------------------------------------------------------------------
     def overlaps(self, second_geometry):
@@ -701,8 +701,8 @@ class GeoSeriesAccessor:
         :return: boolean
 
         """
-        return pd.Series(self._data.overlaps(**{'second_geometry' : second_geometry}), 
-                         name='overlaps', 
+        return pd.Series(self._data.overlaps(**{'second_geometry' : second_geometry}),
+                         name='overlaps',
                          index=self._index)
     #----------------------------------------------------------------------
     def point_from_angle_and_distance(self, angle, distance, method='GEODESCIC'):
@@ -731,8 +731,8 @@ class GeoSeriesAccessor:
         res = self._data.point_from_angle_and_distance(**{'angle' : angle,
                                                            'distance' : distance,
                                                            'method' : method})
-        return pd.Series(res, 
-                         index=self._index, 
+        return pd.Series(res,
+                         index=self._index,
                          name='point_from_angle_and_distance')
     #----------------------------------------------------------------------
     def position_along_line(self, value, use_percentage=False):
@@ -757,8 +757,8 @@ class GeoSeriesAccessor:
         """
         res = self._data.position_along_line(**{'value' : value,
                                                 'use_percentage' : use_percentage})
-        return pd.Series(res, 
-                         index=self._index, 
+        return pd.Series(res,
+                         index=self._index,
                          name='position_along_line')
     #----------------------------------------------------------------------
     def project_as(self, spatial_reference, transformation_name=None):
@@ -778,8 +778,8 @@ class GeoSeriesAccessor:
         """
         res = self._data.project_as(**{'spatial_reference' : spatial_reference,
                                        'transformation_name' : transformation_name})
-        return pd.Series(res, 
-                         index=self._index, 
+        return pd.Series(res,
+                         index=self._index,
                          name='project_as')
     #----------------------------------------------------------------------
     def query_point_and_distance(self, second_geometry,
@@ -804,8 +804,8 @@ class GeoSeriesAccessor:
         """
         res = self._data.query_point_and_distance(**{'second_geometry' : second_geometry,
                                                       'use_percentage' : use_percentage})
-        return pd.Series(res, 
-                         index=self._index, 
+        return pd.Series(res,
+                         index=self._index,
                          name='query_point_and_distance')
     #----------------------------------------------------------------------
     def segment_along_line(self, start_measure,
@@ -836,8 +836,8 @@ class GeoSeriesAccessor:
         res = self._data.segment_along_line(**{'start_measure' : start_measure,
                                                'end_measure' : end_measure,
                                                'use_percentage' : use_percentage})
-        return pd.Series(res, 
-                         index=self._index, 
+        return pd.Series(res,
+                         index=self._index,
                          name='segment_along_line')
     #----------------------------------------------------------------------
     def snap_to_line(self, second_geometry):
@@ -854,8 +854,8 @@ class GeoSeriesAccessor:
 
         """
         res = self._data.snap_to_line(**{'second_geometry' : second_geometry})
-        return pd.Series(res, 
-                         index=self._index, 
+        return pd.Series(res,
+                         index=self._index,
                          name='snap_to_line')
     #----------------------------------------------------------------------
     def symmetric_difference (self, second_geometry):
@@ -874,8 +874,8 @@ class GeoSeriesAccessor:
         :return: arcgis.gis.Geometry
         """
         res = self._data.symmetric_difference(**{'second_geometry' : second_geometry})
-        return pd.Series(res, 
-                         index=self._index, 
+        return pd.Series(res,
+                         index=self._index,
                          name='symmetric_difference')
     #----------------------------------------------------------------------
     def touches(self, second_geometry):
@@ -891,8 +891,8 @@ class GeoSeriesAccessor:
 
         :return: boolean
         """
-        return pd.Series(self._data.touches(**{'second_geometry' : second_geometry}), 
-                         name='touches', 
+        return pd.Series(self._data.touches(**{'second_geometry' : second_geometry}),
+                         name='touches',
                          index=self._index)
     #----------------------------------------------------------------------
     def union(self, second_geometry):
@@ -910,8 +910,8 @@ class GeoSeriesAccessor:
         :return: arcgis.gis.Geometry
         """
         res = self._data.union(**{'second_geometry' : second_geometry})
-        return pd.Series(res, 
-                         index=self._index, 
+        return pd.Series(res,
+                         index=self._index,
                          name='union')
     #----------------------------------------------------------------------
     def within(self, second_geometry, relation=None):
@@ -935,8 +935,8 @@ class GeoSeriesAccessor:
 
         """
         return pd.Series(self._data.within(**{'second_geometry' : second_geometry,
-                                                'relation' : relation}), 
-                         name='within', 
+                                                'relation' : relation}),
+                         name='within',
                          index=self._index)
 
 
@@ -975,42 +975,42 @@ class GeoAccessor(object):
     @property
     def _meta(self):
         """
-        Users have the ability to store the source reference back to the 
-        dataframe.  This will allow the user to compare SeDF with source 
+        Users have the ability to store the source reference back to the
+        dataframe.  This will allow the user to compare SeDF with source
         data such as FeatureLayers and Feature Classes.
-        
+
         ===============   =======================================================
         **Parameter**     **Description**
         ---------------   -------------------------------------------------------
         source            String/Object Reference to the source of the dataframe.
         ===============   =======================================================
-        
+
         :returns: object/string
-        
+
         """
         from arcgis.features.geo._tools import _metadata
         if 'metadata' in self._data.attrs and self._data.attrs['metadata'] and \
            isinstance(self._data.attrs['metadata'], _metadata._Metadata):
-            return self._data.attrs['metadata']     
+            return self._data.attrs['metadata']
         else:
             self._meta = _metadata._Metadata()
-            return self._meta   
+            return self._meta
     #----------------------------------------------------------------------
     @_meta.setter
     def _meta(self, source):
         """
-        Users have the ability to store the source reference back to the 
-        dataframe.  This will allow the user to compare SeDF with source 
+        Users have the ability to store the source reference back to the
+        dataframe.  This will allow the user to compare SeDF with source
         data such as FeatureLayers and Feature Classes.
-        
+
         ===============   =======================================================
         **Parameter**     **Description**
         ---------------   -------------------------------------------------------
         source            String/Object Reference to the source of the dataframe.
         ===============   =======================================================
-        
+
         :returns: object/string
-        
+
         """
         from ._tools import _metadata
         if not 'metadata' in self._data.attrs and \
@@ -1027,7 +1027,7 @@ class GeoAccessor(object):
     def renderer(self):
         """
         Returns the renderer for the SeDF
-        
+
         :returns: InsensitiveDict
         """
         if self._meta.renderer is None:
@@ -1038,10 +1038,10 @@ class GeoAccessor(object):
     def renderer(self, renderer):
         """
         Define the renderer for the SeDF.  If none is given, then the value is reset.
-        
+
         :returns: InsensitiveDict
         """
-        
+
         if renderer is None:
             renderer = self._build_renderer()
         if isinstance(renderer, dict):
@@ -1065,8 +1065,8 @@ class GeoAccessor(object):
             'label' : "",
             'description' : "",
             'type' : 'simple',
-            'symbol' : None        
-        }        
+            'symbol' : None
+        }
         if gt.lower() in ['point', 'multipoint']:
             base_renderer['symbol'] = {"color":[0,128,0,128],
                          "size":18,"angle":0,
@@ -1075,8 +1075,8 @@ class GeoAccessor(object):
                          "style":"esriSMSCircle",
                          "outline":{"color":[0,128,0,255],"width":1,
                                     "type":"esriSLS","style":"esriSLSSolid"}
-                         }            
-            
+                         }
+
         elif gt.lower() =='polygon':
             base_renderer['symbol'] = {
                         "type": "esriSLS",
@@ -2042,7 +2042,7 @@ class GeoAccessor(object):
     def to_featureclass(self, location, overwrite=True, has_z=None, has_m=None):
         """
         Exports a geo enabled dataframe to a feature class.
-        
+
         ===========================     ====================================================================
         **Argument**                    **Description**
         ---------------------------     --------------------------------------------------------------------
@@ -2054,13 +2054,13 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         has_z                           Optional Boolean.  If True, the dataset will be forced to have Z
                                         based geometries.  If a geometry is missing a Z value when true, a
-                                        RuntimeError will be raised.  When False, the API will not use the 
-                                        Z value.  
+                                        RuntimeError will be raised.  When False, the API will not use the
+                                        Z value.
         ---------------------------     --------------------------------------------------------------------
         has_m                           Optional Boolean.  If True, the dataset will be forced to have M
                                         based geometries.  If a geometry is missing a M value when true, a
-                                        RuntimeError will be raised. When False, the API will not use the 
-                                        M value.  
+                                        RuntimeError will be raised. When False, the API will not use the
+                                        M value.
         ===========================     ====================================================================
 
         :returns: String
@@ -2068,8 +2068,8 @@ class GeoAccessor(object):
         """
         return to_featureclass(self,
                                location=location,
-                               overwrite=overwrite, 
-                               has_z=has_z, 
+                               overwrite=overwrite,
+                               has_z=has_z,
                                has_m=has_m)
     #----------------------------------------------------------------------
     def to_table(self, location, overwrite=True):
@@ -2117,7 +2117,7 @@ class GeoAccessor(object):
         tags                            Optional list of strings. A comma seperated list of descriptive
                                         words for the service.
         ---------------------------     --------------------------------------------------------------------
-        folder                          Optional string. Name of the folder where the featurelayer item 
+        folder                          Optional string. Name of the folder where the featurelayer item
                                         and imported data would be stored.
         ===========================     ====================================================================
 
@@ -2434,7 +2434,7 @@ class GeoAccessor(object):
         import arcgis
         cols_norm = [col for col in self._data.columns]
         cols_lower = [col.lower() for col in self._data.columns]
-        
+
         fields = []
         features = []
         date_fields = []
@@ -2460,7 +2460,7 @@ class GeoAccessor(object):
         # Ensure all number values are 0 so errors do not occur.
         for c in self._data.select_dtypes(include='number').columns.tolist():
             self._data[c].fillna(0, inplace=True)
-        
+
         if 'objectid' in cols_lower:
             fs['objectIdFieldName'] = cols_norm[cols_lower.index('objectid')]
             fs['displayFieldName'] = cols_norm[cols_lower.index('objectid')]
@@ -2534,7 +2534,7 @@ class GeoAccessor(object):
             elif isinstance(col_val, (datetime.datetime,
                                       pd.Timestamp,
                                       np.datetime64,
-                                      pd.datetime)):
+                                      )):#pd.datetime
                 fields.append({
                     "name" : col,
                     "type" : "esriFieldTypeDate",
@@ -2993,7 +2993,7 @@ class GeoAccessor(object):
     def has_z(self):
         """
         Returns a boolean that determines if the datasets have `Z` values
-        
+
         :returns: Boolean
         """
         return self._data[self.name].geom.has_z.all()
@@ -3002,10 +3002,10 @@ class GeoAccessor(object):
     def has_m(self):
         """
         Returns a boolean that determines if the datasets have `Z` values
-        
+
         :returns: Boolean
         """
-        return self._data[self.name].geom.has_m.all() 
+        return self._data[self.name].geom.has_m.all()
     #----------------------------------------------------------------------
     @property
     def bbox(self):
@@ -3027,7 +3027,7 @@ class GeoAccessor(object):
             xmax += .001
         if ymin == ymax:
             ymin -= .001
-            ymax += .001            
+            ymax += .001
         return Geometry(
             {'rings' : [[[xmin,ymin], [xmin, ymax],
                          [xmax, ymax], [xmax, ymin],

@@ -32,46 +32,46 @@ def create_buffers(input_layer,
 
     .. image:: _static/images/create_buffers_geo/create_buffers_geo.png
 
-    Buffers are typically used to create areas that can be further analyzed 
-    using other tools such as ``aggregate_points``. For example, ask the question, 
-    "What buildings are within one mile of the school?" The answer can be found 
-    by creating a one-mile buffer around the school and overlaying the buffer 
-    with the layer containing building footprints. The end result is a layer 
+    Buffers are typically used to create areas that can be further analyzed
+    using other tools such as ``aggregate_points``. For example, ask the question,
+    "What buildings are within one mile of the school?" The answer can be found
+    by creating a one-mile buffer around the school and overlaying the buffer
+    with the layer containing building footprints. The end result is a layer
     of those buildings within one mile of the school.
 
     ================================================    =========================================================
     **Parameter**                                       **Description**
     ------------------------------------------------    ---------------------------------------------------------
-    input_layer                                         Required layer. The point, line, or polygon features to be buffered. 
+    input_layer                                         Required layer. The point, line, or polygon features to be buffered.
                                                         See :ref:`Feature Input<gaxFeatureInput>`.
     ------------------------------------------------    ---------------------------------------------------------
-    distance (Required if field is not provided)        Optional float. A float value used to buffer the input features. 
-                                                        You must supply a value for either the distance or field parameter. 
-                                                        You can only enter a single distance value. The units of the 
+    distance (Required if field is not provided)        Optional float. A float value used to buffer the input features.
+                                                        You must supply a value for either the distance or field parameter.
+                                                        You can only enter a single distance value. The units of the
                                                         distance value are supplied by the ``distance_unit`` parameter.
 
                                                         The default value is 1.
     ------------------------------------------------    ---------------------------------------------------------
-    distance_unit (Required if distance is used)        Optional string. The linear unit to be used with the value specified in distance.  
+    distance_unit (Required if distance is used)        Optional string. The linear unit to be used with the value specified in distance.
 
-                                                        Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']    
+                                                        Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
 
                                                         The default value is "Miles"
     ------------------------------------------------    ---------------------------------------------------------
     field (Required if distance not provided)           Optional string. A field on the ``input_layer`` containing a buffer distance or a field expression.
-                                                        A buffer expression must begin with an equal sign (=). To learn more about buffer expressions 
+                                                        A buffer expression must begin with an equal sign (=). To learn more about buffer expressions
                                                         see: `Buffer Expressions <https://developers.arcgis.com/rest/services-reference/bufferexpressions.htm>`_
     ------------------------------------------------    ---------------------------------------------------------
     method                                              Optional string. The method used to apply the buffer with. There are two methods to choose from:
-    
+
                                                         Choice list:['Geodesic', 'Planar']
 
                                                         * ``Planar`` - This method applies a Euclidean buffers and is appropriate for local analysis on projected data. This is the default.
                                                         * ``Geodesic`` - This method is appropriate for large areas and any geographic coordinate system.
     ------------------------------------------------    ---------------------------------------------------------
     dissolve_option                                     Optional string. Determines how output polygon attributes are processed.
-    
-                                                        Choice list:['All', 'List', 'None']    
+
+                                                        Choice list:['All', 'List', 'None']
 
                                                         +----------------------------------+---------------------------------------------------------------------------------------------------+
                                                         |Value                             | Description                                                                                       |
@@ -86,15 +86,15 @@ def create_buffers(input_layer,
                                                         | None - No features are dissolved.| There are no additional dissolve options.                                                         |
                                                         +----------------------------------+---------------------------------------------------------------------------------------------------+
     ------------------------------------------------    ---------------------------------------------------------
-    dissolve_field                                      Specifies the fields to dissolve on. Multiple fields may be provided.
+    dissolve_fields                                     Specifies the fields to dissolve on. Multiple fields may be provided.
     ------------------------------------------------    ---------------------------------------------------------
-    summary_fields                                      Optional string. A list of field names and statistical summary types 
-                                                        that you want to calculate for resulting polygons. Summary statistics 
-                                                        are only available if dissolveOption = List or All. By default, all 
+    summary_fields                                      Optional string. A list of field names and statistical summary types
+                                                        that you want to calculate for resulting polygons. Summary statistics
+                                                        are only available if dissolveOption = List or All. By default, all
                                                         statistics are returned.
 
                                                         Example: [{"statisticType": "statistic type", "onStatisticField": "field name"}, ..}]
-            
+
                                                         fieldName is the name of the fields in the input point layer.
 
                                                         statisticType is one of the following for numeric fields:
@@ -114,12 +114,12 @@ def create_buffers(input_layer,
                                                             * ``Any`` - Returns a sample string of a point in each polygon.
 
     ------------------------------------------------    ---------------------------------------------------------
-    multipart                                           Optional boolean. Determines if output features are multipart or single part. 
+    multipart                                           Optional boolean. Determines if output features are multipart or single part.
                                                         This option is only available if a ``dissolve_option`` is applied.
     ------------------------------------------------    ---------------------------------------------------------
     output_name                                         Optional string. The task will create a feature service of the results. You define the name of the service.
     ------------------------------------------------    ---------------------------------------------------------
-    gis                                                 Optional, the GIS on which this tool runs. If not specified, the active GIS is used.  
+    gis                                                 Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------------------    ---------------------------------------------------------
     context                                             Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
@@ -134,7 +134,7 @@ def create_buffers(input_layer,
     ================================================    =========================================================
 
     :returns: Output Features as a feature layer collection item
-    
+
     .. code-block:: python
 
             # Usage Example: To create buffer based on distance field.
@@ -143,7 +143,7 @@ def create_buffers(input_layer,
                                     field='dist',
                                     method='Geodesic',
                                     dissolve_option='All',
-                                    dissolve_fields='Date')    
+                                    dissolve_fields='Date')
     """
     kwargs = locals()
 
@@ -182,7 +182,7 @@ def create_buffers(input_layer,
         params["context"] = context
     else:
         _set_context(params)
-        
+
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
         "distance": (float, "distance"),
