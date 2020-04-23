@@ -94,5 +94,5 @@ Submodules
 .. toctree::
    :maxdepth: 3
 
-   arcgis.gis.ogc
+   arcgis.mapping.ogc
    
