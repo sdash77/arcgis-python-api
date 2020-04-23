@@ -19,9 +19,7 @@ class GeoRSSLayer(BaseOGC):
     ===============     ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
-    url                 Required string. The administration URL for the ArcGIS Server.
-    ---------------     --------------------------------------------------------------------
-    gis                 Optional GIS. The `GIS` connection object
+    url                 Required string. The web address of the GeoRSS sevice.
     ---------------     --------------------------------------------------------------------
     copyright           Optional String. Describes limitations and usage of the data.
     ---------------     --------------------------------------------------------------------

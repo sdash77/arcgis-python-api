@@ -19,7 +19,7 @@ class CSVLayer(BaseOpenData):
     ---------------     --------------------------------------------------------------------
     url_or_item         Required String or Item. The web address or `Item` to the CSV resource.
     ---------------     --------------------------------------------------------------------
-    gis                 Optional GIS. The `GIS` connection object
+    gis                 Optional GIS. The GIS used to reference the service. The arcgis.env.active_gis is used if not specified.
     ---------------     --------------------------------------------------------------------
     copyright           Optional String. Describes limitations and usage of the data.
     ---------------     --------------------------------------------------------------------
