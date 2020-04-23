@@ -1,6 +1,7 @@
 OGC Layers
 ===================
 
+.. automodule:: arcgis.mapping.ogc
 
 CSVLayer
 ---------------------------
