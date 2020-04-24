@@ -85,6 +85,13 @@ GroupManager
     :undoc-members:
     :show-inheritance:
 
+GroupMigrationManager
+-----------------------
+.. autoclass:: arcgis.gis.GroupMigrationManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 DatastoreManager
 ---------------------------
 .. autoclass:: arcgis.gis.DatastoreManager
