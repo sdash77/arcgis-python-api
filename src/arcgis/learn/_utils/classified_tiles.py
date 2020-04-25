@@ -105,7 +105,7 @@ def show_batch_classified_tiles(self, rows=3, alpha=0.7, **kwargs):
                 axi  = axs[r][c]
             axi.axis('off')
             if idx < symbology_x_batch.shape[0]:
-                axi.imshow(symbology_x_batch[idx])
+                axi.imshow(symbology_x_batch[idx].cpu().numpy())
                 y_rgb = color_array[y_batch[idx][0]].cpu().numpy()
                 axi.imshow(y_rgb, alpha=alpha)
             idx+=1

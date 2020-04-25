@@ -79,11 +79,7 @@ def do_fastai_imports():
         pass
 
 def fastai_installation_command():
-    installation_steps = "Install them using 'conda install -c esri -c fastai -c pytorch arcgis pillow scikit-image fastai=1.0.60 pytorch=1.4.0'"
-    if sys.platform == 'win32':
-        installation_steps = "Install them using 'conda install -c esri arcgis fastai pillow scikit-image'"
-    elif sys.platform in ['linux', 'darwin']:
-        pass
+    installation_steps = "Install them using 'conda install -c esri arcgis=1.8.1 pillow scikit-image'\n'conda install -c fastai -c pytorch fastai pytorch=1.4.0 torchvision=0.5.0 tensorflow-gpu=2.1.0'\n'conda install gdal=2.3.3'"
             
     return installation_steps 
 
