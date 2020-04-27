@@ -738,12 +738,18 @@ class Connection(object):
         ---------------------------   -----------------------------------------------------
         ssl                           optional boolean. If true all calls are forced to be
                                       https.
+        ---------------------------   -----------------------------------------------------
+        post_json                     optional bool. If True, the data is pushed in the request's json parameter.  This is an edge case for Workflow Manager. The default is `False`.
+        ---------------------------   -----------------------------------------------------
+        json_encode                   optional Bool. If False, the key/value parameters will not be JSON encoded.
         ===========================   =====================================================
 
         :returns: dict or string depending on the response
 
         """
         token = kwargs.pop('token', _DEFAULT_TOKEN)
+        post_json = kwargs.pop("post_json", False)
+        json_encode = kwargs.pop("json_encode", True)
         out_path = kwargs.pop('out_path', None)
         file_name = kwargs.pop('file_name', None)
         token_as_header = kwargs.pop('token_as_header', True)
@@ -796,7 +802,29 @@ class Connection(object):
 
             params.update(fields)
             del files, fields
-        resp = self._session.put(url=url, data=params)
+        if self._cert_file:
+            cert = (self._cert_file, self._key_file)
+        else:
+            cert = None   
+        if json_encode:
+            for k,v in params.items():
+                if isinstance(v, (dict, list, tuple, bool)):
+                    params[k] = json.dumps(v)
+                elif isinstance(v, PropertyMap):
+                    params[k] = json.dumps(dict(v))
+                elif isinstance(v, InsensitiveDict):
+                    params[k] = v.json
+        if post_json:  # edge case workflow
+            resp = self._session.put(url=url,
+                                      json=params,
+                                      cert=cert,
+                                      files=files)
+        else:
+            resp = self._session.put(url=url,
+                                     data=params,
+                                     cert=cert,
+                                     files=files)        
+        #
         return self._handle_response(resp=resp,
                                          out_path=out_path,
                                          file_name=file_name,
