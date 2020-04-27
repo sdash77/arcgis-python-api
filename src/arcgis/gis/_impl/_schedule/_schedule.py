@@ -133,7 +133,7 @@ class Task(BaseTask):
         self._gis = gis
     #----------------------------------------------------------------------
     def __str__(self):
-        return f"<{self.__class__.__name__ } @ {self.properties.id}}>"
+        return f"<Task @ {self.properties.id}>"
     #----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
@@ -296,8 +296,10 @@ class Task(BaseTask):
 
         if isinstance(item, Item):
             params['itemId'] = item.itemid
-        else:
+        elif item:
             params['itemId'] = item
+        else:
+            params['itemId'] = self.properties.itemId
 
         if start_date:
             params['startDate'] = local_time_to_online(dt=start_date)
@@ -367,6 +369,54 @@ class UserTasks():
     #----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
+    #----------------------------------------------------------------------
+    def search(self, item:Item=None, active:bool=None, types:str=None):
+        """
+        This property allows users to search for tasks based on criteria.
+
+        ================  ===============================================================================
+        **Argument**      **Description**
+        ----------------  -------------------------------------------------------------------------------
+        item              Optional Item. The item to query tasks about.
+        ----------------  -------------------------------------------------------------------------------
+        active            Optional Bool. Queries tasks based on active status.
+        ----------------  -------------------------------------------------------------------------------
+        types             Optional String. The type of notebook execution for the item.  This can be
+                          `ExecuteNotebook`, or `UpdateInsightsWorkbook`.
+        ================  ===============================================================================
+
+        :returns: List of Tasks
+        
+        """        
+        if item is None and \
+           active is None and \
+           types is None:
+            return self.all
+        else:
+            _tasks = []
+            url = f"{self._gis._portal.resturl}community/users/{self._user.username}/tasks"
+            params = {
+                'num' : 100,
+                'start' : 1,
+            }
+            if item:
+                params['itemId'] = item.itemid
+            if not active is None:
+                params['active'] = active
+            if types:
+                params['types'] = types
+            res = self._gis._con.get(url, params)
+            for t in res['tasks']:
+                url = f"{self._url}/{t['id']}"
+                _tasks.append(Task(url=url, gis=self._gis))
+            while res['nextStart'] != -1:
+                params['start'] = res['nextStart']
+                res = self._gis._con.get(url, params)
+                for t in res['tasks']:
+                    url = f"{self._url}/{t['id']}"
+                    _tasks.append(Task(url=url, gis=self._gis))
+            return _tasks
+        return []
     #----------------------------------------------------------------------
     def create(self,
                item:Item,

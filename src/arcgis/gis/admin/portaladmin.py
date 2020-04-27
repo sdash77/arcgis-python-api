@@ -2,7 +2,7 @@
 Entry point to working with local enterprise GIS functions
 """
 from ...gis._impl._con import Connection
-from ...gis import GIS
+from ...gis import GIS, Item, User
 from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
@@ -151,23 +151,46 @@ class PortalAdminManager(BasePortalAdmin):
             self._servers = ServerManager(gis=self._gis)
         return self._servers
     #----------------------------------------------------------------------
-    @property
-    def scheduled_tasks(self):
+    def scheduled_tasks(self, item:Item=None, active:bool=None, user:User=None, types:str=None):
         """
         This property allows `org_admins` to be able to see all scheduled tasks on the enterprise
 
+        ================  ===============================================================================
+        **Argument**      **Description**
+        ----------------  -------------------------------------------------------------------------------
+        item              Optional Item. The item to query tasks about.
+        ----------------  -------------------------------------------------------------------------------
+        active            Optional Bool. Queries tasks based on active status.
+        ----------------  -------------------------------------------------------------------------------
+        user              Optional User. Search for tasks for a single user.
+        ----------------  -------------------------------------------------------------------------------
+        types             Optional String. The type of notebook execution for the item.  This can be
+                          `ExecuteNotebook`, or `UpdateInsightsWorkbook`.
+        ================  ===============================================================================
+
+
         :returns: List of Tasks
+        
         """
         _tasks = []
         num = 100
         url = f"{self._gis._portal.resturl}portals/self/allScheduledTasks"
-        res = self._con.get(url, {'f' : 'json', 'start' : 1, 'num' : num })
+        params = {'f' : 'json', 'start' : 1, 'num' : num }
+        if item:
+            params['itemId'] = item.itemid
+        if not active is None:
+            params['active'] = active
+        if user:
+            params['userFilter'] = user.username
+        if types:
+            params['types'] = types
+        res = self._con.get(url, params)
         start = res['nextStart']
         _tasks.extend(res['tasks'])
         while start != -1:
-            res = self._con.get(url, {'f' : 'json',
-                                      'start' : start,
-                                      'num' : num})
+            params['start'] = start
+            params['num'] = num
+            res = self._con.get(url, params)
             if len(res['tasks']) == 0:
                 break
             _tasks.extend(res['tasks'])

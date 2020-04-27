@@ -2,7 +2,7 @@
 This is 10.8.1+ Functionality Tests for Notebook Server
 """
 import sys
-#sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_3584\src")
+sys.path.insert(0, r"c:\SVN\achapkowski_geosaurus_fork_issue_3584_redo\src")
 import unittest
 import os, json
 import arcgis
@@ -23,15 +23,23 @@ except:
                  "Cannot connect to Testing Server and/or Portal")
 class TestGISAdminAllTasks1081(unittest.TestCase):
     #----------------------------------------------------------------------
+    def test_user_search(self):    
+        tasks = gis.users.me.tasks
+        assert isinstance(tasks, UserTasks)
+        assert tasks.search(types="ExecuteNotebook,UpdateInsightsWorkbook")    
+    #----------------------------------------------------------------------
     def test_list_all_tasks(self):
         """tests listing all the tasks"""
         st = gis.admin.scheduled_tasks
-        assert st
-        assert isinstance(st, list)
+        assert st()
+        assert isinstance(st(), list)
+        assert isinstance(st(user=gis.users.me), list)
+        assert isinstance(st(active=False), list)
+        assert isinstance(st(active=True), list)
+        assert isinstance(st(types="ExecuteNotebook,UpdateInsightsWorkbook",), list)
 ###########################################################################
 @unittest.skipIf(SKIP_TESTS == True,
                  "Cannot connect to Testing Server and/or Portal")
-#@unittest.skip(reason='said so')
 class TestUserScheduleTasks1081(unittest.TestCase):
     #----------------------------------------------------------------------
     def test_task_properties(self):
@@ -68,14 +76,17 @@ class TestUserScheduleTasks1081(unittest.TestCase):
         user = gis.users.me
         st = user.tasks
         isinstance(st, UserTasks)
-        item = gis.content.get("de1ac4a070e74bd7ad61e0cb3e1174b1")
-        itemid = item.itemid
-        t1 = st.create(title='t1', task_type="ExecuteNotebook", item=item, cron='* * * * ?')
-        assert isinstance(t1, Task)
-        assert t1.delete()
-        t2 = st.create(title='t2', task_type="ExecuteNotebook", item=itemid, cron='0 1 2 12 ?')
-        assert isinstance(t2, Task)
-        assert t2.delete()
+        items = gis.content.search("owner: %s" % gis.users.me.username, item_type='Notebook')
+        if len(items) > 0:
+            
+            item = items[0]
+            itemid = item.itemid
+            t1 = st.create(title='t1', task_type="ExecuteNotebook", item=item, cron='* * * * ?')
+            assert isinstance(t1, Task)
+            assert t1.delete()
+            t2 = st.create(title='t2', task_type="ExecuteNotebook", item=itemid, cron='0 1 2 12 ?')
+            assert isinstance(t2, Task)
+            assert t2.delete()
     #----------------------------------------------------------------------
     def test_isinstance(self):
         """tests the isinstance checks for the scheduling"""
