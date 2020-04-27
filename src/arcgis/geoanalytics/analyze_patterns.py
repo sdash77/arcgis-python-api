@@ -394,7 +394,7 @@ def gwr(input_layer,
 
                                                                                 Values: `Meters, Kilometers, Feet, Miles, NauticalMiles, or Yards`
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    number_of_neighbors                                                         Optional Integer. The closest number of neighbors (up to 1000) to consider for each feature. The number should be an integer between 2 and 1000.
+    number_of_neighbors                                                         Optional Integer. The closest number of neighbors to consider for each feature. The number should be an integer greater than or equal to `2`.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     local_weighting_scheme                                                      Optional String. Specifies the kernel type that will be used to provide the spatial weighting in the model. The kernel defines how each feature is related to other features within its neighborhood.
 
