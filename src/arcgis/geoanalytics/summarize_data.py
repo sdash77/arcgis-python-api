@@ -180,6 +180,8 @@ def build_multivariable_grid(input_layers,
                                                                            #. Processing spatial reference (``processSR``) The features will be projected into this coordinate system for analysis.
                                                                            #. Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                                                            #. Data store (``dataStore``) Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    future                                                                 optional Boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
     ===================================================================    =============================================================================
 
     :returns: boolean
@@ -476,6 +478,9 @@ def aggregate_points(point_layer,
     ]
 
     try:
+        if future:
+            gpjob = _execute_gp_tool(gis, "AggregatePoints", params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)        
         _execute_gp_tool(gis, "AggregatePoints", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
@@ -984,6 +989,8 @@ def reconstruct_tracks(input_layer,
                                                                                                 * ``Range`` - Finds the difference between the Min and Max values.
                                                                                                 * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
                                                                                                 * ``Var`` - Finds the variance of all the points in each polygon.
+                                                                                                * ``First`` - Returns a the first value of a specified field in the summarized track. For string and numeric fields. This parameters was introduced at ArcGIS Enterprise 10.8.1.
+                                                                                                * ``Last`` - Returns a the last value of a specified field in the summarized track. For string and numeric fields. This parameters was introduced at ArcGIS Enterprise 10.8.1.
 
                                                                                             statisticType is one of the following for string fields:
 
