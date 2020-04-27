@@ -152,6 +152,31 @@ class Task(BaseTask):
             return res['success']
         return res
     #----------------------------------------------------------------------
+    def status(self, enabled:bool) -> bool:
+        """
+        Enables/Disables the Current Task.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        enabled                Required Boolean.  If True, the status of the task is set to active. If False, the task is set active to False.
+        ==================     ====================================================================
+        
+        :returns: Bool
+        
+        """
+        params = {'f' : 'json'}
+        if enabled == True:
+            url = f"{self._url}/enable"
+        elif enabled == False:
+            url = f"{self._url}/disable"
+        else:
+            raise ValueError("`enabled` must be a boolean value")
+        res = self._gis.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
     def start(self) -> bool:
         """
         Starts a task if it is actively running.
@@ -180,10 +205,39 @@ class Task(BaseTask):
                title:str=None,
                parameters:dict=None,
                task_url:str=None,
-               is_active:bool=None) -> bool:
+               is_active:bool=None,
+               reset:bool=None) -> bool:
         """
         Updates the current Task
 
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item                   Optional Item. The item to update the schedule for.
+        ------------------     --------------------------------------------------------------------
+        cron                   Optional String. The executution time syntax. 
+        ------------------     --------------------------------------------------------------------
+        task_type              Optional String. The type of task. Two valid options are `ExecuteNotebook` or `UpdateInsightsWorkbook`.
+        ------------------     --------------------------------------------------------------------
+        occurences             Optional Integer. The maximum number of occurrences this task should execute.
+        ------------------     --------------------------------------------------------------------
+        start_date             Optional Datetime. The date/time when the task will begin executing.
+        ------------------     --------------------------------------------------------------------
+        end_date               Optional Datetime.  The date/time when the task will stop executing.
+        ------------------     --------------------------------------------------------------------
+        title                  Optional String. The name of the task.
+        ------------------     --------------------------------------------------------------------
+        parameters             Optional Dict.  Additional key/value pairs for execution of notebooks.
+        ------------------     --------------------------------------------------------------------
+        task_url               Optional String. A response URL with a set of results.
+        ------------------     --------------------------------------------------------------------
+        is_active              Optional Bool. Determines if the tasks is currently running.
+        ------------------     --------------------------------------------------------------------
+        reset                  Optional Bool. This will reset internal counter and reset the task's execution history.
+        ==================     ====================================================================
+
+        :returns: bool or Dict on error.
+        
         """
         SPECIALS = {"reboot":   '@reboot',
                     "hourly":   '0 * * * *',
@@ -206,8 +260,13 @@ class Task(BaseTask):
             "dayOfWeek": None,
             "maxOccurrences": occurences or self.properties.maxOccurrences,
             "isActive" : None,
+            "resetTask" : None,
             "f": "json"
         }
+        if not reset is None:
+            params['resetTask'] = reset   
+        else:
+            params.pop('resetTask')
         if is_active is None:
             params.pop('isActive', None)
         else:
