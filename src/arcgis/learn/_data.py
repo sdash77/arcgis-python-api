@@ -80,7 +80,7 @@ imagery_type_lib = {
 }
 
 def get_installation_command():
-    installation_steps = "Install them using 'conda install -c fastai -c pytorch scikit-image fastai=1.0.60 pytorch=1.4.0 \nconda install pillow=6.1.0 --no-deps'"
+    installation_steps = "Install them using 'conda install -c esri arcgis=1.8.1 pillow scikit-image'\n'conda install -c fastai -c pytorch fastai pytorch=1.4.0 torchvision=0.5.0 tensorflow-gpu=2.1.0'\n'conda install gdal=2.3.3'"
 
     return installation_steps 
 

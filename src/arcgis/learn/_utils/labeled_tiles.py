@@ -77,15 +77,11 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs): # parameters adjusted in k
     for r in range(nrows):
         for c in range(ncols):
             if idx < symbology_x_batch.shape[0]:
-                axi  = ax[r][c]
-                axi.imshow(symbology_x_batch[idx])
+                axi = ax[r][c]
+                axi.imshow(symbology_x_batch[idx].cpu().numpy())
                 title = f"{self.classes[y_batch[idx].item()]}"
                 axi.set_title(title)
                 axi.axis('off')
             else:
                 ax[r][c].axis('off')
-            idx+=1
-
-
-
-            
+            idx += 1

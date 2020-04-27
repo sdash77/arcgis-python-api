@@ -342,10 +342,10 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
         else:
             axi  = axs[r]
         if r < symbology_x_batch.shape[0]:
-            axi[0].imshow(symbology_x_batch[r])
+            axi[0].imshow(symbology_x_batch[r].cpu().numpy())
             y_rgb = color_array[y_batch[r][0]]
             axi[0].imshow(y_rgb, alpha=alpha)
-            axi[1].imshow(symbology_x_batch[r])
+            axi[1].imshow(symbology_x_batch[r].cpu().numpy())
             p_rgb = color_array[predictions[r]]
             axi[1].imshow(p_rgb, alpha=alpha)
         axi[0].axis('off')
