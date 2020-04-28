@@ -21,10 +21,12 @@ from bs4 import BeautifulSoup
 from automation.misc._assets.css import get_css_asset_file_names
 
 unsafe_dirs = ['apidoc','labs','talks','data']
-DEFAULT_IMG_PREFIX = "/assets/img/python-graphics/" #What the dev site uses
+DEFAULT_IMG_PREFIX = "/assets/img/python-graphics/" # What the dev site uses
+DEFAULT_VIDEO_PREFIX = "/python/assets/video/" # What the dev site uses
 
 def export_notebooks(root_path, output_root_path, embed_try_it_live=False,
                      replace_img_path=False, img_prefix=DEFAULT_IMG_PREFIX,
+                     replace_video_path=False, video_prefix=DEFAULT_VIDEO_PREFIX,
                      replace_full_urls=True,
                      log_func=log.info,
                      dummy_mode_css_add_head=False):
@@ -36,6 +38,9 @@ def export_notebooks(root_path, output_root_path, embed_try_it_live=False,
     :param replace_img_path: if True, replaces /foo/bar/image.png with 
     {img_prefix}image.png
     :param img_prefix: the image prefix to use
+    :param replace_img_path: if True, replaces /foo/bar/vid.mp4 with 
+    {video_prefix}vid.mp4
+    :param video_prefix: the video prefix to use
     :param replace_full_urls: if True, 
     replaces http://developers.arcgis.com/foo/bar to /foo/bar
     :param dummy_mode_css_add_header: if True, will add references to the
@@ -107,6 +112,21 @@ def export_notebooks(root_path, output_root_path, embed_try_it_live=False,
                         log_func("IMG replaced {} with {}".format(old_img_src,
                                                                   new_img_src))
                 log_str += " | modified img "
+            #end region
+
+            #region replace all rel path video srcs with the dev-site format
+            if replace_video_path:
+                for vid in soup.findAll('video'):
+                    if ("http" not in vid["src"]) and \
+                       ("data:" not in vid["src"]):
+                        #Will match with all relative paths in the notebook
+                        old_vid_src = vid["src"]
+                        filename = vid["src"].split("/")[-1]
+                        new_vid_src = video_prefix + filename
+                        vid["src"] = new_vid_src
+                        log_func("video replaced {} with {}".format(old_vid_src,
+                                                                    new_vid_src))
+                log_str += " | modified video "
             #end region
 
             #region replace developers.arcgis.com/foo/bar... urls to /foo/bar

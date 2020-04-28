@@ -37,7 +37,7 @@ from torchvision.models.segmentation.segmentation import _segm_resnet
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead, DeepLabV3
 from torchvision.models.segmentation.fcn import FCNHead
 from ._arcgis_model import _get_backbone_meta
-from fastprogress import progress_bar
+from fastprogress.fastprogress import progress_bar
 
 class Deeplab(nn.Module):
     def __init__(self, num_classes, backbone_fn, chip_size=224):

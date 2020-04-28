@@ -106,6 +106,7 @@ if HAS_FASTAI and HAS_TENSORFLOW:
     tf.Tensor.cpu = lambda x: x.numpy()
     tf.Tensor.item = lambda x: x.numpy()
     tf.Tensor.size = lambda x, axis: tf.shape(x)[axis].numpy()
+    tf.Tensor.float = lambda x: tf.dtypes.cast(x, tf.float32)
 
 # Activation function for losses
 def noop(x): return x
@@ -248,7 +249,8 @@ def tf_fit(epochs, model, loss_func, opt, data, callbacks, metrics):
     except Exception as e:
         exception = e
         raise e
-    finally: cb_handler.on_train_end(exception)
+    finally:
+        cb_handler.on_train_end(exception)
 
     
 @dataclass
@@ -530,7 +532,10 @@ class TfOptimWrapper():
     def apply_gradients(self, grads_and_vars):
         for l, opt in zip(self.layer_groups, self.opt):
             for i in range(len(l.trainable_weights)):
-                opt.apply_gradients([next(grads_and_vars)])
+                next_var = next(grads_and_vars)
+                if next_var[0] is None:
+                    continue
+                opt.apply_gradients([next_var])
         
     @property
     def lr(self)->float:

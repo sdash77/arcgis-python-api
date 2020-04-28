@@ -60,7 +60,7 @@ class MaskRCNN(ArcGISModel):
 
     :returns: ``MaskRCNN`` Object
     """
-    def __init__(self, data, backbone=None, pretrained_path=None):
+    def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
 
         # Set default backbone to be 'resnet50'
         if backbone is None:
@@ -340,7 +340,7 @@ class MaskRCNN(ArcGISModel):
         elif type_data_loader == 'testing':
             data_loader = self._data.test_dl
         else:
-            e = Exception(f'could not find {type_data_loader} in data.')
+            e = Exception(f'could not find {type_data_loader} in data. Please ensure that the data loader type is traininig, validation or testing ')
             raise(e)
 
         statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
@@ -421,7 +421,7 @@ class MaskRCNN(ArcGISModel):
                 ax_i = ax[i]
 
             # Ground Truth
-            ax_i[0].imshow(symbology_x_batch[i])
+            ax_i[0].imshow(symbology_x_batch[i].cpu())
             ax_i[0].axis('off')
             if mode in ['mask', 'bbox_mask']:
                 n_instance = y_batch[i].unique().shape[0]
@@ -433,7 +433,7 @@ class MaskRCNN(ArcGISModel):
             ax_i[0].axis('off')
 
             # Predictions
-            ax_i[1].imshow(symbology_x_batch[i])
+            ax_i[1].imshow(symbology_x_batch[i].cpu())
             ax_i[1].axis('off')
             if mode in ['mask', 'bbox_mask']:
                 n_instance = np.unique(pred_mask[i]).shape[0]

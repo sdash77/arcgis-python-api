@@ -33,7 +33,6 @@ try:
     import torch.distributed as dist
     from fastai.torch_core import get_model
     from torch.nn.parallel import DistributedDataParallel
-
     from .._utils.common import get_post_processed_model
 except ImportError as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -198,6 +197,11 @@ class SaveModelCallback(TrackerCallback):
             except:
                 pass
 
+# Multispectral Models Specific resources start #
+
+valid_init_schemes = ['red_band', 'random', 'all_random']
+rgb_map = {'r':0, 'g':1, 'b': 2}
+
 def _get_tail(model):
     if hasattr(model, 'named_children'):
         child_name, child = next(model.named_children())
@@ -219,19 +223,17 @@ def _get_ms_tail(tail, data, type_init='random'):
         padding_mode=tail.padding_mode,
     )
     avg_weights = tail.weight.data.mean(dim=1)
-    rgb_map = {'r':0, 'g':1, 'b': 2}
     for i, j in enumerate(data._extract_bands):
         band = str(data._bands[j]).lower()
         b = rgb_map.get(band, None)
-        if b is not None:
+        if b is not None and not type_init == 'all_random':
             new_tail.weight.data[:, i] = tail.weight.data[:, b]
         else:
             if type_init == 'red_band':
                 new_tail.weight.data[:, i] = tail.weight.data[:, 0] # Red Band Weights for all other band weights
-            elif type_init == 'average':
-                new_tail.weight.data[:, i] = avg_weights # Average Weights for all other band weights
-            elif type_init == 'random':
-                new_tail.weight.data[:, i] = torch.rand((new_tail.weight.data[:, i].shape)) # Random Weights for all other band weights
+            elif type_init == 'random' or type_init == 'all_random':
+                # Random Weights for all other band weights
+                pass
     return new_tail
 
 def _set_tail(model, new_tail):
@@ -246,7 +248,13 @@ def _set_tail(model, new_tail):
 
 def _change_tail(model, data):
     tail_name, tail = _get_tail(model)
-    type_init = getattr(arcgis.env, 'type_init_tail_parameters', 'random') 
+    type_init = getattr(arcgis.env, 'type_init_tail_parameters', 'random')
+    if type_init not in valid_init_schemes:
+        raise Exception(f"""
+        \n'{type_init}' is not a valid scheme for initializing model tail weights.
+        \nplease set a valid scheme from 'red_band', 'random' or 'all_random'.
+        \n`arcgis.env.type_init_tail_parameters={{valid_scheme}}`
+        """)
     new_tail = _get_ms_tail(tail, data, type_init=type_init)
     _set_tail(model, new_tail)
     return model
@@ -254,6 +262,8 @@ def _change_tail(model, data):
 def _get_backbone_meta(arch_name):
     _model_meta = {i.__name__:j for i, j in model_meta.items()}
     return _model_meta.get(arch_name, _default_meta)
+
+# Multispectral Models Specific resources end #
 
 
 class ArcGISModel(object):

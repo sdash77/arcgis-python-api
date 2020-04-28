@@ -123,6 +123,8 @@ def tf_loss_function_single_image(ssd, image_y_bboxes, image_y_classes, image_p_
         gt_overlap, gt_idx = ssd._map_to_ground_truth(overlaps,False)
         gt_idx = gt_idx.numpy()
     except Exception as e:
+        logger = logging.getLogger()
+        logger.warning("Returning zero tensors as there is no overlap between ground truth and prior boxes")
         return tf.constant(0.), tf.constant(0.)
     gt_clas = tf.gather(image_y_classes, gt_idx)
     pos = (gt_overlap > 0.4)

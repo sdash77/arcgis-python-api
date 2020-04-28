@@ -298,6 +298,17 @@ class MapView(widgets.DOMWidget):
     def basemap(self):
         """What basemap you would like to apply to the widget (‘topo’,
         ‘national-geographic’, etc.). See `basemaps` for a full list
+        
+        # Usage example: Set the widget basemap equal to an item
+            from arcgis.mapping import WebMap
+            widget = gis.map()
+            # Use basemap from another item as your own
+            widget.basemap = webmap
+            widget.basemap = tiled_map_service_item
+            widget.basemap = image_layer_item
+            widget.basemap = webmap2.basemap
+            widget.basemap - 'national-geographic'
+        
         """
         return self._basemap
 
@@ -308,7 +319,17 @@ class MapView(widgets.DOMWidget):
         elif value in self.gallery_basemaps:
             self._basemap = value
         else:
-            raise RuntimeError("Basemap '{}' isn't valid".format(value))
+            try:
+                self.webmap.basemap = value
+                # takes dict object
+                self._gallery_basemaps['base'] = self.webmap._basemap
+                self._basemap = 'base'
+                # You need to re-write this dict to trigger the JS side change
+                copy_gallery = dict(self._gallery_basemaps)
+                self._gallery_basemaps = {}
+                self._gallery_basemaps = copy_gallery
+            except Exception:
+                raise RuntimeError("Basemap '{}' isn't valid".format(value))
 
     _basemap = Unicode('topo').tag(sync=True)
     """What basemap you would like to apply to the widget (‘topo’,
@@ -820,6 +841,8 @@ class MapView(widgets.DOMWidget):
         if _js_cdn_override_global != "":
             # If the user had previously set this global property, use it
             self._js_cdn_override = _js_cdn_override_global
+        elif os.environ.get("JSAPI_CDN", ""):
+            self._js_cdn_override = os.environ.get("JSAPI_CDN", "")
         else:
             # Else, test default CDNs and portal CDNs
             default_cdn_unreachable = not self._is_reachable(_DEFAULT_JS_CDN)
@@ -839,7 +862,7 @@ class MapView(widgets.DOMWidget):
         of the `gallery_basemaps` property (which has a long load time)
         """
         if basemap:
-            # takes PropertyMap object
+            # used instead of basemap setter to avoid the reset of the associated webmap's basemap on instantiation
             self._gallery_basemaps['base'] = basemap
             self._basemap = 'base'
             # You need to re-write this dict to trigger the JS side change

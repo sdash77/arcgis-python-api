@@ -87,7 +87,7 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False):
   
                       For a collection of example scripts, see `Examples: Scripting custom analysis with the Run Python Script task <https://developers.arcgis.com/rest/services-reference/run-python-script-examples.htm>`_.
     ----------------  ---------------------------------------------------------------
-    layers            Optional list. A list of Feature layers to operate on. See :ref:`Feature Input<FeatureInput>`.
+    layers            Optional list. A list of Feature layers to operate on. See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------  ---------------------------------------------------------------
     gis               optional GIS. The GIS object where the analysis will take place.
     ----------------  ---------------------------------------------------------------
@@ -190,7 +190,7 @@ def dissolve_boundaries(input_layer,
     ================  ===============================================================
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
-    input_layer       Required layer. The layer containing polygon features that will be dissolved. See :ref:`Feature Input<FeatureInput>`.
+    input_layer       Required layer. The layer containing polygon features that will be dissolved. See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------  ---------------------------------------------------------------
     dissolve_fields   Optional string. A comma seperated list of strings for each
                       field that you want to dissolve on.One or more fields in the ``input_layer`` that determine how polygons are merged based on field value.
@@ -353,7 +353,7 @@ def merge_layers(input_layer,
     ----------------  ---------------------------------------------------------------
     input_layer       Required layer. The table, point, line, or polygon features to 
                       merge with the ``merge_layer`` parameter. All fields in ``input_layer`` 
-                      will be included in the result layer.  See :ref:`Feature Input<FeatureInput>`.
+                      will be included in the result layer.  See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------  ---------------------------------------------------------------
     merge_layer       Required layer. The point, line, or polygon features to
                       merge with the ``input_layer``. The ``merge_layer`` must contain the
@@ -361,7 +361,7 @@ def merge_layers(input_layer,
                       same time type (none, instant, or interval) as the ``input_layer``.
                       All fields in the ``merge_layer`` will be included in the result
                       layer by default or you can define ``merge_attributes`` to
-                      customize the resulting schema.  See :ref:`Feature Input<FeatureInput>`.
+                      customize the resulting schema.  See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------  ---------------------------------------------------------------
     merge_attributes  Optional list of dicts. Defines how the fields in ``merge_layer`` will be
                       modified. By default, all fields from both inputs will be
@@ -492,11 +492,11 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None
     ----------------  ---------------------------------------------------------------
     input_layer       Required feature layer. The point, line, or polygon features 
                       that will be clipped to the areas of ``clip_layer`` features. 
-                      See :ref:`Feature Input<FeatureInput>`.
+                      See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------  ---------------------------------------------------------------
     clip_layer        Required feature layer. The polygon features that define the 
                       areas to which ``input_layer`` features will be clipped. 
-                      See :ref:`Feature Input<FeatureInput>`.
+                      See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------  ---------------------------------------------------------------
     output_name       Optional string. The task will create a feature service of 
                       the results. You define the name of the service.
@@ -616,7 +616,7 @@ def overlay_data(input_layer,
     ======================  ===============================================================================
     **Argument**            **Description**
     ----------------------  -------------------------------------------------------------------------------
-    input_layer             Required layer. The point, line, or polygon features that will be overlaid with the ``overlay_layer`` features. See :ref:`Feature Input<FeatureInput>`.
+    input_layer             Required layer. The point, line, or polygon features that will be overlaid with the ``overlay_layer`` features. See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------------  -------------------------------------------------------------------------------
     overlay_layer           Required layer. The features that will be overlaid with the ``input_layer`` features.
     ----------------------  -------------------------------------------------------------------------------
@@ -860,7 +860,7 @@ def calculate_fields(input_layer,
     **Argument**                                        **Description**
     -------------------------------------------------   ---------------------------------------------------------------
     input_layer                                         Required layer. The input features that will have a field added and calculated.
-                                                        See :ref:`Feature Input<FeatureInput>`.
+                                                        See :ref:`Feature Input<gaxFeatureInput>`.
     -------------------------------------------------   ---------------------------------------------------------------
     field_name                                          Required string. A string representing the name of the new
                                                         field. If the name already exists in the dataset, then a
@@ -1009,7 +1009,7 @@ def copy_to_data_store(
     ==========================   ===============================================================
     **Argument**                 **Description**
     --------------------------   ---------------------------------------------------------------
-    input_layer                  Required layer. The table, point, line, or polygon features that will be copied. See :ref:`Feature Input<FeatureInput>`.
+    input_layer                  Required layer. The table, point, line, or polygon features that will be copied. See :ref:`Feature Input<gaxFeatureInput>`.
     --------------------------   ---------------------------------------------------------------
     output_name                  Optional string. The task will create a feature service of the results. You define the name of the service.
     --------------------------   --------------------------------------------------------------- 

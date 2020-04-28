@@ -116,6 +116,7 @@ def compute_sensor_model(image_collection,
                          context=None,
                          *,
                          gis=None,
+                         future=False,
                          **kwargs):
     """
     compute_sensor_model computes the bundle block adjustment for the image collection 
@@ -177,6 +178,17 @@ def compute_sensor_model(image_collection,
         The imagery layer url
 
     """
+
+    gis = arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.orthomapping.compute_sensor_model(image_collection=image_collection,
+                                                        mode=mode,
+                                                        location_accuracy=location_accuracy,
+                                                        context=context,
+                                                        future=future,
+                                                        **kwargs)
+
+    """
     gis = arcgis.env.active_gis if gis is None else gis
 
     params = {}
@@ -203,11 +215,12 @@ def compute_sensor_model(image_collection,
     job_values = _execute_task(gis, task, params)
     
     return job_values["result"]["url"]
+    """
 
 ###################################################################################################
 ## Alter processing states
 ###################################################################################################
-def alter_processing_states(image_collection, new_states, *, gis=None, **kwargs):
+def alter_processing_states(image_collection, new_states, *, gis=None, future=False, **kwargs):
     '''
     Alter the processing states of the image collection.
     The states are stored as key property "Orthomapping". 
@@ -245,7 +258,13 @@ def alter_processing_states(image_collection, new_states, *, gis=None, **kwargs)
         The result will be the newly set states dictionary
 
     '''
+    gis = arcgis.env.active_gis if gis is None else gis
 
+    return gis._tools.orthomapping.alter_processing_states(image_collection=image_collection,
+                                                           new_states=new_states,
+                                                           future=future,
+                                                           **kwargs)
+    """
     gis = arcgis.env.active_gis if gis is None else gis
         
     params = {}
@@ -268,12 +287,12 @@ def alter_processing_states(image_collection, new_states, *, gis=None, **kwargs)
             processing_states = job_values['processingStates'].replace("'",'"')
             processing_states=json.loads( processing_states.replace('u"','"'))
             return processing_states
- 
+ """
 
 ###################################################################################################
 ## Get processing states
 ###################################################################################################
-def get_processing_states(image_collection, *, gis=None, **kwargs):
+def get_processing_states(image_collection, *, gis=None, future=False, **kwargs):
     '''
     Retrieve the processing states of the image collection
 
@@ -296,6 +315,13 @@ def get_processing_states(image_collection, *, gis=None, **kwargs):
 
     gis = arcgis.env.active_gis if gis is None else gis
 
+    return gis._tools.orthomapping.get_processing_states(image_collection=image_collection,
+                                                         future=future,
+                                                         **kwargs)
+    """
+
+    gis = arcgis.env.active_gis if gis is None else gis
+
     params = {}
 
     _set_image_collection_param(gis, params, image_collection)
@@ -303,6 +329,7 @@ def get_processing_states(image_collection, *, gis=None, **kwargs):
     task = 'GetProcessingStates'
     job_values = _execute_task(gis, task, params)
     return job_values["processingStates"]
+    """
 
 """
 ###################################################################################################
@@ -381,7 +408,7 @@ def append_control_points(image_collection, control_points, gis = None):
 ###################################################################################################
 ## Match control points
 ###################################################################################################
-def match_control_points(image_collection, control_points, similarity='High', context=None, *, gis=None, **kwargs):
+def match_control_points(image_collection, control_points, similarity='High', context=None, *, gis=None, future=False, **kwargs):
     '''
     The match_control_points is a function that takes a collection of ground control points
     as input (control points to be specified as a list of dictionary objects), and each of the 
@@ -499,6 +526,16 @@ def match_control_points(image_collection, control_points, similarity='High', co
         A list of dictionary objects
 
     '''
+    gis = arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.orthomapping.match_control_points(image_collection=image_collection,
+                                                        control_points=control_points,
+                                                        similarity=similarity,
+                                                        context=context,
+                                                        future=future,
+                                                        **kwargs)
+
+    """
 
     gis = arcgis.env.active_gis if gis is None else gis
 
@@ -528,7 +565,7 @@ def match_control_points(image_collection, control_points, similarity='High', co
         return job_values["result"]
 
     return result
-
+    """
 ###################################################################################################
 ## Color Correction
 ###################################################################################################
@@ -539,6 +576,7 @@ def color_correction(image_collection,
                   context = None,
                    *, 
                    gis=None, 
+                   future=False,
                    **kwargs):
     '''
     Color balance the image collection. 
@@ -640,6 +678,18 @@ def color_correction(image_collection,
 
     gis = arcgis.env.active_gis if gis is None else gis
 
+    return gis._tools.orthomapping.compute_color_correction(image_collection=image_collection,
+                                                            color_correction_method=color_correction_method,
+                                                            dodging_surface=dodging_surface_type,
+                                                            target_image=target_image,
+                                                            context=context,
+                                                            future=future,
+                                                            **kwargs)
+
+    """
+
+    gis = arcgis.env.active_gis if gis is None else gis
+
     params = {}
     _set_image_collection_param(gis,params, image_collection)
 
@@ -676,12 +726,12 @@ def color_correction(image_collection,
 
     return job_values["result"]["url"]
 
-
+    """
 
 ###################################################################################################
 ## Compute Control Points
 ###################################################################################################
-def compute_control_points(image_collection, reference_image=None, image_location_accuracy="High", context = None, *, gis=None, **kwargs):
+def compute_control_points(image_collection, reference_image=None, image_location_accuracy="High", context = None, *, gis=None, future=False, **kwargs):
     '''
     This service tool is used for computing matching control points between images
     within an image collection and/or matching control points between the image 
@@ -766,6 +816,16 @@ def compute_control_points(image_collection, reference_image=None, image_locatio
     '''
     gis = arcgis.env.active_gis if gis is None else gis
 
+    return gis._tools.orthomapping.compute_control_points(image_collection=image_collection,
+                                                          reference_image=reference_image,
+                                                          image_location_accuracy=image_location_accuracy,
+                                                          context=context,
+                                                          future=future,
+                                                          **kwargs)
+
+    """
+    gis = arcgis.env.active_gis if gis is None else gis
+
     params = {}
     _set_image_collection_param(gis, params, image_collection)
 
@@ -794,6 +854,7 @@ def compute_control_points(image_collection, reference_image=None, image_locatio
     job_values = _execute_task(gis, task, params)
 
     return job_values["result"]
+    """
 
 ###################################################################################################
 ## Compute Seamlines
@@ -803,6 +864,7 @@ def compute_seamlines(image_collection,
                       context = None,
                       *, 
                       gis=None, 
+                      future=False,
                       **kwargs):
     '''
     Compute seamlines on the image collection. This service tool is used to compute
@@ -863,6 +925,16 @@ def compute_seamlines(image_collection,
         The Imagery layer url
 
     '''
+
+    gis = arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.orthomapping.compute_seamlines(image_collection=image_collection,
+                                                     seamlines_method=seamlines_method,
+                                                     context=context,
+                                                     future=future,
+                                                     **kwargs)
+
+    """
     gis = arcgis.env.active_gis if gis is None else gis
 
     params = {}
@@ -886,12 +958,12 @@ def compute_seamlines(image_collection,
     job_values = _execute_task(gis, task, params)
 
     return job_values["result"]["url"]
-
+    """
 
 ###################################################################################################
 ## Edit control points
 ###################################################################################################
-def edit_control_points(image_collection, control_points, *, gis=None, **kwargs):
+def edit_control_points(image_collection, control_points, *, gis=None, future=False, **kwargs):
     '''
     This service can be used to append additional ground control point sets to
     the image collection's control points. It is recommended that a ground control point (GCP) set 
@@ -985,6 +1057,15 @@ def edit_control_points(image_collection, control_points, *, gis=None, **kwargs)
         The Imagery layer url
 
     '''
+
+    gis = arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.orthomapping.edit_control_points(image_collection=image_collection,
+                                                       input_control_points=control_points,
+                                                       future=future,
+                                                       **kwargs)
+    
+    """
     gis = arcgis.env.active_gis if gis is None else gis
 
     params = {}
@@ -997,7 +1078,7 @@ def edit_control_points(image_collection, control_points, *, gis=None, **kwargs)
     job_values = _execute_task(gis, task, params)
 
     return job_values["result"]["url"]
-
+    """
 ###################################################################################################
 ## Generate DEM
 ###################################################################################################
@@ -1009,6 +1090,7 @@ def generate_dem(image_collection,
                  context = None,
                  *,
                  gis = None,
+                 future=False,
                  **kwargs):
     '''
     Generate a DEM from the image collection. Refer to "Interpolate From Point Cloud"
@@ -1100,7 +1182,18 @@ def generate_dem(image_collection,
         The DEM layer item
 
     '''
+    gis = arcgis.env.active_gis if gis is None else gis
 
+    return gis._tools.orthomapping.generate_dem(image_collection=image_collection,
+                                                cell_size=cell_size,
+                                                output_dem=out_dem,
+                                                surface_type=surface_type,
+                                                matching_method=matching_method,
+                                                context=context,
+                                                future=future,
+                                                **kwargs)
+
+    """
     gis = arcgis.env.active_gis if gis is None else gis
 
     task = 'GenerateDEM'
@@ -1176,7 +1269,7 @@ def generate_dem(image_collection,
     output_service= gis.content.get(job_values["result"]["itemId"])
 
     return  output_service 
-
+    """
 
 ###################################################################################################
 ## Generate orthomosaic
@@ -1188,6 +1281,7 @@ def generate_orthomosaic(image_collection,
                          context=None,
                          *,
                          gis=None,
+                         future=False,
                          **kwargs):
     '''
     Function can be used for generating single ortho-rectified mosaicked image from image collection after 
@@ -1230,6 +1324,45 @@ def generate_orthomosaic(image_collection,
                                               be projected into the output spatial reference.
 
                                            2. Extent (extent) - extent that would clip or expand the output image 
+
+                                           3. Cell Size (cellSize) - The output raster will have the resolution specified by cell size.
+
+                                           4. Compute Seamlines (seamlinesMethod) - Default.
+
+                                           5. Clipping Geometry (clippingGeometry) - Clips the orthomosaic image to an area of 
+                                              interest defined by the geometry.
+
+                                           6. Orthomosaic As Overview (orthoMosaicAsOvr) - Adds the orthomosaic as an overview of the image collection.
+
+                                           7. Compute Color Correction (colorcorrectionMethod) — Default.
+
+                                           Example:
+
+                                           {
+                                             "outSR": {"wkid": 3516}, 
+                                             "extent": {"xmin": 470614.263139, 
+                                                       "ymin": 8872849.409968, 
+                                                       "xmax": 532307.351827, 
+                                                       "ymax": 8920205.372412, 
+                                                       "spatialReference": {"wkid": 32628}},
+                                             "clippingGeometry": {},
+                                             "orthoMosaicAsOvr": False,
+                                             "seamlinesMethod": "VORONOI", 
+                                             "minRegionSize": 100, 
+                                             "pixelSize": "", 
+                                             "blendType": "Both", 
+                                             "blendWidth": None, 
+                                             "blendUnit": "Pixels", 
+                                             "requestSize": 1000, 
+                                             "minThinnessRatio": 0.05, 
+                                             "maxSliverSize": 20
+                                             "colorCorrectionMethod": "DODGING", 
+                                             "dodgingSurface": "Single_Color", 
+                                             "referenceImg": {"url": https://..."}, 
+                                             "skipRows": 10, 
+                                             "skipCols": 10, 
+                                             "reCalculateSats": "OVERWRITE"
+                                            }      
     -----------------------------------    --------------------------------------------------------------------
     gis                                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ===================================    ====================================================================
@@ -1238,6 +1371,16 @@ def generate_orthomosaic(image_collection,
         The Orthomosaicked Imagery layer item
 
     '''
+    gis = arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.orthomapping.generate_orthomosaic(image_collection=image_collection,
+                                                        output_ortho_image=out_ortho,
+                                                        regen_seamlines=regen_seamlines,
+                                                        recompute_color_correction=recompute_color_correction,
+                                                        context=context,
+                                                        future=future,
+                                                        **kwargs)
+    """
     gis = arcgis.env.active_gis if gis is None else gis
 
     task = 'GenerateOrthomosaic'
@@ -1303,12 +1446,12 @@ def generate_orthomosaic(image_collection,
     output_service= gis.content.get(job_values["result"]["itemId"])
 
     return  output_service 
-
+    """
 
 ###################################################################################################
 ## Generate report
 ###################################################################################################
-def generate_report(image_collection, report_format="PDF", *, gis=None, **kwargs):
+def generate_report(image_collection, report_format="PDF", *, gis=None, future=False, **kwargs):
     """
     This function is used to generate orthomapping report with image collection 
     that has been block adjusted. The report would contain information about 
@@ -1334,6 +1477,13 @@ def generate_report(image_collection, report_format="PDF", *, gis=None, **kwargs
     """
     gis = arcgis.env.active_gis if gis is None else gis
 
+    return gis._tools.orthomapping.generate_report(image_collection=image_collection,
+                                                   report_format=report_format,
+                                                   future=future,
+                                                   **kwargs)
+    """
+    gis = arcgis.env.active_gis if gis is None else gis
+
     params = {}
 
     _set_image_collection_param(gis, params, image_collection)
@@ -1349,13 +1499,14 @@ def generate_report(image_collection, report_format="PDF", *, gis=None, **kwargs
     job_values = _execute_task(gis, task, params)
 
     return job_values["outReport"]["url"]
-
+    """
 ###################################################################################################
 ## query camera info
 ###################################################################################################
 def query_camera_info(camera_query=None,
                       *, 
                       gis=None,
+                      future=False,
                       **kwargs):
     ''' 
     This service tool is used to query specific or the entire digital camera 
@@ -1381,6 +1532,13 @@ def query_camera_info(camera_query=None,
         Data Frame representing the camera database
 
     '''
+    gis = arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.orthomapping.query_camera_info(camera_query=camera_query,
+                                                     future=future,
+                                                     **kwargs)
+
+    """
     import pandas as pd
     import numpy as np
 
@@ -1399,6 +1557,8 @@ def query_camera_info(camera_query=None,
     df = pd.DataFrame(np.array(job_values["outputCameraInfo"]["content"]),columns = job_values["outputCameraInfo"]["schema"])
     return df
 
+    """
+
 ###################################################################################################
 ## query control points
 ###################################################################################################
@@ -1406,6 +1566,7 @@ def query_control_points(image_collection,
                          query,
                          *, 
                          gis=None, 
+                         future=False,
                          **kwargs):
     '''
     Query for control points in an image collection. It allows users to query 
@@ -1435,6 +1596,14 @@ def query_control_points(image_collection,
     '''
     gis = arcgis.env.active_gis if gis is None else gis
 
+    return gis._tools.orthomapping.query_control_points(image_collection=image_collection,
+                                                        where=query,
+                                                        future=future,
+                                                        **kwargs)
+
+    """
+    gis = arcgis.env.active_gis if gis is None else gis
+
     params = {}
 
     _set_image_collection_param(gis, params, image_collection)
@@ -1455,6 +1624,7 @@ def query_control_points(image_collection,
         return job_values["outControlPoints"]
 
     return result
+    """
 
 ###################################################################################################
 ## Reset image collection
@@ -1462,6 +1632,7 @@ def query_control_points(image_collection,
 def reset_image_collection(image_collection,
                             *, 
                             gis=None, 
+                            future=False,
                             **kwargs):
     '''
     Reset the image collection. It is used to reset the image collection to its 
@@ -1487,6 +1658,12 @@ def reset_image_collection(image_collection,
     '''
     gis = arcgis.env.active_gis if gis is None else gis
 
+    return gis._tools.orthomapping.reset_image_collection(image_collection=image_collection,
+                                                          future=future,
+                                                          **kwargs)
+    """
+    gis = arcgis.env.active_gis if gis is None else gis
+
     params = {}
 
     _set_image_collection_param(gis, params, image_collection)
@@ -1494,6 +1671,7 @@ def reset_image_collection(image_collection,
     task = 'ResetImageCollection'
     job_values = _execute_task(gis, task, params)
     return job_values["result"]
+    """
 
 
 def compute_spatial_reference_factory_code(latitude, longitude): 

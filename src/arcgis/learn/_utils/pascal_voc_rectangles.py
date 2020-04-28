@@ -3,7 +3,7 @@ import math
 import numpy as np
 import torch
 from fastai.vision.data import ObjectItemList
-from .common import ArcGISMSImage
+from .common import ArcGISMSImage, get_nbatches
 from ..models._ssd_utils import SSDObjectCategoryList
 from matplotlib import pyplot as plt
 from matplotlib import patheffects
@@ -57,14 +57,7 @@ def show_batch_pascal_voc_rectangles(self, rows=3, alpha=1, **kwargs): # paramet
         symbology_bands.append(b_index)
 
     # Get Batch
-    x_batch, y_batch = [], []
-    i = 0
-    dl_iterater = iter(data_loader)
-    while i < n_items:
-        x, y = next(dl_iterater)
-        x_batch.append(x)
-        y_batch.append(y)
-        i+=self.batch_size
+    x_batch, y_batch = get_nbatches(data_loader, n_items)
     x_batch = torch.cat(x_batch)
     # Denormalize X
     x_batch = (self._scaled_std_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._scaled_mean_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)
@@ -104,7 +97,7 @@ def show_batch_pascal_voc_rectangles(self, rows=3, alpha=1, **kwargs): # paramet
         for c in range(ncols):
             if idx < symbology_x_batch.shape[0]:
                 axi  = ax[r][c]
-                axi.imshow(symbology_x_batch[idx])
+                axi.imshow(symbology_x_batch[idx].cpu().numpy())
                 classes = y_classes[idx][y_classes[idx] > 0]
                 bboxes = y_bboxes[idx][y_classes[idx] > 0]
                 bboxes = (bboxes+1)*.5
@@ -113,7 +106,7 @@ def show_batch_pascal_voc_rectangles(self, rows=3, alpha=1, **kwargs): # paramet
                     xs = bbox[[1, 1, 3, 3, 1]]
                     ys = bbox[[0, 2, 2, 0, 0]]
                     color = self._multispectral_color_array[classes[i]]
-                    axi.plot(xs, ys, color=color, linewidth=2)
+                    axi.plot(xs.cpu().numpy(), ys.cpu().numpy(), color=color, linewidth=2)
                     axi.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self.classes[classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=.5, foreground='gray')])
                 axi.axis('off')
             else:

@@ -71,7 +71,7 @@ class UnetClassifier(ArcGISModel):
     :returns: `UnetClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, pretrained_path=None, backend='pytorch', **kwargs):
+    def __init__(self, data, backbone=None, pretrained_path=None, backend='pytorch', *args, **kwargs):
 
         self._backend = backend
         if self._backend == 'tensorflow':
@@ -110,11 +110,12 @@ class UnetClassifier(ArcGISModel):
             else:
                 self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
 
-            if self.class_balancing and data.class_weight is not None:
-                class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(self._device)
-                self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
-            else:
-                logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
+            if self.class_balancing:
+                if data.class_weight is not None:
+                    class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(self._device)
+                    self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
+                else:
+                    logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")                
 
             if self.focal_loss:
                 self.learn.loss_func = FocalLoss(self.learn.loss_func)
@@ -125,7 +126,6 @@ class UnetClassifier(ArcGISModel):
             self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback
 
             self.learn.model = self.learn.model.to(self._device)
-
             # _set_multigpu_callback(self) # MultiGPU doesn't work for U-Net. (Fastai-Forums)
             if pretrained_path is not None:
                 self.load(pretrained_path)
@@ -281,6 +281,8 @@ class UnetClassifier(ArcGISModel):
             if checkpoint:
                 model_accuracy = np.max(self.learn.recorder.metrics)
         except:
+            logger = logging.getLogger()
+            logger.debug("Cannot retrieve model accuracy.")
             model_accuracy = 0.0
 
         return float(model_accuracy)

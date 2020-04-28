@@ -71,7 +71,7 @@ class PointCNN(ArcGISModel):
     :returns: `PointCNN` Object
     """
 
-    def __init__(self, data, pretrained_path=None, **kwargs):
+    def __init__(self, data, pretrained_path=None, *args, **kwargs):
         super().__init__(data, None)
 
         if not HAS_FASTAI:

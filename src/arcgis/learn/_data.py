@@ -20,10 +20,11 @@ try:
     from fastai.torch_core import data_collate
     import torch
     from .models._ssd_utils import SSDObjectItemList
-    from .models._unet_utils import ArcGISSegmentationItemList, ArcGISSegmentationMSItemList, _show_batch_unet_multispectral, is_no_color
+    from .models._unet_utils import ArcGISSegmentationItemList, ArcGISSegmentationMSItemList, is_no_color
     from .models._maskrcnn_utils import ArcGISInstanceSegmentationItemList, ArcGISInstanceSegmentationMSItemList
     from .models._ner_utils import ner_prepare_data
     from ._utils.common import ArcGISMSImageList
+    from ._utils.classified_tiles import show_batch_classified_tiles
     from ._utils.labeled_tiles import show_batch_labeled_tiles
     from ._utils.rcnn_masks import show_batch_rcnn_masks
     from ._utils.pascal_voc_rectangles import SSDObjectMSItemList, show_batch_pascal_voc_rectangles
@@ -79,12 +80,8 @@ imagery_type_lib = {
 }
 
 def get_installation_command():
-    installation_steps = "Install them using 'conda install -c esri -c fastai -c pytorch arcgis pillow scikit-image fastai=1.0.54 pytorch=1.1.0'"
-    if sys.platform == 'win32':
-        installation_steps = "Install them using 'conda install -c esri arcgis fastai pillow scikit-image'"
-    elif sys.platform in ['linux', 'darwin']:
-        pass
-            
+    installation_steps = "Install them using 'conda install -c esri arcgis=1.8.1 pillow scikit-image'\n'conda install -c fastai -c pytorch fastai pytorch=1.4.0 torchvision=0.5.0 tensorflow-gpu=2.1.0'\n'conda install gdal=2.3.3'"
+
     return installation_steps 
 
 def _raise_fastai_import_error(import_exception=import_exception):
@@ -355,20 +352,47 @@ def prepare_data(path,
                             the `dataset_type` on its own if it contains a 
                             map.txt file. If the path does not contain the 
                             map.txt file pass either of 'PASCAL_VOC_rectangles', 
-                            'RCNN_Masks', 'Classified_Tiles', 'Labeled_Tiles' and 
-                            'Imagenet', 'PointCloud'.                    
+                            'RCNN_Masks', 'Classified_Tiles', 'Labeled_Tiles', 
+                            'Imagenet' and 'PointCloud'.                    
     ---------------------   -------------------------------------------
     resize_to               Optional integer. Resize the image to given size.
     =====================   ===========================================
 
+    **Keyword Arguments**
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    imagery_type            Optional string. Type of imagery used to export 
+                            the training data, valid values are:
+                                - 'naip'
+                                - 'sentinel2'
+                                - 'landsat8'
+                                - 'ms' - any other type of imagery
+    ---------------------   -------------------------------------------
+    bands                   Optional list. Bands of the imagery used to export 
+                            training data. 
+                            For example ['r', 'g', 'b', 'nir', 'u'] 
+                            where 'nir' is near infrared band and 'u' is a miscellaneous band.
+    ---------------------   -------------------------------------------
+    rgb_bands               Optional list. Indices of red, green and blue bands 
+                            in the imagery used to export the training data.
+                            for example: [2, 1, 0] 
+    ---------------------   -------------------------------------------
+    extract_bands           Optional list. Indices of bands to be used for
+                            training the model, same as in the imagery used to 
+                            export the training data.
+                            for example: [3, 1, 0] where we will not be using 
+                            the band at index 2 to train our model. 
+    ---------------------   -------------------------------------------
+    norm_pct                Optional float. Percentage of training data to be 
+                            used for calculating imagery statistics for  
+                            normalizing the data. 
+                            Default is 0.3 (30%) of data.
+    =====================   ===========================================
+
     :returns: data object
-  
-    kwargs documentation
-    * imagery_type='RGB' # Change to known imagery_type or anything else to trigger multispectral
-    * bands=None # specify bands type for unknown imagery ['r', 'g', 'b', 'nir']
-    * rgb_bands=[0, 1, 2] # specify rgb bands indices for unknown imagery
-    * norm_pct=0.3 # sample of images to calculate normalization stats on 
-    * do_normalize=True # Normalize data 
+
     """
     
     height_width = []
@@ -377,7 +401,7 @@ def prepare_data(path,
         _raise_fastai_import_error()
 
     if isinstance(path, str) and not os.path.exists(path):
-        raise Exception("Invalid input path.")
+        raise Exception("Invalid input path. Please ensure that the input path is correct.")
 
     if type(path) is str:
         path = Path(path)
@@ -409,7 +433,7 @@ def prepare_data(path,
     _show_batch_multispectral = None
 
     if dataset_type is None and not has_esri_files:
-        raise Exception("Could not infer dataset type.")
+        raise Exception("Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid esri files")
     
     stats_file = path / 'esri_accumulated_stats.json'
     if dataset_type != "Imagenet" and has_esri_files:
@@ -564,7 +588,7 @@ def prepare_data(path,
                     class_mapping=class_mapping,
                     color_mapping=color_mapping
                 )
-            _show_batch_multispectral = _show_batch_unet_multispectral            
+            _show_batch_multispectral = show_batch_classified_tiles            
 
             def classified_tiles_collate_fn(samples): # The default fastai collate_fn was causing memory leak on tensors
                 r = ( torch.stack([x[0].data for x in samples]), torch.stack([x[1].data for x in samples]) )

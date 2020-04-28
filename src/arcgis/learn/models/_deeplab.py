@@ -101,7 +101,7 @@ class DeepLab(ArcGISModel):
 
     :returns: ``DeepLab`` Object
     """
-    def __init__(self, data, backbone=None, pretrained_path=None, **kwargs):
+    def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
         # Set default backbone to be 'resnet101'
         if backbone is None:
             backbone = models.resnet101
@@ -138,8 +138,9 @@ class DeepLab(ArcGISModel):
 
         self.learn.loss_func = self._deeplab_loss
 
-        if self.class_balancing and self._data.class_weight is None:
-            logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
+        if self.class_balancing:
+            if self._data.class_weight is None:
+                logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
 
         if self.focal_loss:
             self.learn.loss_func = FocalLoss(self.learn.loss_func)
@@ -247,7 +248,7 @@ class DeepLab(ArcGISModel):
             model_accuracy = np.max(self.learn.recorder.metrics)             
         return float(model_accuracy)
 
-    def _deeplab_loss(self, outputs, targets):
+    def _deeplab_loss(self, outputs, targets, **kwargs):
         targets = targets.squeeze(1).detach()
 
         if self.class_balancing and self._data.class_weight is not None:
