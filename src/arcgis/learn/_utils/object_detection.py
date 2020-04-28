@@ -1,10 +1,10 @@
 
 try:
     import tensorflow as tf
-    from tensorflow.keras.layers import Conv2D, Dropout, ReLU, BatchNormalization, UpSampling2D, Reshape, Layer
+    from tensorflow.keras.layers import Input, Conv2D, Dropout, ReLU, BatchNormalization, UpSampling2D, Reshape, Layer
     from tensorflow.keras import Model
     from .._utils.fastai_tf_fit import _tf_to_pytorch, _pytorch_to_tf_batch, _pytorch_to_tf
-    from .common_tf import NormalizationLayerRGB
+    from .common_tf import NormalizationLayerRGB, UpSample2DToSize
     HAS_TENSORFLOW = True
 except:
     HAS_TENSORFLOW = False
@@ -24,20 +24,6 @@ except:
 ## Common end ##
 
 ## Tensorflow specific utils start ##
-
-class UpSample2DToSize(Layer):
-    def __init__(self, output_size, name=None, **kwargs):
-        super(UpSample2DToSize, self).__init__()
-        self.size = output_size
-    def call(self, input):
-        if tf.keras.backend.image_data_format() == 'channels_first':
-            x = tf.transpose(input, perm=[0, 2, 3, 1])
-            x = self.resize(x)
-            return tf.transpose(x, perm=[0, 3, 1, 2])
-        else:
-            return self.resize(input)
-    def resize(self, input):
-        return tf.image.resize(input, (self.size, self.size))
 
 def flatten_conv(output, n_anchors_per_cell, data_format):
     if data_format == 'channels_last':
@@ -137,6 +123,8 @@ def tf_loss_function_single_image(ssd, image_y_bboxes, image_y_classes, image_p_
         gt_overlap, gt_idx = ssd._map_to_ground_truth(overlaps,False)
         gt_idx = gt_idx.numpy()
     except Exception as e:
+        logger = logging.getLogger()
+        logger.warning("Returning zero tensors as there is no overlap between ground truth and prior boxes")
         return tf.constant(0.), tf.constant(0.)
     gt_clas = tf.gather(image_y_classes, gt_idx)
     pos = (gt_overlap > 0.4)

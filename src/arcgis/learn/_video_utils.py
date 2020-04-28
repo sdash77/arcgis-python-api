@@ -7,9 +7,9 @@ HAS_ARCPY = True
 
 try:
     from .models import _tracker_util
-    from fastprogress import progress_bar
     from ._image_utils import _draw_predictions
     from fastai.vision.image import bb2hw, Image, pil2tensor
+    from fastprogress.fastprogress import progress_bar
 except Exception:
     HAS_FASTAI = False
 

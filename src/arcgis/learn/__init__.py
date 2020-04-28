@@ -7,6 +7,7 @@ import arcgis as _arcgis
 from arcgis.raster._layer import ImageryLayer as _ImageryLayer
 from arcgis.raster._util import _set_context, _id_generator
 from .models import SingleShotDetector, UnetClassifier, FeatureClassifier, RetinaNet, PSPNetClassifier, EntityRecognizer, MaskRCNN, DeepLab, PointCNN
+from ._utils.pointcloud_data import Transform3d
 from ._data import prepare_data
 from ._process_df import process_df, add_datepart
 
@@ -1163,10 +1164,10 @@ def export_point_dataset(data_path, output_path, block_size=50.0, max_points=819
     output_path            Required string. Path where exported files will be dumped. This directory
                            either should be empty or be a totally new directory.                                
     ------------------     --------------------------------------------------------------------
-    block_size             Optinal float. Size of the block to contain in one exported file.
+    block_size             Optional float. Size of the block to contain in one exported file.
                            Default 50.0
     ------------------     --------------------------------------------------------------------
-    max_points             Required integer. Maximum number of points to contain in each block.
+    max_points             Optional integer. Maximum number of points to contain in each block.
                            Default 8192
     ------------------     --------------------------------------------------------------------
     extra_features         Optional list of tuple. Extra features to read from las files.
@@ -1178,6 +1179,6 @@ def export_point_dataset(data_path, output_path, block_size=50.0, max_points=819
     """
 
     from ._utils.pointcloud_data import  prepare_las_data
-    prepare_las_data(data_path, block_size, max_points, output_path, **kwargs)
+    prepare_las_data(data_path, block_size, max_points, output_path, extra_features, **kwargs)
 
     

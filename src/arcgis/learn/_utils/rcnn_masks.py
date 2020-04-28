@@ -4,6 +4,7 @@ import torch
 import matplotlib.pyplot as plt
 import matplotlib
 from ..models._maskrcnn_utils import ArcGISImageSegment
+from .common import get_nbatches
 
 def show_batch_rcnn_masks(self, rows=3, alpha=0.5, **kwargs): # parameters adjusted in kwargs 
     nrows = rows
@@ -23,7 +24,7 @@ def show_batch_rcnn_masks(self, rows=3, alpha=0.5, **kwargs): # parameters adjus
     elif type_data_loader == 'testing':
         data_loader = self.test_dl
     else:
-        e = Exception(f'could not find {type_data_loader} in data.')
+        e = Exception(f'could not find {type_data_loader} in data. Please ensure that the data loader type is traininig, validation or testing ')
         raise(e)
 
     imsize = 5
@@ -41,14 +42,7 @@ def show_batch_rcnn_masks(self, rows=3, alpha=0.5, **kwargs): # parameters adjus
         nrows = math.ceil(n_items/ncols)
     n_items = min(n_items, len(self.x))
 
-    x_batch, y_batch = [], []
-    i = 0
-    dl_iterater = iter(data_loader)
-    while i < n_items:
-        x, y = next(dl_iterater)
-        x_batch.append(x)
-        y_batch.append(y)
-        i+=self.batch_size
+    x_batch, y_batch = get_nbatches(data_loader, n_items)
     x_batch = torch.cat(x_batch)
     y_batch = torch.cat(y_batch)
 
@@ -111,7 +105,7 @@ def show_batch_rcnn_masks(self, rows=3, alpha=0.5, **kwargs): # parameters adjus
         for c in range(ncols):
             ax_i  = ax[r][c]
             if idx < symbology_x_batch.shape[0]:
-                ax_i.imshow(symbology_x_batch[idx])
+                ax_i.imshow(symbology_x_batch[idx].cpu().numpy())
                 n_instance = y_batch[idx].unique().shape[0]
                 y_merged = y_batch[idx].max(dim=0)[0].cpu().numpy()
                 cmap_fn = getattr(matplotlib.cm, cmap)

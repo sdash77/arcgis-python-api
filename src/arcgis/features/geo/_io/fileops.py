@@ -131,7 +131,12 @@ def _from_xy(df, x_column, y_column, sr=None):
     """
     Takes an X/Y Column and Creates a Point Geometry from it.
     """
-    from arcgis.geometry import SpatialReference, Geometry
+    from arcgis.geometry import SpatialReference, Point
+    from arcgis.features.geo._array import GeoArray
+    def _xy_to_geometry(x,y,sr):
+        """converts x/y coordinates to Point object"""
+        return Point({'spatialReference' : sr, 'x' : x, 'y': y})
+    
     if sr is None:
         sr = SpatialReference({'wkid' : 4326})
     if not isinstance(sr, SpatialReference):
@@ -142,13 +147,11 @@ def _from_xy(df, x_column, y_column, sr=None):
         elif isinstance(sr, str):
             sr = SpatialReference({'wkt' : sr})
     geoms = []
-    for idx, row in df.iterrows():
-        geoms.append(
-            Geometry({'x' : row[x_column], 'y' : row[y_column],
-             'spatialReference' : sr})
-        )
-    df['SHAPE'] = geoms
-    df.spatial.set_geometry('SHAPE')
+    v_func = np.vectorize(_xy_to_geometry, otypes='O')
+    ags_geom = np.empty(len(df), dtype="O")
+    ags_geom[:] = v_func(df[x_column].values, df[y_column].values, sr)    
+    df['SHAPE'] = GeoArray(ags_geom)
+    df.spatial.name
     return df
 
 def _ensure_path_string(input_path):
@@ -431,6 +434,7 @@ def from_featureclass(filename, **kwargs):
            .apply(geoms[gt])
         )
         df.spatial.set_geometry("SHAPE")
+        df.spatial._meta.source = filename
         return df
     elif HASARCPY == False and \
          HASPYSHP == True and\
@@ -453,6 +457,7 @@ def from_featureclass(filename, **kwargs):
         sdf.spatial.set_geometry('SHAPE')
         sdf['OBJECTID'] = range(sdf.shape[0])
         sdf.reset_index(inplace=True)
+        sdf.spatial._meta.source = filename
         return sdf
     elif HASARCPY == False and \
          HASFIONA == True and \
@@ -492,6 +497,7 @@ def from_featureclass(filename, **kwargs):
                     df = pd.DataFrame(data=atts, columns=cols)
                     df.spatial.set_geometry(geoms)
                     df.spatial.sr = sr
+                    df.spatial._meta.source = filename
                     return df
         else:
             with fiona.drivers():
@@ -507,6 +513,7 @@ def from_featureclass(filename, **kwargs):
                         del idx, row
                     df = pd.DataFrame(data=atts, columns=cols)
                     df.spatial.set_geometry(geoms)
+                    df.spatial._meta.source = filename
                     return df
     else:
         if os.path.dirname(filename).lower().find('.gdb') > -1:
@@ -523,7 +530,10 @@ def from_featureclass(filename, **kwargs):
 def to_featureclass(geo,
                     location,
                     overwrite=True,
-                    validate=False):
+                    validate=False,
+                    sanitize_columns=True,
+                    has_m=True,
+                    has_z=False):
     """
     Exports the DataFrame to a Feature class.
 
@@ -538,16 +548,24 @@ def to_featureclass(geo,
                         data will be deleted and replaced with the spatial
                         dataframe.
     ---------------     ----------------------------------------------------
-    validate            Optional Boolean. If true, the export will check if
+    validate            Optional Boolean. If True, the export will check if
                         all the geometry objects are correct upon export.
+    ---------------     ----------------------------------------------------
+    sanitize_columns    Optional Boolean. If True, column names will be
+                        converted to string, invalid characters removed and
+                        other checks will be performed. The default is True.
+    ---------------     ----------------------------------------------------
+    ham_m               Optional Boolean to indicate if data has linear
+                        referencing (m) values. Default is False.
+    ---------------     ----------------------------------------------------
+    has_z               Optional Boolean to indicate if data has elevation
+                        (z) values. Default is False.
     ===============     ====================================================
 
 
     :returns: string
 
     """
-
-
     out_location= os.path.dirname(location)
     fc_name = os.path.basename(location)
     df = geo._data
@@ -559,6 +577,18 @@ def to_featureclass(geo,
        geo.validate(strict=True) == False:
         raise ValueError(("Mixed geometry types detected, "
                          "cannot export to feature class."))
+
+    # sanitize
+    if sanitize_columns:
+        # logic
+        _sanitize_column_names(geo, inplace=True)
+
+    columns = df.columns.tolist()
+    for col in columns[:]:
+        if not isinstance(col, str):
+            df.rename(columns={col: str(col)}, inplace=True)
+            col = str(col)
+
     if HASARCPY:
         # 1. Create the Save Feature Class
         #
@@ -584,11 +614,23 @@ def to_featureclass(geo,
         }
         sr = geo._data[geo._name][idx].spatial_reference.as_arcpy
         null_geom = null_geom[gt.lower()]
+        
+        if has_m == True:
+            has_m = "ENABLED"
+        else:
+            has_m = None
+        
+        if has_z == True:
+            has_z = "ENABLED"
+        else:
+            has_z = None
+            
         fc = arcpy.CreateFeatureclass_management(out_location,
                                                  spatial_reference=sr,
                                                  geometry_type=gt,
                                                  out_name=fc_name,
-                                                 )[0]
+                                                 has_m=has_m,
+                                                 has_z=has_z)[0]
 
         # 2. Add the Fields and Data Types
         oidfld = da.Describe(fc)['OIDFieldName']
@@ -891,3 +933,64 @@ def _pyshp2(df, out_path, out_name):
         del shpfile
         return out_fc
     return None
+
+
+def _sanitize_column_names(geo, remove_special_char=True, rename_duplicates=True, inplace=False):
+    """
+    Cleans column names by converting them to string, removing special characters, renaming columns without
+    column names with 'noname' and renaming duplicates with integer suffixes.
+
+    ==============================     ====================================================================
+    **Argument**                       **Description**
+    ------------------------------     --------------------------------------------------------------------
+    remove_special_char                Optional Boolean. Default is True. Removes any characters in column
+                                       names that are not numeric or underscores.
+    ------------------------------     --------------------------------------------------------------------
+    rename_duplicates                  Optional Boolean. Default is True. If duplicate column names are
+                                       present, numbered suffixes are added to make columns unique.
+    ------------------------------     --------------------------------------------------------------------
+    inplace                            Optional Boolean. Default is False. If True, edits the DataFrame
+                                       in place and returns Nothing. If False, returns a new DataFrame object.
+    ==============================     ====================================================================
+
+    :returns: pd.DataFrame object if inplace=False. Else None.
+    """
+    from copy import deepcopy
+    original_col_names = list(geo._data.columns)
+
+    # convert to string
+    new_col_names = [str(x) for x in original_col_names]
+
+    # remove special characters
+    if remove_special_char:
+        for ind, val in enumerate(new_col_names):
+            name = "".join(i for i in str(val) if i.isalnum() or "_" in i)
+            new_col_names[ind] = name
+
+    # fill empty column names
+    for ind, val in enumerate(new_col_names):
+        if val == "":
+            new_col_names[ind] = "column"
+
+    # rename duplicates
+    if rename_duplicates:
+        for ind, val in enumerate(new_col_names):
+            if val == geo.name:
+                pass
+            if new_col_names.count(val) > 1:
+                counter = 1
+                new_name = val + str(counter)  # adds a integer suffix to column name
+                while new_col_names.count(new_name) > 0:
+                    counter += 1
+                    new_name = val + str(counter)  # if a column with the suffix exists, increment suffix
+                new_col_names[ind] = new_name
+
+    # if inplace
+    if inplace:
+        geo._data.columns = new_col_names
+    else:
+        # return a new dataframe
+        df = geo._data.copy()
+        df.columns = new_col_names
+        return df
+    return True

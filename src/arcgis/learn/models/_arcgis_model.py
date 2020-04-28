@@ -25,8 +25,15 @@ try:
     from torch import nn
     import torch
     from torchvision import models
+    import numpy as np
     import math
     import warnings
+    from fastai.distributed import *
+    import argparse
+    import torch.distributed as dist
+    from fastai.torch_core import get_model
+    from torch.nn.parallel import DistributedDataParallel
+    from .._utils.common import get_post_processed_model
 except ImportError as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
@@ -99,8 +106,45 @@ class _MultiGPUCallback(LearnerCallback):
             self.learn.model = self.learn.model.module
 
 def _set_multigpu_callback(model):
-    model.learn.callback_fns.append(_MultiGPUCallback)
+    if (not hasattr(arcgis.env, "_gpuid")) or \
+            (arcgis.env._gpuid >= torch.cuda.device_count()):
+        model.learn.callback_fns.append(_MultiGPUCallback)
 
+def _set_ddp_multigpu(model):
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--local_rank", type=int)
+    args = parser.parse_args()
+    if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
+        args.rank = int(os.environ["RANK"])
+        args.world_size = int(os.environ['WORLD_SIZE'])
+        args.gpu = int(os.environ['LOCAL_RANK'])
+    elif 'SLURM_PROCID' in os.environ:
+        args.rank = int(os.environ['SLURM_PROCID'])
+        args.gpu = args.rank % torch.cuda.device_count()
+    elif hasattr(args, "rank"):
+        pass
+    else:
+        model._multigpu_training = False
+        return
+    model._multigpu_training = True
+    torch.cuda.set_device(args.gpu)
+    torch.distributed.init_process_group(backend='nccl', init_method='env://',world_size=args.world_size, rank=args.rank)
+    torch.distributed.barrier()
+    model._rank_distributed = args.gpu
+
+def _isnotebook():
+
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            return True
+        elif shell == 'TerminalInteractiveShell':
+            return False
+        else:
+            return False
+    except NameError:
+        return False
 
 def _create_zip(zipname, path):
     import shutil
@@ -129,6 +173,7 @@ class SaveModelCallback(TrackerCallback):
 
     def on_epoch_end(self, epoch, **kwargs):
         "Compare the value monitored to its best score and maybe save the model."
+
         if self.every == "epoch": self.model.save('{}_{}'.format(self.name, epoch))
         else: #every="improvement"
             current = self.get_monitor_value()
@@ -139,7 +184,8 @@ class SaveModelCallback(TrackerCallback):
                 self.model._save('{}'.format(self.name), zip_files=False, save_html=False)
 
     def on_train_end(self, **kwargs):
-        "Load the best model."      
+        "Load the best model."     
+
         if self.every == "improvement" and self.load_best_at_end:
             try:
                 self.model.load('{}'.format(self.name))
@@ -150,6 +196,11 @@ class SaveModelCallback(TrackerCallback):
                 self.model.save('{}'.format(self.name))
             except:
                 pass
+
+# Multispectral Models Specific resources start #
+
+valid_init_schemes = ['red_band', 'random', 'all_random']
+rgb_map = {'r':0, 'g':1, 'b': 2}
 
 def _get_tail(model):
     if hasattr(model, 'named_children'):
@@ -172,19 +223,17 @@ def _get_ms_tail(tail, data, type_init='random'):
         padding_mode=tail.padding_mode,
     )
     avg_weights = tail.weight.data.mean(dim=1)
-    rgb_map = {'r':0, 'g':1, 'b': 2}
     for i, j in enumerate(data._extract_bands):
         band = str(data._bands[j]).lower()
         b = rgb_map.get(band, None)
-        if b is not None:
+        if b is not None and not type_init == 'all_random':
             new_tail.weight.data[:, i] = tail.weight.data[:, b]
         else:
             if type_init == 'red_band':
                 new_tail.weight.data[:, i] = tail.weight.data[:, 0] # Red Band Weights for all other band weights
-            elif type_init == 'average':
-                new_tail.weight.data[:, i] = avg_weights # Average Weights for all other band weights
-            elif type_init == 'random':
-                new_tail.weight.data[:, i] = torch.rand((new_tail.weight.data[:, i].shape)) # Random Weights for all other band weights
+            elif type_init == 'random' or type_init == 'all_random':
+                # Random Weights for all other band weights
+                pass
     return new_tail
 
 def _set_tail(model, new_tail):
@@ -199,7 +248,13 @@ def _set_tail(model, new_tail):
 
 def _change_tail(model, data):
     tail_name, tail = _get_tail(model)
-    type_init = getattr(arcgis.env, 'type_init_tail_parameters', 'random') 
+    type_init = getattr(arcgis.env, 'type_init_tail_parameters', 'random')
+    if type_init not in valid_init_schemes:
+        raise Exception(f"""
+        \n'{type_init}' is not a valid scheme for initializing model tail weights.
+        \nplease set a valid scheme from 'red_band', 'random' or 'all_random'.
+        \n`arcgis.env.type_init_tail_parameters={{valid_scheme}}`
+        """)
     new_tail = _get_ms_tail(tail, data, type_init=type_init)
     _set_tail(model, new_tail)
     return model
@@ -207,6 +262,8 @@ def _change_tail(model, data):
 def _get_backbone_meta(arch_name):
     _model_meta = {i.__name__:j for i, j in model_meta.items()}
     return _model_meta.get(arch_name, _default_meta)
+
+# Multispectral Models Specific resources end #
 
 
 class ArcGISModel(object):
@@ -285,6 +342,37 @@ class ArcGISModel(object):
     def _check_tf(self):
         if not HAS_TENSORFLOW:
             raise_tensorflow_import_error()
+
+    def _init_tensorflow(self, data, backbone):
+        self._check_tf()
+        
+        from .._utils.common import get_color_array
+        from .._utils.common_tf import handle_backbone_parameter, get_input_shape, check_backbone_is_mobile_optimized
+
+        # Get color Array
+        color_array = get_color_array(data.color_mapping)
+        if len(data.color_mapping) == (data.c -1 ):
+            # Add Background color
+            color_array = np.concatenate([np.array([[0.0, 0.0, 0.0, 0.0]]), color_array]) 
+        data._multispectral_color_array = color_array
+
+        # Handle Backbone
+        self._backbone = handle_backbone_parameter(backbone)
+
+        self._backbone_mobile_optimized = check_backbone_is_mobile_optimized(self._backbone)
+    
+        # Initialize Backbone
+        in_shape = get_input_shape(data.chip_size)
+        self._backbone_initalized = self._backbone(
+            input_shape=in_shape, 
+            include_top=False, 
+            weights='imagenet'
+        )
+
+        self._backbone_initalized.trainable = False
+        self._device = torch.device('cpu')
+        self._data = data
+
 
     def lr_find(self, allow_plot=True):
         """
@@ -412,7 +500,7 @@ class ArcGISModel(object):
         if arcgis.env.verbose:
             logger.info('Fitting the model.')        
         
-        if getattr(self, '_backend', 'tensorflow'):
+        if getattr(self, '_backend', 'pytorch') == 'tensorflow':
             checkpoint = False
 
         callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
@@ -464,7 +552,10 @@ class ArcGISModel(object):
         if self._backbone is None:
             backbone = self._backbone
         else:
-            backbone = self._backbone.__name__
+            if self._backend == 'tensorflow':
+                backbone = self._backbone._keras_api_names[-1].split('.')[-1]
+            else:
+                backbone = self._backbone.__name__
             if backbone == 'backbone_wrapper':
                 backbone = self._orig_backbone.__name__
 
@@ -483,11 +574,18 @@ class ArcGISModel(object):
         _emd_template["ImageSpaceUsed"] = self._data._image_space_used
         _emd_template["LearningRate"] = str(_emd_lr)
         _emd_template["ModelName"] = type(self).__name__
+        _emd_template["backend"] = self._backend
 
-        if not _emd_template.get("ModelParameters"):
-            _emd_template["ModelParameters"] = {"backbone": backbone}
+        model_params = {
+            "backbone": backbone,
+            "backend": self._backend
+            }
+
+        if _emd_template.get("ModelParameters", None) is None:
+            _emd_template["ModelParameters"] = model_params
         else:
-            _emd_template["ModelParameters"]["backbone"] = backbone
+            for _key in model_params:
+                _emd_template["ModelParameters"][_key] = model_params[_key]
 
         model_metrics = self._model_metrics
 
@@ -636,23 +734,32 @@ class ArcGISModel(object):
             _framework = framework.lower()
             if self._backend == 'tensorflow' and _framework == 'tflite':
                 saved_path = self._save_tflite(name, post_processed=post_processed, quantized=quantized)
-            elif self._backend == 'tensorflow' and _framework != 'tflite':
-                _err_msg = """
-                Models initialized with parameter backend="tensorflow" are currently only supported to be saved into tflite framework
-                \nPlease set parameter framework="tflite"
-                """
-                raise Exception(_err_msg)
+            # elif self._backend == 'tensorflow' and _framework != 'tflite':
+            #     _err_msg = """
+            #     Models initialized with parameter backend="tensorflow" are currently only supported to be saved into tflite framework
+            #     \nPlease set parameter framework="tflite"
+            #     """
+            #     raise Exception(_err_msg)
             elif self._backend != 'tensorflow' and _framework == 'tflite':
                 _err_msg = """
                 Only models initialized with parameter backend="tensorflow" are supported to be saved into tflite framework
                 """
                 raise Exception(_err_msg)
             else:
+
+                if isinstance(self.learn.model, (DistributedDataParallel)):
+
+                    if not int(os.environ.get('RANK', 0)):
+                        saved_path = self.learn.save(name,  return_path=True)
+                    return
+
                 saved_path = self.learn.save(name,  return_path=True)
+
             # undoing changes to self.learn.path
         except Exception as e:
             raise e
         finally:
+
             self.learn.path = temp
             self.learn.model_dir = 'models'
 
@@ -700,8 +807,7 @@ class ArcGISModel(object):
             
 
     def _get_post_processed_model(self, input_normalization=True):
-        from .._utils.common import _get_post_processed_model
-        return _get_post_processed_model(self, input_normalization=input_normalization)
+        return get_post_processed_model(self, input_normalization=input_normalization)
 
     def _save_model_characteristics(self, model_characteristics_dir):
 
@@ -848,7 +954,9 @@ class ArcGISModel(object):
                                 Boolean `overwrite` if True, it will overwrite
                                 the item on ArcGIS Online/Enterprise, default False.                                
         =====================   ===========================================
-        """        
+        """    
+        if int(os.environ.get('RANK', 0)):
+            return
         return self._save(name_or_path, framework=framework, publish=publish, gis=gis, **kwargs)
         
     def load(self, name_or_path):

@@ -41,10 +41,10 @@ def enrich_from_grid(input_layer,
     **Argument**            **Description**
     ----------------------  ---------------------------------------------------------------
     input_layer             Required layer. The point features that will be enriched
-                            by the multi-variable grid. See :ref:`Feature Input<FeatureInput>`.
+                            by the multi-variable grid. See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------------  ---------------------------------------------------------------
     grid_layer              Required layer. The multivariable grid layer created using the Build Multi-Variable Grid task. 
-                            See :ref:`Feature Input<FeatureInput>`.
+                            See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------------  ---------------------------------------------------------------
     enrichment_attributes   optional string. A list of fields in the multi-variable grid
                             that will be joined to the input point features. If the

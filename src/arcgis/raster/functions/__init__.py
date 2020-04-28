@@ -901,6 +901,7 @@ def classify(raster1, raster2=None, classifier_definition=None, astype=None):
     """
 
     layer1, raster_1, raster_ra1 = _raster_input(raster1)
+    layer2=None
     if raster2 is not None:
         layer2, raster_2, raster_ra2 = _raster_input(raster1, raster2)
 
@@ -2826,7 +2827,7 @@ def segment_mean_shift(raster, spectral_detail=None, spatial_detail=None, spectr
 
 
 def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=None, slope_type=None, ps_power=None,
-                  psz_factor=None, remove_edge_effect=None, astype=None):
+                  psz_factor=None, remove_edge_effect=None, astype=None, colorramp=None, hillshade_type=0):
     """
     Shaded relief is a color 3D model of the terrain, created by merging the images from the Elevation-coded and
     Hillshade methods. For more information, see
@@ -2844,6 +2845,11 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
     :param psz_factor: double, used together with SCALED slope type
     :param remove_edge_effect: boolean, True or False
     :param astype: output pixel type
+    :param colorramp: string, specifying color ramp name like <Black To White|Yellow To Red|Slope|more..>
+                      or a color ramp object. 
+                      For more information about colorramp object, see color ramp object at
+                      http://resources.arcgis.com/en/help/arcgis-rest-api/#/Color_ramp_objects/02r3000001m0000000/)
+    :param hillshade_type: new at 10.8.1. int, 0 = traditional, 1 = multi - directional; default is 0
     :return: the output raster
 
     """
@@ -2869,6 +2875,8 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
         template_dict["rasterFunctionArguments"]["ZFactor"] = z_factor
     if colormap is not None:
         template_dict["rasterFunctionArguments"]["Colormap"] = colormap
+    if colorramp is not None:
+        template_dict["rasterFunctionArguments"]['Colorramp'] = colorramp
     if slope_type is not None:
         template_dict["rasterFunctionArguments"]["SlopeType"] = slope_type
     if ps_power is not None:
@@ -2877,6 +2885,8 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
         template_dict["rasterFunctionArguments"]["PSZFactor"] = psz_factor
     if remove_edge_effect is not None:
         template_dict["rasterFunctionArguments"]["RemoveEdgeEffect"] = remove_edge_effect
+    if hillshade_type is not None:
+        template_dict["rasterFunctionArguments"]["HillshadeType"] = hillshade_type
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -4073,7 +4083,16 @@ def lookup(raster, field=None):
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def raster_collection_function(raster, item_function, aggregation_function, processing_function):
+def raster_collection_function(raster, item_function=None, 
+                               aggregation_function=None, 
+                               processing_function=None, 
+                               aggregation_definition_type="ALL",
+                               dimension=None,
+                               interval_keyword=None,
+                               interval_value=None,
+                               interval_unit=None,
+                               interval_ranges=None,
+                               ):
     """
     Creates a new raster by applying item, aggregation and processing function
     :param raster: Input Imagery Layer. The image service the layer is based on should be a mosaic dataset
@@ -4085,51 +4104,194 @@ def raster_collection_function(raster, item_function, aggregation_function, proc
                                  specify that as the input to aggregation_function 
     :param processing_function: The processing template to be applied on the imagery layer.
                                 Create an RFT object out of the raster function template item on the portal and 
-                                specify that as the input to processing_function 
+                                specify that as the input to processing_function.
+    :param aggregation_definition_type: Optional String. Specifies the dimension interval for which the data
+                                        will be aggregated.
+
+                                        - ALL : The data values will be aggregated across all slices. This is the default.
+
+                                        - INTERVAL_KEYWORD : The variable data will be aggregated using a commonly known interval.
+
+                                        - INTERVAL_VALUE : The variable data will be aggregated using a user-specified interval and unit.
+
+                                        - INTERVAL_RANGES : The variable data will be aggregated between specified pairs of values or dates.
+    :param dimension: Optional String. This is the dimension along which the variables will be aggregated.
+    :param interval_keyword: Optional String. Specifies the keyword interval that will be used
+                                             when aggregating along the dimension. This parameter is required
+                                             when the aggregation_def parameter is set to INTERVAL_KEYWORD, and
+                                             the aggregation must be across time.
+
+                                             - HOURLY : The data values will be aggregated into hourly time steps, 
+                                               and the result will include every hour in the time series.
+
+                                             - DAILY : The data values will be aggregated into daily time steps, 
+                                               and the result will include every day in the time series.
+
+                                             - WEEKLY : The data values will be aggregated into weekly time steps, 
+                                               and the result will include every week in the time series.
+
+                                             - DEKADLY : Divides each month into 3 periods of 10 days each 
+                                               (last period might have more or less than 10 days)
+                                               and each month would output 3 slices.
+
+                                             - PENTADLY : Divides each month into 6 periods of 5 days each 
+                                               (last period might have more or less than 5 days)
+                                               and each month would output 6 slices.
+
+                                             - MONTHLY : The data values will be aggregated into monthly time steps, 
+                                               and the result will include every month in the time series.
+
+                                             - QUARTERLY : The data values will be aggregated into quarterly time steps, 
+                                               and the result will include every quarter in the time series.
+
+                                             - YEARLY : The data values will be aggregated into yearly time steps, 
+                                               and the result will include every year in the time series.
+
+                                             - RECURRING_DAILY : The data values will be aggregated into daily time steps, 
+                                               and the result includes each one aggregated value per day. 
+                                               The output will include, at most, 366 daily time slices
+
+                                             - RECURRING_WEEKLY : The data values will be aggregated into weekly time steps, 
+                                               and the result will include one aggregated value per week. 
+                                               The output will include, at most, 53 weekly time slices.
+
+                                             - RECURRING_MONTHLY : The data values will be aggregated into weekly time steps, 
+                                               and the result will include one aggregated value per month. 
+                                               The output will include, at most, 12 monthly time slices.
+
+                                             - RECURRING_QUARTERLY : The data values will be aggregated into weekly time steps, 
+                                               and the result will include one aggregated value per quarter. 
+                                               The output will include, at most, 4 quarterly time slices.
+
+    :param interval_value: Optional String. The size of the interval that will be used for the
+                           aggregation. This parameter is required when the aggregation_def
+                           parameter is set to INTERVAL_VALUE.
+
+                           For example, to aggregate 30 years of monthly temperature data into
+                           5-year increments, enter 5 as the interval_value, and specify
+                           interval_unit as YEARS.
+
+    :param interval_unit: Optional String. The unit that will be used for the interval value.
+                          This parameter is required when the dimension parameter is set to a
+                          time field and the aggregation_def parameter is set to INTERVAL_VALUE.
+
+                          If you are aggregating over anything other than time, this option
+                          will not be available and the unit for the interval value will match
+                          the variable unit of the input multidimensional raster data.
+
+                          - HOURS : The data values will be aggregated into hourly time slices at the interval provided.
+                          - DAYS : The data values will be aggregated into daily time slices at the interval provided.
+                          - WEEKS : The data values will be aggregated into weekly time slices at the interval provided.
+                          - MONTHS : The data values will be aggregated into monthly time slices at the interval provided.
+                          - YEARS : The data values will be aggregated into yearly time slices at the interval provided.
+    :param interval_ranges: Optional List of dictionary objects. Interval ranges specified as list of dictionary objects 
+                            that will be used to aggregate groups of values. 
+
+                            This parameter is required when the aggregation_definition parameter is set to INTERVAL_RANGE.
+                            If dimension is StdTime, then the value must be specified in human readable time format (YYYY-MM-DDTHH:MM:SS).
+
+                            Syntax: 
+                                [{"minValue":"<min value>","maxValue":"<max value>"},
+                                {"minValue":"<min value>","maxValue":"<max value>"}]
+
+                            Example:
+                                [{"minValue":"2012-01-15T03:00:00","maxValue":"2012-01-15T09:00:00"},
+                                {"minValue":"2012-01-15T12:00:00","maxValue":"2012-01-15T21:00:00"}]
+    
+
     :return: the output raster with function applied on it
     """
 
     layer, raster, raster_ra = _raster_input(raster)
-
+       
     template_dict = {
-        "name" : "collection_raster_function",
-        "function" : {"name":"RasterCollectionFunction"},
-        "arguments" : {
-        "RasterCollection":{  
-             "name":"RasterCollection",
-             "value":raster,
-             "isDataset":True,
-             "isPublic":False,
-             "type":"RasterFunctionVariable"
-          },
-        "type" : "RasterCollectionFunctionArguments"
-         },
-        "functionType" : 3
+        "rasterFunction": "RasterCollection",
+        "rasterFunctionArguments": {
+            "RasterCollection": raster
+        },
+        "variableName": "RasterCollection"
     }
+    
     if item_function is not None:
         if isinstance(item_function, RFT):
-            template_dict["function"]["itemFunction"]=item_function._rft_json
+            template_dict["rasterFunctionArguments"]['ItemFunction']=item_function._rft_json
         else:
-            template_dict["function"]["itemFunction"]=item_function
+            template_dict["rasterFunctionArguments"]['ItemFunction']=item_function
+        if "type" not in template_dict["rasterFunctionArguments"]["ItemFunction"]:
+            template_dict["rasterFunctionArguments"]["ItemFunction"].update({'type':'RasterFunctionTemplate'})
 
     if aggregation_function is not None:
         if isinstance(aggregation_function, RFT):
-            template_dict["function"]["aggregationFunction"]=aggregation_function._rft_json
+            template_dict["rasterFunctionArguments"]["AggregationFunction"]=aggregation_function._rft_json
         else:
-            template_dict["function"]["aggregationFunction"]=aggregation_function
+            template_dict["rasterFunctionArguments"]["AggregationFunction"]=aggregation_function
+        if "type" not in template_dict["rasterFunctionArguments"]["AggregationFunction"]:
+            template_dict["rasterFunctionArguments"]["AggregationFunction"].update({'type':'RasterFunctionTemplate'})
 
     if processing_function is not None:
         if isinstance(processing_function, RFT):
-            template_dict["function"]["processingFunction"]=processing_function._rft_json
+            template_dict["rasterFunctionArguments"]["ProcessingFunction"]=processing_function._rft_json
         else:
-            template_dict["function"]["processingFunction"]=processing_function
+            template_dict["rasterFunctionArguments"]["ProcessingFunction"]=processing_function
+        if "type" not in template_dict["rasterFunctionArguments"]["ProcessingFunction"]:
+            template_dict["rasterFunctionArguments"]["ProcessingFunction"].update({'type':'RasterFunctionTemplate'})
 
-    #if mosaic_operation is not None:
-        #template_dict["function"]["mosaicOperation"] = mosaic_operation
-    template_dict["function"]["type"] = "RasterCollectionFunction"
-    function_chain_ra = copy.deepcopy(template_dict)
-    function_chain_ra["arguments"]["RasterCollection"]["value"] = raster_ra
-    return _clone_layer_without_copy(layer, template_dict, function_chain_ra)
+    aggregation_definition = {}
+    aggregation_definition.update({"definitionType": aggregation_definition_type})
+
+    if dimension is not None:
+         aggregation_definition.update({"dimension":dimension})
+
+    if aggregation_definition_type == "INTERVAL_VALUE":
+        if interval_value is None:
+            raise RuntimeError("interval_value cannot be None, if aggregation_definition_type is INTERVAL_VALUE")
+
+        aggregation_definition.update({"intervalValue":interval_value})
+        if interval_unit is not None:
+            aggregation_definition.update({"intervalUnits":interval_unit})
+
+    elif aggregation_definition_type == "INTERVAL_KEYWORD":
+        if interval_keyword is None:
+            raise RuntimeError("interval_keyword cannot be None, if aggregation_definition_type is INTERVAL_KEYWORD")
+
+        interval_keyword_val=interval_keyword
+        if interval_keyword is not None:
+            interval_keyword_allowed_values = ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY',
+                                               'RECURRING_MONTHLY', 'RECURRING_QUARTERLY', 'PENTADLY', 'DEKADLY']
+            if [element.lower() for element in interval_keyword_allowed_values].count(interval_keyword.lower()) <= 0 :
+                raise RuntimeError('interval_keyword can only be one of the following: '+str(interval_keyword_allowed_values))
+            interval_keyword_val=interval_keyword
+            for element in interval_keyword_allowed_values:
+                if interval_keyword.upper() == element:
+                    interval_keyword_val = element
+        aggregation_definition.update({"intervalKeyword":interval_keyword})
+
+    elif aggregation_definition_type == "INTERVAL_RANGES":
+        if interval_ranges is None:
+            raise RuntimeError("interval_ranges cannot be None, if aggregation_definition_type is INTERVAL_RANGES")
+            
+        min_list=[]
+        max_list=[]
+        if isinstance(interval_ranges, list):
+            for ele in interval_ranges:
+                if isinstance(ele,dict):
+                    min_list.append(ele["minValue"])
+                    max_list.append(ele["maxValue"])
+
+        if isinstance(interval_ranges, dict):
+            min_list.append(interval_ranges["minValue"])
+            max_list.append(interval_ranges["maxValue"])
+
+        aggregation_definition.update({"minValues":min_list})
+        aggregation_definition.update({"maxValues":max_list})
+
+    if aggregation_definition is not None:
+        template_dict["rasterFunctionArguments"]["AggregationDefinition"] = _json.dumps(aggregation_definition)
+
+    #if where_clause is not None:
+    #    template_dict["rasterFunctionArguments"]["WhereClause"] = where_clause
+
+    return _clone_layer(layer, template_dict, raster_ra)
 
 def monitor_vegetation(raster, method='NDVI', band_indexes=None, astype=None):
     """
@@ -4525,6 +4687,539 @@ def _raster_item(raster, raster_id=None):
 
     return _clone_layer(layer, template_dict, raster_ra)
 
+def generate_trend(raster, dimension_name, regression_type=0, cycle_length = 1, cycle_unit = "YEARS",
+                   harmonic_frequency=1, polynomial_order=2, ignore_nodata=True, rmse=True, r2=False,slope_p_value=False):
+
+    """
+    Estimates the trend for each pixel along a dimension for one or more variables in a multidimensional raster.
+
+    :param raster: The input multidimensional raster.
+    :param dimension_name: Required String. The dimension along which a trend will be extracted for the 
+                           variable or variables selected in the analysis.
+    :param regression_type: Optional Integer or String. Specifies the type of line to be used to fit to the pixel values along a dimension.
+
+                            - 0 (LINEAR) : Fits the pixel values for a variable along a linear trend line. This is the default.
+                            - 1 (HARMONIC) : Fits the pixel values for a variable along a harmonic trend line.
+                            - 2 (POLYNOMIAL) : Fits the pixel values for a variable along a second-order polynomial trend line.
+
+    :param cycle_length: Optional Integer. The length of periodic variation to model. This parameter is required when Trend Line Type is
+                         set to Harmonic. For example, leaf greenness often has one strong cycle of variation in a single year, so the 
+                         cycle length is 1 year. Hourly temperature data has one strong cycle of variation throughout a single day, 
+                         so the cycle length is 1 day. Default is 1.
+    :param cycle_unit: Optional String. Specifies the time unit to be used for the length of harmonic cycle. Options: "DAYS", "YEARS" (This is the default).
+
+    :param harmonic_frequency: Optional Integer. The frequency number to use in the trend fitting. This parameter specifies the 
+                               frequency of cycles in a year. The default value is 1, or one harmonic cycle per year. 
+                               This parameter is only included in the trend analysis for a harmonic regression (regression_type=1).
+    :param polynomial_order: Optional Integer. The polynomial order number to use in the trend fitting. This parameter specifies the 
+                             polynomial order. The default value is 2, or second-order polynomial. This parameter 
+                             is only included in the trend analysis for a polynomial regression (regression_type=2).
+    :param ignore_nodata: Optional Boolean. Specifies whether NoData values are ignored in the analysis.
+                          
+                          - True : The analysis will include all valid pixels along a given dimension and ignore any NoData pixels. This is the default.
+                          - False : The analysis will result in NoData if there are any NoData values for the pixels along the given dimension.
+
+    :param rmse: Optional Boolean. Specifies whether to generate the root mean square error (RMSE) of the trend fit line.
+
+                 - True : The RMSE will be calculated and displayed when the tool is finished running. This is the default.
+                 - False : The RMSE will not be calculated.
+
+    :param r2: Optional Boolean. Specifies whether to calculate the R-squared goodness-of-fit statistic for the trend fit line.
+
+               - True : The R-squared will be calculated and displayed when the tool is finished running.
+               - False : The R-squared will not be calculated. This is the default.
+
+    :param slope_p_value: Optional Boolean. Specifies whether to calculate the p-value statistic for the slope coefficient of the trend line.
+
+                          - True : The p-value will be calculated and displayed when the tool is finished running. 
+                          - False : The p-value will not be calculated. This is the default.
+
+    :return: output raster 
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "TrendAnalysis",
+        "rasterFunctionArguments": {
+            "Raster" : raster,            
+        }
+    }
+    
+    if dimension_name is not None:
+        template_dict["rasterFunctionArguments"]['DimensionName'] = dimension_name
+
+    regression_type_dict = {"LINEAR":0, "HARMONIC":1, "POLYNOMIAL":2}
+    if regression_type is not None:
+        if isinstance(regression_type, str):
+            regression_type= regression_type_dict[regression_type.upper()]
+            template_dict["rasterFunctionArguments"]['RegressionType'] = regression_type
+        else:
+            template_dict["rasterFunctionArguments"]['RegressionType'] = regression_type
+
+    if cycle_length is not None:
+        template_dict["rasterFunctionArguments"]['CycleLength'] = cycle_length
+
+    if cycle_unit is not None:
+        template_dict["rasterFunctionArguments"]['CycleUnit'] = cycle_unit
+
+    if harmonic_frequency is not None:
+        template_dict["rasterFunctionArguments"]['Frequency'] = harmonic_frequency
+
+    if polynomial_order is not None:
+        template_dict["rasterFunctionArguments"]['Order'] = polynomial_order
+
+    if ignore_nodata is not None:
+        template_dict["rasterFunctionArguments"]['IgnoreNoData'] = ignore_nodata
+
+    if rmse is not None:
+        template_dict["rasterFunctionArguments"]['RMSE'] = rmse
+
+    if r2 is not None:
+        template_dict["rasterFunctionArguments"]['R2'] = r2
+
+    if slope_p_value is not None:
+        template_dict["rasterFunctionArguments"]['SlopePValue'] = slope_p_value
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+
+def predict_using_trend(raster, dimension_definition_type=0, dimension_values=None, start=None, end=None, interval_value=1, interval_unit='HOURS'):
+
+    """
+    Computes a forecasted multidimensional raster layer using the output trend raster from the generate_trend function.
+
+    :param raster: The input raster.
+    :param dimension_definition_type: Optional Integer or String. Specifies the method used to provide prediction dimension values.
+
+                                      - 0 (BY_VALUE) : The prediction will be calculated for a single dimension value. For example, you want to predict yearly precipitation for the years 2050, 2100, and 2150. This is the default.
+                                      - 1 (BY_INTERVAL) : The prediction will be calculated for an interval of the dimension defined by a start and an end value. For example, you want to predict yearly precipitation for every year between 2050 and 2150.
+
+    :param dimension_values: Optional List. The dimension value or values to be used in the prediction. The format of the time, 
+                             depth, and height values must match the format of the dimension values used to 
+                             generate the trend raster. If the trend raster was generated for the StdTime dimension, 
+                             the format should be YYYY-MM-DDTHH:MM:SS, 
+                             for example, 2050-01-01T00:00:00.
+
+    :param start: Optional String or Integer. The start date, height, or depth of the dimension interval to be used in the prediction.
+                            This parameter is required when the dimension_definition_type parameter is set to 1 (By Interval).
+
+    :param end: Optional String or Integer. The end date, height, or depth of the dimension interval to be used in the prediction.
+                          This parameter is required when the dimension_definition_type parameter is set to 1 (By Interval).
+    :param interval_value: Optional Integer. The number of steps between two dimension values to be included in the prediction. The default value is 1.
+                                This parameter is required when the dimension_definition_type parameter is set to 1 (By Interval).
+    :param interval_unit: Optional String. The unit that will be used for the value interval. This parameter only applies when the dimension of analysis is a time dimension.
+
+                            - HOURS - The prediction will be calculated for each hour in the range of time described by the start, end, and interval_value parameters.
+
+                            - DAYS - The prediction will be calculated for each day in the range of time described by the start, end, and interval_value parameters.
+
+                            - WEEKS - The prediction will be calculated for each week in the range of time described by the start, end, and interval_value parameters.
+
+                            - MONTHS - The prediction will be calculated for each month in the range of time described by the start, end, and interval_value parameters.
+
+                            - YEARS - The prediction will be calculated for each year in the range of time described by the start, end, and interval_value parameters.
+
+    :return: output raster 
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "Trend",
+        "rasterFunctionArguments": {
+            "Raster" : raster,            
+        }
+    }
+
+    dimension_definition_type_dict = {"BY_VALUE":0, "BY_INTERVAL":1}
+    if dimension_definition_type is not None:
+        if isinstance(dimension_definition_type, str):
+            dimension_definition_type= dimension_definition_type_dict[dimension_definition_type.upper()]
+            template_dict["rasterFunctionArguments"]['DimensionDefinitionType'] = dimension_definition_type
+        else:
+            template_dict["rasterFunctionArguments"]['DimensionDefinitionType'] = dimension_definition_type
+    
+
+    if dimension_values is not None:
+        if isinstance(dimension_values, list):
+            values = ";".join(str(ele) for ele in dimension_values)
+            template_dict["rasterFunctionArguments"]['DimensionValues'] = values
+        else:
+            template_dict["rasterFunctionArguments"]['DimensionValues'] = dimension_values
+
+    if start is not None:
+        template_dict["rasterFunctionArguments"]['DimensionStart'] = start
+
+    if end is not None:
+        template_dict["rasterFunctionArguments"]['DimensionEnd'] = end
+
+    if interval_value is not None:
+        template_dict["rasterFunctionArguments"]['DimensionInterval'] = interval_value
+
+    if interval_unit is not None:
+        template_dict["rasterFunctionArguments"]['DimensionUnit'] = interval_unit
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def linear_spectral_unmixing(raster,spectral_profile_def=None, non_negative=False, sum_to_one=False):
+
+    """
+    Performs subpixel classification and calculates the fractional abundance of different land cover types for individual pixels. 
+
+    :param raster: The input raster.
+    :param spectral_profile_def: Optional dict. The class spectral profile information.
+    :param non_negative: Optional bool. Specifies the options to define the output pixel values.
+
+                         - True : There will be no negative output values.
+                         - False : There can be negative values of fractional land cover. This is the default.
+
+    :param sum_to_one: Optional bool. Specifies the options to define the output pixel values.
+
+                        - True : Class values for each pixel are provided in decimal format with the sum of all classes equal to 1. 
+
+                          Example: 
+                            Class1 = 0.16; Class2 = 0.24; Class3 = 0.60.
+
+                        - False : The sum of all classes in a pixel can exceed 1. This is the default.
+
+    :return: output raster 
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "SpectralUnmixing",
+        "rasterFunctionArguments": {
+            "Raster" : raster,            
+        }
+    }
+
+    if spectral_profile_def is not None:
+        template_dict["rasterFunctionArguments"]['SpectralProfileDefinition'] = spectral_profile_def
+
+    if non_negative is not None:
+        template_dict["rasterFunctionArguments"]['NonNegative'] = non_negative
+
+    if sum_to_one is not None:
+        template_dict["rasterFunctionArguments"]['SumToOne'] = sum_to_one
+
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def multidimensional_filter(raster, 
+                            variables=None,
+                            dimension_definition='ALL',
+                            dimension=None,
+                            dimension_ranges=None,
+                            dimension_values=None,
+                            start_of_first_iteration=None,
+                            end_of_first_iteration=None,
+                            iteration_step=3,
+                            iteration_unit=None,
+                            dimensionless=False):
+
+    """
+    Applies a filter on a multidimensional raster. Function creates a raster layer 
+    from a multidimensional raster by slicing data along defined variables and dimensions.
+
+    :param raster: The input multidimensional raster
+    :param variables: Optional List. The list of variables that will be included in the output 
+                      multidimensional raster layer. If no variable is specified, the first variable will be used.
+
+    :param dimension_definition: Optional String. Specifies the method that will be used to slice the dimension.
+
+                                    - ALL : The full range for each dimension will be used. This is the default.
+
+                                    - BY_RANGES : The dimension will be sliced using a range or a list of ranges.
+
+                                    - BY_ITERATION : The dimension will be sliced over a specified interval.
+
+                                    - BY_VALUES : The dimension will be sliced using a list of dimension values.
+
+    :param dimension: Optional String. The dimension along which the variables will be sliced. 
+                      This parameter is required when the dimension_definition is set to BY_ITERATION.
+
+    :param dimension_ranges: Optional list of dicts. This slices the data based on the dimension name and the minimum and maximum values for the range. This parameter is required when the dimension_definition is set to BY_RANGE.
+                             If dimension is StdTime, then the min value and max value must be specified in 
+                             human readable time format (YYYY-MM-DDTHH:MM:SS). The input should be specified as:
+                             [{"dimension":"<dimension_name>", "minValue":"<dimension_min_value>", "maxValue":"<dimension_max_value>"},{"dimension":"<dimension_name>", "minValue":"<dimension_min_value>", "maxValue":"<dimension_max_value>"}]
+
+                             Example:
+                                 [{"dimension":"StdTime", "minValue":"2013-05-17T00:00:00", "maxValue":"2013-05-17T03:00:00"},{"dimension":"StdZ", "minValue":"-5000", "maxValue":"-4000"}]
+
+    :param dimension_values: Optional List of Dicts. This slices the data based on the dimension name and the value specified.
+                             This parameter is required when the dimension_definition is set to BY_VALUE.
+
+                             If dimension is StdTime, then the value must be specified in 
+                             human readable time format (YYYY-MM-DDTHH:MM:SS). The input should be specified as:
+                             [{"dimension":"<dimension_name>", "value":"<dimension_value>"},{"dimension":"<dimension_name>", "value":"<dimension_value>"}]
+
+                             Example:
+                                 [{"dimension":"StdTime", "value":"2012-01-15T03:00:00"},{"dimension":" StdZ ", "value":"-4000"}]
+
+    :param start_of_first_iteration: Optional String. The beginning of the interval. 
+                                     This parameter is required when the dimension_definition is set to BY_ITERATION
+    :param end_of_first_iteration: Optional String. The end of the interval. 
+                                   This parameter is required when the dimension_definition is set to BY_ITERATION
+    :param iteration_step: Optional Float. The frequency with which the data will be sliced. 
+                           This parameter is required when the dimension_definition is set to BY_ITERATION
+                           The default is 3.
+    :param iteration_unit: Optional String. Specifies the iteration unit. 
+                           This parameter is required when the dimension_definition is set to BY_ITERATION
+                           and the dimension parameter is set to StdTime.
+
+                            - HOURS - Uses hours as the specified unit of time.
+
+                            - DAYS - Uses days as the specified unit of time.
+
+                            - WEEKS - Uses weeks as the specified unit of time.
+
+                            - MONTHS - Uses months as the specified unit of time.
+
+                            - YEARS -Uses years as the specified unit of time.
+
+    :param dimensionless: Optional Boolean. Specifies whether the layer should have dimension values. This option is only available if a single slice is selected to create a layer.
+
+                           - True - The layer will not have dimension values.
+                           - False - The layer will have a dimension value. This is the default.
+
+    :return: output raster 
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    dimension_definition_val = dimension_definition
+    if dimension_definition is not None:
+        dimension_definition_allowed_values = ['ALL', 'BY_VALUES', 'BY_RANGES', 'BY_ITERATION']
+        if [element.lower() for element in dimension_definition_allowed_values].count(dimension_definition.lower()) <= 0 :
+            raise RuntimeError('dimension_definition can only be one of the following: '+str(dimension_definition_allowed_values))
+
+        for element in dimension_definition_allowed_values:
+            if dimension_definition.upper() == element:
+                dimension_definition_val = element
+
+    iteration_unit_val = iteration_unit
+    if iteration_unit is not None:
+        iteration_unit_allowed_values = ['HOURS','DAYS', 'DAILY', 'WEEKS', 'MONTHS', 'YEARS']
+        if [element.lower() for element in iteration_unit_allowed_values].count(iteration_unit.lower()) <= 0 :
+            raise RuntimeError('iteration_unit can only be one of the following: '+str(iteration_unit_allowed_values))
+
+        for element in iteration_unit_allowed_values:
+            if iteration_unit.upper() == element:
+                iteration_unit_val = element
+
+    filter_dict = {}
+    filter_dict.update({"definitionType": dimension_definition_val})
+
+    if variables is not None:
+        if isinstance(variables, list):
+            filter_dict.update({"variables":variables})
+        else:
+            filter_dict.update({"variables":[variables]})
+
+
+    if dimension_definition == "BY_RANGES":
+        dimensions_list = []
+        min_values_list = []
+        max_values_list = []
+        if isinstance(dimension_ranges, list):
+            for ele in dimension_ranges:
+                if isinstance(ele,dict):
+                    min_values_list.append(ele["minValue"])
+                    max_values_list.append(ele["maxValue"])
+                    dimensions_list.append(ele["dimension"])
+        filter_dict.update({"dimensions":dimensions_list, "minValues":min_values_list, "maxValues":max_values_list})
+
+    elif dimension_definition == "BY_ITERATION":
+        filter_dict.update({"dimension":dimension, 
+                            "startValue":start_of_first_iteration, 
+                            "endValue":end_of_first_iteration,
+                            "stepValue":iteration_step})
+        if iteration_unit is not None:
+            filter_dict.update({"units":iteration_unit_val})
+
+    elif dimension_definition == "BY_VALUES":
+        dimensions_list = []
+        values_list = []
+        if isinstance(dimension_values, list):
+            for ele in dimension_values:
+                if isinstance(ele,dict):
+                    values_list.append(ele["value"])
+                    dimensions_list.append(ele["dimension"])
+        filter_dict.update({"dimensions":dimensions_list, "values":values_list})
+
+    template_dict = {
+        "rasterFunction" : "MultidimensionalFilter",
+        "rasterFunctionArguments": {
+            "Raster" : raster,  
+            "Filter" : _json.dumps(filter_dict)
+        }
+    }
+
+    if dimensionless is not None:
+        if isinstance(dimensionless, bool):
+            template_dict["rasterFunctionArguments"]['Dimensionless'] = dimensionless
+        else:
+            raise RuntimeError('dimensionless should be an instance of bool')
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+def s1_radiometric_calibration(raster, calibration_type=None):
+
+    """
+    Performs different types of radiometric calibration on Sentinel-1 data.
+
+    :param raster: The input raster.
+                   The Sentinel-1 Level-1 GRD or SLC input raster you want to process.
+
+                   The function will use the LUT file either to apply the thermal correction or to 
+                   remove the correction, depending on the contents of the LUT.
+    :param calibration_type: Optional string or int. one of four calibration types: 
+                             "beta_nought" (0) - produces an output containing the radar brightness coefficient.
+                             "sigma_nought" (1) - the backscatter returned to the antenna from a unit area on the ground, related to ground range.
+                             "gamma" (2) - measurement of emitted and returned energy useful for determining antenna patterns.
+                              None - Specify None to not apply a correction. This is the default.
+
+    :return: output raster 
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "S1RadiometricCalibration",
+        "rasterFunctionArguments": {
+            "Raster" : raster,            
+        }
+    }
+    
+    calibration_type_dict = {"beta_nought":0, "sigma_nought":1, "gamma":2}
+    if calibration_type is not None:
+        if isinstance(calibration_type, str):
+            calibration_type= calibration_type_dict[calibration_type.upper()]
+            template_dict["rasterFunctionArguments"]['CalibrationType'] = calibration_type
+        else:
+            template_dict["rasterFunctionArguments"]['CalibrationType'] = calibration_type
+    else:
+        template_dict["rasterFunctionArguments"]['CalibrationType'] = 3
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def s1_thermal_noise_removal(raster, calibration_type=None):
+
+    """
+    Removes thermal noise from Sentinel-1 data.
+
+    :param raster: The input raster.
+                   The Sentinel-1 Level-1 GRD or SLC input raster you want to process.
+
+                   The function will use the LUT file either to apply the thermal correction or to 
+                   remove the correction, depending on the contents of the LUT.
+
+    :return: output raster 
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "S1ThermalNoiseRemoval",
+        "rasterFunctionArguments": {
+            "Raster" : raster,            
+        }
+    }
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+def interpolate_irregular_data(point_feature, value_field=None, cell_size=0, interpolation_method = 0, radius=3, gis=None):
+    """
+    Interpolates from point clouds or irregular grids. (Supported from 10.8.1)
+
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    point_feature_class                  Rquired. The input point feature layer.
+    --------------------------------     --------------------------------------------------------------------
+    value_field                          Optional string. The name of the field that contains the value of the points to be interpolated.
+    --------------------------------     --------------------------------------------------------------------
+    cell_size                            Optional int. The cell size for the output raster dataset. 
+    --------------------------------     --------------------------------------------------------------------
+    interpolation_method                 Optional int or string. The resampling method to use for interpolation:
+
+                                          -  0 or NEAREST_NEIGBOR : Calculates pixel value using the nearest pixel. If no source pixel 
+                                             exists, no new pixel can be created in the output. This is the default.
+
+                                          -  2 or LINEAR_TINNING : Uses a triangular irregular network from the center 
+                                             points of each cell in the irregular raster to interpolate a surface 
+                                             that is then converted to a regular raster.
+
+                                          -  3 or NATURAL_NEIGHBOR : Finds the closest subset of input samples to a 
+                                             query point and applies weights to them based on proportionate 
+                                             areas to interpolate a value.
+
+                                          -  4 or INVERSE_DISTANCE_WEIGHTED : Determines cell values using a 
+                                             linearly weighted combination of a set of sample points or cells. 
+                                             The weight is a function of the inverse of the distance from the known points or cells.
+    --------------------------------     --------------------------------------------------------------------
+    radius                               Optional int. The number of pixels to be included for resampling. The default value is 3 pixels.
+    --------------------------------     --------------------------------------------------------------------
+    gis                                  Optional gis. gis parameter can be specified to render the output raster 
+                                         dynamically using the raster rendering service of the gis.
+                                         If not provided, active gis will be used to do this.
+                                         If gis parameter is not specified the output of interpolate_irregular_data() cannot be displayed. 
+    ================================     ====================================================================
+
+    :returns: output raster with function applied
+
+    """
+    from arcgis.geoprocessing._support import _layer_input
+    point_feature = _layer_input(point_feature)
+    template_dict = {
+        "rasterFunction" : "InterpolateIrregularData",
+        "rasterFunctionArguments": {"PointFeatureClass":point_feature,
+                                    "RasterInfo":{"blockWidth" : 2048,
+                                                "blockHeight" : 256,
+                                                "bandCount" : 0,
+                                                "pixelType" : -1,
+                                                "pixelSizeX" : cell_size,
+                                                "pixelSizeY" : cell_size,
+                                                "format" : "",
+                                                "compressionType" : "",
+                                                "firstPyramidLevel" : 1,
+                                                "maximumPyramidLevel" : 30,
+                                                "packetSize" : 4,
+                                                "compressionQuality" : 0,
+                                                "pyramidResamplingType" : -1,
+                                                "type" : "RasterInfo"}
+                                 }
+                 }
+
+    interpolation_methods = {
+        'NEAREST_NEIGBOR': 0,
+        'LINEAR_TINNING': 2,
+        'NATURAL_NEIGHBOR' : 3,
+        'INVERSE_DISTANCE_WEIGHTED': 4
+    }
+
+
+    if interpolation_method is not None:
+        if isinstance(interpolation_method, str):
+            interpolation_method = interpolation_methods[interpolation_method.upper()]
+        else:
+            interpolation_method = interpolation_method
+        template_dict["rasterFunctionArguments"]["InterpolationMethod"] = interpolation_method
+
+    if value_field is not None:
+        template_dict["rasterFunctionArguments"]["ValueField"] = value_field
+
+    if radius is not None:
+        template_dict["rasterFunctionArguments"]["Radius"] = radius
+
+    if gis is not None:
+        newlyr = ImageryLayer(template_dict, gis)
+    else:
+        newlyr = ImageryLayer(template_dict,None)
+    #_LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
+    newlyr._fn = template_dict
+    newlyr._fnra = template_dict
+    return newlyr
 
 class RFT:
     def __init__(self, raster_function_template,gis=None):

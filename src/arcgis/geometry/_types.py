@@ -9,63 +9,70 @@ except ImportError as e:
 from six import add_metaclass
 from functools import partial
 
-#--------------------------------------------------------------------------
+_number_type = (int, float)
+_empty_value = [None, "NaN"]
+
+
 def _is_valid(value):
     """checks if the value is valid"""
-    number_type = (int, float)
-    if 'spatialReference' not in value or \
-       isinstance(value['spatialReference'],
-                  (dict, SpatialReference)) == False:
+
+    if not isinstance(
+        value.get('spatialReference', None),
+        (dict, SpatialReference)
+    ):
         return False
+
     if isinstance(value, Point):
         if hasattr(value, 'x') and \
-           hasattr(value, 'y') :
+           hasattr(value, 'y'):
             return True
         elif 'x' in value and \
-             (value['x'] is None or \
-              value['x'] == "NaN"):
+             (value['x'] in _empty_value):
             return True
         return False
     elif isinstance(value, Envelope):
-        if all(hasattr(value, a) for a in ('xmin', 'ymin',
-                                           'xmax', 'ymax')) and \
-           all(isinstance(getattr(value,a), number_type) for a in ('xmin', 'ymin',
-                                                                   'xmax', 'ymax')):
+        if all(
+            isinstance(getattr(value, extent, None), _number_type)
+            for extent in ('xmin', 'ymin', 'xmax', 'ymax')
+        ):
             return True
         elif hasattr(value, "xmin") and \
-             (value.xmin is None or value.xmin == "NaN"):
+             (value.xmin in _empty_value):
             return True
-        else:
-            return False
+
+        return False
     elif isinstance(value, (MultiPoint,
                             Polygon,
                             Polyline)):
         if 'paths' in value:
             if len(value['paths']) == 0:
                 return True
-            else:
-                return _is_line(coords=value['paths'])
+            return _is_line(coords=value['paths'])
         elif 'rings' in value:
             if len(value['rings']) == 0:
                 return True
-            else:
-                return _is_polygon(coords=value['rings'])
+            return _is_polygon(coords=value['rings'])
         elif 'points' in value:
             if len(value['points']) == 0:
                 return True
-            else:
-                return _is_point(coords=value['points'])
-        return False
-    else:
-        return False
+            return _is_point(coords=value['points'])
+
     return False
-#--------------------------------------------------------------------------
+
+
 def _is_polygon(coords):
-    lengths = all(len(elem) >= 4 for elem in coords)
-    valid_pts = all(_is_line(part) for part in coords)
-    isring = all(elem[0] == elem[-1] for elem in coords)
-    return lengths and isring and valid_pts
-#--------------------------------------------------------------------------
+
+    for coord in coords:
+        if len(coord) < 4:
+            return False
+        if not _is_line(coord):
+            return False
+        if coord[0] != coord[-1]:
+            return False
+
+    return True
+
+
 def _is_line(coords):
     """
     checks to see if the line has at
@@ -73,178 +80,170 @@ def _is_line(coords):
     """
     list_types = (list, tuple, set)
     if isinstance(coords, list_types) and \
-       len(coords) > 0: # list of lists
+       len(coords) > 0:
         return all(_is_point(elem) for elem in coords)
-    else:
-        return True
-    return False
-#--------------------------------------------------------------------------
+
+    return True
+
+
 def _is_point(coords):
     """
     checks to see if the point has at
     least 2 coordinates in the list
     """
-    number_type = (int, float)
-    if isinstance(coords, (list, tuple)) and \
-       len(coords) > 1:
+    valid = False
+    if isinstance(coords, (list, tuple)) and len(coords) > 1:
         for coord in coords:
-            if isinstance(coord, number_type):
-                return all(isinstance(v, number_type) for v in coords) and \
-                       len(coords) > 1
-            else:
-                return _is_point(coord)
-    return False
-#--------------------------------------------------------------------------
+            if not isinstance(coord, _number_type):
+                if not _is_point(coord):
+                    return False
+            valid = True
+
+    return valid
+
+
 def _geojson_type_to_esri_type(type_):
-    if type_ in ['LineString','MultiLineString']:
-        return Polyline
-    if type_ in ['Polygon','MultiPolygon']:
-        return Polygon
-    if type_ == 'Point':
-        return Point
-    if type_ == 'MultiPoint':
-        return MultiPoint
+    mapping = {
+        'LineString': Polyline,
+        'MultiLineString': Polyline,
+        'Polygon': Polygon,
+        'MultiPolygon': Polygon,
+        'Point': Point,
+        'MultiPoint': MultiPoint
+    }
+    if mapping.get(type_):
+        return mapping[type_]
     else:
         raise ValueError("Unknown GeoJSON Geometry type: {}".format(type_))
-###########################################################################
+
+
 class BaseGeometry(dict):
     _ao = None
     _type = None
     _HASARCPY = None
     _HASSHAPELY = None
-    #----------------------------------------------------------------------
+    _class_attributes = {'_ao', '_type', '_HASARCPY', '_HASSHAPELY', '_ipython_canary_method_should_not_exist_'}
+
     def __init__(self, iterable=None):
         if iterable is None:
             iterable = {}
         self.update(iterable)
-    #----------------------------------------------------------------------
+
     def is_valid(self):
         return _is_valid(self)
-    #----------------------------------------------------------------------
-    def _check_geometry_engine(self):
-        if self._HASARCPY is None:
-            try:
-                import arcpy
-                self._HASARCPY = True
-            except:
-                self._HASARCPY = False
 
-        if self._HASSHAPELY is None:
-            try:
-                import shapely
-                self._HASSHAPELY = True
-            except:
-                self._HASSHAPELY = False
+    def _check_geometry_engine(self):
+        self._HASARCPY = True
+        try:
+            import arcpy
+        except:
+            self._HASARCPY = False
+
+        self._HASSHAPELY = True
+        try:
+            import shapely
+        except:
+            self._HASSHAPELY = False
 
         return self._HASARCPY, self._HASSHAPELY
-    #----------------------------------------------------------------------
+
     def __setattr__(self, key, value):
         """sets the attribute"""
-        if key in {'_ao','_type', '_HASARCPY', '_HASSHAPELY',
-                   '_ipython_canary_method_should_not_exist_'}:
-            super(BaseGeometry, self).__setattr__(key,value)
+        if key in self._class_attributes:
+            super(BaseGeometry, self).__setattr__(key, value)
         else:
             self[key] = value
             self._ao = None
-    #----------------------------------------------------------------------
-    def __setattribute__ (self, key, value):
-        if key in {'_ao','_type', '_HASARCPY', '_HASSHAPELY',
-                   '_ipython_canary_method_should_not_exist_'}:
-            super(BaseGeometry, self).__setattr__(key,value)
+
+    def __setattribute__(self, key, value):
+        if key in self._class_attributes:
+            super(BaseGeometry, self).__setattr__(key, value)
         else:
             self[key] = value
             self._ao = None
-    #----------------------------------------------------------------------
+
     def __setitem__(self, key, value):
         dict.__setitem__(self, key, value)
         self._ao = None
-    #----------------------------------------------------------------------
-    def __getattribute__ (self, name):
+
+    def __getattribute__(self, name):
         return super(BaseGeometry, self).__getattribute__(name)
-    #----------------------------------------------------------------------
+
     def __getattr__(self, name):
         try:
-            if name in {'_ao',"_type", '_HASARCPY', '_HASSHAPELY',
-                        '_ipython_canary_method_should_not_exist_'}:
-                return super(BaseGeometry, self).__getattr__(k)
-            return dict.__getitem__(self, name)
+            if name in self._class_attributes:
+                return super(BaseGeometry, self).__getattr__(name)
+            return self.__getitem__(name)
         except:
             raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__, name))
-    #----------------------------------------------------------------------
+
     def __getitem__(self, k):
         return dict.__getitem__(self, k)
-########################################################################
+
+
 class GeometryFactory(type):
     """
     Creates the Geometry Objects Based on JSON
     """
-    #----------------------------------------------------------------------
     def _from_wkb(self, iterable):
+        _HASARCPY = True
         try:
             import arcpy
-            HASARCPY = True
         except:
-            HASARCPY = False
-        if HASARCPY:
+            _HASARCPY = False
+        if _HASARCPY:
             return json.loads(arcpy.FromWKB(iterable).JSON)
         return {}
-    #----------------------------------------------------------------------
+
     def _from_wkt(self, iterable):
+        _HASARCPY = True
         try:
             import arcpy
-            HASARCPY = True
         except:
-            HASARCPY = False
-        if HASARCPY:
+            _HASARCPY = False
+        if _HASARCPY:
             return json.loads(arcpy.FromWKT(iterable).JSON)
         return {}
-    #----------------------------------------------------------------------
+
     def _from_gj(self, iterable):
+        _HASARCPY = True
         try:
             import arcpy
-            HASARCPY = True
         except:
-            HASARCPY = False
-        if HASARCPY:
+            _HASARCPY = False
+        if _HASARCPY:
             gj = json.loads(arcpy.AsShape(iterable, False).JSON)
             gj['spatialReference']['wkid'] = 4326
             return gj
         else:
             cls = _geojson_type_to_esri_type(iterable['type'])
             return cls._from_geojson(iterable)
-        return {}
 
-    #----------------------------------------------------------------------
     def __call__(cls, iterable=None, **kwargs):
         if iterable is None:
             iterable = {}
 
         if iterable:
-            if isinstance(iterable, (bytearray, bytes)): # WKB
-                iterable = cls._from_wkb(iterable)
+            # WKB
+            if isinstance(iterable, (bytearray, bytes)):
+                iterable = GeometryFactory._from_wkb(iterable)
             elif hasattr(iterable, "JSON"):
                 iterable = json.loads(getattr(iterable, "JSON"))
             elif 'coordinates' in iterable:
-                iterable = cls._from_gj(iterable)
+                iterable = GeometryFactory._from_gj(iterable)
             elif hasattr(iterable, "exportToString"):
-                iterable = {'wkt' : iterable.exportToString()}
-            elif isinstance(iterable, str) and\
-                 "{" in iterable:
+                iterable = {'wkt': iterable.exportToString()}
+            elif isinstance(iterable, str) and \
+                    "{" in iterable:
                 iterable = json.loads(iterable)
-            elif isinstance(iterable, str): # WKT
-                iterable = cls._from_wkt(iterable)
-            #elif isinstance(iterable, (bytearray, bytes)): # WKB
-            #    iterable = cls._from_wkb(iterable)
+            elif isinstance(iterable, str):  # WKT
+                iterable = GeometryFactory._from_wkt(iterable)
 
             if 'x' in iterable:
                 cls = Point
-            elif 'rings' in iterable:
+            elif 'rings' in iterable or "curveRings" in iterable:
                 cls = Polygon
-            elif "curveRings" in iterable:
-                cls = Polygon
-            elif 'curvePaths' in iterable:
-                cls = Polyline
-            elif 'paths' in iterable:
+            elif 'curvePaths' in iterable or 'paths' in iterable:
                 cls = Polyline
             elif 'points' in iterable:
                 cls = MultiPoint
@@ -253,13 +252,14 @@ class GeometryFactory(type):
             elif 'wkid' in iterable or 'wkt' in iterable:
                 return SpatialReference(iterable=iterable)
             elif isinstance(iterable, list):
-                return Point({'x':iterable[0], 'y':iterable[1],
-                              'spatialReference' : \
-                              {'wkid': kwargs.pop('wkid', 4326)}})
+                return Point({'x': iterable[0], 'y': iterable[1],
+                              'spatialReference':
+                                  {'wkid': kwargs.pop('wkid', 4326)}})
             else:
                 cls = Geometry
         return type.__call__(cls, iterable, **kwargs)
-###########################################################################
+
+
 @add_metaclass(GeometryFactory)
 class Geometry(BaseGeometry):
     """
@@ -280,14 +280,12 @@ class Geometry(BaseGeometry):
         print (isinstance(geom, Polygon) # True
 
     """
-    _HASARCPY = None
-    _HASSHAPELY = None
 
     def __init__(self, iterable=None, **kwargs):
         if iterable is None:
             iterable = ()
         super(Geometry, self).__init__(iterable, **kwargs)
-    #----------------------------------------------------------------------
+
     @property
     def __geo_interface__(self):
         """
@@ -295,8 +293,8 @@ class Geometry(BaseGeometry):
 
         :returns: string
         """
-        HASARCPY, HASSHAPELY = self._check_geometry_engine()
-        if HASARCPY:
+        _HASARCPY, _HASSHAPELY = self._check_geometry_engine()
+        if _HASARCPY:
             import arcpy
             if isinstance(self.as_arcpy, arcpy.Point):
                 return arcpy.PointGeometry(self.as_arcpy).__geo_interface__
@@ -311,8 +309,8 @@ class Geometry(BaseGeometry):
                 for part in self['rings']:
                     col.append([tuple(pt) for pt in part])
                 return {
-                    'coordinates' : [col],
-                    'type' : 'MultiPolygon'
+                    'coordinates': [col],
+                    'type': 'MultiPolygon'
                 }
             elif isinstance(self, Polyline):
                 return {'type': 'MultiLineString', 'coordinates': [[((pt[0], pt[1]) if pt else None)
@@ -320,31 +318,31 @@ class Geometry(BaseGeometry):
                                                                    for part in self['paths']]}
             elif isinstance(self, MultiPoint):
                 return {'type': 'Multipoint', 'coordinates': [(pt[0], pt[1]) for pt in self['points']]}
+
             from arcgis._impl.common._arcgis2geojson import arcgis2geojson
             return arcgis2geojson(arcgis=self)
-        return {}
-    #----------------------------------------------------------------------
+
     def __iter__(self):
         """
         Iterator for the Geometry
         """
-        import numpy as np
         if isinstance(self, Polygon):
             avgs = []
             shape = 2
             for ring in self['rings']:
-                a = np.array(ring)
-                if a.shape[1] != shape:
-                    shape = a.shape[1]
-                avgs.append([np.array(ring)[:, 0].mean(), np.array(ring)[:,1].mean()])
+                np_array_ring = np.array(ring)
+                shape = np_array_ring.shape[1]
+                avgs.append([np_array_ring[:, 0].mean(), np_array_ring[:, 1].mean()])
+
             avgs = np.array(avgs)
+            res = []
             if shape == 2:
-                res = [avgs[:,0].mean(),
-                       avgs[:,1].mean()]
+                res = [avgs[:, 0].mean(),
+                       avgs[:, 1].mean()]
             elif shape > 2:
-                res = [avgs[:,0].mean(),
-                       avgs[:,1].mean(),
-                       avgs[:,2].mean()]
+                res = [avgs[:, 0].mean(),
+                       avgs[:, 1].mean(),
+                       avgs[:, 2].mean()]
             for a in res:
                 yield a
                 del a
@@ -352,31 +350,31 @@ class Geometry(BaseGeometry):
             avgs = []
             shape = 2
             for ring in self['paths']:
-                a = np.array(ring)
-                if a.shape[1] != shape:
-                    shape = a.shape[1]
-                avgs.append([np.array(ring)[:, 0].mean(), np.array(ring)[:,1].mean()])
+                np_array_ring = np.array(ring)
+                shape = np_array_ring.shape[1]
+                avgs.append([np_array_ring[:, 0].mean(), np_array_ring[:,1].mean()])
             avgs = np.array(avgs)
+            res = []
             if shape == 2:
-                res = [avgs[:,0].mean(),
-                       avgs[:,1].mean()]
+                res = [avgs[:, 0].mean(),
+                       avgs[:, 1].mean()]
             elif shape > 2:
-                res = [avgs[:,0].mean(),
-                       avgs[:,1].mean(),
-                       avgs[:,2].mean()]
+                res = [avgs[:, 0].mean(),
+                       avgs[:, 1].mean(),
+                       avgs[:, 2].mean()]
             for a in res:
                 yield a
                 del a
         elif isinstance(self, MultiPoint):
             a = np.array(self['points'])
             if a.shape[1] == 2:
-                for i in [a[:,0].mean(),
-                          a[:,1].mean()]:
+                for i in [a[:, 0].mean(),
+                          a[:, 1].mean()]:
                     yield i
             elif a.shape[1] >= 3: #has z
-                for i in [a[:,0].mean(),
-                          a[:,1].mean(),
-                          a[:,2].mean()]:
+                for i in [a[:, 0].mean(),
+                          a[:, 1].mean(),
+                          a[:, 2].mean()]:
                     yield i
         elif isinstance(self, Point):
             keys = ['x', 'y', 'z']
@@ -388,7 +386,7 @@ class Geometry(BaseGeometry):
             for i in [(self['xmin'] + self['xmax'])/2,
                       (self['ymin'] + self['ymax'])/2]:
                 yield i
-    #----------------------------------------------------------------------
+
     def _repr_svg_(self):
         """SVG representation for iPython notebook"""
         svg_top = '<svg xmlns="http://www.w3.org/2000/svg" ' \
@@ -398,6 +396,11 @@ class Geometry(BaseGeometry):
         else:
             # Establish SVG canvas that will fit all the data + small space
             xmin, ymin, xmax, ymax = self.extent
+            # Expand bounds by a fraction of the data ranges
+            expand = 0.04  # or 4%, same as R plots
+            widest_part = max([xmax - xmin, ymax - ymin])
+            expand_amount = widest_part * expand
+
             if xmin == xmax and ymin == ymax:
                 # This is a point; buffer using an arbitrary size
                 try:                
@@ -408,22 +411,21 @@ class Geometry(BaseGeometry):
                     xmax += expand_amount
                     ymax += expand_amount
             else:
-                # Expand bounds by a fraction of the data ranges
-                expand = 0.04  # or 4%, same as R plots
-                widest_part = max([xmax - xmin, ymax - ymin])
-                expand_amount = widest_part * expand
                 xmin -= expand_amount
                 ymin -= expand_amount
                 xmax += expand_amount
                 ymax += expand_amount
+
             dx = xmax - xmin
             dy = ymax - ymin
             width = min([max([100., dx]), 300])
             height = min([max([100., dy]), 300])
+
             try:
                 scale_factor = max([dx, dy]) / max([width, height])
             except ZeroDivisionError:
                 scale_factor = 1.
+
             view_box = "{0} {1} {2} {3}".format(xmin, ymin, dx, dy)
             transform = "matrix(1,0,0,-1,0,{0})".format(ymax + ymin)
             return svg_top + (
@@ -433,7 +435,6 @@ class Geometry(BaseGeometry):
                 ).format(view_box, width, height, transform,
                          self.svg(scale_factor))
 
-    #----------------------------------------------------------------------
     @property
     def as_arcpy(self):
         """
@@ -446,37 +447,33 @@ class Geometry(BaseGeometry):
         :returns: arcpy.Geometry
 
         """
-        HASARCPY, HASSHAPELY = self._check_geometry_engine()
-        if HASARCPY:
+        _HASARCPY, _HASSHAPELY = self._check_geometry_engine()
+        if self._ao is not None or not _HASARCPY:
+            return self._ao
+
+        if _HASARCPY:
             import arcpy
 
-        if self._ao is None and HASARCPY and \
-           isinstance(self, (Point, MultiPoint, Polygon, Polyline)):
+        if isinstance(self, (Point, MultiPoint, Polygon, Polyline)):
             self._ao = arcpy.AsShape(
                 json.dumps(dict(self)),
                 True)
-        elif self._ao is None and HASARCPY and \
-             isinstance(self, SpatialReference):
+        elif isinstance(self, SpatialReference):
             if 'wkid' in self:
                 self._ao = arcpy.SpatialReference(self['wkid'])
             elif 'wkt' in self:
                 self._ao = arcpy.SpatialReference(self['wkt'])
             else:
                 raise ValueError("Invalid SpatialReference")
-        elif self._ao is None and \
-             HASARCPY and \
-             isinstance(self, Envelope):
+        elif isinstance(self, Envelope):
             return arcpy.Extent(XMin=self['xmin'],
                                 YMin=self['ymin'],
                                 XMax=self['xmax'],
                                 YMax=self['ymax'])
         return self._ao
-    #----------------------------------------------------------------------
+
     def _wkt(obj, fmt='%.16f'):
         """converts an arcgis.Geometry to WKT"""
-        HASARCPY, HASSHAPELY = obj._check_geometry_engine()
-        if HASARCPY:
-            import arcpy
         if isinstance(obj, Point):
             coords = [obj['x'], obj['y']]
             if 'z' in obj:
@@ -514,7 +511,7 @@ class Geometry(BaseGeometry):
                 c2.append("(%s,  %s)" % (fmt % c[0], fmt % c[1]))
             return b % ", ".join(c2)
         return ""
-    #----------------------------------------------------------------------
+
     @property
     def geoextent(self):
         """
@@ -527,88 +524,85 @@ class Geometry(BaseGeometry):
 
         :return: tuple
         """
-        HASARCPY, HASSHAPELY = self._check_geometry_engine()
-        import numpy as np
-        if hasattr(self, 'type'):
-            if str(self.type).upper() == "POLYGON" and\
-               'rings' in self:
+        _HASARCPY, _HASSHAPELY = self._check_geometry_engine()
+
+        if not hasattr(self, 'type'):
+            return None
+
+        a = None
+        if str(self.type).upper() == "POLYGON":
+            if 'rings' in self:
                 a = self['rings']
-            elif str(self.type).upper() == "POLYGON" and\
-                 'curveRings' in self and \
-                 HASARCPY:
+            elif 'curveRings' in self:
+                if not _HASARCPY:
+                    raise Exception("Cannot calculate the geoextent with curves without ArcPy.")
                 return (self.as_arcpy.extent.XMin,
                         self.as_arcpy.extent.YMin,
                         self.as_arcpy.extent.XMax,
                         self.as_arcpy.extent.YMax)
-            elif str(self.type).upper() == "POLYGON" and \
-                 'curveRings' in self and \
-                 HASARCPY == False:
-                raise Exception("Cannot calculate the geoextent with curves without ArcPy.")
-            elif str(self.type).upper() == "POLYLINE" and \
-                 'paths' in self:
+        elif str(self.type).upper() == "POLYLINE":
+            if 'paths' in self:
                 a = self['paths']
-            elif str(self.type).upper() == "POLYLINE" and \
-                 "curvePaths" in self and HASARCPY:
+            elif "curvePaths" in self:
+                if not _HASARCPY:
+                    raise Exception("Cannot calculate the geoextent with curves without ArcPy.")
                 return (self.as_arcpy.extent.XMin,
                         self.as_arcpy.extent.YMin,
                         self.as_arcpy.extent.XMax,
                         self.as_arcpy.extent.YMax)
-            elif str(self.type).upper() == "POLYLINE" and \
-                 "curvePaths" in self and HASARCPY == False:
-                raise Exception("Cannot calculate the geoextent with curves without ArcPy.")
-            elif str(self.type).upper() == "MULTIPOINT":
-                a = self['points']
-                x_max = max(np.array(a)[:,0])
-                x_min = min(np.array(a)[:,0])
-                y_min = min(np.array(a)[:,1])
-                y_max = max(np.array(a)[:,1])
-                return x_min, y_min, x_max, y_max
-            elif str(self.type).upper() == "POINT":
-                return self['x'], self['y'], self['x'],  self['y']
-            elif str(self.type).upper() == "ENVELOPE":
-                return tuple(self.coordinates().tolist())
-            else:
-                return None
-            if len(a) == 0:
-                return None
-            elif len(a) == 1: # single part
-                x_max = max(a[0], key=lambda x: x[0])[0]
-                x_min = min(a[0], key=lambda x: x[0])[0]
-                y_max = max(a[0], key=lambda x: x[1])[1]
-                y_min = min(a[0], key=lambda x: x[1])[1]
-                return x_min, y_min, x_max, y_max
-            else:
-                if 'points' in a:
-                    a = a['points']
-                if 'points' not in a and 'coordinates' in a:
-                    a = a['coordinates']
-                xs = []
-                ys = []
-                for pt in a: # multiple part geometry
-                    x_max = max(pt, key=lambda x: x[0])[0]
-                    x_min = min(pt, key=lambda x: x[0])[0]
-                    y_max = max(pt, key=lambda x: x[1])[1]
-                    y_min = min(pt, key=lambda x: x[1])[1]
-                    xs.append(x_max)
-                    xs.append(x_min)
-                    ys.append(y_max)
-                    ys.append(y_min)
-                    del pt
-                return min(xs), min(ys), max(xs), max(ys)
-        return None
-    #----------------------------------------------------------------------
+        elif str(self.type).upper() == "MULTIPOINT":
+            a = np.array(self['points'])
+            x_max = max(a[:, 0])
+            x_min = min(a[:, 0])
+            y_min = min(a[:, 1])
+            y_max = max(a[:, 1])
+            return x_min, y_min, x_max, y_max
+        elif str(self.type).upper() == "POINT":
+            return self['x'], self['y'], self['x'],  self['y']
+        elif str(self.type).upper() == "ENVELOPE":
+            return tuple(self.coordinates().tolist())
+        else:
+            return None
+
+        if a is None or len(a) == 0:
+            return None
+
+        if len(a) == 1: # single part
+            x_max = max(a[0], key=lambda x: x[0])[0]
+            x_min = min(a[0], key=lambda x: x[0])[0]
+            y_max = max(a[0], key=lambda x: x[1])[1]
+            y_min = min(a[0], key=lambda x: x[1])[1]
+            return x_min, y_min, x_max, y_max
+        else:
+            if 'points' in a:
+                a = a['points']
+            elif 'coordinates' in a:
+                a = a['coordinates']
+            xs = []
+            ys = []
+            for pt in a: # multiple part geometry
+                x_max = max(pt, key=lambda x: x[0])[0]
+                x_min = min(pt, key=lambda x: x[0])[0]
+                y_max = max(pt, key=lambda x: x[1])[1]
+                y_min = min(pt, key=lambda x: x[1])[1]
+                xs.append(x_max)
+                xs.append(x_min)
+                ys.append(y_max)
+                ys.append(y_min)
+                del pt
+            return min(xs), min(ys), max(xs), max(ys)
 
     @property
     def envelope(self):
         """Returns the geoextent as an Envelope object"""
-        env_dict = {'xmin':self.geoextent[0],
-                    'ymin':self.geoextent[1],
-                    'xmax':self.geoextent[2],
-                    'ymax':self.geoextent[3],
-                    'spatialReference':self.spatial_reference}
+        env_dict = {'xmin': self.geoextent[0],
+                    'ymin': self.geoextent[1],
+                    'xmax': self.geoextent[2],
+                    'ymax': self.geoextent[3],
+                    'spatialReference': self.spatial_reference}
 
         return Envelope(env_dict)
-    # ----------------------------------------------------------------------
+
     def skew(self, x_angle=0,
              y_angle=0, inplace=False):
         """
@@ -636,7 +630,7 @@ class Geometry(BaseGeometry):
             return self
         return skew(geom=self, x_angle=x_angle,
                     y_angle=y_angle)
-    #----------------------------------------------------------------------
+
     def rotate(self, theta,
                inplace=False):
         """
@@ -661,7 +655,7 @@ class Geometry(BaseGeometry):
         if inplace:
             self = r
         return r
-    #----------------------------------------------------------------------
+
     def scale(self, x_scale=1, y_scale=1, inplace=False):
         """
         Scales in either the x,y or both directions
@@ -683,12 +677,14 @@ class Geometry(BaseGeometry):
 
         """
         from .affine import scale
+        import copy
+
         g = copy.copy(self)
         s = scale(g, *(x_scale, y_scale))
         if inplace:
             self = s
         return s
-    #----------------------------------------------------------------------
+
     def translate(self, x_offset=0,
                   y_offset=0, inplace=False):
         """
@@ -715,7 +711,7 @@ class Geometry(BaseGeometry):
         if inplace:
             self = t
         return t
-    #----------------------------------------------------------------------
+
     @property
     def is_empty(self):
         """boolean value that determines if the geometry is empty or not"""
@@ -731,22 +727,19 @@ class Geometry(BaseGeometry):
         elif isinstance(self, MultiPoint):
             return len(self['points']) == 0
         return True
-    #----------------------------------------------------------------------
+
     @property
     def as_shapely(self):
         """returns a shapely geometry object"""
-        _, HASSHAPELY = self._check_geometry_engine()
-
-        if HASSHAPELY:
+        _, _HASSHAPELY = self._check_geometry_engine()
+        if _HASSHAPELY:
             if isinstance(self,(Point, Polygon, Polyline, MultiPoint)):
                 from shapely.geometry import shape
-                if 'curvePaths' in self:
-                    return {}
-                elif 'curveRings' in self:
+                if 'curvePaths' in self or 'curveRings' in self:
                     return {}
                 return shape(self.__geo_interface__)
         return None
-    #----------------------------------------------------------------------
+
     @property
     def JSON(self):
         """
@@ -765,9 +758,8 @@ class Geometry(BaseGeometry):
                 return self.as_shapely.__geo_interface__
             except:
                 return json.dumps(self)
-        else:
-            return json.dumps(self)
-        return
+
+        return json.dumps(self)
     #----------------------------------------------------------------------
     @classmethod
     def from_shapely(cls, shapely_geometry, spatial_reference=None):
@@ -798,13 +790,12 @@ class Geometry(BaseGeometry):
             )
 
         """
+        _HASSHAPELY = True
         try:
             import shapely
-            HASSHAPELY = True
         except:
-            HASSHAPELY = False
-
-        if HASSHAPELY:
+            _HASSHAPELY = False
+        if _HASSHAPELY:
             gj = shapely_geometry.__geo_interface__
             geom_cls = _geojson_type_to_esri_type(gj['type'])
 
@@ -843,9 +834,8 @@ class Geometry(BaseGeometry):
                 return self.as_shapely.wkt
             except:
                 return self._wkt(fmt='%.16f')
-        else:
-            return self._wkt(fmt='%.16f')
-        return
+
+        return self._wkt(fmt='%.16f')
     #----------------------------------------------------------------------
     @property
     def WKB(self):
@@ -965,7 +955,6 @@ class Geometry(BaseGeometry):
                 g = getattr(self.as_arcpy, "centroid", None)
                 if g is None:
                     return g
-                import arcpy
                 return tuple(Geometry(
                     arcpy.PointGeometry(g,
                                         self.spatial_reference)
@@ -1049,8 +1038,6 @@ class Geometry(BaseGeometry):
         :return: arcgis.gis.Geometry
         """
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
-        if HASARCPY:
-            import arcpy
         if HASARCPY and \
            isinstance(self, Envelope):
             try:
@@ -1060,6 +1047,7 @@ class Geometry(BaseGeometry):
             except:
                 return None
         elif HASARCPY:
+            import arcpy
             return Geometry(json.loads(arcpy.PointGeometry(getattr(
                 self.as_arcpy,
                 "firstPoint",
@@ -1091,6 +1079,26 @@ class Geometry(BaseGeometry):
                  'spatialReference' : {'wkid' : 4326}}
             )
         return
+    #----------------------------------------------------------------------
+    @property
+    def has_z(self):
+        """
+        Determines if the geometry has a `Z` value.  
+        
+        :returns: Boolean
+        
+        """
+        return self.get("hasZ", False)
+    #----------------------------------------------------------------------
+    @property
+    def has_m(self):
+        """
+        Determines if the geometry has a `M` value.  
+        
+        :returns: Boolean
+        
+        """
+        return self.get("hasM", False)
     #----------------------------------------------------------------------
     @property
     def hull_rectangle(self):
@@ -1180,8 +1188,6 @@ class Geometry(BaseGeometry):
 
         """
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
-        if HASARCPY:
-            import arcpy
         if HASARCPY and \
            isinstance(self, Envelope):
             return getattr(self.polygon.as_arcpy, "labelPoint", None)
@@ -1189,9 +1195,8 @@ class Geometry(BaseGeometry):
             import arcpy
             return Geometry(arcpy.PointGeometry(getattr(self.as_arcpy, "labelPoint", None),
                                                 self.spatial_reference))
-        else:
-            return self.centroid
-        return
+
+        return self.centroid
     #----------------------------------------------------------------------
     @property
     def last_point(self):
@@ -1213,13 +1218,12 @@ class Geometry(BaseGeometry):
         :returns: arcgis.geometry.Point
         """
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
-        if HASARCPY:
-            import arcpy
         if HASARCPY and \
            isinstance(self, Envelope):
             return Geometry({'x' : self['XMax'], 'y' : self['YMax'],
                              'spatialReference' : self['spatialReference']})
         elif HASARCPY:
+            import arcpy
             return Geometry(arcpy.PointGeometry(getattr(self.as_arcpy, "lastPoint", None),
                                                 self.spatial_reference))
         elif isinstance(self, Point):
@@ -1271,8 +1275,8 @@ class Geometry(BaseGeometry):
             return getattr(self.as_arcpy, "length", None)
         elif HASSHAPELY:
             return self.as_shapely.length
-        else:
-            return None
+
+        return None
     #----------------------------------------------------------------------
     @property
     def length3D(self):
@@ -1304,9 +1308,8 @@ class Geometry(BaseGeometry):
             return getattr(self.as_arcpy, "length3D", None)
         elif HASSHAPELY:
             return self.as_shapely.length
-        else:
-            return self.length
-        return
+
+        return self.length
     #----------------------------------------------------------------------
     @property
     def part_count(self):
@@ -1499,8 +1502,7 @@ class Geometry(BaseGeometry):
         :returns: a tuple of angle and distance to another point using a measurement type.
         """
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
-        if HASARCPY:
-            import arcpy
+
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Envelope):
                 second_geometry = second_geometry.polygon
@@ -1517,9 +1519,8 @@ class Geometry(BaseGeometry):
         :returns: arcgis.geometry.Polyline
         """
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
-        if HASARCPY:
-            import arcpy
-        if HASARCPY  and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
+
+        if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_arcpy.boundary())
         elif HASSHAPELY  and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_shapely.boundary.buffer(1).__geo_interface__)
@@ -1570,7 +1571,6 @@ class Geometry(BaseGeometry):
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         if HASARCPY:
             import arcpy
-
         if HASARCPY and \
            isinstance(envelope, (list,tuple)) and \
            len(envelope) == 4:
@@ -1606,8 +1606,7 @@ class Geometry(BaseGeometry):
         :returns: boolean
         """
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
-        if HASARCPY:
-            import arcpy
+
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
@@ -2160,8 +2159,10 @@ class Geometry(BaseGeometry):
         """
         from six import string_types, integer_types
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
+
         if HASARCPY:
             import arcpy
+
         if HASARCPY:
             if isinstance(spatial_reference, SpatialReference):
                 spatial_reference = spatial_reference.as_arcpy
@@ -2334,8 +2335,7 @@ class Geometry(BaseGeometry):
         :return: arcgis.gis.Geometry
         """
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
-        if HASARCPY:
-            import arcpy
+
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Envelope):
                 second_geometry = second_geometry.polygon
@@ -2364,8 +2364,6 @@ class Geometry(BaseGeometry):
         :return: boolean
         """
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
-        if HASARCPY:
-            import arcpy
         if HASARCPY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
@@ -2519,9 +2517,14 @@ class MultiPoint(Geometry):
     def _from_geojson(cls, data, sr=None):
         if sr is None:
             sr = {'wkid' : 4326}
-        coordkey = ([d for d in data if d.lower() == 'coordinates']
-                    or ['coordinates']).pop()
+
+        coordkey = 'coordinates'
+        for d in data:
+            if d.lower() == 'coordinates':
+                coordkey = d
+
         coordinates = data[coordkey]
+
         return cls({'points' : [p for p in coordinates],
                     'spatialReference' : sr})
 ########################################################################
@@ -2590,8 +2593,11 @@ class Point(Geometry):
     def _from_geojson(cls, data, sr=None):
         if sr == None:
             sr = {'wkid' : 4326}
-        coordkey = ([d for d in data if d.lower() == 'coordinates']
-                    or ['coordinates']).pop()
+
+        coordkey = 'coordinates'
+        for d in data:
+            if d.lower() == 'coordinates':
+                coordkey = d
         coordinates = data[coordkey]
 
         return cls({
@@ -2676,19 +2682,23 @@ class Polygon(Geometry):
     def _from_geojson(cls, data, sr=None):
         if sr is None:
             sr = {'wkid' : 4326}
-        coordkey = ([d for d in data if d.lower() == 'coordinates']
-                    or ['coordinates']).pop()
+
+        coordkey = 'coordinates'
+        for d in data:
+            if d.lower() == 'coordinates':
+                coordkey = d
         coordinates = data[coordkey]
-        typekey = ([d for d in data if d.lower() == 'type']
-                   or ['type']).pop()
+        typekey = 'type'
+        for d in data:
+            if d.lower() == 'type':
+                typekey = d
+
         if data[typekey].lower() == "polygon":
             coordinates = [coordinates]
         part_list = []
         for part in coordinates:
             part_item = []
-            for idx, ring in enumerate(part):
-                #if idx:
-                #    part_item.append(None)
+            for ring in part:
                 for coord in ring:
                     part_item.append(coord)
             if part_item:
@@ -2775,12 +2785,10 @@ class Polyline(Geometry):
     def _from_geojson(cls, data, sr=None):
         if sr is None:
             sr = {'wkid' : 4326}
-        coordkey = ([d for d in data if d.lower() == 'coordinates']
-                    or ['coordinates']).pop()
         if data['type'].lower() == 'linestring':
-            coordinates = [data[coordkey]]
+            coordinates = [data['coordinates']]
         else:
-            coordinates = data[coordkey]
+            coordinates = data['coordinates']
 
         return cls(
             {'paths' : [[p for p in part] for part in coordinates],
@@ -2943,6 +2951,22 @@ class SpatialReference(BaseGeometry):
     def svg(self, scale_factor=1, fill_color=None):
         """represents the SVG of the object"""
         return "<g/>"
+    #----------------------------------------------------------------------
+    def __eq__(self, other):
+        """checks if the spatial reference is not equal"""
+        if 'wkt' in self and \
+           'wkt' in other and \
+           self['wkt'] == other['wkt']:
+            return True
+        elif 'wkid' in self and \
+           'wkid' in other and \
+           self['wkid'] == other['wkid']:
+            return True        
+        return False
+    #----------------------------------------------------------------------
+    def __ne__(self, other):
+        """checks if the two values are unequal"""
+        return self.__eq__(other) == False
     #----------------------------------------------------------------------
     @property
     def as_arcpy(self):

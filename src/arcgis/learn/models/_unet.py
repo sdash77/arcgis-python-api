@@ -4,21 +4,28 @@ from ._codetemplate import image_classifier_prf
 from ._arcgis_model import _EmptyData
 from functools import partial
 import math
+import types
 from .._data import _raise_fastai_import_error  
-import traceback    
+import traceback
+import logging
+logger = logging.getLogger()
 
 try:
-    from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback, _resnet_family
+    from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback, _resnet_family, _set_ddp_multigpu, _isnotebook
     import torch
     from torchvision import models
     from fastai.vision.learner import unet_learner, cnn_config
     import numpy as np
+    from fastai.layers import CrossEntropyFlat
+    from .._utils.segmentation_loss_functions import  FocalLoss, MixUpCallback
     from ._unet_utils import is_no_color, LabelCallback, _class_array_to_rbg, predict_batch, show_results_multispectral
     from fastai.callbacks import EarlyStoppingCallback
     from torch.nn import Module as NnModule
     from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.classified_tiles import per_class_metrics
     from ._psp_utils import accuracy
     from ._deeplab_utils import compute_miou
+    import os as arcgis_os
     HAS_FASTAI = True
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -45,39 +52,83 @@ class UnetClassifier(ArcGISModel):
                             saved.
     =====================   ===========================================
 
+    **kwargs**
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    class_balancing         Optional boolean. If True, it will balance the
+                            cross-entropy loss inverse to the frequency
+                            of pixels per class. Default: False. 
+    ---------------------   -------------------------------------------
+    mixup                   Optional boolean. If True, it will use mixup
+                            augmentation and mixup loss. Default: False
+    ---------------------   -------------------------------------------
+    focal_loss              Optional boolean. If True, it will use focal loss
+                            Default: False                                                         
+    =====================   ===========================================
+
     :returns: `UnetClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, pretrained_path=None):
+    def __init__(self, data, backbone=None, pretrained_path=None, backend='pytorch', *args, **kwargs):
 
-        super().__init__(data, backbone)
+        self._backend = backend
+        if self._backend == 'tensorflow':
+            super().__init__(data, None)
+            self._intialize_tensorflow(data, backbone, pretrained_path, kwargs)
+        else:
+            super().__init__(data, backbone)
 
-        self._code = image_classifier_prf
+            self.mixup = kwargs.get('mixup', False)
+            self.class_balancing = kwargs.get('class_balancing', False)
+            self.focal_loss = kwargs.get('focal_loss', False)
 
-        backbone_cut = None
-        backbone_split = None
+            self._code = image_classifier_prf
 
-        _backbone = self._backbone
-        if hasattr(self, '_orig_backbone'):
-            _backbone = self._orig_backbone
-            
-        if not (self._check_backbone_support(_backbone)):
-            raise Exception(f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+            backbone_cut = None
+            backbone_split = None
 
-        if hasattr(self, '_orig_backbone'):
-            _backbone_meta = cnn_config(self._orig_backbone)
-            backbone_cut = _backbone_meta['cut']
-            backbone_split = _backbone_meta['split']
+            _backbone = self._backbone
+            if hasattr(self, '_orig_backbone'):
+                _backbone = self._orig_backbone
+                
+            if not (self._check_backbone_support(_backbone)):
+                raise Exception(f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
-        self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
-        self._arcgis_init_callback() # make first conv weights learnable
-        self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback
+            if hasattr(self, '_orig_backbone'):
+                _backbone_meta = cnn_config(self._orig_backbone)
+                backbone_cut = _backbone_meta['cut']
+                backbone_split = _backbone_meta['split']
 
-        self.learn.model = self.learn.model.to(self._device)
+            if not _isnotebook() and arcgis_os.name=='posix':
+                _set_ddp_multigpu(self)
+                if self._multigpu_training:
+                    self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split).to_distributed(self._rank_distributed)
+                else:
+                    self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
+            else:
+                self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
 
-        # _set_multigpu_callback(self) # MultiGPU doesn't work for U-Net. (Fastai-Forums)
-        if pretrained_path is not None:
-            self.load(pretrained_path)
+            if self.class_balancing:
+                if data.class_weight is not None:
+                    class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(self._device)
+                    self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
+                else:
+                    logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")                
+
+            if self.focal_loss:
+                self.learn.loss_func = FocalLoss(self.learn.loss_func)
+            if self.mixup:
+                self.learn.callbacks.append(MixUpCallback(self.learn))
+
+            self._arcgis_init_callback() # make first conv weights learnable
+            self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback
+
+            self.learn.model = self.learn.model.to(self._device)
+            # _set_multigpu_callback(self) # MultiGPU doesn't work for U-Net. (Fastai-Forums)
+            if pretrained_path is not None:
+                self.load(pretrained_path)
 
     def __str__(self):
         return self.__repr__()
@@ -230,6 +281,8 @@ class UnetClassifier(ArcGISModel):
             if checkpoint:
                 model_accuracy = np.max(self.learn.recorder.metrics)
         except:
+            logger = logging.getLogger()
+            logger.debug("Cannot retrieve model accuracy.")
             model_accuracy = 0.0
 
         return float(model_accuracy)
@@ -257,4 +310,78 @@ class UnetClassifier(ArcGISModel):
         if mean:
             return np.mean(miou)
         return dict(zip(['0'] + self._data.classes[1:], miou))
+
+    ## Tensorflow specific functions start ##
+    def _intialize_tensorflow(self, data, backbone, pretrained_path, kwargs):
+        self._check_tf()
         
+        import tensorflow as tf
+        from .._utils.common import get_color_array
+        from .._utils.common_tf import handle_backbone_parameter, get_input_shape
+        from .._model_archs.unet_tf import get_unet_tf_model 
+        from tensorflow.keras.losses import SparseCategoricalCrossentropy, BinaryCrossentropy
+        from .._utils.fastai_tf_fit import TfLearner, defaults
+        from tensorflow.keras.models import Model
+        from tensorflow.keras.optimizers import Adam
+        from .._utils.common import kwarg_fill_none
+        
+        if data._is_multispectral:
+            raise Exception('Multispectral data is not supported with backend="tensorflow"')
+
+        # Intialize Tensorflow
+        self._init_tensorflow(data, backbone)
+
+        # Loss Function
+        #self._loss_function_tf_ = BinaryCrossentropy(from_logits=True)
+        self._loss_function_tf_ = SparseCategoricalCrossentropy(from_logits=True, reduction='auto')
+
+        self._mobile_optimized = kwarg_fill_none(kwargs, 'mobile_optimized', self._backbone_mobile_optimized)
+
+        # Create Unet Model
+        model = get_unet_tf_model(
+            self._backbone_initalized, 
+            data,
+            mobile_optimized=self._mobile_optimized
+        )
+
+        self.learn = TfLearner(
+            data, 
+            model,
+            opt_func=Adam,
+            loss_func=self._loss_function_tf,
+            true_wd=True, 
+            bn_wd=True, 
+            wd=defaults.wd, 
+            train_bn=True
+        )
+        
+        self.learn.unfreeze()
+        self.learn.freeze_to(len(self._backbone_initalized.layers))
+
+        self.show_results = self._show_results_multispectral
+
+        self._code = image_classifier_prf
+
+    def _loss_function_tf(self, target, predictions):
+        import tensorflow as tf
+        # print(target.shape, predictions.shape)
+        # print(target.dtype, predictions.dtype)
+        # print(tf.unique(tf.reshape(target, [-1]))[0])
+        # print('\n', tf.unique(tf.reshape(predictions, [-1]))[0])
+        #print(tf.unique(tf.reshape(target, [-1])).numpy(), tf.unique(tf.reshape(predictions, [-1])))
+        target = tf.squeeze(target, axis=1)
+
+        # from .._utils.pixel_classification import segmentation_mask_to_one_hot
+        # from .._utils.fastai_tf_fit import _pytorch_to_tf
+        # target = _pytorch_to_tf(segmentation_mask_to_one_hot(target.cpu().numpy(), self._data.c).permute(0, 2, 3, 1))
+
+        return self._loss_function_tf_(target, predictions)
+
+    ## Tensorflow specific functions end ##
+
+    def per_class_metrics(self):
+        """
+        Computer per class precision, recall and f1-score on validation set.
+        """
+        ## Calling imported function `per_class_metrics`        
+        return per_class_metrics(self)

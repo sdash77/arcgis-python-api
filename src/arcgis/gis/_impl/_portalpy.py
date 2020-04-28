@@ -328,7 +328,7 @@ class Portal(object):
             return resp['id']
 
     def publish_item(self, itemid, data=None, text=None, fileType="serviceDefinition", publishParameters=None,
-                     outputType=None, overwrite=False, owner=None, folder=None, buildInitialCache=False):
+                     outputType=None, overwrite=False, owner=None, folder=None, buildInitialCache=False, item_id=None):
         """
         Publishes a hosted service based on an existing source item.
         Publishers can create feature services as well as tiled map services.
@@ -354,7 +354,8 @@ class Portal(object):
 
         if outputType is not None:
             postdata['outputType'] = outputType
-
+        if item_id and isinstance(item_id, str) and len(item_id) >=32:
+            postdata['itemIdToCreate'] = str(item_id)        
         postdata['overwrite'] = json.dumps(overwrite)
 
         postdata['buildInitialCache'] = buildInitialCache
@@ -391,7 +392,13 @@ class Portal(object):
                        wkid=102100,
                        service_type="imageService",
                        create_params=None,
-                       owner=None, folder=None, common_params=None, is_view = False):
+                       owner=None, 
+                       folder=None, 
+                       common_params=None, 
+                       is_view=False, 
+                       item_id=None,
+                       tags=None,
+                       snippet=None):
         """ Creates service.
          #"Create,Delete,Query,Update,Editing",
         :return:
@@ -452,7 +459,14 @@ class Portal(object):
 
         postdata['outputType'] = service_type
         postdata['isView'] = is_view
-
+        if item_id and isinstance(item_id, str) and len(item_id) == 32:
+            postdata['itemIdToCreate'] = item_id
+        if tags and isinstance(tags, (list, tuple)):
+            tags = ",".join([str(t) for t in tags])
+        if tags and isinstance(tags, str):
+            postdata['tags'] = tags
+        if snippet:
+            postdata['snippet'] = snippet
         # If common_params dictionary provided, add each key/value pair to postdata.
         if common_params is not None:
             for key in common_params:

@@ -47,7 +47,7 @@ else:
         'six',
         'ipywidgets >=7',
         'widgetsnbextension >=3',
-        'pandas >=0.25',
+        'pandas >=1',
         'numpy >=1.16.2',
         'matplotlib',
         'keyring >=19',

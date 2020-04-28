@@ -20,7 +20,6 @@ try:
     import pandas as pd
     import PIL
     from fastai.vision.learner import create_body
-    from fastprogress import progress_bar
     from fastai.vision import ImageList
     from fastai.vision import imagenet_stats, normalize
     from fastai.vision.image import open_image, bb2hw, image2np, Image, pil2tensor
@@ -34,6 +33,7 @@ try:
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
     from .._video_utils import VideoUtils
     from .._utils.common import get_multispectral_data_params_from_emd
+    from fastprogress.fastprogress import progress_bar
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
@@ -77,7 +77,7 @@ class RetinaNet(ArcGISModel):
     :returns: `RetinaNet` Object
     """
 
-    def __init__(self, data, scales=None, ratios=None, backbone=None, pretrained_path=None):
+    def __init__(self, data, scales=None, ratios=None, backbone=None, pretrained_path=None, *args, **kwargs):
 
         # Set default backbone to be 'resnet50'
         if backbone is None: 

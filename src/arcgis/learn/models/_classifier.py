@@ -24,8 +24,7 @@ try:
     from fastai.vision.image import open_image
     from fastai.vision.data import ImageDataBunch, ImageList
     from fastai.vision import imagenet_stats, normalize
-    from fastai.callbacks import LearnerCallback
-    from fastai.basic_train import Learner
+    from fastai.basic_train import Learner, LearnerCallback
     from torch.utils.data.sampler import WeightedRandomSampler, BatchSampler
     from fastai.vision.learner import cnn_learner, ClassificationInterpretation, cnn_config
     from ._arcgis_model import _set_multigpu_callback, _resnet_family
@@ -95,12 +94,17 @@ class FeatureClassifier(ArcGISModel):
     ---------------------   -------------------------------------------
     oversample              Optional boolean. If set to True, it oversamples unbalanced
                             classes of the dataset during training.
+    ---------------------   -------------------------------------------
+    backend                 Optional string. Controls the backend framework to be used
+                            for this model, which is 'pytorch' by default.
+
+                            valid options are 'pytorch', 'tensorflow'
     =====================   ===========================================
 
     :returns: `FeatureClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, pretrained_path=None, mixup=False, oversample=False, backend='pytorch', **kwargs):
+    def __init__(self, data, backbone=None, pretrained_path=None, mixup=False, oversample=False, backend='pytorch', *args, **kwargs):
         
         self._backend = backend
         if self._backend == 'tensorflow':
@@ -204,17 +208,16 @@ class FeatureClassifier(ArcGISModel):
     def _save_confusion_matrix(self, path):
         from matplotlib import pyplot as plt
         import fastai
-        try:
-            from fastprogress import fastprogress
-        except ImportError:
-            import fastprogress
-        fastprogress.fastprogress.NO_BAR = True
-        fastai.basic_train.master_bar, fastai.basic_train.progress_bar = fastprogress.force_console_behavior()
+        from fastprogress import fastprogress
+        from fastprogress.fastprogress import force_console_behavior, master_bar, progress_bar
+
+        fastprogress.NO_BAR = True
+        fastai.basic_train.master_bar, fastai.basic_train.progress_bar = force_console_behavior()
         self.plot_confusion_matrix()
-        fastai.basic_train.master_bar, fastai.basic_train.progress_bar = fastprogress.master_bar, fastprogress.progress_bar
         plt.savefig(os.path.join(path, 'confusion_matrix.png'))
         plt.close()
-
+        fastai.basic_train.master_bar, fastai.basic_train.progress_bar = master_bar, progress_bar
+        
     @property
     def _model_metrics(self):
         return {}

@@ -242,7 +242,6 @@ class ImageryLayerCacheManager(_GISResource):
             return self._con.post(url, params)
         return None
     #----------------------------------------------------------------------
-    @property
     def rerun_job(self, job_id, code):
         """
         The rerun job operation supports re-running a canceled job from a
@@ -1226,7 +1225,8 @@ class ImageryLayer(Layer):
                      save_file=None,
                      compression_tolerance=None,
                      adjust_aspect_ratio=None,
-                     lerc_version=None
+                     lerc_version=None,
+                     slice_id=None
                      ):
         """
         The export_image operation is performed on an imagery layer.
@@ -1360,6 +1360,9 @@ class ImageryLayer(Layer):
                                 Values: 1 or 2
                                 If a version is specified, the server returns the matching version,
                                 or otherwise the highest version available.
+        ----------------------  --------------------------------------------------------------------
+        slice_id                optional integer. Exports the given slice of a multidimensional raster.
+                                To get the slice index use slices method on the ImageryLayer object.
         ======================  ====================================================================
 
         :returns: dict or string
@@ -1506,6 +1509,9 @@ class ImageryLayer(Layer):
 
         if lerc_version:
             params['lercVersion'] = lerc_version
+
+        if slice_id is not None:
+            params['sliceId'] = slice_id
 
         if self._datastore_raster:
             params["Raster"]=self._uri
@@ -1948,17 +1954,31 @@ class ImageryLayer(Layer):
         return self._con.post(path=url,
                               postdata=params)
 
-    def _slices(self,muldidef=None):
+    def slices(self,muldidef=None):
         """
-        Operation to get the list of slice definitions of a multidimensional image service.
+        Operation to query slice ID and multidimensional information of a multidimensional image service.
+
+        Operation available in ArcGIS Image Server 10.8.1 and higher.
+
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
-        muldidef              optional array. multidemensional definition used for filtering by
-                              variable/dimensions.
+        muldidef              optional array. Multidimensional definition used for querying 
+                              dimensional slices of the input image service.
                               See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
         -----------------     --------------------------------------------------------------------
+
+        .. code-block:: python
+
+            # Usage Example 1: This example returns the slice ID and multidimensional information of slices with
+            # "salinity" variable at "StdZ" dimension with a value of "-5000".
+
+            multidimensional_definition = [{"variableName":"salinity","dimensionName":"StdZ","values":[-5000]}]
+            multidimensional_lyr_input.slices(multidimensional_definition)
+
         :returns: dictionary containing the list of slice definitions.
+
+
         """
         url = self._url + "/slices"
 
@@ -1967,13 +1987,12 @@ class ImageryLayer(Layer):
         if muldidef is not None:
             params['multidimensionalDefinition'] = muldidef
 
-
         if self._datastore_raster:
             params["Raster"]=self._uri
 
-
         return self._con.post(path=url,
                               postdata=params)
+
     # ----------------------------------------------------------------------
     def _add_rasters(self,
                      raster_type,

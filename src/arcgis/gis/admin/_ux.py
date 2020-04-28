@@ -272,10 +272,23 @@ class UX(object):
 
          :return: boolean
         """
-        res = self._gis.update_properties({"name": name})
+        import json
         if self._gis.properties.name != name:
-            res = self._gis.update_properties({"name": name})
-        return res
+            rps = [dict(r) for r in self._gis.properties.rotatorPanels]
+            for r in  rps:
+                r['innerHTML'] = r['innerHTML'].replace(self._gis.properties.name, name)
+
+            res = self._gis.update_properties({"name": name,
+                                               "rotatorPanels" : json.dumps(rps)})
+            params = {
+                "key": "localizedOrgProperties",
+                "text": json.dumps({"default":{"name":name,"description":None}}),
+                "f" : "json",
+                "token" : self._gis._con.token
+            }
+            url = f"{self._gis._portal.resturl}portals/self/addResource"
+            res = self._gis._con.post(url, params)
+            return res
     #----------------------------------------------------------------------
     @property
     def description(self):

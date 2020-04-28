@@ -41,7 +41,7 @@ class PointCNN(ArcGISModel):
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    encoder_params          Optinal dictionary. The keys of the dictionary are 
+    encoder_params          Optional dictionary. The keys of the dictionary are 
                             `out_channels`, `P`, `K`, `D` and `m`.
 
                               Examples:
@@ -64,14 +64,14 @@ class PointCNN(ArcGISModel):
     dropout                 Optional float. This parameter will control overfitting.                          
                             The range of this parameter is [0,1).
     ---------------------   -------------------------------------------
-    sample_point_num        Optinal integer. The number of points that the models
+    sample_point_num        Optional integer. The number of points that the models
                             will actually process.     
     =====================   ===========================================
 
     :returns: `PointCNN` Object
     """
 
-    def __init__(self, data, pretrained_path=None, **kwargs):
+    def __init__(self, data, pretrained_path=None, *args, **kwargs):
         super().__init__(data, None)
 
         if not HAS_FASTAI:
@@ -186,6 +186,16 @@ class PointCNN(ArcGISModel):
 
                                 The default value is 'False'.
         =====================   ===========================================
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        iters_per_epoch         Optional integer. The number of iterations 
+                                to run during the training phase.
+        =====================   ===========================================
+                
         """
         iterations = kwargs.get('iters_per_epoch', None)
         from ._pointcnn_utils import IterationStop
@@ -214,7 +224,7 @@ class PointCNN(ArcGISModel):
 
         model_accuracy = self.learn.recorder.metrics[-1][0]
         if checkpoint:
-            model_accuracy = np.max(self.learn.recorder.metrics)
+            model_accuracy = np.max([i[0] for i in self.learn.recorder.metrics])
 
         return float(model_accuracy)
 

@@ -588,7 +588,8 @@ class DataStoreManager(BaseServer):
                parent_path=None,
                ancestor_path=None,
                types=None,
-               id=None):
+               id=None,
+               **kwargs):
         """
         Use this operation to search through the various data items that are registered in the server's data store.
 
@@ -621,6 +622,8 @@ class DataStoreManager(BaseServer):
             params['types'] = types
         if id is not None:
             params['id'] = id
+        if "decrypt" in kwargs.keys():
+            params["decrypt"] = kwargs["decrypt"]
         url = self._url + "/findItems"
         return self._con.post(path=url,
                               postdata=params)

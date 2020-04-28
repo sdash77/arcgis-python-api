@@ -7,7 +7,8 @@ import sys
 import json 
 import logging      
 import types       
-import traceback                                                                                                                                                
+import traceback    
+from ._utils.env import ARCGIS_ENABLE_TF_BACKEND                                                                                                                                            
 
 import_exception = None
 try:
@@ -19,10 +20,11 @@ try:
     from fastai.torch_core import data_collate
     import torch
     from .models._ssd_utils import SSDObjectItemList
-    from .models._unet_utils import ArcGISSegmentationItemList, ArcGISSegmentationMSItemList, _show_batch_unet_multispectral, is_no_color
+    from .models._unet_utils import ArcGISSegmentationItemList, ArcGISSegmentationMSItemList, is_no_color
     from .models._maskrcnn_utils import ArcGISInstanceSegmentationItemList, ArcGISInstanceSegmentationMSItemList
     from .models._ner_utils import ner_prepare_data
     from ._utils.common import ArcGISMSImageList
+    from ._utils.classified_tiles import show_batch_classified_tiles
     from ._utils.labeled_tiles import show_batch_labeled_tiles
     from ._utils.rcnn_masks import show_batch_rcnn_masks
     from ._utils.pascal_voc_rectangles import SSDObjectMSItemList, show_batch_pascal_voc_rectangles
@@ -78,12 +80,8 @@ imagery_type_lib = {
 }
 
 def get_installation_command():
-    installation_steps = "Install them using 'conda install -c esri -c fastai -c pytorch arcgis pillow scikit-image fastai=1.0.54 pytorch=1.1.0'"
-    if sys.platform == 'win32':
-        installation_steps = "Install them using 'conda install -c esri arcgis fastai pillow scikit-image'"
-    elif sys.platform in ['linux', 'darwin']:
-        pass
-            
+    installation_steps = "Install them using 'conda install -c esri arcgis=1.8.1 pillow scikit-image'\n'conda install -c fastai -c pytorch fastai pytorch=1.4.0 torchvision=0.5.0 tensorflow-gpu=2.1.0'\n'conda install gdal=2.3.3'"
+
     return installation_steps 
 
 def _raise_fastai_import_error(import_exception=import_exception):
@@ -341,6 +339,8 @@ def prepare_data(path,
                             for satellite imagery well). If transforms is set
                             to `False` no transformation will take place and 
                             `chip_size` parameter will also not take effect.
+                            If the dataset_type is 'PointCloud'. To add custom
+                            transforms use Transforms3d class from arcgis.learn.
     ---------------------   -------------------------------------------
     collate_fn              Optional function. Passed to PyTorch to collate data
                             into batches(usually default works).
@@ -352,38 +352,69 @@ def prepare_data(path,
                             the `dataset_type` on its own if it contains a 
                             map.txt file. If the path does not contain the 
                             map.txt file pass either of 'PASCAL_VOC_rectangles', 
-                            'RCNN_Masks', 'Classified_Tiles', 'Labeled_Tiles' and 
-                            'Imagenet'.                    
+                            'RCNN_Masks', 'Classified_Tiles', 'Labeled_Tiles', 
+                            'Imagenet' and 'PointCloud'.                    
     ---------------------   -------------------------------------------
     resize_to               Optional integer. Resize the image to given size.
     =====================   ===========================================
 
-    :returns: data object
-  
-    kwargs documentation
-    * imagery_type='RGB' # Change to known imagery_type or anything else to trigger multispectral
-    * bands=None # specify bands type for unknown imagery ['r', 'g', 'b', 'nir']
-    * rgb_bands=[0, 1, 2] # specify rgb bands indices for unknown imagery
-    * norm_pct=0.3 # sample of images to calculate normalization stats on 
-    * do_normalize=True # Normalize data 
-    """
+    **Keyword Arguments**
 
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    imagery_type            Optional string. Type of imagery used to export 
+                            the training data, valid values are:
+                                - 'naip'
+                                - 'sentinel2'
+                                - 'landsat8'
+                                - 'ms' - any other type of imagery
+    ---------------------   -------------------------------------------
+    bands                   Optional list. Bands of the imagery used to export 
+                            training data. 
+                            For example ['r', 'g', 'b', 'nir', 'u'] 
+                            where 'nir' is near infrared band and 'u' is a miscellaneous band.
+    ---------------------   -------------------------------------------
+    rgb_bands               Optional list. Indices of red, green and blue bands 
+                            in the imagery used to export the training data.
+                            for example: [2, 1, 0] 
+    ---------------------   -------------------------------------------
+    extract_bands           Optional list. Indices of bands to be used for
+                            training the model, same as in the imagery used to 
+                            export the training data.
+                            for example: [3, 1, 0] where we will not be using 
+                            the band at index 2 to train our model. 
+    ---------------------   -------------------------------------------
+    norm_pct                Optional float. Percentage of training data to be 
+                            used for calculating imagery statistics for  
+                            normalizing the data. 
+                            Default is 0.3 (30%) of data.
+    =====================   ===========================================
+
+    :returns: data object
+
+    """
+    
     height_width = []
 
     if not HAS_FASTAI:
         _raise_fastai_import_error()
 
     if isinstance(path, str) and not os.path.exists(path):
-        raise Exception("Invalid input path.")
+        raise Exception("Invalid input path. Please ensure that the input path is correct.")
 
     if type(path) is str:
         path = Path(path)
 
     databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
     databunch_kwargs['bs'] = batch_size
-
+    
     if hasattr(arcgis, "env") and getattr(arcgis.env, "_processorType", "") == "CPU":
         databunch_kwargs["device"] = torch.device('cpu')
+
+    if ARCGIS_ENABLE_TF_BACKEND:
+        databunch_kwargs["device"] = torch.device('cpu')
+        databunch_kwargs["pin_memory"] = False
 
     kwargs_transforms = {}
     if resize_to:
@@ -402,10 +433,10 @@ def prepare_data(path,
     _show_batch_multispectral = None
 
     if dataset_type is None and not has_esri_files:
-        raise Exception("Could not infer dataset type.")
-
+        raise Exception("Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid esri files")
+    
+    stats_file = path / 'esri_accumulated_stats.json'
     if dataset_type != "Imagenet" and has_esri_files:
-        stats_file = path / 'esri_accumulated_stats.json'
         with open(stats_file) as f:
             stats = json.load(f)
             dataset_type = stats['MetaDataMode']
@@ -557,7 +588,7 @@ def prepare_data(path,
                     class_mapping=class_mapping,
                     color_mapping=color_mapping
                 )
-            _show_batch_multispectral = _show_batch_unet_multispectral            
+            _show_batch_multispectral = show_batch_classified_tiles            
 
             def classified_tiles_collate_fn(samples): # The default fastai collate_fn was causing memory leak on tensors
                 r = ( torch.stack([x[0].data for x in samples]), torch.stack([x[1].data for x in samples]) )
@@ -682,10 +713,17 @@ def prepare_data(path,
             batch_size = 8
         return ner_prepare_data(dataset_type=dataset_type, path=path, class_mapping=class_mapping, val_split_pct=val_split_pct,batch_size=batch_size)
     elif dataset_type == "PointCloud":
-        return pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type, **kwargs)
+        from ._utils.pointcloud_data import Transform3d
+        if transforms is None:
+            transform_fn = Transform3d()
+        elif transforms is False:
+            transform_fn = None
+        else:
+            transform_fn = transforms
+        return pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type, transform_fn, **kwargs)
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
-    
+
     if _is_multispectral:
         if dataset_type == 'RCNN_Masks':
             kwargs['do_normalize'] = False
@@ -738,6 +776,8 @@ def prepare_data(path,
                     normstats[norm_pct_search][s] = normstats[norm_pct_search][s].tolist()
             with open(normstats_json_path, 'w', encoding='utf-8') as f:
                 json.dump(normstats, f, ensure_ascii=False, indent=4)
+
+                
 
         # batch_stats -> [band_min_values, band_max_values, band_mean_values, band_std_values, scaled_min_values, scaled_max_values, scaled_mean_values, scaled_std_values]
         data._band_min_values = batch_stats['band_min_values']
@@ -810,6 +850,22 @@ def prepare_data(path,
         for i, class_name in enumerate(class_mapping.keys()):
             new_mapping[i+1] = class_name
         class_mapping = new_mapping
+
+    ## For calculating loss from inverse of frquency.
+    if dataset_type == 'Classified_Tiles':
+        with open(stats_file) as f:
+            stats_json = json.load(f)
+            pixel_stats = stats_json.get('ClassPixelStats', None)
+            if pixel_stats is not None:
+                data.num_pixels_per_class = pixel_stats.get('NumPixelsPerClass', None)
+            else:
+                data.num_pixels_per_class = None
+            ## Might want to change the variable name
+            if data.num_pixels_per_class is not None:
+                data.class_weight = np.array(data.num_pixels_per_class).sum() / np.array(data.num_pixels_per_class)
+            else:
+                data.class_weight = None
+
 
     data.class_mapping = class_mapping
     data.color_mapping = color_mapping

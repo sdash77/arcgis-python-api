@@ -14,7 +14,15 @@ from collections import OrderedDict
 from urllib.parse import urlparse
 import os
 import shutil
-
+import ipywidgets
+try:
+    import pandas as pd
+    from arcgis.features.geo import _is_geoenabled
+except:
+    def _is_geoenabled(**kwargs):
+        return False
+    pd = None
+    
 from ipywidgets import widgets
 from ipywidgets.embed import embed_minimal_html
 from traitlets import Unicode, Int, List, Bool, Dict, Tuple, Float, observe
@@ -64,7 +72,7 @@ def _flatten_list(*unpacked_list):
 
 def _get_extent(item):
     from arcgis.features import FeatureSet, Feature, FeatureCollection, FeatureLayer
-    from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster
+    from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster, _ArcpyRaster
     from arcgis.gis import Layer
     from arcgis.gis import Item
     from arcgis._impl.common._mixins import PropertyMap
@@ -73,7 +81,9 @@ def _get_extent(item):
 
     if isinstance(item, Raster):
         if isinstance(item._engine_obj, _ImageServerRaster):
-            item=item._engine_obj
+            item = item._engine_obj
+        elif isinstance(item._engine_obj, _ArcpyRaster):
+            return dict(item.extent)
     if isinstance(item, Item):
         return list(map(_get_extent, item.layers))
     elif isinstance(item, list):
@@ -235,30 +245,70 @@ class MapView(widgets.DOMWidget):
     def zoom(self, value):
         self._zoom = value
 
-    rotation = Float(0).tag(sync=True)
-    """For 2D mode, the clockwise rotation of due north in relation to the top
-    of the view in degrees. Note that you can NOT set rotation in 3D mode.
-    3D mode uses the ‘heading’ property.
-    """
-    heading = Float(0).tag(sync=True)
-    """For 3D mode, the compass heading of the camera in degrees. Heading is
-    zero when north is the top of the screen. It increases as the view rotates
-    clockwise. The angles are always normalized between 0 and 360 degrees.
-    Note that you can NOT set heading in 2D mode. 2D mode uses the ‘rotation’
-    property.
-    """
-    tilt = Float(0).tag(sync=True)
-    """For 3D mode, the tilt of the camera in degrees with respect to the
-    surface as projected down from the camera position. Tilt is zero when
-    looking straight down at the surface and 90 degrees when the camera is
-    looking parallel to the surface. Note that you can NOT set tilt in
-    2D mode.
-    """
+    _rotation = Float(0).tag(sync=True)
+    _readonly_rotation = Float(0).tag(sync=True)
+    _link_writeonly_rotation = Float(0).tag(sync=True)
+    @property
+    def rotation(self):
+        """For 2D mode, the clockwise rotation of due north in relation to the top
+        of the view in degrees. Note that you can NOT set rotation in 3D mode.
+        3D mode uses the ‘heading’ property.
+        """
+        return self._readonly_rotation
+
+    @rotation.setter
+    def rotation(self, value):
+        self._rotation = value
+
+    _heading = Float(0).tag(sync=True)
+    _readonly_heading = Float(0).tag(sync=True)
+    _link_writeonly_heading = Float(0).tag(sync=True)
+    @property
+    def heading(self):
+        """For 3D mode, the compass heading of the camera in degrees. Heading is
+        zero when north is the top of the screen. It increases as the view rotates
+        clockwise. The angles are always normalized between 0 and 360 degrees.
+        Note that you can NOT set heading in 2D mode. 2D mode uses the ‘rotation’
+        property.
+        """
+        return self._readonly_heading
+
+    @heading.setter
+    def heading(self, value):
+        self._heading = value
+
+    _tilt = Float(0).tag(sync=True)
+    _readonly_tilt = Float(0).tag(sync=True)
+    _link_writeonly_tilt = Float(0).tag(sync=True)
+    @property
+    def tilt(self):
+        """For 3D mode, the tilt of the camera in degrees with respect to the
+        surface as projected down from the camera position. Tilt is zero when
+        looking straight down at the surface and 90 degrees when the camera is
+        looking parallel to the surface. Note that you can NOT set tilt in
+        2D mode.
+        """
+        return self._readonly_tilt
+
+    @tilt.setter
+    def tilt(self, value):
+        self._tilt = value
 
     @property
     def basemap(self):
         """What basemap you would like to apply to the widget (‘topo’,
         ‘national-geographic’, etc.). See `basemaps` for a full list
+        
+        # Usage example: Set the widget basemap equal to an item
+            from arcgis.mapping import WebMap
+            widget = gis.map()
+            # Use basemap from another item as your own
+            widget.basemap = webmap
+            widget.basemap = tiled_map_service_item
+            widget.basemap = image_layer_item
+            widget.basemap = webmap2.basemap
+            widget.basemap - 'national-geographic'
+        
         """
         return self._basemap
 
@@ -269,7 +319,17 @@ class MapView(widgets.DOMWidget):
         elif value in self.gallery_basemaps:
             self._basemap = value
         else:
-            raise RuntimeError("Basemap '{}' isn't valid".format(value))
+            try:
+                self.webmap.basemap = value
+                # takes dict object
+                self._gallery_basemaps['base'] = self.webmap._basemap
+                self._basemap = 'base'
+                # You need to re-write this dict to trigger the JS side change
+                copy_gallery = dict(self._gallery_basemaps)
+                self._gallery_basemaps = {}
+                self._gallery_basemaps = copy_gallery
+            except Exception:
+                raise RuntimeError("Basemap '{}' isn't valid".format(value))
 
     _basemap = Unicode('topo').tag(sync=True)
     """What basemap you would like to apply to the widget (‘topo’,
@@ -305,6 +365,7 @@ class MapView(widgets.DOMWidget):
 
     _readonly_extent = Dict({}).tag(sync=True)
     _extent = Dict({}).tag(sync=True)
+    _link_writeonly_extent = Dict({}).tag(sync=True)
 
     @property
     def extent(self):
@@ -354,10 +415,15 @@ class MapView(widgets.DOMWidget):
                     "ymin": value[0][1],
                     "xmax": value[1][0],
                     "ymax": value[1][1]}
+            elif len(value) == 0:
+                pass            
             else:
                 raise Exception
         except Exception:
-            log.warn("extent must be set to either a 2d list, spatially " \
+            if _is_iterable(value) and len(value) == 0:
+                pass
+            else:
+                log.warn("extent must be set to either a 2d list, spatially " \
                      "enabled data frame full_extent, or dict. Values specified " \
                 "must include xmin, ymin, xmax, ymax. Please see the API doc for " \
                 "more information")
@@ -598,6 +664,10 @@ class MapView(widgets.DOMWidget):
         # Set up LocalRasterOverlay instance
         self._raster = LocalRasterOverlayManager(mapview=self)
 
+        self._synced_mapviews = []
+        self._mapview_uuid_to_dlinks = {}
+        self._dlinks = []
+
     # Start screenshot specific section
 
     def _ipython_display_(self):
@@ -771,6 +841,8 @@ class MapView(widgets.DOMWidget):
         if _js_cdn_override_global != "":
             # If the user had previously set this global property, use it
             self._js_cdn_override = _js_cdn_override_global
+        elif os.environ.get("JSAPI_CDN", ""):
+            self._js_cdn_override = os.environ.get("JSAPI_CDN", "")
         else:
             # Else, test default CDNs and portal CDNs
             default_cdn_unreachable = not self._is_reachable(_DEFAULT_JS_CDN)
@@ -784,12 +856,20 @@ class MapView(widgets.DOMWidget):
                     "Make sure you have a JSAPI4 compatible basemap " +
                     "set as the default basemap in your portal.")
 
-    def _setup_default_basemap(self):
+    def _setup_default_basemap(self, basemap=None):
         """This method gets called once on startup, it populates the 'default'
         basemap field and the corresponding JSON without loading the rest
         of the `gallery_basemaps` property (which has a long load time)
         """
-        if 'defaultBasemap' in self.gis.properties:
+        if basemap:
+            # used instead of basemap setter to avoid the reset of the associated webmap's basemap on instantiation
+            self._gallery_basemaps['base'] = basemap
+            self._basemap = 'base'
+            # You need to re-write this dict to trigger the JS side change
+            copy_gallery = dict(self._gallery_basemaps)
+            self._gallery_basemaps = {}
+            self._gallery_basemaps = copy_gallery
+        elif 'defaultBasemap' in self.gis.properties:
             self._gallery_basemaps['default'] = \
                 self.gis.properties['defaultBasemap']
             self._basemap = 'default'
@@ -929,6 +1009,13 @@ class MapView(widgets.DOMWidget):
         """
         if options is None:
             options = {}
+        if isinstance(item, arcgis.features.FeatureLayer) and \
+           'renderer' not in options:
+            options['renderer'] = json.loads(item.renderer.json)
+        elif isinstance(item, pd.DataFrame) and \
+             'renderer' not in options and \
+             _is_geoenabled(item):
+            item = item.spatial.to_feature_collection()
         self._add_layer_to_widget(item, options)
 
     def _add_layer_to_webmap(self, item, options):
@@ -960,7 +1047,8 @@ class MapView(widgets.DOMWidget):
                         log.warning("Item.layers is a 'NoneType' object: nothing to be added to map")
                     else:
                         for layer in item.layers:
-                            self._add_layer_to_widget(layer, options)
+                            self.add_layer(layer, options)
+                            #self._add_layer_to_widget(layer, options)
             except KeyError:
                 log.warning("No 'layers' in Item: will not be added to map")
         elif isinstance(item, Layer):
@@ -1890,6 +1978,152 @@ class MapView(widgets.DOMWidget):
         if self.ready:
             self._image_overlays_to_remove = tuple()
 
+    def _isinstance(self, *args, **kwargs):
+        return isinstance(*args, **kwargs)
+
     _image_overlays_to_remove = Tuple(tuple()).tag(sync=True)
     _overlay_this_image = Dict({}).tag(sync=True)
     _overlay_these_images_on_widget_load = Tuple(tuple()).tag(sync=True)
+
+    _synced_mapviews = []
+    _mapview_uuid_to_dlinks = {}
+    _dlinks = []
+
+    def sync_navigation(self, mapview):
+        """Synchronizes the navigation from this `MapView` to another `MapView`
+        instance so panning/zooming/navigating in one will update the other.
+    
+        ==================     ===================================================================
+        **Argument**           **Description**
+        ------------------     -------------------------------------------------------------------
+        mapview                Either a single `MapView` instance, or a list of `MapView`
+                               instances to synchronize to.
+        ==================     ===================================================================
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: link the navigation of two maps together
+            from ipywidgets import HBox
+            map1 = gis.map("Chicago, IL")
+            map1.basemap = "gray"
+            map2 = gis.map("Chicago, IL")
+            map2.basemap = "dark-gray"
+            map1.sync_navigation(map2)
+            HBox([map1, map2])
+
+        """
+        if _is_iterable(mapview):
+            for m in mapview:
+                self.sync_navigation(m)
+        elif not self._isinstance(mapview, MapView):
+            raise Exception("Can only link navigation to a `MapView` instance")
+        else:
+            self._sync_navigation(mapview, ignore_errors = False)
+            for m in mapview._synced_mapviews:
+                m._sync_navigation(self, ignore_errors = True)
+            for m in self._synced_mapviews:
+                m._sync_navigation(mapview, ignore_errors = True)
+
+    def _sync_navigation(self, mapview, ignore_errors = False):
+        try:
+            # Check to make sure this call is valid
+            if mapview in self._synced_mapviews or \
+               self in mapview._synced_mapviews:
+                raise Exception(f"Not syncing MapView {mapview} since it is "
+                                 "already synced")
+            if self == mapview:
+                return
+
+            # Edge case for when you link widgets before they are drawn
+            if not self.ready:
+                self._readonly_extent = self._extent
+            if not mapview.ready:
+                mapview._readonly_extent = mapview._extent
+
+            # Set references to each other
+            self._synced_mapviews.append(mapview)
+            mapview._synced_mapviews.append(self)
+
+            # Set up, reference, and apply dlinks for each other,
+            self_dlinks = []
+            their_dlinks = []
+            self_dlinks.append(ipywidgets.dlink((self, "_readonly_extent"),
+                                           (mapview, "_link_writeonly_extent")))
+            their_dlinks.append(ipywidgets.dlink((mapview, "_readonly_extent"),
+                                           (self, "_link_writeonly_extent")))
+
+            self_dlinks.append(ipywidgets.dlink((self, "_readonly_rotation"),
+                                           (mapview, "_link_writeonly_rotation")))
+            their_dlinks.append(ipywidgets.dlink((mapview, "_readonly_rotation"),
+                                           (self, "_link_writeonly_rotation")))
+
+            self_dlinks.append(ipywidgets.dlink((self, "_readonly_heading"),
+                                           (mapview, "_link_writeonly_heading")))
+            their_dlinks.append(ipywidgets.dlink((mapview, "_readonly_heading"),
+                                           (self, "_link_writeonly_heading")))
+
+            self_dlinks.append(ipywidgets.dlink((self, "_readonly_tilt"),
+                                           (mapview, "_link_writeonly_tilt")))
+            their_dlinks.append(ipywidgets.dlink((mapview, "_readonly_tilt"),
+                                           (self, "_link_writeonly_tilt")))
+            self._mapview_uuid_to_dlinks[mapview._uuid] = self_dlinks
+            mapview._mapview_uuid_to_dlinks[self._uuid] = their_dlinks
+            return True
+        except Exception as e:
+            if ignore_errors:
+                return True
+            else:
+                raise e
+
+
+    def unsync_navigation(self, mapview=None):
+        """Unsynchronizes connections  made to other MapView instances made
+        via `my_mapview.sync_navigation(other_mapview)`.
+
+        ==================     ===================================================================
+        **Argument**           **Description**
+        ------------------     -------------------------------------------------------------------
+        mapview                (Optional) Either a single `MapView` instance, or a list of 
+                               `MapView` instances to unsynchronize. If not specified, will
+                               unsynchronize all synced `MapView` instances
+        ==================     ===================================================================
+
+        """
+        if mapview is None:
+            mapview = self._synced_mapviews
+        if _is_iterable(mapview):
+            for m in mapview:
+                self.unsync_navigation(m)
+        elif not self._isinstance(mapview, MapView):
+            raise Exception("Can only unsync navigation to a `MapView` instance")
+        else:
+            self._unsync_navigation(mapview, ignore_errors = False)
+            for m in mapview._synced_mapviews:
+                m._unsync_navigation(self, ignore_errors = True)
+            for m in self._synced_mapviews:
+                m._unsync_navigation(mapview, ignore_errors = True)
+
+    def _unsync_navigation(self, mapview, ignore_errors = False):
+        try:
+            if mapview not in self._synced_mapviews and \
+               self not in mapview._synced_mapviews:
+                raise Exception(f"Not unsyncing MapView {mapview} since it "
+                                 "hasn't been synced")
+            if self == mapview:
+                return
+
+            for self_dlink in self._mapview_uuid_to_dlinks[mapview._uuid]:
+                self_dlink.unlink()
+            self._synced_mapviews.remove(mapview)
+            del self._mapview_uuid_to_dlinks[mapview._uuid]
+
+            for their_dlink in mapview._mapview_uuid_to_dlinks[self._uuid]:
+                their_dlink.unlink()
+            mapview._synced_mapviews.remove(self)
+            del mapview._mapview_uuid_to_dlinks[self._uuid]
+            return True
+        except Exception as e:
+            if ignore_errors:
+                return True
+            else:
+                raise e

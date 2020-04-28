@@ -31,6 +31,8 @@ from . import manage_data
 from . import summarize_data
 from . import use_proximity
 from . import analysis
+from . import elevation
+from . import hydrology
 
 
 __all__ = ['Feature', 'FeatureSet',

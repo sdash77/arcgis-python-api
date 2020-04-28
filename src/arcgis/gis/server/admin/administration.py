@@ -17,7 +17,31 @@ from ..._impl._con import Connection
 ########################################################################
 class Server(BaseServer):
     """
-    An ArcGIS Enterprise Server site used for hosting GIS Web services.
+    An ArcGIS Enterprise Server site used for hosting GIS Web services. This class is not
+    created by users directly to access server instances in an Enterprise configuration. Use the
+    :class:`ServerManager` :func:`~ServerManager.list` or :func:`~ServerManager.get` methods.
+
+    .. code-block:: python
+
+        # Usage Example 1: Get a GIS server federated with Enterprise
+
+        gis = GIS(profile="your_ent_admin_profile")
+
+        hosting_server = gis.servers.get(role="HOSTING_SERVER")
+
+
+    For stand alone servers, directly create a :class:`Server` instance.
+
+    .. code-block:: python
+
+        # Usage Example 2: Get a stand alone server that has Web Adaptor installed
+
+        server_base_url = "https://example.site.com"
+
+        gis_server = Server(url=f"{server_base_url}/web_adaptor/admin",
+                            token_url=f"{server_base_url}/web_adaptor/tokens/generateToken",
+                            username="admin_user",
+                            password="admin_password")
 
 
     ==================     ====================================================================
@@ -86,6 +110,7 @@ class Server(BaseServer):
     =====================     ====================================================================
 
     """
+
     _url = None
     _con = None
     _json_dict = None

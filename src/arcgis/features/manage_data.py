@@ -8,7 +8,7 @@ overlay_layers combines two or more layers into one single layer. You can think 
 maps and creating a single map containing all the information found in the stack.
 """
 import arcgis as _arcgis
-
+from .._impl.common._utils import inspect_function_inputs
 #----------------------------------------------------------------------
 def generate_tessellation(extent_layer,
                          bin_size=1,
@@ -62,16 +62,11 @@ def generate_tessellation(extent_layer,
     :returns: FeatureLayer or Feature Layer Collection
 
     """
+    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-
-    return gis._tools.featureanalysis.generate_tesselation(bin_type=bin_type,
-                                             bin_size=bin_size,
-                                             bin_size_unit=bin_size_unit,
-                                             extent_layer=extent_layer,
-                                             intersect_study_area=intersect_study_area,
-                                             output_name=output_name, estimate=estimate,
-                                             context=context, future=future)
-
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.generate_tessellations, **kwargs)    
+    return gis._tools.featureanalysis.generate_tesselation(**params)
+#----------------------------------------------------------------------
 def dissolve_boundaries(
         input_layer,
         dissolve_fields=[],
@@ -158,25 +153,17 @@ def dissolve_boundaries(
                                             output_name="DissolveBoundaries")
     """
 
+    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-
-    return gis._tools.featureanalysis.dissolve_boundaries(
-        input_layer,
-        dissolve_fields,
-        summary_fields,
-        output_name,
-        context,
-        estimate=estimate,
-        multi_part_features=multi_part_features, future=future)
-
-
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.dissolve_boundaries, **kwargs)   
+    return gis._tools.featureanalysis.dissolve_boundaries(**params)
+#----------------------------------------------------------------------
 def extract_data(
         input_layers,
         extent=None,
         clip=False,
         data_format=None,
         output_name=None,
-        context=None,
         gis=None,
         estimate=False,
         future=False):
@@ -201,26 +188,38 @@ def extract_data(
     -----------------------------------    ---------------------------------------------------------
     data_format                            Optional string. A keyword defining the output data format for your extracted data.
 
-                                           Choice list: ['FileGeodatabase', 'ShapeFile', 'KML', 'CSV']
+                                           Choice list: ``['FileGeodatabase', 'ShapeFile', 'KML', 'CSV']``
 
                                            The default is 'CSV'.
 
-                                           If FILEGEODATABASE is specified, and the input layer has `attachments <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-layers.htm#ESRI_SECTION2_EF4F7A72F7B74E47B5CBCC1F343445E2>`_ , the attachments will be extracted
-                                           to the output file geodatabase if clip is false. If clip is true, attachments will not be extracted.
-    -----------------------------------    ---------------------------------------------------------
-    output_name                            Optional string or dict. ``output_name`` is used to name the item in your My contents page. For more information on these item properties, see the Item resource page in the `ArcGIS REST API <https://developers.arcgis.com/rest/users-groups-and-items/item.htm>`_
-                                           Syntax when ``output_name`` is dict: {
-                                                                                "title": "<title>",
-                                                                                "tag": "<tags>",
-                                                                                "snippet": "<snippet>",
-                                                                                "description": "<description>"
-                                                                                }
-    -----------------------------------    ---------------------------------------------------------
-    context                                Optional string. Context contains additional settings that affect method execution. For ``extract_data``, there is one setting.
+                                           If *FileGeodatase* is specified *and* the input layer has `attachments: <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-layers.htm#ESRI_SECTION2_EF4F7A72F7B74E47B5CBCC1F343445E2>`_
 
-                                           #. Output Spatial Reference (outSR) the extracted features will be projected into the output spatial reference.
+                                            * if *clip=False*, the attachments will be extracted to the output file
+                                            * if *clip=True*, the attachments will not be extracted
+    -----------------------------------    ---------------------------------------------------------
+    output_name                            Optional string or dict.
+
+                                           When ``output_name`` is a string, the output item in your My contents page
+                                           will be named by the value. Other item properties will receive default values.
+
+                                           .. code-block:: python
+
+                                               output_name = "my_extracted_item"
+
+                                           To explicitly provide other item properties, use a dict with the following Syntax.
+
+                                           .. code-block:: python
+
+                                               output_name = {"title": "<title>",
+                                                              "tag": "<tags>",
+                                                              "snippet": "<snippet>",
+                                                              "description": "<description>"}
+
+                                           For more information on these and other item properties, see the Item resource page in the `ArcGIS REST API. <https://developers.arcgis.com/rest/users-groups-and-items/item.htm>`_
     -----------------------------------    ---------------------------------------------------------
     gis                                    Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    -----------------------------------    ---------------------------------------------------------
+    estimate                               Optional boolean. If True, the number of credits to run the operation will be returned.
     -----------------------------------    ---------------------------------------------------------
     future                                 Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ===================================    =========================================================
@@ -232,21 +231,14 @@ def extract_data(
         ext_state_highway = extract_data(input_layers=[highways.layers[0]],
                                  extent=state_area_boundary.layers[0],
                                  clip=True,
-                                 data_format='shapefile',
+                                 data_format='ShapeFile',
                                  output_name='state highway extracted')
     """
+    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-
-    return gis._tools.featureanalysis.extract_data(
-        input_layers,
-        extent,
-        clip,
-        data_format,
-        output_name,
-        context,
-        estimate=estimate, future=future)
-
-
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.extract_data, **kwargs)   
+    return gis._tools.featureanalysis.extract_data(**params)
+#----------------------------------------------------------------------
 def merge_layers(
         input_layer,
         merge_layer,
@@ -322,17 +314,11 @@ def merge_layers(
                               merging_attributes=["State Match Place_Name"],
                               output_name="merge layers")
     """
+    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-
-    return gis._tools.featureanalysis.merge_layers(
-        input_layer,
-        merge_layer,
-        merging_attributes,
-        output_name,
-        context,
-        estimate=estimate, future=future)
-
-
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.merge_layers, **kwargs)   
+    return gis._tools.featureanalysis.merge_layers(**params)
+#----------------------------------------------------------------------
 def overlay_layers(
         input_layer,
         overlay_layer,
@@ -438,19 +424,11 @@ def overlay_layers(
 
 
     """
+    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-
-    return gis._tools.featureanalysis.overlay_layers(
-        input_layer,
-        overlay_layer,
-        overlay_type,
-        snap_to_input,
-        output_type,
-        tolerance,
-        output_name,
-        context,
-        estimate=estimate, future=future)
-
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.overlay_layers, **kwargs)   
+    return gis._tools.featureanalysis.overlay_layers(**params)
+#----------------------------------------------------------------------
 def create_route_layers(route_data_item,
                         delete_route_data_item=False,
                         tags=None,
@@ -518,7 +496,13 @@ def create_route_layers(route_data_item,
                             route_name_prefix="santa_ana",
                             folder_name="create route layers")
     """
+    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
+    params_tool = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.create_route_layers, **kwargs)   
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis.create_route_layers, **kwargs)   
+    if 'context' not in params_tool and 'context' in params:
+        params.pop('context', None)
+        
     output_name = {}
     output_item_properties = {}
     if route_name_prefix:
@@ -542,8 +526,10 @@ def create_route_layers(route_data_item,
             output_item_properties["folderId"] = folder_id
     if output_item_properties:
         output_name["itemProperties"] = output_item_properties
-
-    return gis._tools.featureanalysis.create_route_layers(
-        route_data_item,
-        delete_route_data_item,
-        output_name, estimate=estimate, future=future)
+    if output_name:
+        params['output_name'] = output_name
+    return gis._tools.featureanalysis.create_route_layers(**params)
+    #return gis._tools.featureanalysis.create_route_layers(
+        #route_data_item,
+        #delete_route_data_item,
+        #output_name, estimate=estimate, future=future)
