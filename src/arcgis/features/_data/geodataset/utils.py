@@ -6,14 +6,18 @@ from __future__ import division
 from __future__ import absolute_import
 import re
 from .index.rtree import Rtree
-from datetime import datetime
+from datetime import datetime as _datetime
 import pandas as pd
 import numpy as np
 
-DATETIME_TYPES = (datetime,
-                  np.datetime64,
-                  pd.datetime,
-                  pd.DatetimeIndex)
+if [float(i) for i in pd.__version__.split('.')] < [1,0,0]:
+    DATETIME_TYPES = (_datetime,
+                      np.datetime64,
+                      pd.datetime,
+                      pd.DatetimeIndex)
+else:
+    DATETIME_TYPES = (_datetime,
+                      np.datetime64)
 
 NUMERIC_TYPES = tuple([int] + [
     np.int, np.int16,

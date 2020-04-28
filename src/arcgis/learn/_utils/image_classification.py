@@ -14,6 +14,8 @@ try:
 except:
     HAS_TENSORFLOW = False
 
+from .common import get_nbatches
+
 try:
     import torch
     import fastai
@@ -30,6 +32,7 @@ def IC_show_results(self, nrows=5, **kwargs):
 
     # Get Number of items
     ncols = kwargs.get('ncols', nrows)
+    n_items = kwargs.get('n_items', nrows * ncols)
 
     type_data_loader = kwargs.get('data_loader', 'validation') # options : traininig, validation, testing
     if type_data_loader == 'training':
@@ -131,8 +134,8 @@ def IC_show_results(self, nrows=5, **kwargs):
     for r in range(nrows):
         for c in range(ncols):
             if idx < symbology_x_batch.shape[0]:
-                axi  = ax[r][c]
-                axi.imshow(symbology_x_batch[idx])
+                axi = ax[r][c]
+                axi.imshow(symbology_x_batch[idx].cpu().numpy())
                 y = self._data.classes[y_batch[idx].item()]
                 prediction = self._data.classes[predictions_class_store[idx]]
                 # prediction_confidence = predictions_confidence_store[idx]

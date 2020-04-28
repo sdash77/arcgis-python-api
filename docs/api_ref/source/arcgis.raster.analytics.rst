@@ -159,3 +159,11 @@ optimal_path_as_line
 optimal_region_connections
 --------------------------
 .. automethod:: arcgis.raster.analytics.optimal_region_connections
+
+analyze_changes_using_ccdc
+--------------------------
+.. automethod:: arcgis.raster.analytics.analyze_changes_using_ccdc
+
+detect_change_using_change_analysis_raster
+------------------------------------------
+.. automethod:: arcgis.raster.analytics.detect_change_using_change_analysis_raster

@@ -46,7 +46,6 @@ from torch import nn, LongTensor
 import torch.nn.functional as F
 from fastai.vision.image import ImageBBox
 from fastai.vision.data import ObjectCategoryList, ObjectItemList
-from fastprogress import progress_bar
 import numpy as np
 from fastai.callbacks.hooks import model_sizes, hook_outputs
 from fastai.layers import conv2d, conv_layer
@@ -55,6 +54,7 @@ import math
 import matplotlib.pyplot as plt
 import warnings
 
+from fastprogress.fastprogress import progress_bar
 
 class LateralUpsampleMerge(nn.Module):
     
@@ -262,7 +262,8 @@ class RetinaNetFocalLoss(nn.Module):
         self.anchors = create_anchors(sizes, self.ratios, self.scales).to(device)
     
     def _unpad(self, bbox_tgt, clas_tgt):
-        i = torch.min(torch.nonzero(clas_tgt-self.pad_idx))
+        non_zero = torch.nonzero(clas_tgt - self.pad_idx)
+        i = bbox_tgt.shape[0] if non_zero.nelement() == 0 else torch.min(non_zero)
         return tlbr2cthw(bbox_tgt[i:]), clas_tgt[i:]-1+self.pad_idx
     
     def _focal_loss(self, clas_pred, clas_tgt):
@@ -279,8 +280,7 @@ class RetinaNetFocalLoss(nn.Module):
         try:
             matches = match_anchors(self.anchors, bbox_tgt)
         except:
-            logger = logging.getLogger()
-            logger.debug("Returning zero tensors as there is no overlap between ground truth and anchors.")
+            # "Returning zero tensors as there is no overlap between ground truth and anchors."
             return torch.tensor(0., requires_grad=True).to(self._device)
 
         bbox_mask = matches>=0

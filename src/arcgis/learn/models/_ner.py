@@ -2,15 +2,12 @@ try:
     import spacy
     from spacy.util import minibatch, compounding
     import pandas as pd
-    try:
-        from fastprogress import master_bar, progress_bar
-    except ImportError:
-        from fastprogress.fastprogress import master_bar, progress_bar
+    from fastprogress.fastprogress import master_bar, progress_bar
     from ._codetemplate import entity_recognizer_placeholder
     import numpy as np
-    HAS_SPACY=True
+    HAS_SPACY = True
 except:
-    HAS_SPACY=False
+    HAS_SPACY = False
 
 from ._arcgis_model import ArcGISModel
 import os,json,logging
@@ -181,7 +178,7 @@ class EntityRecognizer(ArcGISModel):
                 self.optimizer.alpha = lr
                 lr_find = False
             mb = master_bar(range(epochs))
-            mb.write(['epoch','losses','val_loss'], table=True)
+            mb.write(['epoch','losses','val_loss','precision_score','recall_score','f1_score'], table=True)
             losses_list = []
             
             for itn in mb:
@@ -202,7 +199,7 @@ class EntityRecognizer(ArcGISModel):
                     if lr_find:
                         losses_list.append(train_loss)
                     else: # recording training loss per iteration.
-                        self.recorder.losses.append(train_loss)
+                        self.recorder.losses.append(train_loss)                       
                 if VAL_DATA:
 
                     val_batches = minibatch(VAL_DATA, size=batch_size)
@@ -225,7 +222,14 @@ class EntityRecognizer(ArcGISModel):
                     update_recorder = False
                     if np.mean(losses_list) > 3*np.min(self.recorder.losses): #break the epoch if loss overshoots
                             return    
-                mb.write([itn,round(train_loss,2),round(val_loss,2)],table=True)
+                score = nlp.evaluate(self.train_ds)
+                precision_score,recall_score,f1_score,metrics_per_label = score.ents_p,score.ents_r,score.ents_f,score.ents_per_type
+                self.recorder.metrics['precision_score'].append(precision_score)
+                self.recorder.metrics['recall_score'].append(recall_score)
+                self.recorder.metrics['f1_score'].append(f1_score)
+                self.recorder.metrics['metrics_per_label'].append(metrics_per_label)
+                mb.write([itn, round(train_loss,2), round(val_loss,2), round(precision_score/100,2)
+                        , round(recall_score/100,2), round(f1_score/100,2)],table=True)
         if  not lr_find:
             self._trained = True
             self.model = nlp
@@ -239,6 +243,10 @@ class EntityRecognizer(ArcGISModel):
         self._emd_template['ModelName'] = type(self).__name__
         self._emd_template['Labels'] = self.model.entity.labels
         self._emd_template['Lang'] = self.lang
+        self._emd_template['metrics'] = json.dumps({'precision_score':[self.recorder.metrics['precision_score'][-1]]
+                                                ,'recall_score':[self.recorder.metrics['recall_score'][-1]]
+                                                ,'f1_score':[self.recorder.metrics['f1_score'][-1]]
+                                                ,'metrics_per_label':[self.recorder.metrics['metrics_per_label'][-1]]})
         if self._has_address:
             self._emd_template['address_tag'] = self._address_tag
         json.dump(self._emd_template, open(path/Path(path.stem).with_suffix('.emd'), 'w'), indent=4)
@@ -300,7 +308,7 @@ class EntityRecognizer(ArcGISModel):
         =====================   ===========================================
         """
         if '\\' in str(name_or_path) or '/' in str(name_or_path):
-            name_or_path=name_or_path
+            name_or_path = name_or_path
             model_path = Path(name_or_path).parent
         else:
             model_path =  Path(self.path) /'models'/ name_or_path
@@ -310,13 +318,15 @@ class EntityRecognizer(ArcGISModel):
         emd = json.loads(emd)
         address_tag= emd.get('address_tag')
         if address_tag:
-            self._has_address=True
-            self._address_tag=address_tag
+            self._has_address = True
+            self._address_tag = address_tag
         self.model = spacy.load(model_path)
         self.ner = self.model.get_pipe('ner')
         self._trained = True
         self.entities = list(self.model.entity.labels)
-        self.model_dir=Path(name_or_path).parent.resolve()
+        self.model_dir = Path(name_or_path).parent.resolve()
+        self.recorder = Recorder()
+        self.recorder.metrics = json.loads(emd.get('metrics'))
         print(self.model)
 
     @classmethod
@@ -441,7 +451,7 @@ class EntityRecognizer(ArcGISModel):
                 item_names = os.listdir(text_list)
                 item_list = pd.Series()
                 text = []
-                skipped_docs=[]
+                skipped_docs = []
                 for item_name in item_names:
                     try:
                         with open(f'{text_list}/{item_name}', 'r', encoding='utf-16', errors='ignore') as f:
@@ -449,7 +459,7 @@ class EntityRecognizer(ArcGISModel):
                     except:
                         try:
                             with open(f'{text_list}/{item_name}', 'r', encoding='utf-8', errors='ignore') as f:
-                                item_list[item_name]=f.read()
+                                item_list[item_name] = f.read()
                         except:
                             skipped_docs.append(item_name)
                 if len(skipped_docs):
@@ -525,9 +535,40 @@ class EntityRecognizer(ArcGISModel):
             return self.extract_entities(xs)
         else:
             print('Please provide a valid ds_type:[\'valid\'|\'train\']')
+    def precision_score(self):
+        if self._trained:
+            precision_pct=self.recorder.metrics['precision_score'][-1]
+            precision=round(precision_pct/100,2)
+            return precision
+        else:
+            return logging.warning('This model has not been trained')
+
+    def recall_score(self):
+        if self._trained:
+            recall_pct=self.recorder.metrics['recall_score'][-1]
+            recall=round(recall_pct/100,2)
+            return recall
+        else:
+            return logging.warning('This model has not been trained')
+    def f1_score(self):
+        if self._trained:
+            f1_pct=self.recorder.metrics['f1_score'][-1]
+            f1=round(f1_pct/100,2)
+            return f1
+        else:
+            return logging.warning('This model has not been trained')
+    def metrics_per_label(self):
+        if self._trained:
+            metrics_df = pd.DataFrame(self.recorder.metrics['metrics_per_label'][-1]).transpose()
+            metrics_df.columns = ['Precision_score','Recall_score','F1_score']
+            metrics_df=metrics_df.apply(lambda x: round(x/100,2))
+            return metrics_df
+        else:
+            return logging.warning('This model has not been trained')
 
 class Recorder():
     def __init__(self):
         self.lrs = []
         self.losses = []
         self.val_loss = []
+        self.metrics = {'precision_score':[],'recall_score':[],'f1_score':[],'metrics_per_label':[]}

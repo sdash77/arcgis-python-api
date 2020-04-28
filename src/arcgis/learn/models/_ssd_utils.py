@@ -5,6 +5,7 @@ from fastai.vision import imagenet_stats
 from fastai.vision.image import ImageBBox
 from fastai.vision.data import ObjectCategoryList, ObjectItemList
 from fastprogress.fastprogress import progress_bar
+
 import numpy as np
 import random
 import math
@@ -581,7 +582,7 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
         # Plot Ground Truth
         ax_ground_truth = ax[r][0]
         ax_ground_truth.axis('off')
-        ax_ground_truth.imshow(symbology_x_batch[idx])
+        ax_ground_truth.imshow(symbology_x_batch[idx].cpu().numpy())
         gt_classes = y_classes[idx][y_classes[idx] > 0]
         gt_bboxes = y_bboxes[idx][y_classes[idx] > 0]
         gt_bboxes = (gt_bboxes+1)*.5
@@ -590,13 +591,13 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
             xs = bbox[[1, 1, 3, 3, 1]]
             ys = bbox[[0, 2, 2, 0, 0]]
             color = self._data._multispectral_color_array[gt_classes[i]]
-            ax_ground_truth.plot(xs, ys, color=color, linewidth=2, path_effects=[patheffects.Stroke(linewidth=3, foreground='black'), patheffects.Normal()])
+            ax_ground_truth.plot(xs.cpu().numpy(), ys.cpu().numpy(), color=color, linewidth=2, path_effects=[patheffects.Stroke(linewidth=3, foreground='black'), patheffects.Normal()])
             ax_ground_truth.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[gt_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=1, foreground='black'), patheffects.Normal()])
 
         # Plot Predictions
         ax_prediction  = ax[r][1]
         ax_prediction.axis('off')
-        ax_prediction.imshow(symbology_x_batch[idx])
+        ax_prediction.imshow(symbology_x_batch[idx].cpu().numpy())
         analyzed_prediction = _analyze_pred(
             (predictions_class_store[idx], predictions_activation_store[idx]), 
             thresh=thresh, 
@@ -614,7 +615,7 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
                     xs = bbox[[1, 1, 3, 3, 1]]
                     ys = bbox[[0, 2, 2, 0, 0]]
                     color = self._data._multispectral_color_array[predicted_classes[i]]
-                    ax_prediction.plot(xs, ys, color=color, linewidth=2, path_effects=[patheffects.Stroke(linewidth=3, foreground='black'), patheffects.Normal()])
+                    ax_prediction.plot(xs.cpu().numpy(), ys.cpu().numpy(), color=color, linewidth=2, path_effects=[patheffects.Stroke(linewidth=3, foreground='black'), patheffects.Normal()])
                     ax_prediction.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[predicted_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=1, foreground='black'), patheffects.Normal()])
             
         idx+=1

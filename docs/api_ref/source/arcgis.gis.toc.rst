@@ -148,7 +148,6 @@ CertificateManager
     :show-inheritance:
 
 
-
 Submodules
 --------------
 .. toctree::

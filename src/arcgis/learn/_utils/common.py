@@ -45,7 +45,14 @@ class ArcGISMSImage(Image):
 
     @classmethod
     def open_gdal(cls, path):
-        import gdal
+        try:
+            import gdal
+        except ImportError as e:
+            message = f"""
+            {e}\n\nPlease install gdal using the following command 
+            \nconda install gdal=2.3.3
+            """
+            raise Exception(message)
         path = str(os.path.abspath(path))
         x = gdal.Open(path).ReadAsArray()
         x = torch.tensor(x.astype(np.float32))
@@ -86,6 +93,11 @@ def get_color_array(color_mapping: dict, alpha=0.7):
 
 ## show_batch() show_results() helper functions start ##
 
+def to_torch_tensor(x):
+    if type(x) == torch.Tensor:
+        return x.clone().detach()
+    return torch.tensor(x)
+
 def get_symbology_bands(rgb_bands, extract_bands, bands):
     e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
     symbology_bands = []
@@ -93,10 +105,10 @@ def get_symbology_bands(rgb_bands, extract_bands, bands):
         raise(e)
     for b in rgb_bands:
         if type(b) == str:
-            b_index = self._bands.index(b)
+            b_index = bands.index(b)
         elif type(b) == int:
             # check if the band index specified by the user really exists.
-            self._bands[b]
+            bands[b]
             b_index = b
         else:
             raise(e)
@@ -152,17 +164,29 @@ def image_tensor_checks_plotting(imagetensor_batch):
 
     # Squeeze channels if single channel (1, 224, 224) -> (224, 224)
     if symbology_x_batch.shape[-1] == 1:
-        symbology_x_batch = symbology_x_batch.squeeze()
+        symbology_x_batch = symbology_x_batch.squeeze(-1)
     return symbology_x_batch
 
 def denorm_x(imagetensor_batch, self=None):
-    if self is not None:
-        if self._data._is_multispectral:
-            return denorm_image(
-                imagetensor_batch, 
-                mean=self._data._scaled_mean_values[self._data._extract_bands],
-                std=self._data._scaled_std_values[self._data._extract_bands]
-            )
+    """
+    denormalizes a imagetensor_batch for plotting
+    -------------------------
+    imagetensor_batch: imagebatch with shape (batch, bands, rows, columns)
+    
+    self: optional. can be an instance of ArcGISModel or arcgis.learn data object(databunch)
+    -------------------------
+    returns denormalized imagetensor_batch
+    """
+    if isinstance(self, models._arcgis_model.ArcGISModel):
+        data = self._data
+    else:
+        data = self
+    if data is not None and data._is_multispectral:
+        return denorm_image(
+            imagetensor_batch, 
+            mean=data._scaled_mean_values[data._extract_bands],
+            std=data._scaled_std_values[data._extract_bands]
+        )
     return denorm_image(imagetensor_batch)
     
 def denorm_image(imagetensor_batch, mean=None, std=None):
@@ -170,13 +194,14 @@ def denorm_image(imagetensor_batch, mean=None, std=None):
     if mean is None or std is None:
         mean = imagenet_stats[0]
         std = imagenet_stats[1]
-    mean = torch.tensor(mean).to(imagetensor_batch).view(1, -1, 1, 1)
-    std = torch.tensor(std).to(imagetensor_batch).view(1, -1, 1, 1)
+    mean = to_torch_tensor(mean).to(imagetensor_batch).view(1, -1, 1, 1)
+    std = to_torch_tensor(std).to(imagetensor_batch).view(1, -1, 1, 1)
     return (imagetensor_batch * std) + mean
 
 def predict_batch(self, imagetensor_batch):
     if self._backend == 'pytorch':
         predictions = self.learn.model.eval()(imagetensor_batch.to(self._device).float()).detach()
+        return predictions
     elif self._backend == 'tensorflow':
         from .common_tf import predict_batch_tf
         return predict_batch_tf(self, imagetensor_batch)

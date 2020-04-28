@@ -22,6 +22,7 @@ from arcgis.geoprocessing._support import _layer_input,_feature_input
 import string as _string
 import random as _random
 import arcgis as _arcgis
+from ..._impl.common._deprecate import deprecated
 
 def _create_output_image_service(gis, output_name, task):
     ok = gis.content.is_service_name_available(output_name, "Image Service")
@@ -137,6 +138,7 @@ def _gbl_clone_layer_raster(layer, function_chain, function_chain_ra, **kwargs):
 
     return newlyr
 
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_accumulation() instead. ")
 def euclidean_distance(in_source_data,
                        cell_size=None,
                        max_distance=None,
@@ -221,7 +223,7 @@ def euclidean_distance(in_source_data,
     return _gbl_clone_layer(layer, template_dict, function_chain_ra)
 
 
-
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_allocation() instead. ")
 def euclidean_allocation(in_source_data,
                          in_value_raster=None,
                          max_distance=None,
@@ -329,7 +331,7 @@ def euclidean_allocation(in_source_data,
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
 
-
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_accumulation() instead. ")
 def cost_distance(in_source_data,
                   in_cost_raster,
                   max_distance=None,
@@ -442,7 +444,7 @@ def cost_distance(in_source_data,
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
-
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_allocation() instead. ")
 def cost_allocation(in_source_data,
                     in_cost_raster,
                     in_value_raster=None,
@@ -1325,6 +1327,8 @@ def watershed(input_flow_direction_raster,
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
 
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_accumulation()"
+ " (or arcgis.raster.functions.gbl.distance_allocation() for allocation output), instead. ")
 def calculate_travel_cost(in_source_data,
                           in_cost_raster=None,
                           in_surface_raster=None,
@@ -1628,7 +1632,7 @@ def kernel_density(in_features,
     newlyr._uses_gbl_function = True
     return newlyr
 
-
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.optimal_path_as_raster() instead.")
 def cost_path(in_destination_data,
               in_cost_distance_raster,
               in_cost_backlink_raster,
@@ -1709,6 +1713,8 @@ def cost_path(in_destination_data,
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_accumulation()"
+"with value specified for output_source_direction_raster_name, instead.")
 def euclidean_direction(in_source_data,
                         cell_size=None,
                         max_distance=None,
@@ -1791,6 +1797,8 @@ def euclidean_direction(in_source_data,
 
     return _gbl_clone_layer(layer, template_dict, function_chain_ra)
 
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_accumulation()"
+                                            "with value specified for output_back_direction_raster_name, instead.")
 def cost_backlink(in_source_data,
                   in_cost_raster,
                   max_distance=None,
@@ -2051,7 +2059,7 @@ def corridor(in_distance_raster1,
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
-
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_accumulation() instead. ")
 def path_distance(in_source_data,
                   in_cost_raster=None,
                   in_surface_raster=None,
@@ -2217,7 +2225,7 @@ def path_distance(in_source_data,
 
     return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra)
 
-
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_allocation() instead.")
 def path_distance_allocation(in_source_data,
                   in_cost_raster=None,
                   in_surface_raster=None,
@@ -2400,7 +2408,8 @@ def path_distance_allocation(in_source_data,
 
     return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra)
 
-
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_accumulation()"
+                                            "with value specified for output_back_direction_raster_name, instead.")
 def path_distance_back_link(in_source_data,
                   in_cost_raster=None,
                   in_surface_raster=None,
@@ -2574,6 +2583,8 @@ def path_distance_back_link(in_source_data,
 
     return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra)
 
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_accumulation()"
+ " (or arcgis.raster.functions.gbl.distance_allocation() for allocation output) instead. ")
 def calculate_distance(in_source_data,
                        maximum_distance=None,
                        output_cell_size=None,
@@ -2736,7 +2747,8 @@ def calculate_distance(in_source_data,
     else:
         return _feature_gbl_clone_layer(in_source_data, template_dict, function_chain_ra, out_allocation_raster = generate_out_allocation_raster, out_direction_raster = generate_out_direction_raster, out_back_direction_raster=generate_out_back_direction_raster, use_ra=True)
 
-
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_accumulation()"
+                                           "with value specified for output_back_direction_raster_name, instead.")
 def euclidean_back_direction(in_source_data,
                              cell_size=None,
                              max_distance=None,

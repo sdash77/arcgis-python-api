@@ -9,10 +9,12 @@ import PIL
 import numpy as np
 from skimage import io
 import matplotlib.pyplot as plt
-from fastprogress.fastprogress import progress_bar
 from torch import LongTensor
 import os
 from .._utils.common import ArcGISMSImage
+
+from fastprogress.fastprogress import progress_bar
+
 
 class ArcGISImageSegment(Image):
     "Support applying transforms to segmentation masks data in `px`."
@@ -156,7 +158,7 @@ def mask_to_dict(last_target, device):
         labels = []
         for j in range(last_target[i].shape[0]):
 
-            mask = np.array(last_target[i].data[j])
+            mask = np.array(last_target[i].data[j].cpu())
             obj_ids = np.unique(mask)
 
             if len(obj_ids)==1:

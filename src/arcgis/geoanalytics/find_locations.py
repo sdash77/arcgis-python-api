@@ -507,6 +507,8 @@ def find_dwell_locations(input_layer,
                                  -  Stddev - Finds the standard deviation of all the points in each dwell. For numeric fields.
                                  -  Var - Finds the variance of all the points in each dwell. For numeric fields.
                                  -  Any - Returns a sample string of a point in each dwell. For string and numeric fields.
+                                 -  First - Returns a the first value of a specified field in the summarized track. For string and numeric fields. This parameters was introduced at ArcGIS Enterprise 10.8.1.
+                                 -  Last - Returns a the last value of a specified field in the summarized track. For string and numeric fields. This parameters was introduced at ArcGIS Enterprise 10.8.1.
                                  
                                  Example:
                                  

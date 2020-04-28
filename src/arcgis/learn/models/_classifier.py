@@ -24,8 +24,7 @@ try:
     from fastai.vision.image import open_image
     from fastai.vision.data import ImageDataBunch, ImageList
     from fastai.vision import imagenet_stats, normalize
-    from fastai.callbacks import LearnerCallback
-    from fastai.basic_train import Learner
+    from fastai.basic_train import Learner, LearnerCallback
     from torch.utils.data.sampler import WeightedRandomSampler, BatchSampler
     from fastai.vision.learner import cnn_learner, ClassificationInterpretation, cnn_config
     from ._arcgis_model import _set_multigpu_callback, _resnet_family
@@ -209,10 +208,9 @@ class FeatureClassifier(ArcGISModel):
     def _save_confusion_matrix(self, path):
         from matplotlib import pyplot as plt
         import fastai
-        try:
-            from fastprogress import fastprogress, force_console_behavior, master_bar, progress_bar
-        except ImportError:
-            import fastprogress
+        from fastprogress import fastprogress
+        from fastprogress.fastprogress import force_console_behavior, master_bar, progress_bar
+
         fastprogress.NO_BAR = True
         fastai.basic_train.master_bar, fastai.basic_train.progress_bar = force_console_behavior()
         self.plot_confusion_matrix()

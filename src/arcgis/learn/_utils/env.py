@@ -49,7 +49,7 @@ def tf_set_gpu_memory_growth():
 def raise_tensorflow_import_error():
     message = """
     Could not find tensorflow, Please install tensorflow using the following command 
-    \nconda install -c esri tensorflow-gpu=2.0.0
+    \nconda install -c esri tensorflow-gpu=2.1.0
     """
     ex = Exception(message)
     raise(ex)
@@ -79,11 +79,7 @@ def do_fastai_imports():
         pass
 
 def fastai_installation_command():
-    installation_steps = "Install them using 'conda install -c esri -c fastai -c pytorch arcgis pillow scikit-image fastai=1.0.54 pytorch=1.1.0'"
-    if sys.platform == 'win32':
-        installation_steps = "Install them using 'conda install -c esri arcgis fastai pillow scikit-image'"
-    elif sys.platform in ['linux', 'darwin']:
-        pass
+    installation_steps = "Install them using 'conda install -c esri arcgis=1.8.1 pillow scikit-image'\n'conda install -c fastai -c pytorch fastai pytorch=1.4.0 torchvision=0.5.0 tensorflow-gpu=2.1.0'\n'conda install gdal=2.3.3'"
             
     return installation_steps 
 
