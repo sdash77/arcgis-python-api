@@ -6649,7 +6649,18 @@ class User(dict):
         url = "%s/community/users/%s/userLicenseType" % (self._portal.resturl, self.username)
         params = {'f' : 'json'}
         return self._portal.con.post(url, params)
-
+    #----------------------------------------------------------------------
+    @property
+    def tasks(self):
+        """provides access to the schedule tasks"""
+        if str(self.role).lower() == 'org_admin' or \
+           self._gis.properties['user']:
+            url = f"{self._gis._portal.resturl}community/users/{self.username}/tasks"
+            from ._impl._schedule import UserTasks
+            return UserTasks(url=url,
+                             user=self,
+                             gis=self._gis)
+        return None
     #----------------------------------------------------------------------
     @property
     def provisions(self):
