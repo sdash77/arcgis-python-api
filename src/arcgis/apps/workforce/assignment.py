@@ -33,7 +33,8 @@ class Assignment(FeatureModel):
                            The date and time the assignment was assigned
     ------------------     --------------------------------------------------------------------
     assignment_read        Optional :class:`Bool`.
-                           A flag indicating that the mobile worker has seen the assignment
+                           A flag indicating that the mobile worker has seen the assignment.
+                           Version 1 Projects Only
     ------------------     --------------------------------------------------------------------
     completed_date         Optional :class:`Date`.
                            The date the assignment was completed
