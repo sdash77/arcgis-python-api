@@ -1199,7 +1199,7 @@ class GroupMigrationManager(object):
     #----------------------------------------------------------------------
     def create(self,
                items=None,
-               exclude_data_source:bool=False,
+               exclude_data:bool=False,
                future:bool=True):
         """
         Exports a `Group` content to a **EPK Package Item**.
@@ -1238,7 +1238,7 @@ class GroupMigrationManager(object):
                 items = None
             params = {
                       'itemIdList' : items,
-                      'excludeSourceData' : json.dumps(exclude_data_source),
+                      'excludeSourceData' : json.dumps(exclude_data),
                       }
             
             params['async'] = json.dumps(True)
