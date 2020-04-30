@@ -114,7 +114,11 @@ def _set_ddp_multigpu(model):
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--local_rank", type=int)
-    args = parser.parse_args()
+    try:
+        args = parser.parse_args()
+    except:
+        model._multigpu_training = False
+        return
     if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
         args.rank = int(os.environ["RANK"])
         args.world_size = int(os.environ['WORLD_SIZE'])
