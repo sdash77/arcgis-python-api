@@ -5670,7 +5670,7 @@ class Group(dict):
         """
         The category manager for groups. See :class:`~arcgis.gis.CategorySchemaManager`.
         """
-        base_url = "{base}content/groups/{groupid}".format(
+        base_url = "{base}community/groups/{groupid}".format(
             base=self._gis._portal.resturl,
             groupid=self.groupid)
         return CategorySchemaManager(base_url=base_url, gis=self._gis)
