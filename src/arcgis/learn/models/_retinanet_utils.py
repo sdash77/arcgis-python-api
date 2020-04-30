@@ -53,11 +53,11 @@ from fastai.core import ifnone, is_tuple, range_of
 import math
 import matplotlib.pyplot as plt
 import warnings
+import logging
 
 from fastprogress.fastprogress import progress_bar
 
 class LateralUpsampleMerge(nn.Module):
-    
     def __init__(self, ch, ch_lat, hook):
         super().__init__()
         self.hook = hook
@@ -82,6 +82,7 @@ class RetinaNetModel(nn.Module):
         super().__init__()
         self.n_classes,self.flatten = n_classes,flatten
         self.chip_size = chip_size
+        
         
         # Fetch the sizes of various activation layers of the backbone
         sfs_szs = model_sizes(encoder, size=self.chip_size)
@@ -280,7 +281,8 @@ class RetinaNetFocalLoss(nn.Module):
         try:
             matches = match_anchors(self.anchors, bbox_tgt)
         except:
-            # "Returning zero tensors as there is no overlap between ground truth and anchors."
+            logger = logging.getLogger()
+            logger.debug("Returning zero tensors as there is no overlap between ground truth and anchors.")
             return torch.tensor(0., requires_grad=True).to(self._device)
 
         bbox_mask = matches>=0

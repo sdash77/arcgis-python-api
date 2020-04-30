@@ -5,7 +5,7 @@
 
 import unittest
 import os
-
+from integration.arcgis_learn.env import *
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 
 HAS_DEPS = True
@@ -24,34 +24,37 @@ if not HAS_DEPS:
 else:
     from arcgis.learn import SingleShotDetector, UnetClassifier, PSPNetClassifier, FeatureClassifier, RetinaNet, MaskRCNN, prepare_data
 
+####
+
 # TestModule
 @unittest.skipIf(module_skip, "Precondition check failed. Skipping Common tests")
 def setUpModule():
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data1"], "models")}"')
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data1"], "images/models")}"')
+    setupenviron()
+    # os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data1"], "models")}"')
+    # os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data1"], "images/models")}"')
 
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data2"], "models")}"')
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data2"], "images/models")}"')
+    # os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data2"], "models")}"')
+    # os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data2"], "images/models")}"')
 
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data3"], "models")}"')
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data3"], "images/models")}"')
+    # os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data3"], "models")}"')
+    # os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data3"], "images/models")}"')
 
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["pixel_classification_data1"], "models")}"')
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["pixel_classification_data1"], "images/models")}"')
+    # os.system(f'rmdir /s /q "{os.path.join(os.environ["pixel_classification_data1"], "models")}"')
+    # os.system(f'rmdir /s /q "{os.path.join(os.environ["pixel_classification_data1"], "images/models")}"')
 
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["feature_classification_data1"], "models")}"')
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["feature_classification_data1"], "images/models")}"')
+    # os.system(f'rmdir /s /q "{os.path.join(os.environ["feature_classification_data1"], "models")}"')
+    # os.system(f'rmdir /s /q "{os.path.join(os.environ["feature_classification_data1"], "images/models")}"')
 
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["maskrcnn_data1"], "models")}"')
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["maskrcnn_data1"], "images/models")}"')
+    # os.system(f'rmdir /s /q "{os.path.join(os.environ["maskrcnn_data1"], "models")}"')
+    # os.system(f'rmdir /s /q "{os.path.join(os.environ["maskrcnn_data1"], "images/models")}"')
 
-    outputs_to_delete = os.listdir(os.path.dirname(os.environ["object_detection_inferencing_result_ssd"]))
-    for output_files in outputs_to_delete:
-        os.remove(f'{os.path.join(os.path.dirname(os.environ["object_detection_inferencing_result_ssd"]), output_files)}')
+    # outputs_to_delete = os.listdir(os.path.dirname(os.environ["object_detection_inferencing_result_ssd"]))
+    # for output_files in outputs_to_delete:
+    #     os.remove(f'{os.path.join(os.path.dirname(os.environ["object_detection_inferencing_result_ssd"]), output_files)}')
 
-    outputs_to_delete = os.listdir(os.path.dirname(os.environ["object_detection_inferencing_result_rn"]))
-    for output_files in outputs_to_delete:
-        os.remove(f'{os.path.join(os.path.dirname(os.environ["object_detection_inferencing_result_rn"]), output_files)}')
+    # outputs_to_delete = os.listdir(os.path.dirname(os.environ["object_detection_inferencing_result_rn"]))
+    # for output_files in outputs_to_delete:
+    #     os.remove(f'{os.path.join(os.path.dirname(os.environ["object_detection_inferencing_result_rn"]), output_files)}')
 
     print("Dependencies Installed.")
 
@@ -100,8 +103,8 @@ def common_test(model_type, output_name, data_path, old_models, **prepare_data_k
     for old_model in old_models:
         model_object = model_type.from_model(old_model)
 
-
-#For object detection inferencing.
+# if os.environ['run_inferencing'] == '1':
+    #For object detection inferencing.
 def object_detection_inferencing(in_model_definition, in_raster, out_detected_objects, model_args):
     import arcpy
     arcpy.env.processorType = "GPU"
@@ -119,7 +122,6 @@ def object_detection_inferencing(in_model_definition, in_raster, out_detected_ob
         "PROCESS_AS_MOSAICKED_IMAGE"
     )
 
-
 def pixel_classification_inferencing(in_model_definition, in_raster):
     import arcpy
     arcpy.env.processorType = "GPU"
@@ -132,7 +134,7 @@ def pixel_classification_inferencing(in_model_definition, in_raster):
         "PROCESS_AS_MOSAICKED_IMAGE"
     )
 
-
+    
 def classify_features_test(in_model_definition, in_raster, feature_layer, output_path):
     import arcpy
     arcpy.env.processorType = "GPU"
@@ -170,6 +172,7 @@ class Test_Common(unittest.TestCase):
 
         cls.maskrcnn_data1 = os.environ['maskrcnn_data1']
 
+        # if os.environ['run_inferencing'] == '1':
         #Inferencing Data
         cls.obj_detection_inference_data1 = os.environ["object_detection_inferencing_data1"]
         cls.obj_detection_inference_data2 = os.environ["object_detection_inferencing_data2"]
@@ -215,13 +218,13 @@ class Test_Common(unittest.TestCase):
             batch_size=2,
             chip_size=300
         )
-
-        object_detection_inferencing(
-            os.path.join(self.obj_detection_data2, 'models/post_fit_ssd/post_fit_ssd.emd'),
-            self.obj_detection_inference_data1,
-            os.environ["object_detection_inferencing_result_ssd"],
-            os.environ["object_detection_inferencing_ssd_args"]
-        )
+        if os.environ['run_inferencing'] == '1':
+            object_detection_inferencing(
+                os.path.join(self.obj_detection_data2, 'models/post_fit_ssd/post_fit_ssd.emd'),
+                self.obj_detection_inference_data1,
+                os.environ["object_detection_inferencing_result_ssd"],
+                os.environ["object_detection_inferencing_ssd_args"]
+            )
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     def test_rn(self):
@@ -233,13 +236,13 @@ class Test_Common(unittest.TestCase):
             batch_size=2,
             chip_size=300
         )
-
-        object_detection_inferencing(
-            os.path.join(self.obj_detection_data2, 'models/post_fit_rn/post_fit_rn.emd'),
-            self.obj_detection_inference_data1,
-            os.environ["object_detection_inferencing_result_rn"],
-            os.environ["object_detection_inferencing_rn_args"]
-        )
+        if os.environ['run_inferencing'] == '1':
+            object_detection_inferencing(
+                os.path.join(self.obj_detection_data2, 'models/post_fit_rn/post_fit_rn.emd'),
+                self.obj_detection_inference_data1,
+                os.environ["object_detection_inferencing_result_rn"],
+                os.environ["object_detection_inferencing_rn_args"]
+            )
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     def test_unet(self):
@@ -250,11 +253,12 @@ class Test_Common(unittest.TestCase):
             [self.model_unet_162, self.model_unet_170],
             batch_size=2
         )
-
-        pixel_classification_inferencing(
-            os.path.join(self.pixel_classification_data1, 'models/post_fit_unet/post_fit_unet.emd'),
-            self.pixel_classification_inferencing_data1
-        )
+        
+        if os.environ['run_inferencing'] == '1':
+            pixel_classification_inferencing(
+                os.path.join(self.pixel_classification_data1, 'models/post_fit_unet/post_fit_unet.emd'),
+                self.pixel_classification_inferencing_data1
+            )
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     def test_fc(self):
@@ -266,12 +270,13 @@ class Test_Common(unittest.TestCase):
             batch_size=2
         )
 
-        classify_features_test(
-            os.path.join(self.feature_classification_data1, 'models/post_fit_fc/post_fit_fc.emd'),
-            self.feature_classification_inferencing_in_raster,
-            self.feature_classification_inferencing_data1,
-            os.environ['inferencing_result_fc']
-        )
+        if os.environ['run_inferencing'] == '1':
+            classify_features_test(
+                os.path.join(self.feature_classification_data1, 'models/post_fit_fc/post_fit_fc.emd'),
+                self.feature_classification_inferencing_in_raster,
+                self.feature_classification_inferencing_data1,
+                os.environ['inferencing_result_fc']
+            )
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     def test_pspnet(self):
@@ -283,10 +288,11 @@ class Test_Common(unittest.TestCase):
             batch_size=2
         )
 
-        pixel_classification_inferencing(
-            os.path.join(self.pixel_classification_data1, 'models/post_fit_pspnet/post_fit_pspnet.emd'),
-            self.pixel_classification_inferencing_data1
-        )
+        if os.environ['run_inferencing'] == '1':
+            pixel_classification_inferencing(
+                os.path.join(self.pixel_classification_data1, 'models/post_fit_pspnet/post_fit_pspnet.emd'),
+                self.pixel_classification_inferencing_data1
+            )
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     def test_maskrcnn(self):
@@ -298,12 +304,13 @@ class Test_Common(unittest.TestCase):
             batch_size=2
         )
 
-        object_detection_inferencing(
-            os.path.join(self.maskrcnn_data1, 'models/post_fit_maskrcnn/post_fit_maskrcnn.emd'),
-            self.obj_detection_inference_data1,
-            os.environ["object_detection_inferencing_result_maskrcnn"],
-            os.environ["object_detection_inferencing_maskrcnn_args"]
-        )
+        if os.environ['run_inferencing'] == '1':
+            object_detection_inferencing(
+                os.path.join(self.maskrcnn_data1, 'models/post_fit_maskrcnn/post_fit_maskrcnn.emd'),
+                self.obj_detection_inference_data1,
+                os.environ["object_detection_inferencing_result_maskrcnn"],
+                os.environ["object_detection_inferencing_maskrcnn_args"]
+            )
 
 
 # TestModule
@@ -326,13 +333,13 @@ def tearDownModule():
     os.system(f'rmdir /s /q "{os.path.join(os.environ["maskrcnn_data1"], "models")}"')
     os.system(f'rmdir /s /q "{os.path.join(os.environ["maskrcnn_data1"], "images/models")}"')
 
-    outputs_to_delete = os.listdir(os.path.dirname(os.environ["object_detection_inferencing_result_ssd"]))
-    for output_files in outputs_to_delete:
-        os.remove(f'{os.path.join(os.path.dirname(os.environ["object_detection_inferencing_result_ssd"]), output_files)}')
+    # outputs_to_delete = os.listdir(os.path.dirname(os.environ["object_detection_inferencing_result_ssd"]))
+    # for output_files in outputs_to_delete:
+    #     os.remove(f'{os.path.join(os.path.dirname(os.environ["object_detection_inferencing_result_ssd"]), output_files)}')
 
-    outputs_to_delete = os.listdir(os.path.dirname(os.environ["object_detection_inferencing_result_rn"]))
-    for output_files in outputs_to_delete:
-        os.remove(f'{os.path.join(os.path.dirname(os.environ["object_detection_inferencing_result_rn"]), output_files)}')
+    # outputs_to_delete = os.listdir(os.path.dirname(os.environ["object_detection_inferencing_result_rn"]))
+    # for output_files in outputs_to_delete:
+    #     os.remove(f'{os.path.join(os.path.dirname(os.environ["object_detection_inferencing_result_rn"]), output_files)}')
 
 
     print("**End Common Arcgis Learn module Tests**")
