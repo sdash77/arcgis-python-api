@@ -19,16 +19,18 @@ from contextlib import contextmanager
 import functools
 from datetime import datetime
 import logging
-
+from typing import Tuple
 from urllib.error import  HTTPError
-from functools import lru_cache
-from ._impl import _portalpy as portalpy#import arcgis.gis._impl._portalpy as portalpy
+import concurrent.futures
+
 import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis.gis._impl._con._helpers import _is_http_url
 from arcgis._impl.common._deprecate import deprecated
 from ._impl import _portalpy
+
+from ._impl._jb import StatusJob  
 _log = logging.getLogger(__name__)
 
 class Error(Exception): pass
@@ -1128,7 +1130,209 @@ class Datastore(dict):
         res = self._portal.con.post(data_item_manifest_url, params, verify_cert=False)
 
         return res['datasets']
+###########################################################################
+class GroupMigrationManager(object):
+    """
+    This manager class allows groups to export and import data to and from EPK files.
+    """
+    _con = None
+    _gis = None
+    _group = None
 
+    def __init__(self, group):
+        """initializer"""
+        assert isinstance(group, Group)
+        self._group = group
+        self._gis = group._gis
+        self._con = group._gis._con
+    #----------------------------------------------------------------------
+    def _from_package(self,
+                      item,
+                      item_id_list=None,
+                      preview_only=False,
+                      run_async=False,
+                      overwrite=False):
+        """
+        Imports an EPK Item to a Group.  This will import items associated with this group.
+
+        :returns: Boolean
+        """
+        if self._gis.users.me.role == 'org_admin':
+            url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/import"
+            if isinstance(item, Item):
+                item = item.itemid
+            params = {
+                'f' : 'json',
+                "itemId": item,
+            }
+            if item_id_list:
+                params['itemIdList'] = item_id_list
+            if overwrite is not None:
+                params['overwriteExistingItems'] = overwrite
+            if preview_only:
+                params['previewOnly'] = preview_only
+            if run_async:
+                params['async'] = run_async
+
+            return self._con.post(url, params)
+
+        else:
+            raise Exception("Must be an administror to perform this action")
+        pass
+    #----------------------------------------------------------------------
+    def _status(self, job_id, key=None):
+        """
+        Checks the status of an export job
+        """
+        params = {}
+        if job_id:
+            url = f"{self._gis._portal.resturl}portals/self/jobs/{job_id}"
+            params['f'] = 'json'
+            res = self._con.post(url, params)
+            while res["status"] not in ["completed", "complete"]:
+                res = self._con.post(url, params)
+                if res['status'] == "failed":
+                    raise Exception(res)
+            return res
+        else:
+            raise Exception(res)
+    #----------------------------------------------------------------------
+    def create(self,
+               items=None,
+               exclude_data:bool=False,
+               future:bool=True):
+        """
+        Exports a `Group` content to a **EPK Package Item**.
+
+        `EPK Items` are intended to migrate content from an enterprise deployment to a new 
+        enterprise. Once an `EPK Item` is created using this method, you can use the `load` 
+        to ingest the package's content into the target enterprise. If your package 
+        contains web maps, web-mapping applications, and/or associated web layers, during 
+        the import operation, the method will takes care of swizzling the service URLs and 
+        item IDs correctly.
+
+        There are some limits to this functionality. Packages should be under 10 GB in size 
+        and only hosted feature layers, web maps, web-mapping apps, and other text-based 
+        items are supported. You need to have **administrative** privileges to run this 
+        operation.
+
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        items                  Optional List<Item>. A set of items to export from the group.  If nothing is given, all items will be attempted to be exported.
+        ------------------     --------------------------------------------------------------------
+        exclude_data           Optional Boolean.  The default is `False`. If `True`, the data will be referenced by URL instead of being included in the export package.
+        ------------------     --------------------------------------------------------------------
+        future                 Optional Boolean.  When True, the operation will return a Job object and return the results asynchronously.
+        ==================     ====================================================================
+
+        :returns: Item --or-- Job when future=True
+
+        """
+        if self._gis.users.me.role == 'org_admin':
+            url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/export"
+            if items and isinstance(items, (list, tuple)):
+                items = [i.id for i in items]
+            else:
+                items = None
+            params = {
+                      'itemIdList' : items,
+                      'excludeSourceData' : json.dumps(exclude_data),
+                      }
+            
+            params['async'] = json.dumps(True)
+            res = self._gis._con.post(url, params)
+            
+            executor =  concurrent.futures.ThreadPoolExecutor(1)
+            futureobj = executor.submit(self._status, **{"job_id" : res['jobId'], "key": res['key']})
+            executor.shutdown(False)
+            job = StatusJob(future=futureobj, op='Export Group Content', jobid=res['jobId'], gis=self._gis, notify=arcgis.env.verbose)                  
+            if future:     
+                return job
+            else:
+                return job.result()
+        else:
+            raise Exception("Must be an administror to perform this action")
+    #----------------------------------------------------------------------
+    def load(self,
+             epk_item,
+             item_ids:list=None,
+             overwrite:bool=True,
+             future:bool=True):
+        """
+        Imports the EPK content into the current `Group`. 
+        
+        Administrative privileges are required to run this operation.
+        Once imported, items will be owned by the importer, and will have 
+        to be manually reassigned to the proper owner if needed.  
+        
+        
+        ================  ===============================================================================
+        **Keys**          **Description**
+        ----------------  -------------------------------------------------------------------------------
+        epk_item          Required Item. A report on the content of the EPK Item.  This allows administrators 
+                          to view the contents inside a EPK.
+        ----------------  -------------------------------------------------------------------------------
+        item_ids          Optional list. A list of item IDs to import to the organization. 
+        ----------------  -------------------------------------------------------------------------------
+        overwrite         Optional bool. If the Items import exist, or the Item ID that is in use 
+                          already, it will delete the old item and replace it with this one. 
+        ----------------  -------------------------------------------------------------------------------
+        future            Optional bool. When True, the `load` will return a `Job` object and will not 
+                          pause the current thread.  When `False` `load` will occur in a synchronous 
+                          fashion pausing the thread.  If you are loading large amounts of data, set
+                          future to `True` to reduce time.
+        ================  ===============================================================================
+        
+        :returns: dict --or-- Job when future=True
+        
+        """      
+        assert isinstance(epk_item, Item)
+        if isinstance(epk_item, Item) and \
+           epk_item.type == 'Export Package':
+            res = self._from_package(item=epk_item,
+                                      item_id_list=item_ids,
+                                      preview_only=False,
+                                      run_async=True,
+                                      overwrite=overwrite)
+            executor =  concurrent.futures.ThreadPoolExecutor(1)
+            futureobj = executor.submit(self._status, **{"job_id" : res['jobId'], "key": res['key']})
+            executor.shutdown(False)
+            job = StatusJob(future=futureobj, 
+                            op='Export Group Content', 
+                            jobid=res['jobId'], 
+                            gis=self._gis, notify=arcgis.env.verbose)                              
+            if future:
+                return job
+            else:
+                return job.result()
+        else:
+            raise Exception(f"Invalid Item {epk_item.type}")
+        return None
+    #----------------------------------------------------------------------
+    def inspect(self, epk_item) -> dict:
+        """
+        Returns the contents of the EPK Package
+        
+        ================  ===============================================================================
+        **Keys**          **Description**
+        ----------------  -------------------------------------------------------------------------------
+        epk_item          Required Item. A report on the content of the EPK Item.  This allows administrators 
+                          to view the contents inside a EPK.
+                          
+        ================  ===============================================================================
+        
+        :returns: dict
+        
+        """
+        if isinstance(epk_item, Item) and epk.type == 'Export Package':
+            return self._from_package(epk_item.itemid, preview_only=True, run_async=False)
+        else:
+            raise Exception("Invalid Item Type.")
+        return None
+
+###########################################################################
 class DatastoreManager(object):
     """
     Helper class for managing the GIS data stores in on-premises ArcGIS Portals.
@@ -3992,7 +4196,7 @@ class ContentManager(object):
                 capabilities = 'Query'
             else:
                 capabilities = 'Query'
-        if self._gis.version <= [7,1]:
+        if self._gis.version <= [7,1] and item_id:
             item_id = None
             import warnings
             warnings.warn("Item ID is not Support at this version. Please use version >=10.8.1 Enterprise.")
@@ -5613,6 +5817,7 @@ class Group(dict):
     def __init__(self, gis, groupid, groupdict=None):
         dict.__init__(self)
         self._gis = gis
+        self._migrate = None
         self._portal = gis._portal
         self.groupid = groupid
         self.thumbnail = None
@@ -5785,6 +5990,16 @@ class Group(dict):
             f.write(response)
         """
         return self._portal.get_group_thumbnail(self.groupid)
+
+    @property
+    def migration(self):
+        """provides to to migrate content of a `Group` to a new Organaization or Portal"""
+        isinstance(self._gis, GIS)
+        
+        if self._gis.version >= [7,3] and \
+           self._gis._portal.is_arcgisonline == False:
+            self._migrate = GroupMigrationManager(group=self)
+        return self._migrate
 
     def download_thumbnail(self, save_folder=None):
         """
