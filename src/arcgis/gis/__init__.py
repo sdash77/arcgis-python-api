@@ -1199,13 +1199,22 @@ class GroupMigrationManager(object):
     #----------------------------------------------------------------------
     def create(self,
                items=None,
-               exclude_data_source=False,
-               future=True):
+               exclude_data_source:bool=False,
+               future:bool=True):
         """
-        Exports a `Group` content to a EPK package file.
+        Exports a `Group` content to a **EPK Package Item**.
 
-        The .epk file is a compressed package file that will allow for the republish of
-        group items from Portal A to Portal B. There is a 10 GB size limit on the EPK file.
+        `EPK Items` are intended to migrate content from an enterprise deployment to a new 
+        enterprise. Once an `EPK Item` is created using this method, you can use the `load` 
+        to ingest the package's content into the target enterprise. If your package 
+        contains web maps, web-mapping applications, and/or associated web layers, during 
+        the import operation, the method will takes care of swizzling the service URLs and 
+        item IDs correctly.
+
+        There are some limits to this functionality. Packages should be under 10 GB in size 
+        and only hosted feature layers, web maps, web-mapping apps, and other text-based 
+        items are supported. You need to have **administrative** privileges to run this 
+        operation.
 
 
         ==================     ====================================================================
@@ -1213,7 +1222,7 @@ class GroupMigrationManager(object):
         ------------------     --------------------------------------------------------------------
         items                  Optional List<Item>. A set of items to export from the group.  If nothing is given, all items will be attempted to be exported.
         ------------------     --------------------------------------------------------------------
-        exclude_data           Optional Boolean.  The default is `False`. If `True`, the data will be reference by URL instead of copying locally.
+        exclude_data           Optional Boolean.  The default is `False`. If `True`, the data will be referenced by URL instead of being included in the export package.
         ------------------     --------------------------------------------------------------------
         future                 Optional Boolean.  When True, the operation will return a Job object and return the results asynchronously.
         ==================     ====================================================================
@@ -1254,10 +1263,15 @@ class GroupMigrationManager(object):
         """
         Imports the EPK content into the current `Group`. 
         
+        Administrative privileges are required to run this operation.
+        Once imported, items will be owned by the importer, and will have 
+        to be manually reassigned to the proper owner if needed.  
+        
+        
         ================  ===============================================================================
         **Keys**          **Description**
         ----------------  -------------------------------------------------------------------------------
-        epk               Required Item. A report on the content of the EPK Item.  This allows administrators 
+        epk_item          Required Item. A report on the content of the EPK Item.  This allows administrators 
                           to view the contents inside a EPK.
         ----------------  -------------------------------------------------------------------------------
         item_ids          Optional list. A list of item IDs to import to the organization. 
@@ -1297,14 +1311,14 @@ class GroupMigrationManager(object):
             raise Exception(f"Invalid Item {epk_item.type}")
         return None
     #----------------------------------------------------------------------
-    def inspect(self, epk) -> dict:
+    def inspect(self, epk_item) -> dict:
         """
         Returns the contents of the EPK Package
         
         ================  ===============================================================================
         **Keys**          **Description**
         ----------------  -------------------------------------------------------------------------------
-        epk               Required Item. A report on the content of the EPK Item.  This allows administrators 
+        epk_item          Required Item. A report on the content of the EPK Item.  This allows administrators 
                           to view the contents inside a EPK.
                           
         ================  ===============================================================================
@@ -1312,8 +1326,8 @@ class GroupMigrationManager(object):
         :returns: dict
         
         """
-        if isinstance(epk, Item) and epk.type == 'Export Package':
-            return self._from_package(epk.itemid, preview_only=True, run_async=False)
+        if isinstance(epk_item, Item) and epk.type == 'Export Package':
+            return self._from_package(epk_item.itemid, preview_only=True, run_async=False)
         else:
             raise Exception("Invalid Item Type.")
         return None
@@ -5980,7 +5994,10 @@ class Group(dict):
     @property
     def migration(self):
         """provides to to migrate content of a `Group` to a new Organaization or Portal"""
-        if self._gis.version >= [7,3]:
+        isinstance(self._gis, GIS)
+        
+        if self._gis.version >= [7,3] and \
+           self._gis._portal.is_arcgisonline == False:
             self._migrate = GroupMigrationManager(group=self)
         return self._migrate
 
