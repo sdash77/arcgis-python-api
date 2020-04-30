@@ -7,13 +7,12 @@ import json as _json
 
 import logging as _logging
 import arcgis as _arcgis
+from arcgis import env as _env
 from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.geoprocessing._support import _execute_gp_tool
 from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob
 import datetime
 _log = _logging.getLogger(__name__)
-
-# url = "https://dev003153.esri.com/gax/rest/services/System/GeoAnalyticsTools/GPServer"
 
 _use_async = True
 
@@ -429,7 +428,11 @@ def find_dwell_locations(input_layer,
                          output_name=None,
                          gis=None,
                          context=None,
-                         future=False):
+                         future=False,
+                         time_boundary_split=None,
+                         time_split_unit=None,
+                         time_reference=None):  
+    
     """
     
     .. image:: _static/images/find_similar_locations/find_similar_locations.png 
@@ -554,67 +557,115 @@ def find_dwell_locations(input_layer,
     future                       Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
 
                                  The default value is 'False'.
+    --------------------------   ---------------------------------------------------------------
+    time_boundary_split          Optional integer. A time boundary to detect and incident. A time 
+                                 boundary allows your to analyze values within a defined time span. 
+                                 For example, if you use a time boundary of 1 day, starting on January 
+                                 1st, 1980 tracks will be analyzed 1 day at a time. The time boundary 
+                                 parameter was introduced in ArcGIS Enterprise 10.8.1.
+
+                                 The ``time_boundary_split`` parameter defines the scale of the time boundary. 
+                                 In the case above, this would be 1. See the portal documentation for 
+                                 this tool to learn more.
+    --------------------------   ---------------------------------------------------------------
+    time_split_unit              Optional string. The unit to detect an incident is `time_boundary_split` is used. This was introduced in ArcGIS Enterprise 10.8.1.
+
+                                 Choice list: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds'].
+    --------------------------   ---------------------------------------------------------------
+    time_reference               Optional datetime.detetime. The starting date/time where analysis will
+                                 begin from. This parameter was introduced in ArcGIS Enterprise 10.8.1.
     ==========================   ===============================================================
     
     :returns: Output Service if future is False and GAJob if future is True
     
     """
-    kwargs = locals()
+    gis = None
+    if gis is None and \
+       _env.active_gis is None:
+        raise ValueError("A `GIS is required`")
+    elif gis is None and \
+         _env.active_gis:
+        gis = _env.active_gis
+    if gis.version < [8,1]:
+        return None
 
-    gis = _arcgis.env.active_gis if gis is None else gis
+
     url = gis.properties.helperServices.geoanalytics.url
-
-    params = {}
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
+    tbx = _arcgis.geoprocessing.import_toolbox(url, gis=gis)
+    input_parameters = list(tbx.find_dwell_locations.__annotations__.keys())
+    
 
     if output_name is None:
-        output_service_name = 'Dwell Locations_' + _id_generator()
-        output_name = output_service_name.replace(' ', '_')
+        output_name = f'FDL_{_id_generator()}'.replace(' ', '_')
     else:
-        output_service_name = output_name.replace(' ', '_')
+        output_name = output_name.replace(' ', '_')
+    #del output_name
+    
+    params = {
+        "input_layer" : input_layer,
+        "track_fields" : track_fields,
+        "distance_tolerance" : distance_tolerance,
+        "distance_tolerance_unit" : distance_unit,
+        "time_tolerance" : time_tolerance,
+        "time_tolerance_unit" : time_unit,
+        "summary_fields" : summary_fields,
+        "distance_method" : method,
+        "output_type" : dwell_type,
+        "output_name" : output_name,
+        "gis" : gis,
+        "context" : context,
+        "future" : future,
+        "time_boundary_split" : time_boundary_split,
+        "time_split_unit" : time_split_unit,
+        "time_reference" : time_reference
+    }    
 
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Find Dwell Locations')
+    for k in list(params.keys()):
+        if k not in input_parameters:
+            params.pop(k, None)
+    ## Validate Input Parameters
+    ##
+    valid_values = dict(tbx.choice_list['find_dwell_locations'])
+    for k,v in params.items():
+        if k in valid_values.keys():
+            lookup = dict(zip([v.lower() for v in valid_values[k]], valid_values[k]))
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+            if v and v.lower() not in lookup:
+                raise ValueError(f"Value: {v} not supported at this version of `find_dwell_locations`")
+            if v:
+                params[k] = lookup[v.lower()]
+    output_service = _create_output_service(gis,
+                                            params['output_name'],
+                                            params['output_name'],
+                                            'Find Dwell Locations')
+    params['output_name'] = _json.dumps(
+        {
+            "serviceProperties": {"name" : output_name,
+                                  "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}
+        }
+    )
 
     if context is not None:
         params["context"] = context
     else:
-        _set_context(params)   
+        _set_context(params)
 
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "track_fields": (str, "trackFields"),
-        "dwell_type" : (str, "outputType"),
-        "distance_tolerance": (float, "distanceTolerance"),
-        "distance_unit": (str, "distanceToleranceUnit"),
-        "time_tolerance": (int, "timeTolerance"),
-        "time_unit": (str, "timeToleranceUnit"),
-        "method": (str, "distanceMethod"),
-        "summary_fields": (list, "summaryFields"),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "output": (_FeatureSet, "Output Features"),
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-        #{"name": "process_info", "display_name": "Process Information", "type": list}
-    ]
+    if hasattr(input_layer, "_lyr_dict"):
+        params['input_layer'] = input_layer._lyr_dict
+
     try:
+        params['future'] = True
+        gpjob = tbx.find_dwell_locations(**params)
+        gpjob = GAJob(gpjob=gpjob, return_service=output_service)
         if future:
-            gpjob = _execute_gp_tool(gis, "FindDwellLocations", params, param_db, return_values, _use_async, url, True, future=future)
-            return GAJob(gpjob=gpjob, return_service=output_service)
-        res = _execute_gp_tool(gis, "FindDwellLocations", params, param_db, return_values, _use_async, url, True, future=future)
-
-        
-        return output_service   
-    except:
+            return gpjob
+        return gpjob.result()
+    except Exception as e:
+        _log.info(e)
         output_service.delete()
-        raise     
+        raise
+    return None    
 
 def find_similar_locations(
                            input_layer,
