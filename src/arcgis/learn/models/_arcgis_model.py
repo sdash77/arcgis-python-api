@@ -114,11 +114,7 @@ def _set_ddp_multigpu(model):
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--local_rank", type=int)
-    try:
-        args = parser.parse_args()
-    except:
-        model._multigpu_training = False
-        return
+    args, unknown = parser.parse_known_args()
     if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
         args.rank = int(os.environ["RANK"])
         args.world_size = int(os.environ['WORLD_SIZE'])
@@ -188,8 +184,9 @@ class SaveModelCallback(TrackerCallback):
                 self.model._save('{}'.format(self.name), zip_files=False, save_html=False)
 
     def on_train_end(self, **kwargs):
-        "Load the best model."     
-
+        "Load the best model."
+        if int(os.environ.get('RANK', 0)):
+            return
         if self.every == "improvement" and self.load_best_at_end:
             try:
                 self.model.load('{}'.format(self.name))
@@ -752,7 +749,6 @@ class ArcGISModel(object):
             else:
 
                 if isinstance(self.learn.model, (DistributedDataParallel)):
-
                     if not int(os.environ.get('RANK', 0)):
                         saved_path = self.learn.save(name,  return_path=True)
                     return
