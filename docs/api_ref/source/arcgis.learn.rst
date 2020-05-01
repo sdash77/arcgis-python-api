@@ -106,3 +106,10 @@ Transform3d
 .. autoclass:: arcgis.learn.Transform3d
     :members:
     :undoc-members:
+
+FasterRCNN
+------------------
+.. autoclass:: arcgis.learn.FasterRCNN
+    :members:
+    :inherited-members:
+    :undoc-members:

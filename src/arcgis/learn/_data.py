@@ -835,8 +835,8 @@ def prepare_data(path,
             data = (src.transform(transforms, size=chip_size, tfm_y=True) 
                     .databunch(**databunch_kwargs))
         data.show_batch = types.MethodType( show_batch_rcnn_masks, data )
+
     else:
-        # 
         data = (data.transform(transforms, **kwargs_transforms)
             .databunch(**databunch_kwargs)
             .normalize(imagenet_stats))

@@ -8,3 +8,5 @@ from ._pspnet import PSPNetClassifier
 from ._maskrcnn import MaskRCNN
 from ._deeplab import DeepLab
 from ._pointcnnseg import PointCNN
+from ._model_extension import ModelExtension
+from ._fastrcnn import FasterRCNN

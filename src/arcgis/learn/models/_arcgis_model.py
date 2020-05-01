@@ -14,6 +14,7 @@ import sys
 import socket
 from functools import wraps  
 import traceback    
+import inspect
 
 HAS_FASTAI = True
 HAS_TENSORBOARDX = True
@@ -215,9 +216,15 @@ def _get_tail(model):
     if hasattr(model, 'named_children'):
         child_name, child = next(model.named_children())
         if isinstance(child, nn.Conv2d):
-            return child_name, child                
+            return child_name, child
+            
     if hasattr(model, 'children'):
-        return _get_tail(next(model.children()))
+        for children in model.children():
+            try:
+                child_name, child =  _get_tail(children)
+                return child_name, child
+            except:
+                pass
 
 def _get_ms_tail(tail, data, type_init='random'):
     new_tail = nn.Conv2d(
@@ -253,7 +260,12 @@ def _set_tail(model, new_tail):
             setattr(model, child_name, new_tail)
             updated = True
     if hasattr(model, 'children') and not updated:
-        return _set_tail(next(model.children()), new_tail)
+        for children in model.children():
+            try:
+                _set_tail(children, new_tail)
+                return
+            except:
+                pass
 
 def _change_tail(model, data):
     tail_name, tail = _get_tail(model)
@@ -267,6 +279,7 @@ def _change_tail(model, data):
     new_tail = _get_ms_tail(tail, data, type_init=type_init)
     _set_tail(model, new_tail)
     return model
+
 
 def _get_backbone_meta(arch_name):
     _model_meta = {i.__name__:j for i, j in model_meta.items()}
@@ -328,13 +341,10 @@ class ArcGISModel(object):
             if self._data._train_tail:
                 params_iterator = self.learn.model.parameters()
                 next(params_iterator).requires_grad = True # make first conv weights learnable
-                if self.__class__.__name__ == 'MaskRCNN':
-                    iterater = self.learn.model.children()
-                    next(iterater)
-                    tail_name, first_layer = _get_tail(next(iterater))
-                else:
-                    tail_name, first_layer = _get_tail(self.learn.model)
-                if first_layer.bias is not None or self.__class__.__name__ == 'MaskRCNN':
+
+                tail_name, first_layer = _get_tail(self.learn.model)
+
+                if first_layer.bias is not None or self.__class__.__name__ == 'MaskRCNN' or self.__class__.__name__ == 'ModelExtension':
                     # make first conv bias weights learnable 
                     # In case of maskrcnn make the batch norm trainable
                     next(params_iterator).requires_grad = True
@@ -795,6 +805,10 @@ class ArcGISModel(object):
         if _emd_template.get('InferenceFunction', False):
             with open(saved_path.parent / _emd_template['InferenceFunction'], 'w') as f:
                 f.write(self._code)
+
+        if _emd_template.get('ModelConfigurationFile', False):
+            with open(saved_path.parent / _emd_template['ModelConfigurationFile'], 'w') as f:
+                f.write(inspect.getsource(self.model_conf_class))
 
         if zip_files:
             _create_zip(str(zip_name), str(saved_path.parent))

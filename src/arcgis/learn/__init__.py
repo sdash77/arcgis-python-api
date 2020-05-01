@@ -6,7 +6,7 @@ import json as _json
 import arcgis as _arcgis
 from arcgis.raster._layer import ImageryLayer as _ImageryLayer
 from arcgis.raster._util import _set_context, _id_generator
-from .models import SingleShotDetector, UnetClassifier, FeatureClassifier, RetinaNet, PSPNetClassifier, EntityRecognizer, MaskRCNN, DeepLab, PointCNN
+from .models import SingleShotDetector, UnetClassifier, FeatureClassifier, RetinaNet, PSPNetClassifier, EntityRecognizer, MaskRCNN, DeepLab, PointCNN, ModelExtension, FasterRCNN
 from ._utils.pointcloud_data import Transform3d
 from ._data import prepare_data
 from ._process_df import process_df, add_datepart

@@ -258,7 +258,7 @@ def nms(boxes, scores, overlap=0.5, top_k=100):
         idx = idx[IoU.le(overlap)]
     return keep, count
 
-def _analyze_pred(pred, thresh=0.5, nms_overlap=0.1, ssd=None, ret_scores=True, device=torch.device('cpu')):
+def _analyze_pred(pred, thresh=0.5, nms_overlap=0.1, ssd=None, ret_scores=True, device=torch.device('cpu'), get_pred=None):
     """
     It works on a single activation, does not support batch.
     """
@@ -301,6 +301,12 @@ def _analyze_pred(pred, thresh=0.5, nms_overlap=0.1, ssd=None, ret_scores=True, 
         bbox_pred, preds, scores =  get_predictions(pred, 0, crit=ssd._loss_f, detect_thresh=thresh, nms_overlap=nms_overlap)
         return bbox_pred, preds, scores
 
+    elif getattr(ssd, "_is_model_extension", False):
+
+        preds = get_pred(pred, nms_overlap, thresh, ssd.learn.data.chip_size, device)
+
+        return preds
+
 def _reconstruct(t, x, pad_idx, classes):
     if t is None: return None
 
@@ -329,8 +335,8 @@ def _reconstruct(t, x, pad_idx, classes):
 
 class SSDObjectCategoryList(ObjectCategoryList):
     "`ItemList` for labelled bounding boxes detected using SSD."
-    def analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ssd=None, ret_scores=True, device=torch.device('cpu')):
-        return _analyze_pred(pred, thresh=thresh, nms_overlap=nms_overlap, ssd=ssd, ret_scores=ret_scores, device=device)
+    def analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ssd=None, ret_scores=True, device=torch.device('cpu'), get_pred=None):
+        return _analyze_pred(pred, thresh=thresh, nms_overlap=nms_overlap, ssd=ssd, ret_scores=ret_scores, device=device, get_pred=get_pred)
 
     def reconstruct(self, t, x):
         return _reconstruct(t, x, self.pad_idx, self.classes)
@@ -355,10 +361,27 @@ def compute_class_AP(ssd, dl, n_classes, show_progress, iou_thresh=0.5, detect_t
     classes, n_gts = LongTensor(range(n_classes)),torch.zeros(n_classes).long()
     with torch.no_grad():
         for input,target in progress_bar(dl, display=show_progress):
-            output = ssd.learn.pred_batch(batch=(input, target))#, reconstruct=True)
 
+            if getattr(ssd, "_is_model_extension", False):
+                if ssd._is_multispectral:
+                    output = ssd.learn.model.eval()(ssd.model_conf.transform_input_multispectral(input))
+                else:
+                    output = ssd.learn.model.eval()(ssd.model_conf.transform_input(input))
+                analyzed_pred_out = _analyze_pred(output,
+                                                thresh=detect_thresh,
+                                                nms_overlap=iou_thresh,
+                                                ssd=ssd,
+                                                ret_scores=True,
+                                                device=ssd._device,
+                                                get_pred=ssd.model_conf.post_process
+                                                )
+            else:
+                output = ssd.learn.pred_batch(batch=(input, target))#, reconstruct=True)
             for i in range(target[0].size(0)):
-                op = ssd._data.y.analyze_pred((output[0][i], output[1][i]), thresh=detect_thresh, nms_overlap=iou_thresh, ssd=ssd, ret_scores=True, device=ssd._device)
+                if getattr(ssd, "_is_model_extension", False):
+                    op = analyzed_pred_out[i]
+                else:
+                    op = ssd._data.y.analyze_pred((output[0][i], output[1][i]), thresh=detect_thresh, nms_overlap=iou_thresh, ssd=ssd, ret_scores=True, device=ssd._device)
                 tgt_bbox, tgt_clas = ssd._get_y(target[0][i], target[1][i])
                 
                 try:
@@ -506,21 +529,37 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
     # predictions_activation_store = torch.cat(predictions_activation_store)
     # predictions_class_store = torch.cat(predictions_class_store)
     # predictions_confidence_store = torch.cat(predictions_confidence_store)
-    
     predictions_class_store = []
     predictions_activation_store = []
+    pred_model_external = []
     for i in range(0, x_batch.shape[0], self._data.batch_size):
+
         if self._backend == 'pytorch':
-            _classes_sparse, _activations = self.learn.model.eval()(x_batch[i:i+self._data.batch_size])
+            if getattr(self, "_is_model_extension", False):
+                _pred_ext = self.learn.model.eval()(self.model_conf.transform_input_multispectral(x_batch[i:i+self._data.batch_size]))
+                analyzed_pred_ext = _analyze_pred(  _pred_ext, 
+                                                    thresh=thresh, 
+                                                    nms_overlap=nms_overlap, 
+                                                    ssd=self, 
+                                                    ret_scores=True,
+                                                    device=self._device,
+                                                    get_pred=self.model_conf.post_process
+                                                    )
+            else:
+                _classes_sparse, _activations = self.learn.model.eval()(x_batch[i:i+self._data.batch_size])
         elif self._backend == 'tensorflow':
             from .._utils.fastai_tf_fit import _pytorch_to_tf_batch
             _classes_sparse, _activations = self.learn.model(_pytorch_to_tf_batch(x_batch[i:i+self._data.batch_size]))
             _classes_sparse, _activations = _classes_sparse.detach().numpy(), _activations.detach().numpy()
             _classes_sparse, _activations = torch.tensor(_classes_sparse), torch.tensor(_activations)
-        predictions_class_store.append(_classes_sparse)
-        predictions_activation_store.append(_activations)
-    predictions_activation_store = torch.cat(predictions_activation_store)
-    predictions_class_store = torch.cat(predictions_class_store)
+        if getattr(self, "_is_model_extension", False):
+            pred_model_external.extend(analyzed_pred_ext)
+        else:
+            predictions_class_store.append(_classes_sparse)
+            predictions_activation_store.append(_activations)
+    if not getattr(self, "_is_model_extension", False):
+        predictions_activation_store = torch.cat(predictions_activation_store)
+        predictions_class_store = torch.cat(predictions_class_store)
     # predictions_bbox_store, predictions_class_store, predictions_confidence_store = _analyze_pred((predictions_class_store, predictions_activation_store), thresh=thresh, nms_overlap=nms_overlap, ssd=self, ret_scores=True, device=self._device)
 
 
@@ -597,15 +636,20 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
         # Plot Predictions
         ax_prediction  = ax[r][1]
         ax_prediction.axis('off')
+
         ax_prediction.imshow(symbology_x_batch[idx].cpu().numpy())
-        analyzed_prediction = _analyze_pred(
-            (predictions_class_store[idx], predictions_activation_store[idx]), 
-            thresh=thresh, 
-            nms_overlap=nms_overlap, 
-            ssd=self, 
-            ret_scores=True, 
-            device=self._device
-        )
+        if getattr(self, "_is_model_extension", False):
+            analyzed_prediction = pred_model_external[idx]
+        else:
+            analyzed_prediction = _analyze_pred(
+                (predictions_class_store[idx], predictions_activation_store[idx]), 
+                thresh=thresh, 
+                nms_overlap=nms_overlap, 
+                ssd=self, 
+                ret_scores=True, 
+                device=self._device
+            )
+
         if analyzed_prediction is not None:
             predicted_bboxes, predicted_classes, predicted_confidences = analyzed_prediction
             predicted_bboxes = (predicted_bboxes+1)*.5
@@ -615,8 +659,9 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
                     xs = bbox[[1, 1, 3, 3, 1]]
                     ys = bbox[[0, 2, 2, 0, 0]]
                     color = self._data._multispectral_color_array[predicted_classes[i]]
-                    ax_prediction.plot(xs.cpu().numpy(), ys.cpu().numpy(), color=color, linewidth=2, path_effects=[patheffects.Stroke(linewidth=3, foreground='black'), patheffects.Normal()])
+                    ax_prediction.plot(xs.detach().cpu().numpy(), ys.detach().cpu().numpy(), color=color, linewidth=2, path_effects=[patheffects.Stroke(linewidth=3, foreground='black'), patheffects.Normal()])
                     ax_prediction.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[predicted_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=1, foreground='black'), patheffects.Normal()])
             
         idx+=1
+
     return ax
