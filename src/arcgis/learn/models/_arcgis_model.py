@@ -73,8 +73,13 @@ def nostdout():
     sys.stdout = save_stdout
 
 
+class _EmptyDS(object):
+    def __init__(self, size):
+        self.size = (size, size)
+
+
 class _EmptyData():
-    def __init__(self, path, c, loss_func, chip_size):
+    def __init__(self, path, c, loss_func, chip_size, train_ds=True):
         self.path = path
         if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
             self.device = torch.device("cuda")
@@ -85,6 +90,9 @@ class _EmptyData():
         self.c = c
         self.loss_func = loss_func
         self.chip_size = chip_size
+
+        if train_ds:
+            self.train_ds = [[_EmptyDS(chip_size)]]
 
 
 class _MultiGPUCallback(LearnerCallback):
