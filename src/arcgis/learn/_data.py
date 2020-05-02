@@ -161,6 +161,7 @@ def _get_lbls(imagefile, class_mapping):
     xmlfile = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), '.xml')
     return _get_bbox_classes(xmlfile, class_mapping)[1][0]
 
+
 def _check_esri_files(path):
     if os.path.exists(path / 'esri_model_definition.emd') \
         and os.path.exists(path / 'map.txt') \
@@ -168,6 +169,7 @@ def _check_esri_files(path):
         return True
 
     return False
+
 
 def _get_class_mapping(path):
     class_mapping = {}
@@ -180,6 +182,7 @@ def _get_class_mapping(path):
             class_mapping[tag_obj.find('name').text] = tag_obj.find('name').text
 
     return class_mapping
+
 
 def _get_batch_stats(image_list, norm_pct=1, _band_std_values=False):
     n_normalization_samples = round(len(image_list)*norm_pct)
@@ -261,6 +264,7 @@ def _get_view_shape(tensor_batch, band_factors):
     view_shape[tensor_batch.shape.index(band_factors.shape[0])] = band_factors.shape[0]
     return tuple(view_shape)
 
+
 def _tensor_scaler(tensor_batch, min_values, max_values, mode='minmax', create_view=True):
     if create_view:
         view_shape = _get_view_shape(tensor_batch, min_values)
@@ -271,6 +275,7 @@ def _tensor_scaler(tensor_batch, min_values, max_values, mode='minmax', create_v
         scaled_tensor_batch = (tensor_batch - min_values) / ( (max_values - min_values) + 1e-05)
     return scaled_tensor_batch
 
+
 def _tensor_scaler_tfm(tensor_batch, min_values, max_values, mode='minmax'):
     x = tensor_batch[0]
     y = tensor_batch[1]
@@ -279,10 +284,12 @@ def _tensor_scaler_tfm(tensor_batch, min_values, max_values, mode='minmax'):
     x = _tensor_scaler(x, min_values, max_values, mode, create_view=False)
     return (x, y)
 
+
 def _extract_bands_tfm(tensor_batch, band_indices):
     x_batch = tensor_batch[0][:, band_indices]
     y_batch = tensor_batch[1]
     return (x_batch, y_batch)
+
 
 def prepare_data(path,
                  class_mapping=None, 
@@ -471,7 +478,6 @@ def prepare_data(path,
             
         class_mapping = emd_class_mapping
 
-
         color_mapping = {(i.get('Value', 0) or i.get('ClassValue', 0)): i['Color'] for i in emd.get('Classes', [])}
 
         if color_mapping.get(None):
@@ -492,6 +498,13 @@ def prepare_data(path,
         if class_mapping is None:
             class_mapping = _get_class_mapping(path / 'labels')
             alter_class_mapping = True
+
+    _map_space = "MAP_SPACE"
+    _pixel_space = "PIXEL_SPACE"
+    if has_esri_files:
+        _image_space_used = emd.get('ImageSpaceUsed', _map_space)
+    else:
+        _image_space_used = _pixel_space
 
     # Multispectral check
     imagery_type = 'RGB'
@@ -594,8 +607,6 @@ def prepare_data(path,
                 r = ( torch.stack([x[0].data for x in samples]), torch.stack([x[1].data for x in samples]) )
                 return r
             databunch_kwargs['collate_fn'] = classified_tiles_collate_fn
-
-
         else:
             data = ArcGISSegmentationItemList.from_folder(path/'images')\
                 .split_by_rand_pct(val_split_pct, seed=seed)\
@@ -606,12 +617,18 @@ def prepare_data(path,
                 )
 
         if transforms is None:
-            transforms = get_transforms(
-                flip_vert=True,
-                max_rotate=90.,
-                max_zoom=3.0,
-                max_lighting=0.5
-            )
+            if _image_space_used == _map_space:
+                transforms = get_transforms(
+                    flip_vert=True,
+                    max_rotate=90.,
+                    max_zoom=3.0,
+                    max_lighting=0.5
+                )
+            else:
+                transforms = get_transforms(
+                    max_zoom=3.0,
+                    max_lighting=0.5
+                )
 
         kwargs_transforms['tfm_y'] = True
         kwargs_transforms['size'] = chip_size
@@ -650,13 +667,21 @@ def prepare_data(path,
 
         if transforms is None:
             ranges = (0, 1)
-            train_tfms = [
-                crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges),
-                dihedral_affine() if has_esri_files else flip_lr(),
-                brightness(change=(0.4, 0.6)),
-                contrast(scale=(0.75, 1.5)),
-                rand_zoom(scale=(1.0, 1.5))
-            ]
+            if _image_space_used == _map_space:
+                train_tfms = [
+                    crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges),
+                    dihedral_affine(),
+                    brightness(change=(0.4, 0.6)),
+                    contrast(scale=(0.75, 1.5)),
+                    rand_zoom(scale=(1.0, 1.5))
+                ]
+            else:
+                train_tfms = [
+                    crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges),
+                    brightness(change=(0.4, 0.6)),
+                    contrast(scale=(0.75, 1.5)),
+                    rand_zoom(scale=(1.0, 1.5))
+                ]
             val_tfms = [crop(size=chip_size, p=1., row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
 
@@ -699,13 +724,21 @@ def prepare_data(path,
 
         if transforms is None:
             ranges = (0, 1)
-            train_tfms = [
-                rotate(degrees=30, p=0.5),
-                crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges),
-                dihedral_affine(),
-                brightness(change=(0.4, 0.6)),
-                contrast(scale=(0.75, 1.5))
-            ]
+            if _image_space_used == _map_space:
+                train_tfms = [
+                    rotate(degrees=30, p=0.5),
+                    crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges),
+                    dihedral_affine(),
+                    brightness(change=(0.4, 0.6)),
+                    contrast(scale=(0.75, 1.5))
+                ]
+            else:
+                train_tfms = [
+                    rotate(degrees=30, p=0.5),
+                    crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges),
+                    brightness(change=(0.4, 0.6)),
+                    contrast(scale=(0.75, 1.5))
+                ]
             val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
     elif dataset_type in ['ner_json','BIO','IOB','LBIOU','BILUO']:
@@ -866,7 +899,6 @@ def prepare_data(path,
             else:
                 data.class_weight = None
 
-
     data.class_mapping = class_mapping
     data.color_mapping = color_mapping
     data.show_batch = partial(data.show_batch, rows=min(int(math.sqrt(batch_size)), 5))
@@ -952,9 +984,6 @@ def prepare_data(path,
             _train_tail = False
         data._train_tail = kwargs.get('train_tail', _train_tail)
 
-    if has_esri_files:
-        data._image_space_used = emd.get('ImageSpaceUsed', 'MAP_SPACE')
-    else:
-        data._image_space_used = 'PIXEL_SPACE'
+    data._image_space_used = _image_space_used
 
     return data

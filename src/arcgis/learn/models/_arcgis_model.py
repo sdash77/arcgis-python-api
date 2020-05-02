@@ -598,7 +598,7 @@ class ArcGISModel(object):
         model_params = {
             "backbone": backbone,
             "backend": self._backend
-            }
+        }
 
         if _emd_template.get("ModelParameters", None) is None:
             _emd_template["ModelParameters"] = model_params
@@ -826,7 +826,6 @@ class ArcGISModel(object):
             input_normalization = quantized is False
             return self.learn._save_tflite(name, return_path=True, model_to_save=self._get_post_processed_model(input_normalization=input_normalization), quantized=quantized, data=self._data)
         return self.learn._save_tflite(name)
-            
 
     def _get_post_processed_model(self, input_normalization=True):
         return get_post_processed_model(self, input_normalization=input_normalization)
