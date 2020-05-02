@@ -113,3 +113,10 @@ FasterRCNN
     :members:
     :inherited-members:
     :undoc-members:
+
+SuperResolution
+------------------
+.. autoclass:: arcgis.learn.SuperResolution
+    :members:
+    :inherited-members:
+    :undoc-members:

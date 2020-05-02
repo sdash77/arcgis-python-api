@@ -14,15 +14,16 @@ import_exception = None
 try:
     import arcgis
     import numpy as np
-    from fastai.vision.data import imagenet_stats, ImageList, bb_pad_collate
+    from fastai.vision.data import imagenet_stats, ImageList, bb_pad_collate, ImageImageList
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms, flip_lr, ResizeMethod
-    from fastai.vision import ImageDataBunch
+    from fastai.vision import ImageDataBunch, parallel
     from fastai.torch_core import data_collate
     import torch
     from .models._ssd_utils import SSDObjectItemList
     from .models._unet_utils import ArcGISSegmentationItemList, ArcGISSegmentationMSItemList, is_no_color
     from .models._maskrcnn_utils import ArcGISInstanceSegmentationItemList, ArcGISInstanceSegmentationMSItemList
     from .models._ner_utils import ner_prepare_data
+    from .models._superres_utils import resize_one
     from ._utils.common import ArcGISMSImageList
     from ._utils.classified_tiles import show_batch_classified_tiles
     from ._utils.labeled_tiles import show_batch_labeled_tiles
@@ -401,7 +402,6 @@ def prepare_data(path,
     :returns: data object
 
     """
-    
     height_width = []
 
     if not HAS_FASTAI:
@@ -741,6 +741,25 @@ def prepare_data(path,
                 ]
             val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
+    elif dataset_type == "superres":
+        path_lr = path/'images'
+        path_hr = path/'labels'
+        il = ImageList.from_folder(path_hr)
+        size_hr = il[0].shape[1]    #il.sizes[0][0]
+        if not (path_lr).exists():
+            print("downsampling...")
+            parallel(partial(resize_one, path_lr=path_lr, size=size_hr/kwargs.get('downsample_factor'), path_hr=path_hr), il.items, max_workers=0)
+        elif kwargs.get('downsample_factor') is not None:
+            print("downsampling...")
+            parallel(partial(resize_one, path_lr=path_lr, size=size_hr/kwargs.get('downsample_factor'), path_hr=path_hr), il.items, max_workers=0)
+
+        data = ImageImageList.from_folder(path_lr)\
+            .split_by_rand_pct(val_split_pct, seed=42)\
+            .label_from_func(lambda x: path_hr/x.name)
+
+        kwargs_transforms['tfm_y'] = True
+        kwargs_transforms['size'] = size_hr
+        
     elif dataset_type in ['ner_json','BIO','IOB','LBIOU','BILUO']:
         if batch_size == 64:
             batch_size = 8
@@ -905,6 +924,7 @@ def prepare_data(path,
     data.orig_path = path
     data.resize_to = kwargs_transforms.get('size', None)
     data.height_width = height_width
+    data.downsample_factor = kwargs.get("downsample_factor")
     
     data._is_multispectral = _is_multispectral
     if data._is_multispectral:

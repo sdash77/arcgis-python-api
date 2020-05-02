@@ -613,6 +613,9 @@ class ArcGISModel(object):
         
         if model_metrics.get('average_precision_score'):
             _emd_template['average_precision_score'] = model_metrics.get('average_precision_score')
+            
+        if model_metrics.get('psnr_metric'):
+            _emd_template['psnr_metric'] = model_metrics.get('psnr_metric')
 
         resize_to = None
         if hasattr(self._data, 'resize_to') and self._data.resize_to:
@@ -711,6 +714,11 @@ class ArcGISModel(object):
             <p><b>Average Precision Score:</b> {emd_template.get('average_precision_score')}</p>
         """
 
+        if emd_template.get('psnr_metric'):
+            model_analysis = f"""
+            <p><b>PSNR Metric:</b> {emd_template.get('psnr_metric')}</p>
+        """
+        
         if model_analysis:
             HTML_TEMPLATE += f"""
             <p><b>Analysis of the model</b></p>

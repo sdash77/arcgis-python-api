@@ -10,3 +10,5 @@ from ._deeplab import DeepLab
 from ._pointcnnseg import PointCNN
 from ._model_extension import ModelExtension
 from ._fastrcnn import FasterRCNN
+from ._superres import SuperResolution
+

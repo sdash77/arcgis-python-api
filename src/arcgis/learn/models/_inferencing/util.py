@@ -217,7 +217,12 @@ def segment_image(model, images, device, predict_bg):
         return output.max(dim=1)[1]
     else:
         return output[:, 1:].max(dim=1)[1]
-    
+
+def superres_image(model, images, device):
+    model = model.to(device)
+    normed_batch_tensor = tensor(images).to(device).float()
+    output = model(normed_batch_tensor)
+    return output
 
 def pixel_classify_image(model, tiles, device, classes, predict_bg, model_info):
     tile_height, tile_width = tiles.shape[2], tiles.shape[3]
@@ -227,4 +232,10 @@ def pixel_classify_image(model, tiles, device, classes, predict_bg, model_info):
         img_normed = norm(tiles.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
     semantic_predictions = segment_image(model, img_normed, device, predict_bg)
     return semantic_predictions
+
+def pixel_classify_superres_image(model, tiles, device):
+    tile_height, tile_width = tiles.shape[2], tiles.shape[3]
+    img_normed = norm(tiles.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
+    superres_predictions = superres_image(model, img_normed, device)
+    return superres_predictions
     
