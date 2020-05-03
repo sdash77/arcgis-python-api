@@ -392,7 +392,6 @@ class ArcGISModel(object):
         self._device = torch.device('cpu')
         self._data = data
 
-
     def lr_find(self, allow_plot=True):
         """
         Runs the Learning Rate Finder, and displays the graph of it's output.
@@ -553,6 +552,13 @@ class ArcGISModel(object):
         """
         self.learn.unfreeze()
 
+    def plot_losses(self):
+        """
+        Plot validation and training losses after fitting the model.
+        """
+        if hasattr(self.learn, 'recorder'):
+            self.learn.recorder.plot_losses()
+
     def _create_emd_template(self, path):
 
         _emd_template = {}
@@ -588,9 +594,14 @@ class ArcGISModel(object):
             _emd_lr = None
 
         _emd_template["ModelFile"] = path.name
-        _emd_template["ImageHeight"] = self._data.chip_size
-        _emd_template["ImageWidth"] = self._data.chip_size
-        _emd_template["ImageSpaceUsed"] = self._data._image_space_used
+
+        if hasattr(self._data, 'chip_size'):
+            _emd_template["ImageHeight"] = self._data.chip_size
+            _emd_template["ImageWidth"] = self._data.chip_size
+
+        if hasattr(self._data, '_image_space_used'):
+            _emd_template["ImageSpaceUsed"] = self._data._image_space_used
+
         _emd_template["LearningRate"] = str(_emd_lr)
         _emd_template["ModelName"] = type(self).__name__
         _emd_template["backend"] = self._backend
@@ -616,6 +627,9 @@ class ArcGISModel(object):
             
         if model_metrics.get('psnr_metric'):
             _emd_template['psnr_metric'] = model_metrics.get('psnr_metric')
+
+        if model_metrics.get('score'):
+            _emd_template['score'] = model_metrics.get('score')
 
         resize_to = None
         if hasattr(self._data, 'resize_to') and self._data.resize_to:
@@ -714,11 +728,16 @@ class ArcGISModel(object):
             <p><b>Average Precision Score:</b> {emd_template.get('average_precision_score')}</p>
         """
 
+        if emd_template.get('score'):
+            model_analysis = f"""
+            <p><b>Score:</b> {emd_template.get('score')}</p>
+        """
+
         if emd_template.get('psnr_metric'):
             model_analysis = f"""
             <p><b>PSNR Metric:</b> {emd_template.get('psnr_metric')}</p>
         """
-        
+
         if model_analysis:
             HTML_TEMPLATE += f"""
             <p><b>Analysis of the model</b></p>
@@ -874,7 +893,7 @@ class ArcGISModel(object):
 
         if self.__str__() == '<PointCNN>':
             self.show_results(save_html=True, save_path=model_characteristics_dir)
-        else:
+        elif hasattr(self, 'show_results'):
             self.show_results()
             plt.savefig(os.path.join(model_characteristics_dir, 'show_results.png'))
             plt.close()

@@ -39,6 +39,10 @@ prepare_data
 -----------
 .. autofunction:: arcgis.learn.prepare_data
 
+prepare_tabulardata
+-----------
+.. autofunction:: arcgis.learn.prepare_tabulardata
+
 SingleShotDetector
 ------------------
 .. autoclass:: arcgis.learn.SingleShotDetector
@@ -97,6 +101,20 @@ DeepLab
 PointCNN
 ------------------
 .. autoclass:: arcgis.learn.PointCNN
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+FullyConnectedNetwork
+---------------------
+.. autoclass:: arcgis.learn.FullyConnectedNetwork
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+MLModel
+-------
+.. autoclass:: arcgis.learn.MLModel
     :members:
     :inherited-members:
     :undoc-members:

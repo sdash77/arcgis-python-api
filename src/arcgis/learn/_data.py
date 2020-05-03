@@ -6,9 +6,12 @@ import math
 import sys
 import json 
 import logging      
-import types       
-import traceback    
+import types
+import tempfile
+import traceback
+
 from ._utils.env import ARCGIS_ENABLE_TF_BACKEND                                                                                                                                            
+
 
 import_exception = None
 try:
@@ -30,11 +33,16 @@ try:
     from ._utils.rcnn_masks import show_batch_rcnn_masks
     from ._utils.pascal_voc_rectangles import SSDObjectMSItemList, show_batch_pascal_voc_rectangles
     from ._utils.pointcloud_data import pointcloud_prepare_data
+    from fastai.tabular import TabularDataBunch
+    from fastai.tabular.transform import FillMissing, Categorify, Normalize
+    from fastai.tabular import cont_cat_split, add_datepart
+    from ._utils.tabular_data import TabularDataObject
     import random
     HAS_FASTAI = True
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
+
 
 band_abrevation_lib = {
     'b': 'BLUE',
@@ -291,6 +299,108 @@ def _extract_bands_tfm(tensor_batch, band_indices):
     y_batch = tensor_batch[1]
     return (x_batch, y_batch)
 
+
+def prepare_tabulardata(
+        input_features,
+        variable_predict,
+        explanatory_variables=None,
+        explanatory_rasters=None,
+        date_field=None,
+        distance_features=None,
+        procs=None,
+        val_split_pct=0.1,
+        seed=42,
+        batch_size=64
+    ):
+
+    """
+    Prepares a databunch object from dataframe and fields_mapping dictionary.
+    The first two inputs can be prepared using process_dataframe function.
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    input_features          Required input feature layer or spatially enabled dataframe.
+                            This contains features denoting the value of the dependent variable.
+    ---------------------   -------------------------------------------
+    variable_predict        Required String, optionally 2-sized tuple
+                            denoting field_name, Categorical/Continuous.
+                            For example:
+                                ("Field_Name", True)
+                            By default: Automatically deduces the type.
+    ---------------------   -------------------------------------------
+    explanatory_variables   Optional list containing field names from input_features
+                            By default the field type is continuous.
+                            To override field type to categorical, pass
+                            a 2-sized tuple containing:
+                                1. field to be taken as input from the input_features.
+                                2. True/False denoting Categorical/Continuous variable.
+    ---------------------   -------------------------------------------
+    explanatory_rasters     Optional list containing Raster objects.
+                            By default the rasters are continuous.
+                            To mark a raster categorical, pass a 2-sized tuple containing:
+                                1. Raster object.
+                                2. True/False denoting Categorical/Continuous variable.
+    ---------------------   -------------------------------------------
+    date_field              Optional field_name.
+                            This field contains the date in the input_layer.
+                            If specified, the field will be split into
+                            Year, month, week, day, dayofweek, dayofyear,
+                            is_month_end, is_month_start, is_quarter_end,
+                            is_quarter_start, is_year_end, is_year_start,
+                            hour, minute, second, elapsed.
+                            If specified here,
+                            no need to specify in the feature_variables list.
+    ---------------------   -------------------------------------------
+    distance_features       Optional list of feature_layers.
+                            These layers are used for calculation of field "NEAR_DIST_1",
+                            "NEAR_DIST_2" etc, in the output dataframe.
+                            These field contains the nearest feature distance
+                            from the input_layer feature.
+    ---------------------   -------------------------------------------
+    procs                   For Fastai: Optional transforms list.
+                            For Scikit-learn: supply a column transformer object.
+                            Categorical data is by default encoded.
+                            If nothing is specified, default transforms are applied
+                            to fill missing values and normalize categorical data.
+    ---------------------   -------------------------------------------
+    val_split_pct           Optional float. Percentage of training data to keep
+                            as validation.
+                            By default 10% data is kept for validation.
+    ---------------------   -------------------------------------------
+    seed                    Optional integer. Random seed for reproducible
+                            train-validation split.
+                            Default value is 42.
+    ---------------------   -------------------------------------------
+    batch_size              Optional integer. Batch size for mini batch gradient
+                            descent (Reduce it if getting CUDA Out of Memory
+                            Errors).
+                            Default value is 64.
+    =====================   ===========================================
+
+    :returns: `TabularData` object
+
+    """
+
+    if not HAS_FASTAI:
+        _raise_fastai_import_error(import_exception)
+
+    dependent_variable = variable_predict
+    if isinstance(variable_predict, tuple):
+        dependent_variable = variable_predict[0]
+
+    return TabularDataObject.prepare_data_for_layer_learner(
+        input_features,
+        dependent_variable,
+        feature_variables=explanatory_variables,
+        raster_variables=explanatory_rasters,
+        date_field=date_field,
+        distance_feature_layers=distance_features,
+        procs=procs,
+        val_split_pct=val_split_pct,
+        seed=seed,
+        batch_size=batch_size
+    )
 
 def prepare_data(path,
                  class_mapping=None, 
