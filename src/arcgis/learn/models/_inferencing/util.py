@@ -209,14 +209,18 @@ def detect_objects_image_space(model, tiles, anchors, grid_sizes, device, classe
 
     return bounding_boxes, scores, classes
 
-def segment_image(model, images, device, predict_bg):
+def segment_image(model, images, device, predict_bg, model_info):
     model = model.to(device)
     normed_batch_tensor = tensor(images).to(device).float()
     output = model(normed_batch_tensor)
+    ignore_mapped_class = model_info['ignore_mapped_class']
+    for k in ignore_mapped_class:
+        output[:, k] = -1
     if predict_bg:
         return output.max(dim=1)[1]
     else:
-        return output[:, 1:].max(dim=1)[1]
+        output[:, 0] = -1
+        return output.max(dim=1)[1]
 
 def superres_image(model, images, device):
     model = model.to(device)
@@ -230,7 +234,7 @@ def pixel_classify_image(model, tiles, device, classes, predict_bg, model_info):
         img_normed = normalize_batch(tiles, model_info)
     else:
         img_normed = norm(tiles.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
-    semantic_predictions = segment_image(model, img_normed, device, predict_bg)
+    semantic_predictions = segment_image(model, img_normed, device, predict_bg, model_info)
     return semantic_predictions
 
 def pixel_classify_superres_image(model, tiles, device):

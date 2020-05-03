@@ -1022,9 +1022,15 @@ def prepare_data(path,
                 data.num_pixels_per_class = pixel_stats.get('NumPixelsPerClass', None)
             else:
                 data.num_pixels_per_class = None
-            ## Might want to change the variable name
+
+           ## Might want to change the variable name
             if data.num_pixels_per_class is not None:
-                data.class_weight = np.array(data.num_pixels_per_class).sum() / np.array(data.num_pixels_per_class)
+                num_pixels_per_class = np.array(data.num_pixels_per_class, dtype=np.int64)
+                if num_pixels_per_class.sum() < 0:
+                    data.overflow_encountered = True
+                    data.class_weight = None
+                else:
+                    data.class_weight = num_pixels_per_class.sum() /num_pixels_per_class
             else:
                 data.class_weight = None
 

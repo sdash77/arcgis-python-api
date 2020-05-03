@@ -113,10 +113,10 @@ class Deeplab(nn.Module):
 
 def mask_iou(mask1, mask2):
      
-    mask1 = mask1.permute(0,2,3,1)
-    mask2 = mask2.permute(0,2,3,1)
-    mask1 = torch.reshape(mask1>0, (-1, mask1.shape[-1])).type(torch.float64)
-    mask2 = torch.reshape(mask2>0, (-1, mask2.shape[-1])).type(torch.float64)
+    mask1 = mask1.permute(0, 2, 3, 1)
+    mask2 = mask2.permute(0, 2, 3, 1)
+    mask1 = torch.reshape(mask1 > 0, (-1, mask1.shape[-1])).type(torch.float64)
+    mask2 = torch.reshape(mask2 > 0, (-1, mask2.shape[-1])).type(torch.float64)
     area1 = torch.sum(mask1, dim=0)
     area2 = torch.sum(mask2, dim=0)
     intersection = torch.sum(mask1*mask2, dim=0)
@@ -124,22 +124,28 @@ def mask_iou(mask1, mask2):
     iou = intersection / (union + 1e-6)
     return iou
 
-def compute_miou(model, dl, mean, num_classes, show_progress):
+def compute_miou(model, dl, mean, num_classes, show_progress, ignore_mapped_class=[]):
 
     ious=[]
     model.learn.model.eval()
     with torch.no_grad():
         for input, target in progress_bar(dl, display=show_progress):
             pred = model.learn.model(input)
-            pred = pred.argmax(dim=1)
             target = target.squeeze(1)
+            if ignore_mapped_class != []:
+                _, total_classes, _, _ = pred.shape
+                for k in ignore_mapped_class:
+                    pred[:, k] = -1
+                pred = pred.argmax(dim=1)
+            else:
+                pred = pred.argmax(dim=1)
             mask1 = []
             mask2 = []
             for i in range(pred.shape[0]):
                 mask1.append(pred[i].to(model._device) == num_classes[:, None, None].to(model._device))
                 mask2.append(target[i].to(model._device) == num_classes[:, None, None].to(model._device))
             mask1 = torch.stack(mask1)
-            mask2 =torch.stack(mask2)
+            mask2 = torch.stack(mask2)
             iou = mask_iou(mask1, mask2)
             ious.append(iou.tolist())
 

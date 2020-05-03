@@ -65,7 +65,11 @@ class UnetClassifier(ArcGISModel):
                             augmentation and mixup loss. Default: False
     ---------------------   -------------------------------------------
     focal_loss              Optional boolean. If True, it will use focal loss
-                            Default: False                                                         
+                            Default: False
+    ---------------------   -------------------------------------------
+    ignore_classes          Optional list. It will contain the list of class
+                            values on which model will not incur loss.
+                            Default: []
     =====================   ===========================================
 
     :returns: `UnetClassifier` Object
@@ -80,6 +84,16 @@ class UnetClassifier(ArcGISModel):
         else:
             super().__init__(data, backbone)
 
+            # import pdb; pdb.set_trace();
+            self._ignore_classes = kwargs.get('ignore_classes', [])
+            data_classes = list(self._data.class_mapping.keys())
+            self._ignore_mapped_class = [data_classes.index(k) + 1 for k in self._ignore_classes]
+            if self._ignore_classes != []:
+                if 0 not in self._ignore_mapped_class:
+                    self._ignore_mapped_class.insert(0, 0)
+                global accuracy
+                accuracy = partial(accuracy, ignore_mapped_class=self._ignore_mapped_class)       
+
             self.mixup = kwargs.get('mixup', False)
             self.class_balancing = kwargs.get('class_balancing', False)
             self.focal_loss = kwargs.get('focal_loss', False)
@@ -92,7 +106,7 @@ class UnetClassifier(ArcGISModel):
             _backbone = self._backbone
             if hasattr(self, '_orig_backbone'):
                 _backbone = self._orig_backbone
-                
+
             if not (self._check_backbone_support(_backbone)):
                 raise Exception(f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
@@ -113,9 +127,21 @@ class UnetClassifier(ArcGISModel):
             if self.class_balancing:
                 if data.class_weight is not None:
                     class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(self._device)
-                    self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
                 else:
-                    logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")                
+                    if getattr(data, 'overflow_encountered', False):
+                        logger.warning("Overflow Encountered. Ignoring `class_balancing` parameter.")
+                        class_weight = [1] * len(data.classes)
+                    else:
+                        logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")                
+
+            if self._ignore_classes != []:
+                if not self.class_balancing:
+                    class_weight = torch.tensor([1] * data.c).float().to(self._device)
+                class_weight[self._ignore_mapped_class] = 0.
+            else:
+                class_weight = None
+
+            self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
 
             if self.focal_loss:
                 self.learn.loss_func = FocalLoss(self.learn.loss_func)
@@ -233,6 +259,7 @@ class UnetClassifier(ArcGISModel):
         _emd_template["ModelConfiguration"] = "_unet"
         _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
         _emd_template["ExtractBands"] = [0, 1, 2]
+        _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
 
         _emd_template['Classes'] = []
         class_data = {}
@@ -266,7 +293,7 @@ class UnetClassifier(ArcGISModel):
         self.learn.callbacks = [x for x in self.learn.callbacks if not isinstance(x, LabelCallback)]
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
-        self.learn.show_results(rows=rows, **kwargs)
+        self.learn.show_results(rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs)
 
     def accuracy(self):
         return self.learn.validate()[-1].tolist()     
@@ -306,10 +333,14 @@ class UnetClassifier(ArcGISModel):
         :returns: `dict` if mean is False otherwise `float`
         """
         num_classes = torch.arange(self._data.c)
-        miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress)
+        miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress, self._ignore_mapped_class)
         if mean:
             return np.mean(miou)
-        return dict(zip(['0'] + self._data.classes[1:], miou))
+        if self._ignore_mapped_class == []:
+            return dict(zip(['0'] + self._data.classes[1:], miou))
+        else:
+            class_values = [0] + list(self._data.class_mapping.keys())
+            return {class_values[i]: miou[i] for i in range(len(miou)) if i not in self._ignore_mapped_class} 
 
     ## Tensorflow specific functions start ##
     def _intialize_tensorflow(self, data, backbone, pretrained_path, kwargs):
@@ -339,7 +370,7 @@ class UnetClassifier(ArcGISModel):
 
         # Create Unet Model
         model = get_unet_tf_model(
-            self._backbone_initalized, 
+            self._backbone_initalized,
             data,
             mobile_optimized=self._mobile_optimized
         )
@@ -384,4 +415,4 @@ class UnetClassifier(ArcGISModel):
         Computer per class precision, recall and f1-score on validation set.
         """
         ## Calling imported function `per_class_metrics`        
-        return per_class_metrics(self)
+        return per_class_metrics(self, ignore_mapped_class=self._ignore_mapped_class)
