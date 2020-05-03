@@ -1,4 +1,5 @@
 import arcgis
+import datetime as _dt
 from arcgis._impl.common._utils import _lazy_property
 from arcgis.apps.tracker import LocationTrackingError
 
@@ -34,55 +35,86 @@ class LocationTrackingManager:
         if not location_tracking_enabled and "locationTracking" in self._gis.properties.helperServices:
             raise LocationTrackingError("Location Tracking is already enabled.")
 
-    def enable(self):
+    def enable(self, tracks_layer_shards=6, lkl_layer_shards=3, tracks_layer_rolling_index_strategy="Monthly"):
         """
         Enables location tracking for the organization.
+
+        ===================================       ===============================================================
+        **Argument**                              **Description**
+        -----------------------------------       ---------------------------------------------------------------
+        tracks_layer_shards                       The number of shards to use for the tracks layer. This only
+                                                  applies for ArcGIS Enterprise.
+        -----------------------------------       ---------------------------------------------------------------
+        lkl_layer_shards                          The number of shards to use for the last known location layer.
+                                                  This only applies for ArcGIS Enterprise.
+        -----------------------------------       ---------------------------------------------------------------
+        tracks_layer_rolling_index_strategy       The rolling index strategy for the tracks layer
+                                                  ["Daily", "Weekly", "Monthly", "Yearly", "Decade", "Century"]
+                                                  This only applies for ArcGIS Enterprise.
+        ===================================       ===============================================================
 
         :return: True if successful, False otherwise
         """
         if self.status == "enabled":
             return False
         self._validate_environment(location_tracking_enabled=False)
+        if tracks_layer_rolling_index_strategy not in ["Daily", "Weekly", "Monthly", "Yearly", "Decade", "Century"]:
+            raise ValueError(f"Invalid rolling index strategy '{tracks_layer_rolling_index_strategy}'")
+        if float(self._gis.properties.get("currentVersion", "0")) <= 7.3 and tracks_layer_rolling_index_strategy in ["Century", "Decade"]:
+            raise ValueError(f"'{tracks_layer_rolling_index_strategy}' is not supported for this version of Enterprise")
         for folder in self._gis.users.me.folders:
             if folder["title"] == "Location Tracking":
                 break
         else:
             self._gis.content.create_folder("Location Tracking")
-        item = self._gis.content.create_service(
-            "location_tracking",
-            create_params={
-                "name": "location_tracking",
-                "layers": [
-                    {
-                        "adminLayerInfo": {
-                            "tableMetadata": {
-                                "numberOfShards": "6",
-                                "rollingIndexStrategy": "Yearly",
-                                "dataRetentionStrategy": "30",
-                                "dataRetentionStrategyUnits": "DAYS",
-                                "dataRetention": "true"
-                            }
-                        }
-                    },
-                    {
-                        "adminLayerInfo": {
-                            "tableMetadata": {
-                                "numberOfShards": "2",
-                                "rollingIndexStrategy": "Yearly",
-                                "dataRetentionStrategy": "30",
-                                "dataRetentionStrategyUnits": "DAYS",
-                                "dataRetention": "false"
-                            }
+        service_name = "location_tracking"
+        if not self._gis.content.is_service_name_available(service_name, service_type="featureService"):
+            service_name = f"{service_name}{int(_dt.datetime.now().timestamp())}"
+        create_params = {
+            "name": f"{service_name}",
+            "layers": [
+                {
+                    "adminLayerInfo": {
+                        "tableMetadata": {
+                            "numberOfShards": f"{tracks_layer_shards}",
+                            "rollingIndexStrategy": f"{tracks_layer_rolling_index_strategy}",
+                            "dataRetentionStrategy": "30",
+                            "dataRetentionStrategyUnits": "DAYS",
+                            "dataRetention": "true"
                         }
                     }
-                ],
-                "description": "Location Tracking Service",
-                "snippet": "Location Tracking Service"
-            },
+                },
+                {
+                    "adminLayerInfo": {
+                        "tableMetadata": {
+                            "numberOfShards": f"{lkl_layer_shards}",
+                            "rollingIndexStrategy": "Yearly",
+                            "dataRetentionStrategy": "30",
+                            "dataRetentionStrategyUnits": "DAYS",
+                            "dataRetention": "false"
+                        }
+                    }
+                }
+            ],
+            "description": "Location Tracking Service",
+            "snippet": "Location Tracking Service"
+        }
+        # Use a longer rolling index strategy if 10.8.1 or later
+        if float(self._gis.properties.get("currentVersion", "0")) > 7.3:
+            create_params["layers"][1]["adminLayerInfo"]["tableMetadata"]["rollingIndexStrategy"] = "Century"
+        item = self._gis.content.create_service(
+            "location_tracking",
+            create_params=create_params,
             folder="Location Tracking",
             service_type="locationTrackingService"
         )
         item.protect(True)
+        item.update({
+            "description": "The location tracking service stores the last known location of each mobile user, "
+                           "as well as full historical tracks of where the mobile user has been. It is part of an "
+                           "organization-wide capability that is managed by an administrator.",
+            "snippet": "Location Tracking Service"
+        })
         item.share(org=True)
         self._gis.update_properties({
             "locationTrackingService": {
