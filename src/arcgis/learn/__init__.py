@@ -1173,7 +1173,8 @@ def export_point_dataset(data_path, output_path, block_size=50.0, max_points=819
     extra_features         Optional list of tuple. Extra features to read from las files.
                            The first value of tuple is the key name of the features. The second
                            value of the tuple is max value of the feature. The third value is
-                           the minimum value of that feature.
+                           the minimum value of that feature. If you do not want any extra
+                           features to be considered make this parameter equal to an empty list [].
                            Deafult: [('intensity', 5000, 0), ('num_returns', 5, 0)]                 
     ==================     ====================================================================
     """

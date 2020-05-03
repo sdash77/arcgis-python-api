@@ -5,7 +5,7 @@ import_exception = None
 try:
     from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback
     from ._pointcnn_utils import PointCNNSeg, SamplePointsCallback, CrossEntropyPC, accuracy, accuracy_non_zero, AverageMetric
-    from .._utils.pointcloud_data import get_device, inference_las, show_results, compute_precision_recall
+    from .._utils.pointcloud_data import get_device, inference_las, show_results, compute_precision_recall, predict_h5, show_results_tool
     from ._unet_utils import is_no_color
     from fastai.basic_train import Learner
     import torch
@@ -54,10 +54,10 @@ class PointCNN(ArcGISModel):
 
                             Length of `out_channels`, `P`, `K`, `D` should be same.
                             The length denotes the number of layers in encoder.
-                              Parameter Explaination
+                              Parameter Explanation
                                 - 'out_channels': Number of channels in each layer multiplied by `m`,
                                 - 'P': Number of points in each layer,
-                                - 'K': Number of K-nearest neighbour in each layer,
+                                - 'K': Number of K-nearest neighbor in each layer,
                                 - 'D': Dilation in each layer,
                                 - 'm': Multiplier which is multiplied by each out_channel.
     ---------------------   -------------------------------------------
@@ -241,15 +241,16 @@ class PointCNN(ArcGISModel):
         _emd_template['DataAttributes']['max_point'] = self._data.max_point
         _emd_template['DataAttributes']['extra_features'] = self._data.extra_features
         _emd_template['DataAttributes']['extra_dim'] = self._data.extra_dim
+        _emd_template['DataAttributes']['remap'] = self._data.remap
 
         _emd_template['Classes'] = []
         class_data = {}
         for i, class_name in enumerate(self._data.classes):  # 0th index is background
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
-            class_data["Value"] = inverse_class_mapping[class_name]
+            class_data["Value"] = inverse_class_mapping[i]
             class_data["Name"] = class_name
             color = [random.choice(range(256)) for i in range(3)] if is_no_color(self._data.color_mapping) else \
-                self._data.color_mapping[inverse_class_mapping[class_name]]
+                self._data.color_mapping[class_name]
             class_data["Color"] = np.array(color).astype(int).tolist()
             _emd_template['Classes'].append(class_data.copy())
 
@@ -258,10 +259,58 @@ class PointCNN(ArcGISModel):
     def show_results(self, rows=2, **kwargs):
 
         """
-        Displays the results of a trained model on a part of the validation set.
-        """        
+        Displays the results from your model on the validation set
+        with ground truth on the left and predictions on the right.
 
-        return show_results(self, rows, **kwargs)
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional rows. Number of rows to show. Default
+                                value is 2.                                                       
+        =====================   ===========================================
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        color_mapping           Optional dictionary. Mapping from class value
+                                to RGB values. Default value
+                                Example: {0:[220,220,220],
+                                            1:[255,0,0],
+                                            2:[0,255,0],
+                                            3:[0,0,255]}          
+        ---------------------   -------------------------------------------
+        mask_class              Optional array of integers. Array containing
+                                class values to mask. Use this parameter to 
+                                display the classes of interest.
+                                Default value is []. 
+                                Example: All the classes are in [0, 1, 2]
+                                to display only class `0` set the mask class
+                                parameter to be [1, 2]. List of all classes
+                                can be accessed from `data.classes` attribute
+                                where `data` is the `Databunch` object returned
+                                by `prepare_data` function.    
+        ---------------------   -------------------------------------------
+        width                   Optional integer. Width of the plot. Default 
+                                value is 750.
+        ---------------------   -------------------------------------------
+        height                  Optional integer. Height of the plot. Default
+                                value is 512.   
+        ---------------------   -------------------------------------------
+        max_display_point       Optional integer. Maximum number of points
+                                to display. Default is 20000. A warning will
+                                be raised if the total points to display exceeds
+                                this parameter. Setting this parameter will
+                                randomly sample the specified number of points
+                                and once set, it will be used for future uses.
+        =====================   ===========================================
+        """
+
+        if self._data.pc_type == 'PointCloud_TF':
+            return show_results(self, rows, **kwargs)
+        elif self._data.pc_type == 'PointCloud':
+            return show_results_tool(self, rows, **kwargs)
 
     def predict_las(self, path, output_path=None, print_metrics=False, **kwargs):
 
@@ -294,4 +343,24 @@ class PointCNN(ArcGISModel):
         """
 
         return compute_precision_recall(self)
+
+    def predict_h5(self, path, output_path=None, **kwargs):
+        """
+        Predicts and writes the resulting las file on the disk. 
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        path                    Required string. The path to folder where the h5
+                                files which needs to be predicted are present.   
+        ---------------------   -------------------------------------------
+        output_path             Optional string. The path to folder where to dump
+                                the resulting h5 files. Defaults to `results` folder
+                                in input path.
+        =====================   ===========================================
+        
+        :returns: Path where files are dumped.
+        """
+        
+        return predict_h5(self, path, output_path)        
         
