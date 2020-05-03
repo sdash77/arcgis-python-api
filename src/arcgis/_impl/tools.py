@@ -5421,7 +5421,51 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         return param_value
 
+    def _set_multiple_raster_inputs(self, input_rasters):
+        from arcgis.raster import ImageryLayer
+        gis = self._gis
+        input_rasters_dict={}
+        # input rasters
+        if isinstance(input_rasters, list):
+            # extract the IDs of all the input items
+            # and then convert the list to JSON
+            item_id_list = []
+            url_list = []
+            uri_list = []
+            for item in input_rasters:
+                if isinstance(item, Item):
+                    item_id_list.append(item.itemid)
+                elif isinstance(item, str):
+                    if 'http:' in item or 'https:' in item:
+                        url_list.append(item)
+                    else:
+                        uri_list.append(item)
+                elif isinstance(item, ImageryLayer):
+                    url_list.append(item.url)
 
+            if len(item_id_list) > 0:
+                input_rasters_dict = {"itemIds" : item_id_list }
+                input_raster_specified = True
+            elif len(url_list) > 0:
+                input_rasters_dict = {"urls" : url_list}
+                input_raster_specified = True
+            elif len(uri_list) > 0:
+                input_rasters_dict = {"uris" : uri_list}
+                input_raster_specified = True
+        elif isinstance(input_rasters, str):
+            # the input_rasters is a folder name; try and extract the folderID
+            owner = gis.properties.user.username
+            folderId = gis._portal.get_folder_id(owner, input_rasters)
+            if folderId is None:
+                if 'http:' in input_rasters or 'https:' in input_rasters:
+                    input_rasters_dict = {"url" : input_rasters}
+                else:
+                    input_rasters_dict = {"uri" : input_rasters}
+            else:
+                input_rasters_dict = {"folderId" : folderId}
+            input_raster_specified = True
+
+        return input_rasters_dict
     #----------------------------------------------------------------------
     def add_image(self,
                   image_collection,
@@ -9959,6 +10003,194 @@ class _RasterAnalysisTools(BaseAnalytics):
             return gpjob
         return gpjob.result()
 
+
+    def manage_multidimensional_raster(self,
+                                        target_multidimensional_raster, 
+                                        manage_mode='APPEND_SLICES', 
+                                        variables=None, 
+                                        input_multidimensional_rasters=None, 
+                                        dimension_name=None, 
+                                        dimension_value=None, 
+                                        dimension_description=None, 
+                                        dimension_unit=None,
+                                        future=False,
+                                        **kwargs):
+        """
+        target_multidimensional_raster: targetMultidimensionalRaster (str). Required parameter.  
+
+        manage_mode: manageMode (str). Optional parameter.  
+            Choice list:ADD_DIMENSION,APPEND_SLICES,APPEND_VARIABLES,REPLACE_SLICES,DELETE_VARIABLES,REMOVE_DIMENSION
+
+        variables: variables (str). Optional parameter.  
+
+        input_multidimensional_rasters: inputMultidimensionalRasters (str). Optional parameter.  
+
+        dimension_name: dimensionName (str). Optional parameter.  
+
+        dimension_value: dimensionValue (str). Optional parameter.  
+
+        dimension_description: dimensionDescription (str). Optional parameter.  
+
+        dimension_unit: dimensionUnit (str). Optional parameter.  
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        task = "ManageMultidimensionalRaster"
+
+        gis = self._gis
+
+        target_multidimensional_raster = self._layer_input(input_layer=target_multidimensional_raster)
+
+        if input_multidimensional_rasters is not None:
+            input_multidimensional_rasters = _set_multiple_raster_inputs(input_multidimensional_rasters)
+
+        manage_mode_allowed_values = self._tbx.choice_list.manage_multidimensional_raster["manage_mode"]
+        if [element.lower() for element in manage_mode_allowed_values].count(manage_mode.lower()) <= 0 :
+            raise RuntimeError('manage_mode can only be one of the following: '+str(manage_mode_allowed_values))
+        for element in manage_mode_allowed_values:
+            if manage_mode.lower() == element.lower():
+                manage_mode = element
+
+
+        gpjob = self._tbx.manage_multidimensional_raster(target_multidimensional_raster=target_multidimensional_raster, 
+                                                         manage_mode=manage_mode, 
+                                                         variables=variables, 
+                                                         input_multidimensional_rasters=input_multidimensional_rasters, 
+                                                         dimension_name=dimension_name, 
+                                                         dimension_value=dimension_value, 
+                                                         dimension_description=dimension_description, 
+                                                         dimension_unit=dimension_unit,
+                                                         gis=self._gis,
+                                                         future=True)
+        gpjob._is_ra = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    def sample(self,
+               in_rasters, 
+               in_location_data, 
+               output_name=None, 
+               resampling_type="NEAREST", 
+               unique_id_field=None, 
+               acquisition_definition=None, 
+               statistics_type="MEAN", 
+               percentile_value=None, 
+               buffer_distance=None, 
+               layout="ROW_WISE", 
+               generate_feature_class=None,
+               context=None,
+               future=False,
+               **kwargs):
+        """
+       in_rasters: inRasters (str). Required parameter.  
+       in_location_data: inLocationData (str). Required parameter.  
+       output_name: outputTableName (str). Required parameter.  
+       resampling_type: resamplingType (str). Optional parameter.  
+          Choice list:NEAREST,BILINEAR,CUBIC
+       unique_id_field: uniqueIdField (str). Optional parameter.  
+       acquisition_definition: acquisitionDefinition (str). Optional parameter.  
+       statistics_type: statisticsType (str). Optional parameter.  
+          Choice list:MINIMUM,MAXIMUM,MEDIAN,MEAN,SUM,MAJORITY,MINORITY,STD,PERCENTILE
+       percentile_value: percentileValue (str). Optional parameter.  
+       buffer_distance: bufferDistance (str). Optional parameter.  
+       layout: layout (str). Optional parameter.  
+          Choice list:ROW_WISE,COLUMN_WISE
+       generate_feature_class: generateFeatureClass (bool). Required parameter.  
+       context: context (str). Optional parameter.
+       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        """
+
+        task = "Sample"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        in_rasters = self._set_multiple_raster_inputs(in_rasters)
+
+        statistics_type_allowed_values = self._tbx.choice_list.sample["statistics_type"]
+        if [element.lower() for element in statistics_type_allowed_values].count(statistics_type.lower()) <= 0 :
+            raise RuntimeError('statistics_type can only be one of the following: '+str(statistics_type_allowed_values))
+        for element in statistics_type_allowed_values:
+            if statistics_type.lower() == element.lower():
+                statistics_type = element
+
+        resampling_type_allowed_values = self._tbx.choice_list.sample["resampling_type"]
+        if [element.lower() for element in resampling_type_allowed_values].count(resampling_type.lower()) <= 0 :
+            raise RuntimeError('resampling_type can only be one of the following: '+str(resampling_type_allowed_values))
+        for element in resampling_type_allowed_values:
+            if resampling_type.lower() == element.lower():
+                resampling_type = element
+
+        layout_allowed_values = self._tbx.choice_list.sample["layout"]
+        if [element.lower() for element in layout_allowed_values].count(layout.lower()) <= 0 :
+            raise RuntimeError('layout can only be one of the following: '+str(layout_allowed_values))
+        for element in layout_allowed_values:
+            if layout.lower() == element.lower():
+                layout = element
+
+        if isinstance(in_location_data, _FEATURE_INPUTS):
+            in_location_data = self._feature_input(in_location_data)
+        elif isinstance(in_location_data, Item):
+            in_location_data = {"itemId": in_location_data.itemid}
+        else:
+            in_location_data = self._layer_input(in_location_data)
+
+        folder = None
+        folderId = None
+
+        if output_name is None:
+            output_name = str(task) + '_' + _id_generator()
+
+        if kwargs is not None:
+            if "folder" in kwargs:
+                folder = kwargs["folder"]
+        if folder is not None:
+            if isinstance(folder, dict):
+                if "id" in folder:
+                    folderId = folder["id"]
+                    folder=folder["title"]
+            else:
+                owner = gis.properties.user.username
+                folderId = gis._portal.get_folder_id(owner, folder)
+            if folderId is None:
+                folder_dict = gis.content.create_folder(folder, owner)
+                folder = folder_dict["title"]
+                folderId = folder_dict["id"]
+            output_name =  json.dumps({"serviceProperties": {"name" : output_name}, "itemProperties": {"folderId" : folderId}})
+        else:
+            output_name = json.dumps({"serviceProperties": {"name" : output_name}})
+
+        gpjob = self._tbx.sample(in_rasters=in_rasters, 
+                                in_location_data= in_location_data, 
+                                output_name=output_name, 
+                                resampling_type=resampling_type, 
+                                unique_id_field=unique_id_field, 
+                                acquisition_definition=acquisition_definition, 
+                                statistics_type=statistics_type, 
+                                percentile_value=percentile_value, 
+                                buffer_distance=buffer_distance, 
+                                layout=layout, 
+                                generate_feature_class=generate_feature_class,
+                                context=context,
+                                gis=self._gis,
+                                future=True)
+
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
 
 ###########################################################################
 class _GeoanalyticsTools(_AsyncService):
