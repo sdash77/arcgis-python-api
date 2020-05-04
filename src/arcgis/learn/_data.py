@@ -22,16 +22,16 @@ try:
     from fastai.vision import ImageDataBunch, parallel
     from fastai.torch_core import data_collate
     import torch
-    from .models._ssd_utils import SSDObjectItemList
     from .models._unet_utils import ArcGISSegmentationItemList, ArcGISSegmentationMSItemList, is_no_color
     from .models._maskrcnn_utils import ArcGISInstanceSegmentationItemList, ArcGISInstanceSegmentationMSItemList
     from .models._ner_utils import ner_prepare_data
+    from ._utils.pascal_voc_rectangles import ObjectDetectionItemList
     from .models._superres_utils import resize_one
     from ._utils.common import ArcGISMSImageList
     from ._utils.classified_tiles import show_batch_classified_tiles
     from ._utils.labeled_tiles import show_batch_labeled_tiles
     from ._utils.rcnn_masks import show_batch_rcnn_masks
-    from ._utils.pascal_voc_rectangles import SSDObjectMSItemList, show_batch_pascal_voc_rectangles
+    from ._utils.pascal_voc_rectangles import ObjectMSItemList, show_batch_pascal_voc_rectangles
     from ._utils.pointcloud_data import pointcloud_prepare_data
     from fastai.tabular import TabularDataBunch
     from fastai.tabular.transform import FillMissing, Categorify, Normalize
@@ -760,14 +760,13 @@ def prepare_data(path,
         )
 
         if _is_multispectral:
-            data = SSDObjectMSItemList.from_folder(path/'images')\
+            data = ObjectMSItemList.from_folder(path/'images')\
             .filter_by_func(remove_image_without_label)\
             .split_by_rand_pct(val_split_pct, seed=seed)\
             .label_from_func(get_y_func)
             _show_batch_multispectral = show_batch_pascal_voc_rectangles
         else:
-            data = SSDObjectItemList.from_folder(path/'images')\
-                .filter_by_func(remove_image_without_label)\
+            data = ObjectDetectionItemList.from_folder(path/'images')\
                 .split_by_rand_pct(val_split_pct, seed=seed)\
                 .label_from_func(get_y_func)
 

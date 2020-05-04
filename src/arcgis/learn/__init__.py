@@ -7,7 +7,9 @@ import arcgis as _arcgis
 from arcgis.raster._layer import ImageryLayer as _ImageryLayer
 from arcgis.raster._util import _set_context, _id_generator
 
-from .models import SingleShotDetector, UnetClassifier, FeatureClassifier, RetinaNet, PSPNetClassifier, EntityRecognizer, MaskRCNN, DeepLab, PointCNN, ModelExtension, FasterRCNN, SuperResolution, FullyConnectedNetwork, MLModel
+from .models import SingleShotDetector, UnetClassifier, FeatureClassifier, RetinaNet, \
+      PSPNetClassifier, EntityRecognizer, MaskRCNN, DeepLab, PointCNN, ModelExtension, \
+      FasterRCNN, SuperResolution, FullyConnectedNetwork, MLModel, YOLOv3
 
 from ._utils.pointcloud_data import Transform3d
 from ._data import prepare_data, prepare_tabulardata

@@ -258,93 +258,41 @@ def nms(boxes, scores, overlap=0.5, top_k=100):
         idx = idx[IoU.le(overlap)]
     return keep, count
 
-def _analyze_pred(pred, thresh=0.5, nms_overlap=0.1, ssd=None, ret_scores=True, device=torch.device('cpu'), get_pred=None):
+def postprocess(pred, model=None, thresh=0.5, nms_overlap=0.1, ret_scores=True, device=None):
     """
     It works on a single activation, does not support batch.
     """
-    from ._ssd import SingleShotDetector
-    from ._retinanet import RetinaNet
+    if device is None:
+        device = torch.device('cpu')
+    b_clas, b_bb = pred
+    a_ic = model._actn_to_bb(b_bb.to(device), model._anchors.to(device), model._grid_sizes.to(device))
+    conf_scores, clas_ids = b_clas[:, 1:].max(1)
+    conf_scores = b_clas.t().sigmoid().to(device)
 
-    if type(ssd).__name__ == "SingleShotDetector": #isinstance(ssd, SingleShotDetector):
-        b_clas, b_bb = pred
-        a_ic = ssd._actn_to_bb(b_bb.to(device), ssd._anchors.to(device), ssd._grid_sizes.to(device))
-        conf_scores, clas_ids = b_clas[:, 1:].max(1)
-        conf_scores = b_clas.t().sigmoid().to(device)
+    out1, bbox_list, class_list = [], [], []
 
-        out1, bbox_list, class_list = [], [], []
+    for cl in range(1, len(conf_scores)):
+        c_mask = conf_scores[cl] > thresh
+        if c_mask.sum() == 0: 
+            continue
+        scores = conf_scores[cl][c_mask]
+        l_mask = c_mask.unsqueeze(1)
+        l_mask = l_mask.expand_as(a_ic)
+        boxes = a_ic[l_mask].view(-1, 4) # boxes are now in range[ 0, 1]
+        boxes = (boxes-0.5) * 2.0        # putting boxes in range[-1, 1]
+        ids, count = nms(boxes.data, scores, nms_overlap, 50) # FIX- NMS overlap hardcoded
+        ids = ids[:count]
+        out1.append(scores[ids])
+        bbox_list.append(boxes.data[ids])
+        class_list.append(torch.tensor([cl]*count))
 
-        for cl in range(1, len(conf_scores)):
-            c_mask = conf_scores[cl] > thresh
-            if c_mask.sum() == 0: 
-                continue
-            scores = conf_scores[cl][c_mask]
-            l_mask = c_mask.unsqueeze(1)
-            l_mask = l_mask.expand_as(a_ic)
-            boxes = a_ic[l_mask].view(-1, 4) # boxes are now in range[ 0, 1]
-            boxes = (boxes-0.5) * 2.0        # putting boxes in range[-1, 1]
-            ids, count = nms(boxes.data, scores, nms_overlap, 50) # FIX- NMS overlap hardcoded
-            ids = ids[:count]
-            out1.append(scores[ids])
-            bbox_list.append(boxes.data[ids])
-            class_list.append(torch.tensor([cl]*count))
-
-        if len(bbox_list) == 0:
-            return None #torch.Tensor(size=(0,4)), torch.Tensor()
-
-        if ret_scores:
-            return torch.cat(bbox_list, dim=0).to(device), torch.cat(class_list, dim=0).to(device), torch.cat(out1, dim=0).to(device)
-        else:
-            return torch.cat(bbox_list, dim=0), torch.cat(class_list, dim=0) # torch.cat(out1, dim=0), 
-    
-    elif type(ssd).__name__ == "RetinaNet":
-        from ._retinanet_utils import get_predictions
-        bbox_pred, preds, scores =  get_predictions(pred, 0, crit=ssd._loss_f, detect_thresh=thresh, nms_overlap=nms_overlap)
-        return bbox_pred, preds, scores
-
-    elif getattr(ssd, "_is_model_extension", False):
-
-        preds = get_pred(pred, nms_overlap, thresh, ssd.learn.data.chip_size, device)
-
-        return preds
-
-def _reconstruct(t, x, pad_idx, classes):
-    if t is None: return None
-
-    t = list(t)
-    if len(t[0]) == 0:
+    if len(bbox_list) == 0:
         return None
 
-    if len(t) == 3:
-        bboxes, labels, scores = t
-        if len((labels - pad_idx).nonzero()) == 0: 
-            ret = ImageBBox.create(*x.size, bboxes, labels=labels, classes=classes, scale=False)
-            ret.scores = t[2]
-            return ret
-        i = (labels - pad_idx).nonzero().min()
-        bboxes,labels,scores = bboxes[i:],labels[i:], scores[i:]
-        ret = ImageBBox.create(*x.size, bboxes, labels=labels, classes=classes, scale=False)
-        ret.scores = t[2]
-        return ret
+    if ret_scores:
+        return torch.cat(bbox_list, dim=0).to(device), torch.cat(class_list, dim=0).to(device), torch.cat(out1, dim=0).to(device)
     else:
-        bboxes, labels = t
-        if len((labels - pad_idx).nonzero()) == 0: return ImageBBox.create(*x.size, bboxes, labels=labels, classes=classes, scale=False)
-        i = (labels - pad_idx).nonzero().min()
-        bboxes,labels = bboxes[i:],labels[i:]
-        return ImageBBox.create(*x.size, bboxes, labels=labels, classes=classes, scale=False)    
-
-
-class SSDObjectCategoryList(ObjectCategoryList):
-    "`ItemList` for labelled bounding boxes detected using SSD."
-    def analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ssd=None, ret_scores=True, device=torch.device('cpu'), get_pred=None):
-        return _analyze_pred(pred, thresh=thresh, nms_overlap=nms_overlap, ssd=ssd, ret_scores=ret_scores, device=device, get_pred=get_pred)
-
-    def reconstruct(self, t, x):
-        return _reconstruct(t, x, self.pad_idx, self.classes)
-
-    
-class SSDObjectItemList(ObjectItemList):
-    "`ItemList` suitable for object detection."
-    _label_cls,_square_show_res = SSDObjectCategoryList,False
+        return torch.cat(bbox_list, dim=0), torch.cat(class_list, dim=0)
 
 def compute_ap(precision, recall):
     "Compute the average precision for `precision` and `recall` curve."
@@ -356,38 +304,36 @@ def compute_ap(precision, recall):
     ap = np.sum((recall[idx + 1] - recall[idx]) * precision[idx + 1])
     return ap
 
-def compute_class_AP(ssd, dl, n_classes, show_progress, iou_thresh=0.5, detect_thresh=0.35, num_keep=100):
+def compute_class_AP(model, dl, n_classes, show_progress, iou_thresh=0.5, detect_thresh=0.35, num_keep=100):
     tps, clas, p_scores = [], [], []
     classes, n_gts = LongTensor(range(n_classes)),torch.zeros(n_classes).long()
     with torch.no_grad():
         for input,target in progress_bar(dl, display=show_progress):
 
-            if getattr(ssd, "_is_model_extension", False):
-                if ssd._is_multispectral:
-                    output = ssd.learn.model.eval()(ssd.model_conf.transform_input_multispectral(input))
+            if getattr(model, "_is_model_extension", False):
+                if model._is_multispectral:
+                    output = model.learn.model.eval()(model.model_conf.transform_input_multispectral(input))
                 else:
-                    output = ssd.learn.model.eval()(ssd.model_conf.transform_input(input))
-                analyzed_pred_out = _analyze_pred(output,
-                                                thresh=detect_thresh,
-                                                nms_overlap=iou_thresh,
-                                                ssd=ssd,
-                                                ret_scores=True,
-                                                device=ssd._device,
-                                                get_pred=ssd.model_conf.post_process
-                                                )
+                    output = model.learn.model.eval()(model.model_conf.transform_input(input))
+                analyzed_pred_out = model._analyze_pred(output,
+                                                        thresh=detect_thresh,
+                                                        nms_overlap=iou_thresh,
+                                                        ret_scores=True,
+                                                        device=model._device,
+                                                        )
             else:
-                output = ssd.learn.pred_batch(batch=(input, target))#, reconstruct=True)
+                output = model.learn.pred_batch(batch=(input, target))
             for i in range(target[0].size(0)):
-                if getattr(ssd, "_is_model_extension", False):
+                if getattr(model, "_is_model_extension", False):
                     op = analyzed_pred_out[i]
                 else:
-                    op = ssd._data.y.analyze_pred((output[0][i], output[1][i]), thresh=detect_thresh, nms_overlap=iou_thresh, ssd=ssd, ret_scores=True, device=ssd._device)
-                tgt_bbox, tgt_clas = ssd._get_y(target[0][i], target[1][i])
+                    op = model._data.y.analyze_pred((output[0][i], output[1][i]), model=model, thresh=detect_thresh, nms_overlap=iou_thresh, ret_scores=True, device=model._device)
+                tgt_bbox, tgt_clas = model._get_y(target[0][i], target[1][i])
                 
                 try:
                     bbox_pred, preds, scores = op
                     if len(bbox_pred) != 0 and len(tgt_bbox) != 0:
-                        ious = ssd._jaccard(bbox_pred, tgt_bbox)
+                        ious = model._jaccard(bbox_pred, tgt_bbox)
                         max_iou, matches = ious.max(1)
                         detected = []
                         for i in range(len(preds)):
@@ -460,208 +406,10 @@ def kmeans(bboxes, num_anchor):
         if (prev_centroids == cur_centroids).all() :
             return centroids
         
-        centroid_sums = np.zeros((num_points, dim), np.float)
+        centroid_sums = np.zeros((num_points, dim), np.float) #num_points needs to be num_anchors
         for i in range(num_points):
             centroid_sums[cur_centroids[i]] += bboxes[i]
         for i in range(num_anchor):
             centroids[i] = centroid_sums[i]/(np.sum(cur_centroids == i) + 1e-6)
             
         prev_centroids = cur_centroids.copy()
-    
-def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs): # parameters adjusted in kwargs
-    from matplotlib import pyplot as plt
-    from matplotlib import patheffects
-
-    # Get Number of items
-    ncols = 2
-
-    type_data_loader = kwargs.get('data_loader', 'validation') # options : traininig, validation, testing
-    if type_data_loader == 'training':
-        data_loader = self._data.train_dl
-    elif type_data_loader == 'validation':
-        data_loader = self._data.valid_dl
-    elif type_data_loader == 'testing':
-        data_loader = self._data.test_dl
-    else:
-        e = Exception(f'could not find {type_data_loader} in data. Please ensure that the data loader type is traininig, validation or testing ')
-        raise(e)
-
-    nodata = kwargs.get('nodata', 0)
-
-    index = kwargs.get('start_index', 0)
-
-    imsize = kwargs.get('imsize', 4)
-
-    title_font_size = 16
-    _top = 1 - (math.sqrt(title_font_size)/math.sqrt(100*nrows*imsize))
-    top = kwargs.get('top', _top)
-
-    statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
-    label_font_size = kwargs.get('label_font_size', 16)
-    
-    # Get Batch
-    x_batch, y_batch = [], []
-    i = 0
-    dl_iterater = iter(data_loader)
-    while i < nrows:
-        x, y = next(dl_iterater)
-        x_batch.append(x)
-        y_batch.append(y)
-        i+=self._data.batch_size
-    x_batch = torch.cat(x_batch)
-    y_bboxes = []
-    y_classes = []
-    for yb in y_batch:
-        y_bboxes.extend(yb[0])
-        y_classes.extend(yb[1])
-    
-     # Get Predictions
-    # predictions_class_store = []
-    # predictions_confidence_store = []
-    # predictions_activation_store = []
-    # for i in range(0, x_batch.shape[0], self._data.batch_size):
-    #     _classes_sparse, _activations = self.learn.model.eval()(x_batch[i:i+self._data.batch_size])
-    #     _confidences, _classes = _classes_sparse[:, :, 1:].max(dim=-1) # _class_confidences are not used anywhere
-    #     #_confidences = torch.stack([_classes_sparse[:, :, -1], _confidences], dim=-1).max(dim=-1)[0] # Confidence wether there is an object in the anchor box or not
-    #     predictions_confidence_store.append(_confidences)
-    #     predictions_class_store.append(_classes)
-    #     predictions_activation_store.append(_activations)
-    # predictions_activation_store = torch.cat(predictions_activation_store)
-    # predictions_class_store = torch.cat(predictions_class_store)
-    # predictions_confidence_store = torch.cat(predictions_confidence_store)
-    predictions_class_store = []
-    predictions_activation_store = []
-    pred_model_external = []
-    for i in range(0, x_batch.shape[0], self._data.batch_size):
-
-        if self._backend == 'pytorch':
-            if getattr(self, "_is_model_extension", False):
-                _pred_ext = self.learn.model.eval()(self.model_conf.transform_input_multispectral(x_batch[i:i+self._data.batch_size]))
-                analyzed_pred_ext = _analyze_pred(  _pred_ext, 
-                                                    thresh=thresh, 
-                                                    nms_overlap=nms_overlap, 
-                                                    ssd=self, 
-                                                    ret_scores=True,
-                                                    device=self._device,
-                                                    get_pred=self.model_conf.post_process
-                                                    )
-            else:
-                _classes_sparse, _activations = self.learn.model.eval()(x_batch[i:i+self._data.batch_size])
-        elif self._backend == 'tensorflow':
-            from .._utils.fastai_tf_fit import _pytorch_to_tf_batch
-            _classes_sparse, _activations = self.learn.model(_pytorch_to_tf_batch(x_batch[i:i+self._data.batch_size]))
-            _classes_sparse, _activations = _classes_sparse.detach().numpy(), _activations.detach().numpy()
-            _classes_sparse, _activations = torch.tensor(_classes_sparse), torch.tensor(_activations)
-        if getattr(self, "_is_model_extension", False):
-            pred_model_external.extend(analyzed_pred_ext)
-        else:
-            predictions_class_store.append(_classes_sparse)
-            predictions_activation_store.append(_activations)
-    if not getattr(self, "_is_model_extension", False):
-        predictions_activation_store = torch.cat(predictions_activation_store)
-        predictions_class_store = torch.cat(predictions_class_store)
-    # predictions_bbox_store, predictions_class_store, predictions_confidence_store = _analyze_pred((predictions_class_store, predictions_activation_store), thresh=thresh, nms_overlap=nms_overlap, ssd=self, ret_scores=True, device=self._device)
-
-
-    if self._is_multispectral:
-
-        rgb_bands = kwargs.get('rgb_bands', self._data._symbology_rgb_bands)
-
-        e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
-        symbology_bands = []
-        if not ( len(rgb_bands) == 3 or len(rgb_bands) == 1 ):
-            raise(e)
-        for b in rgb_bands:
-            if type(b) == str:
-                b_index = self._bands.index(b)
-            elif type(b) == int:
-                self._bands[b] # To check if the band index specified by the user really exists.
-                b_index = b
-            else:
-                raise(e)
-            b_index = self._data._extract_bands.index(b_index)
-            symbology_bands.append(b_index)
-
-        # Denormalize X
-        x_batch = (self._data._scaled_std_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._data._scaled_mean_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch)
-
-        # Extract RGB Bands
-        symbology_x_batch = x_batch[:, symbology_bands]
-        if statistics_type == 'DRA':
-            shp = symbology_x_batch.shape
-            min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
-            max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
-            symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
-    else:
-        # normalization stats
-        norm_mean = torch.tensor(imagenet_stats[0]).to(x_batch).view(1, -1, 1, 1)
-        norm_std = torch.tensor(imagenet_stats[1]).to(x_batch).view(1, -1, 1, 1)
-        symbology_x_batch = (x_batch * norm_std) + norm_mean
-
-    # Channel first to channel last for plotting
-    symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
-    # Clamp float values to range 0 - 1
-    if symbology_x_batch.mean() < 1:
-        symbology_x_batch = symbology_x_batch.clamp(0, 1)
-    
-    # Squeeze channels if single channel (1, 224, 224) -> (224, 224)
-    if symbology_x_batch.shape[-1] == 1:
-        symbology_x_batch = symbology_x_batch.squeeze()
-
-    # Get color Array
-    color_array = self._data._multispectral_color_array
-    color_array[:, 3] = alpha
-
-    # Size for plotting
-    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
-    fig.suptitle('Ground Truth / Predictions', fontsize=title_font_size)
-    plt.subplots_adjust(top=top)
-    idx=0
-    for r in range(0, nrows):
-        # Plot Ground Truth
-        ax_ground_truth = ax[r][0]
-        ax_ground_truth.axis('off')
-        ax_ground_truth.imshow(symbology_x_batch[idx].cpu().numpy())
-        gt_classes = y_classes[idx][y_classes[idx] > 0]
-        gt_bboxes = y_bboxes[idx][y_classes[idx] > 0]
-        gt_bboxes = (gt_bboxes+1)*.5
-        gt_bboxes = gt_bboxes.clamp(0, 1)*(x_batch.shape[-1]-1)
-        for i, bbox in enumerate(gt_bboxes):
-            xs = bbox[[1, 1, 3, 3, 1]]
-            ys = bbox[[0, 2, 2, 0, 0]]
-            color = self._data._multispectral_color_array[gt_classes[i]]
-            ax_ground_truth.plot(xs.cpu().numpy(), ys.cpu().numpy(), color=color, linewidth=2, path_effects=[patheffects.Stroke(linewidth=3, foreground='black'), patheffects.Normal()])
-            ax_ground_truth.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[gt_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=1, foreground='black'), patheffects.Normal()])
-
-        # Plot Predictions
-        ax_prediction  = ax[r][1]
-        ax_prediction.axis('off')
-
-        ax_prediction.imshow(symbology_x_batch[idx].cpu().numpy())
-        if getattr(self, "_is_model_extension", False):
-            analyzed_prediction = pred_model_external[idx]
-        else:
-            analyzed_prediction = _analyze_pred(
-                (predictions_class_store[idx], predictions_activation_store[idx]), 
-                thresh=thresh, 
-                nms_overlap=nms_overlap, 
-                ssd=self, 
-                ret_scores=True, 
-                device=self._device
-            )
-
-        if analyzed_prediction is not None:
-            predicted_bboxes, predicted_classes, predicted_confidences = analyzed_prediction
-            predicted_bboxes = (predicted_bboxes+1)*.5
-            predicted_bboxes = predicted_bboxes.clamp(0, 1)*(x_batch.shape[-1]-1)
-            if len(predicted_bboxes) > 0:
-                for i, bbox in enumerate(predicted_bboxes):
-                    xs = bbox[[1, 1, 3, 3, 1]]
-                    ys = bbox[[0, 2, 2, 0, 0]]
-                    color = self._data._multispectral_color_array[predicted_classes[i]]
-                    ax_prediction.plot(xs.detach().cpu().numpy(), ys.detach().cpu().numpy(), color=color, linewidth=2, path_effects=[patheffects.Stroke(linewidth=3, foreground='black'), patheffects.Normal()])
-                    ax_prediction.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[predicted_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=1, foreground='black'), patheffects.Normal()])
-            
-        idx+=1
-
-    return ax

@@ -17,12 +17,13 @@ try:
     from fastai.callback import Callback
     from fastai.torch_core import to_cpu, grab_idx
     from fastai.basic_train import loss_batch 
-    from ._ssd_utils import show_results_multispectral, compute_class_AP
+    from ._ssd_utils import compute_class_AP
+    from .._utils.pascal_voc_rectangles import show_results_multispectral
     from .._utils.common import get_multispectral_data_params_from_emd
     from ._arcgis_model import _set_ddp_multigpu, _isnotebook
     import inspect
-
     HAS_FASTAI = True
+    
 except Exception as e:
     HAS_FASTAI = False
 
@@ -36,7 +37,7 @@ class ModelExtension(ArcGISModel):
     model_conf              Object containg the fixed method name ``get_model`` for
                             model defination, fixed method name ``on_batch_begin`` for feding
                             input to the model during training, fixed method name ``transform_input``
-                            for feding input to the model during infrencing/validation, fixed
+                            for feding input to the model during inferencing/validation, fixed
                             method name ``loss`` to return loss value of the model, and finaly
                             fixed method name ``post_process`` to post process the output of the
                             model.
@@ -88,12 +89,15 @@ class ModelExtension(ArcGISModel):
 
                 return {'last_input':last_input, 'last_target':last_target}
 
+    def _analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ret_scores=True, device=None):
+        return self.model_conf.post_process(pred, nms_overlap, thresh, self.learn.data.chip_size, device)
+       
     def _get_emd_params(self):
         import random
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
-        _emd_template["ModelConfiguration"] = "_model_extension_infrencing"
+        _emd_template["ModelConfiguration"] = "_model_extension_inferencing"
         _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template['Classes'] = []
@@ -210,7 +214,7 @@ class ModelExtension(ArcGISModel):
         self._check_requisites()
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
-        self._show_results_modified(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self, get_pred=self.model_conf.post_process)
+        self._show_results_modified(rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self)
 
     def _show_results_multispectral(self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs):
         ax = show_results_multispectral(

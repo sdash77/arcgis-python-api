@@ -138,3 +138,10 @@ SuperResolution
     :members:
     :inherited-members:
     :undoc-members:
+
+YOLOv3
+------------------
+.. autoclass:: arcgis.learn.YOLOv3
+    :members:
+    :inherited-members:
+    :undoc-members:

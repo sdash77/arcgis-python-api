@@ -393,7 +393,7 @@ def compute_class_AP(model, dl, n_classes, show_progress, iou_thresh=0.1, detect
 
             for i in range(target[0].size(0)): # range batch-size
                 #output[0] - classpreds, output[1] - bbox preds
-                op = model._data.y.analyze_pred((output[0][i], output[1][i]), thresh=detect_thresh, nms_overlap=iou_thresh, ssd=model, ret_scores=True, device=model._device)
+                op = model._data.y.analyze_pred((output[0][i], output[1][i]), model=model, thresh=detect_thresh, nms_overlap=iou_thresh, ret_scores=True, device=model._device)
                 #op - bbox preds, class preds, scores
                 
                 # Unpad the targets

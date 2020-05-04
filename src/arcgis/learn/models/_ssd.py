@@ -27,8 +27,9 @@ try:
     from torchvision.models import resnet34
     from torchvision.models import mobilenet_v2
     from torchvision import models
-    from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms
-    from ._ssd_utils import SSDObjectCategoryList, compute_class_AP, SSDHeadv2, kmeans, avg_iou, show_results_multispectral
+    from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList, show_results_multispectral
+    from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, postprocess
+    from ._ssd_utils import compute_class_AP, SSDHeadv2, kmeans, avg_iou
     from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
     from ._arcgis_model import SaveModelCallback, _set_multigpu_callback, _resnet_family, _vgg_family, _densenet_family
@@ -63,7 +64,7 @@ class SingleShotDetector(ArcGISModel):
 
     """
     Creates a Single Shot Detector with the specified grid sizes, zoom scales
-    and aspect  ratios. Based on Fast.ai MOOC Version2 Lesson 9.
+    and aspect ratios. Based on Fast.ai MOOC Version2 Lesson 9.
     
     =====================   ===========================================
     **Argument**            **Description**
@@ -325,7 +326,7 @@ class SingleShotDetector(ArcGISModel):
                 warnings.simplefilter("ignore", UserWarning)
                 
                 sd = ImageList([], path=emd_path.parent.parent).split_by_idx([])
-                data = sd.label_const(0, label_cls=SSDObjectCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
+                data = sd.label_const(0, label_cls=ObjectDetectionCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
 
             data.chip_size = chip_size
             data.class_mapping = class_mapping
@@ -454,6 +455,9 @@ class SingleShotDetector(ArcGISModel):
     def _model_metrics(self):
         return {'average_precision_score': self.average_precision_score(show_progress=False)}
 
+    def _analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ret_scores=True, device=None):
+        return postprocess(pred, model=self, thresh=thresh, nms_overlap=nms_overlap, ret_scores=ret_scores, device=device)
+
     def _get_emd_params(self):
         import random
         _emd_template = {}
@@ -493,7 +497,7 @@ class SingleShotDetector(ArcGISModel):
         self._check_requisites()
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
-        self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
+        self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self)
 
     def _show_results_multispectral(self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs):
         ax = show_results_multispectral(
@@ -695,7 +699,7 @@ class SingleShotDetector(ArcGISModel):
 
         for chip in chips:
             frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
-            bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, ssd=self)[0]
+            bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, model=self)[0]
             if bbox:
                 scores = bbox.scores
                 bboxes, lbls = bbox._compute_boxes()

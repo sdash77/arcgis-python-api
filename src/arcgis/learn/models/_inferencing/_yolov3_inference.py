@@ -203,7 +203,7 @@ class ChildObjectDetector:
             raise Exception('PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision')
 
         import arcgis
-        from arcgis.learn.models import RetinaNet
+        from arcgis.learn.models import YOLOv3
 
         if arcpy.env.processorType == "GPU" and torch.cuda.is_available():
             self.device = torch.device('cuda')
@@ -222,10 +222,9 @@ class ChildObjectDetector:
         if model_as_file and not os.path.isabs(model_path):
             model_path = os.path.abspath(os.path.join(os.path.dirname(model), model_path))
 
-        self.retinanet = RetinaNet.from_model(emd_path=model)
-        self.retinanet.learn.model = self.retinanet.learn.model.to(self.device)
-        self.retinanet.learn.model.eval()
-
+        self.model = YOLOv3.from_model(emd_path=model)
+        self.model.learn.model = self.model.learn.model.to(self.device)
+        self.model.learn.model.eval()
         
     def getParameterInfo(self, required_parameters):
         required_parameters.extend(
@@ -241,7 +240,7 @@ class ChildObjectDetector:
                 {
                     'name': 'threshold',
                     'dataType': 'numeric',
-                    'value': 0.5,
+                    'value': 0.1,
                     'required': False,
                     'displayName': 'Confidence Score Threshold [0.0, 1.0]',
                     'description': 'Confidence score threshold value [0.0, 1.0]'
@@ -258,7 +257,7 @@ class ChildObjectDetector:
                     'name': 'batch_size',
                     'dataType': 'numeric',
                     'required': False,
-                    'value': 64,
+                    'value': 4,
                     'displayName': 'Batch Size',
                     'description': 'Batch Size'
                 },
@@ -279,8 +278,8 @@ class ChildObjectDetector:
     def getConfiguration(self, **scalars):
         self.padding = int(scalars.get('padding', self.json_info['ImageHeight'] // 4)) ## Default padding Imageheight//4.
         self.nms_overlap = float(scalars.get('nms_overlap', 0.1))  ## Default 0.1 NMS Overlap.
-        self.thres = float(scalars.get('threshold', 0.5)) ## Default 0.5 threshold.
-        self.batch_size = int(math.sqrt(int(scalars.get('batch_size', 64)))) ** 2  ## Default 64 batch_size
+        self.thres = float(scalars.get('threshold', 0.1)) ## Default 0.1 threshold.
+        self.batch_size = int(math.sqrt(int(scalars.get('batch_size', 4)))) ** 2  ## Default 4 batch_size
         self.filter_outer_padding_detections = scalars.get('exclude_pad_detections', 'True').lower() in ['true', '1', 't', 'y', 'yes'] ## Default value True 
 
 
@@ -331,11 +330,11 @@ class ChildObjectDetector:
         else:
             batch = norm(batch.transpose(0,2,3,1)).transpose(0, 3, 1, 2)
 
-        batch_classes, batch_bboxes = self.retinanet.learn.model(torch.tensor(batch).to(self.device).float())
+        batch_output = self.model.learn.model(torch.tensor(batch).to(self.device).float())
 
         num_boxes = 0
-        for chip_idx, (clas, bbox) in enumerate(zip(batch_classes, batch_bboxes)):
-            pp_output = self.model._analyze_pred(pred=(clas, bbox), thresh=self.thres, nms_overlap=self.nms_overlap)
+        for chip_idx, output in enumerate(batch_output):            
+            pp_output = self.model._analyze_pred(pred=output, thresh=self.thres, nms_overlap=self.nms_overlap)
             image_bbox = _reconstruct(pp_output, dummy_x, pad_idx=0, classes=['background'] + class_names)
             if not image_bbox is None:            
                 for feature_idx in range(len(image_bbox.data[0])):
