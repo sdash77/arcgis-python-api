@@ -2065,6 +2065,7 @@ class GeoAccessor(object):
         :returns: String
 
         """
+        location = os.path.abspath(path=location)
         return to_featureclass(self,
                                location=location,
                                overwrite=overwrite,
