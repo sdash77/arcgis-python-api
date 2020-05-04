@@ -4492,6 +4492,32 @@ class Raster():
         else:
             raise Exception("`cmap` must be of type `str`")
 
+    _vmin = None
+    @property
+    def vmin(self):
+        """When displaying a 1 band raster with the `cmap` argument specified 
+        on a MapView, vmin and vmax define the data range that the colormap covers.
+        This property is the lower end of that range.
+        """
+        return self._vmin
+
+    @vmin.setter
+    def vmin(self, value):
+        self._vmin = value
+
+    _vmax = None
+    @property
+    def vmax(self):
+        """When displaying a 1 band raster with the `cmap` argument specified 
+        on a MapView, vmin and vmax define the data range that the colormap covers.
+        This property is the upper end of that range.
+        """ 
+        return self._vmax
+
+    @vmax.setter
+    def vmax(self, value):
+        self._vmax = value
+
     _opacity = 1
     @property
     def opacity(self):

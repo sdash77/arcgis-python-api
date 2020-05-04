@@ -1,4 +1,4 @@
-var CdnUrl = "//js.arcgis.com/4.14/";
+var CdnUrl = "//js.arcgis.com/4.15/";
 
 var CdnMainCssUrl = "https:" + CdnUrl + "esri/css/main.css";
 
@@ -11,7 +11,7 @@ var EsriLoaderOptions = {
     }
 }
 
-var minJSAPIVersion = "4.14";
+var minJSAPIVersion = "4.15";
 
 var config = {
     CdnUrl,
