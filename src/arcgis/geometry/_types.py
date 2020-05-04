@@ -185,7 +185,9 @@ class GeometryFactory(type):
     """
     Creates the Geometry Objects Based on JSON
     """
-    def _from_wkb(self, iterable):
+    
+    @staticmethod
+    def _from_wkb(iterable):
         _HASARCPY = True
         try:
             import arcpy
@@ -195,7 +197,8 @@ class GeometryFactory(type):
             return json.loads(arcpy.FromWKB(iterable).JSON)
         return {}
 
-    def _from_wkt(self, iterable):
+    @staticmethod
+    def _from_wkt(iterable):
         _HASARCPY = True
         try:
             import arcpy
@@ -204,8 +207,9 @@ class GeometryFactory(type):
         if _HASARCPY:
             return json.loads(arcpy.FromWKT(iterable).JSON)
         return {}
-
-    def _from_gj(self, iterable):
+    
+    @staticmethod
+    def _from_gj(iterable):
         _HASARCPY = True
         try:
             import arcpy

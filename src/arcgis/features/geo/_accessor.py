@@ -14,7 +14,6 @@ from ._internals import register_dataframe_accessor, register_series_accessor
 from ._array import GeoType
 from ._io.fileops import to_featureclass, from_featureclass, _sanitize_column_names
 from arcgis.geometry import Geometry, SpatialReference, Envelope, Point
-from arcgis.geometry import Geometry, SpatialReference, Envelope, Point
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 _LOGGER = logging.getLogger(__name__)
@@ -2066,6 +2065,7 @@ class GeoAccessor(object):
         :returns: String
 
         """
+        location = os.path.abspath(path=location)
         return to_featureclass(self,
                                location=location,
                                overwrite=overwrite,
@@ -2133,7 +2133,7 @@ class GeoAccessor(object):
         return content.import_data(self._data, folder=folder, title=title, tags=tags)
     # ----------------------------------------------------------------------
     @staticmethod
-    def from_df(df, address_column="address", geocoder=None, sr=None):
+    def from_df(df, address_column="address", geocoder=None, sr=None, geometry_column=None):
         """
         Returns a SpatialDataFrame from a dataframe with an address column.
 
@@ -2147,12 +2147,15 @@ class GeoAccessor(object):
                                 addresses (as strings). The addresses are batch geocoded
                                 using the GIS's first configured geocoder and their
                                 locations used as the geometry of the spatial dataframe.
-                                Ignored if the 'geometry' parameter is also specified.
+                                Ignored if the 'geometry_column' is specified.
         --------------------    ---------------------------------------------------------
         geocoder                Optional Geocoder. The geocoder to be used. If not
                                 specified, the active GIS's first geocoder is used.
         --------------------    ---------------------------------------------------------
         sr                      Optional integer. The WKID of the spatial reference.
+        --------------------    ---------------------------------------------------------
+        geometry_column         Optional String.  The name of the geometry column to 
+                                convert to the arcgis.Geometry Objects (new at version 1.8.1)
         ====================    =========================================================
 
         :returns: DataFrame
@@ -2165,44 +2168,67 @@ class GeoAccessor(object):
         """
         import arcgis
         from arcgis.geocoding import get_geocoders, geocode, batch_geocode
-        if geocoder is None:
-            geocoder = arcgis.env.active_gis._tools.geocoders[0]
-        sr = dict(geocoder.properties.spatialReference)
-        geoms = []
-        if address_column in df.columns:
-            batch_size = geocoder.properties.locatorProperties.MaxBatchSize
-            N = len(df)
+        from arcgis.geometry import Geometry
+        if geometry_column:
+            from arcgis.features import GeoAccessor, GeoSeriesAccessor
+            if sr is None:
+                try:
+                    valid_index = df[geometry_column].first_valid_index()
+                except:
+                    raise ValueError("Column provided is all NULL, please provide a valid column")
+                g = Geometry(df[geometry_column].iloc[valid_index])
+                sr = g.spatial_reference
+                if 'wkid' in sr:
+                    sr = sr['wkid'] or 4326
+                elif 'wkt' in sr:
+                    sr = sr['wkt'] or 4326
+                else:
+                    sr = 4326
+            from ._array import GeoArray
+            df[geometry_column] = GeoArray(df[geometry_column].apply(Geometry))
+            df.spatial.set_geometry(geometry_column)
+            df.spatial.project(sr)
+            return df
+        else:
+                
+            if geocoder is None:
+                geocoder = arcgis.env.active_gis._tools.geocoders[0]
+            sr = dict(geocoder.properties.spatialReference)
             geoms = []
-            for i in range(0, N, batch_size):
-                start = i
-                stop = i + batch_size if i + batch_size < N else N
-                res = batch_geocode(list(df[start:stop][address_column]), geocoder=geocoder)
-                for index in range(len(res)):
-                    try:
-                        address = df.loc[start + index, address_column]
-                    except: # for older versions, fall back to `df.ix`
-                        address = df.ix[start + index, address_column]
-                    try:
-                        loc = res[index]['location']
-                        x = loc['x']
-                        y = loc['y']
-                        geoms.append(arcgis.geometry.Geometry({'x': x, 'y': y, 'spatialReference': sr}))
-
-                    except:
-                        x, y = None, None
+            if address_column in df.columns:
+                batch_size = geocoder.properties.locatorProperties.MaxBatchSize
+                N = len(df)
+                geoms = []
+                for i in range(0, N, batch_size):
+                    start = i
+                    stop = i + batch_size if i + batch_size < N else N
+                    res = batch_geocode(list(df[start:stop][address_column]), geocoder=geocoder)
+                    for index in range(len(res)):
                         try:
-                            loc = geocode(address, geocoder=geocoder)[0]['location']
+                            address = df.loc[start + index, address_column]
+                        except: # for older versions, fall back to `df.ix`
+                            address = df.ix[start + index, address_column]
+                        try:
+                            loc = res[index]['location']
                             x = loc['x']
                             y = loc['y']
+                            geoms.append(arcgis.geometry.Geometry({'x': x, 'y': y, 'spatialReference': sr}))
+    
                         except:
-                            print('Unable to geocode address: ' + address)
-                            pass
-                        geoms.append(None)
-        else:
-            raise ValueError("Address column not found in dataframe")
-        df['SHAPE'] = geoms
-        df.spatial.set_geometry("SHAPE")
-        return df
+                            x, y = None, None
+                            try:
+                                loc = geocode(address, geocoder=geocoder)[0]['location']
+                                x = loc['x']
+                                y = loc['y']
+                            except:
+                                print('Unable to geocode address: ' + address)
+                                pass
+                            geoms.append(None)
+            else:
+                raise ValueError("Address column not found in dataframe")
+            df['SHAPE'] = geoms
+            df.spatial.set_geometry("SHAPE")
+            return df
     # ----------------------------------------------------------------------
     @staticmethod
     def from_xy(df, x_column, y_column, sr=4326):
