@@ -345,6 +345,7 @@ class UnetClassifier(ArcGISModel):
     ## Tensorflow specific functions start ##
     def _intialize_tensorflow(self, data, backbone, pretrained_path, kwargs):
         self._check_tf()
+        self._ignore_mapped_class = []
         
         import tensorflow as tf
         from .._utils.common import get_color_array

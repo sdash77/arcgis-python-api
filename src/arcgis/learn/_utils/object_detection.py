@@ -1,13 +1,11 @@
 
-try:
+from .env import HAS_TENSORFLOW
+if HAS_TENSORFLOW:
     import tensorflow as tf
     from tensorflow.keras.layers import Input, Conv2D, Dropout, ReLU, BatchNormalization, UpSampling2D, Reshape, Layer
     from tensorflow.keras import Model
     from .._utils.fastai_tf_fit import _tf_to_pytorch, _pytorch_to_tf_batch, _pytorch_to_tf
     from .common_tf import NormalizationLayerRGB, UpSample2DToSize
-    HAS_TENSORFLOW = True
-except:
-    HAS_TENSORFLOW = False
 
 try:
     import torch

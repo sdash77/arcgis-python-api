@@ -175,6 +175,7 @@ def denorm_x(imagetensor_batch, self=None):
     -------------------------
     returns denormalized imagetensor_batch
     """
+    from .. import models
     if isinstance(self, models._arcgis_model.ArcGISModel):
         data = self._data
     else:

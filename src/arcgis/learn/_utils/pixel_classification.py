@@ -1,11 +1,8 @@
 import math
-
-try:
+from .env import ARCGIS_ENABLE_TF_BACKEND
+if ARCGIS_ENABLE_TF_BACKEND:
     import tensorflow as tf
     from .common_tf import get_channel_axis
-    HAS_TENSORFLOW = True
-except:
-    HAS_TENSORFLOW = False
 
 try:
     import torch

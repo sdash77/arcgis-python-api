@@ -68,12 +68,10 @@ While redistributing the Work or Derivative Works thereof, You may choose to off
 
 """
 
-from .env import ARCGIS_ENABLE_TF_BACKEND
-try:
+
+from .env import HAS_TENSORFLOW, ARCGIS_ENABLE_TF_BACKEND
+if HAS_TENSORFLOW:
     import tensorflow as tf
-    HAS_TENSORFLOW = True
-except:
-    HAS_TENSORFLOW = False
 
 try:
     from fastai.basics import *
