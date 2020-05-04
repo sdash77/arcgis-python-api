@@ -9,6 +9,7 @@ import logging
 import types
 import tempfile
 import traceback
+import PIL
 
 from ._utils.env import ARCGIS_ENABLE_TF_BACKEND                                                                                                                                            
 
@@ -299,6 +300,12 @@ def _extract_bands_tfm(tensor_batch, band_indices):
     y_batch = tensor_batch[1]
     return (x_batch, y_batch)
 
+def image_without_label(imagefile, ext, not_label_count=[0]):
+    labelfile = imagefile.parents[1] / 'labels' / (imagefile.stem + '.{}'.format(ext))
+    if not os.path.exists(labelfile):
+        not_label_count[0] += 1
+        return False
+    return True
 
 def prepare_tabulardata(
         input_features,
@@ -441,8 +448,9 @@ def prepare_data(path,
                                 document will be replicated for each location.
 
     ---------------------   -------------------------------------------
-    chip_size               Optional integer. Size of the image to train the
-                            model.
+    chip_size               Optional integer, default 224. Size of the image to train the
+                            model. Images are cropped to the specified chip_size. If image size is less
+                            than chip_size, the image size is used as chip_size.
     ---------------------   -------------------------------------------
     val_split_pct           Optional float. Percentage of training data to keep
                             as validation.
@@ -559,9 +567,18 @@ def prepare_data(path,
             dataset_type = stats['MetaDataMode']
 
         with open(path / 'map.txt') as f:
-            line = f.readline()
-
+            while True:
+                line = f.readline()
+                if len(line.split())==2:
+                    break
+                
         right = line.split()[1].split('.')[-1].lower()
+        img_shape = PIL.Image.open((path/(line.split()[0]).replace('\\', os.sep))).size
+        if chip_size > img_shape[0]:
+            chip_size = img_shape[0]
+
+        not_label_count = [0]
+        remove_image_without_label = partial(image_without_label, ext=right, not_label_count=not_label_count)
 
         json_file = path / 'esri_model_definition.emd'
         with open(json_file) as f:
@@ -662,6 +679,23 @@ def prepare_data(path,
                     label_path.append(Path(lbl) / (x.stem + '.{}'.format(ext)))
             return label_path
 
+        label_dirs = []
+        index_dir = {} #for handling calss value with any number
+        for i, k in enumerate(sorted(class_mapping.keys())):
+            label_dirs.append(class_mapping[k])
+            index_dir[k] = i+1
+        label_dir = [os.path.join(path/'labels', lbl) for lbl in label_dirs if os.path.isdir(os.path.join(path/'labels', lbl))]
+        get_y_func = partial(get_labels, label_dirs= label_dir)
+
+        def image_without_label_rcnnmask(imagefile, not_label_count=[0]):
+            label_mask = get_y_func(imagefile)
+            if label_mask == []:
+                not_label_count[0] += 1
+                return False
+            return True
+
+        remove_image_without_label_rcnnmask = partial(image_without_label_rcnnmask, not_label_count=not_label_count)
+
         if class_mapping.get(0):
             del class_mapping[0]
 
@@ -670,22 +704,17 @@ def prepare_data(path,
 
         # Handle Multispectral
         if _is_multispectral:
-            src = (ArcGISInstanceSegmentationMSItemList.from_folder(path/'images')
-                .split_by_rand_pct(val_split_pct, seed=seed))
+            src = (ArcGISInstanceSegmentationMSItemList.from_folder(path/'images')\
+                .filter_by_func(remove_image_without_label_rcnnmask)\
+                .split_by_rand_pct(val_split_pct, seed=seed)\
+                .label_from_func(get_y_func, chip_size=chip_size, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping, index_dir=index_dir))
             _show_batch_multispectral = show_batch_rcnn_masks
         else:
-            src = (ArcGISInstanceSegmentationItemList.from_folder(path/'images')
-                .split_by_rand_pct(val_split_pct, seed=seed))
+            src = (ArcGISInstanceSegmentationItemList.from_folder(path/'images')\
+                .filter_by_func(remove_image_without_label_rcnnmask)\
+                .split_by_rand_pct(val_split_pct, seed=seed)\
+                .label_from_func(get_y_func, chip_size=chip_size, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping, index_dir=index_dir))
 
-        label_dirs = []
-        index_dir = {} #for handling calss value with any number
-        for i, k in enumerate(sorted(class_mapping.keys())):
-            label_dirs.append(class_mapping[k])
-            index_dir[k] = i+1
-        label_dir = [os.path.join(path/'labels', lbl) for lbl in label_dirs if os.path.isdir(os.path.join(path/'labels', lbl))]
-        get_y_func = partial(get_labels, label_dirs= label_dir)
-        src = src.label_from_func(get_y_func, chip_size=chip_size, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping, index_dir=index_dir)
-    
     elif dataset_type == 'Classified_Tiles':
 
         def get_y_func(x, ext=right):
@@ -705,6 +734,7 @@ def prepare_data(path,
         # Handle Multispectral
         if _is_multispectral:
             data = ArcGISSegmentationMSItemList.from_folder(path/'images')\
+                .filter_by_func(remove_image_without_label)\
                 .split_by_rand_pct(val_split_pct, seed=seed)\
                 .label_from_func(
                     get_y_func, classes=(['NoData'] + list(class_mapping.values())),
@@ -719,6 +749,7 @@ def prepare_data(path,
             databunch_kwargs['collate_fn'] = classified_tiles_collate_fn
         else:
             data = ArcGISSegmentationItemList.from_folder(path/'images')\
+                .filter_by_func(remove_image_without_label)\
                 .split_by_rand_pct(val_split_pct, seed=seed)\
                 .label_from_func(
                     get_y_func, classes=(['NoData'] + list(class_mapping.values())),
@@ -744,15 +775,6 @@ def prepare_data(path,
         kwargs_transforms['size'] = chip_size
     elif dataset_type == 'PASCAL_VOC_rectangles':
 
-        def image_without_label(imagefile, not_label_count=[0]):
-            xmlfile = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), '.xml')
-            if not os.path.exists(xmlfile):
-                not_label_count[0] += 1
-                return False
-            return True
-
-        not_label_count = [0]
-        remove_image_without_label = partial(image_without_label, not_label_count=not_label_count)
         get_y_func = partial(
             _get_bbox_lbls,
             class_mapping=class_mapping,
@@ -769,10 +791,6 @@ def prepare_data(path,
             data = ObjectDetectionItemList.from_folder(path/'images')\
                 .split_by_rand_pct(val_split_pct, seed=seed)\
                 .label_from_func(get_y_func)
-
-        if not_label_count[0]:
-            logger = logging.getLogger()
-            logger.warning("Please check your dataset. " + str(not_label_count[0]) + " images dont have the corresponding label files.")
 
         if transforms is None:
             ranges = (0, 1)
@@ -1118,6 +1136,10 @@ def prepare_data(path,
         if [data._bands[i] for i in data._extract_bands] == ['r', 'g', 'b']:
             _train_tail = False
         data._train_tail = kwargs.get('train_tail', _train_tail)
+
+    if not_label_count[0]:
+        logger = logging.getLogger()
+        logger.warning("Please check your dataset. " + str(not_label_count[0]) + " images dont have the corresponding label files.")
 
     data._image_space_used = _image_space_used
 
