@@ -373,7 +373,7 @@ class ImageryLayer(Layer):
                     break
                 elif ('serverFunction' in ds._server.keys()) and 'RasterAnalytics' in ds._server['serverFunction']:
                     raster_analytics_server_url = ds._server['url']
-                elif ('serverFunction' in ds._server.keys()) and ds._server['serverFunction'] is '':
+                elif ('serverFunction' in ds._server.keys()) and ds._server['serverFunction'] == '':
                     hosting_server_url = ds._server['url']
             if image_hosting_server_url:
                 url = image_hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"

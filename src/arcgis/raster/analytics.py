@@ -488,15 +488,15 @@ def _set_output_raster(output_name, task, gis, output_properties=None):
     return output_raster, output_service
 
 def _save_ra(raster_function,output_name=None, other_outputs=None,gis=None, future=False, **kwargs):
-    if raster_function['rasterFunctionArguments']['toolName'] is "FlowDirection_sa":
+    if raster_function['rasterFunctionArguments']['toolName'] == "FlowDirection_sa":
         return _flow_direction_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, future=future, **kwargs)
-    if raster_function['rasterFunctionArguments']['toolName'] is "CalculateTravelCost_sa":
+    if raster_function['rasterFunctionArguments']['toolName'] == "CalculateTravelCost_sa":
         return _calculate_travel_cost_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis,future=future, **kwargs)
-    if raster_function['rasterFunctionArguments']['toolName'] is "CalculateDistance_sa":
+    if raster_function['rasterFunctionArguments']['toolName'] == "CalculateDistance_sa":
         return _calculate_distance_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis,future=future, **kwargs)
-    if raster_function['rasterFunctionArguments']['toolName'] is "DistanceAccumulation_sa":
+    if raster_function['rasterFunctionArguments']['toolName'] == "DistanceAccumulation_sa":
         return _distance_accumulation_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, **kwargs)
-    if raster_function['rasterFunctionArguments']['toolName'] is "DistanceAllocation_sa":
+    if raster_function['rasterFunctionArguments']['toolName'] == "DistanceAllocation_sa":
         return _distance_allocation_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, **kwargs)
 
 

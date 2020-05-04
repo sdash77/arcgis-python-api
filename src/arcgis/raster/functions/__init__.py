@@ -5626,7 +5626,7 @@ class RFT:
                                 elif "function" in e.keys(): # if function template inside
                                     _function_traversal(e)
                                 else:  #if raster dataset inside raster array
-                                    if function_arg_type is "LocalFunctionArguments":
+                                    if function_arg_type == "LocalFunctionArguments":
                                         if self._is_public_flag is False or ispublic==True or ("isPublic" not in e.keys()) or (("isPublic" in e.keys()) and e["isPublic"] is True):
                                             _raster_function_traversal(e,  index, scalar_name, ispublic=True)
                                     elif self._is_public_flag is False or ispublic==True or ("isPublic" not in raster_dict.keys()) or (("isPublic" in raster_dict.keys()) and raster_dict["isPublic"] is True):
