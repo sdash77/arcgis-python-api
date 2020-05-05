@@ -9,8 +9,9 @@ ARCGIS_ENABLE_TF_BACKEND = os.environ.get('ARCGIS_ENABLE_TF_BACKEND') is '1'
 HAS_TENSORFLOW = False
 tf_import_exception = None
 try:
-    import tensorflow as tf
-    HAS_TENSORFLOW = True
+    if ARCGIS_ENABLE_TF_BACKEND:
+        import tensorflow as tf
+        HAS_TENSORFLOW = True
 except Exception as e:
     tf_import_exception = traceback.format_exc()
     pass
@@ -47,12 +48,22 @@ def tf_set_gpu_memory_growth():
             print(e)
 
 def raise_tensorflow_import_error():
-    message = """
-    Could not find tensorflow, Please install tensorflow using the following command 
-    \nconda install -c esri tensorflow-gpu=2.1.0
-    """
-    ex = Exception(message)
-    raise(ex)
+    if ARCGIS_ENABLE_TF_BACKEND:
+        message = """
+        Could not find tensorflow, Please install tensorflow using the following command 
+        \nconda install -c esri tensorflow-gpu=2.1.0
+        """
+        ex = Exception(message)
+        raise(ex)
+    else:
+        message = """
+        Please enable tensorflow by setting the required environment variable 'ARCGIS_ENABLE_TF_BACKEND' to '1' before importing arcgis
+        \n for example the following code block needs to be executed before importing arcgis
+        \n\n`import os; os.environ['ARCGIS_ENABLE_TF_BACKEND'] = '1'`
+        """
+        ex = Exception(message)
+        raise(ex)
+
 
 def tf_sample_op():
     a = tf.keras.layers.Conv2D(1, (3, 3))

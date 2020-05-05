@@ -1,6 +1,5 @@
 # necessary imports
 import os
-import PIL
 import json
 import random
 import warnings
@@ -13,6 +12,7 @@ from ._arcgis_model import ArcGISModel
 
 HAS_OPENCV = True
 HAS_FASTAI = True
+HAS_PIL = True
 
 try:
     import torch
@@ -35,8 +35,13 @@ except Exception as e:
 
 try:
     import cv2
-except:
+except ImportError:
     HAS_OPENCV = False
+
+try:
+    import PIL
+except ImportError:
+    HAS_PIL = False
 
 # Yolov3 model
 class YOLOv3(ArcGISModel):
@@ -214,6 +219,9 @@ class YOLOv3(ArcGISModel):
 
         if not HAS_OPENCV:
             raise Exception("This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24")
+
+        if not HAS_PIL:
+            raise Exception("This function requires PIL. Please install it via pip or conda")
 
         if isinstance(image_path, str):
             image = cv2.imread(image_path)

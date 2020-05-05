@@ -213,7 +213,7 @@ def segment_image(model, images, device, predict_bg, model_info):
     model = model.to(device)
     normed_batch_tensor = tensor(images).to(device).float()
     output = model(normed_batch_tensor)
-    ignore_mapped_class = model_info['ignore_mapped_class']
+    ignore_mapped_class = model_info.get('ignore_mapped_class', [])
     for k in ignore_mapped_class:
         output[:, k] = -1
     if predict_bg:

@@ -1,8 +1,11 @@
-import tensorflow as tf
-from tensorflow.keras.layers import Layer
-from tensorflow.keras import applications
-import inspect
-from .._utils.fastai_tf_fit import _pytorch_to_tf_batch
+
+from .env import HAS_TENSORFLOW
+if HAS_TENSORFLOW:
+    import tensorflow as tf
+    from tensorflow.keras.layers import Layer
+    from tensorflow.keras import applications
+    import inspect
+    from .._utils.fastai_tf_fit import _pytorch_to_tf_batch
 
 
 ## Layers Start ##

@@ -5121,7 +5121,7 @@ def optimal_region_connections(input_region_data,
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_region_data                       Required ImageryLayer or Feature Layer object. Portal Item can be passed.
+    input_region_data                        Required ImageryLayer or Feature Layer object. Portal Item can be passed.
                                              The input regions to be connected by the optimal network.
 
                                              If the region input is a raster, the regions are defined by groups 
@@ -5232,9 +5232,7 @@ def optimal_region_connections(input_region_data,
                                              results will be returned asynchronously.
     ====================================     ====================================================================
 
-    :return: Returns the following as a named tuple - 
-             - output_optimum_network_features
-             - output_neighbor_network_features
+    :return: Returns the following as a named tuple - output_optimum_network_features, output_neighbor_network_features
 
     """
 
@@ -5744,6 +5742,7 @@ def sample(input_rasters,
     The input rasters can be two-dimensional or multidimensional. 
     The structure of the output table changes when the input rasters are multidimensional.
     Function available in ArcGIS Image Server 10.8.1 and higher.
+
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
@@ -5798,9 +5797,9 @@ def sample(input_rasters,
                                                 - STD - Calculates the standard deviation.
                                                 - PERCENTILE - Calculates a defined percentile within the specified range.
     ------------------------------------     --------------------------------------------------------------------
-    percentile_value                          Optional int. The percentile to calculate when the  
-                                              statistics_type parameter is set to PERCENTILE.
-                                              This value can range from 0 to 100. The default is 90. 
+    percentile_value                         Optional int. The percentile to calculate when the  
+                                             statistics_type parameter is set to PERCENTILE.
+                                             This value can range from 0 to 100. The default is 90. 
     ------------------------------------     --------------------------------------------------------------------
     buffer_distance                          Optional int. The specified distance around the location data 
                                              features. The buffer distance is specified in the linear unit 
@@ -5834,6 +5833,7 @@ def sample(input_rasters,
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
     ====================================     ====================================================================
+
     :return: Feature Layer or Table object
     """
 
