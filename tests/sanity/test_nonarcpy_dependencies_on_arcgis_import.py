@@ -71,7 +71,7 @@ def test_minimal_install():
     In theory, the basic functionality of the Python API can be used with
     just `six` in the environment
     """
-    mods_import_errors = ['pandas', 'fastai', 'numpy', 'shapely', 
+    mods_import_errors = ['pandas', 'fastai', 'numpy', 'shapely', 'PIL',
                           'arcpy', 'matplotlib', 'ipywidgets', 'keyring']
  
     try:
@@ -85,7 +85,6 @@ def test_minimal_install():
         from arcgis.gis import GIS
 
         gis = GIS()
-        #gis2 = GIS("https://pythonapi.playground.esri.com/portal")
 
         builtins.__import__ = __import__real
         clear_arcgis_import_cache()
