@@ -27,7 +27,7 @@ try:
     from .models._ner_utils import ner_prepare_data
     from ._utils.pascal_voc_rectangles import ObjectDetectionItemList
     from .models._superres_utils import resize_one
-    from ._utils.common import ArcGISMSImageList
+    from ._utils.common import ArcGISMSImageList, ArcGISMSImage
     from ._utils.classified_tiles import show_batch_classified_tiles
     from ._utils.labeled_tiles import show_batch_labeled_tiles
     from ._utils.rcnn_masks import show_batch_rcnn_masks
@@ -38,6 +38,7 @@ try:
     from fastai.tabular import cont_cat_split, add_datepart
     from ._utils.tabular_data import TabularDataObject
     import random
+    import PIL
     HAS_FASTAI = True
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -441,8 +442,9 @@ def prepare_data(path,
                                 document will be replicated for each location.
 
     ---------------------   -------------------------------------------
-    chip_size               Optional integer. Size of the image to train the
-                            model.
+    chip_size               Optional integer, default 224. Size of the image to train the
+                            model. Images are cropped to the specified chip_size. If image size is less
+                            than chip_size, the image size is used as chip_size.
     ---------------------   -------------------------------------------
     val_split_pct           Optional float. Percentage of training data to keep
                             as validation.
@@ -513,6 +515,7 @@ def prepare_data(path,
 
     """
     height_width = []
+    not_label_count = [0]
 
     if not HAS_FASTAI:
         _raise_fastai_import_error()
@@ -559,8 +562,16 @@ def prepare_data(path,
             dataset_type = stats['MetaDataMode']
 
         with open(path / 'map.txt') as f:
-            line = f.readline()
-
+            while True:
+                line = f.readline()
+                if len(line.split())==2:
+                    break
+        try:
+            img_size = ArcGISMSImage.open_gdal((path/(line.split()[0]).replace('\\', os.sep))).shape[-1]
+        except:            
+            img_size = PIL.Image.open((path/(line.split()[0]).replace('\\', os.sep))).size[-1]
+        if chip_size > img_size:
+            chip_size = img_size
         right = line.split()[1].split('.')[-1].lower()
 
         json_file = path / 'esri_model_definition.emd'
@@ -662,6 +673,23 @@ def prepare_data(path,
                     label_path.append(Path(lbl) / (x.stem + '.{}'.format(ext)))
             return label_path
 
+        label_dirs = []
+        index_dir = {} #for handling calss value with any number
+        for i, k in enumerate(sorted(class_mapping.keys())):
+            label_dirs.append(class_mapping[k])
+            index_dir[k] = i+1
+        label_dir = [os.path.join(path/'labels', lbl) for lbl in label_dirs if os.path.isdir(os.path.join(path/'labels', lbl))]
+        get_y_func = partial(get_labels, label_dirs= label_dir)
+
+        def image_without_label(imagefile, not_label_count=[0]):
+            label_mask = get_y_func(imagefile)
+            if label_mask == []:
+                not_label_count[0] += 1
+                return False
+            return True
+        
+        remove_image_without_label = partial(image_without_label, not_label_count=not_label_count)
+
         if class_mapping.get(0):
             del class_mapping[0]
 
@@ -671,25 +699,29 @@ def prepare_data(path,
         # Handle Multispectral
         if _is_multispectral:
             src = (ArcGISInstanceSegmentationMSItemList.from_folder(path/'images')
-                .split_by_rand_pct(val_split_pct, seed=seed))
+                .filter_by_func(remove_image_without_label)
+                .split_by_rand_pct(val_split_pct, seed=seed)
+                .label_from_func(get_y_func, chip_size=chip_size, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping, index_dir=index_dir))
             _show_batch_multispectral = show_batch_rcnn_masks
         else:
             src = (ArcGISInstanceSegmentationItemList.from_folder(path/'images')
-                .split_by_rand_pct(val_split_pct, seed=seed))
-
-        label_dirs = []
-        index_dir = {} #for handling calss value with any number
-        for i, k in enumerate(sorted(class_mapping.keys())):
-            label_dirs.append(class_mapping[k])
-            index_dir[k] = i+1
-        label_dir = [os.path.join(path/'labels', lbl) for lbl in label_dirs if os.path.isdir(os.path.join(path/'labels', lbl))]
-        get_y_func = partial(get_labels, label_dirs= label_dir)
-        src = src.label_from_func(get_y_func, chip_size=chip_size, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping, index_dir=index_dir)
+                .filter_by_func(remove_image_without_label)
+                .split_by_rand_pct(val_split_pct, seed=seed)
+                .label_from_func(get_y_func, chip_size=chip_size, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping, index_dir=index_dir))
     
     elif dataset_type == 'Classified_Tiles':
 
         def get_y_func(x, ext=right):
             return x.parents[1] / 'labels' / (x.stem + '.{}'.format(ext))
+
+        def image_without_label(imagefile, not_label_count=[0], ext=right):
+            xmlfile = imagefile.parents[1] / 'labels' / (imagefile.stem + '.{}'.format(ext))
+            if not os.path.exists(xmlfile):
+                not_label_count[0] += 1
+                return False
+            return True
+        
+        remove_image_without_label = partial(image_without_label, not_label_count=not_label_count)
 
         if class_mapping.get(0):
             del class_mapping[0]
@@ -705,6 +737,7 @@ def prepare_data(path,
         # Handle Multispectral
         if _is_multispectral:
             data = ArcGISSegmentationMSItemList.from_folder(path/'images')\
+                .filter_by_func(remove_image_without_label)\
                 .split_by_rand_pct(val_split_pct, seed=seed)\
                 .label_from_func(
                     get_y_func, classes=(['NoData'] + list(class_mapping.values())),
@@ -719,6 +752,7 @@ def prepare_data(path,
             databunch_kwargs['collate_fn'] = classified_tiles_collate_fn
         else:
             data = ArcGISSegmentationItemList.from_folder(path/'images')\
+                .filter_by_func(remove_image_without_label)\
                 .split_by_rand_pct(val_split_pct, seed=seed)\
                 .label_from_func(
                     get_y_func, classes=(['NoData'] + list(class_mapping.values())),
@@ -751,7 +785,6 @@ def prepare_data(path,
                 return False
             return True
 
-        not_label_count = [0]
         remove_image_without_label = partial(image_without_label, not_label_count=not_label_count)
         get_y_func = partial(
             _get_bbox_lbls,
@@ -767,12 +800,9 @@ def prepare_data(path,
             _show_batch_multispectral = show_batch_pascal_voc_rectangles
         else:
             data = ObjectDetectionItemList.from_folder(path/'images')\
+                .filter_by_func(remove_image_without_label)\
                 .split_by_rand_pct(val_split_pct, seed=seed)\
                 .label_from_func(get_y_func)
-
-        if not_label_count[0]:
-            logger = logging.getLogger()
-            logger.warning("Please check your dataset. " + str(not_label_count[0]) + " images dont have the corresponding label files.")
 
         if transforms is None:
             ranges = (0, 1)
@@ -993,7 +1023,7 @@ def prepare_data(path,
             data = (src.transform(size=chip_size, tfm_y=True)
                 .databunch(**databunch_kwargs))
         else:
-            data = (src.transform(transforms, size=chip_size, tfm_y=True) 
+            data = (src.transform(transforms, tfm_y=True) 
                     .databunch(**databunch_kwargs))
         data.show_batch = types.MethodType( show_batch_rcnn_masks, data )
 
@@ -1118,6 +1148,10 @@ def prepare_data(path,
         if [data._bands[i] for i in data._extract_bands] == ['r', 'g', 'b']:
             _train_tail = False
         data._train_tail = kwargs.get('train_tail', _train_tail)
+
+    if not_label_count[0]:
+            logger = logging.getLogger()
+            logger.warning("Please check your dataset. " + str(not_label_count[0]) + " images dont have the corresponding label files.")
 
     data._image_space_used = _image_space_used
 
