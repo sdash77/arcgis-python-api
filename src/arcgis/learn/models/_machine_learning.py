@@ -11,6 +11,7 @@ from arcgis.features import FeatureLayer
 HAS_SK_LEARN = True
 try:
     import sklearn
+    from sklearn import *
 except:
     HAS_SK_LEARN = False
 
@@ -28,7 +29,7 @@ def _get_model_type(model_type, **kwargs):
         raise Exception("Invalid model type.")
 
     if not isinstance(model_type, str):
-        return model_type(**kwargs), str(model_type)
+        return model_type(**kwargs)
 
     if not model_type.startswith('sklearn.'):
         raise Exception("Invalid model_type.")
@@ -48,7 +49,7 @@ def _get_model_type(model_type, **kwargs):
 
     model = getattr(getattr(sklearn, module), model)
 
-    return model(**kwargs), str(model)
+    return model(**kwargs)
 
 
 def raise_data_exception():
@@ -87,9 +88,8 @@ class MLModel(object):
         self._data = data
         if kwargs.get('pretrained_model'):
             self._model = kwargs.get('pretrained_model')
-            self._model_name = kwargs.get('ModelName')
         else:
-            self._model, self._model_name = _get_model_type(model_type, **kwargs)
+            self._model = _get_model_type(model_type, **kwargs)
 
         self._training_data, self._training_labels, self._validation_data, self._validation_labels = self._data._ml_data
 
@@ -184,7 +184,7 @@ class MLModel(object):
         emd_params = {}
         emd_params['score'] = self.score()
         emd_params['_is_classification'] = "classification" if self._data._is_classification else "regression"
-        emd_params['ModelName'] = self._model_name
+        emd_params['ModelName'] = type(self._model).__name__
         emd_params['ModelFile'] = base_file_name + '.pkl'
         emd_params['ModelParameters'] = self._model.get_params()
         emd_params['categorical_variables'] = self._data._categorical_variables
@@ -369,8 +369,7 @@ class MLModel(object):
                 if column_name not in continuous_variables:
                     categorical = True
             elif match_field_names and match_field_names.get(column_name):
-                column_name = match_field_names.get(column_name)
-                if column_name not in continuous_variables:
+                if match_field_names.get(column_name) not in continuous_variables:
                     categorical = True
             else:
                 continue
