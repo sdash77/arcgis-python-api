@@ -181,6 +181,7 @@ class TabularDataObject(object):
         else:
             _procs = self._procs
 
+        self._encoder_mapping = None
         if self._categorical_variables:
             mapping = {}
             for variable in self._categorical_variables:

@@ -17,6 +17,8 @@ try:
     from fastai.basic_train import Learner, load_learner
     from fastprogress.fastprogress import progress_bar
     from .._utils.tabular_data import TabularDataObject
+    import torch
+    from fastai.metrics import r2_score
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
@@ -340,8 +342,7 @@ class FullyConnectedNetwork(ArcGISModel):
                 if column_name not in continuous_variables:
                     categorical = True
             elif match_field_names and match_field_names.get(column_name):
-                column_name = match_field_names.get(column_name)
-                if column_name not in continuous_variables:
+                if match_field_names.get(column_name) not in continuous_variables:
                     categorical = True
             else:
                 continue
@@ -510,17 +511,9 @@ class FullyConnectedNetwork(ArcGISModel):
         validation_dataframe = self._data._dataframe.loc[self._data._validation_indexes].reset_index(drop=True)
 
         predictions = np.array(self._df_predict(validation_dataframe))
-        labels = self._data._dataframe[self._data._dependent_variable]
+        labels = validation_dataframe[self._data._dependent_variable]
 
         if self._data._is_classification:
             return (np.array(predictions)==labels).mean()
         else:
-            mse = 0
-            for i in range(len(predictions)):
-                abs_diff = abs(predictions[i] - labels[i])
-                mse = mse + abs_diff**2
-            mse = mse/len(predictions)
-            return mse
-
-
-
+            return float(r2_score(torch.tensor(np.array(predictions)), torch.tensor(np.array(labels))))
