@@ -206,17 +206,20 @@ class TabularDataObject(object):
         if not HAS_SK_LEARN:
             raise Exception("This module requires scikit-learn.")
 
-        numerical_transformer = make_pipeline(
-            SimpleImputer(strategy='median'),
-            Normalizer())
+        if not self._procs:
+            numerical_transformer = make_pipeline(
+                SimpleImputer(strategy='median'),
+                Normalizer())
 
-        categorical_transformer = make_pipeline(
-            SimpleImputer(strategy='constant')
-        )
+            categorical_transformer = make_pipeline(
+                SimpleImputer(strategy='constant')
+            )
 
-        _procs = make_column_transformer(
-            (numerical_transformer, self._continuous_variables),
-            (categorical_transformer, self._categorical_variables))
+            _procs = make_column_transformer(
+                (numerical_transformer, self._continuous_variables),
+                (categorical_transformer, self._categorical_variables))
+        else:
+            _procs = self._procs
 
         if self._encoder_mapping:
             for variable, encoder in self._encoder_mapping.items():
@@ -411,12 +414,13 @@ class TabularDataObject(object):
         return data_bunch
 
     @classmethod
-    def _empty(cls, categorical_variables, continuous_variables, dependent_variable, encoder_mapping):
+    def _empty(cls, categorical_variables, continuous_variables, dependent_variable, encoder_mapping, procs=None):
         class_object = cls()
         class_object._dependent_variable = dependent_variable
         class_object._continuous_variables = continuous_variables
         class_object._categorical_variables = categorical_variables
         class_object._encoder_mapping = encoder_mapping
         class_object._is_empty = True
+        class_object._procs = procs
 
         return class_object
