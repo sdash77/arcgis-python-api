@@ -228,8 +228,11 @@ class EntityRecognizer(ArcGISModel):
                 self.recorder.metrics['recall_score'].append(recall_score)
                 self.recorder.metrics['f1_score'].append(f1_score)
                 self.recorder.metrics['metrics_per_label'].append(metrics_per_label)
-                mb.write([itn, round(train_loss,2), round(val_loss,2), round(precision_score/100,2)
-                        , round(recall_score/100,2), round(f1_score/100,2)],table=True)
+                line=[itn, round(train_loss,2), round(val_loss,2), round(precision_score/100,2)
+                        , round(recall_score/100,2), round(f1_score/100,2)]
+                line=[str(val) for val in line]
+                mb.write(line,table=True)
+
         if  not lr_find:
             self._trained = True
             self.model = nlp
