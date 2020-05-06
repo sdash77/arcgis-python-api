@@ -164,7 +164,7 @@ class RetinaNet(ArcGISModel):
         return {'accuracy': self.average_precision_score(show_progress=False)}
 
     def _analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ret_scores=True, device=None):
-        return get_predictions(pred, 0, crit=self._loss_f, detect_thresh=thresh, nms_overlap=nms_overlap)
+        return get_predictions(pred, crit=self._loss_f, detect_thresh=thresh, nms_overlap=nms_overlap)
 
     @classmethod
     def from_model(cls, emd_path, data=None):
