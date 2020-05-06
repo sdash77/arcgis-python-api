@@ -5,11 +5,12 @@ import os
 import copy
 import uuid
 import shutil
+import logging
 import datetime
 import tempfile
 import pandas as pd
 import numpy as np
-import logging
+from collections.abc import Iterable
 from ._internals import register_dataframe_accessor, register_series_accessor
 from ._array import GeoType
 from ._io.fileops import to_featureclass, from_featureclass, _sanitize_column_names
@@ -2178,9 +2179,11 @@ class GeoAccessor(object):
                     raise ValueError("Column provided is all NULL, please provide a valid column")
                 g = Geometry(df[geometry_column].iloc[valid_index])
                 sr = g.spatial_reference
-                if 'wkid' in sr:
+                if isinstance(sr, Iterable) and \
+                   'wkid' in sr:
                     sr = sr['wkid'] or 4326
-                elif 'wkt' in sr:
+                elif isinstance(sr, Iterable) and \
+                     'wkt' in sr:
                     sr = sr['wkt'] or 4326
                 else:
                     sr = 4326
@@ -3281,6 +3284,8 @@ class GeoAccessor(object):
         Reprojects the who dataset into a new spatial reference. This is an inplace operation meaning
         that it will update the defined geometry column from the `set_geometry`.
 
+        **This requires ArcPy or pyproj v4**
+
         ====================     ====================================================================
         **Argument**             **Description**
         --------------------     --------------------------------------------------------------------
@@ -3292,14 +3297,29 @@ class GeoAccessor(object):
 
         :returns: boolean
         """
+        HASARCPY, HASSHAPELY = self._check_geometry_engine()
+        HASPYPROJ = True
         try:
-            if isinstance(spatial_reference, (int, str)):
+            import imp 
+            imp.find_module('pyproj')
+        except ImportError:
+            HASPYPROJ = False
+        try:
+            
+            if isinstance(spatial_reference, (int, str)) and HASARCPY:
                 import arcpy
                 spatial_reference = arcpy.SpatialReference(spatial_reference)
-            vals = self._data[self.name].values.project_as(**{'spatial_reference' : spatial_reference,
-                                                              'transformation_name' : transformation_name})
-            self._data[self.name] = vals
-            return True
+                vals = self._data[self.name].values.project_as(**{'spatial_reference' : spatial_reference,
+                                                                  'transformation_name' : transformation_name})
+                self._data[self.name] = vals
+                return True
+            elif isinstance(spatial_reference, (int, str)) and HASPYPROJ:
+                vals = self._data[self.name].values.project_as(**{'spatial_reference' : spatial_reference,
+                                                                  'transformation_name' : transformation_name})
+                self._data[self.name] = vals
+                return True
+            else:
+                return False
         except Exception as e:
             raise Exception(e)
 
