@@ -23,27 +23,6 @@ User
     :undoc-members:
     :show-inheritance:
 
-UserTasks
----------------------------
-.. autoclass:: arcgis.gis._impl._schedule.UserTasks
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-Task
----------------------------
-.. autoclass:: arcgis.gis._impl._schedule.Task, Run
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-Run
----------------------------
-.. autoclass:: arcgis.gis._impl._schedule.Run
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 Group
 ----------------
 .. autoclass:: arcgis.gis.Group
@@ -164,4 +143,5 @@ Submodules
    arcgis.gis.server
    arcgis.gis.mission
    arcgis.gis.nb
+   arcgis.gis.tasks
 
