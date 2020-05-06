@@ -5,11 +5,12 @@ import os
 import copy
 import uuid
 import shutil
+import logging
 import datetime
 import tempfile
 import pandas as pd
 import numpy as np
-import logging
+from collections.abc import Iterable
 from ._internals import register_dataframe_accessor, register_series_accessor
 from ._array import GeoType
 from ._io.fileops import to_featureclass, from_featureclass, _sanitize_column_names
@@ -2178,9 +2179,11 @@ class GeoAccessor(object):
                     raise ValueError("Column provided is all NULL, please provide a valid column")
                 g = Geometry(df[geometry_column].iloc[valid_index])
                 sr = g.spatial_reference
-                if 'wkid' in sr:
+                if isinstance(sr, Iterable) and \
+                   'wkid' in sr:
                     sr = sr['wkid'] or 4326
-                elif 'wkt' in sr:
+                elif isinstance(sr, Iterable) and \
+                     'wkt' in sr:
                     sr = sr['wkt'] or 4326
                 else:
                     sr = 4326
