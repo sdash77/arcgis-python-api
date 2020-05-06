@@ -6669,14 +6669,14 @@ class User(dict):
     #----------------------------------------------------------------------
     @property
     def tasks(self):
-        """provides access to the schedule tasks"""
+        """The resource manager for user's tasks. See :class:`~arcgis.gis.tasks.TaskManager`."""
         if str(self.role).lower() == 'org_admin' or \
            self._gis.properties['user']:
             url = f"{self._gis._portal.resturl}community/users/{self.username}/tasks"
-            from ._impl._schedule import UserTasks
-            return UserTasks(url=url,
-                             user=self,
-                             gis=self._gis)
+            from .tasks import TaskManager
+            return TaskManager(url=url,
+                               user=self,
+                               gis=self._gis)
         return None
     #----------------------------------------------------------------------
     @property
