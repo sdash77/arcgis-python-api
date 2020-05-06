@@ -255,7 +255,7 @@ def tf_fit(epochs, model, loss_func, opt, data, callbacks, metrics):
 class TfLearner():
     "Train `model` using `data` to minimize `loss_func` with optimizer `opt_func`."
     data:DataBunch
-    model:tf.keras.Model
+    model:'keras_model'
     opt_func:Callable
     loss_func:Callable
     metrics:Collection[Callable]=None
@@ -267,7 +267,7 @@ class TfLearner():
     model_dir:str='models'
     callback_fns:Collection[Callable]=None
     callbacks:Collection[Callback]=field(default_factory=list)
-    layer_groups:Collection[tf.keras.layers.Layer]=None
+    layer_groups:Collection['keras_layers']=None
     def __post_init__(self)->None:
         "Setup path,metrics, callbacks and ensure model directory exists."
         self.path = Path(ifnone(self.path, self.data.path))

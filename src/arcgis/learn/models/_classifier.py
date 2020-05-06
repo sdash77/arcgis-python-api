@@ -184,6 +184,7 @@ class FeatureClassifier(ArcGISModel):
     def predict(self, img_path):
         """
         Runs prediction on an Image.
+        
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------

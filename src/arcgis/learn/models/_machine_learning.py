@@ -175,6 +175,10 @@ class MLModel(object):
             f.write(pickle.dumps(self._model, protocol=_PROTOCOL_LEVEL))
 
         MLModel._save_encoders(self._data._encoder_mapping, path, base_file_name)
+
+        if self._data._procs:
+            MLModel._save_transforms(self._data._procs, path, base_file_name)
+
         self._write_emd(path, base_file_name)
 
         return Path(path)
@@ -182,6 +186,7 @@ class MLModel(object):
     def _write_emd(self, path, base_file_name):
         emd_file = os.path.join(path, base_file_name + '.emd')
         emd_params = {}
+        emd_params['version'] = str(sklearn.__version__)
         emd_params['score'] = self.score()
         emd_params['_is_classification'] = "classification" if self._data._is_classification else "regression"
         emd_params['ModelName'] = type(self._model).__name__
@@ -212,6 +217,8 @@ class MLModel(object):
 
         :returns: `MLModel` Object
         """
+        if not HAS_SK_LEARN:
+            raise Exception("This module requires scikit-learn.")
 
         if not os.path.exists(emd_path):
             raise Exception("Invalid data path.")
@@ -224,6 +231,9 @@ class MLModel(object):
         continuous_variables = emd['continuous_variables']
         model_parameters = emd['ModelParameters']
 
+        if emd['version'] != str(sklearn.__version__):
+            warnings.warn(f"Sklearn version has changed. Model Trained using version {emd['version']}")
+
         _is_classification = True
         if emd['_is_classification'] != "classification":
             _is_classification = False
@@ -235,8 +245,14 @@ class MLModel(object):
                 with open(encoder_path, 'rb') as f:
                     encoder_mapping = pickle.loads(f.read())
 
+        column_transformer = None
+        transforms_path = os.path.join(os.path.dirname(emd_path), os.path.basename(emd_path).split('.')[0] + '_transforms.pkl')
+        if os.path.exists(transforms_path):
+            with open(transforms_path, 'rb') as f:
+                column_transformer = pickle.loads(f.read())
+
         if data is None:
-            data = TabularDataObject._empty(categorical_variables, continuous_variables, dependent_variable, encoder_mapping)
+            data = TabularDataObject._empty(categorical_variables, continuous_variables, dependent_variable, encoder_mapping, column_transformer)
             data._is_classification = _is_classification
 
         model_file = os.path.join(os.path.dirname(emd_path), emd['ModelFile'])
@@ -256,6 +272,15 @@ class MLModel(object):
         encoder_file = os.path.join(path, base_file_name + '_encoders.pkl')
         with open(encoder_file, 'wb') as f:
             f.write(pickle.dumps(encoder_mapping, protocol=_PROTOCOL_LEVEL))
+
+    @staticmethod
+    def _save_transforms(column_transformer, path, base_file_name):
+        if not column_transformer:
+            return
+
+        transforms_file = os.path.join(path, base_file_name + '_transforms.pkl')
+        with open(transforms_file, 'wb') as f:
+            f.write(pickle.dumps(column_transformer, protocol=_PROTOCOL_LEVEL))
 
     def predict(
             self,

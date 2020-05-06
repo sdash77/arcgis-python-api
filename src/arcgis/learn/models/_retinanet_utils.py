@@ -324,7 +324,7 @@ def nms(boxes, scores, thresh=0.2):
         boxes, scores, indexes = boxes[mask_keep], scores[mask_keep], indexes[mask_keep]
     return LongTensor(to_keep)
 
-def process_output(output, i, detect_thresh=0.25, crit=None):
+def process_output(output, detect_thresh=0.25, crit=None):
     clas_pred, bbox_pred, sizes = output[0], output[1], crit.sizes
     anchors = create_anchors(sizes, crit.ratios, crit.scales).to(clas_pred.device)
     bbox_pred = activ_to_bbox(bbox_pred, anchors)
@@ -342,14 +342,22 @@ def process_output(output, i, detect_thresh=0.25, crit=None):
     
     return bbox_pred, scores, preds
 
-def get_predictions(output, idx, detect_thresh=0.2, crit=None, nms_overlap=0.1):
-    bbox_pred, scores, preds = process_output(output, idx, detect_thresh, crit=crit)
+def get_predictions(output, detect_thresh=0.2, crit=None, nms_overlap=0.1):
+    bbox_pred, scores, preds = process_output(output, detect_thresh, crit=crit)
+
+    # Filter out the predicted boxes with size zero
+    mask_keep = (bbox_pred[:,2] * bbox_pred[:,3]) != 0
+    bbox_pred, preds, scores = bbox_pred[mask_keep], preds[mask_keep], scores[mask_keep]
+    
+    # Apply nms
     to_keep = nms(bbox_pred, scores, thresh=nms_overlap)
-    bbox_pred, preds, scores = bbox_pred[to_keep].cpu(), preds[to_keep].cpu(), scores[to_keep].cpu()  
+    bbox_pred, preds, scores = bbox_pred[to_keep].cpu(), preds[to_keep].cpu(), scores[to_keep].cpu()
+    
     # Convert the bbox predictions to TL-BR to be passed to ImageBBox Class in fastai through reconstruct
     bbox_pred = cthw2tlbr(bbox_pred)
     # Add 1 to class predictions to account for prepending of background as a class
     preds += 1
+    
     return bbox_pred, preds, scores
 
 #########################

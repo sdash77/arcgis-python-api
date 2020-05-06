@@ -24,7 +24,7 @@ try:
     from fastai.vision.image import bb2hw, Image, pil2tensor
     from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList, show_results_multispectral
     from .._utils.common import get_multispectral_data_params_from_emd
-    from .._utils.utils import get_home_path, extract_zipfile
+    from .._utils.utils import extract_zipfile
     from ._yolov3_utils import YOLOv3_Model, YOLOv3_Loss, AppendLabelsCallback, generate_anchors, compute_class_AP
     from ._yolov3_utils import download_yolo_weights, parse_yolo_weights, postprocess
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
@@ -87,7 +87,7 @@ class YOLOv3(ArcGISModel):
         pretrained = kwargs.get('pretrained_backbone', True)
         if pretrained:
             # Download (if required) and load YOLOv3 weights pretrained on COCO dataset
-            weights_path = os.path.join(get_home_path(), '.cache', 'weights')
+            weights_path = os.path.join(Path.home(), '.cache', 'weights')
             if not os.path.exists(weights_path): os.mkdir(weights_path)
             weights_file = os.path.join(weights_path, 'yolov3.weights')
             if not os.path.exists(weights_file):
