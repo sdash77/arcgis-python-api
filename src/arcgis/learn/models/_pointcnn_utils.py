@@ -26,7 +26,13 @@ def farthest_point_sample(pts, npoint):
     batch = (torch.arange(0, B*N) // N).to(pts.device).contiguous()
     pts = pts.view(-1, C).float().contiguous()
     indices = fps(pts, batch, ratio=(npoint/N))
-    pts = pts[indices].view(B, npoint, C)
+    if (indices.shape[0] / B) > npoint:
+        each_block_point = int(indices.shape[0] / B)
+        pts = pts[indices].view(B, each_block_point, C)
+        drop_point_num = each_block_point - npoint
+        pts = pts[:, :-drop_point_num, :]
+    else:
+        pts = pts[indices].view(B, npoint, C) 
     return pts.contiguous()
 
 def find_k_neighbor(rep_pts, pts, K, D):

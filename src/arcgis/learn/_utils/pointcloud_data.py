@@ -61,7 +61,7 @@ def try_imports(list_of_modules):
         for module in list_of_modules:
             importlib.import_module(module)
     except Exception as e:
-        raise Exception(f"""This function requires {' '.join(list_of_modules)}. Install plotly, laspy and h5py using 'conda install -c esri -c plotly laspy=1.6.0 plotly=4.5.0 plotly-orca psutil h5py=2.10.0' and install transforms3d using `pip install transforms3d`.
+        raise Exception(f"""This function requires {' '.join(list_of_modules)}. Install plotly, laspy and h5py using 'conda install -c esri -c plotly laspy=1.6.0 plotly=4.5.0 plotly-orca=1.2.1 psutil h5py=2.10.0' and install transforms3d using `pip install transforms3d`.
                             \n On Ubuntu systems, Also install sudo apt install xvfb""")
 
 def try_import(module):
@@ -69,7 +69,7 @@ def try_import(module):
         importlib.import_module(module)
     except ModuleNotFoundError:
         if module == 'plotly':
-            raise Exception("This function requires plotly. Install it using 'conda install -c plotly plotly=4.5.0 plotly-orca psutil'")
+            raise Exception("This function requires plotly. Install it using 'conda install -c plotly plotly=4.5.0 plotly-orca=1.2.1 psutil'")
         elif module == 'laspy':
             raise Exception("This function requires laspy. Install it using 'conda install -c esri laspy=1.6.0'")
         elif module == 'h5py':
@@ -204,6 +204,9 @@ def recompute_color_mapping(color_mapping, all_classes):
         raise Exception(f"Keys of your classes in your color_mapping do not match with classes present in data i.e {all_classes}")
     return color_mapping
 
+def class_string(label_array, prefix=''):
+    return [f'{prefix}class: {k}' for k in label_array]
+
 def mask_classes(labels, mask_class, class_mapping=None):
     if class_mapping is not None:
         mask_class = [class_mapping[x] for x in mask_class]
@@ -296,7 +299,8 @@ def show_point_cloud_batch(self, rows=2, figsize=(6,12), color_mapping=None, **k
     while (idx < rows):
         file = h5_files[file_idx]
         pc = file['xyz'][:]
-        labels = file['classification'][:] 
+        labels = file['classification'][:]
+        unmapped_labels = labels.copy()
         if self.remap:
             labels = remap_labels(labels, self.class_mapping) 
         sample_idxs = mask_classes(labels, mask_class, self.class_mapping if self.remap else None)
@@ -327,7 +331,8 @@ def show_point_cloud_batch(self, rows=2, figsize=(6,12), color_mapping=None, **k
             scene = scene)
 
         fig = go.Figure(data=[go.Scatter3d(x=x[mask], y=y[mask], z=z[mask], 
-                                        mode='markers', marker=dict(size=1, color=color_list))], layout=layout)
+                                        mode='markers', marker=dict(size=1, color=color_list),
+                                        text=class_string(unmapped_labels[sample_idxs][mask]))], layout=layout)
         fig.show()        
 
         if idx == rows-1:
@@ -433,7 +438,8 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
             continue         
        
         pc = np.concatenate(pc, axis=0)
-        labels = np.concatenate(labels, axis=0)        
+        labels = np.concatenate(labels, axis=0)
+        unmapped_labels = labels.copy()    
         if self.remap:
             labels = remap_labels(labels, self.class_mapping)  
         sample_idxs = mask_classes(labels, mask_class, self.class_mapping if self.remap else None)
@@ -461,7 +467,8 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
             scene = scene)
 
         figww = go.Figure(data=[go.Scatter3d(x=x[mask], y=z[mask], z=y[mask], 
-                                        mode='markers', marker=dict(size=1, color=color_list))], layout=layout)
+                                        mode='markers', marker=dict(size=1, color=color_list),
+                                        text=class_string(unmapped_labels[sample_idxs][mask]))], layout=layout)
         figww.show()
 
         if idx == rows-1:
@@ -701,7 +708,7 @@ def prepare_las_data(root,
                         new_file.create_dataset('label_seg', data=label_seg[i])
                         new_file.create_dataset('data_num', data=data_num[i])
                         new_file.close()
-                        all_classes = all_classes.union(np.unique(label_seg[i]).tolist())
+                        all_classes = all_classes.union(np.unique(label_seg[i][:data_num[i]]).tolist())
                         file_idxs.append(i)
                 meta_file['files'][str(fn)] = {'idxs':file_idxs,
                                                 'block_center':block_center.tolist()}
@@ -1163,6 +1170,15 @@ def get_title_text(idx, save_html, max_display_point):
         title_text = f'Ground Truth / Predictions (Displaying randomly sampled {max_display_point} points.)' if idx==0 else ''
     return title_text
 
+def inverse_remap_predictions(predictions, class_mapping):
+    if isinstance(predictions, torch.Tensor):
+        remapped_predictions = torch.zeros_like(predictions)
+    else:
+        remapped_predictions = np.zeros_like(predictions).astype(int)
+    for k,v in class_mapping.items():
+        remapped_predictions[predictions == v] = k
+    return remapped_predictions    
+
 def show_results(self, rows, color_mapping=None, **kwargs):
 
     """
@@ -1262,9 +1278,11 @@ def show_results(self, rows, color_mapping=None, **kwargs):
                 
         pc = np.concatenate(pc, axis=0)
         labels = np.concatenate(labels, axis=0)
+        unmapped_labels = labels.copy().astype(int)
         if self._data.remap:
             labels = remap_labels(labels, self._data.class_mapping)
         pred_class = np.concatenate(pred_class, axis=0).astype(int)
+        unmapped_pred_class = inverse_remap_predictions(pred_class, self._data.class_mapping)
         sample_idxs = mask_classes(labels, mask_class, self._data.class_mapping if self._data.remap else None)
         sampled_pc = pc[sample_idxs]
         if sampled_pc.shape[0] == 0:
@@ -1288,10 +1306,12 @@ def show_results(self, rows, color_mapping=None, **kwargs):
 
 
         fig.add_trace(go.Scatter3d(x=x[mask], y=z[mask], z=y[mask], 
-                                        mode='markers', marker=dict(size=1, color=color_list_true)), row=1, col=1)
+                                        mode='markers', marker=dict(size=1, color=color_list_true),
+                                        text=class_string(unmapped_labels[sample_idxs][mask])), row=1, col=1)
 
         fig.add_trace(go.Scatter3d(x=x[mask], y=z[mask], z=y[mask], 
-                                mode='markers', marker=dict(size=1, color=color_list_pred)), row=1, col=2)
+                                        mode='markers', marker=dict(size=1, color=color_list_pred),
+                                        text=class_string(unmapped_pred_class[sample_idxs][mask], prefix='pred_')), row=1, col=2)
 
         title_text = get_title_text(idx, save_html, max_display_point)
 
@@ -1634,6 +1654,8 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
         pc = np.concatenate(pc)
         pred_class = np.concatenate(pred_class, axis=0)
 
+        unmapped_labels = labels.copy().astype(int)
+        unmapped_predictions = inverse_remap_predictions(pred_class, self._data.class_mapping)
         ## remapping the labels from 0-N
         if self._data.remap:
             labels = remap_labels(labels, self._data.class_mapping)
@@ -1660,10 +1682,12 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
 
 
         fig.add_trace(go.Scatter3d(x=x[mask], y=y[mask], z=z[mask], 
-                                        mode='markers', marker=dict(size=1, color=color_list_true)), row=1, col=1)
+                                        mode='markers', marker=dict(size=1, color=color_list_true),
+                                        text=class_string(unmapped_labels[sample_idxs][mask])), row=1, col=1)
 
         fig.add_trace(go.Scatter3d(x=x[mask], y=y[mask], z=z[mask], 
-                                mode='markers', marker=dict(size=1, color=color_list_pred)), row=1, col=2)
+                                        mode='markers', marker=dict(size=1, color=color_list_pred),
+                                        text=class_string(unmapped_predictions[sample_idxs][mask], prefix='pred_')), row=1, col=2)
 
 
         title_text = get_title_text(idx, save_html, max_display_point)
