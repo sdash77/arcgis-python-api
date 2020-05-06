@@ -3284,6 +3284,8 @@ class GeoAccessor(object):
         Reprojects the who dataset into a new spatial reference. This is an inplace operation meaning
         that it will update the defined geometry column from the `set_geometry`.
 
+        **This requires ArcPy or pyproj v4**
+
         ====================     ====================================================================
         **Argument**             **Description**
         --------------------     --------------------------------------------------------------------
@@ -3295,14 +3297,29 @@ class GeoAccessor(object):
 
         :returns: boolean
         """
+        HASARCPY, HASSHAPELY = self._check_geometry_engine()
+        HASPYPROJ = True
         try:
-            if isinstance(spatial_reference, (int, str)):
+            import imp 
+            imp.find_module('pyproj')
+        except ImportError:
+            HASPYPROJ = False
+        try:
+            
+            if isinstance(spatial_reference, (int, str)) and HASARCPY:
                 import arcpy
                 spatial_reference = arcpy.SpatialReference(spatial_reference)
-            vals = self._data[self.name].values.project_as(**{'spatial_reference' : spatial_reference,
-                                                              'transformation_name' : transformation_name})
-            self._data[self.name] = vals
-            return True
+                vals = self._data[self.name].values.project_as(**{'spatial_reference' : spatial_reference,
+                                                                  'transformation_name' : transformation_name})
+                self._data[self.name] = vals
+                return True
+            elif isinstance(spatial_reference, (int, str)) and HASPYPROJ:
+                vals = self._data[self.name].values.project_as(**{'spatial_reference' : spatial_reference,
+                                                                  'transformation_name' : transformation_name})
+                self._data[self.name] = vals
+                return True
+            else:
+                return False
         except Exception as e:
             raise Exception(e)
 
