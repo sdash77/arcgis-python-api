@@ -192,10 +192,7 @@ class MyFasterRCNN():
             #convert bboxes in format [y1,x1,y2,x2]
             bbox = self.torch.index_select(bbox, 1, self.torch.tensor([1,0,3,2]).to(bbox.device))
             #Append the tuple in list for each image
-            if bbox.size(0) == 0:
-                post_processed_pred.append(None)
-            else:
-                post_processed_pred.append((bbox.to(device), label.to(device), score.to(device)))
+            post_processed_pred.append((bbox.to(device), label.to(device), score.to(device)))
             
         return post_processed_pred
 
