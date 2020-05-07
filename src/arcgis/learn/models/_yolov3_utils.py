@@ -897,9 +897,8 @@ def parse_yolo_weights(model, weights_path):
 
 def download_yolo_weights(weights_path):
     from arcgis.gis import GIS
-    print ("[INFO] Connecting to portal..." )
-    gis = GIS("https://geosaurus.maps.arcgis.com", "arcgis_python", "P@ssword123")
-    item = gis.content.get('7df188a80ae443caac2f9f97c063581d')
+    gis = GIS()
+    item = gis.content.get('8b4600eb9a29407bbfe51491ad5bf62c')
     print(f"[INFO] Downloading COCO pretrained weights for YOLOv3 in {weights_path}...")
     filepath = item.download(weights_path)
     return filepath
