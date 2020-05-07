@@ -308,7 +308,7 @@ def prepare_tabulardata(
         explanatory_rasters=None,
         date_field=None,
         distance_features=None,
-        procs=None,
+        preprocessors=None,
         val_split_pct=0.1,
         seed=42,
         batch_size=64
@@ -359,7 +359,7 @@ def prepare_tabulardata(
                             These field contains the nearest feature distance
                             from the input_layer feature.
     ---------------------   -------------------------------------------
-    procs                   For Fastai: Optional transforms list.
+    preprocessors           For Fastai: Optional transforms list.
                             For Scikit-learn: supply a column transformer object.
                             Categorical data is by default encoded.
                             If nothing is specified, default transforms are applied
@@ -397,7 +397,7 @@ def prepare_tabulardata(
         raster_variables=explanatory_rasters,
         date_field=date_field,
         distance_feature_layers=distance_features,
-        procs=procs,
+        procs=preprocessors,
         val_split_pct=val_split_pct,
         seed=seed,
         batch_size=batch_size
