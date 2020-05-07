@@ -625,6 +625,9 @@ class GIS(object):
 
     @property
     def datastore(self):
+        """
+        The resource managers for GIS datastores. This is only avaiable with enterprises version 10.7+. See :class:`~arcgis.gis._impl._datastores.PortalDataStore`.
+        """
         if self.version >= [7,1]:
             from arcgis.gis._impl._datastores import PortalDataStore
             url = self._portal.resturl + "portals/self/datastores"
