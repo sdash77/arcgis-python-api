@@ -41,12 +41,11 @@ class PortalDataStore(object):
     def __repr__(self):
         return "< PortalDataStore @ {url} >".format(url=self._url)
     #----------------------------------------------------------------------
-    def describe(
-        self, 
-        item:Item, 
-        server_id:str, 
-        path:str, 
-        store_type:str="datastore") -> StatusJob:
+    def describe(self, 
+                 item, 
+                 server_id, 
+                 path, 
+                 store_type="datastore"):
         """
         Describe data store is used to list the contents of a data store. A
         client can use it multiple times to discover the contents of the 
@@ -92,9 +91,11 @@ class PortalDataStore(object):
                          notify=_env.verbose, 
                          extra_marker="")                                  
     #----------------------------------------------------------------------
-    def _status(self, job_id:str, key:str=None) -> dict:
+    def _status(self, job_id, key=None):
         """
         Checks the status of an export job
+        
+        :returns: dict
         """
         params = {}
         if job_id:
@@ -110,7 +111,7 @@ class PortalDataStore(object):
             raise Exception(res)
     #----------------------------------------------------------------------
     @property
-    def properties(self) -> PropertyMap:
+    def properties(self):
         """returns the properties of the datastore"""
         if self._properties is None:
             params = {'f' : 'json'}
@@ -119,9 +120,9 @@ class PortalDataStore(object):
         return self._properties
     #----------------------------------------------------------------------
     def register(self, 
-                 item:Item, 
-                 server_id:str, 
-                 bind:bool=False) -> bool:
+                 item, 
+                 server_id, 
+                 bind=False):
         """
 
         The `register` method allows for Data Store type Items to be added to an ArcGIS Server instance.
@@ -167,7 +168,7 @@ class PortalDataStore(object):
         return res
     #----------------------------------------------------------------------
     @property
-    def _all_datasets(self) -> bool:
+    def _all_datasets(self):
         """
         The _all_datasets resource page provides access to bulk publishing
         operations. These operations allow users to publish and synchronize
@@ -188,7 +189,7 @@ class PortalDataStore(object):
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
-    def delete_layers(self, item:Item) -> bool:
+    def delete_layers(self, item):
         """
         Before a data store can be unregistered from a server, all of its
         bulk-published layers must be deleted. The delete_layers removes all
@@ -225,7 +226,7 @@ class PortalDataStore(object):
             return True
         return False
     #----------------------------------------------------------------------
-    def layers(self, item:Item) -> list:
+    def layers(self, item):
         """
         The `layers operation returns a list of layers bulk published from a
         data store with the `publish_layers` method. The `layers` method
@@ -261,10 +262,10 @@ class PortalDataStore(object):
     #----------------------------------------------------------------------
     def publish(self, 
                 config:dict, 
-                server_id:str, 
-                folder:str=None, 
-                description:str=None, 
-                tags:list=None) -> StatusJob:
+                server_id, 
+                folder=None, 
+                description=None, 
+                tags:list=None):
         """
         The publish operation is used to publish scene layers by reference to data in a data store.
         
@@ -310,7 +311,7 @@ class PortalDataStore(object):
                          jobid=res['jobId'], gis=self._gis, 
                          notify=_env.verbose, extra_marker="")           
     #----------------------------------------------------------------------
-    def servers(self, item:Item) -> list:
+    def servers(self, item):
         """
         The `servers` property returns a list of your servers that a given
         data store has been registered to. This operation returns the
@@ -345,11 +346,11 @@ class PortalDataStore(object):
         return res
     #----------------------------------------------------------------------
     def publish_layers(self, 
-                       item:Item, 
+                       item, 
                        srv_config:dict, 
-                       server_id:str, 
-                       folder:str=None, 
-                       server_folder:str=None, 
+                       server_id, 
+                       folder=None, 
+                       server_folder=None, 
                        future=False):
         """
         The `publish_layers` operation publishes, or syncs, the datasets from a
@@ -423,8 +424,8 @@ class PortalDataStore(object):
         return False
     #----------------------------------------------------------------------
     def unregister(self, 
-                   item:Item, 
-                   server_id:str) -> bool:
+                   item, 
+                   server_id):
         """
         Removes the datastore association from a server.
 
@@ -447,8 +448,8 @@ class PortalDataStore(object):
         return res
     #----------------------------------------------------------------------
     def refresh_server(self, 
-                       item:Item, 
-                       server_id:str) -> bool:
+                       item, 
+                       server_id):
         """
         After a data store has been registered, there may be times in which
         the data store's registration information may be changed. When
@@ -490,10 +491,10 @@ class PortalDataStore(object):
         return res
     #----------------------------------------------------------------------
     def validate(self, 
-                 server_id:str, 
-                 item:Item=None, 
-                 config:dict=None, 
-                 future:bool=False) -> bool:
+                 server_id, 
+                 item=None, 
+                 config=None, 
+                 future=False):
         """
         The `validate` ensures that your ArcGIS Server can connect and use
         the datasets stored within a given data store. While this operation
