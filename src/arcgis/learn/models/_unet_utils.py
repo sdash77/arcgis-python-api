@@ -5,7 +5,7 @@ from fastai.layers import CrossEntropyFlat
 from fastai.basic_train import LearnerCallback
 from .._utils.common import ArcGISMSImage, get_top_padding, kwarg_fill_none, \
     find_data_loader, get_nbatches, dynamic_range_adjustment, image_tensor_checks_plotting, \
-    get_symbology_bands, predict_batch, denorm_x
+    get_symbology_bands, predict_batch, denorm_x, get_nbatches
 from .._utils.pixel_classification import analyze_pred_pixel_classification
 import torch
 import warnings
@@ -89,18 +89,12 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
         nrows = math.ceil(n_items/ncols)
     n_items = min(n_items, len(self.x))
 
-    x_batch, y_batch = [], []
-    i = 0
-    dl_iterater = iter(data_loader)
-    while i < n_items:
-        x, y = next(dl_iterater)
-        x_batch.append(x)
-        y_batch.append(y)
-        i+=self.batch_size
+    x_batch, y_batch = get_nbatches(data_loader, n_items)
     x_batch = torch.cat(x_batch)
+    y_batch = torch.cat(y_batch)
     # Denormalize X
     x_batch = (self._scaled_std_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._scaled_mean_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)
-    y_batch = torch.cat(y_batch)
+
 
     # Extract RGB Bands
     symbology_x_batch = x_batch[:, symbology_bands]
