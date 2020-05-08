@@ -1442,10 +1442,10 @@ class Geometry(BaseGeometry):
             return Geometry(
                 arcpy.PointGeometry(
                     getattr(self.polygon.as_arcpy, "trueCentroid", None),
-                    self.spatial_reference))
+                    self.spatial_reference.as_arcpy))
         elif HASARCPY:
             return Geometry(arcpy.PointGeometry(getattr(self.as_arcpy, "trueCentroid", None),
-                                                self.spatial_reference))
+                                                self.spatial_reference.as_arcpy))
         elif HASSHAPELY:
             return self.centroid
         elif isinstance(self, Point):
