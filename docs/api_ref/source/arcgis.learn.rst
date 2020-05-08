@@ -125,6 +125,13 @@ Transform3d
     :members:
     :undoc-members:
 
+ModelExtension
+------------------
+.. autoclass:: arcgis.learn.ModelExtension
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 FasterRCNN
 ------------------
 .. autoclass:: arcgis.learn.FasterRCNN

@@ -31,30 +31,40 @@ class ModelExtension(ArcGISModel):
     """
     Creates a ``ModelExtension`` object, object detection model to train a model from your own source.
 
-    =====================   ===========================================
+    =====================   ============================================================
     **Argument**            **Description**
-    ---------------------   -------------------------------------------
-    model_conf              Object containg the fixed method name ``get_model`` for
-                            model defination, fixed method name ``on_batch_begin`` for feding
-                            input to the model during training, fixed method name ``transform_input``
-                            for feding input to the model during inferencing/validation, fixed
-                            method name ``loss`` to return loss value of the model, and finaly
-                            fixed method name ``post_process`` to post process the output of the
-                            model.
-    ---------------------   -------------------------------------------
+    ---------------------   ------------------------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             ``prepare_data`` function.
-    ---------------------   -------------------------------------------
-    backbone                Optional function. If custom model require any backbone.
-    ---------------------   -------------------------------------------
+    ---------------------   ------------------------------------------------------------
+    model_conf              A class definition contains the following methods:
+
+                                * ``get_model(self, data, backbone=None)``: for model definition,
+                                
+                                * ``on_batch_begin(self, learn, model_input_batch, model_target_batch)``: for 
+                                  feeding input to the model during training, 
+
+                                * ``transform_input(self, xb)``: for feeding input to the model during
+                                  inferencing/validation,
+
+                                * ``transform_input_multispectral(self, xb)``: for feeding input to the
+                                  model during inferencing/validation in case of multispectral data,
+
+                                * ``loss(self, model_output, *model_target)``: to return loss value of the model, and 
+
+                                * ``post_process(self, pred, nms_overlap, thres, chip_size, device)``: to post-process
+                                  the output of the model.
+    ---------------------   ------------------------------------------------------------
+    backbone                Optional function. If custom model requires any backbone.
+    ---------------------   ------------------------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
-    =====================   ===========================================
+    =====================   ============================================================
 
-    :returns: ``ModelExtension`` Object
+    :return: ``ModelExtension`` Object
     """
 
-    def __init__(self, model_conf, data, backbone=None, pretrained_path=None):
+    def __init__(self, data, model_conf, backbone=None, pretrained_path=None):
 
         super().__init__(data, backbone)
         self.model_conf = model_conf()
@@ -76,6 +86,8 @@ class ModelExtension(ArcGISModel):
         self._arcgis_init_callback() # make first conv weights learnable
         if pretrained_path is not None:
             self.load(pretrained_path)
+
+
     if HAS_FASTAI:
         class train_callback(LearnerCallback):
 
