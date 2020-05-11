@@ -123,7 +123,8 @@ class SuperResolution(ArcGISModel):
         resize_to = emd.get('resize_to')
         feat_loss = create_loss()
         if data is None:
-            data = _EmptyData(path=emd_path.parent.parent,loss_func=feat_loss, c=3,chip_size=emd['ImageHeight'])
+            data = (ImageImageList.from_folder(emd_path.parent.parent).split_none().label_from_func(lambda x: x).transform(get_transforms(do_flip=False),size=(resize_to, resize_to), tfm_y=True).databunch(bs=2, no_check=True).normalize(imagenet_stats, do_y=False))
+            data._is_empty = True
             data.emd_path = emd_path
             data.downsample_factor = downsample_factor
             data.emd = emd
