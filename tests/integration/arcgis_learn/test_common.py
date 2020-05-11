@@ -30,33 +30,8 @@ else:
 @unittest.skipIf(module_skip, "Precondition check failed. Skipping Common tests")
 def setUpModule():
     setupenviron()
-    # os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data1"], "models")}"')
-    # os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data1"], "images/models")}"')
-
-    # os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data2"], "models")}"')
-    # os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data2"], "images/models")}"')
-
-    # os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data3"], "models")}"')
-    # os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data3"], "images/models")}"')
-
-    # os.system(f'rmdir /s /q "{os.path.join(os.environ["pixel_classification_data1"], "models")}"')
-    # os.system(f'rmdir /s /q "{os.path.join(os.environ["pixel_classification_data1"], "images/models")}"')
-
-    # os.system(f'rmdir /s /q "{os.path.join(os.environ["feature_classification_data1"], "models")}"')
-    # os.system(f'rmdir /s /q "{os.path.join(os.environ["feature_classification_data1"], "images/models")}"')
-
-    # os.system(f'rmdir /s /q "{os.path.join(os.environ["maskrcnn_data1"], "models")}"')
-    # os.system(f'rmdir /s /q "{os.path.join(os.environ["maskrcnn_data1"], "images/models")}"')
-
-    # outputs_to_delete = os.listdir(os.path.dirname(os.environ["object_detection_inferencing_result_ssd"]))
-    # for output_files in outputs_to_delete:
-    #     os.remove(f'{os.path.join(os.path.dirname(os.environ["object_detection_inferencing_result_ssd"]), output_files)}')
-
-    # outputs_to_delete = os.listdir(os.path.dirname(os.environ["object_detection_inferencing_result_rn"]))
-    # for output_files in outputs_to_delete:
-    #     os.remove(f'{os.path.join(os.path.dirname(os.environ["object_detection_inferencing_result_rn"]), output_files)}')
-
     print("Dependencies Installed.")
+    tearDownModule()
 
 
 def common_test(model_type, output_name, data_path, old_models, **prepare_data_kwargs):
