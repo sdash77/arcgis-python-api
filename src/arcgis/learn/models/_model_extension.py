@@ -190,7 +190,7 @@ class ModelExtension(ArcGISModel):
             for k, v in class_mapping.items():
                 data.classes.append(v)
             data = get_multispectral_data_params_from_emd(data, emd)
-        return cls(model_configuration, data, backbone, pretrained_path=str(model_file))
+        return cls(data, model_configuration, backbone, pretrained_path=str(model_file))
 
     @property
     def _model_metrics(self):

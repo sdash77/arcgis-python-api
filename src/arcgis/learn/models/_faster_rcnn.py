@@ -219,7 +219,7 @@ class FasterRCNN(ModelExtension):
     """
     def __init__(self, data, backbone='resnet50', pretrained_path=None):
 
-        super().__init__(MyFasterRCNN, data, backbone, pretrained_path)
+        super().__init__(data, MyFasterRCNN, backbone, pretrained_path)
 
         idx = 27
         if self._backbone.__name__ in ['resnet18','resnet34']:
