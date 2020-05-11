@@ -416,6 +416,7 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
     idx = 0
     import random
     keys = list(self.meta['files'].keys()).copy()
+    keys = [k for k in keys if 'train' in Path(k).parts]
     random.shuffle(keys)
     
     for idx_file, fn in enumerate(keys):
@@ -425,6 +426,8 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
         block_center[0][2], block_center[0][1] = block_center[0][1], block_center[0][2]
         if num_files == []:
             continue
+        if not Path(fn).is_absolute():
+            fn = str(self.path / fn)
         idxs = [h5py.File(fn[:-3] + f'_{i}.h5', 'r') for i in num_files]
         pc = []
         labels = []
@@ -710,7 +713,7 @@ def prepare_las_data(root,
                         new_file.close()
                         all_classes = all_classes.union(np.unique(label_seg[i][:data_num[i]]).tolist())
                         file_idxs.append(i)
-                meta_file['files'][str(fn)] = {'idxs':file_idxs,
+                meta_file['files'][os.path.join(*fn.parts[-2:])] = {'idxs':file_idxs,
                                                 'block_center':block_center.tolist()}
                 file.close()
                 os.remove(fn)
@@ -928,32 +931,23 @@ def write_resulting_las(in_las_filename, out_las_filename, labels, num_classes, 
     true_positives = [0] * num_classes
     false_negatives = [0] * num_classes
     inverse_class_mapping = {v:k for k,v in data.class_mapping.items()}
+    shutil.copy(in_las_filename, out_las_filename)
     f = laspy.file.File(in_las_filename, mode='r')    
-    h = f.header
-    f_out = laspy.file.File(out_las_filename, mode='w', header=h)
+    f_out = laspy.file.File(out_las_filename, mode='rw')
     i = 0
-    x = []
-    y = []
-    z = []
     classification = []
     for p in f:
         p = f[i]
         try:
-            false_positives[labels[i]] += int(p.classification != labels[i])
-            true_positives[labels[i]] += int(p.classification == labels[i])
-            false_negatives[p.classification] += int(p.classification != labels[i])
+            false_positives[labels[i]] += int(p.classification != inverse_class_mapping[labels[i]])
+            true_positives[labels[i]] += int(p.classification == inverse_class_mapping[labels[i]])
+            false_negatives[data.class_mapping[p.classification]] += int(p.classification != inverse_class_mapping[labels[i]])
         except:
             pass
 
-        x.append(p.X)
-        y.append(p.Y)
-        z.append(p.Z)
         classification.append(inverse_class_mapping[labels[i]])
         i += 1
     f.close()
-    f_out.X = x
-    f_out.Y = y
-    f_out.Z = z
     f_out.classification = classification
     f_out.close()
     
@@ -1012,7 +1006,8 @@ def get_predictions(pointcnn_model, data, batch_idx, points_batch, sample_num, b
 
 def inference_las(path, pointcnn_model, out_path=None, print_metrics=False):
     try_import("h5py")
-    import h5py    
+    import h5py
+    import pandas as pd    
     ## Export data
     path = Path(path)
 
@@ -1145,10 +1140,14 @@ def inference_las(path, pointcnn_model, out_path=None, print_metrics=False):
             global_false_positives = np.add(global_false_positives, false_positives)
             global_true_positives = np.add(global_true_positives, true_positives)
             global_false_negatives = np.add(global_false_negatives, false_negatives)
-    if print_metrics: 
-        print('Overal per-class-metrics: \nPrecision:{}, \nRecall:   {}, \nF1 score: {}'.format(
-        *calculate_metrics(global_false_positives, global_true_positives, global_false_negatives)))
-
+    if print_metrics:
+        precision, recall, f_1 = calculate_metrics(global_false_positives, global_true_positives, global_false_negatives)
+        data = [precision, recall, f_1]
+        index = ['precision', 'recall', 'f1_score']
+        inverse_class_mapping = {v:k for k,v in pointcnn_model._data.class_mapping.items()} 
+        df = pd.DataFrame(data, columns=[inverse_class_mapping[cval] for cval in range(pointcnn_model._data.c)], index=index)
+        from IPython.display import display
+        display(df)
 
     for fn in glob.glob(str(path / '*.h5'), recursive=True): ## Remove h5 files in val directory.
         os.remove(fn) 
@@ -1242,13 +1241,14 @@ def show_results(self, rows, color_mapping=None, **kwargs):
 
     for idx_file, fn in enumerate(keys):        
         fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'scene'}, {'type': 'scene'}]])        
-
         num_files = self._data.meta['files'][fn]['idxs']
         block_center = self._data.meta['files'][fn]['block_center']
         block_center = np.array(block_center)
         block_center[0][2], block_center[0][1] = block_center[0][1], block_center[0][2]
         if num_files == []:
             continue
+        if not Path(fn).is_absolute():
+            fn = str(self._data.path / fn)            
         idxs = [h5py.File(fn[:-3] + f'_{i}.h5', 'r') for i in num_files]
         pc = []
         labels = []
