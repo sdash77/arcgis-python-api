@@ -1065,7 +1065,13 @@ def prepare_data(path,
 
     data.class_mapping = class_mapping
     data.color_mapping = color_mapping
-    data.show_batch = partial(data.show_batch, rows=min(int(math.sqrt(batch_size)), 5))
+    data.show_batch = types.MethodType(
+        types.FunctionType(
+            data.show_batch.__code__, data.show_batch.__globals__, data.show_batch.__name__,
+            (min(int(math.sqrt(data.batch_size)), 5), *data.show_batch.__defaults__[1:]), data.show_batch.__closure__
+        ),
+        data
+    )
     data.orig_path = path
     data.resize_to = kwargs_transforms.get('size', None)
     data.height_width = height_width
