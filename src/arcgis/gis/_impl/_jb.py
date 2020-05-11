@@ -29,6 +29,9 @@ class StatusJob(object):
     notify            Optional Boolean.  When set to True, a message will inform the
                       user that the geoprocessing task has completed. The default is
                       False.
+    ----------------  ---------------------------------------------------------------
+    extra_marker      Optional String. An extra piece of text to place infront of the 
+                      Job string for the __repr__ object.
     ================  ===============================================================
 
     """
@@ -44,11 +47,12 @@ class StatusJob(object):
     _end_time = None
     _item_properties = None
     #----------------------------------------------------------------------
-    def __init__(self, future, op, jobid, gis, notify=False):
+    def __init__(self, future, op, jobid, gis, notify=False, extra_marker="Group"):
         """
         initializer
         """
         assert isinstance(future, Future)
+        self._thing = extra_marker
         self._future = future
         self._start_time = datetime.datetime.now()
         if notify:
@@ -59,7 +63,7 @@ class StatusJob(object):
         self._gis = gis
     #----------------------------------------------------------------------
     @property
-    def ellapse_time(self):
+    def ellapse_time(self) -> datetime.datetime:
         """
         Returns the Ellapse Time for the Job
         """
@@ -69,7 +73,7 @@ class StatusJob(object):
             return datetime.datetime.now() - self._start_time
     #----------------------------------------------------------------------
     @property
-    def definition(self):
+    def definition(self) -> dict:
         """
         Returns information about the job
 
@@ -101,22 +105,24 @@ class StatusJob(object):
             _log.info(msg)
             print(msg)
     #----------------------------------------------------------------------
-    def __str__(self):
-        return "<%s Group Job: %s>" % (self.task, self._jobid)
+    def __str__(self) -> str:
+        return self.__repr__()
     #----------------------------------------------------------------------
-    def __repr__(self):
-        return "<%s Group Job: %s>" % (self.task, self._jobid)
+    def __repr__(self) -> str:
+        if len(self._thing) > 0:
+            return "<%s %s Job: %s>" % (self.task, self._thing, self._jobid)
+        else:
+            return "<%s Job: %s>" % (self.task, self._jobid)
     #----------------------------------------------------------------------
     @property
-    def task(self):
+    def task(self) -> str:
         """Returns the task name.
         :returns: string
         """
-
         return self._op
     #----------------------------------------------------------------------
     @property
-    def status(self):
+    def status(self) -> str:
         """
         returns the GP status
 
@@ -131,7 +137,7 @@ class StatusJob(object):
         return res
     #----------------------------------------------------------------------
     @property
-    def messages(self):
+    def messages(self) -> list:
         """
         returns the jobs message
 
@@ -145,7 +151,7 @@ class StatusJob(object):
             return res["messages"]
         return res
     #----------------------------------------------------------------------
-    def cancel(self):
+    def cancel(self) -> bool:
         """
         Cancels the `Future` process to end the job locally.
         Import/Export jobs cannot be terminiated on server.
@@ -159,7 +165,7 @@ class StatusJob(object):
         self._future.cancel()
         return True
     #----------------------------------------------------------------------
-    def cancelled(self):
+    def cancelled(self) -> bool:
         """
         Return True if the call was successfully cancelled.
 
@@ -167,7 +173,7 @@ class StatusJob(object):
         """
         return self._future.cancelled()
     #----------------------------------------------------------------------
-    def running(self):
+    def running(self) -> bool:
         """
         Return True if the call is currently being executed and cannot be cancelled.
 
@@ -175,7 +181,7 @@ class StatusJob(object):
         """
         return self._future.running()
     #----------------------------------------------------------------------
-    def done(self):
+    def done(self) -> bool:
         """
         Return True if the call was successfully cancelled or finished running.
 
@@ -198,12 +204,14 @@ class StatusJob(object):
             if 'itemId' in res['result']:
                 from arcgis.gis import Item
                 return Item(gis=self._gis, itemid=res['result']['itemId'])
-            if 'itemsImported' in res['result']:
+            elif 'itemsImported' in res['result']:
                 return_result = {}
                 return_result['itemsImported'] = [Item(itemid=i['itemId'], gis=self._gis) for i in res['result']['itemsImported'] if 'itemId' in i]
                 return_result['itemsSkipped'] = [Item(i['itemId'], gis=self._gis) for i in res['result']['itemsSkipped'] if 'itemId' in i]
                 return_result['itemsFailedImport'] = [Item(i['itemId'], gis=self._gis) for i in res['result']['itemsFailedImport'] if 'itemId' in i]
                 return return_result
+            elif 'services' in res['result']:
+                return [Item(self._gis, t['serviceItemId']) for t in res['result']['services'] if 'serviceItemId' in t]            
             else:
                 return res
             
