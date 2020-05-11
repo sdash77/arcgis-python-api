@@ -1147,7 +1147,12 @@ class Model:
         return job_values["uninstallSucceed"]
         """
 
-def export_point_dataset(data_path, output_path, block_size=50.0, max_points=8192, extra_features=[('intensity', 5000, 0), ('num_returns', 5, 0)], **kwargs):
+def export_point_dataset(data_path,
+                         output_path,
+                         block_size=50.0,
+                         max_points=8192,
+                         extra_features=[],
+                         **kwargs):
 
     """
     Exports the las files into h5 blocks.
@@ -1165,18 +1170,20 @@ def export_point_dataset(data_path, output_path, block_size=50.0, max_points=819
     output_path            Required string. Path where exported files will be dumped. This directory
                            either should be empty or be a totally new directory.                                
     ------------------     --------------------------------------------------------------------
-    block_size             Optional float. Size of the block to contain in one exported file.
-                           Default 50.0
+    block_size             Optional float. Size of the `h5 file` block.
+                           The unit of this parameter is same as, that of the dataset's
+                           coordinate system. Default: 50.0 Units
     ------------------     --------------------------------------------------------------------
-    max_points             Optional integer. Maximum number of points to contain in each block.
-                           Default 8192
+    max_points             Optional integer. Maximum number of points to contain in each block in
+                           a h5 file. Default: 8192 points.
     ------------------     --------------------------------------------------------------------
     extra_features         Optional list of tuple. Extra features to read from las files.
                            The first value of tuple is the key name of the features. The second
                            value of the tuple is max value of the feature. The third value is
-                           the minimum value of that feature. If you do not want any extra
-                           features to be considered make this parameter equal to an empty list [].
-                           Deafult: [('intensity', 5000, 0), ('num_returns', 5, 0)]                 
+                           the minimum value of that feature. If you want extra features like
+                           intensity or number of returns to be considered while training make 
+                           this parameter [('intensity', 5000, 0), ('num_returns', 5, 0)].
+                           The default behaviour has changed from v1.8.0, now the Default: []                 
     ==================     ====================================================================
     """
 

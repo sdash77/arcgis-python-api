@@ -82,7 +82,7 @@ class PointCNN(ArcGISModel):
         self.learn = Learner(data,
                 PointCNNSeg(self.sample_point_num, data.c, data.extra_dim, kwargs.get('encoder_params', None), kwargs.get('dropout', None)),
                 loss_func=CrossEntropyPC(data.c),
-                metrics=[AverageMetric(accuracy), AverageMetric(accuracy_non_zero)],
+                metrics=[AverageMetric(accuracy)],
                 callback_fns=[partial(SamplePointsCallback, sample_point_num=self.sample_point_num)])
         self.encoder_params = self.learn.model.encoder_params
 
@@ -347,6 +347,7 @@ class PointCNN(ArcGISModel):
     def predict_h5(self, path, output_path=None, **kwargs):
         """
         Predicts and writes the resulting las file on the disk. 
+        The block size which was used for training will be used for prediction.
 
         =====================   ===========================================
         **Argument**            **Description**
