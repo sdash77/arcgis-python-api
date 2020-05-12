@@ -355,9 +355,9 @@ class DataStoreManager(BaseServer):
             up = Uploads(url=self._con.baseurl.replace("rest/services", "admin/uploads"),
                          gis=self._con)
 
-            if self._con.portal_connection:
+            if self._con._portal_connection:
                 d = ServicesDirectory(url=self._con.baseurl,
-                                      portal_connection=self._con.portal_connection)
+                                      portal_connection=self._con._portal_connection)
             elif isinstance(self._con, Connection):
                 d = ServicesDirectory(url=self._con.baseurl)
                 d._con = self._con
