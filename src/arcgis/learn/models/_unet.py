@@ -86,6 +86,9 @@ class UnetClassifier(ArcGISModel):
 
             # import pdb; pdb.set_trace();
             self._ignore_classes = kwargs.get('ignore_classes', [])
+            if self._ignore_classes != [] and len(data.classes) <= 3:
+                raise Exception(f"`ignore_classes` parameter can only be used when the dataset has more than 2 classes.")
+
             data_classes = list(self._data.class_mapping.keys())
             self._ignore_mapped_class = [data_classes.index(k) + 1 for k in self._ignore_classes]
             if self._ignore_classes != []:
