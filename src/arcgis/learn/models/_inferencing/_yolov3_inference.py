@@ -319,16 +319,10 @@ class ChildObjectDetector:
 
         preds = { }
 
-        imagenet_stats = ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-
-        mean = 255* np.array(imagenet_stats[0], dtype=np.float32)
-        std  = 255* np.array(imagenet_stats[1], dtype=np.float32)
-        norm = lambda x: (x-mean)/ std
-
         if "NormalizationStats" in self.json_info:
             batch = normalize_batch(batch, self.json_info)
         else:
-            batch = norm(batch.transpose(0,2,3,1)).transpose(0, 3, 1, 2)
+            batch = batch/255.
 
         batch_output = self.model.learn.model(torch.tensor(batch).to(self.device).float())
 

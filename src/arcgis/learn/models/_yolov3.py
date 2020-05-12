@@ -26,7 +26,7 @@ try:
     from .._utils.common import get_multispectral_data_params_from_emd
     from .._utils.utils import extract_zipfile
     from ._yolov3_utils import YOLOv3_Model, YOLOv3_Loss, AppendLabelsCallback, generate_anchors, compute_class_AP
-    from ._yolov3_utils import download_yolo_weights, parse_yolo_weights, postprocess
+    from ._yolov3_utils import download_yolo_weights, parse_yolo_weights, postprocess, coco_config, coco_class_mapping
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
     from .._video_utils import VideoUtils
 except Exception as e:
@@ -61,7 +61,14 @@ class YOLOv3(ArcGISModel):
     :returns: `YOLOv3` Object
     """
 
-    def __init__(self, data, pretrained_path=None, **kwargs):
+    def __init__(self, data=None, pretrained_path=None, **kwargs):
+
+        if data is None:
+            data = create_coco_data()
+        else:
+            #Removing normalization because YOLO ingests images with values in range 0-1
+            data.remove_tfm(data.norm)
+            data.norm, data.denorm = None, None
 
         super().__init__(data)
 
@@ -73,14 +80,17 @@ class YOLOv3(ArcGISModel):
 
         self._code = code
         self._data = data
-        
+
         self.config_model = {}
-        anchors = kwargs.get('anchors', None)
-        self.config_model['ANCHORS'] = anchors if anchors is not None else generate_anchors(num_anchor=9, hw=data.height_width)
-        self.config_model['ANCH_MASK'] = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
-        self.config_model['N_CLASSES'] = data.c - 1 # Subtract 1 for the background class
-        n_bands = kwargs.get('n_bands', None)
-        self.config_model['N_BANDS'] = n_bands if n_bands is not None else data.x[0].data.shape[0]
+        if getattr(data, "_is_coco", "") == True:
+            self.config_model = coco_config()
+        else:
+            anchors = kwargs.get('anchors', None)
+            self.config_model['ANCHORS'] = anchors if anchors is not None else generate_anchors(num_anchor=9, hw=data.height_width)
+            self.config_model['ANCH_MASK'] = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
+            self.config_model['N_CLASSES'] = data.c - 1 # Subtract 1 for the background class
+            n_bands = kwargs.get('n_bands', None)
+            self.config_model['N_BANDS'] = n_bands if n_bands is not None else data.x[0].data.shape[0]
 
         self._model = YOLOv3_Model(self.config_model)
 
@@ -320,12 +330,15 @@ class YOLOv3(ArcGISModel):
             ]
 
         if visualize:
-            image = _draw_predictions(orig_frame, predictions, labels)
+            image = _draw_predictions(orig_frame, predictions, labels, color=(255, 0, 0), fontface=2, thickness=1)
             import matplotlib.pyplot as plt
-            plt.xticks([])
-            plt.yticks([])
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            plt.imshow(PIL.Image.fromarray(image))
+            if getattr(self._data, "_is_coco", "") == True: 
+                figsize = (20,20)
+            else:
+                figsize = (4,4)
+            fig, ax = plt.subplots(1,1, figsize=figsize)
+            ax.imshow(image)
 
         if return_scores:
             return predictions, labels, scores
@@ -560,3 +573,25 @@ class YOLOv3(ArcGISModel):
             ret.learn.data.single_ds.y.classes = ret._data.classes
         
         return ret
+
+def create_coco_data():
+    """ Create an empty databunch for COCO dataset."""
+
+    train_tfms = []
+    val_tfms = []
+    ds_tfms = (train_tfms, val_tfms)
+
+    class_mapping = coco_class_mapping()
+
+    import tempfile
+    sd = ImageList([], path=tempfile.NamedTemporaryFile().name, ignore_empty=True).split_none()
+    data = sd.label_const(0, label_cls=ObjectDetectionCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch()
+
+    data.class_mapping = class_mapping
+    data.classes = list(class_mapping.values())
+    data._is_empty = True
+    data._is_coco = True
+    data.resize_to = 416
+    data.chip_size = 416
+
+    return data
