@@ -58,7 +58,7 @@ class ObjectMSItemList(ObjectItemList):
         return ArcGISMSImage.open_gdal(fn)
 
 
-def show_batch_pascal_voc_rectangles(self, rows=3, alpha=1, **kwargs): # parameters adjusted in kwargs 
+def show_batch_pascal_voc_rectangles(self, rows=3, alpha=1, **kwargs): # parameters adjusted in kwargs
     nrows = rows
     ncols = kwargs.get('ncols', nrows)
     #start_index = kwargs.get('start_index', 0) # Does not work with dataloader
@@ -134,12 +134,20 @@ def show_batch_pascal_voc_rectangles(self, rows=3, alpha=1, **kwargs): # paramet
     color_array[1:, 3] = alpha
 
     # Size for plotting
-    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
     idx = 0
     for r in range(nrows):
         for c in range(ncols):
+            axi = axs
+            if nrows == 1:
+                axi = axi
+            else:
+                axi = axi[r]
+            if ncols == 1:
+                axi = axi
+            else:
+                axi = axi[c]
             if idx < symbology_x_batch.shape[0]:
-                axi  = ax[r][c]
                 axi.imshow(symbology_x_batch[idx].cpu().numpy())
                 classes = y_classes[idx][y_classes[idx] > 0]
                 bboxes = y_bboxes[idx][y_classes[idx] > 0]
@@ -153,7 +161,7 @@ def show_batch_pascal_voc_rectangles(self, rows=3, alpha=1, **kwargs): # paramet
                     axi.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self.classes[classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=.5, foreground='gray')])
                 axi.axis('off')
             else:
-                ax[r][c].axis('off')
+                axi.axis('off')
             idx+=1
 
 def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs): # parameters adjusted in kwargs
@@ -188,20 +196,15 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
     label_font_size = kwargs.get('label_font_size', 16)
     
     # Get Batch
-    x_batch, y_batch = [], []
-    i = 0
-    dl_iterater = iter(data_loader)
-    while i < nrows:
-        x, y = next(dl_iterater)
-        x_batch.append(x)
-        y_batch.append(y)
-        i+=self._data.batch_size
+    x_batch, y_batch = get_nbatches(data_loader, nrows)
     x_batch = torch.cat(x_batch)
     y_bboxes = []
     y_classes = []
     for yb in y_batch:
         y_bboxes.extend(yb[0])
         y_classes.extend(yb[1])
+
+    nrows = min(nrows, len(x_batch))
     
     predictions_store = []
     pred_model_external = []
@@ -231,8 +234,14 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
             predictions_store.append(predictions)
 
     if not getattr(self, "_is_model_extension", False):
-        predictions_store = torch.cat(predictions_store)
-
+        if self.__class__.__name__ == 'YOLOv3':
+            predictions_store = torch.cat(predictions_store)
+        else:
+            __predictions_store = []
+            for __batch in predictions_store:
+                for __chip in zip(*__batch):
+                    __predictions_store.append((__chip[0], __chip[1]))
+            predictions_store = __predictions_store
 
     if self._is_multispectral:
 
@@ -284,13 +293,18 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
     color_array[:, 3] = alpha
 
     # Size for plotting
-    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
     fig.suptitle('Ground Truth / Predictions', fontsize=title_font_size)
     plt.subplots_adjust(top=top)
     idx=0
     for r in range(0, nrows):
+        if nrows == 1:
+            ax_i = axs
+        else:
+            ax_i = axs[r]
+
         # Plot Ground Truth
-        ax_ground_truth = ax[r][0]
+        ax_ground_truth = ax_i[0]
         ax_ground_truth.axis('off')
         ax_ground_truth.imshow(symbology_x_batch[idx].cpu().numpy())
         gt_classes = y_classes[idx][y_classes[idx] > 0]
@@ -305,7 +319,7 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
             ax_ground_truth.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[gt_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=1, foreground='black'), patheffects.Normal()])
 
         # Plot Predictions
-        ax_prediction  = ax[r][1]
+        ax_prediction  = ax_i[1]
         ax_prediction.axis('off')
         ax_prediction.imshow(symbology_x_batch[idx].cpu().numpy())
 
@@ -332,4 +346,4 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
                     ax_prediction.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[predicted_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=1, foreground='black'), patheffects.Normal()])
             
         idx+=1
-    return ax
+    return axs
