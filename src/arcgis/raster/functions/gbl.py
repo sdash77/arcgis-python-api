@@ -57,7 +57,7 @@ def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
 
 
 def _gbl_clone_layer(layer, function_chain, function_chain_ra,**kwargs):
-    if isinstance(layer, Raster):
+    if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
         return _gbl_clone_layer_raster(layer, function_chain, function_chain_ra, **kwargs)
     if isinstance(layer, Item):
         layer = layer.layers[0]

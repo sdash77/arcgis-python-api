@@ -108,7 +108,10 @@ def _set_time_param(time):
 
 def _to_datetime(dt):
     import datetime
-    return  datetime.datetime.utcfromtimestamp(dt/1000)
+    try:
+        return  datetime.datetime.utcfromtimestamp(dt/1000)
+    except:
+        return dt
 
 def _datetime2ole(date):
     #date = datetime.strptime(date, '%d-%b-%Y')
@@ -238,7 +241,10 @@ def _harmonic_regression(sample_size, date_list, x, y, trend_order):
 
 def _epoch_to_iso(dt):
     import datetime
-    return  datetime.datetime.fromtimestamp(dt/1000, tz=datetime.timezone.utc).isoformat()
+    try:
+        return  datetime.datetime.fromtimestamp(dt/1000, tz=datetime.timezone.utc).isoformat()
+    except:
+        return dt
 
 def _datetime2ole(date):
     #date = datetime.strptime(date, '%d-%b-%Y')
