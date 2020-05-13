@@ -303,7 +303,7 @@ class GIS(object):
             #configuring for hosted notebooks need to happen before portalpy
             self._try_configure_for_hosted_nb()
             if self._expiration is None:
-                self._expiration = int(20160/2)            
+                self._expiration = 10080 
         elif self._url.lower() == "home" and \
              os.getenv('NB_AUTH_FILE', None) is None:
             self._url = "pro"
