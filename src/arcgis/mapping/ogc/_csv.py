@@ -267,7 +267,7 @@ class CSVLayer(BaseOpenData):
         return self._fields
     #----------------------------------------------------------------------
     @property
-    def _esri_json(self):
+    def _lyr_json(self):
         """creates a dictionary for web map item."""
         add_layer =  {
             "type" : "csv",

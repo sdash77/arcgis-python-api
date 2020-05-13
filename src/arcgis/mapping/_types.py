@@ -307,6 +307,7 @@ class WebMap(collections.OrderedDict):
         :return:
             True if layer was successfully added. Else, raises appropriate exception.
         """
+        from arcgis.mapping.ogc import BaseOGC
         if options is None:
             options = {}
         if isinstance(layer, arcgis.features.FeatureLayer) and \
@@ -391,6 +392,8 @@ class WebMap(collections.OrderedDict):
                 return True
             else:
                 raise TypeError('FeatureLayerCollection object without layers is not supported')
+        elif isinstance(layer, BaseOGC):
+            print("baseogc")    
         else:
             raise TypeError("Input layer should either be a Layer object or an Item object. To know the supported layer types, refer" +
                             'to https://developers.arcgis.com/web-map-specification/objects/operationalLayers/')

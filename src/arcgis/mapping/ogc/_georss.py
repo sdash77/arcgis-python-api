@@ -134,7 +134,7 @@ class GeoRSSLayer(BaseOGC):
             self._polygon_symbol = InsensitiveDict(value)
     #----------------------------------------------------------------------
     @property
-    def _esri_json(self) -> dict:
+    def _lyr_json(self) -> dict:
         """creates a dictionary for web map item."""
         add_layer =  {
             "type" : "geo-rss",

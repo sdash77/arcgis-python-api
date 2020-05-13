@@ -50,7 +50,7 @@ class BaseOGC(object):
         
         :returns: PropertyMap
         """
-        return PropertyMap(self._esri_json)
+        return PropertyMap(self._lyr_json)
     #----------------------------------------------------------------------
     def __str__(self):
         return f"<{self.__class__.__name__} @ {self._url}>"
@@ -118,7 +118,7 @@ class BaseOGC(object):
         return self._copyright
     #----------------------------------------------------------------------
     @property
-    def _esri_json(self) -> dict:
+    def _lyr_json(self) -> dict:
         """
         represents the map widget's JSON format
 

@@ -64,7 +64,7 @@ class GeoJSONLayer(BaseOGC):
             self._renderer = InsensitiveDict(renderer)
     #----------------------------------------------------------------------
     @property
-    def _esri_json(self) -> dict:
+    def _lyr_json(self) -> dict:
         lyr = {
             "type" : self._type,
             "url" : self._url,

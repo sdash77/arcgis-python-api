@@ -150,7 +150,7 @@ class WMTSLayer(BaseOGC):
         return json.loads(d)
     #----------------------------------------------------------------------
     @property
-    def _esri_json(self):
+    def _lyr_json(self):
         """
         represents the map widget's JSON format
 

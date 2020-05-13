@@ -1064,6 +1064,7 @@ class MapView(widgets.DOMWidget):
         from arcgis.gis import Item
         from arcgis._impl.common._mixins import PropertyMap
         from arcgis.mapping import MapImageLayer, VectorTileLayer
+        from arcgis.mapping._base import BaseOGC
         from pandas import DataFrame
 
         if isinstance(item, Raster):
