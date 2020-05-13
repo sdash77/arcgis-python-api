@@ -232,6 +232,7 @@ class GIS(object):
         self._proxy_port = kwargs.pop('proxy_port', 80)
         self._referer = kwargs.pop('referer', None)
         custom_auth = kwargs.pop('custom_auth', None)
+        self._expiration = kwargs.pop('expiration', None)
         from arcgis._impl.tools import _Tools
         if profile is not None and \
            len(profile) == 0:
@@ -301,10 +302,14 @@ class GIS(object):
            not os.getenv('NB_AUTH_FILE', None) is None:
             #configuring for hosted notebooks need to happen before portalpy
             self._try_configure_for_hosted_nb()
+            if self._expiration is None:
+                self._expiration = int(20160/2)            
         elif self._url.lower() == "home" and \
              os.getenv('NB_AUTH_FILE', None) is None:
             self._url = "pro"
             url = "pro"
+        elif self._expiration is None: # Keep Default Value
+            expiration = 60
         try:
             self._portal = _portalpy.Portal(self._url, self._username,
                                            self._password, self._key_file,
@@ -313,6 +318,7 @@ class GIS(object):
                                            proxy_port=self._proxy_port,
                                            verify_cert=self._verify_cert,
                                            client_id=self._client_id,
+                                           expiration=self._expiration,
                                            referer=self._referer,
                                            custom_auth=custom_auth)
             if self._is_hosted_nb_home:
@@ -364,6 +370,7 @@ class GIS(object):
                                       client_id=self._client_id,
                                       proxy_port=self._proxy_port,
                                       proxy_host=self._proxy_host,
+                                      expiration=self._expiration,
                                       referer=self._referer,
                                       custom_auth=custom_auth)
                 self._portal = pp
@@ -554,6 +561,7 @@ class GIS(object):
                 self._public_portal_url = json_data["publicPortalUrl"]
                 if "token" in json_data:
                     self._utoken = json_data["token"]
+                self._expiration = json_data.get("expiration", None)
                 if "encryptedToken" in json_data:
                     from arcgis.gis._impl._decrypt_nbauth import get_token
                     self._utoken = get_token(nb_auth_file_path)

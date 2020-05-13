@@ -100,7 +100,7 @@ class Connection(object):
         self._username = username
         self._password = password
 
-        self._expiration = kwargs.pop('expiration', 60)
+        self._expiration = kwargs.pop('expiration', 60) or 60
         self._portal_connection = kwargs.pop('portal_connection', None) # For Federated Objects (Portal Connection)
         if isinstance(self._portal_connection, GIS):
             self._portal_connection = self._portal_connection._con
