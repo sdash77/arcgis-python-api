@@ -309,7 +309,7 @@ class GIS(object):
             self._url = "pro"
             url = "pro"
         elif self._expiration is None: # Keep Default Value
-            expiration = 60
+            self._expiration = 60
         try:
             self._portal = _portalpy.Portal(self._url, self._username,
                                            self._password, self._key_file,
