@@ -109,6 +109,11 @@ class Connection(object):
            self._portal_connection and \
            str(self._portal_connection._auth).lower() == "home":
             self._referer = None
+        elif baseurl.lower() == 'pro':
+            try:
+                self._referer = arcpy.GetSigninToken().pop('referer', 'http')
+            except:
+                self._referer = kwargs.pop('referer', 'http')
         else:
             self._referer = kwargs.pop('referer', 'http')
 
@@ -1054,6 +1059,11 @@ class Connection(object):
             if resp:
                 if 'referer' in resp:
                     self._referer = resp['referer']
+                if self._session:
+                    self._session.headers['Referer'] = self._referer
+                else:
+                    self._referer = resp['referer']
+                    self._session = self._create_session()
                 if 'token' in resp:
                     return resp['token']
             else:
