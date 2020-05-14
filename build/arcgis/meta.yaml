@@ -26,7 +26,7 @@ requirements:
   - requests-kerberos
   - requests-oauthlib
   - requests_ntlm
-  - pywin32==227
+  - pywin32>=227     [win]
   - lerc
   - winkerberos      [win]
   run:
