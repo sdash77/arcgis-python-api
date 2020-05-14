@@ -50,6 +50,11 @@ class UnetClassifier(ArcGISModel):
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
+    ---------------------   -------------------------------------------
+    backend                 Optional string. Controls the backend framework to be used
+                            for this model, which is 'pytorch' by default.
+
+                            valid options are 'pytorch', 'tensorflow'
     =====================   ===========================================
 
     **kwargs**
