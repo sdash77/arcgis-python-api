@@ -17,6 +17,7 @@ try:
     from fastai.basic_train import Learner, load_learner
     from fastprogress.fastprogress import progress_bar
     from .._utils.tabular_data import TabularDataObject
+    from fastai.torch_core import split_model_idx
     import torch
     from fastai.metrics import r2_score
 except Exception as e:
@@ -81,6 +82,9 @@ class FullyConnectedNetwork(ArcGISModel):
         self.learn = _get_learner_object(data, layers, emb_szs, ps, emb_drop, kwargs.get('pretrained_path', None))
         self._layers = layers
         self.learn.model = self.learn.model.to(self._device)
+        idx = 1
+        self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
+        self.learn.create_opt(lr=1e-03)
 
     def __str__(self):
         return self.__repr__()
