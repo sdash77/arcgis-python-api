@@ -615,8 +615,6 @@ class Connection(object):
             if token != _DEFAULT_TOKEN:
                 if token is not None:
                     params['token'] = token
-                elif token is None:
-                    params['token'] = self.token
                 else:
                     params.pop('token', None)
                     #pass

@@ -53,6 +53,7 @@ else:
         'keyring >=19',
         'lerc',
         'jupyterlab',
+        'pywin32 >=223',
         'pyshp >=2',
         'requests',
         'requests-oauthlib',
