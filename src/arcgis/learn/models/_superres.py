@@ -1,17 +1,20 @@
 from ._codetemplate import super_resolution
 import json
+import traceback
 from ._arcgis_model import _EmptyData
+from .._data import _raise_fastai_import_error  
 
 try:
     from ._arcgis_model import ArcGISModel, _resnet_family
     from ._superres_utils import FeatureLoss, gram_matrix, compute_psnr, get_resize, create_loss
     from fastai.vision.learner import unet_learner
     from fastai.vision import nn, ImageImageList, get_transforms, imagenet_stats, NormType, open_image
-    from fastai.callbacks import requires_grad,LossMetrics
+    from fastai.callbacks import LossMetrics
     from fastai.utils.mem import Path
 
     HAS_FASTAI = True
 except Exception as e:
+    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
 
 
@@ -171,7 +174,7 @@ class SuperResolution(ArcGISModel):
         self._check_requisites()
         self.learn.show_results(rows=rows)
 
-    def predict(self, img_path, upscale_factor=None):
+    def predict(self, img_path, width=None, height=None):
         """
         Predicts and display the image.
 
@@ -180,22 +183,32 @@ class SuperResolution(ArcGISModel):
         ---------------------   -------------------------------------------
         img_path                Required path of an image.
         ---------------------   -------------------------------------------
-        upscale_factor          Optional int. Factor to increase image 
-                                size.
+        width                   Optional int. Width of the predicted 
+                                output image.
+        ---------------------   -------------------------------------------
+        height                  Optional int. Height of the predicted
+                                output image.
         =====================   ===========================================
 
         """
         img_path = Path(img_path)
         img = open_image(img_path)        
         temp_databunch = self.learn.data
-
-        if upscale_factor:
-            x,y,z = img.shape
-            max_size = 100000
-            y_new, z_new = get_resize(y, z, max_size, upscale_factor)
-            pred_databunch = (ImageImageList.from_folder(img_path.parent).split_none().label_from_func(lambda x: x).transform(get_transforms(do_flip=False), size=(y_new,z_new), tfm_y=True).databunch(bs=2, no_check=True).normalize(imagenet_stats, do_y=False))
+        if width is not None or height is not None:
+            if width is None:
+                width = height
+            elif height is None:
+                height = width
+        elif width is None and height is None:
+            _,width,height = img.shape
+        
+        y_new, z_new = width, height
+        pred_databunch = (ImageImageList.from_folder(img_path.parent).split_none()\
+        .label_from_func(lambda x: x)\
+        .transform(get_transforms(do_flip=False), size=(height,width), tfm_y=True)\
+        .databunch(bs=2, no_check=True).normalize(imagenet_stats, do_y=False))
             
-            self.learn.data = pred_databunch
+        self.learn.data = pred_databunch
         
         pred_img = self.learn.predict(img)[0]
         self.learn.data = temp_databunch

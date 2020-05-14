@@ -7,8 +7,9 @@ try:
     import torch.nn as nn
     from torch.nn import Module as NnModule
     from fastai.vision import resize_to
-    from fastai.callbacks import hook_outputs, requires_grad, children
-    from fastprogress import progress_bar
+    from fastai.callbacks import hook_outputs
+    from fastai.torch_core import requires_grad, children
+    from fastprogress.fastprogress import progress_bar
     HAS_FASTAI = True
 except Exception as e:
     #import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -39,8 +40,7 @@ class FeatureLoss(nn.Module):
         self.loss_features = [self.m_feat[i] for i in layer_ids]
         self.hooks = hook_outputs(self.loss_features, detach=False)
         self.wgts = layer_wgts
-        self.metric_names = ['pixel',] + [f'feat_{i}' for i in range(len(layer_ids))
-              ] + [f'gram_{i}' for i in range(len(layer_ids))]
+        self.metric_names = ['pixel',]
 
     def make_features(self, x, clone=False):
         self.m_feat(x)
