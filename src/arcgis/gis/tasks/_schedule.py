@@ -153,7 +153,7 @@ class Task(BaseTask):
             return res['success']
         return res
     #----------------------------------------------------------------------
-    def enable(self, enabled:bool, reset:bool=False) -> bool:
+    def enable(self, enabled:bool) -> bool:
         """
         The `enable` method allows administrators to enable or disable the scheduled task..
         
@@ -162,9 +162,6 @@ class Task(BaseTask):
         ------------------     --------------------------------------------------------------------
         enabled                Required Boolean.  If True, the status of the task is set to active. 
                                If False, the task is set active to False.
-        ------------------     --------------------------------------------------------------------
-        reset                  Optional Bool. This will reset internal counter and reset the task's 
-                               execution history. This parameter only applies when `enabled=True`
         ==================     ====================================================================
         
         :returns: Bool
@@ -173,7 +170,6 @@ class Task(BaseTask):
         params = {'f' : 'json'}
         if enabled == True:
             url = f"{self._url}/enable"
-            params['resetTask'] = reset or False
         elif enabled == False:
             url = f"{self._url}/disable"
         else:
