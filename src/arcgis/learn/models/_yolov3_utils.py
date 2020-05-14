@@ -668,6 +668,7 @@ class AppendLabelsCallback(LearnerCallback):
             return {'last_input':last_input, 'last_target':last_target}      
         else:
             # On training set xb as (inputs, targets) because YOLOv3 needs both
+            self.learn.model.train()
             targets = transform_targets(last_target)
             return {'last_input':(last_input, targets), 'last_target':last_target}
 
