@@ -117,8 +117,9 @@ class PointCNN(ArcGISModel):
 
         model_file = Path(emd['ModelFile'])
         if not model_file.is_absolute():
-            model_file = emd_path.parent / model_file        
+            model_file = emd_path.parent / model_file
         model_params = emd['ModelParameters']
+
         try:
             class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
             color_mapping = {i['Value'] : i['Color'] for i in emd['Classes']}
@@ -128,12 +129,20 @@ class PointCNN(ArcGISModel):
 
         if data is None:
             data = _EmptyData(path=emd_path.parent.parent, loss_func=None, c=len(class_mapping), chip_size=emd['ImageHeight'])
-            data.class_mapping = class_mapping
-            data.color_mapping = color_mapping
             data.emd_path = emd_path
             data.emd = emd
             for key, value in emd['DataAttributes'].items():
                 setattr(data, key, value)
+            ## backward compatibility.
+            if not hasattr(data, 'class_mapping'):
+                data.class_mapping = class_mapping
+            if not hasattr(data, 'color_mapping'):
+                data.color_mapping = color_mapping
+            if not hasattr(data, 'classes'):
+                data.classes = list(class_mapping.values())
+
+            data.class_mapping = {int(k): int(v) for k, v in data.class_mapping.items()}
+            data.color_mapping = {int(k): v for k, v in data.color_mapping.items()}
 
 
             ## Below are the lines to make save function work
@@ -182,8 +191,8 @@ class PointCNN(ArcGISModel):
         tensorboard             Optional boolean. Parameter to write the training log. 
                                 If set to 'True' the log will be saved at 
                                 <dataset-path>/training_log which can be visualized in
-                                tensorboard. Required tensorboardx version=1.7 (Experimental support).
-
+                                tensorboard. Required tensorboardx version=1.7 
+                                (Experimental support).        
                                 The default value is 'False'.
         =====================   ===========================================
 
@@ -241,7 +250,10 @@ class PointCNN(ArcGISModel):
         _emd_template['DataAttributes']['max_point'] = self._data.max_point
         _emd_template['DataAttributes']['extra_features'] = self._data.extra_features
         _emd_template['DataAttributes']['extra_dim'] = self._data.extra_dim
+        _emd_template['DataAttributes']['class_mapping'] = self._data.class_mapping
+        _emd_template['DataAttributes']['color_mapping'] = self._data.color_mapping
         _emd_template['DataAttributes']['remap'] = self._data.remap
+        _emd_template['DataAttributes']['classes'] = self._data.classes
 
         _emd_template['Classes'] = []
         class_data = {}
@@ -266,7 +278,8 @@ class PointCNN(ArcGISModel):
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional rows. Number of rows to show. Default
-                                value is 2.                                                       
+                                value is 2 and maximum value is the `batch_size`
+                                passed in `prepare_data`. 
         =====================   ===========================================
 
         **kwargs**
@@ -281,7 +294,7 @@ class PointCNN(ArcGISModel):
                                             2:[0,255,0],
                                             3:[0,0,255]}          
         ---------------------   -------------------------------------------
-        mask_class              Optional array of integers. Array containing
+        mask_class              Optional list of integers. Array containing
                                 class values to mask. Use this parameter to 
                                 display the classes of interest.
                                 Default value is []. 
@@ -315,7 +328,8 @@ class PointCNN(ArcGISModel):
     def predict_las(self, path, output_path=None, print_metrics=False, **kwargs):
 
         """
-        Predicts and writes the resulting las file on the disk. 
+        Predicts and writes the resulting las file on the disk.
+        The block size which was used for training will be used for prediction.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -329,12 +343,35 @@ class PointCNN(ArcGISModel):
         ---------------------   -------------------------------------------
         print_metrics           Optional boolean. If True, print metrics such as precision,
                                 recall and f1_score. Defaults to False.
+        =====================   ===========================================                                
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        remap_classes           Optional dictionary {int:int}. Mapping from  
+                                class values to user defined values. Please query 
+                                `pointcnn._data.classes` to get the class values
+                                on which the model is trained on.
+                                Default is {} 
+        ---------------------   -------------------------------------------
+        selective_classify      Optional list of integers. If passed, predict_las 
+                                will selectively classify only those points 
+                                belonging to the specified class-codes. Other 
+                                points in the input point clouds will retain 
+                                their class-codes. 
+                                Please query `pointcnn._data.classes` to get 
+                                the class values on which the model is trained 
+                                on. If `remap_classes` is specified, the new 
+                                mapped values will be used for classification. 
+                                Default value is [].
         =====================   ===========================================
         
         :returns: Path where files are dumped.
         """
         
-        return inference_las(path, self, output_path, print_metrics)
+        return inference_las(path, self, output_path, print_metrics, **kwargs)
 
     def compute_precision_recall(self):
         
@@ -356,8 +393,8 @@ class PointCNN(ArcGISModel):
                                 files which needs to be predicted are present.   
         ---------------------   -------------------------------------------
         output_path             Optional string. The path to folder where to dump
-                                the resulting h5 files. Defaults to `results` folder
-                                in input path.
+                                the resulting h5 block files. Defaults to `results`
+                                folder in input path.
         =====================   ===========================================
         
         :returns: Path where files are dumped.
