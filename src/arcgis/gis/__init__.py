@@ -10708,7 +10708,7 @@ class _GISResource(object):
             try:
                 # try as a federated server
                 if self._con.token is None:
-                    self._lazy_token = self._lazy_token = self._con.generate_portal_server_token(serverUrl=self.url)
+                    self._lazy_token = self._con.generate_portal_server_token(serverUrl=self.url)
                 else:
                     from ._impl._con import Connection
                     if isinstance(self._con, Connection):

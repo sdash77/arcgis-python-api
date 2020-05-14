@@ -491,7 +491,7 @@ class _AsyncResource(_GISResource):
 
         params["f"] = "json"
 
-        resp = self._con.post(submit_url, params, token=self._token)
+        resp = self._con.post(submit_url, params)#, token=self._token)
         # print(resp)
         return task_url, resp, resp['jobId']
 
@@ -504,7 +504,10 @@ class _AsyncResource(_GISResource):
             job_id = job_info.get("jobId")
             job_url = "{}/jobs/{}".format(task_url, job_id)
             params = {"f": "json"}
-            job_response = self._con.post(job_url, params, token=self._token)
+            if self._token:
+                job_response = self._con.post(job_url, params, token=self._token)
+            else:
+                job_response = self._con.post(job_url, params)
 
             # Query and report the Analysis job status.
             #
@@ -792,8 +795,10 @@ class Toolbox(_AsyncResource):
             taskurl = self.url + "/" + task
 
             self._taskurls[fnname] = taskurl + "/execute"
-
-            taskprops = self._con.post(taskurl, {"f":"json"}, token=self._token)
+            if self._token:
+                taskprops = self._con.post(taskurl, {"f":"json"}, token=self._token)
+            else:
+                taskprops = self._con.post(taskurl, {"f":"json"})
             execution_type = taskprops['executionType']
             task_params = taskprops['parameters']
 
@@ -1030,7 +1035,10 @@ class Toolbox(_AsyncResource):
         else:
             task_url = "{}/{}".format(self.url, task_name)
             submit_url = "{}/submitJob".format(task_url)
-            job_info = self._con.post(submit_url, gp_params, token=self._token)
+            if self._token:
+                job_info = self._con.post(submit_url, gp_params, token=self._token)
+            else:
+                job_info = self._con.post(submit_url, gp_params)
             job_id = job_info['jobId']
             try:
                 isCan = False
