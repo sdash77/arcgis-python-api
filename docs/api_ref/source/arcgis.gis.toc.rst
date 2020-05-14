@@ -133,6 +133,12 @@ CertificateManager
     :undoc-members:
     :show-inheritance:
 
+PortalDataStore
+---------------------------
+.. autoclass:: arcgis.gis._impl._datastores.PortalDataStore
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Submodules
 --------------
