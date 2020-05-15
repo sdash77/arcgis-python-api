@@ -7969,6 +7969,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                                 ignore_missing_values=True,
                                 context=None,
                                 future=False,
+                                process_as_multidimensional=False,
+                                percentile_value=90,
                                 **kwargs):
         """
         Parameters
@@ -8028,13 +8030,27 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
-        gpjob = self._tbx.summarize_raster_within(input_zone_layer=input_zone_layer,
-                                                  zone_field=zone_field,
-                                                  input_raster_layerto_summarize=input_raster_layer_to_summarize,
-                                                  output_name=output_raster,
-                                                  statistic_type=statistic_type,
-                                                  ignore_missing_values=ignore_missing_values,
-                                                  context=context, gis=gis, future=True)
+        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]<=10.8):
+            gpjob = self._tbx.summarize_raster_within(input_zone_layer=input_zone_layer,
+                                                      zone_field=zone_field,
+                                                      input_raster_layerto_summarize=input_raster_layer_to_summarize,
+                                                      output_name=output_raster,
+                                                      statistic_type=statistic_type,
+                                                      ignore_missing_values=ignore_missing_values,
+                                                      context=context, gis=gis, future=True)
+
+        else:
+            gpjob = self._tbx.summarize_raster_within(input_zone_layer=input_zone_layer,
+                                                      zone_field=zone_field,
+                                                      input_raster_layerto_summarize=input_raster_layer_to_summarize,
+                                                      output_name=output_raster,
+                                                      statistic_type=statistic_type,
+                                                      ignore_missing_values=ignore_missing_values,
+                                                      context=context, 
+                                                      process_as_multidimensional=process_as_multidimensional,
+                                                      percentile_value=percentile_value,
+                                                      gis=gis, future=True)
+
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:

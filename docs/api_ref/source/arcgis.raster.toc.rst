@@ -50,6 +50,12 @@ RasterManager
     :members:
     :undoc-members:
 
+RasterCollection
+----------------
+.. autoclass:: arcgis.raster.RasterCollection
+    :inherited-members:
+    :members:
+    :undoc-members:
 
 Submodules
 --------------

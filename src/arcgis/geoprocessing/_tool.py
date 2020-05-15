@@ -792,7 +792,6 @@ class Toolbox(_AsyncResource):
             taskurl = self.url + "/" + task
 
             self._taskurls[fnname] = taskurl + "/execute"
-
             taskprops = self._con.post(taskurl, {"f":"json"}, token=self._token)
             execution_type = taskprops['executionType']
             task_params = taskprops['parameters']

@@ -9,6 +9,14 @@ try:
     HAS_SSPI = True
 except ImportError:
     HAS_SSPI = False
+    
+if HAS_SSPI == False: 
+    try:        
+        from .include.requests_negotiate_sspi import HttpNegotiateAuth
+        HAS_SSPI = True
+    except ImportError:
+        HAS_SSPI = False
+
 try:
 
     from requests_kerberos import HTTPKerberosAuth

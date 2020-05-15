@@ -238,7 +238,8 @@ def show_point_cloud_batch(self, rows=2, figsize=(6,12), color_mapping=None, **k
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional rows. Number of rows to show. Default
-                            value is 2.
+                            value is 2 and maximum value is the `batch_size`
+                            passed in `prepare_data`. 
     ---------------------   -------------------------------------------
     color_mapping           Optional dictionary. Mapping from class value
                             to RGB values. Default value
@@ -253,7 +254,7 @@ def show_point_cloud_batch(self, rows=2, figsize=(6,12), color_mapping=None, **k
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    mask_class              Optional array of integers. Array containing
+    mask_class              Optional list of integers. Array containing
                             class values to mask. Use this parameter to 
                             display the classes of interest.
                             Default value is []. 
@@ -360,7 +361,8 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional rows. Number of rows to show. Default
-                            value is 2.
+                            value is 2 and maximum value is the `batch_size`
+                            passed in `prepare_data`. 
     ---------------------   -------------------------------------------
     color_mapping           Optional dictionary. Mapping from class value
                             to RGB values. Default value
@@ -375,7 +377,7 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    mask_class              Optional array of integers. Array containing
+    mask_class              Optional list of integers. Array containing
                             class values to mask. Use this parameter to 
                             display the classes of interest.
                             Default value is []. 
@@ -416,6 +418,7 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
     idx = 0
     import random
     keys = list(self.meta['files'].keys()).copy()
+    keys = [k for k in keys if 'train' in Path(k).parts]
     random.shuffle(keys)
     
     for idx_file, fn in enumerate(keys):
@@ -425,6 +428,8 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
         block_center[0][2], block_center[0][1] = block_center[0][1], block_center[0][2]
         if num_files == []:
             continue
+        if not Path(fn).is_absolute():
+            fn = str(self.path / fn)
         idxs = [h5py.File(fn[:-3] + f'_{i}.h5', 'r') for i in num_files]
         pc = []
         labels = []
@@ -710,7 +715,7 @@ def prepare_las_data(root,
                         new_file.close()
                         all_classes = all_classes.union(np.unique(label_seg[i][:data_num[i]]).tolist())
                         file_idxs.append(i)
-                meta_file['files'][str(fn)] = {'idxs':file_idxs,
+                meta_file['files'][os.path.join(*fn.parts[-2:])] = {'idxs':file_idxs,
                                                 'block_center':block_center.tolist()}
                 file.close()
                 os.remove(fn)
@@ -921,42 +926,52 @@ def save_xyz_label_to_las(filename_las, xyz, xyz_offset, encoding, labels):
     f.close()
 
 
-def write_resulting_las(in_las_filename, out_las_filename, labels, num_classes, data):
+def write_resulting_las(in_las_filename, 
+                        out_las_filename, 
+                        labels, 
+                        num_classes, 
+                        data,
+                        print_metrics,
+                        reclassify_classes={}, 
+                        selective_classify=[]):
     try_import('laspy')
     import laspy
     false_positives = [0] * num_classes
     true_positives = [0] * num_classes
     false_negatives = [0] * num_classes
     inverse_class_mapping = {v:k for k,v in data.class_mapping.items()}
+    shutil.copy(in_las_filename, out_las_filename)
     f = laspy.file.File(in_las_filename, mode='r')    
-    h = f.header
-    f_out = laspy.file.File(out_las_filename, mode='w', header=h)
+    f_out = laspy.file.File(out_las_filename, mode='rw')
     i = 0
-    x = []
-    y = []
-    z = []
     classification = []
+    warn_flag = False
+    
     for p in f:
         p = f[i]
+        current_class = inverse_class_mapping[labels[i]] 
+        if reclassify_classes != {}:
+            current_class = reclassify_classes[current_class]        
         try:
-            false_positives[labels[i]] += int(p.classification != labels[i])
-            true_positives[labels[i]] += int(p.classification == labels[i])
-            false_negatives[p.classification] += int(p.classification != labels[i])
-        except:
-            pass
+            false_positives[labels[i]] += int(p.classification != current_class)
+            true_positives[labels[i]] += int(p.classification == current_class)
+            false_negatives[data.class_mapping[p.classification]] += int(p.classification != current_class)
+        except (IndexError, KeyError) as _:
+            warn_flag = True
 
-        x.append(p.X)
-        y.append(p.Y)
-        z.append(p.Z)
-        classification.append(inverse_class_mapping[labels[i]])
+        if selective_classify != []:
+            current_class = current_class if current_class in selective_classify else p.classification
+
+        classification.append(current_class)
         i += 1
     f.close()
-    f_out.X = x
-    f_out.Y = y
-    f_out.Z = z
     f_out.classification = classification
     f_out.close()
-    
+
+    # if print_metrics and warn_flag:
+    #     logger.warning(f"Some classes in your las file {in_las_filename} do not match the classes the model is trained on")
+    #     print_metrics = False
+
     return false_positives, true_positives, false_negatives
 
 def calculate_metrics(false_positives, true_positives, false_negatives):
@@ -1010,9 +1025,10 @@ def get_predictions(pointcnn_model, data, batch_idx, points_batch, sample_num, b
         
     return predictions
 
-def inference_las(path, pointcnn_model, out_path=None, print_metrics=False):
+def inference_las(path, pointcnn_model, out_path=None, print_metrics=False, remap_classes={}, selective_classify=[]):
     try_import("h5py")
-    import h5py    
+    import h5py
+    import pandas as pd    
     ## Export data
     path = Path(path)
 
@@ -1023,7 +1039,22 @@ def inference_las(path, pointcnn_model, out_path=None, print_metrics=False):
         out_path = path / 'results'
     else:    
         out_path = Path(out_path)
-        
+
+    reclassify_classes = remap_classes
+    if reclassify_classes != {}:
+        if not all([k in pointcnn_model._data.classes for k in reclassify_classes.keys()]):
+            raise Exception(f"`remap_classes` dictionary keys are not present in dataset with classes {pointcnn_model._data.classes}.")
+        reclassify_classes = {k:reclassify_classes.get(k, k) for k in pointcnn_model._data.class_mapping}
+
+    if selective_classify != []:
+        if reclassify_classes != {}:
+            values_to_check = np.unique(np.array(list(reclassify_classes.values()))).tolist()
+        else:
+            values_to_check = list(pointcnn_model._data.classes)
+
+        if not all([k in values_to_check for k in selective_classify]):
+            raise Exception(f"`selective_classify` can only contain values from these class values {values_to_check}.")
+
     prepare_las_data(path.parent,
                      block_size=pointcnn_model._data.block_size[0],
                      max_point_num=pointcnn_model._data.max_point,
@@ -1141,14 +1172,43 @@ def inference_las(path, pointcnn_model, out_path=None, print_metrics=False):
                                                                                    output_path,
                                                                                    merged_label,
                                                                                    pointcnn_model._data.c,
-                                                                                   pointcnn_model._data)
+                                                                                   pointcnn_model._data,
+                                                                                   print_metrics,
+                                                                                   reclassify_classes,
+                                                                                   selective_classify)
             global_false_positives = np.add(global_false_positives, false_positives)
             global_true_positives = np.add(global_true_positives, true_positives)
             global_false_negatives = np.add(global_false_negatives, false_negatives)
-    if print_metrics: 
-        print('Overal per-class-metrics: \nPrecision:{}, \nRecall:   {}, \nF1 score: {}'.format(
-        *calculate_metrics(global_false_positives, global_true_positives, global_false_negatives)))
 
+    if print_metrics:
+        index = ['precision', 'recall', 'f1_score']
+        inverse_class_mapping = {v:k for k,v in pointcnn_model._data.class_mapping.items()}
+        unique_mapped_classes = np.unique(np.array(list(reclassify_classes.values())))
+        if len(unique_mapped_classes) == len(pointcnn_model._data.classes) or remap_classes == {}:
+            precision, recall, f_1 = calculate_metrics(global_false_positives, global_true_positives, global_false_negatives)
+            data = [precision, recall, f_1]
+            column_names = [inverse_class_mapping[cval] for cval in range(pointcnn_model._data.c)]
+            if reclassify_classes != {}:
+                remapping_class_mapping = {v:reclassify_classes[k] for k,v in pointcnn_model._data.class_mapping.items()}
+                column_names = [remapping_class_mapping[cval] for cval in range(pointcnn_model._data.c)]
+            df = pd.DataFrame(data, columns=column_names, index=index)
+        else:
+            inverse_reclassify_classes = {}
+            for k, v in reclassify_classes.items():
+                current_value = inverse_reclassify_classes.get(v, [])
+                current_value.append(k)
+                inverse_reclassify_classes[v] = current_value   
+            map_dict = {u: [pointcnn_model._data.class_mapping[k] for k in inverse_reclassify_classes[u]] for u in unique_mapped_classes}
+            global_false_positives =  recompute_globals(global_false_positives, map_dict)
+            global_true_positives = recompute_globals(global_true_positives, map_dict)
+            global_false_negatives = recompute_globals(global_false_negatives, map_dict)
+            precision, recall, f_1 = calculate_metrics(global_false_positives, global_true_positives, global_false_negatives)
+            data = [precision, recall, f_1]
+            column_names = list(map_dict.keys())
+            df = pd.DataFrame(data, columns=column_names, index=index)            
+
+        from IPython.display import display
+        display(df)
 
     for fn in glob.glob(str(path / '*.h5'), recursive=True): ## Remove h5 files in val directory.
         os.remove(fn) 
@@ -1157,6 +1217,9 @@ def inference_las(path, pointcnn_model, out_path=None, print_metrics=False):
         os.remove(fn)        
 
     return out_path
+
+def recompute_globals(global_count, map_dict):
+    return [sum([global_count[ci] for ci in v]) for k,v in map_dict.items()]
 
 def raise_maxpoint_warning(idx_file, kwargs, logger, max_display_point, save_html=False):
     if not save_html:
@@ -1242,13 +1305,14 @@ def show_results(self, rows, color_mapping=None, **kwargs):
 
     for idx_file, fn in enumerate(keys):        
         fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'scene'}, {'type': 'scene'}]])        
-
         num_files = self._data.meta['files'][fn]['idxs']
         block_center = self._data.meta['files'][fn]['block_center']
         block_center = np.array(block_center)
         block_center[0][2], block_center[0][1] = block_center[0][1], block_center[0][2]
         if num_files == []:
             continue
+        if not Path(fn).is_absolute():
+            fn = str(self._data.path / fn)            
         idxs = [h5py.File(fn[:-3] + f'_{i}.h5', 'r') for i in num_files]
         pc = []
         labels = []

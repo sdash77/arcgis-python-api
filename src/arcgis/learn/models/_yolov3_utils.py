@@ -637,7 +637,7 @@ def transform_targets(last_target):
     """
     B, N, _ = last_target[0].shape
 
-    lt = torch.cat((last_target[1].unsqueeze(2).to(float), last_target[0].to(float)), dim=2)
+    lt = torch.cat((last_target[1].unsqueeze(2).type(torch.float), last_target[0].type(torch.float)), dim=2)
     lt = torch.reshape(lt, (-1,5))
     tmask = lt[:,0] != 0. # Mask to use to transform only non-zero labels
     target = torch.zeros_like(lt)
@@ -662,29 +662,33 @@ class AppendLabelsCallback(LearnerCallback):
         super().__init__(learn)
         
     def on_batch_begin(self, last_input, last_target, **kwargs):
-
         "Returns xb (images,labels), yb (labels) when training"
         if self.learn.predicting:
             self.learn.predicting = False
             return {'last_input':last_input, 'last_target':last_target}      
         else:
             # On training set xb as (inputs, targets) because YOLOv3 needs both
+            self.learn.model.train()
             targets = transform_targets(last_target)
             return {'last_input':(last_input, targets), 'last_target':last_target}
 
 
 from ._ssd_utils import kmeans, avg_iou
-def generate_anchors(num_anchor, hw):
+def generate_anchors(num_anchor, hw, limit=1000):
     """
     Function to generate anchors using k-means
     Args: 
         num_anchors (int) - number of anchors to generate
         hw - List of height width of all bounding boxes in the dataset.
+        limit - max num of bounding boxes to consider for k-means
     Returns: 
         a list of anchors, shape(num_anchors, 2)
     """
-    # TODO: Add a log message for generating anchors
-    hw = np.array(hw)
+
+    if limit > len(hw): limit = len(hw)
+    import random
+    idx = random.sample(range(len(hw)), limit)
+    hw = np.array(hw)[idx]
     new_centroid = kmeans(hw, num_anchor)
     anchors = (np.ceil(new_centroid)).astype(int)
     anchors = anchors.tolist()
@@ -895,10 +899,54 @@ def parse_yolo_weights(model, weights_path):
 
         initflag = (offset >= len(weights)) # the end of the weights file. turn the flag on
 
+
 def download_yolo_weights(weights_path):
+    """ Download COCO pretrained weights for YOLOv3. """
     from arcgis.gis import GIS
-    gis = GIS()
+    gis = GIS(set_active=False)
     item = gis.content.get('8b4600eb9a29407bbfe51491ad5bf62c')
     print(f"[INFO] Downloading COCO pretrained weights for YOLOv3 in {weights_path}...")
     filepath = item.download(weights_path)
     return filepath
+
+def coco_config():
+    """ Function to return YOLOv3 model configurations for COCO dataset. """
+    config_model= {}
+    config_model['ANCHORS'] =   [[10, 13], [16, 30], [33, 23],
+                                [30, 61], [62, 45], [59, 119],
+                                [116, 90], [156, 198], [373, 326]]
+    config_model['ANCH_MASK'] = [[6, 7, 8], [3, 4, 5], [0, 1, 2]]
+    config_model['N_CLASSES'] = 80
+    config_model['N_BANDS'] =   3
+    return config_model
+
+def coco_class_mapping():
+    """ Create class mapping for COCO dataset. """
+
+    # 80 COCO class indices on which YOLOv3 is pretrained
+    coco_class_ids = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20,
+                    21, 22, 23, 24, 25, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44,
+                    46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 67,
+                    70, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 90]
+
+    # 90 classes of COCO dataset
+    coco_label_names = ('background', 
+                        'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck',
+                        'boat', 'traffic light', 'fire hydrant', 'street sign', 'stop sign',
+                        'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
+                        'elephant', 'bear', 'zebra', 'giraffe', 'hat', 'backpack', 'umbrella',
+                        'shoe', 'eye glasses', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis',
+                        'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove',
+                        'skateboard', 'surfboard', 'tennis racket', 'bottle', 'plate', 'wine glass',
+                        'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich',
+                        'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair',
+                        'couch', 'potted plant', 'bed', 'mirror', 'dining table', 'window', 'desk',
+                        'toilet', 'door', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
+                        'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'blender', 'book',
+                        'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
+                        )
+
+    coco_class_mapping = {k:v for k, v in enumerate(coco_label_names)}
+    class_mapping = {k:v for k, v in coco_class_mapping.items() if k in coco_class_ids}
+
+    return class_mapping

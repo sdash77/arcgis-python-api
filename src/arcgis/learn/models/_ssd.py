@@ -102,6 +102,11 @@ class SingleShotDetector(ArcGISModel):
                             bounding box.
     ---------------------   -------------------------------------------
     ssd_version             Optional int within [1,2]. Use version=1 for arcgis v1.6.2 or earlier
+    ---------------------   -------------------------------------------
+    backend                 Optional string. Controls the backend framework to be used
+                            for this model, which is 'pytorch' by default.
+
+                            valid options are 'pytorch', 'tensorflow'
     =====================   ===========================================
     
     :returns: `SingleShotDetector` Object

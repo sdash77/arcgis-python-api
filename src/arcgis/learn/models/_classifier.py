@@ -207,16 +207,12 @@ class FeatureClassifier(ArcGISModel):
 
     def _save_confusion_matrix(self, path):
         from matplotlib import pyplot as plt
-        import fastai
-        from fastprogress import fastprogress
-        from fastprogress.fastprogress import force_console_behavior, master_bar, progress_bar
 
-        fastprogress.NO_BAR = True
-        fastai.basic_train.master_bar, fastai.basic_train.progress_bar = force_console_behavior()
-        self.plot_confusion_matrix()
-        plt.savefig(os.path.join(path, 'confusion_matrix.png'))
-        plt.close()
-        fastai.basic_train.master_bar, fastai.basic_train.progress_bar = master_bar, progress_bar
+        from IPython.utils import io
+        with io.capture_output() as captured:
+            self.plot_confusion_matrix()
+            plt.savefig(os.path.join(path, 'confusion_matrix.png'))
+            plt.close()
         
     @property
     def _model_metrics(self):
