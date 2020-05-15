@@ -16,7 +16,7 @@ class LivingAtlas(BasePortalAdmin):
     When you make Living Atlas content available to your portal members,
     you're providing them with ready-made content that they can use
     alone or in combination with their own content to create maps,
-    scenes, and apps and perform analysis in the portal map viewer or
+    scenes, and apps and perform analysis in the portal Map Viewer or
     Insights for ArcGIS.
 
     :Note:
@@ -28,39 +28,63 @@ class LivingAtlas(BasePortalAdmin):
     created by Esri. If your portal can connect to the Internet, the
     following three levels of Living Atlas content are available to you from
     ArcGIS Online:
-      1). Content that does not require you to sign in to an ArcGIS Online
-          account
-          - This content is available by default in Portal for ArcGIS.
-      2). Subscriber content
-          - Subscriber content is the collection of ready-to-use map layers,
-            analytic tools, and services published by Esri that requires an
-            ArcGIS Online organizational subscription account to access. This
-            includes layers from Esri such as Landsat 8 imagery, NAIP imagery,
-            landscape analysis layers, and historical maps. Subscriber content
-            is provided as part of your organizational subscription and does
-            not consume any credits. Layers included in the Living Atlas
-            subscriber content are suitable for use with analysis tools.
-      3). Premium content
-         - Premium content is a type of subscriber content that requires an
-         ArcGIS Online organizational subscription account to access and
-         consumes credits. Access and credit information is listed in the
-         description details for each item.
-         Premium content provides portal members with access to ready-to-use
-         content such as demographic and lifestyle maps as well as tools for
-         geocoding, geoenrichment, network analysis, elevation analysis, and
-         spatial analysis.
 
+    ================     ====================================================
+    **Content Type**        **Description**
+    ----------------     ----------------------------------------------------
+    Default              Content that does not require you to sign in to an
+                         ArcGIS Online account. Available by default in ArcGIS
+                         Enterprise.
+    ----------------     ----------------------------------------------------
+    Subscriber           Subscriber content is the collection of ready-to-use
+                         map layers, analytic tools, and services published
+                         by Esri that requires an ArcGIS Online organizational
+                         subscription account to access. This includes layers
+                         from Esri such as Landsat 8 imagery, NAIP imagery,
+                         landscape analysis layers, and historical maps.
+                         Subscriber content is provided as part of your
+                         organizational subscription and does not consume
+                         any credits.
+    ----------------     ----------------------------------------------------
+    Premium              Premium content is a type of subscriber content that
+                         requires an ArcGIS Online organizational subscription
+                         account to access and consumes credits. Access and
+                         credit information is listed in the  description details
+                         for each item. Premium content provides portal members
+                         with access to ready-to-use  content such as demographic
+                         and lifestyle maps as well as tools for  geocoding,
+                         geoenrichment, network analysis, elevation analysis, and
+                         spatial analysis.
+    ================     ====================================================
+
+    See `Configure Living Atlas content: Types of Content Available <https://enterprise.arcgis.com/en/portal/latest/administer/windows/configure-living-atlas-content.htm#ESRI_SECTION1_7F44ACDF4DFE408A8430BD29C9DDFC67>`_
+    for complete details.
+
+    Portal administrators do not need to create this class directly in most
+    circumstances. Instead, first access the :class:`PortalAdminManager<arcgis.gis.admin.PortalAdminManager>`
+    using the `admin` property of the :class:`GIS<arcgis.gis.GIS>`. Then use
+    the `living_atlas` property to return a :class:`LivingAtlas` object.
+
+    .. code-block:: python
+
+        ent_living_atlas = gis.admin.living_atlas
+
+    To create an instance directly:
 
     ===============     ====================================================
     **Argument**        **Description**
     ---------------     ----------------------------------------------------
     url                 required string, the web address of the site to
                         manage licenses.
-                        example:
-                        https://<org url>/<wa>/portaladmin/system/content/livingatlas
     ---------------     ----------------------------------------------------
-    gis                 required GIS, the gis connection object.
+    gis                 required :class:`GIS<arcgis.gis.GIS>` object.
     ===============     ====================================================
+
+    .. code-block:: python
+
+        ent_living_atlas = LivingAtlas(url="https://portal_url/web_adaptor/portaladmin/system/content/livingatlas"
+                                       gis=gis)
+
     """
     
     _groupquery = None
@@ -97,7 +121,7 @@ class LivingAtlas(BasePortalAdmin):
             self._groupquery = 'title:"Living Atlas" AND owner:esri_livingatlas'
         groups = self._gis.groups
         self._groups = []
-        for group in groups.search(query=self._groupquery):
+        for group in groups.search(query=self._groupquery, outside_org=True):
             if group.title.lower() == "living atlas".lower():
                 self._living_atlas_group =  group
             elif group.title.lower() == 'Living Atlas Analysis Layers'.lower():
@@ -117,7 +141,7 @@ class LivingAtlas(BasePortalAdmin):
         apps for geographic analysis.
 
         :returns:
-           boolean. True means enabled, False means failure to enable.
+           boolean. `True` if enabled. `False` if failed to enable.
 
         """
         url = self._url + "/share"
@@ -137,7 +161,7 @@ class LivingAtlas(BasePortalAdmin):
         Disables the Public Living Atlas content.
 
         :returns:
-           boolean. True means enabled, False means failure to enable.
+           boolean. True means disabled, False means failure to disable.
 
         """
         url = self._url + "/unshare"
@@ -154,14 +178,41 @@ class LivingAtlas(BasePortalAdmin):
     #----------------------------------------------------------------------
     def status(self, group):
         """
-        returns the information about the sharing status of the Living
-        Atlas
+        Returns information about the sharing status of the Living
+        Atlas with the group.
 
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
         group               required string or Group object
         ===============     ====================================================
+
+        .. code-block:: python
+
+            >>> ent_living_atlas = gis.admin.living_atlas
+
+            >>> liv_atl_groups = ent_living_atlas.groups
+            >>> liv_atl_groups
+
+                [<Group title:"Living Atlas" owner:esri_livingatlas>,
+                 <Group title:"Living Atlas Analysis Layers" owner:esri_livingatlas>]
+
+            >>> liv_atl_group = liv_atl_groups[0]
+
+            >>> living_atlas.status(liv_atl_group)
+
+                 {'publicContentEnabled': True,
+                  'subscriberContentEnabled': True,
+                  'premiumContentEnabled': False,
+                  'publicContentShared': True,
+                  'subscriberContentShared': True,
+                  'premiumContentShared': False,
+                  'subscriberContentUsername': 'demos_deldev',
+                  'subscriberUserValid': 'Valid',
+                  'premiumContentUsername': None,
+                  'premiumUserValid': 'UnKnown',
+                  'upgraded': True}
+
         """
         url = "%s/status" % self._url
         params = {"f" : "json"}
@@ -173,7 +224,9 @@ class LivingAtlas(BasePortalAdmin):
     #----------------------------------------------------------------------
     def upgrade(self):
         """
-        Upgrades the Living Atlas Group to the latest version
+        Upgrades the Living Atlas Group to the latest version of the Living Atlas
+        data. See `Living Atlas content life cycles and updates <https://enterprise.arcgis.com/en/portal/latest/use/living-atlas-content-life-cycles.htm>`_
+        for details.
 
         :return: Boolean
         """
@@ -259,14 +312,14 @@ class LivingAtlas(BasePortalAdmin):
     @property
     def groups(self):
         """returns a list of all living atlas groups"""
-        if self._groups is None:
+        if not self._groups:
             self._init()
         return self._groups
     #----------------------------------------------------------------------
     def validate_credentials(self, username, password, online_url=None):
         """
-        returns the information about the sharing status of the Living
-        Atlas
+        Ensures the arguments contain valid credentials to access an active
+        ArcGIS Online Organization.
 
         ===============     ====================================================
         **Argument**        **Description**
@@ -296,7 +349,7 @@ class LivingAtlas(BasePortalAdmin):
     #----------------------------------------------------------------------
     def enable_premium_atlas(self, username, password):
         """
-        Enables the Premium Livinng Atlas Content for a local portal.
+        Enables the Premium Living Atlas Content for a local portal.
 
         Premium content is a type of subscriber content that requires an
         ArcGIS Online organizational subscription account to access and
@@ -318,6 +371,50 @@ class LivingAtlas(BasePortalAdmin):
         :Note:
           This will cost you credits.
 
+        .. code-block:: python
+
+            >>> ent_living_atlas = gis.admin.living_atlas
+
+            >>> liv_atl_groups = ent_living_atlas.groups
+            >>> liv_atl_groups
+
+                [<Group title:"Living Atlas" owner:esri_livingatlas>,
+                 <Group title:"Living Atlas Analysis Layers" owner:esri_livingatlas>]
+
+            >>> liv_atl_group = liv_atl_groups[0]
+
+            >>> living_atlas.status(liv_atl_group)
+
+                 {'publicContentEnabled': True,
+                  'subscriberContentEnabled': True,
+                  'premiumContentEnabled': False,
+                  'publicContentShared': True,
+                  'subscriberContentShared': True,
+                  'premiumContentShared': False,
+                  'subscriberContentUsername': 'demos_deldev',
+                  'subscriberUserValid': 'Valid',
+                  'premiumContentUsername': None,
+                  'premiumUserValid': 'UnKnown',
+                  'upgraded': True}
+
+            >>> living_atlas.enable_premium_atlas("org_admin",
+                                                  "org_admin_password")
+
+                   True
+
+            >>> living_atlas.status(liv_atl_group)
+
+                 {'publicContentEnabled': True,
+                  'subscriberContentEnabled': True,
+                  'premiumContentEnabled': True,
+                  'publicContentShared': True,
+                  'subscriberContentShared': True,
+                  'premiumContentShared': True,
+                  'subscriberContentUsername': 'demos_deldev',
+                  'subscriberUserValid': 'Valid',
+                  'premiumContentUsername': 'arcgispyapibot',
+                  'premiumUserValid': 'InValid',
+                  'upgraded': True}
 
         """
         group_id = None
@@ -351,17 +448,17 @@ class LivingAtlas(BasePortalAdmin):
     #----------------------------------------------------------------------
     def enable_subscriber_atlas(self, username, password):
         """
-        Enables the Premium Livinng Atlas Content for a local portal.
+        Enables the Subscriber level Living Atlas Content for a local portal.
 
         Subscriber content is the collection of ready-to-use map layers,
         analytic tools, and services published by Esri that requires an
-        ArcGIS Online organizational subscription account to access. This
-        includes layers from Esri such as Landsat 8 imagery, NAIP imagery,
-        landscape analysis layers, and historical maps. Subscriber content
-        is provided as part of your organizational subscription and does
-        not consume any credits. Layers included in the Living Atlas
-        subscriber content are suitable for use with analysis tools.
-
+        ArcGIS Online organizational subscription account to access.
+        This includes layers from Esri such as Landsat 8 imagery,
+        NAIP imagery, landscape analysis layers, and historical maps.
+        Subscriber content is provided as part of your
+        organizational subscription and does not consume any credits.
+        Layers included in the Living Atlas subscriber content are suitable
+        for use with analysis tools.
 
         ===============     ====================================================
         **Argument**        **Description**
@@ -434,6 +531,28 @@ class LivingAtlas(BasePortalAdmin):
     def disable_premium_atlas(self):
         """
         Disables the Premium Living Atlas Content for a local portal.
+
+        .. code-block:: python
+
+            >>> living_atlas = gis.admin.living_atlas
+
+            >>> living_atlas.disable_premium_atlas()
+
+                True
+
+            >>> living_atlas.status(liv_atl_group)
+
+                {'publicContentEnabled': True,
+                 'subscriberContentEnabled': True,
+                 'premiumContentEnabled': False,
+                 'publicContentShared': True,
+                 'subscriberContentShared': True,
+                 'premiumContentShared': False,
+                 'subscriberContentUsername': 'demos_deldev',
+                 'subscriberUserValid': 'Valid',
+                 'premiumContentUsername': None,
+                 'premiumUserValid': 'UnKnown',
+                 'upgraded': True}
 
         """
         group_id = None
