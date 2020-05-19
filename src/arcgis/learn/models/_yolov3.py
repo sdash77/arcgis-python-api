@@ -102,7 +102,7 @@ class YOLOv3(ArcGISModel):
             weights_file = os.path.join(weights_path, 'yolov3.weights')
             if not os.path.exists(weights_file):
                 try:
-                    if not os.path.exists(os.path.join(weights_path, 'yolov3.zip')):
+                    if not os.path.exists(weights_path):
                         weights_file = download_yolo_weights(weights_path)
                     extract_zipfile(weights_path, 'yolov3.zip', remove=True)
                 except Exception as e:
@@ -139,7 +139,7 @@ class YOLOv3(ArcGISModel):
     @property
     def supported_backbones(self):
         """ Supported backbones for this model. """        
-        return self._backbone
+        return ['DarkNet53']
     
     @property
     def _model_metrics(self):
@@ -484,6 +484,8 @@ class YOLOv3(ArcGISModel):
 
 
     def _get_emd_params(self):
+        
+        class_data = {}
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
@@ -495,16 +497,25 @@ class YOLOv3(ArcGISModel):
         _emd_template['ModelParameters']['n_bands'] = self.config_model['N_BANDS']
         _emd_template['Classes'] = []
 
-        class_data = {}
-        for i, class_name in enumerate(self._data.classes[1:]): # 0th index is background
-            inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
-            class_data["Value"] = inverse_class_mapping[class_name]
-            class_data["Name"] = class_name
-            color = [random.choice(range(256)) for i in range(3)]
-            class_data["Color"] = color
-            _emd_template['Classes'].append(class_data.copy())
+        if self._data is not None:
+            for i, class_name in enumerate(self._data.classes[1:]): # 0th index is background
+                inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
+                class_data["Value"] = inverse_class_mapping[class_name]
+                class_data["Name"] = class_name
+                color = [random.choice(range(256)) for i in range(3)]
+                class_data["Color"] = color
+                _emd_template['Classes'].append(class_data.copy())
+
+        else:
+            for k, i in coco_class_mapping().items():
+                class_data['Value'] = k
+                class_data['Name'] = i
+                color = [random.choice(range(256)) for i in range(3)]
+                class_data["Color"] = color
+                _emd_template['Classes'].append(class_data.copy())
 
         return _emd_template
+
 
     @classmethod
     def from_model(cls, emd_path, data=None):

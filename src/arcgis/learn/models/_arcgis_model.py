@@ -562,18 +562,22 @@ class ArcGISModel(object):
     def _create_emd_template(self, path):
 
         _emd_template = {}
-        #For old models - add lr, ModelName
-        if isinstance(self._data, _EmptyData) or getattr(self._data, '_is_empty', False):
-            _emd_template = self._data.emd
-            _emd_template["ModelFile"] = path.name
-            if not _emd_template.get("ModelName"):
-                _emd_template["ModelName"] = type(self).__name__
 
-            if not _emd_template.get("LearningRate"):
-                _emd_template["LearningRate"] = "0.0"
+        if not getattr(self._data, "_is_coco", True):
 
-            return _emd_template
-        
+            #For old models - add lr, ModelName
+            if isinstance(self._data, _EmptyData) or getattr(self._data, '_is_empty', False):
+                _emd_template = self._data.emd
+                _emd_template["ModelFile"] = path.name
+                if not _emd_template.get("ModelName"):
+                    _emd_template["ModelName"] = type(self).__name__
+
+                if not _emd_template.get("LearningRate"):
+                    _emd_template["LearningRate"] = "0.0"
+
+                return _emd_template
+            _emd_template = self._get_emd_params()
+
         if self._backbone is None:
             backbone = self._backbone
         else:
@@ -583,7 +587,6 @@ class ArcGISModel(object):
                 backbone = self._backbone.__name__
             if backbone == 'backbone_wrapper':
                 backbone = self._orig_backbone.__name__
-
         _emd_template = self._get_emd_params()
         
         if isinstance(self._learning_rate, slice):
@@ -616,25 +619,26 @@ class ArcGISModel(object):
             for _key in model_params:
                 _emd_template["ModelParameters"][_key] = model_params[_key]
 
-        model_metrics = self._model_metrics
+        if not getattr(self._data, "_is_coco", True):
+            model_metrics = self._model_metrics
 
-        if model_metrics.get('accuracy'):
-            _emd_template['accuracy'] = model_metrics.get('accuracy')
-        
-        if model_metrics.get('average_precision_score'):
-            _emd_template['average_precision_score'] = model_metrics.get('average_precision_score')
+            if model_metrics.get('accuracy'):
+                _emd_template['accuracy'] = model_metrics.get('accuracy')
             
-        if model_metrics.get('psnr_metric'):
-            _emd_template['psnr_metric'] = model_metrics.get('psnr_metric')
+            if model_metrics.get('average_precision_score'):
+                _emd_template['average_precision_score'] = model_metrics.get('average_precision_score')
+                
+            if model_metrics.get('psnr_metric'):
+                _emd_template['psnr_metric'] = model_metrics.get('psnr_metric')
 
-        if model_metrics.get('score'):
-            _emd_template['score'] = model_metrics.get('score')
+            if model_metrics.get('score'):
+                _emd_template['score'] = model_metrics.get('score')
 
-        resize_to = None
-        if hasattr(self._data, 'resize_to') and self._data.resize_to:
-            resize_to = self._data.resize_to
+            resize_to = None
+            if hasattr(self._data, 'resize_to') and self._data.resize_to:
+                resize_to = self._data.resize_to
 
-        _emd_template['resize_to'] = resize_to
+            _emd_template['resize_to'] = resize_to
         
         # Check if model is Multispectral and dump parameters for that
         _emd_template["IsMultispectral"] = getattr(self, '_is_multispectral', False)

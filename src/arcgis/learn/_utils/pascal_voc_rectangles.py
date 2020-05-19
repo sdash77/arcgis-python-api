@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from fastai.vision.data import ObjectCategoryList, ObjectItemList
 from fastai.vision.image import ImageBBox
-from .common import ArcGISMSImage, get_nbatches
+from .common import ArcGISMSImage, get_nbatches, denorm_x
 from matplotlib import pyplot as plt
 from matplotlib import patheffects
 
@@ -274,9 +274,7 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
             symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
     else:
         # normalization stats
-        norm_mean = torch.tensor(imagenet_stats[0]).to(x_batch).view(1, -1, 1, 1)
-        norm_std = torch.tensor(imagenet_stats[1]).to(x_batch).view(1, -1, 1, 1)
-        symbology_x_batch = (x_batch * norm_std) + norm_mean
+        symbology_x_batch = denorm_x(x_batch)
 
     # Channel first to channel last for plotting
     symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
