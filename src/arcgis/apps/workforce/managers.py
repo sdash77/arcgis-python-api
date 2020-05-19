@@ -969,7 +969,7 @@ class AssignmentIntegrationManager:
         
     def _validate_v2(self, integration):
         """Validates an integration for a version 2 project before adding it"""
-        at = None
+        at_code = None
         if "id" not in integration and "appid" not in integration:
             raise ValidationError("Assignment integration must contain an appid", self)
         elif "prompt" not in integration:
@@ -978,9 +978,9 @@ class AssignmentIntegrationManager:
             raise ValidationError("Assignment integration must contain a URL template", self)
         # handle old dict name
         elif "assignmentTypes" in integration:
-            at = integration["assignmentTypes"]
+            at_code = integration["assignmentTypes"]
         elif "assignmenttype" in integration:
-            at = integration["assignmenttype"]
-        if at:
-            if at not in [at.code for at in self.project.assignment_types.search()]:
+            at_code = integration["assignmenttype"]
+        if at_code:
+            if at_code not in [at.code for at in self.project.assignment_types.search()]:
                 raise ValidationError("Invalid assignment type in integration", self)
