@@ -59,6 +59,6 @@ def setupenviron():
 
     os.environ['run_backbones'] = '0'
     os.environ['run_inferencing'] = '0'
-    
+
      # Notebook Tests
-    os.environ["notebook_test"] = r"/mnt/Raster/Data/testdata/extracted_data/object_detection_data/palm-tree-256/test-object-det"
+    os.environ["notebook_test"] = r"/home/administrator/Raster/notebook_test_model"
