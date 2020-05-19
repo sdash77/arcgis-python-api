@@ -3412,3 +3412,247 @@ assignment_type_table_definition_v2 = json.loads(
 }
 """
 )
+
+app_integration_table_definition_v2 = json.loads(
+"""
+{
+  "currentVersion" : 10.7,
+  "id" : 4,
+  "name" : "Assignment Integrations",
+  "type" : "Table",
+  "displayField" : "appid",
+  "description" : "",
+  "copyrightText" : "",
+  "defaultVisibility" : true,
+  "editFieldsInfo" : {
+    "creationDateField" : "CreationDate",
+    "creatorField" : "Creator",
+    "editDateField" : "EditDate",
+    "editorField" : "Editor"
+  },
+  "relationships" : [],
+  "isDataVersioned" : false,
+  "supportsAppend" : true,
+  "supportsCalculate" : true,
+  "supportsASyncCalculate" : true,
+  "supportsTruncate" : false,
+  "supportsAttachmentsByUploadId" : true,
+  "supportsAttachmentsResizing" : true,
+  "supportsRollbackOnFailureParameter" : true,
+  "supportsStatistics" : true,
+  "supportsExceedsLimitStatistics" : true,
+  "supportsAdvancedQueries" : true,
+  "supportsValidateSql" : true,
+  "supportsCoordinatesQuantization" : true,
+  "supportsFieldDescriptionProperty" : true,
+  "supportsQuantizationEditMode" : true,
+  "supportsApplyEditsWithGlobalIds" : true,
+  "advancedQueryCapabilities" : {
+    "supportsPagination" : true,
+    "supportsPaginationOnAggregatedQueries" : true,
+    "supportsQueryRelatedPagination" : true,
+    "supportsQueryWithDistance" : true,
+    "supportsReturningQueryExtent" : true,
+    "supportsStatistics" : true,
+    "supportsOrderBy" : true,
+    "supportsDistinct" : true,
+    "supportsQueryWithResultType" : true,
+    "supportsSqlExpression" : true,
+    "supportsAdvancedQueryRelated" : true,
+    "supportsCountDistinct" : true,
+    "supportsPercentileStatistics" : true,
+    "supportsLod" : true,
+    "supportsQueryWithLodSR" : false,
+    "supportedLodTypes" : [
+      "geohash"
+    ],
+    "supportsReturningGeometryCentroid" : false,
+    "supportsQueryWithDatumTransformation" : true,
+    "supportsHavingClause" : true,
+    "supportsOutFieldSQLExpression" : true,
+    "supportsMaxRecordCountFactor" : true,
+    "supportsTopFeaturesQuery" : true,
+    "supportsQueryWithCacheHint" : true,
+    "supportsQueryAnalytic" : true
+  },
+  "useStandardizedQueries" : true,
+  "allowGeometryUpdates" : true,
+  "hasAttachments" : false,
+  "htmlPopupType" : "esriServerHTMLPopupTypeNone",
+  "hasM" : false,
+  "hasZ" : false,
+  "objectIdField" : "OBJECTID",
+  "uniqueIdField" :
+  {
+    "name" : "OBJECTID",
+    "isSystemMaintained" : true
+  },
+  "globalIdField" : "GlobalID",
+  "typeIdField" : "",
+  "fields" : [
+    {
+      "name" : "OBJECTID",
+      "type" : "esriFieldTypeOID",
+      "alias" : "OBJECTID",
+      "sqlType" : "sqlTypeInteger",
+      "nullable" : false,
+      "editable" : false,
+      "domain" : null,
+      "defaultValue" : null
+    },
+    {
+      "name" : "GlobalID",
+      "type" : "esriFieldTypeGlobalID",
+      "alias" : "GlobalID",
+      "sqlType" : "sqlTypeOther",
+      "length" : 38,
+      "nullable" : false,
+      "editable" : false,
+      "domain" : null,
+      "defaultValue" : null
+    },
+    {
+      "name" : "appid",
+      "type" : "esriFieldTypeString",
+      "alias" : "App ID",
+      "sqlType" : "sqlTypeVarchar",
+      "length" : 255,
+      "nullable" : false,
+      "editable" : true,
+      "domain" : null,
+      "defaultValue" : null
+    },
+    {
+      "name" : "prompt",
+      "type" : "esriFieldTypeString",
+      "alias" : "Prompt",
+      "sqlType" : "sqlTypeVarchar",
+      "length" : 255,
+      "nullable" : false,
+      "editable" : true,
+      "domain" : null,
+      "defaultValue" : null
+    },
+    {
+      "name" : "urltemplate",
+      "type" : "esriFieldTypeString",
+      "alias" : "URL Template",
+      "sqlType" : "sqlTypeVarchar",
+      "length" : 4000,
+      "nullable" : false,
+      "editable" : true,
+      "domain" : null,
+      "defaultValue" : null
+    },
+    {
+      "name" : "assignmenttype",
+      "type" : "esriFieldTypeGUID",
+      "alias" : "Assignment Type",
+      "sqlType" : "sqlTypeOther",
+      "length" : 38,
+      "nullable" : true,
+      "editable" : true,
+      "domain" : null,
+      "defaultValue" : null
+    },
+    {
+      "name" : "CreationDate",
+      "type" : "esriFieldTypeDate",
+      "alias" : "CreationDate",
+      "sqlType" : "sqlTypeOther",
+      "length" : 8,
+      "nullable" : true,
+      "editable" : false,
+      "domain" : null,
+      "defaultValue" : null
+    },
+    {
+      "name" : "Creator",
+      "type" : "esriFieldTypeString",
+      "alias" : "Creator",
+      "sqlType" : "sqlTypeOther",
+      "length" : 128,
+      "nullable" : true,
+      "editable" : false,
+      "domain" : null,
+      "defaultValue" : null
+    },
+    {
+      "name" : "EditDate",
+      "type" : "esriFieldTypeDate",
+      "alias" : "EditDate",
+      "sqlType" : "sqlTypeOther",
+      "length" : 8,
+      "nullable" : true,
+      "editable" : false,
+      "domain" : null,
+      "defaultValue" : null
+    },
+    {
+      "name" : "Editor",
+      "type" : "esriFieldTypeString",
+      "alias" : "Editor",
+      "sqlType" : "sqlTypeOther",
+      "length" : 128,
+      "nullable" : true,
+      "editable" : false,
+      "domain" : null,
+      "defaultValue" : null
+    }
+  ],
+  "indexes" : [
+    {
+      "name" : "PK__workforc__F4B70D858977FB4B",
+      "fields" : "OBJECTID",
+      "isAscending" : true,
+      "isUnique" : true,
+      "description" : "clustered, unique, primary key"
+    },
+    {
+      "name" : "UK_workforce_dfedfd13f5784822873688fff9dfba92_ASSIGNMENT_INTEGRATIONS_GlobalID",
+      "fields" : "GlobalID",
+      "isAscending" : false,
+      "isUnique" : true,
+      "description" : "nonclustered, unique"
+    },
+    {
+      "name" : "CreationDateIndex",
+      "fields" : "CreationDate",
+      "isAscending" : true,
+      "isUnique" : false,
+      "description" : "CreationDate Field index"
+    },
+    {
+      "name" : "CreatorIndex",
+      "fields" : "Creator",
+      "isAscending" : false,
+      "isUnique" : false,
+      "description" : "Creator Field index"
+    },
+    {
+      "name" : "EditDateIndex",
+      "fields" : "EditDate",
+      "isAscending" : true,
+      "isUnique" : false,
+      "description" : "EditDate Field index"
+    },
+    {
+      "name" : "EditorIndex",
+      "fields" : "Editor",
+      "isAscending" : false,
+      "isUnique" : false,
+      "description" : "Editor Field index"
+    }
+  ],
+  "types" : [],
+  "templates" : [],
+  "supportedQueryFormats" : "JSON, geoJSON, PBF",
+  "hasStaticData" : false,
+  "maxRecordCount" : 2000,
+  "standardMaxRecordCount" : 32000,
+  "tileMaxRecordCount" : 8000,
+  "maxRecordCountFactor" : 1,
+  "capabilities" : "Create,Delete,Query,Update,Editing,Sync"
+}
+"""
+)

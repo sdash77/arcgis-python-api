@@ -130,6 +130,8 @@ class Project:
         if summary:
             item_properties['snippet'] = summary
         self._item.update(item_properties)
+        self.gis.content.get(self.dispatcher_web_map_id).update(item_properties)
+        self.gis.content.get(self.worker_web_map_id).update(item_properties)
 
     @property
     def _supports_tracks(self):
@@ -295,7 +297,23 @@ class Project:
             return Table(self.assignment_types_table_url, self.gis)
         else:
             warn("This Workforce Project does not have an assignment types table", WorkforceWarning)
+            
+    @_lazy_property
+    def integrations_table(self):
+        """The integrations :class:`~arcgis.features.Table`"""
+        if self._is_v2_project:
+            return Table(self.integrations_table_url, self.gis)
+        else:
+            warn("This Workforce Project does not have an integrations table", WorkforceWarning)
 
+    @_lazy_property
+    def integrations_table_url(self):
+        """The integrations :class:`~arcgis.features.Table`"""
+        if self._is_v2_project:
+            return self.assignments_layer_url.replace("/0", "/4")
+        else:
+            warn("This Workforce Project does not have an integrations table", WorkforceWarning)
+            
     @_lazy_property
     def tracks_layer(self):
         """The tracks :class:`~arcgis.features.FeatureLayer`"""
@@ -356,4 +374,3 @@ class Project:
     def assignment_types(self):
         """The :class:`~arcgis.apps.workforce.managers.AssignmentTypeManager` for the project"""
         return AssignmentTypeManager(self)
-
