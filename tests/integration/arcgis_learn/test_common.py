@@ -290,23 +290,25 @@ class Test_Common(unittest.TestCase):
 
 # TestModule
 def tearDownModule():
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data1"], "models")}"')
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data1"], "images/models")}"')
+    os.system(f'rm -rf "{os.path.join(os.environ["object_detection_data1"], "models")}"')
+    os.system(f'rm -rf "{os.path.join(os.environ["object_detection_data1"], "images/models")}"')
 
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data2"], "models")}"')
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data2"], "images/models")}"')
+    os.system(f'rm -rf "{os.path.join(os.environ["object_detection_data2"], "models")}"')
+    os.system(f'rm -rf "{os.path.join(os.environ["object_detection_data2"], "images/models")}"')
 
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data3"], "models")}"')
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["object_detection_data3"], "images/models")}"')
+    os.system(f'rm -rf "{os.path.join(os.environ["object_detection_data3"], "models")}"')
+    os.system(f'rm -rf "{os.path.join(os.environ["object_detection_data3"], "images/models")}"')
 
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["pixel_classification_data1"], "models")}"')
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["pixel_classification_data1"], "images/models")}"')
+    os.system(f'rm -rf "{os.path.join(os.environ["pixel_classification_data1"], "models")}"')
+    os.system(f'rm -rf "{os.path.join(os.environ["pixel_classification_data1"], "images/models")}"')
 
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["feature_classification_data1"], "models")}"')
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["feature_classification_data1"], "images/models")}"')
+    os.system(f'rm -rf "{os.path.join(os.environ["feature_classification_data1"], "models")}"')
+    os.system(f'rm -rf "{os.path.join(os.environ["feature_classification_data1"], "images/models")}"')
 
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["maskrcnn_data1"], "models")}"')
-    os.system(f'rmdir /s /q "{os.path.join(os.environ["maskrcnn_data1"], "images/models")}"')
+    os.system(f'rm -rf "{os.path.join(os.environ["maskrcnn_data1"], "models")}"')
+    os.system(f'rm -rf "{os.path.join(os.environ["maskrcnn_data1"], "images/models")}"')
+
+    os.system(f'rm -rf "{os.path.join(os.environ["notebook_test"])}"')
 
     # outputs_to_delete = os.listdir(os.path.dirname(os.environ["object_detection_inferencing_result_ssd"]))
     # for output_files in outputs_to_delete:
