@@ -308,6 +308,8 @@ def tearDownModule():
     os.system(f'rmdir /s /q "{os.path.join(os.environ["maskrcnn_data1"], "models")}"')
     os.system(f'rmdir /s /q "{os.path.join(os.environ["maskrcnn_data1"], "images/models")}"')
 
+    os.system(f'rmdir /s /q "{os.path.join(os.environ["notebook_test"])}"')
+
     # outputs_to_delete = os.listdir(os.path.dirname(os.environ["object_detection_inferencing_result_ssd"]))
     # for output_files in outputs_to_delete:
     #     os.remove(f'{os.path.join(os.path.dirname(os.environ["object_detection_inferencing_result_ssd"]), output_files)}')
