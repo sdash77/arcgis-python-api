@@ -854,7 +854,8 @@ class AssignmentIntegrationManager:
                                    Version 2 Projects:
                                    String which is a globalid representing an assignment type. This is
                                    stored at assignment_type.code. You can only pass one at a time.
-                                   To add multiple integrations,
+                                   To add multiple integrations, call this function multiple times or
+                                   use `batch_add`.
                                    
                                    Version 1 Projects: :class:`dict`.
                                    A dictionary containing assignment type

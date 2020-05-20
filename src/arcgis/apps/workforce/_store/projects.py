@@ -201,21 +201,10 @@ def _v2_create_project(gis, summary, title):
     workers_webmap = workers_webmap_future.result()
     dispatchers_webmap = dispatchers_webmap_future.result()
 
-    # create the project
-    project_item = _v2_create_project_item(gis,
-                                           folder_name,
-                                           workforce_service_item,
-                                           dispatchers_webmap,
-                                           workers_webmap,
-                                           title,
-                                           summary,
-                                           group_id,
-                                           )
     project_items = [
         workforce_service_item,
         workers_webmap,
-        dispatchers_webmap,
-        project_item
+        dispatchers_webmap
     ]
     # share and protect items
     for i in project_items:
@@ -225,7 +214,6 @@ def _v2_create_project(gis, summary, title):
     # set thumbnail
     my_path = os.path.abspath(os.path.dirname(__file__))
     thumbnail = os.path.join(my_path, '/'.join(('resources', 'default-project-thumbnail.png')))
-    project_item.update(thumbnail=thumbnail)
     workers_webmap.update(thumbnail=thumbnail)
     dispatchers_webmap.update(thumbnail=thumbnail)
     
@@ -234,7 +222,6 @@ def _v2_create_project(gis, summary, title):
         "properties": {
             "workforceProjectGroupId": group_id,
             "workforceProjectVersion": "2.0.0-beta.3",
-            "workforceProjectItemId": project_item.id,
             "workforceDispatcherMapId": dispatchers_webmap.id,
             "workforceWorkerMapId": workers_webmap.id
         }
@@ -255,62 +242,8 @@ def _v2_create_project(gis, summary, title):
     )])
 
     # create the Project to return
-    project = arcgis.apps.workforce.Project(project_item)
+    project = arcgis.apps.workforce.Project(workforce_service_item)
     return project
-
-
-def _v2_create_project_item(gis, folder_name, workforce_service_item, dispatchers_webmap, workers_webmap, title, summary, group_id):
-    """
-    Creates the project item
-    :param gis: An authenticated GIS
-    :param folder_name: The name of the folder in which to place the project
-    :param workforce_service_item: The assignments item
-    :param dispatchers_webmap: The dispatcher webmap item
-    :param workers_webmap: The workers webmap item
-    :param title: The title of the project
-    :param summary: The summary of the project
-    :param group_id: The group id
-    :return: The project item
-    """
-    item_properties = {
-        "title": title,
-        "snippet": summary,
-        "tags": 'workforce',
-        "type": 'Workforce Project',
-        "typeKeywords": 'Workforce Project, Workforce Project 2.0'
-    }
-    project_data = {
-        "workerWebMapId": workers_webmap.id,
-        "dispatcherWebMapId": dispatchers_webmap.id,
-        "dispatchers": {
-            "serviceItemId": workforce_service_item.id,
-            "url": workforce_service_item.tables[0].url
-        },
-        "assignments": {
-            "serviceItemId": workforce_service_item.id,
-            "url": workforce_service_item.layers[0].url
-        },
-        "workers": {
-            "serviceItemId": workforce_service_item.id,
-            "url": workforce_service_item.layers[1].url
-        },
-        "assignmentIntegrations": [
-            {
-                "id": 'default-navigator',
-                "prompt": "Navigate to Assignment",
-                "urlTemplate": "arcgis-navigator://?stop=${assignment.latitude},${assignment.longitude}&stopname=${assignment.location}&callback=arcgis-workforce://&callbackprompt=Workforce",
-            }
-        ],
-        "version": "2.0.0-beta.3",
-        "assignmentTypes": {
-            "serviceItemId": workforce_service_item.id,
-            "url": workforce_service_item.tables[1].url
-        },
-        "groupId": group_id,
-    }
-    item_properties["text"] = json.dumps(project_data)
-    item = gis.content.add(item_properties, folder=folder_name)
-    return item
 
 
 def _v1_create_project_item(gis, folder_name, assignments_item, dispatchers_item, workers_item, tracks_item,
@@ -395,7 +328,7 @@ def _v2_create_worker_webmap(gis, folder_name, workforce_service_item, assignmen
         "tags": "workforce-worker",
         "extent": array_extent,
         "type": 'Web Map',
-        "typeKeywords": 'ArcGIS Online,Explorer Web Map,Map,Offline,Online Map,Web Map,Workforce Project,Workforce Worker,Data Editing',
+        "typeKeywords": 'ArcGIS Online,Explorer Web Map,Map,Offline,Online Map,Web Map,Workforce Worker,Data Editing',
         "properties": {"workforceFeatureServiceId": workforce_service_item.id}
     }
 
@@ -433,6 +366,7 @@ def _v2_create_worker_webmap(gis, folder_name, workforce_service_item, assignmen
     webmap_data["operationalLayers"].append(_build_operational_layers(workforce_service_item, workers_popup_def, layer_index=1))
     webmap_data["tables"].append(_build_table(workforce_service_item, table_index=0))
     webmap_data["tables"].append(_build_table(workforce_service_item, table_index=1))
+    webmap_data["tables"].append(_build_table(workforce_service_item, table_index=2))
     item_properties["text"] = json.dumps(webmap_data)
 
     item = gis.content.add(item_properties, folder=folder_name)
@@ -459,7 +393,7 @@ def _v2_create_dispatcher_webmap(gis, folder_name, workforce_service_item, assig
         "tags": "workforce-dispatcher",
         "extent": array_extent,
         "type": 'Web Map',
-        "typeKeywords": 'ArcGIS Online,Explorer Web Map,Map,Offline,Online Map,Web Map,Workforce Dispatcher,Workforce Project',
+        "typeKeywords": 'ArcGIS Online,Explorer Web Map,Map,Offline,Online Map,Web Map,Workforce Dispatcher',
         "properties": {"workforceFeatureServiceId": workforce_service_item.id}
     }
 
