@@ -49,7 +49,11 @@ def common_test(model_type, output_name, data_path, old_models, **prepare_data_k
 
     # Fit for 5 epochs without LR.
     model_object.fit(5)
-    #
+
+    # Fit for 10 epochs if nightly tests are run.
+    # if os.environ['nightly_test'] == '1:
+        # model_object.fit(5)
+
     # Fit for 5 epochs with LR.
     model_object.fit(1, lr=0.001)
 
@@ -58,6 +62,10 @@ def common_test(model_type, output_name, data_path, old_models, **prepare_data_k
 
     # Show results after training.
     model_object.show_results()
+
+    #Test for accuracy if nightly_test is run
+    # if os.environ['nightly_test'] == '1:
+        # assertGreater(model.average_precision_score(mean=True), .40)
 
     # Load from saved model.
     model_object.load(f'post_fit_{output_name}')
@@ -78,7 +86,6 @@ def common_test(model_type, output_name, data_path, old_models, **prepare_data_k
     for old_model in old_models:
         model_object = model_type.from_model(old_model)
 
-# if os.environ['run_inferencing'] == '1':
     #For object detection inferencing.
 def object_detection_inferencing(in_model_definition, in_raster, out_detected_objects, model_args):
     import arcpy
@@ -193,6 +200,7 @@ class Test_Common(unittest.TestCase):
             batch_size=2,
             chip_size=300
         )
+
         if os.environ['run_inferencing'] == '1':
             object_detection_inferencing(
                 os.path.join(self.obj_detection_data2, 'models/post_fit_ssd/post_fit_ssd.emd'),
