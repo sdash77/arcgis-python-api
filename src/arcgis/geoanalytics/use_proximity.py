@@ -9,7 +9,7 @@ import logging as _logging
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet, FeatureCollection
 from arcgis.geoprocessing._support import _execute_gp_tool
-from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob
+from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob, _prevent_bds_item
 
 _log = _logging.getLogger(__name__)
 
@@ -146,7 +146,7 @@ def create_buffers(input_layer,
                                     dissolve_fields='Date')
     """
     kwargs = locals()
-
+    input_layer = _prevent_bds_item(input_layer)
 
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url

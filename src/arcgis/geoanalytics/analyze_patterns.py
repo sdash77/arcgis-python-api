@@ -14,7 +14,12 @@ from arcgis.geoprocessing import import_toolbox
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing import DataFile
 from arcgis import env as _env
-from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob
+from ._util import (_id_generator, 
+                    _feature_input, 
+                    _set_context, 
+                    _create_output_service, 
+                    GAJob, 
+                    _prevent_bds_item)
 
 _log=_logging.getLogger(__name__)
 
@@ -249,6 +254,8 @@ def forest(input_layer,
         'trainandpredict' : 'TrainAndPredict'
 
     }
+    
+    input_layer = _prevent_bds_item(input_layer)
     if str(prediction_type).lower() not in allowed_prediction_types:
         raise ValueError("Invalid Prediction type.")
     else:
@@ -320,7 +327,7 @@ def forest(input_layer,
     try:
         if future:
             gpjob = _execute_gp_tool(gis, "ForestBasedClassificationAndRegression", params, param_db, return_values, _use_async, url, True, future=future)
-            return GAJob(gpjob=gpjob, return_service=output_service)
+            return GAJob(gpjob=gpjob, return_service=output_service, add_message=True)
         res = _execute_gp_tool(gis, "ForestBasedClassificationAndRegression", params, param_db, return_values, _use_async, url, True, future=future)
 
         if return_tuple:
@@ -422,6 +429,8 @@ def gwr(input_layer,
     
 
     """
+    input_layer = _prevent_bds_item(input_layer)
+    
     if gis is None and \
        _env.active_gis is None:
         raise ValueError("A `GIS is required`")
@@ -650,7 +659,7 @@ def glr(input_layer,
         "count" : "Count"
     }
     kwargs=locals()
-
+    input_layer = _prevent_bds_item(input_layer)
     if regression_family.lower() in _allowed_regression_family:
         regression_family = _allowed_regression_family[regression_family.lower()]
         if 'regression_family' in kwargs:
@@ -822,7 +831,7 @@ def find_point_clusters(
     for key, value in kwargs.items():
         if value is not None:
             params[key]=value
-
+    input_layer = _prevent_bds_item(input_layer)
     if output_name is None:
         output_service_name='Find Point Clusters_' + _id_generator()
         output_name=output_service_name.replace(' ', '_')
@@ -1025,7 +1034,7 @@ def calculate_density(
 
     """
     kwargs=locals()
-
+    input_layer = _prevent_bds_item(input_layer)
     gis=_arcgis.env.active_gis if gis is None else gis
     url=gis.properties.helperServices.geoanalytics.url
 
@@ -1217,7 +1226,7 @@ def find_hot_spots(
 
     """
     kwargs=locals()
-
+    input_layer = _prevent_bds_item(input_layer)
     gis=_arcgis.env.active_gis if gis is None else gis
     url=gis.properties.helperServices.geoanalytics.url
 
@@ -1401,7 +1410,7 @@ def create_space_time_cube(point_layer: _FeatureSet,
     """
 
     kwargs=locals()
-
+    input_layer = _prevent_bds_item(input_layer)
     gis=_arcgis.env.active_gis if gis is None else gis
     url=gis.properties.helperServices.geoanalytics.url
 

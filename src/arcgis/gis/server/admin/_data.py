@@ -339,13 +339,12 @@ class DataStoreManager(BaseServer):
 
         **Usage**:
 
-        >>> con = dm.create_connection_string(r"c:\myfolder\postgres_db.sde")
+        >>> con = dm.create_connection_string("c:\\myfolder\\postgres_db.sde")
         >>> print(con)
         'ENCRYPTED_PASSWORD=************************;SERVER=localhost;
         INSTANCE=sde:postgresql:localhost,5432;DBCLIENT=postgresql;
         DB_CONNECTION_PROPERTIES=localhost,5432;DATABASE=esri_spatial;
         USER=sde;VERSION=sde.DEFAULT;AUTHENTICATION_MODE=DBMS'
-
         """
         if str(sde).lower().endswith('.sde'):
             

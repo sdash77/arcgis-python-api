@@ -10,7 +10,7 @@ import datetime as _datetime
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.geoprocessing._support import _execute_gp_tool
-from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob
+from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob, _prevent_bds_item
 
 _log = _logging.getLogger(__name__)
 
@@ -269,6 +269,7 @@ def dissolve_boundaries(input_layer,
                                                   output_name="Soil_Suitability_dissolved")
     """
     kwargs = locals()
+    input_layer = _prevent_bds_item(input_layer)
     tool_name = "DissolveBoundaries"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
@@ -422,6 +423,7 @@ def merge_layers(input_layer,
                                        output_name="IL_WI_Census_Blocks")
     """
     kwargs = locals()
+    input_layer = _prevent_bds_item(input_layer)
     tool_name = "MergeLayers"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
@@ -533,6 +535,7 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None
 
     """
     kwargs = locals()
+    input_layer = _prevent_bds_item(input_layer)
     tool_name = "ClipLayer"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
@@ -699,6 +702,7 @@ def overlay_data(input_layer,
                                           output_name="Watershed_intersections")   
     """
     kwargs = locals()
+    input_layer = _prevent_bds_item(input_layer)
     tool_name = "OverlayLayers"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
@@ -802,6 +806,7 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
 
     """
     kwargs = locals()
+    input_layer = _prevent_bds_item(input_layer)
     tool_name = "AppendData"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
@@ -925,6 +930,7 @@ def calculate_fields(input_layer,
                                       expression='max($feature["InputValue"],$feature["Value2"])')
     """
     kwargs = locals()
+    input_layer = _prevent_bds_item(input_layer)
     tool_name = "CalculateField"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
@@ -1037,7 +1043,7 @@ def copy_to_data_store(
                                              output_name="copy earthquakes data")
     """
     kwargs = locals()
-
+    input_layer = _prevent_bds_item(input_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
 
@@ -1079,11 +1085,13 @@ def copy_to_data_store(
         {"name": "output", "display_name": "Output Layer", "type": _FeatureSet},
     ]
     try:
+        
+        gpjob = _execute_gp_tool(gis, "CopyToDataStore", params, param_db, return_values, _use_async, url, True, future=True)
+        gajob =  GAJob(gpjob=gpjob, return_service=output_service)
         if future:
-            gpjob = _execute_gp_tool(gis, "CopyToDataStore", params, param_db, return_values, _use_async, url, True, future=future)
-            return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, "CopyToDataStore", params, param_db, return_values, _use_async, url, True, future=future)
-        return output_service
+            return gajob
+        else:
+            return gajob.result()
     except:
         if isinstance(output_service, bool):
             return False
