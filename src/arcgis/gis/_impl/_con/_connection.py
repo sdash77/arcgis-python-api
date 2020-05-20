@@ -501,6 +501,8 @@ class Connection(object):
         #else:
             #return resp.text
             if 'error' in data:
+                if 'messages' in data:
+                    return data
                 errorcode = data['error']['code'] if 'code' in data['error'] else 0
                 self._handle_json_error(data['error'], errorcode)
             return data
