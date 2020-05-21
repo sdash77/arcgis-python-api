@@ -51,7 +51,7 @@ def common_test(model_type, output_name, data_path, old_models, **prepare_data_k
     model_object.fit(5)
 
     # Fit for 10 epochs if nightly tests are run.
-    if os.environ['nightly_test'] == '1:
+    if os.environ['nightly_test'] == "1":
         model_object.fit(5)
 
     # Fit for 5 epochs with LR.
@@ -64,7 +64,7 @@ def common_test(model_type, output_name, data_path, old_models, **prepare_data_k
     model_object.show_results()
 
     #Test for accuracy if nightly_test is run
-    if os.environ['nightly_test'] == '1:
+    if os.environ['nightly_test'] == "1":
         assertGreater(model.average_precision_score(mean=True), .40)
 
     # Load from saved model.
@@ -73,7 +73,7 @@ def common_test(model_type, output_name, data_path, old_models, **prepare_data_k
     # Check all supported backbones.
     supported_backbones = model_type.supported_backbones
 
-    if os.environ['run_backbones'] == '1':
+    if os.environ['run_backbones'] == "1":
         for backbone in supported_backbones:
             model_object = model_type(data, backbone=backbone)
             model_object.fit(1, lr=0.1)
