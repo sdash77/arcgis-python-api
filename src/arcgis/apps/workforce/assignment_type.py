@@ -6,7 +6,7 @@ from .feature_model import FeatureModel
 from ._store import *
 from ._store.assignment_types_v2 import *
 from warnings import warn
-from ._schemas import AssignmentTypesSchema
+from ._schemas import AssignmentTypeSchema
 
 
 class AssignmentType(FeatureModel):
@@ -30,7 +30,7 @@ class AssignmentType(FeatureModel):
     def __init__(self, project, feature=None, coded_value=None, name=None):
         if project._is_v2_project:
             super().__init__(project=project, feature_layer=project.assignment_types_table, feature=feature)
-            self._schema = AssignmentTypesSchema(project.assignment_types_table)
+            self._schema = AssignmentTypeSchema(project.assignment_types_table)
             self._coded_value = None
             if not feature:
                 self.name = name

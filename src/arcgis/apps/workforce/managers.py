@@ -1,9 +1,8 @@
 import os
-
-from ._store.assignment_types_v2 import get_assignment_type_v2, get_assignment_types_v2, add_assignment_type_v2, update_assignment_types_v2, delete_assignment_types_v2, add_assignment_types_v2
 from ._store import *
 from .exceptions import *
 from arcgis.features import Feature
+from .integration import Integration
 
 
 class AssignmentManager(object):
@@ -690,7 +689,7 @@ class WorkerManager:
 
     def batch_add(self, workers):
         """
-          Adds the list of dispatchers to the project.
+          Adds the list of workers to the project.
 
 
           ==================     ====================================================================
@@ -736,7 +735,7 @@ class WorkerManager:
 
     def batch_update(self, workers):
         """
-          Adds the list of dispatchers to update in the project.
+          Adds the list of workers to update in the project.
 
 
           ==================     ====================================================================
@@ -769,8 +768,13 @@ class AssignmentIntegrationManager:
     """
      This manages the assignment integrations in the project
      It can be accessed from the project as :py:attr:`~arcgis.apps.workforce.Project.integrations`
-
-     An integration in Workforce consists of a formatted dictionary. Two examples are shown below:
+    
+     For a version 2 (offline-enabled project), an integration is represented by an Integration
+     object and can be updated in the same fashion as Assignment, AssignmentType, Dispatcher, Project,
+     and Worker objects.
+     
+     For a version 1 project, an integration in Workforce consists of a formatted dictionary.
+     Two examples are shown below:
 
      .. code-block:: python
 
@@ -811,28 +815,29 @@ class AssignmentIntegrationManager:
           ==================     ====================================================================
           **Argument**           **Description**
           ------------------     --------------------------------------------------------------------
-          integration_id         Required :class:`string`. The id of the integration
+          integration_id         Required :class:`string`. The id of the integration. This is field
+                                 'appid' for a Version 2 Workforce project.
           ==================     ====================================================================
 
-          :returns: :class:`dict` or :class:`None`
+          :returns: Version 1: :class:`dict` or :class:`None`, Version 2: :class:`Integration`
 
          """
         if self.project._is_v2_project:
-            return [feature.attributes for feature in self.integration_table.query("appid = '{}'".format(integration_id)).features]
+            return get_integration(self.project, integration_id)
         else:
             for integration in self.project._item_data["assignmentIntegrations"]:
                 if integration_id == integration["id"]:
                     return integration
             return None
 
-    def search(self):
+    def search(self, where="1=1"):
         """
             This returns all of the assignment integrations for the project
 
             :returns: :class:`List` A list of the integrations.
         """
         if self.project._is_v2_project:
-            return [feature.attributes for feature in self.integration_table.query("1=1").features]
+            return query_integrations(self.project, where=where)
         else:
             return self.project._item_data["assignmentIntegrations"]
 
@@ -850,12 +855,13 @@ class AssignmentIntegrationManager:
             url_template           Required for version 2 Workforce projects. Optional for version 1.
                                    :class:`string`. The url template that is used for app linking.
             ------------------     --------------------------------------------------------------------
-            assignment_types       Optional: :class:`string`
+            assignment_types       Optional: :class:`string` or :class:`list`
                                    Version 2 Projects:
                                    String which is a globalid representing an assignment type. This is
-                                   stored at assignment_type.code. You can only pass one at a time.
-                                   To add multiple integrations, call this function multiple times or
-                                   use `batch_add`.
+                                   stored at assignment_type.code. If you pass a list for this object,
+                                   it will add multiple integrations, with identical integration_id,
+                                   prompt, and url_template values, with differring assignment_types
+                                   values.
                                    
                                    Version 1 Projects: :class:`dict`.
                                    A dictionary containing assignment type
@@ -863,30 +869,28 @@ class AssignmentIntegrationManager:
                                    code as values. If provided, this will override any general url_template specified.
             ==================     ====================================================================
 
-            :returns: :class:`dict` A dictionary representing the assignment integration
+            :returns: :class:`dict` Version 1: dict representing the integration, Version 2: :class:`Integration`
         """
-        integration = dict()
-        if integration_id:
-            integration["id"] = integration_id
-        if prompt:
-            integration["prompt"] = prompt
-        if assignment_types:
-            integration["assignmentTypes"] = assignment_types
-        if url_template:
-            integration["urlTemplate"] = url_template
-
         if self.project._is_v2_project:
-            self._validate_v2(integration)
-            i = self.integration_table.edit_features(adds=[Feature(attributes={"appid": integration_id,
-                                                                       "prompt": prompt,
-                                                                       "assignmenttype": assignment_types,
-                                                                       "urltemplate": url_template})])
-            return i
+            if isinstance(assignment_types, (list, str)):
+                integration = [add_integration(project=self.project, integration_id=integration_id, prompt=prompt, url_template=url_template, assignment_type=a) for a in assignment_types]
+            else:
+                integration = add_integration(project=self.project, integration_id=integration_id, prompt=prompt, url_template=url_template, assignment_type=assignment_types)
+            return integration
         else:
+            integration = dict()
+            if integration_id:
+                integration["id"] = integration_id
+            if prompt:
+                integration["prompt"] = prompt
+            if assignment_types:
+                integration["assignmentTypes"] = assignment_types
+            if url_template:
+                integration["urlTemplate"] = url_template
             new_integration = self._validate(integration)
             self.project._item_data["assignmentIntegrations"].append(new_integration)
             self.project._update_data()
-            return integration
+            return new_integration
 
     def batch_add(self, integrations):
         """
@@ -898,30 +902,14 @@ class AssignmentIntegrationManager:
 
             :returns: :class:`List` The list of integrations that were added
         """
-        integrations_to_add = []
-        for integration in integrations:
-            if self.project._is_v2_project:
-                self._validate_v2(integration)
-                integration_dict = integration
-                # if old values are provided
-                if "assignmentTypes" in integration_dict:
-                    integration_dict["assignmenttype"] = integration_dict["assignmentTypes"]
-                if "id" in integration_dict:
-                    integration_dict["appid"] = integration_dict["id"]
-                if "urlTemplate" in integration_dict:
-                    integration_dict["urltemplate"] = integration_dict["urlTemplate"]
-                integrations_to_add.append(Feature(attributes={"appid": integration_dict["appid"],
-                                                               "prompt": integration_dict["prompt"],
-                                                               "assignmenttype": integration_dict.get("assignmenttype", None),
-                                                               "urltemplate": integration_dict["urltemplate"]}))
-            else:
+        if self.project._is_v2_project:
+            return add_integrations(self.project, integrations)
+        else:
+            for integration in integrations:
                 new_integration = self._validate(integration)
                 self.project._item_data["assignmentIntegrations"].append(new_integration)
-        if self.project._is_v2_project:
-            self.integration_table.edit_features(adds=integrations_to_add)
-        else:
             self.project._update_data()
-        return integrations
+            return integrations
 
     def batch_delete(self, integrations):
         """
@@ -932,7 +920,7 @@ class AssignmentIntegrationManager:
             ==================     ====================================================================
         """
         if self.project._is_v2_project:
-            pass
+            delete_integrations(project=self.project, integrations=integrations)
         else:
             self.project._item_data["assignmentIntegrations"] = [e for e in self.project._item_data["assignmentIntegrations"] if e not in integrations]
             self.project._update_data()
@@ -967,21 +955,3 @@ class AssignmentIntegrationManager:
         elif "urlTemplate" not in integration:
             raise ValidationError("Assignment integration must contain a urlTemplate", self)
         return integration
-        
-    def _validate_v2(self, integration):
-        """Validates an integration for a version 2 project before adding it"""
-        at_code = None
-        if "id" not in integration and "appid" not in integration:
-            raise ValidationError("Assignment integration must contain an appid", self)
-        elif "prompt" not in integration:
-            raise ValidationError("Assignment integration must contain a prompt", self)
-        elif "urlTemplate" not in integration and "urltemplate" not in integration:
-            raise ValidationError("Assignment integration must contain a URL template", self)
-        # handle old dict name
-        elif "assignmentTypes" in integration:
-            at_code = integration["assignmentTypes"]
-        elif "assignmenttype" in integration:
-            at_code = integration["assignmenttype"]
-        if at_code:
-            if at_code not in [at.code for at in self.project.assignment_types.search()]:
-                raise ValidationError("Invalid assignment type in integration", self)

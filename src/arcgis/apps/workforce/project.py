@@ -61,7 +61,8 @@ class Project:
             self._track_schema = None
         self._worker_schema = WorkerSchema(self.workers_layer)
         if self._is_v2_project:
-            self._assignment_types = AssignmentTypesSchema(self.assignment_types_table)
+            self._assignment_types = AssignmentTypeSchema(self.assignment_types_table)
+            self._integration_schema = IntegrationSchema(self.integrations_table)
         self._dispatcher_schema = DispatcherSchema(self.dispatchers_layer)
         # to do: integration schema
         self._update_cached_objects()

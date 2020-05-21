@@ -173,8 +173,8 @@ class DispatcherSchema(FeatureSchema):
         return self._field_called('userId')['name']
 
 
-class AssignmentTypesSchema(FeatureSchema):
-    """ Describes the schema for a track :py:attr:`~arcgis.apps.workforce.AssignmentType.schema`
+class AssignmentTypeSchema(FeatureSchema):
+    """ Describes the schema for an assignment type :py:attr:`~arcgis.apps.workforce.AssignmentType.schema`
     This is useful for getting the field names, which may be different depending on if
     Workforce for ArcGIS is hosted on ArcGIS Online or on an Enterprise Deployment.
     """
@@ -183,6 +183,30 @@ class AssignmentTypesSchema(FeatureSchema):
     def description(self):
         """Gets the assignment type field name"""
         return self._field_called('description')['name']
+    
+    
+class IntegrationSchema(FeatureSchema):
+    """ Describes the schema for an integration :py:attr:`~arcgis.apps.workforce.Integration.schema`
+        This is useful for getting the field names, which may be different depending on if
+        Workforce for ArcGIS is hosted on ArcGIS Online or on an Enterprise Deployment.
+    """
+    @property
+    def integration_id(self):
+        """Gets the integration app id"""
+        return self._field_called('appid')['name']
+    
+    @property
+    def prompt(self):
+        """Gets the prompt"""
+        return self._field_called('prompt')['name']
+    
+    @property
+    def url_template(self):
+        return self._field_called('urltemplate')['name']
+    
+    @property
+    def assignment_type(self):
+        return self._field_called('assignmenttype')['name']
 
 
 class TrackSchema(FeatureSchema):
