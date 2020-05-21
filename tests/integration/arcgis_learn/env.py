@@ -57,8 +57,9 @@ def setupenviron():
     os.environ["model_unet_162"] = r"/home/administrator/Raster/Test_Data/models/unet/162/unet_model/unet_model.emd"
     os.environ["model_unet_170"] = r"/home/administrator/Raster/Test_Data/models/unet/170/unet_model/unet_model.emd"
 
+    # Random env variables
     os.environ['run_backbones'] = '0'
     os.environ['run_inferencing'] = '0'
-    
+
      # Notebook Tests
-    os.environ["notebook_test"] = r"/mnt/Raster/Data/testdata/extracted_data/object_detection_data/palm-tree-256/test-object-det"
+    os.environ["notebook_test"] = r"/home/administrator/Raster/notebook_test_model"
