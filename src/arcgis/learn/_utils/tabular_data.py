@@ -277,7 +277,7 @@ class TabularDataObject(object):
             input_features,
             date_field,
             distance_feature_layers,
-            rasters
+            raster_variables
         )
 
         dataframe_columns = dataframe.columns
@@ -348,21 +348,52 @@ class TabularDataObject(object):
 
         # Process Raster Data to get information.
         rasters_data = {}
-        for raster in rasters:
-            rasters_data[raster.name] = []
 
         original_points = []
         for i in range(len(sdf)):
-            original_points.append(sdf.iloc[i]["SHAPE"].true_centroid)
+            original_points.append(sdf.iloc[i]["SHAPE"])
 
         input_layer_spatial_reference = sdf.spatial._sr
         for raster in rasters:
-            points = arcgis.geometry.project(original_points, input_layer_spatial_reference,
-                                             raster.extent['spatialReference'])
-            for point in points:
-                raster_value = raster.read(origin_coordinate=(point['x'], point['y']), ncols=1, nrows=1)
-                point_value = raster_value[0][0][0]
-                rasters_data[raster.name].append(point_value)
+            raster_type = 0
+
+            if isinstance(raster, tuple):
+                if raster[1] is True:
+                    raster_type = 1
+                raster = raster[0]
+            rasters_data[raster.name] = []
+
+            shape_objects_transformed = arcgis.geometry.project(original_points, input_layer_spatial_reference,
+                                                                raster.extent['spatialReference'])
+            for shape in shape_objects_transformed:
+                shape['spatialReference'] = raster.extent['spatialReference']
+                if isinstance(shape, arcgis.geometry._types.Point):
+                    raster_value = raster.read(origin_coordinate=(shape['x'], shape['y']), ncols=1, nrows=1)
+                    value = raster_value[0][0][0]
+                elif isinstance(shape, arcgis.geometry._types.Polygon):
+                    xmin, ymin, xmax, ymax = shape.extent
+                    start_x, start_y = xmin + (raster.mean_cell_width / 2), ymin + (raster.mean_cell_height / 2)
+                    values = []
+                    while start_y < ymax:
+                        while start_x < xmax:
+                            if shape.contains(arcgis.geometry._types.Point(
+                                    {'x': start_x, 'y': start_y, 'sr': raster.extent['spatialReference']})):
+                                values.append(raster.read(origin_coordinate=(start_x - raster.mean_cell_width, start_y), ncols=1, nrows=1)[0][0][0])
+                            start_x = start_x + raster.mean_cell_width
+                        start_y = start_y + raster.mean_cell_height
+                        start_x = xmin + (raster.mean_cell_width / 2)
+
+                    if len(values) == 0:
+                        values.append(raster.read(origin_coordinate=(shape.true_centroid['x'] - raster.mean_cell_width, shape.true_centroid['y']), ncols=1,
+                                        nrows=1)[0][0][0])
+                    if raster_type == 0:
+                        value = sum(values) / len(values)
+                    else:
+                        value = max(values, key=values.count)
+                else:
+                    raise Exception("Input features can be point or polygon only.")
+
+                rasters_data[raster.name].append(value)
 
         # Append Raster data to sdf
         for key, value in rasters_data.items():
