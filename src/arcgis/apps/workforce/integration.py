@@ -66,7 +66,7 @@ class Integration(FeatureModel):
             ==================     ====================================================================
 
         """
-        update_integrations(self.project, self, integration_id, prompt, url_template, assignment_type)
+        update_integration(self.project, self, integration_id, prompt, url_template, assignment_type)
 
     def delete(self):
         """Deletes the integration from the server"""
