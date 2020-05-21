@@ -57,6 +57,7 @@ def setupenviron():
     os.environ["model_unet_162"] = r"/home/administrator/Raster/Test_Data/models/unet/162/unet_model/unet_model.emd"
     os.environ["model_unet_170"] = r"/home/administrator/Raster/Test_Data/models/unet/170/unet_model/unet_model.emd"
 
+    # Random env variables
     os.environ['run_backbones'] = '0'
     os.environ['run_inferencing'] = '0'
 
