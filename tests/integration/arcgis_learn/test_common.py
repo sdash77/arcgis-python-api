@@ -34,7 +34,7 @@ def setUpModule():
     tearDownModule()
 
 
-def common_test(model_type, output_name, data_path, old_models, **prepare_data_kwargs):
+def common_test(test_object, model_type, output_name, data_path, old_models, **prepare_data_kwargs):
     # Prepare Data bunch.
     data = prepare_data(data_path, **prepare_data_kwargs)
 
@@ -63,9 +63,9 @@ def common_test(model_type, output_name, data_path, old_models, **prepare_data_k
     # Show results after training.
     model_object.show_results()
 
-    #Test for accuracy if nightly_test is run
+    # Test for accuracy if nightly_test is run
     if os.environ['nightly_test'] == "1":
-        assertGreater(model.average_precision_score(mean=True), .40)
+        test_object.assertGreater(model_object.average_precision_score(mean=True), .40)
 
     # Load from saved model.
     model_object.load(f'post_fit_{output_name}')
@@ -193,6 +193,7 @@ class Test_Common(unittest.TestCase):
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     def test_ssd(self):
         common_test(
+            self,
             SingleShotDetector,
             'ssd',
             self.obj_detection_data2,
@@ -212,6 +213,7 @@ class Test_Common(unittest.TestCase):
     @unittest.skipIf(True, "Preconditions not met, skipping test")
     def test_rn(self):
         common_test(
+            self,
             RetinaNet,
             'rn',
             self.obj_detection_data2,
@@ -230,6 +232,7 @@ class Test_Common(unittest.TestCase):
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     def test_unet(self):
         common_test(
+            self,
             UnetClassifier,
             'unet',
             self.pixel_classification_data1,
@@ -246,6 +249,7 @@ class Test_Common(unittest.TestCase):
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     def test_fc(self):
         common_test(
+            self,
             FeatureClassifier,
             'fc',
             self.feature_classification_data1,
@@ -264,6 +268,7 @@ class Test_Common(unittest.TestCase):
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     def test_pspnet(self):
         common_test(
+            self,
             PSPNetClassifier,
             'pspnet',
             self.pixel_classification_data1,
@@ -280,6 +285,7 @@ class Test_Common(unittest.TestCase):
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     def test_maskrcnn(self):
         common_test(
+            self,
             MaskRCNN,
             'maskrcnn',
             self.maskrcnn_data1,
