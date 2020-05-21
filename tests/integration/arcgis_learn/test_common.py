@@ -51,8 +51,8 @@ def common_test(model_type, output_name, data_path, old_models, **prepare_data_k
     model_object.fit(5)
 
     # Fit for 10 epochs if nightly tests are run.
-    # if os.environ['nightly_test'] == '1:
-        # model_object.fit(5)
+    if os.environ['nightly_test'] == '1:
+        model_object.fit(5)
 
     # Fit for 5 epochs with LR.
     model_object.fit(1, lr=0.001)
@@ -64,8 +64,8 @@ def common_test(model_type, output_name, data_path, old_models, **prepare_data_k
     model_object.show_results()
 
     #Test for accuracy if nightly_test is run
-    # if os.environ['nightly_test'] == '1:
-        # assertGreater(model.average_precision_score(mean=True), .40)
+    if os.environ['nightly_test'] == '1:
+        assertGreater(model.average_precision_score(mean=True), .40)
 
     # Load from saved model.
     model_object.load(f'post_fit_{output_name}')
