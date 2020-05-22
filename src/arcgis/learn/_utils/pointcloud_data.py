@@ -925,6 +925,18 @@ def save_xyz_label_to_las(filename_las, xyz, xyz_offset, encoding, labels):
         
     f.close()
 
+def prediction_remap_classes(labels, reclassify_classes, inverse_class_mapping):
+    if reclassify_classes == {}:
+        return labels
+    else:
+        labels = np.vectorize(inverse_class_mapping.get)(labels)
+        labels = np.vectorize(reclassify_classes.get)(labels)
+        return labels
+
+def prediction_selective_classify(labels, las_file, selective_classify):
+    all_indexes = list(range(len(labels)))
+    return np.vectorize(lambda i:labels[i] if labels[i] in selective_classify\
+                                        else las_file.classification[i])(all_indexes)
 
 def write_resulting_las(in_las_filename, 
                         out_las_filename, 
@@ -946,26 +958,29 @@ def write_resulting_las(in_las_filename,
     i = 0
     classification = []
     warn_flag = False
+
+    ## remap classes
+    labels = prediction_remap_classes(labels, reclassify_classes, inverse_class_mapping)
     
-    for p in f:
-        p = f[i]
-        current_class = inverse_class_mapping[labels[i]] 
-        if reclassify_classes != {}:
-            current_class = reclassify_classes[current_class]        
-        try:
-            false_positives[labels[i]] += int(p.classification != current_class)
-            true_positives[labels[i]] += int(p.classification == current_class)
-            false_negatives[data.class_mapping[p.classification]] += int(p.classification != current_class)
-        except (IndexError, KeyError) as _:
-            warn_flag = True
+    if print_metrics:
+        for p in f:
+            p = f[i]
+            current_class = labels[i]        
+            try:
+                false_positives[labels[i]] += int(p.classification != current_class)
+                true_positives[labels[i]] += int(p.classification == current_class)
+                false_negatives[data.class_mapping[p.classification]] += int(p.classification != current_class)
+            except (IndexError, KeyError) as _:
+                warn_flag = True
 
-        if selective_classify != []:
-            current_class = current_class if current_class in selective_classify else p.classification
+            i += 1
 
-        classification.append(current_class)
-        i += 1
+    if selective_classify != []:
+        #current_class if current_class in selective_classify else p.classification
+        labels = prediction_selective_classify(labels, f, selective_classify)
+            
     f.close()
-    f_out.classification = classification
+    f_out.classification = labels.tolist()
     f_out.close()
 
     # if print_metrics and warn_flag:
@@ -1145,10 +1160,11 @@ def inference_las(path, pointcnn_model, out_path=None, print_metrics=False, rema
                     label_length2 = np.max([label_length2, np.max(indices[i][:data_num[i]])])
                 label_length2 += 1
                 if label_length < label_length2:
-                    # expanding labels and confidence arrays, as the new file appears having mode of them
-                    for i in range(label_length2 - label_length):
-                        merged_label = np.append(merged_label, 0)
-                        merged_confidence = np.append(merged_confidence, 0.0)
+                    # expanding labels and confidence arrays, as the new file appears having more of them
+                    labels_more = np.zeros((label_length2 - label_length), dtype=merged_label.dtype)
+                    conf_more = np.zeros((label_length2 - label_length), dtype=merged_confidence.dtype)
+                    merged_label = np.append(merged_label, labels_more)
+                    merged_confidence = np.append(merged_confidence, conf_more)
                     label_length = label_length2
             
             for i in range(labels_seg.shape[0]):
