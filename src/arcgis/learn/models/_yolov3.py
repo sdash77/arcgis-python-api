@@ -98,12 +98,11 @@ class YOLOv3(ArcGISModel):
         if pretrained:
             # Download (if required) and load YOLOv3 weights pretrained on COCO dataset
             weights_path = os.path.join(Path.home(), '.cache', 'weights')
-            if not os.path.exists(weights_path): os.mkdir(weights_path)
+            if not os.path.exists(weights_path): os.makedirs(weights_path)
             weights_file = os.path.join(weights_path, 'yolov3.weights')
             if not os.path.exists(weights_file):
                 try:
-                    if not os.path.exists(weights_path):
-                        weights_file = download_yolo_weights(weights_path)
+                    weights_file = download_yolo_weights(weights_path)
                     extract_zipfile(weights_path, 'yolov3.zip', remove=True)
                 except Exception as e:
                     print (e)
