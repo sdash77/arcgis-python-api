@@ -17,7 +17,12 @@ from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.features import Table as _Table
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing import DataFile
-from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob
+from ._util import (_id_generator, 
+                    _feature_input, 
+                    _set_context, 
+                    _create_output_service, 
+                    GAJob, 
+                    _prevent_bds_item)
 
 _log = _logging.getLogger(__name__)
 
@@ -219,7 +224,7 @@ def build_multivariable_grid(input_layers,
                                             output_name="multi_variable_grid")
     """
     kwargs=locals()
-
+    input_layer = _prevent_bds_item(input_layer)
     gis=_arcgis.env.active_gis if gis is None else gis
     url=gis.properties.helperServices.geoanalytics.url
 
@@ -432,7 +437,7 @@ def aggregate_points(point_layer,
     """
 
     kwargs = locals()
-
+    input_layer = _prevent_bds_item(input_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
 
@@ -585,6 +590,7 @@ def describe_dataset(input_layer,
                                     output_name="describe dataset")
     """
     kwargs = locals()
+    input_layer = _prevent_bds_item(input_layer)
     tool_name = "DescribeDataset"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
@@ -835,7 +841,7 @@ def join_features(target_layer,
                                    output_name="LightningOutages")
     """
     kwargs = locals()
-
+    input_layer = _prevent_bds_item(input_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
 
@@ -1069,7 +1075,7 @@ def reconstruct_tracks(input_layer,
                                         output_name='reconstruct hurricane tracks')
     """
     kwargs = locals()
-
+    input_layer = _prevent_bds_item(input_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
 
@@ -1208,7 +1214,7 @@ def summarize_attributes(input_layer,
     """
     kwargs = locals()
 
-
+    input_layer = _prevent_bds_item(input_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
 
@@ -1441,7 +1447,7 @@ def summarize_within(summarized_layer,
     """
     kwargs = locals()
 
-
+    input_layer = _prevent_bds_item(input_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
 

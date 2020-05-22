@@ -4,9 +4,16 @@ import string
 import random
 
 import arcgis
-from arcgis.gis import Layer
+from arcgis.gis import Layer, Item
 from arcgis.features import FeatureCollection
 from arcgis.geoprocessing._job import GPJob
+
+
+def _prevent_bds_item(item):
+    """checks if the input is a valid input for the GeoAnalytics Tool"""
+    if isinstance(item, Item):
+        raise ValueError(f"The {item.title} is an Item. Please pass the layer instead.")
+    return item
 
 def _id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
@@ -145,19 +152,23 @@ class GAJob(object):
     gpjob             Required GPJob. The geoprocessing job.
     ----------------  ---------------------------------------------------------------
     return_service    Optional Item. The service to return to the user.
+    ----------------  ---------------------------------------------------------------
+    add_messages      Optional Boolean. At v1.8.2 a user can request the processing information to be appended to the item.
     ================  ===============================================================
 
     """
     _gpjob = None
     _return_service = None
+    _add_messages = None
     #----------------------------------------------------------------------
-    def __init__(self, gpjob, return_service=None):
+    def __init__(self, gpjob, return_service=None, add_messages=False):
         """
         initializer
         """
         assert isinstance(gpjob, GPJob)
         self._gpjob = gpjob
         self._return_service = return_service
+        self._add_messages = add_messages
     #----------------------------------------------------------------------
     def __str__(self):
         return "<%s GA Job: %s>" % (self.task, self._gpjob._jobid)
@@ -171,6 +182,15 @@ class GAJob(object):
         :returns: string
         """
         return self._gpjob.task
+    #----------------------------------------------------------------------
+    @property
+    def messages(self):
+        """
+        returns the GP messages
+
+        :returns: List
+        """
+        return self._gpjob.messages
     #----------------------------------------------------------------------
     @property
     def status(self):
