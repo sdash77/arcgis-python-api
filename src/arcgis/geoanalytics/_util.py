@@ -10,7 +10,7 @@ from arcgis.geoprocessing._job import GPJob
 
 
 def _prevent_bds_item(item):
-    """checks if the input is a BDS item of not, raises value error if the value is not allowed"""
+    """checks if the input is a valid input for the GeoAnalytics Tool"""
     if isinstance(item, Item):
         raise ValueError(f"The {item.title} is an Item. Please pass the layer instead.")
     return item
