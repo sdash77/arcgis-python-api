@@ -8543,7 +8543,13 @@ class Item(dict):
             ret_dict['org'] = True
 
         if len(sharing_info['groups']) > 0:
-            ret_dict['groups'] = [Group(self._gis, g) for g in sharing_info['groups']]
+            grps = []
+            for g in sharing_info['groups']:
+                try:
+                    grps.append(Group(self._gis, g))
+                except: # ignore groups you can't access
+                    pass
+            ret_dict['groups'] = grps
 
         return ret_dict
 
