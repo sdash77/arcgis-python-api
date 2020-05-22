@@ -143,6 +143,8 @@ class YOLOv3(ArcGISModel):
     
     @property
     def _model_metrics(self):
+        if getattr(self._data, "_is_coco", "") == True:
+            return {'accuracy': {'IoU': 0.50, 'AP': 0.558}}
         return {'accuracy': self.average_precision_score(show_progress=False)}
 
     def _analyze_pred(self, pred, thresh=0.1, nms_overlap=0.1, ret_scores=True, device=None):
@@ -600,7 +602,7 @@ def create_coco_data():
 
     data.class_mapping = class_mapping
     data.classes = list(class_mapping.values())
-    data._is_empty = True
+    data._is_empty = False
     data._is_coco = True
     data.resize_to = 416
     data.chip_size = 416
