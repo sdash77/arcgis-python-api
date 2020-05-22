@@ -267,7 +267,7 @@ class Project:
 
     @_lazy_property
     def integrations_table_url(self):
-        """The integrations :class:`~arcgis.features.Table`"""
+        """The integrations table url :class:`~arcgis.features.Table`"""
         if self._is_v2_project:
             return self._item.url + "/4"
         else:

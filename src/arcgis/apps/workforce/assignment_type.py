@@ -1,11 +1,10 @@
 """
 Defines the AssignmentType class.
 """
-from .exceptions import ValidationError, WorkforceWarning
+from .exceptions import ValidationError
 from .feature_model import FeatureModel
 from ._store import *
 from ._store.assignment_types_v2 import *
-from warnings import warn
 from ._schemas import AssignmentTypeSchema
 
 

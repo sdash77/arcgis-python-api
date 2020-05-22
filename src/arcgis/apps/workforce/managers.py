@@ -1,8 +1,6 @@
 import os
 from ._store import *
 from .exceptions import *
-from arcgis.features import Feature
-from .integration import Integration
 
 
 class AssignmentManager(object):
@@ -451,7 +449,6 @@ class DispatcherManager:
         :return: :class:`~arcgis.apps.workforce.Dispatcher`
         """
         return add_dispatcher(self.project, feature, contact_number, name, user_id)
-
 
     def batch_add(self, dispatchers):
         """

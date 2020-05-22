@@ -5,6 +5,7 @@ from arcgis.gis import Item
 from arcgis.apps import workforce
 from arcgis.apps.workforce._store._definitions import *
 from arcgis.apps.workforce.exceptions import WorkforceError
+from arcgis.mapping._basemap_definitions import basemap_dict
 import concurrent.futures
 import os
 
@@ -12,7 +13,7 @@ import os
 def get_project(project_id, gis):
     """ Loads and returns a workforce project.
         :param gis: An authenticated arcigs.gis.GIS object.
-        :param project_id: The project's id.
+        :param project_id: The project's id. Version 1 - id of the project item. Version 2 - id of the feature service
         :returns: workforce.Project
     """
     item = Item(gis, project_id)
@@ -64,19 +65,8 @@ def _get_basemap(gis):
     :param gis:
     :return:
     """
-    default_raster_basemap = {
-        "baseMapLayers": [
-            {
-                "id": 'World_Topo_Map',
-                "layerType": 'ArcGISTiledMapServiceLayer',
-                "url": 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer',
-                "visibility": True,
-                "opacity": 1,
-                "title": 'World_Topo_Map'
-            }
-        ],
-        "title": 'Topographic'
-    }
+    default_raster_basemap = {'baseMapLayers': basemap_dict['topo'],
+                            'title': "Topographic"}
     try:
         if gis.properties['useVectorBasemaps']:
             bm_group = gis.groups.search(gis.properties['vectorBasemapGalleryGroupQuery'], outside_org=True)[0]
@@ -141,6 +131,11 @@ def _build_operational_layers(item, popup_def=None, visibility=True, layer_index
 
 
 def _build_table(item, table_index):
+    """
+    Helper method to build table
+    :param item: The item containing the layer (at index 0)
+    :param table_index: The index for the table in the item
+    """
     table = item.tables[table_index]
     op_table = {
         "capabilities": "Create,Delete,Query,Update,Editing,Sync",
@@ -153,6 +148,7 @@ def _build_table(item, table_index):
 
 
 def _v2_create_project(gis, summary, title):
+    """Creates project following version 2 Workforce schema"""
     for f in gis.users.me.folders:
         if f['title'].lower() == title.lower():
             raise WorkforceError("A folder named '{}' already exists.".format(title))
@@ -449,6 +445,7 @@ def _v2_create_service_with_layers(gis, folder_name, service_name, assignments_l
        :param workers_layer_def: The workers layer definition (dictionary)
        :param dispatchers_table_def: The dispatchers table definition (dictionary)
        :param assignment_type_table_def: The assignment type table definition (dictionary)
+       :param integration_table_def: The integration table definition (dictionary)
        :return: The service item
     """
     default_extent = gis.properties["defaultExtent"]

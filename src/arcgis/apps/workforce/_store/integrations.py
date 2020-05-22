@@ -84,7 +84,6 @@ def update_integration(project, integration, integration_id=None, prompt=None, u
 
 def update_integrations(project, integrations):
     """ Updates Integrations to a project.
-
         :param project:
         :param integrations: list of Integrations
         :raises ValidationError: Indicates that one or more dispatchers failed validation.
