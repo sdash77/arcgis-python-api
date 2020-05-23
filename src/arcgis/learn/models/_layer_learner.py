@@ -54,7 +54,7 @@ def _get_learner_object(data, layers, emb_szs, ps, emb_drop, pretrained_path):
 
 class FullyConnectedNetwork(ArcGISModel):
     """
-    Creates a FullyConnectedNetwork Object with specified layers and emb_szs.
+    Creates a FullyConnectedNetwork Object.
     Based on the Fast.ai's Tabular Learner
 
     =====================   ===========================================
@@ -63,9 +63,13 @@ class FullyConnectedNetwork(ArcGISModel):
     data                    Required TabularDataObject. Returned data object from
                             `prepare_tabulardata` function.
     ---------------------   -------------------------------------------
-    layers                  Optional list of 2 values, specifying the number of layers.
+    layers                  Optional list, specifying the number of nodes in each layer.
+                            Default: [500, 100] is used.
+                            2 layers each with nodes 500 and 100 respectively.
     ---------------------   -------------------------------------------
-    emb_szs                 Optional dict
+    emb_szs                 Optional dict, variable name with embedding size
+                            for categorical variables.
+                            If not specified, then calculated using fastai.
     =====================   ===========================================
 
     :returns: `FullyConnectedNetwork` Object
@@ -254,19 +258,20 @@ class FullyConnectedNetwork(ArcGISModel):
         =================================   =========================================================================
         **Argument**                        **Description**
         ---------------------------------   -------------------------------------------------------------------------
-        input_features                      Optional Feature Layer or spatial dataframe. Required is prediction_type='features'.
+        input_features                      Optional Feature Layer or spatially enabled dataframe.
+                                            Required if prediction_type='features'.
                                             Contains features with location and
                                             some or all fields required to infer the dependent variable value.
         ---------------------------------   -------------------------------------------------------------------------
-        explanatory_rasters                 Optional list. Required if prediction_type='raster'.
-                                            Contains a list of raster objects containing
-                                            some or all fields required to infer the dependent variable value.
+        explanatory_rasters                 Optional list of Raster Objects.
+                                            If prediction_type='raster', must contain all rasters
+                                            required to make predictions.
         ---------------------------------   -------------------------------------------------------------------------
         datefield                           Optional string. Field name from feature layer
                                             that contains the date, time for the input features.
                                             Same as `prepare_tabulardata()`.
         ---------------------------------   -------------------------------------------------------------------------
-        distance_features                   Optional List of Feature Layers.
+        distance_features                   Optional List of Feature Layer objects.
                                             These layers are used for calculation of field "NEAR_DIST_1",
                                             "NEAR_DIST_2" etc in the output dataframe.
                                             These fields contain the nearest feature distance
@@ -299,7 +304,7 @@ class FullyConnectedNetwork(ArcGISModel):
                                                 }
         =================================   =========================================================================
 
-        :returns Feature Layer predict_features=True or creates an output raster.
+        :returns Feature Layer if prediction_type='features' else creates an output raster.
 
         """
 
@@ -529,7 +534,7 @@ class FullyConnectedNetwork(ArcGISModel):
 
     def score(self):
         """
-        :returns MSE for regression model and Accuracy for classification model.
+        :returns R2 score for regression model and Accuracy for classification model.
         """
 
         self._check_requisites()

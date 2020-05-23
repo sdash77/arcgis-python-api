@@ -136,7 +136,7 @@ class MLModel(object):
 
     def score(self):
         """
-        :returns output from scikit-learn's model.score()
+        :returns output from scikit-learn's model.score(), R2 score in case of regression and Accuracy in case of classification.
         """
         if self._validation_data is None or self._validation_labels is None:
             raise_data_exception()
@@ -146,7 +146,7 @@ class MLModel(object):
     def save(self, name_or_path):
         """
         Saves the model, creates an Esri Model Definition. Uses pickle to save the model.
-        Using protocol level 2.Protocol level is backward compatible.
+        Using protocol level 2. Protocol level is backward compatible.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -315,7 +315,7 @@ class MLModel(object):
                                             that contains the date, time for the input features.
                                             Same as `prepare_tabulardata()`.
         ---------------------------------   -------------------------------------------------------------------------
-        distance_features                   Optional List of Feature Layers.
+        distance_features                   Optional List of Feature Layer objects.
                                             These layers are used for calculation of field "NEAR_DIST_1",
                                             "NEAR_DIST_2" etc in the output dataframe.
                                             These fields contain the nearest feature distance
@@ -348,7 +348,7 @@ class MLModel(object):
                                                 }
         =================================   =========================================================================
 
-        :returns Feature Layer prediction_type='features' or creates an output raster.
+        :returns Feature Layer if prediction_type='features' else creates an output raster.
 
         """
 
