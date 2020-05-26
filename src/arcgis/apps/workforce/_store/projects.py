@@ -210,11 +210,13 @@ def _v2_create_project(gis, summary, title):
     # set thumbnail
     my_path = os.path.abspath(os.path.dirname(__file__))
     thumbnail = os.path.join(my_path, '/'.join(('resources', 'default-project-thumbnail.png')))
+    workforce_service_item.update(thumbnail=thumbnail)
     workers_webmap.update(thumbnail=thumbnail)
     dispatchers_webmap.update(thumbnail=thumbnail)
     
     # set fs item properties
     workforce_service_item.update(item_properties={
+        "snippet": summary,
         "properties": {
             "workforceProjectGroupId": group_id,
             "workforceProjectVersion": "2.0.0-beta.3",
@@ -321,7 +323,6 @@ def _v2_create_worker_webmap(gis, folder_name, workforce_service_item, assignmen
     item_properties = {
         "title": "{}".format(title),
         "snippet": summary,
-        "tags": "workforce-worker",
         "extent": array_extent,
         "type": 'Web Map',
         "typeKeywords": 'ArcGIS Online,Explorer Web Map,Map,Offline,Online Map,Web Map,Workforce Worker,Data Editing',
@@ -386,7 +387,6 @@ def _v2_create_dispatcher_webmap(gis, folder_name, workforce_service_item, assig
     item_properties = {
         "title": "{} Dispatcher Map".format(title),
         "snippet": summary,
-        "tags": "workforce-dispatcher",
         "extent": array_extent,
         "type": 'Web Map',
         "typeKeywords": 'ArcGIS Online,Explorer Web Map,Map,Offline,Online Map,Web Map,Workforce Dispatcher',

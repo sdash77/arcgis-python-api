@@ -766,7 +766,8 @@ class AssignmentIntegrationManager:
      This manages the assignment integrations in the project
      It can be accessed from the project as :py:attr:`~arcgis.apps.workforce.Project.integrations`
     
-     For a version 2 (offline-enabled project), an integration is represented by an Integration
+     For a version 2 (offline-enabled project), an integration is represented by an object
+     :class:`~arcgis.apps.workforce.Integration`
      object and can be updated in the same fashion as Assignment, AssignmentType, Dispatcher, Project,
      and Worker objects.
      
@@ -830,6 +831,13 @@ class AssignmentIntegrationManager:
     def search(self, where="1=1"):
         """
             This returns all of the assignment integrations for the project
+            
+            ==================     ====================================================================
+            **Argument**           **Description**
+            ------------------     --------------------------------------------------------------------
+            where                  Optional :class:`string`. ArcGIS where clause - version 2 projects
+                                   only. Defaults to "1=1"
+            ------------------     --------------------------------------------------------------------
 
             :returns: :class:`List` A list of the integrations.
         """
