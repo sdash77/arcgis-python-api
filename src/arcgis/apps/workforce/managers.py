@@ -877,7 +877,7 @@ class AssignmentIntegrationManager:
             :returns: :class:`dict` Version 1: dict representing the integration, Version 2: :class:`Integration`
         """
         if self.project._is_v2_project:
-            if isinstance(assignment_types, (list, str)):
+            if isinstance(assignment_types, (list)):
                 integration = [add_integration(project=self.project, integration_id=integration_id, prompt=prompt, url_template=url_template, assignment_type=a) for a in assignment_types]
             else:
                 integration = add_integration(project=self.project, integration_id=integration_id, prompt=prompt, url_template=url_template, assignment_type=assignment_types)
