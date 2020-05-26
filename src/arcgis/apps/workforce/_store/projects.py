@@ -454,8 +454,9 @@ def _v2_create_service_with_layers(gis, folder_name, service_name, assignments_l
     if gis.content.is_service_name_available(service_name, "featureService"):
         item = _v2_create_service(gis, service_name, folder_name, spatial_reference)
         item.update({
-            "title": "{} Layers".format(title),
-            "tags": "workforce"
+            "title": title,
+            "tags": "workforce",
+            "typeKeywords": "Workforce Project"
         })
         feature_layer_collection = arcgis.features.FeatureLayerCollection.fromitem(item)
     else:
