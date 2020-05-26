@@ -5,7 +5,6 @@ from arcgis.gis import Item
 from arcgis.apps import workforce
 from arcgis.apps.workforce._store._definitions import *
 from arcgis.apps.workforce.exceptions import WorkforceError
-from arcgis.mapping._basemap_definitions import basemap_dict
 import concurrent.futures
 import os
 
@@ -65,8 +64,19 @@ def _get_basemap(gis):
     :param gis:
     :return:
     """
-    default_raster_basemap = {'baseMapLayers': basemap_dict['topo'],
-                            'title': "Topographic"}
+    default_raster_basemap = {
+        "baseMapLayers": [
+            {
+                "id": 'World_Topo_Map',
+                "layerType": 'ArcGISTiledMapServiceLayer',
+                "url": 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer',
+                "visibility": True,
+                "opacity": 1,
+                "title": 'World_Topo_Map'
+            }
+        ],
+        "title": 'Topographic'
+    }
     try:
         if gis.properties['useVectorBasemaps']:
             bm_group = gis.groups.search(gis.properties['vectorBasemapGalleryGroupQuery'], outside_org=True)[0]
