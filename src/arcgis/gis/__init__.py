@@ -10175,7 +10175,7 @@ class Item(dict):
                                  'Hub Site Application', 'Hub Page',
                                  'Web Mapping Application', 'Mobile Application',
                                  'Symbol Set', 'Color Set', 'Content Category Set',
-                                 'Windows Viewer Configuration']
+                                 'Windows Viewer Configuration', 'Notebook']
         FILE_BASED_ITEM_TYPES = ['CityEngine Web Scene','Pro Map', 'Map Area', 'KML Collection',
                                  'Code Attachment', 'Operations Dashboard Add In',
                                  'Native Application', 'Native Application Template', 'KML',
@@ -10288,6 +10288,8 @@ class Item(dict):
                 'text' : data,
                 'title' : title
             }
+            if item.type == "Notebook":
+                ip['properties'] = item.properties
             new_item = self._gis.content.add(item_properties=ip)
             if item.url and item.url.find(item.id) > -1:
                 new_item.update({"url" : item.url.replace(item.id, new_item.id)})
