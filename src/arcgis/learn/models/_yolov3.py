@@ -102,7 +102,7 @@ class YOLOv3(ArcGISModel):
             weights_file = os.path.join(weights_path, 'yolov3.weights')
             if not os.path.exists(weights_file):
                 try:
-                    weights_file = download_yolo_weights(weights_path)
+                    download_yolo_weights(weights_path)
                     extract_zipfile(weights_path, 'yolov3.zip', remove=True)
                 except Exception as e:
                     print (e)
