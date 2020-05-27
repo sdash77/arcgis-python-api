@@ -1,13 +1,16 @@
 import json
 import uuid
-from arcgis.gis import GIS
-from arcgis import env as _env
+import re
+from io import BytesIO, StringIO
+import xml.etree.cElementTree as ET
 from urllib.parse import (urlencode, urlparse, urlunparse,
                           parse_qs, ParseResult)
-import xml.etree.cElementTree as ET
-from io import BytesIO, StringIO
+
+from arcgis.gis import GIS
+from arcgis import env as _env
 from arcgis._impl.common._mixins import PropertyMap
 from ._base import BaseOGC
+
 ###########################################################################
 class WMSLayer(BaseOGC):
     """
@@ -58,7 +61,7 @@ class WMSLayer(BaseOGC):
             url = url[:-1]
         self._url = url
         self._add_token = str(self._con._auth).lower() == "builtin"
-        self._opacity = kwargs.pop('opacity', 0)
+        self._opacity = kwargs.pop('opacity', 1)
         self._min_scale, self._max_scale = kwargs.pop('scale', (0,0))
     #----------------------------------------------------------------------
     @property
@@ -92,6 +95,33 @@ class WMSLayer(BaseOGC):
             d = self._xml_to_dictionary(tree)
             self._properties = PropertyMap(d)
         return self._properties
+    #---------------------------------------------------------------------
+    @property
+    def _extents(self) -> list:
+        """list of extents from the service in the form of 
+        [[minx, miny], [maxx, maxy]] for each entry in the list
+        """
+        try:
+            bboxes = self.properties.WMS_Capabilities.Capability.Layer.BoundingBox
+            output = []
+            for bbox in bboxes:
+                output.append([[ float(bbox["@minx"]), float(bbox["@miny"]) ],
+                               [ float(bbox["@maxx"]), float(bbox["@maxy"]) ]])
+            return output
+        except Exception:
+            return [[[0,0], [0,0]],]
+
+    @property
+    def _spatial_references(self) -> list:
+        try:
+            crss = self.properties.WMS_Capabilities.Capability.Layer.CRS
+            output = []
+            for crs_str in crss:
+                output += [int(crs_num) for crs_num in re.findall(r"\d+", crs_str)]
+            return output
+        except Exception as e:
+            return []
+
     #----------------------------------------------------------------------
     @property
     def layers(self) -> list:

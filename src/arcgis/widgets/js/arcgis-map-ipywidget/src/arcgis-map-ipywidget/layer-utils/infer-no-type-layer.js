@@ -33,6 +33,7 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                                 'esri/layers/SceneLayer',
                                 'esri/layers/FeatureLayer',
                                 'esri/tasks/support/FeatureSet',
+                                'esri/layers/WMSLayer',
                                 'esri/PopupTemplate',
                                 'esri/layers/support/RasterFunction',
                                 'esri/layers/support/MosaicRule'],
@@ -44,6 +45,7 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                         SceneLayer,
                         FeatureLayer,
                         FeatureSet,
+                        WMSLayer,
                         PopupTemplate,
                         RasterFunction,
                         MosaicRule]) => {
@@ -101,6 +103,12 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                 var typedLayer = new SceneLayer(noTypeLayer.url);
                 typedLayer.id = noTypeLayer._hashFromPython;
                 resolve(typedLayer);}
+            else if (noTypeLayer.type == "WMS"){
+                noTypeLayer.subLayers = [noTypeLayer.sublayers[0],];
+                delete noTypeLayer.type;
+                var typedLayer = new WMSLayer(noTypeLayer);
+                resolve(typedLayer);
+                }
             else if ((noTypeLayer.type == "FeatureLayer") ||
                      (noTypeLayer.type == "Feature Layer")) {
                 //TODO: clean up this Feature layer stuff, seperate into new file

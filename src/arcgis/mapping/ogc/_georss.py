@@ -50,7 +50,7 @@ class GeoRSSLayer(BaseOGC):
         assert isinstance(scale, (list, tuple)) and len(scale) == 2
         self._min_scale = scale[0]
         self._max_scale = scale[1]
-        self._opacity = kwargs.pop('opacity', 0)
+        self._opacity = kwargs.pop('opacity', 1)
         self._copyright = kwargs.pop('copyright', None)
         self._title = kwargs.pop('title', None)
         self.point_symbol = kwargs.pop('point_symbol', None)

@@ -308,6 +308,7 @@ class WebMap(collections.OrderedDict):
             True if layer was successfully added. Else, raises appropriate exception.
         """
         from arcgis.mapping.ogc._base import BaseOGC
+        from arcgis.mapping.ogc import WMSLayer
         if options is None:
             options = {}
         if isinstance(layer, arcgis.features.FeatureLayer) and \
@@ -397,6 +398,7 @@ class WebMap(collections.OrderedDict):
             title = lyr["title"]
             opacity = lyr["opacity"]
             id = lyr["id"]
+            layer_type = layer._type
         else:
             raise TypeError("Input layer should either be a Layer object or an Item object. To know the supported layer types, refer" +
                             'to https://developers.arcgis.com/web-map-specification/objects/operationalLayers/')
@@ -548,14 +550,18 @@ class WebMap(collections.OrderedDict):
 
         #region
         if isinstance(layer, BaseOGC):
-            new_layer["layers"] = [{"name": lyr.Name,
-                                   "title": lyr.Title} for lyr in layer.layers]
+            lyr = layer._lyr_json
+            new_layer["layers"] = [{"name": subLyr.Name,
+                                    "title": subLyr.Title} for subLyr in layer.layers]
             new_layer["url"] = lyr["url"]
             new_layer["visibleLayers"] = []
             if new_layer["layers"]:
                 # Only have the first layer be the visible layer
                 new_layer["visibleLayers"].append(
                     new_layer["layers"][0]["name"])
+            if isinstance(layer, WMSLayer):
+                new_layer["extent"] = layer._extents[0]
+                new_layer["spatialReferences"] = layer._spatial_references
         #endregion
 
         # region Process popup info

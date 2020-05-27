@@ -65,7 +65,7 @@ class CSVLayer(BaseOpenData):
         self._id = kwargs.pop('id', uuid.uuid4().hex)
         self._title = kwargs.pop('title', None)
         self._min_scale, self._max_scale = kwargs.pop('scale', (0,0))
-        self._opacity = kwargs.pop('opacity', 0)
+        self._opacity = kwargs.pop('opacity', 1)
     #----------------------------------------------------------------------
     def __str__(self):
         if self._item:
