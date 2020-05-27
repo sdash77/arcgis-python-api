@@ -77,7 +77,7 @@ def _binary_predicate(name, left, right, *args, **kwargs):
     Supports:
     -  contains
     -  disjoint 
-    -  intersects
+    -  intersect
     -  touches
     -  crosses
     -  within
