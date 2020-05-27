@@ -1105,7 +1105,7 @@ class Datastore(dict):
         """
         url = self._admin_url + '/data/items' + self.datapath + "/manifest/regenerate"
         params = {'f' : 'json'}
-        res = self._con.post(url, params)
+        res = self._portal.con.post(url, params)
         if 'success' in res:
             return res['success']
         return res
