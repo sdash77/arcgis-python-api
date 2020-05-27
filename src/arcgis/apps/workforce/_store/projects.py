@@ -249,8 +249,9 @@ def _v2_create_project(gis, summary, title):
         }
     )])
 
-    # create the Project to return
+    # create the Project to return, add navigator as default integration
     project = arcgis.apps.workforce.Project(workforce_service_item)
+    project.integrations.add(integration_id="arcgis-navigator",prompt="Navigate to Assignment",url_template="arcgis-navigator://?stop=${assignment.latitude},${assignment.longitude}&stopname=${assignment.location}&callback=arcgis-workforce://&callbackprompt=Workforce")
     return project
 
 
@@ -460,7 +461,8 @@ def _v2_create_service_with_layers(gis, folder_name, service_name, assignments_l
     """
     default_extent = gis.properties["defaultExtent"]
     spatial_reference = default_extent["spatialReference"]
-    layer_defs = [assignments_layer_def, workers_layer_def, dispatchers_table_def, assignment_type_table_def, integration_table_def]
+    layer_defs = [assignments_layer_def, workers_layer_def]
+    table_defs = [dispatchers_table_def, assignment_type_table_def, integration_table_def]
     if gis.content.is_service_name_available(service_name, "featureService"):
         item = _v2_create_service(gis, service_name, folder_name, spatial_reference)
         item.update({
@@ -473,17 +475,14 @@ def _v2_create_service_with_layers(gis, folder_name, service_name, assignments_l
         raise Exception("Service name already exists.")
 
     for layer_def in layer_defs:
-        if layer_def["type"] != "Table":
-            layer_def["extent"] = default_extent
-            feature_layer_collection.manager.add_to_definition({
-                "layers": [layer_def]
-            })
-        else:
-            feature_layer_collection.manager.add_to_definition({
-                "tables": [layer_def]
-            })
+        layer_def["extent"] = default_extent
 
-        # enabled editor tracking
+    feature_layer_collection.manager.add_to_definition({
+        "layers": layer_defs,
+        "tables": table_defs
+    })
+    
+    # enabled editor tracking
     feature_layer_collection.manager.update_definition({
         "editorTrackingInfo": {
             "enableEditorTracking": True,
