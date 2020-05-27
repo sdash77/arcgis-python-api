@@ -38,6 +38,7 @@ class WMSLayer(BaseOGC):
     _reader = None
     _cap_reader = None
     _properties = None
+    _type = "WMS"
     #----------------------------------------------------------------------
     def __init__(self, url, version='1.3.0', gis=None, **kwargs):
         super(WMSLayer, self)
@@ -165,6 +166,7 @@ class WMSLayer(BaseOGC):
         :returns: dict
         """
         return {
+            "type": self._type,
             "id" : self._id,
             "title" : self._title or "WMTS Layer",
             "url" : self._url,

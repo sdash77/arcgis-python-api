@@ -39,7 +39,7 @@ class BaseOGC(object):
         self._gis = gis
         self._min_scale, self._max_scale = kwargs.pop('scale', (0,0))
         self._title = kwargs.pop("title", "Layer")
-        self._opacity = kwargs.pop('opacity', 0)
+        self._opacity = kwargs.pop('opacity', 1)
         self._id = kwargs.pop('id', uuid.uuid4().hex)
         self._copyright = kwargs.pop("copyright", "")
     #----------------------------------------------------------------------

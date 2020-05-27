@@ -307,7 +307,7 @@ class WebMap(collections.OrderedDict):
         :return:
             True if layer was successfully added. Else, raises appropriate exception.
         """
-        from arcgis.mapping.ogc import BaseOGC
+        from arcgis.mapping.ogc._base import BaseOGC
         if options is None:
             options = {}
         if isinstance(layer, arcgis.features.FeatureLayer) and \
@@ -393,7 +393,10 @@ class WebMap(collections.OrderedDict):
             else:
                 raise TypeError('FeatureLayerCollection object without layers is not supported')
         elif isinstance(layer, BaseOGC):
-            print("baseogc")    
+            lyr = layer._lyr_json
+            title = lyr["title"]
+            opacity = lyr["opacity"]
+            id = lyr["id"]
         else:
             raise TypeError("Input layer should either be a Layer object or an Item object. To know the supported layer types, refer" +
                             'to https://developers.arcgis.com/web-map-specification/objects/operationalLayers/')
@@ -524,7 +527,6 @@ class WebMap(collections.OrderedDict):
                                  "width": 24,
                                  "height": 24}
             #endregion
-
             #insert symbol into the layerDefinition of featureCollection - pro style
             if renderer:
                 fc_layer_definition['drawingInfo'] = {'renderer':renderer}
@@ -542,6 +544,18 @@ class WebMap(collections.OrderedDict):
                      'layerDefinition':fc_layer_definition
                      }]
             }
+        #endregion
+
+        #region
+        if isinstance(layer, BaseOGC):
+            new_layer["layers"] = [{"name": lyr.Name,
+                                   "title": lyr.Title} for lyr in layer.layers]
+            new_layer["url"] = lyr["url"]
+            new_layer["visibleLayers"] = []
+            if new_layer["layers"]:
+                # Only have the first layer be the visible layer
+                new_layer["visibleLayers"].append(
+                    new_layer["layers"][0]["name"])
         #endregion
 
         # region Process popup info

@@ -1064,7 +1064,7 @@ class MapView(widgets.DOMWidget):
         from arcgis.gis import Item
         from arcgis._impl.common._mixins import PropertyMap
         from arcgis.mapping import MapImageLayer, VectorTileLayer
-        from arcgis.mapping._base import BaseOGC
+        from arcgis.mapping.ogc._base import BaseOGC
         from pandas import DataFrame
 
         if isinstance(item, Raster):
@@ -1144,6 +1144,11 @@ class MapView(widgets.DOMWidget):
                 if not added_successful:
                     item["_hashFromPython"] = self._get_hash(item)
                     self._add_notype_layer(item, item)
+        elif isinstance(item, BaseOGC):
+            self._add_layer_to_webmap(item, options)
+            _lyr = _make_jsonable_dict(item._lyr_json)
+            _lyr["_hashFromPython"] = self._get_hash(item)
+            self._add_notype_layer(item, _lyr)
         elif _is_iterable(item):
             # If it's any iterable not previously checked, attempt to infer
             if 'layers' in item:
