@@ -1,5 +1,5 @@
 import sys
-#sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_3185\src")
+#sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_3989\src")
 import os
 import unittest
 import pytest
@@ -17,9 +17,9 @@ except:
     fp = r"./test002.sd"
 
 try:
-    url = "https://dev0011111.esri.com/portal"#"https://rpubs16029.ags.esri.com/portal"
-    username = "admin"#"PAPIadmin"
-    password = "esri.agp2"#"PAPIletmein01"
+    url = "https://rags19003.ags.esri.com/portal"
+    username = "CWadmin"
+    password = "esri.agp2"
     SKIPIT = False
 except:
     SKIPIT = True
@@ -41,7 +41,7 @@ class TestGroupImportExport(unittest.TestCase):
         isinstance(item, Item)
         pitem.share(groups=[new_group])
         epk_file = new_group.migration.create(items=[pitem],
-                                              exclude_data_source=False,
+                                              
                                               future=True) # SHould Return an StatusJob
         assert isinstance(epk_file, StatusJob)
         assert epk_file.result()
@@ -62,8 +62,9 @@ class TestGroupImportExport(unittest.TestCase):
         new_group = gis.groups.create(title='export_test_group', tags='a,b,c')
         isinstance(item, Item)
         pitem.share(groups=[new_group])
+        
         epk_file = new_group.migration.create(items=[pitem],
-                                              exclude_data_source=False,
+                                              
                                               future=False) # SHould Return an Item
         assert isinstance(epk_file, Item)
         assert epk_file.delete()
@@ -87,7 +88,7 @@ class TestImport2Group(unittest.TestCase):
         isinstance(item, Item)
         pitem.share(groups=[new_group])
         epk_file = new_group.migration.create(items=[pitem],
-                                              exclude_data_source=False,
+                                              
                                               future=False) # SHould Return an Item
         assert isinstance(epk_file, Item)
         assert item.delete()
@@ -100,36 +101,52 @@ class TestImport2Group(unittest.TestCase):
         assert isinstance(res.result(), dict)
         assert all([i.delete() for i in res.result()['itemsImported']])
         new_group.delete()
+    #----------------------------------------------------------------------
     def test_inspect_package(self):
         """
         tests the `inspect` package call on Portal
         """
+        ##
+        ## SETUP EXPORT
+        ##
         gis = GIS(url=url, username=username, password=password, verify_cert=False)
         for i in gis.content.search("erasemedata123"):
             assert i.delete()        
-        item = gis.content.add({'title' : "erasemedata123", "tags" : ['a', 'b', 'c']}, data=fp)
-        pitem = item.publish()
+        pitem = gis.content.add({'title' : "erasemedata123", "tags" : ['a', 'b', 'c']}, data=fp)
         for grp in gis.groups.search("export_test_group"):
             assert grp.delete()
         new_group = gis.groups.create(title='export_test_group', tags='a,b,c')
-        isinstance(item, Item)
         pitem.share(groups=[new_group])
-        epk_file = new_group.migration.create(items=[pitem],
-                                              exclude_data_source=False,
+        epk_file = new_group.migration.create(items=[pitem],                                      
                                               future=False) # SHould Return an Item
         assert isinstance(epk_file, Item)
-        assert item.delete()
-        assert pitem.delete()        
+        assert pitem.delete()    
+        new_group.delete()
+        
+        ##
+        ## BEGIN PREVIEW TEST
+        ##
+        
+        for grp in gis.groups.search("export_test_group2342"):
+            assert grp.delete()        
+        new_group = gis.groups.create(title='export_test_group2342', tags='a,b,c')
+        
+        epk_file.share(groups=[new_group])        
         m = new_group.migration
         assert isinstance(m, GroupMigrationManager)
         res = m.inspect(epk_file)
         assert res
         assert isinstance(res, dict)
-        
-        
-        new_group.delete()    
+        ##
+        ## CLEAN UP 
+        ##
+        assert new_group.delete()    
+        ## 
+        ## NEED TRY/EXCEPT HERE BECAUSE PRERELEASE (10.8.1)
+        ## HAS BUG ON DELETING PREVIEWED ITEMS
+        ##
         try:
-            epk_file.delete()
+            epk_file.delete() 
         except:
             pass
         
