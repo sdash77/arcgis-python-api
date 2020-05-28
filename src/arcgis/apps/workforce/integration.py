@@ -40,7 +40,8 @@ class Integration(FeatureModel):
             self.integration_id = integration_id
             self.prompt = prompt
             self.url_template = url_template
-            self.assignment_type = assignment_type.upper()
+            if assignment_type:
+                self.assignment_type = assignment_type.upper()
 
     def __str__(self):
         return "<Integration {}>".format(self.integration_id)
