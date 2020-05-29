@@ -78,6 +78,7 @@ def update_integration(project, integration, integration_id=None, prompt=None, u
     if url_template:
         integration.url_template = url_template
     if assignment_type:
+        # GUIDs are cast to upper for internal storage purposes
         integration.assignment_type = assignment_type.upper()
     return update_integrations(project, [integration])[0]
 
