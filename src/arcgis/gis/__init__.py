@@ -1173,6 +1173,7 @@ class GroupMigrationManager(object):
         :returns: Boolean
         """
         if self._gis.users.me.role == 'org_admin':
+            
             url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/import"
             if isinstance(item, Item):
                 item = item.itemid
@@ -1189,7 +1190,9 @@ class GroupMigrationManager(object):
             if run_async:
                 params['async'] = run_async
 
-            return self._con.post(url, params)
+            return self._con.post(url, 
+                                  params, 
+                                  try_json=preview_only)
 
         else:
             raise Exception("Must be an administror to perform this action")
@@ -1214,7 +1217,6 @@ class GroupMigrationManager(object):
     #----------------------------------------------------------------------
     def create(self,
                items=None,
-               exclude_data:bool=False,
                future:bool=True):
         """
         Exports a `Group` content to a **EPK Package Item**.
@@ -1237,8 +1239,6 @@ class GroupMigrationManager(object):
         ------------------     --------------------------------------------------------------------
         items                  Optional List<Item>. A set of items to export from the group.  If nothing is given, all items will be attempted to be exported.
         ------------------     --------------------------------------------------------------------
-        exclude_data           Optional Boolean.  The default is `False`. If `True`, the data will be referenced by URL instead of being included in the export package.
-        ------------------     --------------------------------------------------------------------
         future                 Optional Boolean.  When True, the operation will return a Job object and return the results asynchronously.
         ==================     ====================================================================
 
@@ -1248,12 +1248,11 @@ class GroupMigrationManager(object):
         if self._gis.users.me.role == 'org_admin':
             url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/export"
             if items and isinstance(items, (list, tuple)):
-                items = [i.id for i in items]
+                items = ",".join([i.id for i in items])
             else:
                 items = None
             params = {
-                      'itemIdList' : items,
-                      'excludeSourceData' : json.dumps(exclude_data),
+                      'itemIdList' : items
                       }
             
             params['async'] = json.dumps(True)
@@ -1341,8 +1340,24 @@ class GroupMigrationManager(object):
         :returns: dict
         
         """
-        if isinstance(epk_item, Item) and epk.type == 'Export Package':
-            return self._from_package(epk_item.itemid, preview_only=True, run_async=False)
+        if isinstance(epk_item, Item) and epk_item.type == 'Export Package':
+            try:
+                self._from_package(epk_item.itemid, preview_only=True, run_async=False)
+            except:
+                pass
+            url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/importPreview/{epk_item.itemid}"
+            params = {"f" : "json", "start" : 1, "num" : 25}
+            res = self._con.post(url, params)
+            results = res['results']
+            while res['nextStart'] > 0:
+                params['start'] = res['nextStart']
+                res = self._con.post(url, params)
+                results.extend(res['results'])
+                if res['nextStart'] == -1:
+                    break
+            res['results'] = results
+            return res            
+            
         else:
             raise Exception("Invalid Item Type.")
         return None
