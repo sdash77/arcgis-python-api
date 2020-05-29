@@ -60,7 +60,7 @@ class WMTSLayer(BaseOGC):
         self._add_token = str(self._con._auth).lower() == "builtin"
         self._min_scale, self._max_scale = kwargs.pop('scale', (0,0))
         self._opacity = kwargs.pop('opacity', 1)
-        self._type = "wms"
+        self._type = ""
     #----------------------------------------------------------------------
     @property
     def properties(self):
@@ -82,6 +82,8 @@ class WMTSLayer(BaseOGC):
             elif text.lower().find("<html>") > -1:
                 url = self._capabilities_url(service_url=self._url)
                 text = self._con.get(url, {}, try_json=False, add_token=False)
+            elif text.lower().find("<?xml version=\"1.0\" ?>") > -1:
+                pass
             else:
                 raise Exception("Could not connect to the WebMap Tile Service")
             sss = BytesIO()
