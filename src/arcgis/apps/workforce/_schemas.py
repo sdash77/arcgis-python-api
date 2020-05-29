@@ -60,7 +60,7 @@ class FeatureSchema:
 class AssignmentSchema(FeatureSchema):
     """ Describes the schema for an assignment :py:attr:`~arcgis.apps.workforce.Assignment.schema`
     This is useful for getting the field names, which may be different depending on if
-    Workforce for ArcGIS is hosted on ArcGIS Online or on an Enterprise Deployment.
+    ArcGIS Workforce is hosted on ArcGIS Online or on an Enterprise Deployment.
     """
 
     @property
@@ -154,7 +154,7 @@ class AssignmentSchema(FeatureSchema):
 class DispatcherSchema(FeatureSchema):
     """ Describes the schema for a dispatcher :py:attr:`~arcgis.apps.workforce.Dispatcher.schema`
     This is useful for getting the field names, which may be different depending on if
-    Workforce for ArcGIS is hosted on ArcGIS Online or on an Enterprise Deployment.
+    ArcGIS Workforce is hosted on ArcGIS Online or on an Enterprise Deployment.
     """
 
     @property
@@ -173,22 +173,48 @@ class DispatcherSchema(FeatureSchema):
         return self._field_called('userId')['name']
 
 
-class AssignmentTypesSchema(FeatureSchema):
-    """ Describes the schema for a track :py:attr:`~arcgis.apps.workforce.AssignmentType.schema`
+class AssignmentTypeSchema(FeatureSchema):
+    """ Describes the schema for an assignment type :py:attr:`~arcgis.apps.workforce.AssignmentType.schema`
     This is useful for getting the field names, which may be different depending on if
-    Workforce for ArcGIS is hosted on ArcGIS Online or on an Enterprise Deployment.
+    ArcGIS Workforce is hosted on ArcGIS Online or on an Enterprise Deployment.
     """
 
     @property
     def description(self):
         """Gets the assignment type field name"""
         return self._field_called('description')['name']
+    
+    
+class IntegrationSchema(FeatureSchema):
+    """ Describes the schema for an integration :py:attr:`~arcgis.apps.workforce.Integration.schema`
+        This is useful for getting the field names, which may be different depending on if
+        ArcGIS Workforce is hosted on ArcGIS Online or on an Enterprise Deployment.
+    """
+    @property
+    def integration_id(self):
+        """Gets the integration app id"""
+        return self._field_called('appid')['name']
+    
+    @property
+    def prompt(self):
+        """Gets the prompt"""
+        return self._field_called('prompt')['name']
+    
+    @property
+    def url_template(self):
+        """Gets the url template"""
+        return self._field_called('urltemplate')['name']
+    
+    @property
+    def assignment_type(self):
+        """Gets the assignment type"""
+        return self._field_called('assignmenttype')['name']
 
 
 class TrackSchema(FeatureSchema):
     """ Describes the schema for a track :py:attr:`~arcgis.apps.workforce.Track.schema`
     This is useful for getting the field names, which may be different depending on if
-    Workforce for ArcGIS is hosted on ArcGIS Online or on an Enterprise Deployment.
+    ArcGIS Workforce is hosted on ArcGIS Online or on an Enterprise Deployment.
     """
 
     @property
@@ -200,7 +226,7 @@ class TrackSchema(FeatureSchema):
 class WorkerSchema(FeatureSchema):
     """ Describes the schema for a worker :py:attr:`~arcgis.apps.workforce.Worker.schema`
     This is useful for getting the field names, which may be different depending on if
-    Workforce for ArcGIS is hosted on ArcGIS Online or on an Enterprise Deployment.
+    ArcGIS Workforce is hosted on ArcGIS Online or on an Enterprise Deployment.
     """
 
     @property

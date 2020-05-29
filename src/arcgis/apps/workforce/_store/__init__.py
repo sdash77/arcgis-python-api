@@ -57,6 +57,16 @@ from .dispatchers import (
     update_dispatcher
 )
 
+from .integrations import (
+    get_integration,
+    query_integrations,
+    add_integration,
+    add_integrations,
+    update_integration,
+    update_integrations,
+    delete_integrations
+)
+
 from .projects import (
     get_project,
     create_project

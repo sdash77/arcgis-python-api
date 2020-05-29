@@ -1,4 +1,4 @@
-""" Defines Exception subclasses for errors raised by the workorce-python-api.
+""" Defines Exception subclasses for errors raised by the workforce-python-api.
 """
 
 
