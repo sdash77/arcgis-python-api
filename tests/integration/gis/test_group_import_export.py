@@ -12,11 +12,11 @@ from arcgis.gis._impl._jb import StatusJob
 
 try:
     from utils import NOTEBOOK_TESTS_DIR
-    #fp = os.path.join(NOTEBOOK_TESTS_DIR, "test002.sd")
-    fp = r"C:\GIS\sample_data\Manhattan Beach Parking Lots\parkinglots.zip"
+    fp = os.path.join(NOTEBOOK_TESTS_DIR, "parkinglots.zip")
+    
 except:
-    #fp = r"./test002.sd"
-    fp = r"C:\GIS\sample_data\Manhattan Beach Parking Lots\parkinglots.zip"
+    fp = r"./parkinglots.zip"
+    
 
 try:
     url = "https://rags19003.ags.esri.com/portal"
@@ -111,7 +111,7 @@ class TestImport2Group(unittest.TestCase):
         gis = GIS(url=url, username=username, password=password, verify_cert=False)
         for i in gis.content.search("erasemedata123"):
             assert i.delete()  
-        fp = r"C:\GIS\sample_data\Manhattan Beach Parking Lots\parkinglots.zip"
+        
         pitem = gis.content.add({'title' : "erasemedata123", "tags" : ['a', 'b', 'c']}, data=fp)
         for grp in gis.groups.search("export_test_group"):
             assert grp.delete()
