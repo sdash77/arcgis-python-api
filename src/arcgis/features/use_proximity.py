@@ -419,7 +419,7 @@ def create_drive_time_areas(input_layer,
     * What areas are within four minutes of our fire stations?
 
     See `Create Drive-Time Areas <https://developers.arcgis.com/rest/analysis/api-reference/create-drivetime.htm>`_
-    for details on the `Spatial Analysis Service <https://developers.arcgis.com/rest/analysis/api-reference/getting-started.htm`_
+    for details on the `Spatial Analysis Service <https://developers.arcgis.com/rest/analysis/api-reference/getting-started.htm>`_
     that this task runs.
 
     =========================    =========================================================
@@ -532,7 +532,7 @@ def create_drive_time_areas(input_layer,
     -------------------------    ---------------------------------------------------------
     include_reachable_streets    Optional sting. Only applicable if :attr:`output_name` is specified.
                                  When `True` (and :attr:`output_name` is specified), a second layer named
-                                 `Reachable Streets` is created in the output :class:`FeatureLayerCollection~<feature service>`.
+                                 `Reachable Streets` is created in the output :class:`Feature Layer<arcgis.features.FeatureLayerCollection>`.
 
                                  This layer contains the streets that were used to define the drive time
                                  area polygons. Set this to true if you want a potentially more accurate
