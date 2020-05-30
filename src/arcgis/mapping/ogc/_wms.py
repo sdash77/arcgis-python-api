@@ -84,7 +84,7 @@ class WMSLayer(BaseOGC):
             elif text.lower().find("<html>") > -1:
                 url = self._capabilities_url(service_url=self._url)
                 text = self._con.get(url, {}, try_json=False, add_token=False)
-            elif text.lower().find("<?xml version=\"1.0\" ?>") > -1:
+            elif text.lower().find("<?xml version=") > -1:
                 pass
             else:
                 raise Exception("Could not connect to the Web Map Service")
