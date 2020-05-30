@@ -420,7 +420,7 @@ def create_drive_time_areas(input_layer,
 
     See `Create Drive-Time Areas <https://developers.arcgis.com/rest/analysis/api-reference/create-drivetime.htm>`_
     for details on the `Spatial Analysis Service <https://developers.arcgis.com/rest/analysis/api-reference/getting-started.htm>`_
-    that this task runs.
+    that runs this task.
 
     =========================    =========================================================
     **Parameter**                **Description**
