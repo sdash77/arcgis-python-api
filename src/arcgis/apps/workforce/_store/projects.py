@@ -189,6 +189,8 @@ def _v2_create_project(gis, summary, title):
                                                             title)
 
     # create webmaps
+    my_path = os.path.abspath(os.path.dirname(__file__))
+    thumbnail = os.path.join(my_path, '/'.join(('resources', 'default-project-thumbnail.png')))
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         workers_webmap_future = executor.submit(_v2_create_worker_webmap,
                                                 gis,
@@ -196,14 +198,14 @@ def _v2_create_project(gis, summary, title):
                                                 workforce_service_item,
                                                 assignment_layer_popup_definition_v2,
                                                 worker_layer_popup_definition_v2,
-                                                title, summary)
+                                                title, summary, thumbnail)
         dispatchers_webmap_future = executor.submit(_v2_create_dispatcher_webmap,
                                                     gis,
                                                     folder_name,
                                                     workforce_service_item,
                                                     assignment_layer_popup_definition_v2,
                                                     worker_layer_popup_definition_v2,
-                                                    title, summary)
+                                                    title, summary, thumbnail)
     workers_webmap = workers_webmap_future.result()
     dispatchers_webmap = dispatchers_webmap_future.result()
 
@@ -217,22 +219,16 @@ def _v2_create_project(gis, summary, title):
         i.share(groups=[group])
         i.protect()
 
-    # set thumbnail
-    my_path = os.path.abspath(os.path.dirname(__file__))
-    thumbnail = os.path.join(my_path, '/'.join(('resources', 'default-project-thumbnail.png')))
-    workforce_service_item.update(thumbnail=thumbnail)
-    workers_webmap.update(thumbnail=thumbnail)
-    dispatchers_webmap.update(thumbnail=thumbnail)
-    
-    # set fs item properties
-    workforce_service_item.update(item_properties={
-        "snippet": summary,
-        "properties": {
-            "workforceProjectGroupId": group_id,
-            "workforceProjectVersion": "2.0.0-beta.3",
-            "workforceDispatcherMapId": dispatchers_webmap.id,
-            "workforceWorkerMapId": workers_webmap.id
-        }
+    # set fs item properties / thumbnail
+    workforce_service_item.update(thumbnail=thumbnail,
+                                  item_properties={
+                                    "snippet": summary,
+                                    "properties": {
+                                        "workforceProjectGroupId": group_id,
+                                        "workforceProjectVersion": "2.0.0-beta.3",
+                                        "workforceDispatcherMapId": dispatchers_webmap.id,
+                                        "workforceWorkerMapId": workers_webmap.id
+                                    }
     })
 
     # manually add the owner as the first dispatcher
@@ -318,7 +314,7 @@ def _v1_create_project_item(gis, folder_name, assignments_item, dispatchers_item
 
 
 def _v2_create_worker_webmap(gis, folder_name, workforce_service_item, assignments_popup_def,
-                             workers_popup_def, title, summary):
+                             workers_popup_def, title, summary, thumbnail):
     """
     Creates the worker webmap
     :param gis: An authenticated GIS
@@ -377,12 +373,12 @@ def _v2_create_worker_webmap(gis, folder_name, workforce_service_item, assignmen
     webmap_data["tables"].append(_build_table(workforce_service_item, table_index=2))
     item_properties["text"] = json.dumps(webmap_data)
 
-    item = gis.content.add(item_properties, folder=folder_name)
+    item = gis.content.add(item_properties, folder=folder_name, thumbnail=thumbnail)
     return item
 
 
 def _v2_create_dispatcher_webmap(gis, folder_name, workforce_service_item, assignments_popup_def,
-                                 workers_popup_def, title, summary):
+                                 workers_popup_def, title, summary, thumbnail):
     """
     Creates the dispatcher webmap
     :param gis: An authenticated GIS
@@ -418,11 +414,11 @@ def _v2_create_dispatcher_webmap(gis, folder_name, workforce_service_item, assig
     webmap_data["operationalLayers"].append(_build_operational_layers(workforce_service_item, assignments_popup_def, layer_index=0, capabilities="Query,Sync"))
     webmap_data["operationalLayers"].append(_build_operational_layers(workforce_service_item, workers_popup_def, layer_index=1, capabilities="Query,Sync"))
     item_properties["text"] = json.dumps(webmap_data)
-    item = gis.content.add(item_properties, folder=folder_name)
+    item = gis.content.add(item_properties, folder=folder_name, thumbnail=thumbnail)
     return item
 
 
-def _v2_create_service(gis, service_name, folder_name, spatial_ref):
+def _v2_create_service(gis, service_name, folder_name, spatial_ref, item_properties=None):
     """
     Helper method that creates a workforce service
     :param gis: An authenticated GIS
@@ -442,6 +438,7 @@ def _v2_create_service(gis, service_name, folder_name, spatial_ref):
         service_name,
         folder=folder_name,
         create_params=create_params,
+        item_properties=item_properties,
         service_type="featureService"
     )
 
@@ -464,12 +461,12 @@ def _v2_create_service_with_layers(gis, folder_name, service_name, assignments_l
     layer_defs = [assignments_layer_def, workers_layer_def]
     table_defs = [dispatchers_table_def, assignment_type_table_def, integration_table_def]
     if gis.content.is_service_name_available(service_name, "featureService"):
-        item = _v2_create_service(gis, service_name, folder_name, spatial_reference)
-        item.update({
+        item_properties = {
             "title": title,
             "tags": "workforce",
             "typeKeywords": "Workforce Project"
-        })
+        }
+        item = _v2_create_service(gis, service_name, folder_name, spatial_reference, item_properties)
         feature_layer_collection = arcgis.features.FeatureLayerCollection.fromitem(item)
     else:
         raise Exception("Service name already exists.")
