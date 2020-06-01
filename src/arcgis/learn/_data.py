@@ -904,19 +904,25 @@ def prepare_data(path,
         path_hr = path/'images'
         path_lr = path/'labels'
         il = ImageList.from_folder(path_hr)
-        size_hr = il[0].shape[1]    #il.sizes[0][0]
-        if kwargs.get('downsample_factor') is not None:
-            downsample = kwargs.get('downsample_factor')
-        else:
-            downsample = 4
-        parallel(partial(resize_one, path_lr=path_lr, size=size_hr/downsample, path_hr=path_hr), il.items, max_workers=0)
+        img_size = il[0].shape[1]
+        if chip_size > img_size:
+            chip_size = img_size
+        downsample = kwargs.get('downsample_factor', 4)
+        parallel(partial(resize_one, path_lr=path_lr, size=img_size/downsample, path_hr=path_hr, img_size=img_size), il.items, max_workers=0)
 
         data = ImageImageList.from_folder(path_lr)\
-            .split_by_rand_pct(val_split_pct, seed=42)\
+            .split_by_rand_pct(val_split_pct, seed=seed)\
             .label_from_func(lambda x: path_hr/x.name)
-
+        if transforms is None:
+            ranges = (0, 1)
+            train_tfms = [
+                crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges),
+                brightness(change=(0.4, 0.6)),
+                contrast(scale=(0.75, 1.5))
+                ]
+            val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
+            transforms = (train_tfms, val_tfms)
         kwargs_transforms['tfm_y'] = True
-        kwargs_transforms['size'] = size_hr
         
     elif dataset_type in ['ner_json','BIO','IOB','LBIOU','BILUO']:
         if batch_size == 64:

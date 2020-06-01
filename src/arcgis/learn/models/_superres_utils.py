@@ -18,12 +18,13 @@ except Exception as e:
     HAS_FASTAI = False
 
 
-def resize_one(fn, i, path_lr, size, path_hr):
+def resize_one(fn, i, path_lr, size, path_hr, img_size):
     dest = path_lr/fn.relative_to(path_hr)
     dest.parent.mkdir(parents=True, exist_ok=True)
     img = PIL.Image.open(fn)
     targ_sz = resize_to(img, size, use_min=True)
     img = img.resize(targ_sz, resample=PIL.Image.BILINEAR).convert('RGB')
+    img = img.resize((img_size,img_size), resample=PIL.Image.BILINEAR).convert('RGB')
     img.save(dest, quality=60)
 
 
