@@ -5,6 +5,7 @@ from .exceptions import ValidationError
 from .feature_model import FeatureModel
 from ._store import *
 from ._schemas import IntegrationSchema
+from .assignment_type import AssignmentType
 
 
 class Integration(FeatureModel):
@@ -41,7 +42,10 @@ class Integration(FeatureModel):
             self.prompt = prompt
             self.url_template = url_template
             if assignment_type:
-                self.assignment_type = assignment_type.upper()
+                if isinstance(assignment_type, AssignmentType):
+                    self.assignment_type = assignment_type.code
+                else:
+                    self.assignment_type = assignment_type.upper()
 
     def __str__(self):
         return "<Integration {}>".format(self.integration_id)
