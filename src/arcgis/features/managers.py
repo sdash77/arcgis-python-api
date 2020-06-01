@@ -909,6 +909,16 @@ class FeatureLayerCollectionManager(_GISResource):
 
         return res
     #----------------------------------------------------------------------
+    @property
+    def generate_service_definition(self):
+        """
+        Returns a dictionary can be used for service generation.
+        
+        :returns: dict or None (if not supported on the service)
+        
+        """
+        return self._generate_mapservice_definition()
+    #----------------------------------------------------------------------
     def _generate_mapservice_definition(self):
         """
         This operation returns a map service JSON that can be used to
