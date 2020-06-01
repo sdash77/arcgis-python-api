@@ -131,6 +131,13 @@ def update_assignment(project, assignment, geometry=None, assignment_type=None,
     Sets the properties of an assignment and updates the item on the server
     """
     project._update_cached_objects()
+    if status:
+        # logic for resetting stale dates if reassigning
+        if assignment.status == "declined" and worker and worker != assignment.worker:
+            assignment.declined_date = None
+        if assignment.status == "paused" and worker and worker != assignment.worker:
+            assignment.paused_date = None
+        assignment.status = status
     if geometry:
         assignment.geometry = geometry
     if assigned_date:
