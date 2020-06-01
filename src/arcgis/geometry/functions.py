@@ -11,7 +11,8 @@ def areas_and_lengths(polygons,
                       area_unit,
                       calculation_type,
                       spatial_ref=4326,
-                      gis=None):
+                      gis=None, 
+                      future=False):
     """
        The areas_and_lengths function calculates areas and perimeter lengths
        for each polygon specified in the input array.
@@ -82,13 +83,13 @@ def areas_and_lengths(polygons,
         length_unit,
         area_unit,
         calculation_type,
-        spatial_ref)
+        spatial_ref, future=False)
 
 
 def auto_complete(polygons=None,
                   polylines=None,
                   spatial_ref=None,
-                  gis=None):
+                  gis=None, future=False):
     """
        The auto_complete function simplifies the process of
        constructing new polygons that are adjacent to other polygons.
@@ -108,7 +109,7 @@ def auto_complete(polygons=None,
     return gis._tools.geometry.auto_complete(
         polygons,
         polylines,
-        spatial_ref)
+        spatial_ref, future=False)
 
 
 def buffer(geometries,
@@ -119,7 +120,7 @@ def buffer(geometries,
            buffer_sr=None,
            union_results=None,
            geodesic=None,
-           gis=None):
+           gis=None, future=False):
     """
        The buffer function is performed on a geometry service resource
        The result of this function is buffered polygons at the
@@ -164,11 +165,11 @@ def buffer(geometries,
         out_sr,
         buffer_sr,
         union_results,
-        geodesic)
+        geodesic, future=False)
 
 def convex_hull(geometries,
                 spatial_ref=None,
-                gis=None):
+                gis=None, future=False):
     """
     The convex_hull function is performed on a geometry service
     resource. It returns the convex hull of the input geometry. The
@@ -185,12 +186,12 @@ def convex_hull(geometries,
         gis = arcgis.env.active_gis
     return gis._tools.geometry.convex_hull(
         geometries,
-        spatial_ref)
+        spatial_ref, future=False)
 
 def cut(cutter,
         target,
         spatial_ref=None,
-        gis=None):
+        gis=None, future=False):
     """
     The cut function is performed on a geometry service resource. This
     function splits the target polyline or polygon where it's crossed
@@ -217,14 +218,14 @@ def cut(cutter,
     return gis._tools.geometry.cut(
         cutter,
         target,
-        spatial_ref)
+        spatial_ref, future=False)
 
 def densify(geometries,
             spatial_ref,
             max_segment_length,
             length_unit,
             geodesic=False,
-            gis=None):
+            gis=None, future=False):
     """
     The densify function is performed using the GIS's geometry engine.
     This function densifies geometries by plotting points between
@@ -261,12 +262,12 @@ def densify(geometries,
         spatial_ref,
         max_segment_length,
         length_unit,
-        geodesic)
+        geodesic, future=False)
 
 def difference(geometries,
                spatial_ref,
                geometry,
-               gis=None):
+               gis=None, future=False):
     """
     The difference function is performed on a geometry service
     resource. This function constructs the set-theoretic difference
@@ -293,14 +294,14 @@ def difference(geometries,
     return gis._tools.geometry.difference(
         geometries,
         spatial_ref,
-        geometry)
+        geometry, future=False)
 
 def distance(spatial_ref,
              geometry1,
              geometry2,
              distance_unit="",
              geodesic=False,
-             gis=None):
+             gis=None, future=False):
     """
     The distance function is performed on a geometry service resource.
     It reports the 2D Euclidean or geodesic distance between the two
@@ -331,9 +332,9 @@ def distance(spatial_ref,
         geometry1,
         geometry2,
         distance_unit,
-        geodesic)
+        geodesic, future=False)
 
-def find_transformation(in_sr, out_sr, extent_of_interest=None, num_of_results=1, gis=None):
+def find_transformation(in_sr, out_sr, extent_of_interest=None, num_of_results=1, gis=None, future=False):
     """
     The find_transformations function is performed on a geometry
     service resource. This function returns a list of applicable
@@ -370,11 +371,11 @@ def find_transformation(in_sr, out_sr, extent_of_interest=None, num_of_results=1
     if gis is None:
         gis = arcgis.env.active_gis
     return gis._tools.geometry.find_transformation(in_sr, out_sr,
-                                                    extent_of_interest, num_of_results)
+                                                    extent_of_interest, num_of_results, future=False)
 
 
 def from_geo_coordinate_string(spatial_ref, strings,
-                               conversion_type, conversion_mode=None, gis=None):
+                               conversion_type, conversion_mode=None, gis=None, future=False):
     """
     The from_geo_coordinate_string function is performed on a geometry
     service resource. The function converts an array of well-known
@@ -422,14 +423,14 @@ def from_geo_coordinate_string(spatial_ref, strings,
     if gis is None:
         gis = arcgis.env.active_gis
     return gis._tools.geometry.from_geo_coordinate_string(spatial_ref, strings,
-                                                           conversion_type, conversion_mode)
+                                                           conversion_type, conversion_mode, future=False)
 
 
 def generalize(spatial_ref,
                geometries,
                max_deviation,
                deviation_unit,
-               gis=None):
+               gis=None, future=False):
     """
     The generalize function is performed on a geometry service
     resource. The generalize function simplifies the input geometries
@@ -454,12 +455,12 @@ def generalize(spatial_ref,
         spatial_ref,
         geometries,
         max_deviation,
-        deviation_unit)
+        deviation_unit, future=False)
 
 def intersect(spatial_ref,
               geometries,
               geometry,
-              gis=None):
+              gis=None, future=False):
     """
     The intersect function is performed on a geometry service
     resource. This function constructs the set-theoretic intersection
@@ -482,11 +483,11 @@ def intersect(spatial_ref,
         gis = arcgis.env.active_gis
     return gis._tools.geometry.intersect(spatial_ref,
                                           geometries,
-                                          geometry)
+                                          geometry, future=False)
 
 def label_points(spatial_ref,
                  polygons,
-                 gis=None):
+                 gis=None, future=False):
     """
     The label_points function is performed on a geometry service
     resource. The labelPoints function calculates an interior point
@@ -502,14 +503,14 @@ def label_points(spatial_ref,
     """
     if gis is None:
         gis = arcgis.env.active_gis
-    return gis._tools.geometry.label_points(spatial_ref, polygons)
+    return gis._tools.geometry.label_points(spatial_ref, polygons, future=False)
 
 
 def lengths(spatial_ref,
             polylines,
             length_unit,
             calculation_type,
-            gis=None):
+            gis=None, future=False):
     """
     The lengths function is performed on a geometry service resource.
     This function calculates the 2D Euclidean or geodesic lengths of
@@ -549,7 +550,7 @@ def lengths(spatial_ref,
         spatial_ref,
         polylines,
         length_unit,
-        calculation_type)
+        calculation_type, future=False)
 
 def offset(geometries,
            offset_distance,
@@ -558,7 +559,7 @@ def offset(geometries,
            bevel_ratio=10,
            simplify_result=False,
            spatial_ref=None,
-           gis=None):
+           gis=None, future=False):
     """
     The offset function is performed on a geometry service resource.
     This function constructs geometries that are offset from the
@@ -611,7 +612,7 @@ def offset(geometries,
         offset_how,
         bevel_ratio,
         simplify_result,
-        spatial_ref)
+        spatial_ref, future=False)
 
 
 def project(geometries,
@@ -619,7 +620,7 @@ def project(geometries,
             out_sr,
             transformation="",
             transform_forward=False,
-            gis=None):
+            gis=None, future=False):
     """
     The project function is performed on a geometry service resource.
     This function projects an array of input geometries from the input
@@ -658,7 +659,7 @@ def project(geometries,
         in_sr,
         out_sr,
         transformation,
-        transform_forward)
+        transform_forward, future=False)
 
 
 def relation(geometries1,
@@ -666,7 +667,7 @@ def relation(geometries1,
              spatial_ref,
              spatial_relation="esriGeometryRelationIntersection",
              relation_param="",
-             gis=None):
+             gis=None, future=False):
     """
     The relation function is performed on a geometry service resource.
     This function determines the pairs of geometries from the input
@@ -701,13 +702,13 @@ def relation(geometries1,
         geometries2,
         spatial_ref,
         spatial_relation,
-        relation_param)
+        relation_param, future=False)
 
 
 def reshape(spatial_ref,
             target,
             reshaper,
-            gis=None):
+            gis=None, future=False):
     """
     The reshape function is performed on a geometry service resource.
     It reshapes a polyline or polygon feature by constructing a
@@ -726,12 +727,12 @@ def reshape(spatial_ref,
     return gis._tools.geometry.reshape(
         spatial_ref,
         target,
-        reshaper)
+        reshaper, future=False)
 
 
 def simplify(spatial_ref,
              geometries,
-             gis=None):
+             gis=None, future=False):
     """
     The simplify function is performed on a geometry service resource.
     Simplify permanently alters the input geometry so that the geometry
@@ -745,7 +746,7 @@ def simplify(spatial_ref,
     """
     if gis is None:
         gis = arcgis.env.active_gis
-    return gis._tools.geometry.simplify(spatial_ref, geometries)
+    return gis._tools.geometry.simplify(spatial_ref, geometries, future=False)
 
 
 def to_geo_coordinate_string(spatial_ref,
@@ -755,7 +756,7 @@ def to_geo_coordinate_string(spatial_ref,
                              num_of_digits=None,
                              rounding=True,
                              add_spaces=True,
-                             gis=None):
+                             gis=None, future=False):
     """
     The to_geo_coordinate_string function is performed on a geometry
     service resource. The function converts an array of
@@ -819,14 +820,14 @@ def to_geo_coordinate_string(spatial_ref,
         conversion_mode,
         num_of_digits,
         rounding,
-        add_spaces)
+        add_spaces, future=False)
 
 
 def trim_extend(spatial_ref,
                 polylines,
                 trim_extend_to,
                 extend_how=0,
-                gis=None):
+                gis=None, future=False):
     """
     The trim_extend function is performed on a geometry service
     resource. This function trims or extends each polyline specified
@@ -866,12 +867,12 @@ def trim_extend(spatial_ref,
     return gis._tools.geometry.trim_extend(spatial_ref,
                                             polylines,
                                             trim_extend_to,
-                                            extend_how)
+                                            extend_how, future=False)
 
 
 def union(spatial_ref,
           geometries,
-          gis=None):
+          gis=None, future=False):
     """
     The union function is performed on a geometry service resource.
     This function constructs the set-theoretic union of the geometries
@@ -884,4 +885,4 @@ def union(spatial_ref,
     """
     if gis is None:
         gis = arcgis.env.active_gis
-    return gis._tools.geometry.union(spatial_ref, geometries)
+    return gis._tools.geometry.union(spatial_ref, geometries, future=False)
