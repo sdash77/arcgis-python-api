@@ -73,6 +73,7 @@ def areas_and_lengths(polygons,
                                       ellipsoid. The shape of the
                                       geometry in its coordinate system
                                       is preserved.
+        future - boolean. This operation determines if the job is run asynchronously or not.
        Output:
           JSON as dictionary
     """
@@ -103,6 +104,7 @@ def auto_complete(polygons=None,
          list of Polyline objects
         spatial_ref -
          spatial reference of the input geometries WKID
+        future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -154,6 +156,7 @@ def buffer(geometries,
           geodesic is set to false, the 2D Euclidean distance is used
           to buffer the input geometries. The default value depends on
           the geometry type, unit and bufferSR.
+        future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -181,6 +184,7 @@ def convex_hull(geometries,
        geometries - The geometries whose convex hull is to be created.
        spatial_ref - The well-known ID or a spatial reference JSON object for
             the output geometry.
+       future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -212,6 +216,7 @@ def cut(cutter,
         spatial_ref.
        spatial_ref - The well-known ID or a spatial reference JSON object for
         the output geometry.
+       future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -254,6 +259,7 @@ def densify(geometries,
         shortest path between two points along the ellipsoid of the
         earth. If geodesic is set to false, then 2D Euclidean distance
         is used to calculate max_segment_length. The default is false.
+       future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -288,6 +294,7 @@ def difference(geometries,
        syntax is not supported.
       spatial_ref - The well-known ID of the spatial reference or a spatial
        reference JSON object for the input geometries.
+      future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -324,6 +331,7 @@ def distance(spatial_ref,
       the ellipsoid of the earth. If geodesic is set to false or not
       specified, the planar distance is returned. The default value is
       false.
+     future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -367,6 +375,7 @@ def find_transformation(in_sr, out_sr, extent_of_interest=None, num_of_results=1
        num_of_results - The number of geographic transformations to
          return. The default value is 1. If num_of_results has a value of
          -1, all applicable transformations are returned.
+       future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -419,6 +428,7 @@ def from_geo_coordinate_string(spatial_ref, strings,
        utmDefault - Default. No options.
        utmNorthSouth - Uses north/south latitude indicators instead of
         zone numbers. Non-standard. Default is recommended
+      future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -448,6 +458,7 @@ def generalize(spatial_ref,
       geometry.
      deviation_unit - A unit for maximum deviation. If a unit is not
       specified, the units are derived from spatial_ref.
+     future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -478,6 +489,7 @@ def intersect(spatial_ref,
       ArcGIS REST API.
      geometry - A single geometry of any type with a dimension equal to
       or greater than the elements of geometries.
+     future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -500,6 +512,7 @@ def label_points(spatial_ref,
      polygons - The array of polygons whose label points are to be
       computed. The spatial reference of the polygons is specified by
       spatial_ref.
+     future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -543,6 +556,7 @@ def lengths(spatial_ref,
         preserveShape - This type calculates the length of the geometry
          on the surface of the earth ellipsoid. The shape of the
          geometry in its coordinate system is preserved.
+        future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -602,6 +616,7 @@ def offset(geometries,
       geometries. The default is false.
      spatial_ref - The well-known ID or a spatial reference JSON object for the
       input geometries.
+     future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -643,6 +658,7 @@ def project(geometries,
       transformation is implied in the name of the transformation. If
       transformation is specified, a value for the transformForward
       parameter must also be specified. The default value is false.
+     future - boolean. This operation determines if the job is run asynchronously or not.
 
     Example:
      input_geom = [{"x": -17568824.55, "y": 2428377.35}, {"x": -17568456.88, "y": 2428431.352}]
@@ -694,6 +710,7 @@ def relation(geometries1,
       esriGeometryRelationWithin | esriGeometryRelationRelation
      relation_param - The Shape Comparison Language string to be
       evaluated.
+     future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -721,6 +738,7 @@ def reshape(spatial_ref,
       reference JSON object for the input geometries.
      target -  The polyline or polygon to be reshaped.
      reshaper - The single-part polyline that does the reshaping.
+     future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -743,6 +761,7 @@ def simplify(spatial_ref,
     spatial_ref - The well-known ID of the spatial reference or a spatial
       reference JSON object for the input geometries.
     geometries - The array of geometries to be simplified.
+    future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -810,6 +829,7 @@ def to_geo_coordinate_string(spatial_ref,
        the string. The addSpaces parameter applies only to conversion
        types MGRS, USNG and UTM. The default value for MGRS is false,
        while the default value for both USNG and UTM is true.
+      future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -861,6 +881,7 @@ def trim_extend(spatial_ref,
        its attributes empty. Incompatible with esriKeepAttributes.
       8 - Do not extend the 'from' end of any path.
       16 - Do not extend the 'to' end of any path.
+     future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -882,6 +903,7 @@ def union(spatial_ref,
     spatial_ref - The well-known ID of the spatial reference or a spatial
      reference json object.
     geometries - The array of geometries to be unioned.
+    future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
