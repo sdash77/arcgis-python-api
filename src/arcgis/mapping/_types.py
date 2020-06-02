@@ -562,8 +562,10 @@ class WebMap(collections.OrderedDict):
                         new_layer["layers"][0]["name"])
                 new_layer["extent"] = layer._extents[0]
                 new_layer["spatialReferences"] = layer._spatial_references
-            if isinstance(layer, WMTSLayer):
+            elif isinstance(layer, WMTSLayer):
                 new_layer = {**new_layer, **layer.__text__}
+            else:
+                new_layer = {**new_layer, **layer._operational_layer_json}
         #endregion
 
         # region Process popup info

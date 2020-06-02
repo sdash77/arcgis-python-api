@@ -28,7 +28,7 @@ class KMLLayer(BaseOGC):
 
 
     """
-    _type = "kml"
+    _type = "KML"
     def __init__(self, url, **kwargs):
         """initializer"""
         super(KMLLayer, self)
@@ -42,9 +42,9 @@ class KMLLayer(BaseOGC):
     #----------------------------------------------------------------------
     @property
     def _lyr_json(self) -> dict:
-        """creates a dictionary for web map item."""
+        """Dictionary representing the layer for the MapView widget"""
         add_layer =  {
-            "type" : "kml",
+            "type" : self._type,
             'url' : self._url,
             'opacity' : self.opacity,
             'minScale' : self.scale[0],
@@ -52,4 +52,12 @@ class KMLLayer(BaseOGC):
             'id' : self._id,
             'title' : self.title
         }
+        if self.scale == (-1,-1):
+            del add_layer['minScale']
+            del add_layer['maxScale']
         return add_layer
+
+    @property
+    def _operational_layer_json(self) -> dict:
+        """Dictionary representing the operational layer for the WebMap class"""
+        return self._lyr_json

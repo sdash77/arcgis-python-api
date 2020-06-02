@@ -79,7 +79,7 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                             }
                             typedLayer.raster = encodedRaster;}}
                 resolve(typedLayer);}
-            else if (noTypeLayer.type == "KMLLayer") {
+            else if (noTypeLayer.type == "KML") {
                 var typedLayer = new KMLLayer(noTypeLayer.url);
                 typedLayer.id = noTypeLayer._hashFromPython;
                 resolve(typedLayer);}
@@ -107,8 +107,7 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                 noTypeLayer.subLayers = [noTypeLayer.sublayers[0],];
                 delete noTypeLayer.type;
                 var typedLayer = new WMSLayer(noTypeLayer);
-                resolve(typedLayer);
-                }
+                resolve(typedLayer);}
             else if ((noTypeLayer.type == "FeatureLayer") ||
                      (noTypeLayer.type == "Feature Layer")) {
                 //TODO: clean up this Feature layer stuff, seperate into new file
