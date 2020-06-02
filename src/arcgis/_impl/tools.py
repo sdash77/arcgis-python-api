@@ -11932,8 +11932,9 @@ class _GeometryService(_GISService):
         else:
             return json.dumps(listGeoms)
     #----------------------------------------------------------------------
-    def _process_results(self, results):
+    def _process_results(self, results, out_sr=None):
         """processes the result"""
+        from arcgis.geometry import SpatialReference
         if isinstance(results, concurrent.futures.Future):
             results = results.result()
             if 'error' in results:
@@ -11942,12 +11943,18 @@ class _GeometryService(_GISService):
             vals = []
             for result in results:
                 if isinstance(result, dict):
+                    if out_sr and not 'spatialReference' in result and isinstance(out_sr, int):
+                        result['spatialReference'] = {'wkid' : out_sr}
+                    elif out_sr and not 'spatialReference' in result and isinstance(out_sr, str):
+                        result['spatialReference'] = {'wkt' : out_sr}
+                    elif out_sr and not 'spatialReference' in result and isinstance(out_sr, (dict, SpatialReference)):
+                        result['spatialReference'] = out_sr
                     vals.append(Geometry(result))
                 del result
             return vals
         elif isinstance(results, dict):
             if 'geometries' in results:
-                return self._process_results(results['geometries'])
+                return self._process_results(results['geometries'], out_sr=out_sr)
             elif 'geometry' in results:
                 return Geometry(results['geometry'])
             else:
@@ -11989,7 +11996,7 @@ class _GeometryService(_GISService):
             params['polylines'] = polylines
         executor =  concurrent.futures.ThreadPoolExecutor(2)
         f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
         executor.shutdown(False)                  
         job = GeometryJob(future=f2, 
                  task_name="auto_complete", 
@@ -12082,7 +12089,7 @@ class _GeometryService(_GISService):
             params['outSR'] = outSR
         executor =  concurrent.futures.ThreadPoolExecutor(2)
         f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : outSR})
         executor.shutdown(False)                  
         job = GeometryJob(future=f2, 
                  task_name="buffer", 
@@ -12136,7 +12143,7 @@ class _GeometryService(_GISService):
         
         executor =  concurrent.futures.ThreadPoolExecutor(2)
         f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
         executor.shutdown(False)                  
         job = GeometryJob(future=f2, 
                  task_name="convex_hull", 
@@ -12203,7 +12210,7 @@ class _GeometryService(_GISService):
             AttributeError("You must provide at least 1 Polygon/Polyline geometry in a list")
         executor =  concurrent.futures.ThreadPoolExecutor(2)
         f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
         executor.shutdown(False)                  
         job = GeometryJob(future=f2, 
                  task_name="cut", 
@@ -12290,7 +12297,7 @@ class _GeometryService(_GISService):
         params['geometries'] = template
         executor =  concurrent.futures.ThreadPoolExecutor(2)
         f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
         executor.shutdown(False)                  
         job = GeometryJob(future=f2, 
                  task_name="densify", 
@@ -12369,7 +12376,7 @@ class _GeometryService(_GISService):
         params['geometry'] = geomTemplate
         executor =  concurrent.futures.ThreadPoolExecutor(2)
         f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
         executor.shutdown(False)                  
         job = GeometryJob(future=f2, 
                  task_name="difference", 
@@ -12604,7 +12611,7 @@ class _GeometryService(_GISService):
         params['geometries'] = self.__geometryListToGeomTemplate(geometries=geometries)
         executor =  concurrent.futures.ThreadPoolExecutor(2)
         f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
         executor.shutdown(False)                  
         job = GeometryJob(future=f2, 
                  task_name="generalize", 
@@ -12650,7 +12657,7 @@ class _GeometryService(_GISService):
         }
         executor =  concurrent.futures.ThreadPoolExecutor(2)
         f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
         executor.shutdown(False)                  
         job = GeometryJob(future=f2, 
                  task_name="intersect", 
@@ -12838,7 +12845,7 @@ class _GeometryService(_GISService):
         }
         executor =  concurrent.futures.ThreadPoolExecutor(2)
         f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
         executor.shutdown(False)                  
         job = GeometryJob(future=f2, 
                  task_name="offset", 
@@ -12892,7 +12899,7 @@ class _GeometryService(_GISService):
         }
         executor =  concurrent.futures.ThreadPoolExecutor(2)
         f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : outSR})
         executor.shutdown(False)                  
         job = GeometryJob(future=f2, 
                  task_name="project", 
@@ -13011,7 +13018,7 @@ class _GeometryService(_GISService):
             raise AttributeError("Invalid reshaper object, must be Polyline")
         executor =  concurrent.futures.ThreadPoolExecutor(2)
         f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
         executor.shutdown(False)                  
         job = GeometryJob(future=f2, 
                           task_name="reshape", 
@@ -13047,7 +13054,7 @@ class _GeometryService(_GISService):
         }
         executor =  concurrent.futures.ThreadPoolExecutor(2)
         f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
         executor.shutdown(False)                  
         job = GeometryJob(future=f2, 
                  task_name="simplify", 
@@ -13206,7 +13213,7 @@ class _GeometryService(_GISService):
         }
         executor =  concurrent.futures.ThreadPoolExecutor(2)
         f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
         executor.shutdown(False)                  
         job = GeometryJob(future=f2, 
                  task_name="trim_extend", 
@@ -13241,7 +13248,7 @@ class _GeometryService(_GISService):
         }
         executor =  concurrent.futures.ThreadPoolExecutor(2)
         f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
-        f2 = executor.submit(self._process_results, **{'results' : f1})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
         executor.shutdown(False)                  
         job = GeometryJob(future=f2, 
                  task_name="auto_complete", 

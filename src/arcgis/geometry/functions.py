@@ -84,7 +84,7 @@ def areas_and_lengths(polygons,
         length_unit,
         area_unit,
         calculation_type,
-        spatial_ref, future=False)
+        spatial_ref, future=future)
 
 
 def auto_complete(polygons=None,
@@ -111,7 +111,7 @@ def auto_complete(polygons=None,
     return gis._tools.geometry.auto_complete(
         polygons,
         polylines,
-        spatial_ref, future=False)
+        spatial_ref, future=future)
 
 
 def buffer(geometries,
@@ -168,7 +168,7 @@ def buffer(geometries,
         out_sr,
         buffer_sr,
         union_results,
-        geodesic, future=False)
+        geodesic, future=future)
 
 def convex_hull(geometries,
                 spatial_ref=None,
@@ -190,7 +190,7 @@ def convex_hull(geometries,
         gis = arcgis.env.active_gis
     return gis._tools.geometry.convex_hull(
         geometries,
-        spatial_ref, future=False)
+        spatial_ref, future=future)
 
 def cut(cutter,
         target,
@@ -223,7 +223,7 @@ def cut(cutter,
     return gis._tools.geometry.cut(
         cutter,
         target,
-        spatial_ref, future=False)
+        spatial_ref, future=future)
 
 def densify(geometries,
             spatial_ref,
@@ -268,7 +268,7 @@ def densify(geometries,
         spatial_ref,
         max_segment_length,
         length_unit,
-        geodesic, future=False)
+        geodesic, future=future)
 
 def difference(geometries,
                spatial_ref,
@@ -301,7 +301,7 @@ def difference(geometries,
     return gis._tools.geometry.difference(
         geometries,
         spatial_ref,
-        geometry, future=False)
+        geometry, future=future)
 
 def distance(spatial_ref,
              geometry1,
@@ -340,7 +340,7 @@ def distance(spatial_ref,
         geometry1,
         geometry2,
         distance_unit,
-        geodesic, future=False)
+        geodesic, future=future)
 
 def find_transformation(in_sr, out_sr, extent_of_interest=None, num_of_results=1, gis=None, future=False):
     """
@@ -380,7 +380,7 @@ def find_transformation(in_sr, out_sr, extent_of_interest=None, num_of_results=1
     if gis is None:
         gis = arcgis.env.active_gis
     return gis._tools.geometry.find_transformation(in_sr, out_sr,
-                                                    extent_of_interest, num_of_results, future=False)
+                                                    extent_of_interest, num_of_results, future=future)
 
 
 def from_geo_coordinate_string(spatial_ref, strings,
@@ -433,7 +433,7 @@ def from_geo_coordinate_string(spatial_ref, strings,
     if gis is None:
         gis = arcgis.env.active_gis
     return gis._tools.geometry.from_geo_coordinate_string(spatial_ref, strings,
-                                                           conversion_type, conversion_mode, future=False)
+                                                           conversion_type, conversion_mode, future=future)
 
 
 def generalize(spatial_ref,
@@ -466,7 +466,7 @@ def generalize(spatial_ref,
         spatial_ref,
         geometries,
         max_deviation,
-        deviation_unit, future=False)
+        deviation_unit, future=future)
 
 def intersect(spatial_ref,
               geometries,
@@ -495,7 +495,7 @@ def intersect(spatial_ref,
         gis = arcgis.env.active_gis
     return gis._tools.geometry.intersect(spatial_ref,
                                           geometries,
-                                          geometry, future=False)
+                                          geometry, future=future)
 
 def label_points(spatial_ref,
                  polygons,
@@ -516,7 +516,7 @@ def label_points(spatial_ref,
     """
     if gis is None:
         gis = arcgis.env.active_gis
-    return gis._tools.geometry.label_points(spatial_ref, polygons, future=False)
+    return gis._tools.geometry.label_points(spatial_ref, polygons, future=future)
 
 
 def lengths(spatial_ref,
@@ -564,7 +564,7 @@ def lengths(spatial_ref,
         spatial_ref,
         polylines,
         length_unit,
-        calculation_type, future=False)
+        calculation_type, future=future)
 
 def offset(geometries,
            offset_distance,
@@ -627,7 +627,7 @@ def offset(geometries,
         offset_how,
         bevel_ratio,
         simplify_result,
-        spatial_ref, future=False)
+        spatial_ref, future=future)
 
 
 def project(geometries,
@@ -675,7 +675,7 @@ def project(geometries,
         in_sr,
         out_sr,
         transformation,
-        transform_forward, future=False)
+        transform_forward, future=future)
 
 
 def relation(geometries1,
@@ -719,7 +719,7 @@ def relation(geometries1,
         geometries2,
         spatial_ref,
         spatial_relation,
-        relation_param, future=False)
+        relation_param, future=future)
 
 
 def reshape(spatial_ref,
@@ -745,7 +745,7 @@ def reshape(spatial_ref,
     return gis._tools.geometry.reshape(
         spatial_ref,
         target,
-        reshaper, future=False)
+        reshaper, future=future)
 
 
 def simplify(spatial_ref,
@@ -765,7 +765,7 @@ def simplify(spatial_ref,
     """
     if gis is None:
         gis = arcgis.env.active_gis
-    return gis._tools.geometry.simplify(spatial_ref, geometries, future=False)
+    return gis._tools.geometry.simplify(spatial_ref, geometries, future=future)
 
 
 def to_geo_coordinate_string(spatial_ref,
@@ -840,7 +840,7 @@ def to_geo_coordinate_string(spatial_ref,
         conversion_mode,
         num_of_digits,
         rounding,
-        add_spaces, future=False)
+        add_spaces, future=future)
 
 
 def trim_extend(spatial_ref,
@@ -888,7 +888,7 @@ def trim_extend(spatial_ref,
     return gis._tools.geometry.trim_extend(spatial_ref,
                                             polylines,
                                             trim_extend_to,
-                                            extend_how, future=False)
+                                            extend_how, future=future)
 
 
 def union(spatial_ref,
@@ -907,4 +907,4 @@ def union(spatial_ref,
     """
     if gis is None:
         gis = arcgis.env.active_gis
-    return gis._tools.geometry.union(spatial_ref, geometries, future=False)
+    return gis._tools.geometry.union(spatial_ref, geometries, future=future)

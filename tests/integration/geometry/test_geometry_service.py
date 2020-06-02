@@ -1,9 +1,51 @@
 import sys
-#sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_3757\src")
+#sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_2678\src")
 import unittest
 from arcgis.gis import GIS
 from arcgis._impl.tools import _GeometryService
 from arcgis._impl._async.jobs import GeometryJob
+
+class TestGSSettingSR(unittest.TestCase):
+    """
+    Tests that async and sync operations set the spatial reference on the geometry objects
+    """
+    def test_setting_spatial_reference(self):
+        """tests if geometry service sets the output spatial reference"""
+        from arcgis.geometry.functions import intersect
+        from arcgis.geometry import Geometry
+        geoms = [
+                Geometry({
+                    "paths" : 
+                    [
+                        [[-117,34],[-116,34],[-117,33]],
+                        [[-115,44],[-114,43],[-115,43]]
+                    ],
+                    "spatialReference" : {'wkid' : 4326}
+                    }),
+                Geometry({
+                    "paths" : 
+                    [
+                        [[32,17],[31,17],[30,17],[30,16]]
+                    ],
+                    "spatialReference" : {'wkid' : 4326}
+                })
+            ]
+        geom = Geometry({
+                "rings" : [
+                    [[-117,34],[-116,34],[-117,33],[-117,34]],
+                    [[-115,44],[-114,43],[-115,43],[-115,44]]
+                ],
+                "spatialReference" : {'wkid' : 4326}
+            })
+        sr = 4326    
+        gis = GIS(verify_cert=False)
+        geom_async = intersect(spatial_ref=4326, geometries=geoms, geometry=geom, gis=None, future=True)
+        assert geom_async
+        assert 'spatialReference' in geom_async.result()[0]
+        geom_sync = intersect(spatial_ref=4326, geometries=geoms, geometry=geom, gis=None, future=False)
+        assert 'spatialReference' in geom_sync[0]
+        
+            
 ###########################################################################
 class TestGeometryService(unittest.TestCase):
     """Tests the underlying Geometry Service"""
