@@ -1105,7 +1105,7 @@ class Datastore(dict):
         """
         url = self._admin_url + '/data/items' + self.datapath + "/manifest/regenerate"
         params = {'f' : 'json'}
-        res = self._con.post(url, params)
+        res = self._portal.con.post(url, params)
         if 'success' in res:
             return res['success']
         return res
@@ -1173,6 +1173,9 @@ class GroupMigrationManager(object):
         :returns: Boolean
         """
         if self._gis.users.me.role == 'org_admin':
+            try_json = True
+            if preview_only:
+                try_json = False
             url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/import"
             if isinstance(item, Item):
                 item = item.itemid
@@ -1189,7 +1192,9 @@ class GroupMigrationManager(object):
             if run_async:
                 params['async'] = run_async
 
-            return self._con.post(url, params)
+            return self._con.post(url, 
+                                  params, 
+                                  try_json=try_json)
 
         else:
             raise Exception("Must be an administror to perform this action")
@@ -1199,6 +1204,7 @@ class GroupMigrationManager(object):
         """
         Checks the status of an export job
         """
+        import time
         params = {}
         if job_id:
             url = f"{self._gis._portal.resturl}portals/self/jobs/{job_id}"
@@ -1208,13 +1214,13 @@ class GroupMigrationManager(object):
                 res = self._con.post(url, params)
                 if res['status'] == "failed":
                     raise Exception(res)
+                time.sleep(2)
             return res
         else:
             raise Exception(res)
     #----------------------------------------------------------------------
     def create(self,
                items=None,
-               exclude_data:bool=False,
                future:bool=True):
         """
         Exports a `Group` content to a **EPK Package Item**.
@@ -1237,8 +1243,6 @@ class GroupMigrationManager(object):
         ------------------     --------------------------------------------------------------------
         items                  Optional List<Item>. A set of items to export from the group.  If nothing is given, all items will be attempted to be exported.
         ------------------     --------------------------------------------------------------------
-        exclude_data           Optional Boolean.  The default is `False`. If `True`, the data will be referenced by URL instead of being included in the export package.
-        ------------------     --------------------------------------------------------------------
         future                 Optional Boolean.  When True, the operation will return a Job object and return the results asynchronously.
         ==================     ====================================================================
 
@@ -1248,12 +1252,11 @@ class GroupMigrationManager(object):
         if self._gis.users.me.role == 'org_admin':
             url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/export"
             if items and isinstance(items, (list, tuple)):
-                items = [i.id for i in items]
+                items = ",".join([i.id for i in items])
             else:
                 items = None
             params = {
-                      'itemIdList' : items,
-                      'excludeSourceData' : json.dumps(exclude_data),
+                      'itemIdList' : items
                       }
             
             params['async'] = json.dumps(True)
@@ -1341,8 +1344,26 @@ class GroupMigrationManager(object):
         :returns: dict
         
         """
-        if isinstance(epk_item, Item) and epk.type == 'Export Package':
-            return self._from_package(epk_item.itemid, preview_only=True, run_async=False)
+        if isinstance(epk_item, Item) and epk_item.type == 'Export Package':
+            try:
+                import time
+                self._from_package(epk_item.itemid, preview_only=True, run_async=False)
+                time.sleep(2)
+            except:
+                pass
+            url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/importPreview/{epk_item.itemid}"
+            params = {"f" : "json", "start" : 1, "num" : 25}
+            res = self._con.post(url, params)
+            results = res['results']
+            while res['nextStart'] > 0:
+                params['start'] = res['nextStart']
+                res = self._con.post(url, params)
+                results.extend(res['results'])
+                if res['nextStart'] == -1:
+                    break
+            res['results'] = results
+            return res            
+            
         else:
             raise Exception("Invalid Item Type.")
         return None
@@ -8543,7 +8564,13 @@ class Item(dict):
             ret_dict['org'] = True
 
         if len(sharing_info['groups']) > 0:
-            ret_dict['groups'] = [Group(self._gis, g) for g in sharing_info['groups']]
+            grps = []
+            for g in sharing_info['groups']:
+                try:
+                    grps.append(Group(self._gis, g))
+                except: # ignore groups you can't access
+                    pass
+            ret_dict['groups'] = grps
 
         return ret_dict
 
@@ -10169,7 +10196,7 @@ class Item(dict):
                                  'Hub Site Application', 'Hub Page',
                                  'Web Mapping Application', 'Mobile Application',
                                  'Symbol Set', 'Color Set', 'Content Category Set',
-                                 'Windows Viewer Configuration']
+                                 'Windows Viewer Configuration', 'Notebook']
         FILE_BASED_ITEM_TYPES = ['CityEngine Web Scene','Pro Map', 'Map Area', 'KML Collection',
                                  'Code Attachment', 'Operations Dashboard Add In',
                                  'Native Application', 'Native Application Template', 'KML',
@@ -10282,6 +10309,8 @@ class Item(dict):
                 'text' : data,
                 'title' : title
             }
+            if item.type == "Notebook":
+                ip['properties'] = item.properties
             new_item = self._gis.content.add(item_properties=ip)
             if item.url and item.url.find(item.id) > -1:
                 new_item.update({"url" : item.url.replace(item.id, new_item.id)})

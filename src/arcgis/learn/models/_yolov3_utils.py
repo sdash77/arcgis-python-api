@@ -907,7 +907,7 @@ def download_yolo_weights(weights_path):
     item = gis.content.get('8b4600eb9a29407bbfe51491ad5bf62c')
     print(f"[INFO] Downloading COCO pretrained weights for YOLOv3 in {weights_path}...")
     filepath = item.download(weights_path)
-    return filepath
+    return
 
 def coco_config():
     """ Function to return YOLOv3 model configurations for COCO dataset. """

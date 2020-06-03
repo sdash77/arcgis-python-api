@@ -92,6 +92,7 @@ class _GeoEnrichment(object):
     _gis = None
     _portal = None
     _base_url = None
+    _limits = None
     _url_standard_geography_query = '/StandardGeographyLevels'
     _url_standard_geography_query_execute = '/StandardGeographyQuery/execute'
     _url_getVariables = '/GetVariables/execute'
@@ -948,6 +949,23 @@ class _GeoEnrichment(object):
         else:
             return pd.DataFrame.from_dict(res)
         return res
+    #----------------------------------------------------------------------
+    @property
+    def limits(self):
+        """
+        Provides the limits of the current GeoEnrichment Service.  This will allow 
+        users to determine how to break up the calls accordingly to ensure all data 
+        is returned.
+        
+        :returns: Pandas' DataFrame
+        """
+        if self._limits is None:
+            limits_resp = self._gis._con.get(f'{self._gis.properties.helperServices.geoenrichment.url}/Geoenrichment/ServiceLimits')
+            if 'serviceLimits' in limits_resp:
+                self._limits = pd.DataFrame(limits_resp['serviceLimits']['value'])
+            else:
+                return limits_resp
+        return self._limits
     #----------------------------------------------------------------------
     def standard_geography_query(self,
                                  source_country=None,
