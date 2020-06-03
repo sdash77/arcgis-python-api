@@ -64,7 +64,7 @@ def common_test(test_object, model_type, output_name, data_path, old_models, **p
     model_object.show_results()
 
     # Test for accuracy if nightly_test is run
-    if output_name in ['rn', 'ssd']:
+    if output_name in ['retinanet', 'ssd']:
         if os.environ['nightly_test'] == "1":
             test_object.assertGreater(model_object.average_precision_score(mean=True), .40)
 
@@ -213,11 +213,11 @@ class Test_Common(unittest.TestCase):
             )
 
     @unittest.skipIf(True, "Preconditions not met, skipping test")
-    def test_rn(self):
+    def test_retinanet(self):
         common_test(
             self,
             RetinaNet,
-            'rn',
+            'retinanet',
             self.obj_detection_data2,
             [self.model_rn_170],
             batch_size=2,
