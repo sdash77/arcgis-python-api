@@ -40,7 +40,7 @@ class GeoRSSLayer(BaseOGC):
     _line_symbol = None
     _point_symbol = None
     _polygon_symbol = None
-    _type = "geo-rss"
+    _type = "GeoRSS"
     #----------------------------------------------------------------------
     def __init__(self, url, **kwargs):
         super(GeoRSSLayer, self)
@@ -137,7 +137,7 @@ class GeoRSSLayer(BaseOGC):
     def _lyr_json(self) -> dict:
         """creates a dictionary for web map item."""
         add_layer =  {
-            "type" : "geo-rss",
+            "type" : self._type,
             'url' : self._url,
             'opacity' : self.opacity,
             'minScale' : self.scale[0],
@@ -149,3 +149,7 @@ class GeoRSSLayer(BaseOGC):
             'title' : self.title
         }
         return add_layer
+
+    @property
+    def _operational_layer_json(self) -> dict:
+        return self._lyr_json
