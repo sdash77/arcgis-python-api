@@ -64,8 +64,9 @@ def common_test(test_object, model_type, output_name, data_path, old_models, **p
     model_object.show_results()
 
     # Test for accuracy if nightly_test is run
-    if os.environ['nightly_test'] == "1":
-        test_object.assertGreater(model_object.average_precision_score(mean=True), .40)
+    if output_name in ['rn', 'ssd']:
+        if os.environ['nightly_test'] == "1":
+            test_object.assertGreater(model_object.average_precision_score(mean=True), .40)
 
     # Load from saved model.
     model_object.load(f'post_fit_{output_name}')
@@ -87,6 +88,7 @@ def common_test(test_object, model_type, output_name, data_path, old_models, **p
         model_object = model_type.from_model(old_model)
 
     #For object detection inferencing.
+
 def object_detection_inferencing(in_model_definition, in_raster, out_detected_objects, model_args):
     import arcpy
     arcpy.env.processorType = "GPU"
