@@ -97,5 +97,33 @@ class Job(object):
     def result(self):
         """returns the job result"""
         return self._future.result()
-    
-    
+
+class GeometryJob(Job):
+    _future = None
+    _gis = None
+    _task_name = None
+    _start_time = None
+    _end_time = None
+    _verbose = None    
+    def __init__(self, 
+                 future:concurrent.futures.Future, 
+                 task_name:str, 
+                 jobid:str=None, 
+                 task_url:str=None, 
+                 notify:bool=False, 
+                 gis=None) -> None:
+        super(GeometryJob, self)
+        self._start_time = datetime.datetime.now()
+        self._task_name = task_name
+        self._future = future
+        if notify:
+            self._future.add_done_callback(self._notify)
+        self._future.add_done_callback(self._set_end_time)        
+        
+        self._end_time = None
+        self._url = task_url
+        if jobid is None:
+            self._jobid = uuid.uuid4().hex
+        else:
+            self._jobid = jobid
+        

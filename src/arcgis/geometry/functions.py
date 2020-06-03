@@ -11,7 +11,8 @@ def areas_and_lengths(polygons,
                       area_unit,
                       calculation_type,
                       spatial_ref=4326,
-                      gis=None):
+                      gis=None, 
+                      future=False):
     """
        The areas_and_lengths function calculates areas and perimeter lengths
        for each polygon specified in the input array.
@@ -72,6 +73,7 @@ def areas_and_lengths(polygons,
                                       ellipsoid. The shape of the
                                       geometry in its coordinate system
                                       is preserved.
+        future - boolean. This operation determines if the job is run asynchronously or not.
        Output:
           JSON as dictionary
     """
@@ -82,13 +84,13 @@ def areas_and_lengths(polygons,
         length_unit,
         area_unit,
         calculation_type,
-        spatial_ref)
+        spatial_ref, future=future)
 
 
 def auto_complete(polygons=None,
                   polylines=None,
                   spatial_ref=None,
-                  gis=None):
+                  gis=None, future=False):
     """
        The auto_complete function simplifies the process of
        constructing new polygons that are adjacent to other polygons.
@@ -102,13 +104,14 @@ def auto_complete(polygons=None,
          list of Polyline objects
         spatial_ref -
          spatial reference of the input geometries WKID
+        future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
     return gis._tools.geometry.auto_complete(
         polygons,
         polylines,
-        spatial_ref)
+        spatial_ref, future=future)
 
 
 def buffer(geometries,
@@ -119,7 +122,7 @@ def buffer(geometries,
            buffer_sr=None,
            union_results=None,
            geodesic=None,
-           gis=None):
+           gis=None, future=False):
     """
        The buffer function is performed on a geometry service resource
        The result of this function is buffered polygons at the
@@ -153,6 +156,7 @@ def buffer(geometries,
           geodesic is set to false, the 2D Euclidean distance is used
           to buffer the input geometries. The default value depends on
           the geometry type, unit and bufferSR.
+        future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -164,11 +168,11 @@ def buffer(geometries,
         out_sr,
         buffer_sr,
         union_results,
-        geodesic)
+        geodesic, future=future)
 
 def convex_hull(geometries,
                 spatial_ref=None,
-                gis=None):
+                gis=None, future=False):
     """
     The convex_hull function is performed on a geometry service
     resource. It returns the convex hull of the input geometry. The
@@ -180,17 +184,18 @@ def convex_hull(geometries,
        geometries - The geometries whose convex hull is to be created.
        spatial_ref - The well-known ID or a spatial reference JSON object for
             the output geometry.
+       future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
     return gis._tools.geometry.convex_hull(
         geometries,
-        spatial_ref)
+        spatial_ref, future=future)
 
 def cut(cutter,
         target,
         spatial_ref=None,
-        gis=None):
+        gis=None, future=False):
     """
     The cut function is performed on a geometry service resource. This
     function splits the target polyline or polygon where it's crossed
@@ -211,20 +216,21 @@ def cut(cutter,
         spatial_ref.
        spatial_ref - The well-known ID or a spatial reference JSON object for
         the output geometry.
+       future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
     return gis._tools.geometry.cut(
         cutter,
         target,
-        spatial_ref)
+        spatial_ref, future=future)
 
 def densify(geometries,
             spatial_ref,
             max_segment_length,
             length_unit,
             geodesic=False,
-            gis=None):
+            gis=None, future=False):
     """
     The densify function is performed using the GIS's geometry engine.
     This function densifies geometries by plotting points between
@@ -253,6 +259,7 @@ def densify(geometries,
         shortest path between two points along the ellipsoid of the
         earth. If geodesic is set to false, then 2D Euclidean distance
         is used to calculate max_segment_length. The default is false.
+       future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -261,12 +268,12 @@ def densify(geometries,
         spatial_ref,
         max_segment_length,
         length_unit,
-        geodesic)
+        geodesic, future=future)
 
 def difference(geometries,
                spatial_ref,
                geometry,
-               gis=None):
+               gis=None, future=False):
     """
     The difference function is performed on a geometry service
     resource. This function constructs the set-theoretic difference
@@ -287,20 +294,21 @@ def difference(geometries,
        syntax is not supported.
       spatial_ref - The well-known ID of the spatial reference or a spatial
        reference JSON object for the input geometries.
+      future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
     return gis._tools.geometry.difference(
         geometries,
         spatial_ref,
-        geometry)
+        geometry, future=future)
 
 def distance(spatial_ref,
              geometry1,
              geometry2,
              distance_unit="",
              geodesic=False,
-             gis=None):
+             gis=None, future=False):
     """
     The distance function is performed on a geometry service resource.
     It reports the 2D Euclidean or geodesic distance between the two
@@ -323,6 +331,7 @@ def distance(spatial_ref,
       the ellipsoid of the earth. If geodesic is set to false or not
       specified, the planar distance is returned. The default value is
       false.
+     future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -331,9 +340,9 @@ def distance(spatial_ref,
         geometry1,
         geometry2,
         distance_unit,
-        geodesic)
+        geodesic, future=future)
 
-def find_transformation(in_sr, out_sr, extent_of_interest=None, num_of_results=1, gis=None):
+def find_transformation(in_sr, out_sr, extent_of_interest=None, num_of_results=1, gis=None, future=False):
     """
     The find_transformations function is performed on a geometry
     service resource. This function returns a list of applicable
@@ -366,15 +375,16 @@ def find_transformation(in_sr, out_sr, extent_of_interest=None, num_of_results=1
        num_of_results - The number of geographic transformations to
          return. The default value is 1. If num_of_results has a value of
          -1, all applicable transformations are returned.
+       future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
     return gis._tools.geometry.find_transformation(in_sr, out_sr,
-                                                    extent_of_interest, num_of_results)
+                                                    extent_of_interest, num_of_results, future=future)
 
 
 def from_geo_coordinate_string(spatial_ref, strings,
-                               conversion_type, conversion_mode=None, gis=None):
+                               conversion_type, conversion_mode=None, gis=None, future=False):
     """
     The from_geo_coordinate_string function is performed on a geometry
     service resource. The function converts an array of well-known
@@ -418,18 +428,19 @@ def from_geo_coordinate_string(spatial_ref, strings,
        utmDefault - Default. No options.
        utmNorthSouth - Uses north/south latitude indicators instead of
         zone numbers. Non-standard. Default is recommended
+      future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
     return gis._tools.geometry.from_geo_coordinate_string(spatial_ref, strings,
-                                                           conversion_type, conversion_mode)
+                                                           conversion_type, conversion_mode, future=future)
 
 
 def generalize(spatial_ref,
                geometries,
                max_deviation,
                deviation_unit,
-               gis=None):
+               gis=None, future=False):
     """
     The generalize function is performed on a geometry service
     resource. The generalize function simplifies the input geometries
@@ -447,6 +458,7 @@ def generalize(spatial_ref,
       geometry.
      deviation_unit - A unit for maximum deviation. If a unit is not
       specified, the units are derived from spatial_ref.
+     future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -454,12 +466,12 @@ def generalize(spatial_ref,
         spatial_ref,
         geometries,
         max_deviation,
-        deviation_unit)
+        deviation_unit, future=future)
 
 def intersect(spatial_ref,
               geometries,
               geometry,
-              gis=None):
+              gis=None, future=False):
     """
     The intersect function is performed on a geometry service
     resource. This function constructs the set-theoretic intersection
@@ -477,16 +489,17 @@ def intersect(spatial_ref,
       ArcGIS REST API.
      geometry - A single geometry of any type with a dimension equal to
       or greater than the elements of geometries.
+     future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
     return gis._tools.geometry.intersect(spatial_ref,
                                           geometries,
-                                          geometry)
+                                          geometry, future=future)
 
 def label_points(spatial_ref,
                  polygons,
-                 gis=None):
+                 gis=None, future=False):
     """
     The label_points function is performed on a geometry service
     resource. The labelPoints function calculates an interior point
@@ -499,17 +512,18 @@ def label_points(spatial_ref,
      polygons - The array of polygons whose label points are to be
       computed. The spatial reference of the polygons is specified by
       spatial_ref.
+     future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
-    return gis._tools.geometry.label_points(spatial_ref, polygons)
+    return gis._tools.geometry.label_points(spatial_ref, polygons, future=future)
 
 
 def lengths(spatial_ref,
             polylines,
             length_unit,
             calculation_type,
-            gis=None):
+            gis=None, future=False):
     """
     The lengths function is performed on a geometry service resource.
     This function calculates the 2D Euclidean or geodesic lengths of
@@ -542,6 +556,7 @@ def lengths(spatial_ref,
         preserveShape - This type calculates the length of the geometry
          on the surface of the earth ellipsoid. The shape of the
          geometry in its coordinate system is preserved.
+        future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -549,7 +564,7 @@ def lengths(spatial_ref,
         spatial_ref,
         polylines,
         length_unit,
-        calculation_type)
+        calculation_type, future=future)
 
 def offset(geometries,
            offset_distance,
@@ -558,7 +573,7 @@ def offset(geometries,
            bevel_ratio=10,
            simplify_result=False,
            spatial_ref=None,
-           gis=None):
+           gis=None, future=False):
     """
     The offset function is performed on a geometry service resource.
     This function constructs geometries that are offset from the
@@ -601,6 +616,7 @@ def offset(geometries,
       geometries. The default is false.
      spatial_ref - The well-known ID or a spatial reference JSON object for the
       input geometries.
+     future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -611,7 +627,7 @@ def offset(geometries,
         offset_how,
         bevel_ratio,
         simplify_result,
-        spatial_ref)
+        spatial_ref, future=future)
 
 
 def project(geometries,
@@ -619,7 +635,7 @@ def project(geometries,
             out_sr,
             transformation="",
             transform_forward=False,
-            gis=None):
+            gis=None, future=False):
     """
     The project function is performed on a geometry service resource.
     This function projects an array of input geometries from the input
@@ -642,6 +658,7 @@ def project(geometries,
       transformation is implied in the name of the transformation. If
       transformation is specified, a value for the transformForward
       parameter must also be specified. The default value is false.
+     future - boolean. This operation determines if the job is run asynchronously or not.
 
     Example:
      input_geom = [{"x": -17568824.55, "y": 2428377.35}, {"x": -17568456.88, "y": 2428431.352}]
@@ -658,7 +675,7 @@ def project(geometries,
         in_sr,
         out_sr,
         transformation,
-        transform_forward)
+        transform_forward, future=future)
 
 
 def relation(geometries1,
@@ -666,7 +683,7 @@ def relation(geometries1,
              spatial_ref,
              spatial_relation="esriGeometryRelationIntersection",
              relation_param="",
-             gis=None):
+             gis=None, future=False):
     """
     The relation function is performed on a geometry service resource.
     This function determines the pairs of geometries from the input
@@ -693,6 +710,7 @@ def relation(geometries1,
       esriGeometryRelationWithin | esriGeometryRelationRelation
      relation_param - The Shape Comparison Language string to be
       evaluated.
+     future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -701,13 +719,13 @@ def relation(geometries1,
         geometries2,
         spatial_ref,
         spatial_relation,
-        relation_param)
+        relation_param, future=future)
 
 
 def reshape(spatial_ref,
             target,
             reshaper,
-            gis=None):
+            gis=None, future=False):
     """
     The reshape function is performed on a geometry service resource.
     It reshapes a polyline or polygon feature by constructing a
@@ -720,18 +738,19 @@ def reshape(spatial_ref,
       reference JSON object for the input geometries.
      target -  The polyline or polygon to be reshaped.
      reshaper - The single-part polyline that does the reshaping.
+     future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
     return gis._tools.geometry.reshape(
         spatial_ref,
         target,
-        reshaper)
+        reshaper, future=future)
 
 
 def simplify(spatial_ref,
              geometries,
-             gis=None):
+             gis=None, future=False):
     """
     The simplify function is performed on a geometry service resource.
     Simplify permanently alters the input geometry so that the geometry
@@ -742,10 +761,11 @@ def simplify(spatial_ref,
     spatial_ref - The well-known ID of the spatial reference or a spatial
       reference JSON object for the input geometries.
     geometries - The array of geometries to be simplified.
+    future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
-    return gis._tools.geometry.simplify(spatial_ref, geometries)
+    return gis._tools.geometry.simplify(spatial_ref, geometries, future=future)
 
 
 def to_geo_coordinate_string(spatial_ref,
@@ -755,7 +775,7 @@ def to_geo_coordinate_string(spatial_ref,
                              num_of_digits=None,
                              rounding=True,
                              add_spaces=True,
-                             gis=None):
+                             gis=None, future=False):
     """
     The to_geo_coordinate_string function is performed on a geometry
     service resource. The function converts an array of
@@ -809,6 +829,7 @@ def to_geo_coordinate_string(spatial_ref,
        the string. The addSpaces parameter applies only to conversion
        types MGRS, USNG and UTM. The default value for MGRS is false,
        while the default value for both USNG and UTM is true.
+      future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -819,14 +840,14 @@ def to_geo_coordinate_string(spatial_ref,
         conversion_mode,
         num_of_digits,
         rounding,
-        add_spaces)
+        add_spaces, future=future)
 
 
 def trim_extend(spatial_ref,
                 polylines,
                 trim_extend_to,
                 extend_how=0,
-                gis=None):
+                gis=None, future=False):
     """
     The trim_extend function is performed on a geometry service
     resource. This function trims or extends each polyline specified
@@ -860,18 +881,19 @@ def trim_extend(spatial_ref,
        its attributes empty. Incompatible with esriKeepAttributes.
       8 - Do not extend the 'from' end of any path.
       16 - Do not extend the 'to' end of any path.
+     future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
     return gis._tools.geometry.trim_extend(spatial_ref,
                                             polylines,
                                             trim_extend_to,
-                                            extend_how)
+                                            extend_how, future=future)
 
 
 def union(spatial_ref,
           geometries,
-          gis=None):
+          gis=None, future=False):
     """
     The union function is performed on a geometry service resource.
     This function constructs the set-theoretic union of the geometries
@@ -881,7 +903,8 @@ def union(spatial_ref,
     spatial_ref - The well-known ID of the spatial reference or a spatial
      reference json object.
     geometries - The array of geometries to be unioned.
+    future - boolean. This operation determines if the job is run asynchronously or not.
     """
     if gis is None:
         gis = arcgis.env.active_gis
-    return gis._tools.geometry.union(spatial_ref, geometries)
+    return gis._tools.geometry.union(spatial_ref, geometries, future=future)
