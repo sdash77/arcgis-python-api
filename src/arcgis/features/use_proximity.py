@@ -530,7 +530,7 @@ def create_drive_time_areas(input_layer,
     -------------------------    ---------------------------------------------------------
     output_name                  Optional string. Output feature service name. If not provided, a feature collection is returned.
     -------------------------    ---------------------------------------------------------
-    include_reachable_streets    Optional sting. Only applicable if :attr:`output_name` is specified.
+    include_reachable_streets    Optional string. Only applicable if :attr:`output_name` is specified.
                                  When `True` (and :attr:`output_name` is specified), a second layer named
                                  `Reachable Streets` is created in the output :class:`Feature Layer<arcgis.features.FeatureLayerCollection>`.
 
