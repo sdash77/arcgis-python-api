@@ -1173,7 +1173,9 @@ class GroupMigrationManager(object):
         :returns: Boolean
         """
         if self._gis.users.me.role == 'org_admin':
-            
+            try_json = True
+            if preview_only:
+                try_json = False
             url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/import"
             if isinstance(item, Item):
                 item = item.itemid
@@ -1192,7 +1194,7 @@ class GroupMigrationManager(object):
 
             return self._con.post(url, 
                                   params, 
-                                  try_json=preview_only)
+                                  try_json=try_json)
 
         else:
             raise Exception("Must be an administror to perform this action")
@@ -1202,6 +1204,7 @@ class GroupMigrationManager(object):
         """
         Checks the status of an export job
         """
+        import time
         params = {}
         if job_id:
             url = f"{self._gis._portal.resturl}portals/self/jobs/{job_id}"
@@ -1211,6 +1214,7 @@ class GroupMigrationManager(object):
                 res = self._con.post(url, params)
                 if res['status'] == "failed":
                     raise Exception(res)
+                time.sleep(2)
             return res
         else:
             raise Exception(res)
@@ -1342,7 +1346,9 @@ class GroupMigrationManager(object):
         """
         if isinstance(epk_item, Item) and epk_item.type == 'Export Package':
             try:
+                import time
                 self._from_package(epk_item.itemid, preview_only=True, run_async=False)
+                time.sleep(2)
             except:
                 pass
             url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/importPreview/{epk_item.itemid}"

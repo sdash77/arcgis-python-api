@@ -12,9 +12,11 @@ from arcgis.gis._impl._jb import StatusJob
 
 try:
     from utils import NOTEBOOK_TESTS_DIR
-    fp = os.path.join(NOTEBOOK_TESTS_DIR, "test002.sd")
+    fp = os.path.join(NOTEBOOK_TESTS_DIR, "parkinglots.zip")
+    
 except:
-    fp = r"./test002.sd"
+    fp = r"./parkinglots.zip"
+    
 
 try:
     url = "https://rags19003.ags.esri.com/portal"
@@ -24,7 +26,8 @@ try:
 except:
     SKIPIT = True
 ###########################################################################
-@unittest.skipIf(SKIPIT, "cannot connect to the GIS")
+#@unittest.skipIf(SKIPIT, "cannot connect to the GIS")
+
 class TestGroupImportExport(unittest.TestCase):
     """Tests the Group Import/Export Methods on a Group Object"""
     #----------------------------------------------------------------------
@@ -33,21 +36,19 @@ class TestGroupImportExport(unittest.TestCase):
         gis = GIS(url=url, username=username, password=password, verify_cert=False)
         for i in gis.content.search("erasemedata123"):
             assert i.delete()        
-        item = gis.content.add({'title' : "erasemedata123", "tags" : ['a', 'b', 'c']}, data=fp)
-        pitem = item.publish()
+        pitem = gis.content.add({'title' : "erasemedata123", "tags" : ['a', 'b', 'c']}, data=fp)
+        #pitem = item.publish()
         for grp in gis.groups.search("export_test_group"):
             assert grp.delete()
         new_group = gis.groups.create(title='export_test_group', tags='a,b,c')
-        isinstance(item, Item)
+        isinstance(pitem, Item)
         pitem.share(groups=[new_group])
         epk_file = new_group.migration.create(items=[pitem],
-                                              
                                               future=True) # SHould Return an StatusJob
         assert isinstance(epk_file, StatusJob)
         assert epk_file.result()
         assert isinstance(epk_file.result(), Item)
         assert epk_file.result().delete()
-        assert item.delete()
         assert pitem.delete()    
     #----------------------------------------------------------------------
     def test_group_export_sync(self):
@@ -55,43 +56,40 @@ class TestGroupImportExport(unittest.TestCase):
         gis = GIS(url=url, username=username, password=password, verify_cert=False)
         for i in gis.content.search("erasemedata123"):
             assert i.delete()        
-        item = gis.content.add({'title' : "erasemedata123", "tags" : ['a', 'b', 'c']}, data=fp)
-        pitem = item.publish()
+        pitem = gis.content.add({'title' : "erasemedata123", "tags" : ['a', 'b', 'c']}, data=fp)
+        #pitem = item.publish()
         for grp in gis.groups.search("export_test_group"):
             assert grp.delete()
         new_group = gis.groups.create(title='export_test_group', tags='a,b,c')
-        isinstance(item, Item)
+        isinstance(pitem, Item)
         pitem.share(groups=[new_group])
         
-        epk_file = new_group.migration.create(items=[pitem],
-                                              
+        epk_file = new_group.migration.create(items=[pitem],                         
                                               future=False) # SHould Return an Item
         assert isinstance(epk_file, Item)
         assert epk_file.delete()
-        assert item.delete()
         assert pitem.delete()
 ###########################################################################
 @unittest.skipIf(SKIPIT, "cannot connect to the GIS")
 class TestImport2Group(unittest.TestCase):
     """tests the import methods"""
     #----------------------------------------------------------------------
+    
     def test_group_import(self):
         """tests importing the group items from an epk"""
         gis = GIS(url=url, username=username, password=password, verify_cert=False)
         for i in gis.content.search("erasemedata123"):
             assert i.delete()        
-        item = gis.content.add({'title' : "erasemedata123", "tags" : ['a', 'b', 'c']}, data=fp)
-        pitem = item.publish()
+        pitem = gis.content.add({'title' : "erasemedata123", "tags" : ['a', 'b', 'c']}, data=fp)
         for grp in gis.groups.search("export_test_group"):
             assert grp.delete()
         new_group = gis.groups.create(title='export_test_group', tags='a,b,c')
-        isinstance(item, Item)
+        isinstance(pitem, Item)
         pitem.share(groups=[new_group])
         epk_file = new_group.migration.create(items=[pitem],
                                               
                                               future=False) # SHould Return an Item
         assert isinstance(epk_file, Item)
-        assert item.delete()
         assert pitem.delete()        
         m = new_group.migration
         assert isinstance(m, GroupMigrationManager)
@@ -102,6 +100,7 @@ class TestImport2Group(unittest.TestCase):
         assert all([i.delete() for i in res.result()['itemsImported']])
         new_group.delete()
     #----------------------------------------------------------------------
+
     def test_inspect_package(self):
         """
         tests the `inspect` package call on Portal
@@ -111,7 +110,8 @@ class TestImport2Group(unittest.TestCase):
         ##
         gis = GIS(url=url, username=username, password=password, verify_cert=False)
         for i in gis.content.search("erasemedata123"):
-            assert i.delete()        
+            assert i.delete()  
+        
         pitem = gis.content.add({'title' : "erasemedata123", "tags" : ['a', 'b', 'c']}, data=fp)
         for grp in gis.groups.search("export_test_group"):
             assert grp.delete()

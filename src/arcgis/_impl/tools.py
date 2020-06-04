@@ -17,7 +17,7 @@ import string
 import tempfile
 import time
 from contextlib import contextmanager
-
+import concurrent.futures
 import arcgis
 import arcgis.gis
 from arcgis.gis import Item
@@ -28,6 +28,7 @@ from arcgis.geometry import Point, MultiPoint, Polygon, Envelope, Polyline, Geom
 from arcgis.features import Feature, FeatureSet, FeatureCollection, FeatureLayer
 from urllib.error import HTTPError
 from arcgis.geoprocessing import import_toolbox
+from ._async.jobs import GeometryJob
 from arcgis.raster._util import _set_context as _set_raster_context
 _log = logging.getLogger(__name__)
 
@@ -11718,25 +11719,6 @@ class _GeoanalyticsTools(_AsyncService):
             # Feature Collection
             return arcgis.features.FeatureCollection(job_values['output'])
 
-
-    # def find_similar_locations(self):
-    #     """
-    #
-    #
-    #     Parameters
-    #     ----------
-    #
-    #     Returns
-    #     -------
-    #     """
-    #
-    #     task ="FindSimilarLocations"
-    #
-    #     params = {}
-    #
-    #     return { }
-
-
 ###########################################################################
 class _GeometryService(_GISService):
     """
@@ -11760,8 +11742,9 @@ class _GeometryService(_GISService):
                           polygons,
                           lengthUnit,
                           areaUnit,
-                        calculationType,
-                        sr=4326):
+                          calculationType,
+                          sr=4326,
+                          future=False):
         """
            The areasAndLengths operation is performed on a geometry service
            resource. This operation calculates areas and perimeter lengths
@@ -11823,6 +11806,8 @@ class _GeometryService(_GISService):
                                           ellipsoid. The shape of the
                                           geometry in its coordinate system
                                           is preserved.
+                                 future - boolean. This operation determines if the job
+                                          is run asynchronously or not.
            Output:
               JSON as dictionary
         """
@@ -11830,7 +11815,7 @@ class _GeometryService(_GISService):
         params = {
             "f" : "json",
             "lengthUnit" : lengthUnit,
-            "areaUnit" : {"areaUnit" : areaUnit},
+            "areaUnit" :areaUnit,
             "calculationType" : calculationType,
             'sr' : sr
         }
@@ -11849,7 +11834,19 @@ class _GeometryService(_GISService):
             params['polygons'] = [polygons]
         else:
             return "No polygons provided, please submit a list of polygon geometries"
-        return self._con.post(path=url, postdata=params, token=self._token)
+        executor =  concurrent.futures.ThreadPoolExecutor(1)
+        futureobj = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        executor.shutdown(False)
+        job = GeometryJob(future=futureobj, task_name="areas_and_lengths", 
+                          jobid=None, 
+                          task_url=url, 
+                          notify=False, 
+                          gis=self._gis)              
+        if future:
+            return job
+        else:
+            return job.result()        
+            #return self._con.post(path=url, postdata=params, token=self._token)
     #----------------------------------------------------------------------
     def __geometryListToGeomTemplate(self, geometries):
         """
@@ -11935,17 +11932,29 @@ class _GeometryService(_GISService):
         else:
             return json.dumps(listGeoms)
     #----------------------------------------------------------------------
-    def _process_results(self, results):
+    def _process_results(self, results, out_sr=None):
+        """processes the result"""
+        from arcgis.geometry import SpatialReference
+        if isinstance(results, concurrent.futures.Future):
+            results = results.result()
+            if 'error' in results:
+                return results            
         if isinstance(results, list):
             vals = []
             for result in results:
                 if isinstance(result, dict):
+                    if out_sr and not 'spatialReference' in result and isinstance(out_sr, int):
+                        result['spatialReference'] = {'wkid' : out_sr}
+                    elif out_sr and not 'spatialReference' in result and isinstance(out_sr, str):
+                        result['spatialReference'] = {'wkt' : out_sr}
+                    elif out_sr and not 'spatialReference' in result and isinstance(out_sr, (dict, SpatialReference)):
+                        result['spatialReference'] = out_sr
                     vals.append(Geometry(result))
                 del result
             return vals
         elif isinstance(results, dict):
             if 'geometries' in results:
-                return self._process_results(results['geometries'])
+                return self._process_results(results['geometries'], out_sr=out_sr)
             elif 'geometry' in results:
                 return Geometry(results['geometry'])
             else:
@@ -11956,8 +11965,8 @@ class _GeometryService(_GISService):
     def auto_complete(self,
                       polygons=None,
                       polylines=None,
-                      sr=None
-                     ):
+                      sr=None,
+                      future=False):
         """
            The autoComplete operation simplifies the process of
            constructing new polygons that are adjacent to other polygons.
@@ -11985,10 +11994,20 @@ class _GeometryService(_GISService):
             params['polylines'] = [polylines]
         elif isinstance(polylines, list):
             params['polylines'] = polylines
-        result = self._con.post(path=url, postdata=params, token=self._token)
-        if 'error' in result:
-            return result
-        return self._process_results(result)
+        executor =  concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f2, 
+                 task_name="auto_complete", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
+        else:
+            return job.result()                
     #----------------------------------------------------------------------
     def buffer(self,
                geometries,
@@ -11998,8 +12017,8 @@ class _GeometryService(_GISService):
                outSR=None,
                bufferSR=None,
                unionResults=None,
-               geodesic=None
-               ):
+               geodesic=None,
+               future=False):
         """
            The buffer operation is performed on a geometry service resource
            The result of this operation is buffered polygons at the
@@ -12039,7 +12058,7 @@ class _GeometryService(_GISService):
             params['geodesic'] = geodesic
         if unionResults is not None:
             params['unionResults'] = unionResults
-
+            
         if isinstance(geometries, list) and len(geometries) > 0:
             g = geometries[0]
             if isinstance(g, Polygon):
@@ -12068,15 +12087,26 @@ class _GeometryService(_GISService):
             params['bufferSR'] = bufferSR
         if outSR is not None:
             params['outSR'] = outSR
-
-        results = self._con.post(path=url, postdata=params, token=self._token)
-        if 'error' in results:
-            return results
-        return self._process_results(results)
+        executor =  concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : outSR})
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f2, 
+                 task_name="buffer", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
+        else:
+            return job.result()
+        
     #----------------------------------------------------------------------
     def convex_hull(self,
                     geometries,
-                    sr=None):
+                    sr=None,
+                    future=False):
         """
         The convexHull operation is performed on a geometry service
         resource. It returns the convex hull of the input geometry. The
@@ -12110,15 +12140,27 @@ class _GeometryService(_GISService):
                                         "geometries" : self.__geomToStringArray(geometries, "list")}
         else:
             return None
-        results = self._con.post(path=url, postdata=params, token=self._token)
-        if 'error' in results:
-            return results
-        return self._process_results(results)
+        
+        executor =  concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f2, 
+                 task_name="convex_hull", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
+        else:
+            return job.result()
     #----------------------------------------------------------------------
     def cut(self,
             cutter,
             target,
-            sr=None):
+            sr=None, 
+            future=False):
         """
         The cut operation is performed on a geometry service resource. This
         operation splits the target polyline or polygon where it's crossed
@@ -12166,10 +12208,20 @@ class _GeometryService(_GISService):
             params['target'] = template
         else:
             AttributeError("You must provide at least 1 Polygon/Polyline geometry in a list")
-        results = self._con.post(path=url, postdata=params, token=self._token)
-        if 'error' in results:
-            return results
-        return self._process_results(results)
+        executor =  concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f2, 
+                 task_name="cut", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
+        else:
+            return job.result()                        
     #----------------------------------------------------------------------
     def densify(self,
                 geometries,
@@ -12177,6 +12229,7 @@ class _GeometryService(_GISService):
                 maxSegmentLength,
                 lengthUnit,
                 geodesic=False,
+                future=False
                 ):
         """
         The densify operation is performed on a geometry service resource.
@@ -12242,16 +12295,26 @@ class _GeometryService(_GISService):
                 template['geometryType'] = "esriGeometryPolygon"
             template['geometries'].append(g)
         params['geometries'] = template
-        results =  self._con.post(path=url, postdata=params, token=self._token)
-        if 'error' in results:
-            return results
-        return self._process_results(results)
+        executor =  concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f2, 
+                 task_name="densify", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
+        else:
+            return job.result()                
     #----------------------------------------------------------------------
     def difference(self,
                    geometries,
                    sr,
-                   geometry
-                   ):
+                   geometry,
+                   future=False):
         """
         The difference operation is performed on a geometry service
         resource. This operation constructs the set-theoretic difference
@@ -12311,17 +12374,28 @@ class _GeometryService(_GISService):
             raise AttributeError("Invalid geometry type")
         geomTemplate['geometry'] = geometry
         params['geometry'] = geomTemplate
-        results =  self._con.post(path=url, postdata=params, token=self._token)
-        if 'error' in results:
-            return results
-        return self._process_results(results)
+        executor =  concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f2, 
+                 task_name="difference", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
+        else:
+            return job.result()                
     #----------------------------------------------------------------------
     def distance(self,
                  sr,
                  geometry1,
                  geometry2,
                  distanceUnit="",
-                 geodesic=False
+                 geodesic=False,
+                 future=False
                  ):
         """
         The distance operation is performed on a geometry service resource.
@@ -12357,9 +12431,21 @@ class _GeometryService(_GISService):
         geometry2 = self.__geometryToGeomTemplate(geometry=geometry2)
         params['geometry1'] = geometry1
         params['geometry2'] = geometry2
-        return self._con.post(path=url, postdata=params, token=self._token)
+        executor =  concurrent.futures.ThreadPoolExecutor(1)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f1, 
+                 task_name="distance", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
+        else:
+            return job.result()                
     #----------------------------------------------------------------------
-    def find_transformation(self, inSR, outSR, extentOfInterest=None, numOfResults=1):
+    def find_transformation(self, inSR, outSR, extentOfInterest=None, numOfResults=1, future=False):
         """
         The findTransformations operation is performed on a geometry
         service resource. This operation returns a list of applicable
@@ -12403,10 +12489,27 @@ class _GeometryService(_GISService):
             params['numOfResults'] = numOfResults
         if isinstance(extentOfInterest, Envelope):
             params['extentOfInterest'] = extentOfInterest
-        return self._con.post(path=url, postdata=params, token=self._token)
+        executor =  concurrent.futures.ThreadPoolExecutor(1)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f1, 
+                 task_name="find_transformation", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
+        else:
+            return job.result()                
     #----------------------------------------------------------------------
-    def from_geo_coordinate_string(self, sr, strings,
-                                   conversionType, conversionMode=None):
+    def from_geo_coordinate_string(self, 
+                                   sr, 
+                                   strings,
+                                   conversionType, 
+                                   conversionMode=None,
+                                   future=False):
         """
         The from_geo_coordinate_string operation is performed on a geometry
         service resource. The operation converts an array of well-known
@@ -12460,13 +12563,26 @@ class _GeometryService(_GISService):
         }
         if not conversionMode is None:
             params['conversionMode'] = conversionMode
-        return self._con.post(path=url, postdata=params, token=self._token)
+        executor =  concurrent.futures.ThreadPoolExecutor(1)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f1, 
+                 task_name="from_geo_coordinate_string", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
+        else:
+            return job.result()                
     #----------------------------------------------------------------------
     def generalize(self,
                    sr,
                    geometries,
                    maxDeviation,
-                   deviationUnit):
+                   deviationUnit, 
+                   future=False):
         """
         The generalize operation is performed on a geometry service
         resource. The generalize operation simplifies the input geometries
@@ -12493,15 +12609,26 @@ class _GeometryService(_GISService):
             "maxDeviation": maxDeviation
         }
         params['geometries'] = self.__geometryListToGeomTemplate(geometries=geometries)
-        results =  self._con.post(path=url, postdata=params, token=self._token)
-        if 'error' in results:
-            return results
-        return self._process_results(results)
+        executor =  concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f2, 
+                 task_name="generalize", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
+        else:
+            return job.result()                
     #----------------------------------------------------------------------
     def intersect(self,
                   sr,
                   geometries,
-                  geometry
+                  geometry,
+                  future=False
                   ):
         """
         The intersect operation is performed on a geometry service
@@ -12528,15 +12655,25 @@ class _GeometryService(_GISService):
             "geometries" : self.__geometryListToGeomTemplate(geometries=geometries),
             "geometry" : self.__geometryToGeomTemplate(geometry=geometry)
         }
-        results =  self._con.post(path=url, postdata=params, token=self._token)
-        if 'error' in results:
-            return results
-        return self._process_results(results)
+        executor =  concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f2, 
+                 task_name="intersect", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
+        else:
+            return job.result()                
     #----------------------------------------------------------------------
     def label_points(self,
                      sr,
                      polygons,
-                     ):
+                     future=False):
         """
         The label_points operation is performed on a geometry service
         resource. The labelPoints operation calculates an interior point
@@ -12557,16 +12694,26 @@ class _GeometryService(_GISService):
             "polygons": self.__geomToStringArray(geometries=polygons,
                                                  returnType="list")
         }
-        results =  self._con.post(path=url, postdata=params, token=self._token)
-        if 'error' in results:
-            return results
-        return results
+        executor =  concurrent.futures.ThreadPoolExecutor(1)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f1, 
+                 task_name="label_points", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
+        else:
+            return job.result()                
     #----------------------------------------------------------------------
     def lengths(self,
                 sr,
                 polylines,
                 lengthUnit,
-                calculationType
+                calculationType,
+                future=False
                 ):
         """
         The lengths operation is performed on a geometry service resource.
@@ -12613,11 +12760,20 @@ class _GeometryService(_GISService):
             "lengthUnit" : lengthUnit,
             "calculationType" : calculationType
         }
-        res = self._con.post(path=url, postdata=params, token=self._token)
-        if res is not None and 'lengths' in res:
-            return res['lengths']
+        executor =  concurrent.futures.ThreadPoolExecutor(1)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f1, 
+                 task_name="lengths", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
         else:
-            return res
+            return job.result()                
     #----------------------------------------------------------------------
     def offset(self,
                geometries,
@@ -12627,7 +12783,7 @@ class _GeometryService(_GISService):
                bevelRatio=10,
                simplifyResult=False,
                sr=None,
-               ):
+               future=False):
         """
         The offset operation is performed on a geometry service resource.
         This operation constructs geometries that are offset from the
@@ -12687,17 +12843,28 @@ class _GeometryService(_GISService):
             "bevelRatio" : bevelRatio,
             "simplifyResult" : json.dumps(simplifyResult)
         }
-        results =  self._con.post(path=url, postdata=params, token=self._token)
-        if 'error' in results:
-            return results
-        return self._process_results(results)
+        executor =  concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f2, 
+                 task_name="offset", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
+        else:
+            return job.result()                
     #----------------------------------------------------------------------
     def project(self,
                 geometries,
                 inSR,
                 outSR,
                 transformation="",
-                transformFoward=False):
+                transformFoward=False,
+                future=False):
         """
         The project operation is performed on a geometry service resource.
         This operation projects an array of input geometries from the input
@@ -12730,17 +12897,28 @@ class _GeometryService(_GISService):
             "transformation" : transformation,
             "transformFoward": transformFoward
         }
-        results =  self._con.post(path=url, postdata=params, token=self._token)
-        if 'error' in results:
-            return results
-        return self._process_results(results)
+        executor =  concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : outSR})
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f2, 
+                 task_name="project", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
+        else:
+            return job.result()                
     #----------------------------------------------------------------------
     def relation(self,
                  geometries1,
                  geometries2,
                  sr,
                  relation="esriGeometryRelationIntersection",
-                 relationParam=""):
+                 relationParam="",
+                 future=False):
         """
         The relation operation is performed on a geometry service resource.
         This operation determines the pairs of geometries from the input
@@ -12793,13 +12971,26 @@ class _GeometryService(_GISService):
             "relation" : relation,
             "relationParam" : relationParam
         }
-        return self._con.post(path=url, postdata=params, token=self._token)
+        executor =  concurrent.futures.ThreadPoolExecutor(1)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f1, 
+                 task_name="relation", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
+        else:
+            return job.result()                        
     #----------------------------------------------------------------------
     def reshape(self,
                 sr,
                 target,
-                reshaper
-                ):
+                reshaper,
+                future=False):
         """
         The reshape operation is performed on a geometry service resource.
         It reshapes a polyline or polygon feature by constructing a
@@ -12825,15 +13016,25 @@ class _GeometryService(_GISService):
             params['reshaper'] = reshaper
         else:
             raise AttributeError("Invalid reshaper object, must be Polyline")
-        results =  self._con.post(path=url, postdata=params, token=self._token)
-        if 'error' in results:
-            return results
-        return self._process_results(results)
+        executor =  concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f2, 
+                          task_name="reshape", 
+                          jobid=None, 
+                          task_url=url, 
+                          notify=False, 
+                          gis=self._gis) 
+        if future:  
+            return job
+        else:
+            return job.result()                
     #----------------------------------------------------------------------
     def simplify(self,
                  sr,
-                 geometries
-                 ):
+                 geometries,
+                 future=False):
         """
         The simplify operation is performed on a geometry service resource.
         Simplify permanently alters the input geometry so that the geometry
@@ -12851,20 +13052,30 @@ class _GeometryService(_GISService):
             "sr" : sr,
             "geometries" : self.__geometryListToGeomTemplate(geometries=geometries)
         }
-        results =  self._con.post(path=url, postdata=params, token=self._token)
-        if 'error' in results:
-            return results
-        return self._process_results(results)
+        executor =  concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f2, 
+                 task_name="simplify", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
+        else:
+            return job.result()                
     #----------------------------------------------------------------------
     def to_geo_coordinate_string(self,
                                  sr,
                                  coordinates,
                                  conversionType,
-                              conversionMode="mgrsDefault",
-                              numOfDigits=None,
-                              rounding=True,
-                              addSpaces=True
-                              ):
+                                 conversionMode="mgrsDefault",
+                                 numOfDigits=None,
+                                 rounding=True,
+                                 addSpaces=True,
+                                 future=False):
         """
         The toGeoCoordinateString operation is performed on a geometry
         service resource. The operation converts an array of
@@ -12934,13 +13145,27 @@ class _GeometryService(_GISService):
             params['rounding'] = rounding
         if isinstance(addSpaces, bool):
             params['addSpaces'] = addSpaces
-        return self._con.post(path=url, postdata=params, token=self._token)
+        executor =  concurrent.futures.ThreadPoolExecutor(1)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f1, 
+                 task_name="to_geo_coordinate_string", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
+        else:
+            return job.result()                
     #----------------------------------------------------------------------
     def trim_extend(self,
                     sr,
                     polylines,
                     trimExtendTo,
-                   extendHow=0):
+                    extendHow=0, 
+                    future=False):
         """
         The trim_extend operation is performed on a geometry service
         resource. This operation trims or extends each polyline specified
@@ -12986,14 +13211,25 @@ class _GeometryService(_GISService):
             "extendHow": extendHow,
             "trimExtendTo" : trimExtendTo
         }
-        results =  self._con.post(path=url, postdata=params, token=self._token)
-        if 'error' in results:
-            return results
-        return self._process_results(results)
+        executor =  concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f2, 
+                 task_name="trim_extend", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
+        else:
+            return job.result()                
     #----------------------------------------------------------------------
     def union(self,
               sr,
-              geometries):
+              geometries, 
+              future=False):
         """
         The union operation is performed on a geometry service resource.
         This operation constructs the set-theoretic union of the geometries
@@ -13010,12 +13246,20 @@ class _GeometryService(_GISService):
             "sr" : sr,
             "geometries" : self.__geometryListToGeomTemplate(geometries=geometries)
         }
-        results =  self._con.post(path=url, postdata=params, token=self._token)
-        if 'error' in results:
-            return results
-        return self._process_results(results)
-
-
+        executor =  concurrent.futures.ThreadPoolExecutor(2)
+        f1 = executor.submit(self._con.post, **{"path" : url, "postdata" : params, "token" : self._token})
+        f2 = executor.submit(self._process_results, **{'results' : f1, 'out_sr' : sr})
+        executor.shutdown(False)                  
+        job = GeometryJob(future=f2, 
+                 task_name="auto_complete", 
+                 jobid=None, 
+                 task_url=url, 
+                 notify=False, 
+                 gis=self._gis)
+        if future:
+            return job
+        else:
+            return job.result()                        
 ###########################################################################
 class _Tools(object):
     """
