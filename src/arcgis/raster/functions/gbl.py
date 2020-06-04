@@ -12,7 +12,7 @@ Functions can be applied to various rasters (or images), including the following
 * Rasters within imagery layers
 
 """
-from arcgis.raster._layer import ImageryLayer,  Raster, _ArcpyRaster
+from arcgis.raster._layer import ImageryLayer,  Raster, _ArcpyRaster, RasterCollection
 from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 import copy
