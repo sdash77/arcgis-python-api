@@ -37,7 +37,7 @@ class GeoJSONLayer(BaseOGC):
         """init"""
         super(GeoJSONLayer, self)
         self._url = url
-        self._type = "geojson"
+        self._type = "GeoJSON"
         self._copyright = kwargs.pop("copyright", "")
         self._title = kwargs.pop("title", "GeoJSON Layer")
         self._id = kwargs.pop('id', uuid.uuid4().hex) # hidden input, but accepted
@@ -72,8 +72,13 @@ class GeoJSONLayer(BaseOGC):
             "title" : self._title,
             "id" : self._id,
             "minScale" : self.scale[0],
-            "maxScale" : self.scale[1]
+            "maxScale" : self.scale[1],
+            "opacity" : self._opacity
         }
         if self._renderer:
             lyr['renderer'] = self._renderer._json
         return lyr
+
+    @property
+    def _operational_layer_json(self) -> dict:
+        return self._lyr_json
