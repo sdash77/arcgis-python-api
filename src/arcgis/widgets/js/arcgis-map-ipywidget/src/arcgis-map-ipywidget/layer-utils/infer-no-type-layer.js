@@ -85,7 +85,7 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                             }
                             typedLayer.raster = encodedRaster;}}
                 resolve(typedLayer);}
-            else if (noTypeLayer.type == "KML") {
+            else if (noTypeLayer.type == "KMLLayer" || noTypeLayer.type == "KML") {
                 var typedLayer = new KMLLayer(noTypeLayer.url);
                 typedLayer.id = noTypeLayer._hashFromPython;
                 resolve(typedLayer);}
