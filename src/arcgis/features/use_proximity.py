@@ -402,7 +402,8 @@ def create_drive_time_areas(input_layer,
                             polygon_barrier_layer=None,
                             future=False,
                             travel_direction="AwayFromFacility",
-                            show_holes=False):
+                            show_holes=False,
+                            include_reachable_streets=False):
     """
     .. image:: _static/images/create_drive_time_areas/create_drive_time_areas.png
 
@@ -416,6 +417,10 @@ def create_drive_time_areas(input_layer,
     * How far can I drive from here in five minutes?
     * What areas are covered within a three-mile drive distance of my stores?
     * What areas are within four minutes of our fire stations?
+
+    See `Create Drive-Time Areas <https://developers.arcgis.com/rest/analysis/api-reference/create-drivetime.htm>`_
+    for details on the `Spatial Analysis Service <https://developers.arcgis.com/rest/analysis/api-reference/getting-started.htm>`_
+    that runs this task.
 
     =========================    =========================================================
     **Parameter**                **Description**
@@ -560,6 +565,16 @@ def create_drive_time_areas(input_layer,
                                  The travel direction can influence how the areas are generated. CreateDriveTimeAreas will obey one-way streets, avoid illegal turns, and follow other rules based on the direction of travel. You should select the direction of travel based on the type of input locations and the context of your analysis. For example, the drive-time area for a pizza delivery store should be created away from the facility, whereas the drive-time area for a hospital should be created toward the facility.
     -------------------------    ---------------------------------------------------------
     show_holes                   Optional boolean. When set to true, the output areas will include holes if some streets couldn't be reached without exceeding the cutoff or due to travel restrictions imposed by the travel mode.
+    -------------------------    ---------------------------------------------------------
+    include_reachable_streets    Optional string. Only applicable if :attr:`output_name` is specified.
+                                 When `True` (and :attr:`output_name` is specified), a second layer named
+                                 `Reachable Streets` is created in the output :class:`Feature Layer<arcgis.features.FeatureLayerCollection>`.
+
+                                 This layer contains the streets that were used to define the drive time
+                                 area polygons. Set this to true if you want a potentially more accurate
+                                 result of which streets are actually covered within a specific travel
+                                 distance than what the drive-time areas would contain.
+    -------------------------    ---------------------------------------------------------
     =========================    =========================================================
 
     :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -593,6 +608,10 @@ def create_drive_time_areas(input_layer,
                 params['travel_mode'] = travel_mode
     if time_of_day:
         params['time_of_day'] = _date_handler(time_of_day)
+    if include_reachable_streets:
+        if not output_name or not bool(output_name.strip()):
+            raise Exception("output_name must be specified when include_reachable_streets is True.")
+
     return gis._tools.featureanalysis.create_drive_time_areas(**params)
 #--------------------------------------------------------------------------
 def find_nearest(

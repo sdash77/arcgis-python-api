@@ -583,6 +583,17 @@ def _data_collections(country=None,
                                 hide_nulls=hide_nulls,
                                 as_dict=as_dict)
 #----------------------------------------------------------------------
+def service_limits(gis=None):
+    """
+    Returns a Pandas' DataFrame that describes the service's limitations for each input parameter.
+    
+    :returns: Pandas' DataFrame 
+    """
+    if gis is None:
+        gis = env.active_gis
+    ge = _GeoEnrichment(gis=gis)
+    return ge.limits
+#----------------------------------------------------------------------
 def enrich(study_areas,
            data_collections=None,
            analysis_variables=None,

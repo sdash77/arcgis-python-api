@@ -6,7 +6,7 @@ build:
   number: '0'
 package:
   name: arcgis
-  version: 1.8.1
+  version: 1.8.2
 requirements:
   build:
   - python
@@ -26,6 +26,7 @@ requirements:
   - requests-kerberos
   - requests-oauthlib
   - requests_ntlm
+  - pywin32-security [win]
   - lerc
   - winkerberos      [win]
   run:
@@ -44,6 +45,7 @@ requirements:
   - requests-kerberos
   - requests-oauthlib
   - requests_ntlm
+  - pywin32-security [win]
   - lerc
   - winkerberos      [win]
 source:

@@ -97,8 +97,14 @@ class PSPNetClassifier(ArcGISModel):
         super().__init__(data, backbone)
 
         self._ignore_classes = kwargs.get('ignore_classes', [])
+        if self._ignore_classes != [] and len(data.classes) <= 3:
+            raise Exception(f"`ignore_classes` parameter can only be used when the dataset has more than 2 classes.")
+
         data_classes = list(self._data.class_mapping.keys())
-        self._ignore_mapped_class = [data_classes.index(k) + 1 for k in self._ignore_classes]
+        if 0 not in list(data.class_mapping.values()):
+            self._ignore_mapped_class = [data_classes.index(k) + 1 for k in self._ignore_classes if k != 0]
+        else:
+            self._ignore_mapped_class = [data_classes.index(k) + 1 for k in self._ignore_classes]
         if self._ignore_classes != []:
             if 0 not in self._ignore_mapped_class:
                 self._ignore_mapped_class.insert(0, 0)
@@ -135,12 +141,14 @@ class PSPNetClassifier(ArcGISModel):
             if self.class_balancing and data.class_weight is not None:
                 class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(self._device)
                 self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
-            
-            if unet_aux_loss:
-               self.learn.loss_func = self._psp_loss 
+
         else:
-            self.learn = _pspnet_learner(data, backbone=self._backbone, chip_size=self._data.chip_size, pyramid_sizes=pyramid_sizes, pretrained=True, metrics=accuracy)
-            self.learn.loss_func = self._psp_loss
+            self.learn = _pspnet_learner(data, 
+                                         backbone=self._backbone, 
+                                         chip_size=self._data.chip_size, 
+                                         pyramid_sizes=pyramid_sizes, 
+                                         pretrained=True, 
+                                         metrics=accuracy)
 
         if self.focal_loss:
             self.learn.loss_func = FocalLoss(self.learn.loss_func)
@@ -165,6 +173,9 @@ class PSPNetClassifier(ArcGISModel):
 
         self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
         self._final_class_weight = class_weight
+
+        if unet_aux_loss or not use_unet:
+            self.learn.loss_func = self._psp_loss
 
         self.learn.model = self.learn.model.to(self._device)
         self.freeze()

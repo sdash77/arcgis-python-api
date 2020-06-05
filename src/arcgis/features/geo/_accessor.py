@@ -3148,7 +3148,7 @@ class GeoAccessor(object):
         =========================    =========================================================
         **Argument**                 **Description**
         -------------------------    ---------------------------------------------------------
-        sdf                          Required Spatially Enabled DataFrame. The geometry to
+        other                        Required Spatially Enabled DataFrame. The geometry to
                                      perform the operation from.
 
         -------------------------    ---------------------------------------------------------
@@ -3163,7 +3163,7 @@ class GeoAccessor(object):
                                      - overlaps - Indicates if the intersection of the two geometries has the same shape type as one of the input geometries and is not equivalent to either of the input geometries.
                                      - touches - Indicates if the boundaries of the geometries intersect.
                                      - within - Indicates if the base geometry is within the comparison geometry.
-
+                                     - intersect - Intdicates if the base geometry has an intersection of the other geometry.
         -------------------------    ---------------------------------------------------------
         relation                     Optional String.  The spatial relationship type.  The
                                      allowed values are: BOUNDARY, CLEMENTINI, and PROPER.
@@ -3185,6 +3185,7 @@ class GeoAccessor(object):
         _ops_allowed = {'contains' : contains,
                         'crosses': crosses,
                         'disjoint': disjoint,
+                        'intersect': disjoint,
                         'equals': equals,
                         'overlaps' : overlaps,
                         'touches': touches,
@@ -3196,6 +3197,9 @@ class GeoAccessor(object):
         if op.lower() in ['contains', 'within']:
             fn = _ops_allowed[op.lower()]
             return fn(sdf=self._data, other=other, relation=relation)
+        elif op.lower() in ['intersect']:
+            fn = _ops_allowed[op.lower()]
+            return fn(sdf=self._data, other=other) == False
         else:
             fn = _ops_allowed[op.lower()]
             return fn(sdf=self._data, other=other)

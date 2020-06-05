@@ -105,6 +105,23 @@ class GPJob(object):
         return self._task_name
     #----------------------------------------------------------------------
     @property
+    def messages(self):
+        """
+        Returns the service's messages
+        
+        :returns: List
+        """
+        url = self._url + "/jobs/%s" % self._jobid
+        params = {'f' : 'json',
+                  'returnMessages': True}
+
+
+        res = self._gis._con.post(url, params)
+        if 'messages' in res:
+            return res['messages']
+        return []
+    #----------------------------------------------------------------------
+    @property
     def status(self):
         """
         returns the GP status

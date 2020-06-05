@@ -12,7 +12,7 @@ Functions can be applied to various rasters (or images), including the following
 * Rasters within imagery layers
 
 """
-from arcgis.raster._layer import ImageryLayer,  Raster, _ArcpyRaster
+from arcgis.raster._layer import ImageryLayer,  Raster, _ArcpyRaster, RasterCollection
 from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 import copy
@@ -57,7 +57,7 @@ def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
 
 
 def _gbl_clone_layer(layer, function_chain, function_chain_ra,**kwargs):
-    if isinstance(layer, Raster):
+    if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
         return _gbl_clone_layer_raster(layer, function_chain, function_chain_ra, **kwargs)
     if isinstance(layer, Item):
         layer = layer.layers[0]
@@ -587,7 +587,8 @@ def zonal_statistics(in_zone_data,
                      in_value_raster,
                      ignore_nodata=True,
                      statistics_type='MEAN',
-                     process_as_multidimensional=None):
+                     process_as_multidimensional=None,
+                     percentile_value=90):
 
     """"
     Calculates statistics on values of a raster within the zones of another dataset.
@@ -646,7 +647,19 @@ def zonal_statistics(in_zone_data,
                             VARIETY-Calculates the number of unique values for all pixels in the
                             Value Raster that belong to the same zone as the output pixel.
 
+                            PERCENTILE -  Calculates a percentile of all cells in the value raster that 
+                            belong to the same zone as the output cell. The 90th percentile 
+                            is calculated by default. You can specify other values (from 0 to 100) 
+                            using the percentile_value parameter.
+
     :param process_as_multidimensional: Optional bool, Process as multidimensional if set to True. (If the input is multidimensional raster.)
+    :param percentile_value: Optional int, The percentile to calculate. The default is 90, for the 90th percentile. The 
+                             values can range from 0 to 100. The 0th percentile is essentially equivalent to the 
+                             Minimum statistic, and the 100th percentile is equivalent to Maximum. 
+                             A value of 50 will produce essentially the same result as the Median statistic.
+                             
+                             This parameter is honoured only available if the statistics_type parameter is 
+                             set to PERCENTILE.
     :return: output raster with function applied
 
     """
@@ -676,7 +689,7 @@ def zonal_statistics(in_zone_data,
         template_dict["rasterFunctionArguments"]["ignore_nodata"] = ignore_nodata
 
 
-    statistics_type_list = ["MEAN","MAJORITY","MAXIMUM","MEDIAN","MINIMUM","MINORITY","RANGE","STD","SUM","VARIETY"]
+    statistics_type_list = ["MEAN","MAJORITY","MAXIMUM","MEDIAN","MINIMUM","MINORITY","RANGE","STD","SUM","VARIETY", "PERCENTILE"]
     if statistics_type is not None:
         if statistics_type.upper() not in statistics_type_list:
             raise RuntimeError('statistics_type should be one of the following '+ str(statistics_type_list))
@@ -689,6 +702,8 @@ def zonal_statistics(in_zone_data,
             else:
                 template_dict["rasterFunctionArguments"]["process_as_multidimensional"]="CURRENT_SLICE"
 
+    if percentile_value is not None:
+        template_dict["rasterFunctionArguments"]["percentile_value"] = percentile_value
 
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra['rasterFunctionArguments']["in_zone_data"] = raster_ra1

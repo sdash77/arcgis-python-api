@@ -1167,7 +1167,7 @@ class ImageryLayer(Layer):
 
     def _clone_layer(self):
 
-        if type(self).__name__ == "Raster":
+        if type(self).__name__ == "Raster" or type(self).__name__ == "RasterCollection" :
             newlyr =  Raster(self._url, is_multidimensional= self._is_multidimensional, gis=self._gis)
 
         elif type(self).__name__ == "ImageryLayer":
@@ -1559,7 +1559,8 @@ class ImageryLayer(Layer):
               result_record_count=None,
               max_allowable_offset=None,
               true_curves=False,
-              as_df=False):
+              as_df=False,
+              raster_query=None):
         """ queries an imagery layer by applying the filter specified by the user. The result of this operation is
          either a set of features or an array of raster IDs (if return_ids_only is set to True),
          count (if return_count_only is set to True), or a set of field statistics (if out_statistics is used).
@@ -1659,6 +1660,16 @@ class ImageryLayer(Layer):
         ------------------------------  --------------------------------------------------------------------
         true_curves                     optional boolean. If true, returns true curves in output geometries,
                                         otherwise curves get converted to densified polylines or polygons.
+        ------------------------------  --------------------------------------------------------------------
+        as_df                           optional boolean. Returns the query result as a dataframe object
+        ------------------------------  --------------------------------------------------------------------
+        raster_query                    optional string.  Make query based on key properties of each 
+                                        raster catalog item. Any legal SQL where clause operating on the 
+                                        key properties of raster catalog items is allowed.
+
+                                        Example: LANDSAT_WRS_PATH >= 150 AND LANDSAT_WRS_PATH<= 165
+
+                                        This option was added at 10.8.1.
         ==============================  ====================================================================
 
         :returns: A FeatureSet containing the footprints (features) matching the query when
@@ -1741,8 +1752,8 @@ class ImageryLayer(Layer):
             params['returnDistinctValues'] = return_distinct_values
         if out_sr is not None:
             params['outSR'] = out_sr
-        #if raster_query is not None:
-        #    params["rasterQuery"] = raster_query //add to sig for 10.8.1 release
+        if raster_query is not None:
+            params["rasterQuery"] = raster_query 
 
         url = self._url + "/query"
         if return_all_records and \
@@ -3203,8 +3214,7 @@ class ImageryLayer(Layer):
 
         url = self._url + "/computeMultidimensionalInfo"
 
-        if self._datastore_raster:
-            raise RuntimeError("This operation cannot be performed on a datastore raster")
+
 
         params = {"f": "json"}
         if object_ids:
@@ -3254,6 +3264,9 @@ class ImageryLayer(Layer):
 
         if dimension_field_names is not None:
             params['dimensionFieldNames'] = dimension_field_names
+
+        if self._datastore_raster:
+            params["Raster"]=self._uri
       
         res = self._con.post(path=url,
                             postdata=params,
@@ -4643,38 +4656,48 @@ class Raster():
         return the following: ['temp(StdTime=24)']"""
         return self._engine_obj.variables
 
-    #@property
-    #def slices(self):
-    #    return self._engine_obj.slices
+    @property
+    def slices(self):
+        """returns the attribute information of each slice, 
+        including its variable name, dimension names, and 
+        dimension values returned as a list of dictionaries."""
+        return self._engine_obj.slices
 
-    #@property
-    #def band_names(self):
-    #    return self._engine_obj.band_names
+    @property
+    def band_names(self):
+        """returns the band names of the raster """
+        return self._engine_obj.band_names
 
-    #@property
-    #def block_size(self):
-    #    return self._engine_obj.block_size
+    @property
+    def block_size(self):
+        """returns the block size of the raster """
+        return self._engine_obj.block_size
 
-    #@property
-    #def compression_type(self):
-    #    return self._engine_obj.compression_type
+    @property
+    def compression_type(self):
+        """returns the compression type of the raster"""
+        return self._engine_obj.compression_type
 
 
-    #@property
-    #def format(self):
-    #    return self._engine_obj.format
+    @property
+    def format(self):
+        """returns the raster format"""
+        return self._engine_obj.format
 
-    #@property
-    #def no_data_value(self):
-    #    return self._engine_obj.no_data_value
+    @property
+    def no_data_value(self):
+        """returns the NoData value of the raster"""
+        return self._engine_obj.no_data_value
 
-    #@property
-    #def no_data_values(self):
-    #    return self._engine_obj.no_data_values
+    @property
+    def no_data_values(self):
+        """returns the NoData value for each band in the multiband raster """
+        return self._engine_obj.no_data_values
 
-    #@property
-    #def uncompressed_size(self):
-    #    return self._engine_obj.uncompressed_size
+    @property
+    def uncompressed_size(self):
+        """returns the size of the referenced raster dataset on disk."""
+        return self._engine_obj.uncompressed_size
 
 
     @property
@@ -5565,28 +5588,28 @@ class _ImageServerRaster(ImageryLayer, Raster):
     @property
     def multidimensional_info(self):
         if self._created_from_collection is True:
-            return self._mdinfo
+            mdinfo = self._mdinfo
         else:
             mdinfo=super().multidimensional_info
-            if mdinfo is not None:
-                for index, ele in enumerate(mdinfo['multidimensionalInfo']['variables']):
-                    #if (ele['name'] == variable_name):
-                    for index_dim, ele_dim in enumerate(ele['dimensions']):
-                        if ele_dim['name'] == 'StdTime' or ele_dim['name'].lower() == 'time' or ele_dim['name'].lower() == 'date' or  ele_dim['name'].lower() == 'acquisitiondate' or ele_dim['unit'] == 'ISO8601':
-                            val = ele_dim['values']
-                            #if (('unit' in ele_dim.keys()) and ele_dim['unit'] == 'ISO8601'):
-                            val_list=[]
-                            for val_ele in val:
-                                if isinstance(val_ele, list):
-                                    val_list.append([_epoch_to_iso(val_ele[0]), _epoch_to_iso(val_ele[1])])
-                                else:
-                                    val_list.append(_epoch_to_iso(val_ele))
-                            ele['dimensions'][index_dim]['values']=val_list
-                            if "extent" in ele_dim.keys():
-                                ele['dimensions'][index_dim]['extent']=[_epoch_to_iso(ele_dim['extent'][0]), _epoch_to_iso(ele_dim['extent'][1])]
-                        break
+        if mdinfo is not None:
+            for index, ele in enumerate(mdinfo['multidimensionalInfo']['variables']):
+                #if (ele['name'] == variable_name):
+                for index_dim, ele_dim in enumerate(ele['dimensions']):
+                    if ele_dim['name'] == 'StdTime' or ele_dim['name'].lower() == 'time' or ele_dim['name'].lower() == 'date' or  ele_dim['name'].lower() == 'acquisitiondate' or ele_dim['unit'] == 'ISO8601':
+                        val = ele_dim['values']
+                        #if (('unit' in ele_dim.keys()) and ele_dim['unit'] == 'ISO8601'):
+                        val_list=[]
+                        for val_ele in val:
+                            if isinstance(val_ele, list):
+                                val_list.append([_epoch_to_iso(val_ele[0]), _epoch_to_iso(val_ele[1])])
+                            else:
+                                val_list.append(_epoch_to_iso(val_ele))
+                        ele['dimensions'][index_dim]['values']=val_list
+                        if "extent" in ele_dim.keys():
+                            ele['dimensions'][index_dim]['extent']=[_epoch_to_iso(ele_dim['extent'][0]), _epoch_to_iso(ele_dim['extent'][1])]
+                    break
 
-            return mdinfo
+        return mdinfo
                 
 
     @property
@@ -5770,8 +5793,8 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     @property
     def format(self):
-        if "format" in super().properties:
-            return super().properties.format
+        if "datasetFormat" in super().properties:
+            return super().properties.datasetFormat
         else:
             return None
 
@@ -6918,1626 +6941,2138 @@ class _ArcpyRaster(Raster,ImageryLayer):
         from arcgis.raster.functions import boolean_or
         return boolean_or([other, self])
 
-#from ._util import _local_function_template, _get_geometry
+def _get_raster_collection_engine(engine):
+
+    """
+    Function to get the engine that will be used to process the Raster object.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    engine                                   Required string. 
+                                                Possible options:
+                                                "arcpy" : Returns arcpy engine
+                                                "image_server" : Returns image server engine
+    ------------------------------------     --------------------------------------------------------------------
+    """
+    
+    engine_dict={
+            "arcpy":_ArcpyRasterCollection,
+            "image_server":_ImageServerRasterCollection,
+        "datastore": _LocalRasterCollection}
+    if isinstance(engine, str):
+        return engine_dict[engine]
+    return engine
+
+from ._util import _local_function_template, _get_geometry
 
 #class RasterCollectionEngineFactory():
 #    def get_engine(self, engine):
 #        engine_dict={
-#		"arcpy":_ArcpyRaster,
-#		"image_server":_ImageServerRaster,
-#        "local_datastore_raster": _LocalRasterCollection
-#		}
+#            "arcpy":_ArcpyRasterCollection,
+#            "image_server":_ImageServerRasterCollection,
+#        "local_datastore_raster": _LocalRasterCollection}
 #        return engine_dict[engine]
 
-#class RasterCollection():
-#    def __init__(self, rasters=None, attribute_dict=None, where_clause=None, query_geometry=None, engine=None, gis=None):
-#        #self._remote = raster.use_server_engine
-#        #super().__init__(rasters, gis)
+class RasterCollection():
+    """
+    The RasterCollection object allows a group of rasters to be sorted and 
+    filtered easily, and prepares a collection for additional processing and analysis.
 
-#        #self._do_not_hydrate=False
-#        local_class=True
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    rasters                                  The input raster datasets. Supported inputs include a list of 
+                                             local or datastore rasters, a mosaic dataset, a multidimensional 
+                                             raster in Cloud Raster Format, a NetCDF file, or an image service. 
+                                             If you're using a list of raster datasets, all rasters must have 
+                                             the same cell size and spatial reference.
 
-#        if (engine is not None) and engine!= _ArcpyRasterCollection and engine !=_ImageServerRasterCollection and engine !=_LocalRasterCollection:
-#            self._ras_coll_engine = engine
-#            self._ras_coll_engine_obj=engine(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry, engine=engine, gis=gis)
-#        else:
-#            if isinstance(rasters, str):
-#                if ("https://"  in rasters or "http://"  in rasters):
-#                    self._ras_coll_engine = _ImageServerRasterCollection
-#                    self._ras_coll_engine_obj=_ImageServerRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry,engine= _ImageServerRasterCollection, gis=gis)
-#                else:
-#                    self._ras_coll_engine = _ArcpyRasterCollection
-#                    self._ras_coll_engine_obj=_ArcpyRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry, engine=_ArcpyRasterCollection,  gis=gis)
+                                             arcpy should be available if the input is a local raster dataset.
+    ------------------------------------     --------------------------------------------------------------------
+    attribute_dict                           Optional dict. attribute information to be added to each raster, 
+                                             when the input is a list of rasters. For each key-value pair, 
+                                             the key is the attribute name and the value is a list of values 
+                                             that represent the attribute value for each raster. For example, 
+                                             to add a name field to a list of three rasters, use 
+                                             {"name": ["Landsat8_Jan", "Landsat8_Feb", "Landsat8_Mar"]}.
+    ------------------------------------     --------------------------------------------------------------------
+    where_clause                             Optional string. An expression that limits the records returned. 
+    ------------------------------------     --------------------------------------------------------------------
+    query_geometry                           Optional. An object that filters 
+                                             the items such that 
+                                             only those that intersect with the object will be returned.
+    ------------------------------------     --------------------------------------------------------------------
+    engine                                   Optional string. The backend engine to be used.
+                                             Possible options:
+                                                - "arcpy" : Use the arcpy engine for processing. 
+
+                                                - "image_server" : Use the Image Server engine for processing.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional. GIS of the Raster object. 
+    ====================================     ====================================================================
+
+    """
+    def __init__(self, rasters=None, attribute_dict=None, where_clause=None, query_geometry=None, engine=None, gis=None):
+        #self._remote = raster.use_server_engine
+        #super().__init__(rasters, gis)
+
+        #self._do_not_hydrate=False
+        local_class=True
+
+        engine = _get_raster_collection_engine(engine)
+
+        if (engine is not None) and engine!= _ArcpyRasterCollection and engine !=_ImageServerRasterCollection and engine !=_LocalRasterCollection:
+            self._ras_coll_engine = engine
+            self._ras_coll_engine_obj=engine(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry, engine=engine, gis=gis)
+        else:
+            if isinstance(rasters, str):
+                if ("https://"  in rasters or "http://"  in rasters):
+                    self._ras_coll_engine = _ImageServerRasterCollection
+                    self._ras_coll_engine_obj=_ImageServerRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry,engine= _ImageServerRasterCollection, gis=gis)
+                else:
+                    self._ras_coll_engine = _ArcpyRasterCollection
+                    self._ras_coll_engine_obj=_ArcpyRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry, engine=_ArcpyRasterCollection,  gis=gis)
     
-#            elif isinstance(rasters,list):
-#                for ele in rasters:
-#                    if isinstance(ele, Raster):
-#                        continue
-#                    elif isinstance(ele, str):
-#                        if '/fileShares/' in ele or '/rasterStores/' in ele or '/cloudStores/' in ele or '/vsi' in ele:
-#                            continue
-#                    else:
-#                        local_class = False
+            elif isinstance(rasters,list):
+                for ele in rasters:
+                    if isinstance(ele, Raster):
+                        continue
+                    elif isinstance(ele, str):
+                        if '/fileShares/' in ele or '/rasterStores/' in ele or '/cloudStores/' in ele or '/vsi' in ele:
+                            continue
+                    else:
+                        local_class = False
 
-#                if local_class == True:
-#                    self._ras_coll_engine = _LocalRasterCollection
-#                    self._ras_coll_engine_obj=_LocalRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry, engine=_LocalRasterCollection, gis=gis)
-#                else:
-#                    self._ras_coll_engine = _ArcpyRasterCollection
-#                    self._ras_coll_engine_obj=_ArcpyRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry,engine=_ArcpyRasterCollection, gis=gis)
+                if local_class == True:
+                    self._ras_coll_engine = _LocalRasterCollection
+                    self._ras_coll_engine_obj=_LocalRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry, engine=_LocalRasterCollection, gis=gis)
+                else:
+                    self._ras_coll_engine = _ArcpyRasterCollection
+                    self._ras_coll_engine_obj=_ArcpyRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry,engine=_ArcpyRasterCollection, gis=gis)
            
 
-#    def set_engine(self, engine):
-#        return RasterCollection(rasters=self._ras_coll_engine_obj._rasters, attribute_dict=self._ras_coll_engine_obj._attribute_dict,  
-#                                where_clause=self._ras_coll_engine_obj._where_clause, query_geometry= self._ras_coll_engine_obj._spatial_filter, 
-#                                engine=engine, gis=self._ras_coll_engine_obj._gis)
+    def set_engine(self, engine):
+        """Can be used to change the back end engine"""
+        return RasterCollection(rasters=self._ras_coll_engine_obj._rasters, attribute_dict=self._ras_coll_engine_obj._attribute_dict,  
+                                where_clause=self._ras_coll_engine_obj._where_clause, query_geometry= self._ras_coll_engine_obj._spatial_filter, 
+                                engine=engine, gis=self._ras_coll_engine_obj._gis)
+
+    @property
+    def count(self):
+        """returns the count of items in the RasterCollection"""
+        return self._ras_coll_engine_obj.count
+
+    @property
+    def fields(self):
+        """returns the fields available in the RasterCollection"""
+        return self._ras_coll_engine_obj.fields
+
+    @property
+    def _rasters_list(self):
+        return self._ras_coll_engine_obj._rasters_list
+
+    def __iter__(self):
+        return self._ras_coll_engine_obj.__iter__()
+
+    def __next__(self):
+        return self._ras_coll_engine_obj.__next__()
+
+    def __len__(self):
+        return self._ras_coll_engine_obj.__len__()
+
+    def __getitem__(self, item):
+        return self._ras_coll_engine_obj.__getitem__(item)
+
+    def filter_by(self, where_clause=None, query_geometry_or_extent=None, raster_query=None):
+        """
+        filter a raster collection based on attribute and/or spatial queries
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        where_clause                             Optional String. An SQL expression used to select a subset of rasters
+        ------------------------------------     --------------------------------------------------------------------
+        query_geometry_or_extent                 Optional Geometry object. Items in the collection that fails to 
+                                                 intersect the given geometry will be excluded
+        ------------------------------------     --------------------------------------------------------------------
+        raster_query                             Optional string. An SQL expression used to select a subset of rasters 
+                                                 by the raster's key properties.
+        ====================================     ====================================================================
+
+        :returns: a RasterCollection object that only contains items sastisfying the queries
+
+        """
+        return self._ras_coll_engine_obj.filter_by(where_clause=where_clause, query_geometry_or_extent=query_geometry_or_extent,raster_query=raster_query )
+
+
+    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None):
+        """
+        filter a raster collection by time
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        start_time                               Optional String representation of the start time.
+        ------------------------------------     --------------------------------------------------------------------
+        end_time                                 Optional String representation of the end time.
+        ------------------------------------     --------------------------------------------------------------------
+        time_field_name                          Optional string. the name of the field containing the time information 
+                                                 for each item. Default: "StdTime"
+        ------------------------------------     --------------------------------------------------------------------
+        date_time_format                         Optional string. the time format that is used to format the time field values. 
+                                                 Please ref the python date time standard for this argument. 
+                                                 https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+                                                 Default is None and this means using the Pro standard time format 
+                                                 '%Y-%m-%dT%H:%M:%S' and ignoring the following sub-second..
+        ====================================     ====================================================================
+
+        :returns: a RasterCollection object that only contains items sastisfying the filter
+
+        """
+
+        return self._ras_coll_engine_obj.filter_by_time(start_time=start_time, end_time=end_time, time_field_name=time_field_name, date_time_format=date_time_format)
+
+    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None):
+        """
+        filter the raster collection by a calendar_field and its start and end value (inclusive). i.e. if you would like
+        to select all the rasters that have the time stamp on Monday, specify calendar_field as 'DAY_OF_WEEK' and put start and
+        end to 1.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        calendar_field                           Required String, one of 'YEAR', 'MONTH', 'QUARTER', 'WEEK_OF_YEAR', 
+                                                 'DAY_OF_YEAR', 'DAY_OF_MONTH', 'DAY_OF_WEEK', 'HOUR'
+        ------------------------------------     --------------------------------------------------------------------
+        start                                    Required integer.
+                                                 The start value of the calendar_field. For example, to filter all 
+                                                 items that were collected in January, 
+
+                                                 filtered_rc = rc.filter_by_calendar_range(calendar_field="MONTH", start=1).
+        ------------------------------------     --------------------------------------------------------------------
+        end                                      Optional integer.
+
+                                                 The end value of the calendar_field. For example, to filter all items 
+                                                 that were collected in the first 5 days of each year, 
 
-#    @property
-#    def count(self):
-#        return self._ras_coll_engine_obj.count
+                                                 filtered_rc = rc.filter_by_calendar_range(calendar_field="DAY_OF_YEAR", 
+                                                 start=1, end=5)
+        ------------------------------------     --------------------------------------------------------------------
+        time_field_name                          Optional string. The name of the field that contains the time attribute 
+                                                 for each item in the collection. The default is StdTime.
+        ------------------------------------     --------------------------------------------------------------------
+        date_time_format                         Optional string. The time format of the values in the time field. 
+                                                 For example, if the input time value is "1990-01-31", the 
+                                                 date_time_format is "%Y-%m-%d".
+        ====================================     ====================================================================
 
-#    @property
-#    def fields(self):
-#        return self._ras_coll_engine_obj.fields
+        :returns: a RasterCollection object that only contains items sastisfying the filter
 
-#    @property
-#    def _rasters_list(self):
-#        return self._ras_coll_engine_obj._rasters_list
+        """
+        # validation
+        return self._ras_coll_engine_obj.filter_by_calendar_range(calendar_field=calendar_field, start=start,end=end,time_field_name=time_field_name,date_time_format=date_time_format)
 
-#    def __iter__(self):
-#        return self._ras_coll_engine_obj.__iter__()
+    def filter_by_geometry(self, query_geometry_or_extent):
+        """
+        Filters the collection of raster items so that only those that intersect with the geometry will be returned.
 
-#    def __next__(self):
-#        return self._ras_coll_engine_obj.__next__()
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        query_geometry_or_extent                 Required object that filters the items such that only those that 
+                                                 intersect with the object will be returned. This can be specified 
+                                                 with a Geometry object, Raster object, ImageryLayer object.
+        ====================================     ====================================================================
 
-#    def __len__(self):
-#        return self._ras_coll_engine_obj.__len__()
+        :returns: a RasterCollection object that only contains items sastisfying the filter
 
-#    def __getitem__(self, item):
-#        return self._ras_coll_engine_obj.__getitem__(item)
+        """
+        return self._ras_coll_engine_obj.filter_by_geometry(query_geometry_or_extent=query_geometry_or_extent)
 
-#    def filter_by(self, where_clause=None, query_geometry_or_extent=None, raster_query=None):
-#        return self._ras_coll_engine_obj.filter_by(where_clause=where_clause, query_geometry_or_extent=query_geometry_or_extent,raster_query=raster_query )
+    def filter_by_attribute(self, field_name, operator, field_values):
+        """
+        Filters the collection of raster items by an attribute query and returns a raster collection 
+        containing only the items that satisfy the query.
 
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        field_name                               Required string. The field name to use in the filter.
+        ------------------------------------     --------------------------------------------------------------------
+        operator                                 Required string. The keyword to filter the attributes. 
+                                                 Keywords include the following:
 
-#    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None):
-#        return self._ras_coll_engine_obj.filter_by_time(start_time=start_time, end_time=end_time, time_field_name=time_field_name, date_time_format=date_time_format)
+                                                  -  CONTAINS - The attribute in the field contains the specified string, list, or number.
 
-#    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None):
-#        """
-#        filter the raster collection by a calendar_field and its start and end value (inclusive). i.e. if you would like
-#        to select all the rasters that have the time stamp on Monday, specify calendar_field as 'DAY_OF_WEEK' and put start and
-#        end to 1.
+                                                  - ENDS_WITH - The attribute ends with the specified string or number.
 
-#        :param calendar_field: string, one of 'YEAR', 'MONTH', 'QUARTER', 'WEEK_OF_YEAR', 'DAY_OF_YEAR', 'DAY_OF_MONTH',
-#         'DAY_OF_WEEK', 'HOUR'
-#        :param start: integer, the start time. inclusive.
-#        :param end: integer, default is None, if default is used, the end is set equal to start. inclusive.
-#        :param time_field_name: string, the time field anme, default is 'StdTime'.
-#        :param date_time_format: the time format that is used to format the time field values. Please ref the python
-#                                date time standard for this argument. https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
-#                                Default is None and this means using the Pro standard time format '%Y-%m-%dT%H:%M:%S'
-#                                and ignoring the following sub-second.
+                                                  -  EQUALS - The attribute equals the specified string, list, or number.
 
-#        :return: a filtered raster collection.
-#        """
-#        # validation
-#        return self._ras_coll_engine_obj.filter_by_calendar_range(calendar_field=calendar_field, start=start,end=end,time_field_name=time_field_name,date_time_format=date_time_format)
+                                                  -  GREATER_THAN - The attribute is greater than the specified number.
 
-#    def filter_by_geometry(self, query_geometry_or_extent):
-#        return self._ras_coll_engine_obj.filter_by_geometry(query_geometry_or_extent=query_geometry_or_extent)
+                                                  -  IN - The attribute is one of the items in the specified list.
 
-#    def filter_by_attribute(self, field_name, operator, field_values):
-#        return self._ras_coll_engine_obj.filter_by_attribute(field_name=field_name, operator=operator, field_values=field_values)
+                                                  -  LESS_THAN - The attribute is less than the specified number.
 
-#    def filter_by_raster_property(self, property_name, operator, property_values):
-#        return self._ras_coll_engine_obj.filter_by_raster_property(property_name=property_name, operator=operator, property_values=property_values)
+                                                  -  NOT_CONTAINS - The attribute does not contain the specified string, list, or number.
 
-#    def sort(self, field_name, ascending=True):
-#        return self._ras_coll_engine_obj.sort(field_name=field_name, ascending=ascending)
+                                                  -  NOT_ENDS_WITH - The attribute does not end with the specified string or number.
 
-
-#    def get_field_values(self, field_name, max_count=0):
-#        return self._ras_coll_engine_obj.get_field_values(field_name=field_name, max_count=max_count)
+                                                  -  NOT_EQUALS - The attribute does not equal the specified string, list, or number.
 
-#    def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
-#        return self._ras_coll_engine_obj.to_multidimensional_raster(variable_field_name=variable_field_name, dimension_field_names=dimension_field_names)
+                                                  -  NOT_GREATER_THAN - The attribute is not greater than the specified number.
 
-#    def max(self):
-#        return self._ras_coll_engine_obj.max()
+                                                  -  NOT_IN - The attribute is not one of the items in the specified list.
 
-#    def min(self):
-#        return self._ras_coll_engine_obj.min()
-
-#    def median(self):
-#        return self._ras_coll_engine_obj.median()
-
-
-#    def mean(self):
-#        return self._ras_coll_engine_obj.mean()
-
-#    def majority(self):
-#        return self._ras_coll_engine_obj.majority()
-
-#    def sum(self):
-#        return self._ras_coll_engine_obj.sum()
-
-#    def mosaic(self, mosaic_method):
-#        return self._ras_coll_engine_obj.mosaic(mosaic_method=mosaic_method)
-
-#    def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
-#        return self._ras_coll_engine_obj.quality_mosaic(quality_rc_or_list=quality_rc_or_list, statistic_type=statistic_type)
-
-#    def select_bands(self, band_ids_or_names):
-#        return self._ras_coll_engine_obj.select_bands(band_ids_or_names=band_ids_or_names)
-
-
-#    def map(self, func):
-#        return self._ras_coll_engine_obj.map(func=func)
-
-
-#    def as_df(self, result_offset=None, result_record_count=None, return_all_records=False):
-#        return self._ras_coll_engine_obj.as_df(result_offset=result_offset, result_record_count=result_record_count, return_all_records=return_all_records)
-
-#    #def display_image(self, item=None):
-#    #    if not raster.use_server:
-#    #        raise RuntimeError('Not available in non server env')
-#    #    else:
-#    #        if item is not None:
-#    #            newcollection = self._clone_raster_collection()
-#    #            newcollection._mosaic_rule = {
-#    #                "mosaicMethod": "esriMosaicLockRaster",
-#    #                "lockRasterIds": [item],
-#    #                "ascending": True,
-#    #                "mosaicOperation": "MT_FIRST"
-#    #            }
-#    #        else:
-#    #            newcollection = self
-
-#    #        bbox_sr = None
-#    #        if 'spatialReference' in newcollection.extent:
-#    #            bbox_sr = newcollection.extent['spatialReference']
-#    #        if not newcollection._uses_gbl_function:
-#    #            byte_array = (newcollection.export_image(bbox=newcollection._extent, bbox_sr=bbox_sr, size=[1200, 450], export_format='jpeg', f='image'))
-#    #            try:
-#    #                from IPython.display import Image
-#    #                return Image(byte_array)
-#    #            except:
-#    #                return byte_array
-
-#    #def _clone_raster_collection(self):
-#    #    return self._ras_coll_engine_obj.filter_by(where_clause=where_clause, query_geometry_or_extent=query_geometry_or_extent)
-
-#    #def _object_id_name(self):
-#    #    for ele in self.properties.fields:
-#    #        if ("type" in ele.keys()) and ele["type"]=="esriFieldTypeOID":
-#    #            return ele["name"]
-
-#    def _repr_html_(self):
-#        return self._ras_coll_engine_obj._repr_html_()
-
-#    def _repr_jpeg_(self):
-#        return None
-
-#class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
-#    def __init__(self, rasters, attribute_dict=None,where_clause=None, query_geometry=None, engine=None, gis=None):
-#        ImageryLayer.__init__(self, str(rasters), gis=gis)
-
-#        self._mosaic_rule = None
-#        if gis is not None:
-#            self._gis = gis
-#        else:
-#            self._gis=None
-#        if where_clause is None:
-#            self._where_clause = '1=1'
-#        else:
-#            self._where_clause = where_clause
-#        if query_geometry is None:
-#            self._spatial_filter = None
-#        else:
-#            self._spatial_filter = query_geometry
-
-#        self._attribute_dict = attribute_dict
-
-
-#        self._local=False
-#        #self._do_not_hydrate=False
-#        self._rasters=rasters
-#        #self._ras_coll_engine=_ArcpyRasterCollection
-#        #self._engine=_ArcpyRaster
-#        #self._engine_obj=_ArcpyRaster(rasters, False, gis)
-#        self._ras_coll_engine = engine
-#        import arcpy
-#        try:
-#            arcpy.CheckOutExtension("ImageAnalyst")
-#            arcpy.CheckOutExtension("Spatial")
-#        except:
-#            pass
-#        if isinstance(rasters, str):
-#            if ("https://"  in rasters or "http://"  in rasters): #To provide access to secured service
-#                if self._token is not None:
-#                    self._raster_collection = arcpy.ia.RasterCollection(rasters+"?token="+self._token, attribute_dict)
-#                else:
-#                    self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
-#            else:
-#                self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
-#        self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
-#        self._df=self.as_df()
-
-
-#    @property
-#    def count(self):
-#        count = len(self._df.index)            
-#        return count
-
-#    @property
-#    def fields(self):
-#        fields = self._raster_collection.fields
-#        return fields
-
-#    @property
-#    def _rasters_list(self):
-#        ras_list=self.get_field_values("Raster")
-#        return ras_list
-
-#    def __iter__(self):
-#        return iter(self._df.to_dict('records', into=dict))
-
-
-#    def __next__(self):
-#        return self._df.to_dict('records', into=dict)[item]
-
-
-#    def __len__(self):
-#        return (self._df.to_dict('records', into=dict)).__len__
-
-#    def __getitem__(self, item):
-#        return self._df.to_dict('records', into=dict)[item]
-
-#    #@property
-#    #def count(self):
-#    #    count = self._raster_collection.count            
-#    #    return count
-
-#    #@property
-#    #def fields(self):
-#    #    fields = self._raster_collection.fields
-#    #    return fields
-
-#    #@property
-#    #def _rasters_list(self):
-#    #    ras_list=self.get_field_values("Raster")
-#    #    return ras_list
-
-#    #def __iter__(self):
-#    #    return(self._raster_collection.__iter__())
-
-
-#    #def __next__(self):
-#    #    return (self._raster_collection.__next__())
-
-
-#    #def __len__(self):
-#    #    return (self._raster_collection.__len__())
-
-
-#    #def __getitem__(self, item):
-#    #    return (self._raster_collection.__getitem__(item))
-
-
-#    def filter_by(self, where_clause=None, query_geometry_or_extent=None, raster_query=None):
-#        newcollection = self._clone_raster_collection()
-#        if isinstance(query_geometry_or_extent, _arcgis.geometry.Geometry):
-#            query_geometry_or_extent = query_geometry_or_extent.as_arcpy
-#        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filter(where_clause=where_clause, query_geometry_or_extent=query_geometry_or_extent, raster_query=raster_query)
-#        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj.as_df()
-#        return newcollection
-
-
-
-
-#    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None):
-#        newcollection = self._clone_raster_collection()
-#        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByTime(start_time=start_time, end_time=end_time, time_field_name=time_field_name)
-#        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj.as_df()
-#        return newcollection
-
-
-#    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None):
-#        """
-#        filter the raster collection by a calendar_field and its start and end value (inclusive). i.e. if you would like
-#        to select all the rasters that have the time stamp on Monday, specify calendar_field as 'DAY_OF_WEEK' and put start and
-#        end to 1.
-
-#        :param calendar_field: string, one of 'YEAR', 'MONTH', 'QUARTER', 'WEEK_OF_YEAR', 'DAY_OF_YEAR', 'DAY_OF_MONTH',
-#         'DAY_OF_WEEK', 'HOUR'
-#        :param start: integer, the start time. inclusive.
-#        :param end: integer, default is None, if default is used, the end is set equal to start. inclusive.
-#        :param time_field_name: string, the time field anme, default is 'StdTime'.
-#        :param date_time_format: the time format that is used to format the time field values. Please ref the python
-#                                date time standard for this argument. https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
-#                                Default is None and this means using the Pro standard time format '%Y-%m-%dT%H:%M:%S'
-#                                and ignoring the following sub-second.
-
-#        :return: a filtered raster collection.
-#        """
-#        # validation
-#        newcollection = self._clone_raster_collection()
-#        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByTime(self._raster_collection.filterByCalendarRange(calendar_field=calendar_field, start=start, end=end,time_field_name=time_field_name,date_time_format=date_time_format))
-#        bnewcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj.as_df()
-#        return newcollection
-    
-#    def filter_by_geometry(self, query_geometry_or_extent):
-#        newcollection = self._clone_raster_collection()
-#        if isinstance(query_geometry_or_extent, _arcgis.geometry.Geometry):
-#            query_geometry_or_extent = query_geometry_or_extent.as_arcpy
-#        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByGeometry(query_geometry_or_extent=query_geometry_or_extent)
-#        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj.as_df()
-#        return newcollection
-
-
-#    def filter_by_attribute(self, field_name, operator, field_values):
-#        newcollection = self._clone_raster_collection()
-#        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByAttribute(field_name=field_name, operator=operator,field_values=field_values)
-#        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj.as_df()
-#        return newcollection
-
-#    def filter_by_raster_property(self, property_name, operator, property_values):
-#        newcollection = self._clone_raster_collection()
-#        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByRasterProperty(property_name=property_name, operator=operator, property_values=property_values)
-#        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj.as_df()
-#        return newcollection
-
-#    def sort(self, field_name, ascending=True):
-#        newcollection = self._clone_raster_collection()
-#        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.sort(field_name=field_name, ascending=ascending)
-#        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj.as_df()
-#        return newcollection
-    
-
-#    def get_field_values(self, field_name, max_count=0):
-#        return self._raster_collection.getFieldValues(field_name=field_name, max_count=max_count)
-
-
-#    def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
-#        return Raster(self._raster_collection.toMultidimensionalRaster(variable_field_name=variable_field_name, dimension_field_names=dimension_field_names))
-
-#    def max(self):
-#        return Raster(self._raster_collection.max())
-
-
-#    def min(self):
-#        return Raster(self._raster_collection.min())
-
-
-#    def median(self):
-#        return Raster(self._raster_collection.median())
-
-#    def mean(self):
-#        return Raster(self._raster_collection.mean())
-
-#    def majority(self):
-#        return Raster(self._raster_collection.majority())
-
-#    def sum(self):
-#        return Raster(self._raster_collection.sum())
-
-#    def mosaic(self, mosaic_method):
-#        return Raster(self._raster_collection.mosaic(mosaic_method=mosaic_method))
-
-#    def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
-#        return Raster(self._raster_collection.quality_mosaic(quality_rc_or_list=quality_rc_or_list,statistic_type=statistic_type))
-
-#    def select_bands(self, band_ids_or_names):
-#        return RasterCollection(self._raster_collection.selectBands(band_ids_or_names))
-
-
-#    def map(self, func):
-#        res = map(func, iter(self))
-#        rasters = []
-#        attribute_dict = defaultdict(list)
-#        for item in res:
-#            rasters.append(item['raster'])
-#            for key, value in item.items():
-#                if key != 'raster':
-#                    attribute_dict[key].append(value)
-
-#        return RasterCollection(rasters, attribute_dict)                
-          
-
-#    def as_df(self, result_offset=None, result_record_count=None, return_all_records=False):
-#        import pandas as pd
-#        data = {}
-#        value_rasters=[]
-#        for field in self.fields:
-#            try:
-#                value = self.get_field_values(field)
-#                if field=="Raster":
-#                    for ele in value:
-#                        value_rasters.append(Raster(ele))
-#                    data[field] = value_rasters
-#                else:
-#                    data[field] = self.get_field_values(field)
-#            except:
-#                continue
-#        return pd.DataFrame(data=data)
-
-#    def display_image(self, item=None):
-#        raise RuntimeError('Not available in non server env')
-
-#    def _clone_raster_collection(self):
-#        new_raster_collection = RasterCollection(self._rasters, self._attribute_dict, self._where_clause, self._spatial_filter, self._ras_coll_engine, self._gis)
-#        new_raster_collection._fn = self._fn
-#        new_raster_collection._fnra = self._fnra
-#        new_raster_collection._mosaic_rule = self._mosaic_rule
-#        new_raster_collection._extent = self._extent
-#        return new_raster_collection
-
-#    def _object_id_name(self):
-#        for ele in self.properties.fields:
-#            if ("type" in ele.keys()) and ele["type"]=="esriFieldTypeOID":
-#                return ele["name"]
-
-#    def _repr_html_(self):
-#        return self._df._repr_html_()
-
-
-#    def _repr_jpeg_(self):
-#        return None
-
-
-#class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
-#    def __init__(self, rasters=None, attribute_dict=None, where_clause=None, query_geometry=None, engine=None, gis=None):
-#        #self._remote = raster.use_server_engine
-#        ImageryLayer.__init__(self, rasters, gis=gis)
-#        self._mosaic_rule = None
-#        if gis is not None:
-#            self._gis = gis
-#        else:
-#            self._gis=None
-#        if where_clause is None:
-#            self._where_clause = '1=1'
-#        else:
-#            self._where_clause = where_clause
-#        if query_geometry is None:
-#            self._spatial_filter = None
-#        else:
-#            self._spatial_filter = query_geometry
-#        self._rasters=rasters
-#        self._attribute_dict = attribute_dict
-
-#        self._object_ids=None
-#        self._raster_query=None
-#        self._order_by_fields=None
+                                                  -  NOT_LESS_THAN - The attribute is not less than the specified number.
+
+                                                  -  NOT_STARTS_WITH - The attribute does not start with the specified string or number.
+
+                                                  -  STARTS_WITH - The attribute starts with the specified string or number.
+        ------------------------------------     --------------------------------------------------------------------
+        field_values                             Required object. The attribute value or values against which to compare. 
+                                                 This can be specified as a string, a list, or a number.
+        ====================================     ====================================================================
+
+        :returns: a RasterCollection object that only contains items sastisfying the filter
+
+        """
+        return self._ras_coll_engine_obj.filter_by_attribute(field_name=field_name, operator=operator, field_values=field_values)
+
+    def filter_by_raster_property(self, property_name, operator, property_values):
+        """
+        Filters the collection of raster items by a raster property query and returns a raster collection 
+        containing only the items that satisfy the query.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        property_name                            Required string. The name of the property to use in the filter.
+        ------------------------------------     --------------------------------------------------------------------
+        operator                                 Required string. The keyword to filter the attributes. 
+                                                 Keywords include the following:
+
+                                                  -  CONTAINS - The attribute in the field contains the specified string, list, or number.
+
+                                                  - ENDS_WITH - The attribute ends with the specified string or number.
+
+                                                  -  EQUALS - The attribute equals the specified string, list, or number.
+
+                                                  -  GREATER_THAN - The attribute is greater than the specified number.
+
+                                                  -  IN - The attribute is one of the items in the specified list.
+
+                                                  -  LESS_THAN - The attribute is less than the specified number.
+
+                                                  -  NOT_CONTAINS - The attribute does not contain the specified string, list, or number.
+
+                                                  -  NOT_ENDS_WITH - The attribute does not end with the specified string or number.
+
+                                                  -  NOT_EQUALS - The attribute does not equal the specified string, list, or number.
+
+                                                  -  NOT_GREATER_THAN - The attribute is not greater than the specified number.
+
+                                                  -  NOT_IN - The attribute is not one of the items in the specified list.
+
+                                                  -  NOT_LESS_THAN - The attribute is not less than the specified number.
+
+                                                  -  NOT_STARTS_WITH - The attribute does not start with the specified string or number.
+
+                                                  -  STARTS_WITH - The attribute starts with the specified string or number.
+        ------------------------------------     --------------------------------------------------------------------
+        field_values                             Required object. The property value or values against which to compare. 
+                                                 This can be specified as a string, a list, or a number..
+        ====================================     ====================================================================
+
+        :returns: a RasterCollection object that only contains items sastisfying the filter
+
+        """
+        return self._ras_coll_engine_obj.filter_by_raster_property(property_name=property_name, operator=operator, property_values=property_values)
+
+    def sort(self, field_name, ascending=True):
+        """
+        Sorts the collection of rasters by a field name and returns a raster collection that is in the order specified.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        field_name                               Required string. The name of the field to use for sorting.
+        ------------------------------------     --------------------------------------------------------------------
+        ascending                                Optional bool. Specifies whether to sort in ascending or descending order. 
+                                                 (The default value is True)
+        ====================================     ====================================================================
+
+        :returns: a sorted RasterCollection object 
+
+        """
+        return self._ras_coll_engine_obj.sort(field_name=field_name, ascending=ascending)
+
+
+    def get_field_values(self, field_name, max_count=0):
+        """
+        Returns the values of a specified field from the raster collection.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        field_name                               Required string. The name of the field from which to extract values.
+        ------------------------------------     --------------------------------------------------------------------
+        max_count                                Optional integer. An integer that specifies the maximum number of 
+                                                 field values to be returned. The values will be returned in the 
+                                                 order that the raster items are ordered in the collection. If 
+                                                 no value is specified, all the field values for the given field 
+                                                 will be returned.
+        ====================================     ====================================================================
+
+        :returns: a list of values of the specified field from the raster collection.
+
+        """
+        return self._ras_coll_engine_obj.get_field_values(field_name=field_name, max_count=max_count)
+
+    def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
+        """
+        Returns a multidimensional raster dataset, in which each item in the raster collection is a 
+        slice in the multidimensional raster.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        variable_field_name                      Required string. The name of the field that contains the variable names.
+        ------------------------------------     --------------------------------------------------------------------
+        dimension_field_names                    Required string. The name of the field or fields that contains the dimension names. 
+                                                 This can be specified as a single string or a list of strings.
+
+                                                 For time-related dimensions, the field name must match one of the 
+                                                 following to be recognized as a time field: StdTime, Date, Time, 
+                                                 or AcquisitionDate. For nontime-related dimensions, the values in 
+                                                 those fields must be type Double. If there are two or more dimensions, 
+                                                 use a comma to separate the fields (for example, 
+                                                 dimension_field_names = ["Time", "Depth"]).
+        ====================================     ====================================================================
+
+        :returns: a Raster object
+
+        """
+        return self._ras_coll_engine_obj.to_multidimensional_raster(variable_field_name=variable_field_name, dimension_field_names=dimension_field_names)
+
+    def max(self):
+        """
+        Returns a raster object in which each band contains the maximum pixel values for that 
+        band across all rasters in the raster collection.
+
+        For example, if there are ten raster items in the raster collection, each with four bands, 
+        the max method will calculate the maximum pixel value that occurs across all raster 
+        items for band 1, band 2, band 3, and band 4; a four-band raster is returned. 
+        Band numbers are matched between raster items using the band index, so the items 
+        in the raster collection must follow the same band order.
         
-#        self._do_not_hydrate=False
-#        #self._ras_coll_engine=_ImageServerRasterCollection
-#        self._is_multidimensional=False
-#        self._engine=_ImageServerRaster
-#        self._engine_obj=_ImageServerRaster(rasters, False, gis)
-#        self._ras_coll_engine = engine
-#        self._df=None
-
-#        if str(self.properties['capabilities']).lower().find('catalog') == -1:
-#            raise RuntimeError("Image Service should have 'Catalog' capability to create a RasterCollection object.")
-#        self._df=self.as_df()
-#        self._start=0
-#        self._lower_limit=self.properties.maxRecordCount
-#        self._upper_limit=0
-#        self._max_rec_count=self.properties.maxRecordCount
-#        self._rep_df=None
-#        self._order_by_fields=self._object_id_name() +" ASC"
-#        self._count=None
-
-
-
-#    @property
-#    def count(self):
-#        if self._count is None:
-#            count = self.query(where=self._where_clause, geometry_filter=self._spatial_filter,
-#                                        object_ids=self._object_ids, return_count_only=True, raster_query=self._raster_query)   
-#            self._count=count
-#        else:
-#            count=self._count
-#        return count
-
-#    @property
-#    def fields(self):
-#        return tuple(self._df.columns.tolist())
-
-#    @property
-#    def _rasters_list(self):
-#        ras_list=self.get_field_values("Raster")
-#        return ras_list
-
-#    def __iter__(self):
-#        return self
-
-#    def __next__(self):
-#        try:
-#            item = self[self._start]
-#        except IndexError:
-
-#            self._start=0
-#            raise StopIteration
-#        self._start += 1
-#        return item
-
-#    def __len__(self):
-#        return (self._df.to_dict('records', into=dict)).__len__
-
-#    def __getitem__(self, item):
-#        if item<self._max_rec_count:
-#            return self._df.to_dict('records', into=dict)[item]
-#        offset=self._max_rec_count
-#        i=2            
-#        while(item>=offset):
-#            offset=self._max_rec_count*i
-#            i=i+1
-#        offset=offset-self._max_rec_count
-#        if item>=self._upper_limit or item<self._lower_limit:
-#            self._rep_df=self.as_df(result_offset=offset, result_record_count=self._max_rec_count)
-#            self._upper_limit=offset+self._max_rec_count
-#            self._lower_limit=offset
-#        return(self._rep_df.to_dict('records', into=dict))[item-offset]
-
-#    def filter_by(self, where_clause=None, query_geometry_or_extent=None, raster_query=None):
-#            from arcgis.geometry.filters import intersects
-#            geometry_filter=None
-#            if query_geometry_or_extent is not None:
-#                query_geometry_or_extent = _get_geometry(query_geometry_or_extent)
-#                geometry_filter = intersects(query_geometry_or_extent)
-#            #newcollection = self._clone_raster_collection()
-#            if where_clause is not None:
-#                where_clause = self._where_clause+" AND ("+ where_clause+")"
-#            else:
-#                where_clause=self._where_clause
-
-
-#            if raster_query is not None and self._raster_query is not None:
-#                raster_query = self._raster_query+" AND ("+ raster_query+")"
-#            elif raster_query is None:
-#                raster_query=self._raster_query
-#            oids = super().query(where=where_clause,
-#                                 geometry_filter=geometry_filter,
-#                                 return_ids_only=True,
-#                                 raster_query=raster_query)['objectIds']
-
-#            newcollection = RasterCollection(rasters=self._url, attribute_dict=self._attribute_dict, where_clause=where_clause, query_geometry=geometry_filter, gis=self._gis)
-#            newcollection._ras_coll_engine_obj._mosaic_rule = {
-#                "mosaicMethod": "esriMosaicLockRaster",
-#                "lockRasterIds": oids,
-#                "ascending": True,
-#                "mosaicOperation": "MT_FIRST"
-#            }
-#            newcollection._ras_coll_engine_obj._raster_query=raster_query
-#            newcollection._ras_coll_engine_obj._object_ids=oids
-#            #newcollection._where_clause=where_clause
-#            #newcollection._spatial_filter=geometry_filter
-#            #newcollection._filtered =True
-#            newcollection._ras_coll_engine_obj._df= newcollection.as_df()
-#            return newcollection
-
-
-#    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None):
-#        if time_field_name not in self.fields:
-#            raise ValueError('the time_field_name is not existed. Please input a valid name for time field.')
-
-#        sql_query1 = time_field_name + ' >= timestamp \'' + start_time + '\'' if start_time else ''
-#        sql_query2 = time_field_name + ' <= timestamp \'' + end_time + '\'' if end_time else ''
-
-#        if sql_query1 and sql_query2:
-#            sql_query = sql_query1 + ' AND ' + sql_query2
-#        else:
-#            sql_query = sql_query1 if sql_query1 else sql_query2
-
-#        return self.filter_by(sql_query)
-
-#    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None):
-#        """
-#        filter the raster collection by a calendar_field and its start and end value (inclusive). i.e. if you would like
-#        to select all the rasters that have the time stamp on Monday, specify calendar_field as 'DAY_OF_WEEK' and put start and
-#        end to 1.
-
-#        :param calendar_field: string, one of 'YEAR', 'MONTH', 'QUARTER', 'WEEK_OF_YEAR', 'DAY_OF_YEAR', 'DAY_OF_MONTH',
-#         'DAY_OF_WEEK', 'HOUR'
-#        :param start: integer, the start time. inclusive.
-#        :param end: integer, default is None, if default is used, the end is set equal to start. inclusive.
-#        :param time_field_name: string, the time field anme, default is 'StdTime'.
-#        :param date_time_format: the time format that is used to format the time field values. Please ref the python
-#                                date time standard for this argument. https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
-#                                Default is None and this means using the Pro standard time format '%Y-%m-%dT%H:%M:%S'
-#                                and ignoring the following sub-second.
-
-#        :return: a filtered raster collection.
-#        """
-#        # validation
-
-#        calendar_field_types = ['YEAR', 'MONTH', 'QUARTER', 'WEEK_OF_YEAR', 'DAY_OF_YEAR', 'DAY_OF_MONTH', 'DAY_OF_WEEK', 'HOUR']
-#        if not isinstance(calendar_field, str):
-#            raise TypeError('calender_field must be string type')
-
-#        if calendar_field not in calendar_field_types:
-#            raise ValueError('invalid calender_field, must be one of ' + ', '.join(calendar_field_types))
-
-#        if time_field_name not in self.fields:
-#            raise ValueError('the time_field_name does not exist. Please input a valid name for time field.')
-
-#        if end is None:
-#            end = start
-#        # validate start and end type
-#        if not isinstance(start, int) or not isinstance(end, int):
-#            raise TypeError('start and end must be numeric.')
-#        if end < start:
-#            raise ValueError('end must be equal or larger than start.')
-#        # validate start and end value
-#        if calendar_field == 'MONTH':
-#            if start < 1 or start > 12 or end < 1 or end > 12:
-#                raise ValueError('start and end must be between [1, 12] for MONTH filter.')
-#        elif calendar_field == 'QUARTER':
-#            if start < 1 or start > 4 or end < 1 or end > 4:
-#                raise ValueError('start and end must be between [1, 4] for QUARTER filter.')
-#        elif calendar_field == 'WEEK_OF_YEAR':
-#            if start < 1 or start > 53 or end < 1 or end > 53:
-#                raise ValueError('start and end must be between [1, 53] for WEEK_OF_YEAR filter.')
-#        elif calendar_field == 'DAY_OF_YEAR':
-#            if start < 1 or start > 366 or end < 1 or end > 366:
-#                raise ValueError('start and end must be between [1, 366] for DAY_OF_YEAR filter.')
-#        elif calendar_field == 'DAY_OF_MONTH':
-#            if start < 1 or start > 31 or end < 1 or end > 31:
-#                raise ValueError('start and end must be between [1, 31] for DAY_OF_MONTH filter.')
-#        elif calendar_field == 'DAY_OF_WEEK':
-#            if start < 1 or start > 7 or end < 1 or end > 7:
-#                raise ValueError('start and end must be between [1, 7] for DAY_OF_WEEK filter.')
-#        elif calendar_field == 'HOUR':
-#            if start < 1 or start > 24 or end < 1 or end > 24:
-#                raise ValueError('start and end must be between [1, 24] for HOUR filter.')
-
-#        oids_dict = super().query(where=self._where_clause,
-#                                    geometry_filter=self._spatial_filter,
-#                                    return_ids_only=True,
-#                                    raster_query=self._raster_query)
-#        oid_name = oids_dict["objectIdFieldName"]
-#        oids = oids_dict["objectIds"]
-#        df = self.as_df()
-#        filtered_rasters_oids=[]
-#        newcollection = self._clone_raster_collection()
-#        for index, row in df.iterrows():
-#            if date_time_format is None:
-#                date_time = datetime.datetime.strptime(row[time_field_name], '%Y-%m-%dT%H:%M:%S')
-#            else:
-#                date_time = datetime.datetime.strptime(row[time_field_name], date_time_format)
-
-#            selected = False
-#            if calendar_field == 'YEAR':
-#                if start <= date_time.year <= end:
-#                    selected = True
-#            elif calendar_field == 'MONTH':
-#                if start <= date_time.month <= end:
-#                    selected = True
-#            elif calendar_field == 'QUARTER':
-#                if start-1 <= (date_time.month - 1)//3 <= end-1:
-#                    selected = True
-#            elif calendar_field == 'WEEK_OF_YEAR':
-#                week_number = int(date_time.strftime('%U'))
-#                if start <= week_number+1 <= end:
-#                    selected = True
-#            elif calendar_field == 'DAY_OF_YEAR':
-#                yday = date_time.timetuple().tm_yday
-#                if start <= yday <= end:
-#                    selected = True
-#            elif calendar_field == 'DAY_OF_MONTH':
-#                mday = date_time.timetuple().tm_mday
-#                if start <= mday <= end:
-#                    selected = True
-#            elif calendar_field == 'DAY_OF_WEEK':
-#                wday = date_time.isoweekday()
-#                if start<= wday%7+1<=end:
-#                    selected = True
-#            elif calendar_field == 'HOUR':
-#                hour = date_time.timetuple().tm_hour
-#                if start <= hour <= end:
-#                    selected = True
-
-#            if selected is True:
-#                filtered_rasters_oids.append(row[oid_name])
-
-#        where_clause = ""
-#        for ele in filtered_rasters_oids:
-#            where_clause += (oid_name+ " = "+str(ele)+" OR ")
-#        newcollection._ras_coll_engine_obj._where_clause = where_clause[:-4]
-#        newcollection._ras_coll_engine_obj._mosaic_rule = {
-#            "mosaicMethod": "esriMosaicLockRaster",
-#            "lockRasterIds": filtered_rasters_oids,
-#            "ascending": True,
-#            "mosaicOperation": "MT_FIRST"
-#        }
-#        newcollection._ras_coll_engine_obj._filtered =True
-#        newcollection._ras_coll_engine_obj._df= newcollection.as_df()
-#        return newcollection
-
-#    def filter_by_geometry(self, query_geometry_or_extent):
-#        return self.filter_by(query_geometry_or_extent = query_geometry_or_extent)
-
-#    def filter_by_attribute(self, field_name, operator, field_values):
-#        if not isinstance(field_name, str):
-#            raise TypeError("field_name should be string")
-
-#        from arcgis.raster._util import build_query_string
-
-#        query_string = build_query_string(field_name, operator.lower(), field_values)
-#        return self.filter_by(query_string)
-
-#    def filter_by_raster_property(self, property_name, operator, property_values):
-#        if not isinstance(property_name, str):
-#            raise TypeError("property_name should be string")
-#        from arcgis.raster._util import build_query_string
-#        raster_query  = build_query_string(property_name, operator.lower(), property_values)
-#        return self.filter_by(raster_query = raster_query)
-
-
-#    def sort(self, field_name, ascending=True):
-#        if ascending is True:
-#            order_by_fields_string = str(field_name)+" "+"ASC"
-#        else:
-#            order_by_fields_string = str(field_name)+" "+"DESC"
-#        newcollection = self._clone_raster_collection()
-#        newcollection._ras_coll_engine_obj._order_by_fields = order_by_fields_string
-#        newcollection._ras_coll_engine_obj._df= newcollection.as_df()
-
-#        return newcollection
-
-
-#    def get_field_values(self, field_name, max_count=0):
-#        #if max_count ==0:
-#        #    max_count = self.count
-            
-#        df = self._df
-#        if max_count!=0:
-#            return df[field_name].tolist()[0:max_count]
-#        else:
-#            return df[field_name].tolist()
-
-
-#    def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
-#        md_info=super()._compute_multidimensional_info(where=self._where_clause,
-#                                                    geometry_filter=self._spatial_filter,
-#                                                    object_ids=self._object_ids,
-#                                                    raster_query=self._raster_query,
-#                                                    variable_field_name=variable_field_name,
-#                                                    dimension_field_names=dimension_field_names)
-
-#        from arcgis.raster.functions import identity
-#        lyr = identity(self)
-#        lyr._engine_obj._fnra["rasterFunctionArguments"].update({"MultidimensionalInfo":md_info})
-#        lyr._engine_obj._fn["rasterFunctionArguments"].update({"MultidimensionalInfo":md_info})
-#        lyr._engine_obj._created_from_collection=True
-#        lyr._engine_obj._mdinfo=md_info
-#        return lyr
-
-
-#    def max(self):
-#        from arcgis.raster.functions import raster_collection_function
-#        raster_function_json = _local_function_template(67)
-#        return raster_collection_function(self, aggregation_function=raster_function_json)
-
-
-
-
-#    def min(self):
-#        from arcgis.raster.functions import raster_collection_function
-#        raster_function_json = _local_function_template(70)
-#        return raster_collection_function(self, aggregation_function=raster_function_json)
-
-
-#    def median(self):
-#        from arcgis.raster.functions import raster_collection_function
-#        raster_function_json = _local_function_template(69)
-#        return raster_collection_function(self, aggregation_function=raster_function_json)
-
-
-
-#    def mean(self):
-#        from arcgis.raster.functions import raster_collection_function
-#        raster_function_json = _local_function_template(68)
-#        return raster_collection_function(self, aggregation_function=raster_function_json)
-
-
-#    def majority(self):
-#        from arcgis.raster.functions import raster_collection_function
-#        raster_function_json = _local_function_template(66)
-#        return raster_collection_function(self, aggregation_function=raster_function_json)
-
-
-#    def sum(self):
-#        from arcgis.raster.functions import raster_collection_function
-#        raster_function_json = _local_function_template(74)
-#        return raster_collection_function(self, aggregation_function=raster_function_json)
-
-
-#    def mosaic(self, mosaic_method):
-#        return (super().mosaic_by(op=mosaic_method))
-
-#    def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
-#        from arcgis.raster.functions import arg_statistics, _pick
-#        if not isinstance(statistic_type, str) or statistic_type.upper() not in ['MAX', 'MIN', 'MEDIAN']:
-#            raise ValueError('invalid statistic_type value')
-
-#        statistic_type = statistic_type.upper()
-
-#        #statistics_type_code = {'MAX': 0, 'MIN': 1, 'MEDIAN': 2}
-
-#        if isinstance(quality_rc_or_list, RasterCollection):
-#            if quality_rc_or_list.count != self.count:
-#                raise ValueError('the quality collection must have same number of items with the calling collection')
-
-#            if 'Raster' in quality_rc_or_list.fields:
-#                rasters = quality_rc_or_list.get_field_values('Raster')
-#            #elif 'Path' in quality_rc_or_list.fields:
-#                #rasters = [arcpy.Raster(path) for path in quality_rc_or_list.getFieldValues('Path')]
-#        elif isinstance(quality_rc_or_list, list):
-#            if len(quality_rc_or_list) != self.count:
-#                raise ValueError('the quality raster list must have same number of items with the calling collection')
-#            rasters = quality_rc_or_list
-#        else:
-#            raise ValueError('invalid quality_rc parameter')
-
-#        arg_statistics_result = arg_statistics(rasters, stat_type=statistic_type)
-#        arg_statistics_result = arg_statistics_result + 1  # the index in argstatistics output counts from 0, but Pick counts from 1
-
-#        if 'Raster' in self.fields:
-#            rasters = self.get_field_values('Raster')
-#        elif 'Path' in self.fields:
-#            rasters = self.get_field_values('Path')
-#        else:
-#            raise ValueError('invalid raster collection')
-
-#        inp_list = [arg_statistics_result]
-#        for ele in rasters:
-#            inp_list.append(ele)
-#        return _pick(inp_list)
-
-#    def select_bands(self, band_ids_or_names):
-#        from arcgis.raster.functions import raster_collection_function, extract_band
-#        by_bandID_or_bandName = 0  # 1: by band id; 2: by band name
-#        if not (isinstance(band_ids_or_names, list) or isinstance(band_ids_or_names, str) or isinstance(
-#                band_ids_or_names, int)):
-#            raise TypeError('bands must be either a list, a single band ID or a single band Name')
-#        if isinstance(band_ids_or_names, list):
-#            for band in band_ids_or_names:
-#                if not (isinstance(band, int) or isinstance(band, str)):
-#                    raise TypeError('elements in band_ids_or_names must be integer or string type')
-#                if isinstance(band, int) and by_bandID_or_bandName == 0:
-#                    by_bandID_or_bandName = 1
-#                elif isinstance(band, int) and by_bandID_or_bandName == 2:
-#                    raise TypeError('elements in band_ids_or_names should either all be integer or string type')
-#                if isinstance(band, str) and by_bandID_or_bandName == 0:
-#                    by_bandID_or_bandName = 2
-#                elif isinstance(band, str) and by_bandID_or_bandName == 1:
-#                    raise TypeError('elements in band_ids_or_names should either all be integer or string type')
-
-#        elif isinstance(band_ids_or_names, str):
-#            by_bandID_or_bandName = 2
-#        else:
-#            by_bandID_or_bandName = 1
-
-#        rasters=self.get_field_values("Raster")
-#        from arcgis.raster.functions import extract_band
-#        if by_bandID_or_bandName == 1:
-#            new_rasters = [extract_band(raster, band_ids=band_ids_or_names) for raster in rasters]
-#        elif by_bandID_or_bandName == 2:
-#            new_rasters = [extract_band(raster, band_names=band_ids_or_names) for raster in rasters]
-
-#        in_raster_collection_dict = {}
-#        for field_name in self.fields:
-#            if field_name == 'Raster' or field_name == 'Path':
-#                continue
-#            in_raster_collection_dict[field_name] = self.get_field_values(field_name)
-
-#        return RasterCollection(new_rasters, in_raster_collection_dict)
-
-
-#    def map(self, func):
-#        if isinstance(func, _arcgis.raster.functions.RFT) or isinstance(func, dict):
-#            from arcgis.raster.functions import raster_collection_function
-#            layer = raster_collection_function(self, item_function=func)
-
-#            newcollection = self._clone_raster_collection()
-#            newcollection._fn = layer._fn
-#            newcollection._fnra = layer._fnra
-#            return newcollection   
-#        else:
-#            res = map(func, iter(self))
-#            rasters = []
-#            attribute_dict = defaultdict(list)
-#            for item in res:
-#                rasters.append(item['raster'])
-#                for key, value in item.items():
-#                    if key != 'raster':
-#                        attribute_dict[key].append(value)
-
-#            return RasterCollection(rasters, attribute_dict)
+        :returns: a Raster object
+
+        """
+        return self._ras_coll_engine_obj.max()
+
+    def min(self):
+        """
+        Returns a raster object in which each band contains the minimum pixel values for that 
+        band across all rasters in the raster collection.
+
+        For example, if there are ten raster items in the raster collection, each with four bands, 
+        the min method will calculate the minimum pixel value that occurs across all raster 
+        items for band 1, band 2, band 3, and band 4; a four-band raster is returned. 
+        Band numbers are matched between raster items using the band index, so the items 
+        in the raster collection must follow the same band order.
+        
+        :returns: a Raster object
+        """
+        return self._ras_coll_engine_obj.min()
+
+    def median(self):
+        """
+        Returns a raster object in which each band contains the median pixel values 
+        for that band across all rasters in the raster collection.
+
+        For example, if there are ten raster items in the raster collection, 
+        each with four bands, the median method will calculate the median pixel value 
+        that occurs across all raster items for band 1, for band 2, for band 3, 
+        and for band 4; a four-band raster is returned. Band numbers are matched 
+        between raster items using the band index, so the items in the raster 
+        collection must follow the same band order.
+        
+        :returns: a Raster object
+
+        """
+        return self._ras_coll_engine_obj.median()
+
+
+    def mean(self):
+        """
+        Returns a raster object in which each band contains the average pixel values 
+        for that band across all rasters in the raster collection.
+
+        For example, if there are ten raster items in the raster collection, 
+        each with four bands, the mean method will calculate the mean pixel value 
+        that occurs across all raster items for band 1, for band 2, for band 3, 
+        and for band 4; a four-band raster is returned. Band numbers are matched 
+        between raster items using the band index, so the items in the raster 
+        collection must follow the same band order.
+
+        :returns: a Raster object
+        
+        """
+        return self._ras_coll_engine_obj.mean()
+
+    def majority(self):
+        """
+        Returns a raster object in which each band contains the pixel 
+        value that occurs most frequently for that band across all 
+        rasters in the raster collection.
+
+        For example, if there are ten raster items in the raster collection, 
+        each with four bands, the majority method will determine the 
+        pixel value that occurs most frequently across all raster 
+        items for band 1, for band 2, for band 3, and for band 4; 
+        a four-band raster is returned. Band numbers are matched 
+        between raster items using the band index, so the items 
+        in the raster collection must follow the same band order.
+
+        :returns: a Raster object
+        
+        """
+        return self._ras_coll_engine_obj.majority()
+
+    def sum(self):
+        """
+        Returns a raster object in which each band contains the sum 
+        of pixel values for that band across all rasters in the raster collection.
+
+        For example, if there are ten raster items in the raster collection, 
+        each with four bands, the sum method will calculate the sum of pixel 
+        values for each pixel that occurs across all raster items for band 1, 
+        band 2, band 3, and band 4; a four-band raster is returned. 
+        Band numbers are matched between raster items using the band index, 
+        so the items in the raster collection must follow the same band order.
+
+        :returns: a Raster object
+        
+        """
+        return self._ras_coll_engine_obj.sum()
+
+    def mosaic(self, mosaic_method):
+        """
+        Returns a Raster object in which all items in a raster collection 
+        have been mosaicked into a single raster.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        mosaic_method                            Required string. The method used to handle overlapping areas 
+                                                 between adjacent raster items. Mosaic method options include the following:
+
+                                                   - FIRST -  Determines the pixel value from the first raster that is overlapping.
+
+                                                   - LAST - Determines the pixel value from the last raster that is overlapping.
+
+                                                   - MEAN - Determines the average pixel value from the two rasters that are overlapping.
+
+                                                   - MINIMUM - Determines the lower pixel value from the two raster datasets that are overlapping.
+
+                                                   - MAXIMUM - Determines the higher pixel value from the two raster datasets that are overlapping.
+
+                                                   - SUM - Determines the sum of pixel values from the two rasters that are overlapping.
+
+                                                    (The default value is First)
+        ====================================     ====================================================================
+
+        :returns: a Raster object
+        
+        """
+        return self._ras_coll_engine_obj.mosaic(mosaic_method=mosaic_method)
+
+    def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
+        """
+        Returns a Raster object in which all items in a raster collection have been 
+        mosaicked into a single raster based on a quality requirement.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        quality_rc_or_list                       Required. The raster collection or list of rasters to be used as quality indicators.
+
+                                                 For example, Landsat 8's Band 1 is the Coastal/Aerosol band, 
+                                                 which can be used to estimate the concentration of fine aerosol 
+                                                 particles such as smoke and haze in the atmosphere. For a 
+                                                 collection of Landsat 8 images, use the select_bands method to 
+                                                 return a RasterCollection object containing only Band 1 from 
+                                                 each raster item. The number of raster items in the 
+                                                 quality_rc_or_list must match the number of raster items 
+                                                 in the raster collection to be mosaicked.
+        ------------------------------------     --------------------------------------------------------------------
+        statistic_type                           Required string. The statistic used to compare the input collection 
+                                                 or list of quality rasters.
+
+                                                    MAX - The highest pixel value in the input quality rasters will 
+                                                          be the pixel value in the output raster. This is the default.
+
+                                                    MEDIAN - The median pixel value in the input quality rasters 
+                                                             will be the pixel value in the output raster.
+
+                                                    MIN - The minimum pixel value in the input quality rasters 
+                                                          will be the pixel value in the output raster.
+
+                                                    For example, to mosaic the input raster collection such that 
+                                                    those with the lowest aerosol content are on top, use the MIN statistic type.
+        ====================================     ====================================================================
+
+        :returns: a Raster object
+
+        """
+        return self._ras_coll_engine_obj.quality_mosaic(quality_rc_or_list=quality_rc_or_list, statistic_type=statistic_type)
+
+    def select_bands(self, band_ids_or_names):
+        """
+        Selects a list of bands from every raster item in a raster collection and 
+        returns a raster collection that contains raster items with only the selected bands.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        band_ids_or_names                        Required. The names or index numbers of bands to be included in 
+                                                 the returned raster items. This can be specified with a single string, 
+                                                 integer, or a list of strings or integers.
+        ====================================     ====================================================================
+
+        :returns: a RasterCollection that contains raster items with only the selected bands.
+        
+        """
+        return self._ras_coll_engine_obj.select_bands(band_ids_or_names=band_ids_or_names)
+
+
+    def map(self, func):
+        """
+        Maps a Python function over a raster collection.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        func                                     Required. The Python function to map over the raster collection. 
+                                                 The return value of the function must be a dictionary in which one 
+                                                 of the keys is raster. For example, 
+                                                 {"raster": output_raster_object, "name": input_item_name["name"]}.
+        ====================================     ====================================================================
+
+        :returns: a new RasterCollection created from the existing RasterCollection after applying the func on each item.
+        
+        """
+        return self._ras_coll_engine_obj.map(func=func)
+
+
+    def _as_df(self, result_offset=None, result_record_count=None, return_all_records=False):
+        """
+        Returns the RasterCollection object as a dataframe
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        result_offset                            optional integer. This option fetches query results by skipping a
+                                                 specified number of records. The query results start from the next
+                                                 record (i.e., resultOffset + 1). The Default value is None.
+
+                                                 only honoured when input is an image service
+        ------------------------------           --------------------------------------------------------------------
+        result_record_count                      optional integer. This option fetches query results up to the
+                                                 resultRecordCount specified. When resultOffset is specified and this
+                                                 parameter is not, image layer defaults to maxRecordCount. The
+                                                 maximum value for this parameter is the value of the layer's
+                                                 maxRecordCount property.
+                                                 max_allowable_offset - This option can be used to specify the
+                                                 max_allowable_offset to be used for generalizing geometries returned
+                                                 by the query operation. The max_allowable_offset is in the units of
+                                                 the out_sr. If outSR is not specified, max_allowable_offset is
+                                                 assumed to be in the unit of the spatial reference of the Layer.
+        ------------------------------           --------------------------------------------------------------------
+        return_all_records                       Optional boolean. To return all records
+        ====================================     ====================================================================
+
+        :returns: a dataframe object
+
+        """
+        
+        return self._ras_coll_engine_obj._as_df(result_offset=result_offset, result_record_count=result_record_count, return_all_records=return_all_records)
+
+    #def display_image(self, item=None):
+    #    if not raster.use_server:
+    #        raise RuntimeError('Not available in non server env')
+    #    else:
+    #        if item is not None:
+    #            newcollection = self._clone_raster_collection()
+    #            newcollection._mosaic_rule = {
+    #                "mosaicMethod": "esriMosaicLockRaster",
+    #                "lockRasterIds": [item],
+    #                "ascending": True,
+    #                "mosaicOperation": "MT_FIRST"
+    #            }
+    #        else:
+    #            newcollection = self
+
+    #        bbox_sr = None
+    #        if 'spatialReference' in newcollection.extent:
+    #            bbox_sr = newcollection.extent['spatialReference']
+    #        if not newcollection._uses_gbl_function:
+    #            byte_array = (newcollection.export_image(bbox=newcollection._extent, bbox_sr=bbox_sr, size=[1200, 450], export_format='jpeg', f='image'))
+    #            try:
+    #                from IPython.display import Image
+    #                return Image(byte_array)
+    #            except:
+    #                return byte_array
+
+    #def _clone_raster_collection(self):
+    #    return self._ras_coll_engine_obj.filter_by(where_clause=where_clause, query_geometry_or_extent=query_geometry_or_extent)
+
+    #def _object_id_name(self):
+    #    for ele in self.properties.fields:
+    #        if ("type" in ele.keys()) and ele["type"]=="esriFieldTypeOID":
+    #            return ele["name"]
+
+    def _repr_html_(self):
+        return self._ras_coll_engine_obj._repr_html_()
+
+    def _repr_jpeg_(self):
+        return None
+
+class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
+    def __init__(self, rasters, attribute_dict=None,where_clause=None, query_geometry=None, engine=None, gis=None):
+        ImageryLayer.__init__(self, str(rasters), gis=gis)
+
+        self._mosaic_rule = None
+        if gis is not None:
+            self._gis = gis
+        else:
+            self._gis=None
+        if where_clause is None:
+            self._where_clause = '1=1'
+        else:
+            self._where_clause = where_clause
+        if query_geometry is None:
+            self._spatial_filter = None
+        else:
+            self._spatial_filter = query_geometry
+
+        self._attribute_dict = attribute_dict
+
+
+        self._local=False
+        #self._do_not_hydrate=False
+        self._rasters=rasters
+        #self._ras_coll_engine=_ArcpyRasterCollection
+        #self._engine=_ArcpyRaster
+        #self._engine_obj=_ArcpyRaster(rasters, False, gis)
+        self._ras_coll_engine = engine
+        import arcpy
+        try:
+            arcpy.CheckOutExtension("ImageAnalyst")
+            arcpy.CheckOutExtension("Spatial")
+        except:
+            pass
+        if isinstance(rasters, str):
+            if ("https://"  in rasters or "http://"  in rasters): #To provide access to secured service
+                if self._token is not None:
+                    self._raster_collection = arcpy.ia.RasterCollection(rasters+"?token="+self._token, attribute_dict)
+                else:
+                    self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
+            else:
+                self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
+        self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
+        self._df=self._as_df()
+
+
+    @property
+    def count(self):
+        count = len(self._df.index)            
+        return count
+
+    @property
+    def fields(self):
+        fields = self._raster_collection.fields
+        return fields
+
+    @property
+    def _rasters_list(self):
+        ras_list=self.get_field_values("Raster")
+        return ras_list
+
+    def __iter__(self):
+        return iter(self._df.to_dict('records', into=dict))
+
+
+    def __next__(self):
+        return self._df.to_dict('records', into=dict)[item]
+
+
+    def __len__(self):
+        return (self._df.to_dict('records', into=dict)).__len__
+
+    def __getitem__(self, item):
+        return self._df.to_dict('records', into=dict)[item]
+
+    #@property
+    #def count(self):
+    #    count = self._raster_collection.count            
+    #    return count
+
+    #@property
+    #def fields(self):
+    #    fields = self._raster_collection.fields
+    #    return fields
+
+    #@property
+    #def _rasters_list(self):
+    #    ras_list=self.get_field_values("Raster")
+    #    return ras_list
+
+    #def __iter__(self):
+    #    return(self._raster_collection.__iter__())
+
+
+    #def __next__(self):
+    #    return (self._raster_collection.__next__())
+
+
+    #def __len__(self):
+    #    return (self._raster_collection.__len__())
+
+
+    #def __getitem__(self, item):
+    #    return (self._raster_collection.__getitem__(item))
+
+
+    def filter_by(self, where_clause="", query_geometry_or_extent=None, raster_query=""):
+        newcollection = self._clone_raster_collection()
+        if isinstance(query_geometry_or_extent, _arcgis.geometry.Geometry):
+            query_geometry_or_extent = query_geometry_or_extent.as_arcpy
+        if where_clause is None:
+            where_clause = ""
+        if raster_query is None:
+            raster_query = ""
+        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filter(where_clause=where_clause, query_geometry_or_extent=query_geometry_or_extent, raster_query=raster_query)
+        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj._as_df()
+        return newcollection
+
+
+
+
+    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None):
+        newcollection = self._clone_raster_collection()
+        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByTime(start_time=start_time, end_time=end_time, time_field_name=time_field_name)
+        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj._as_df()
+        return newcollection
+
+
+    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None):
+        """
+        filter the raster collection by a calendar_field and its start and end value (inclusive). i.e. if you would like
+        to select all the rasters that have the time stamp on Monday, specify calendar_field as 'DAY_OF_WEEK' and put start and
+        end to 1.
+
+        :param calendar_field: string, one of 'YEAR', 'MONTH', 'QUARTER', 'WEEK_OF_YEAR', 'DAY_OF_YEAR', 'DAY_OF_MONTH',
+         'DAY_OF_WEEK', 'HOUR'
+        :param start: integer, the start time. inclusive.
+        :param end: integer, default is None, if default is used, the end is set equal to start. inclusive.
+        :param time_field_name: string, the time field anme, default is 'StdTime'.
+        :param date_time_format: the time format that is used to format the time field values. Please ref the python
+                                date time standard for this argument. https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+                                Default is None and this means using the Pro standard time format '%Y-%m-%dT%H:%M:%S'
+                                and ignoring the following sub-second.
+
+        :return: a filtered raster collection.
+        """
+        # validation
+        newcollection = self._clone_raster_collection()
+        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByTime(self._raster_collection.filterByCalendarRange(calendar_field=calendar_field, start=start, end=end,time_field_name=time_field_name,date_time_format=date_time_format))
+        bnewcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj._as_df()
+        return newcollection
+    
+    def filter_by_geometry(self, query_geometry_or_extent):
+        newcollection = self._clone_raster_collection()
+        if isinstance(query_geometry_or_extent, _arcgis.geometry.Geometry):
+            query_geometry_or_extent = query_geometry_or_extent.as_arcpy
+        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByGeometry(query_geometry_or_extent=query_geometry_or_extent)
+        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj._as_df()
+        return newcollection
+
+
+    def filter_by_attribute(self, field_name, operator, field_values):
+        newcollection = self._clone_raster_collection()
+        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByAttribute(field_name=field_name, operator=operator,field_values=field_values)
+        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj._as_df()
+        return newcollection
+
+    def filter_by_raster_property(self, property_name, operator, property_values):
+        newcollection = self._clone_raster_collection()
+        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByRasterProperty(property_name=property_name, operator=operator, property_values=property_values)
+        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj._as_df()
+        return newcollection
+
+    def sort(self, field_name, ascending=True):
+        newcollection = self._clone_raster_collection()
+        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.sort(field_name=field_name, ascending=ascending)
+        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj._as_df()
+        return newcollection
+    
+
+    def get_field_values(self, field_name, max_count=0):
+        return self._raster_collection.getFieldValues(field_name=field_name, max_count=max_count)
+
+
+    def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
+        return Raster(self._raster_collection.toMultidimensionalRaster(variable_field_name=variable_field_name, dimension_field_names=dimension_field_names))
+
+    def max(self):
+        return Raster(self._raster_collection.max())
+
+
+    def min(self):
+        return Raster(self._raster_collection.min())
+
+
+    def median(self):
+        return Raster(self._raster_collection.median())
+
+    def mean(self):
+        return Raster(self._raster_collection.mean())
+
+    def majority(self):
+        return Raster(self._raster_collection.majority())
+
+    def sum(self):
+        return Raster(self._raster_collection.sum())
+
+    def mosaic(self, mosaic_method):
+        return Raster(self._raster_collection.mosaic(mosaic_method=mosaic_method))
+
+    def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
+        return Raster(self._raster_collection.quality_mosaic(quality_rc_or_list=quality_rc_or_list,statistic_type=statistic_type))
+
+    def select_bands(self, band_ids_or_names):
+        return RasterCollection(self._raster_collection.selectBands(band_ids_or_names))
+
+
+    def map(self, func):
+        res = map(func, iter(self))
+        rasters = []
+        attribute_dict = defaultdict(list)
+        for item in res:
+            rasters.append(item['raster'])
+            for key, value in item.items():
+                if key != 'raster':
+                    attribute_dict[key].append(value)
+
+        return RasterCollection(rasters, attribute_dict)                
           
 
-#    def as_df(self, result_offset=None, result_record_count=None, return_all_records=False):
-#        import pandas as pd
-#        df=super().query(where=self._where_clause,
-#                        geometry_filter=self._spatial_filter,
-#                        object_ids=self._object_ids,
-#                        order_by_fields=self._order_by_fields,
-#                        return_all_records=return_all_records,
-#                        result_offset=result_offset,
-#                        result_record_count=result_record_count,
-#                        return_geometry=True,
-#                        as_df=True,
-#                        raster_query=self._raster_query)
-#        date_field_names=[]
-#        if len(df.index)>0:
-#            for ele in self.properties.fields:
-#                if ("type" in ele.keys()) and ele["type"]=="esriFieldTypeDate":
-#                    if "name" in ele.keys():
-#                        date_field_names.append(ele["name"])
-#            for ele in date_field_names:
-#                df[ele] = pd.to_datetime(df[ele], unit='ms').dt.strftime('%Y-%m-%dT%H:%M:%S')
-
-#            #pos = self.url.find("/ImageServer",0)
-#            #for i in range (0, len(df.index)):
-#                #df.loc[i, "Raster"] = self.url[0:(pos+12)]+"/"+str(df["OBJECTID"].loc[i])+self.url[(pos+12):]
-
-#            from arcgis.raster.functions import raster_item
-#            oid_name=self._object_id_name()
-#            for i in range (0, len(df.index)):
-#                #self._do_not_hydrate=True
-#                df.loc[i, "Raster"] = raster_item(self,int(df[oid_name].loc[i]))
-#                df.loc[i, "Raster"].token = self._token
-#                df.loc[i, "Raster"]._do_not_hydrate = True
-
-#        return df
-
-#    def display_image(self, item=None):
-#        if item is not None:
-#            newcollection = self._clone_raster_collection()
-#            newcollection._mosaic_rule = {
-#                "mosaicMethod": "esriMosaicLockRaster",
-#                "lockRasterIds": [item],
-#                "ascending": True,
-#                "mosaicOperation": "MT_FIRST"
-#            }
-#        else:
-#            newcollection = self
-
-#        bbox_sr = None
-#        if 'spatialReference' in newcollection.extent:
-#            bbox_sr = newcollection.extent['spatialReference']
-#        if not newcollection._uses_gbl_function:
-#            byte_array = (newcollection.export_image(bbox=newcollection._extent, bbox_sr=bbox_sr, size=[1200, 450], export_format='jpeg', f='image'))
-#            try:
-#                from IPython.display import Image
-#                return Image(byte_array)
-#            except:
-#                return byte_array
-
-#    def _clone_raster_collection(self):
-#        new_raster_collection = RasterCollection(self._url, self._attribute_dict, self._where_clause, self._spatial_filter, self._ras_coll_engine, self._gis)
-
-#        new_raster_collection._lazy_token = self._token
-#        new_raster_collection._fn = self._fn
-#        new_raster_collection._fnra = self._fnra
-#        new_raster_collection._mosaic_rule = self._mosaic_rule
-#        new_raster_collection._extent = self._extent
-#        new_raster_collection._raster_query=self._raster_query
-
-#        return new_raster_collection
-
-#    def _object_id_name(self):
-#        for ele in self.properties.fields:
-#            if ("type" in ele.keys()) and ele["type"]=="esriFieldTypeOID":
-#                return ele["name"]
-
-#    def _repr_html_(self):
-#        return self._df._repr_html_()
-
-#    def _repr_jpeg_(self):
-#        return None
-
-#def _get_shape(ele):
-#    boundary=Geometry(ele._engine_obj.query_boundary()["shape"])
-#    if isinstance(boundary, Envelope):
-#        boundary=boundary.polygon
-#    return boundary
-
-#class _LocalRasterCollection(ImageryLayer, RasterCollection):
-#    def __init__(self, rasters=None, attribute_dict=None, where_clause=None, query_geometry=None, engine=None, gis=None):
-#        #self._remote = raster.use_server_engine
-#        ImageryLayer.__init__(self, rasters, gis=gis)
-#        self._mosaic_rule = None
-#        if gis is not None:
-#            self._gis = gis
-#        else:
-#            self._gis=None
-#        if where_clause is None:
-#            self._where_clause = '1=1'
-#        else:
-#            self._where_clause = where_clause
-#        if query_geometry is None:
-#            self._spatial_filter = None
-#        else:
-#            self._spatial_filter = query_geometry
-
-#        #self._attribute_dict = attribute_dict
-#        self._rasters=rasters
-#        self._object_ids=None
-#        self._order_by_fields=None
-#        self._is_multidimensional=False
-#        #self._do_not_hydrate=False
-#        self._engine=_ImageServerRaster
-#        self._engine_obj=_ImageServerRaster(rasters, False, gis)
-
-#        self._ras_coll_engine=engine
-#       #self._engine=_ImageServerRaster
-#        #self._engine_obj=_ImageServerRaster(rasters, False, gis)
-#        ids = list(range(1,len(rasters)+1))
-#        arcgis_rasters=[]
-#        if attribute_dict is not None:
-#            if not isinstance(attribute_dict, dict):
-#                raise TypeError('attribute_dict must be dict type')
-
-#        shapes=[]
-#        for ele in rasters:
-#            if not isinstance(ele, Raster):
-#                ele = Raster(ele)
-#                ele._do_not_hydrate = True
-#            arcgis_rasters.append(ele)
-#        data = {"Raster":arcgis_rasters, "ID":ids}
-
-#        if "SHAPE" not in attribute_dict.keys():
-#            if not isinstance(ele._engine_obj, _ArcpyRaster):
-#                import concurrent.futures
-#                with concurrent.futures.ThreadPoolExecutor(max_workers=len(rasters)) as executor:
-    
-#                    future_to_url = (executor.submit(_get_shape,ele) for ele in arcgis_rasters)
-#                    for future in concurrent.futures.as_completed(future_to_url):
-#                        shapes.append(future.result())
-
-#            if shapes !=[]:
-#                data.update({"SHAPE":shapes})
-#        data.update(attribute_dict)
-#        self._attribute_dict = data
-#        import pandas as pd
-#        df_obj = pd.DataFrame(data)
-#        self._df = df_obj
-
-
-#    @property
-#    def count(self):
-#        count = len(self._df.index)            
-#        return count
-
-#    @property
-#    def fields(self):
-#        return tuple(self._df.columns.tolist())
-
-#    @property
-#    def _rasters_list(self):
-#        ras_list=self.get_field_values("Raster")
-#        return ras_list
-
-#    def __iter__(self):
-#        return iter(self._df.to_dict('records', into=dict))
-
-
-#    def __next__(self):
-#        return self._df.to_dict('records', into=dict)[item]
-
-
-#    def __len__(self):
-#        return (self._df.to_dict('records', into=dict)).__len__
-
-#    def __getitem__(self, item):
-#        return self._df.to_dict('records', into=dict)[item]
-
-
-#    def filter_by(self, where_clause=None, query_geometry_or_extent=None, raster_query=None):        
-#        newcollection = self._clone_raster_collection()
-#        if where_clause is not None:
-#            if "LIKE" in where_clause or "NOT LIKE" in where_clause:
-#                raise RuntimeError("Local RasterCollection does not support LIKE or NOT LIKE in where_clause.")
-#            newcollection._ras_coll_engine_obj._df = self._df.query(where_clause)
-#        if query_geometry_or_extent is not None:
-#            newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj.filter_by_geometry(query_geometry_or_extent).as_df()
-#        if raster_query is not None:
-#            props_list=[]
-#            for ele in self:
-#                props_list.append(ele["Raster"].properties)
-#            import pandas as pd
-#            new_pd=pd.DataFrame.from_dict(props_list)
-#            df=self.as_df()
-#            frames=[df, new_pd]
-#            result = pd.concat(frames, axis=1)
-#            result.query(raster_query)
-#            #newcollection=self.filter_by_attribute("ID", "contains", list(result['ID']) )
-#            filtered_rasters = []
-#            attribute_dict = defaultdict(list)
-
-#            for item in iter(self):
-#                raster = self._get_raster_from_item(item)
-
-#                field_value = item["ID"]
-#                selected = False
-#                selected = (field_value in list(result['ID']))
-#                if selected:
-#                    filtered_rasters.append(raster)
-#                    for key, value in item.items():
-#                        if key not in ['Raster', 'Path']:
-#                            attribute_dict[key].append(value)
-#            newcollection= RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
-#        return newcollection
-
-
-#    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None):
-#        if date_time_format is None:
-#            if start_time:
-#                start_time = datetime.datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S')
-#            if end_time:
-#                end_time = datetime.datetime.strptime(end_time, '%Y-%m-%dT%H:%M:%S')
-#        else:
-#            if start_time:
-#                start_time = datetime.datetime.strptime(start_time, date_time_format)
-#            if end_time:
-#                end_time = datetime.datetime.strptime(end_time, date_time_format)
-
-#        filtered_rasters = []
-#        attribute_dict = defaultdict(list)
-
-#        for item in iter(self):
-#            raster = self._get_raster_from_item(item)
-
-#            if date_time_format is None:
-#                date_time = datetime.datetime.strptime(item[time_field_name], '%Y-%m-%dT%H:%M:%S')
-#            else:
-#                date_time = datetime.datetime.strptime(item[time_field_name], date_time_format)
-
-#            if start_time and date_time < start_time:
-#                continue
-#            elif end_time and date_time > end_time:
-#                continue
-#            else:
-#                filtered_rasters.append(raster)
-#                for key, value in item.items():
-#                    if key not in ['Raster', 'Path']:
-#                        attribute_dict[key].append(value)
-
-#        if not filtered_rasters:
-#            warnings.warn(
-#                "Warning: the output is None because no items have raster properties satisfying the query")
-
-#        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
-
-
-#    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None):
-#        """
-#        filter the raster collection by a calendar_field and its start and end value (inclusive). i.e. if you would like
-#        to select all the rasters that have the time stamp on Monday, specify calendar_field as 'DAY_OF_WEEK' and put start and
-#        end to 1.
-
-#        :param calendar_field: string, one of 'YEAR', 'MONTH', 'QUARTER', 'WEEK_OF_YEAR', 'DAY_OF_YEAR', 'DAY_OF_MONTH',
-#         'DAY_OF_WEEK', 'HOUR'
-#        :param start: integer, the start time. inclusive.
-#        :param end: integer, default is None, if default is used, the end is set equal to start. inclusive.
-#        :param time_field_name: string, the time field anme, default is 'StdTime'.
-#        :param date_time_format: the time format that is used to format the time field values. Please ref the python
-#                                date time standard for this argument. https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
-#                                Default is None and this means using the Pro standard time format '%Y-%m-%dT%H:%M:%S'
-#                                and ignoring the following sub-second.
-
-#        :return: a filtered raster collection.
-#        """
-#        # validation
-#        filtered_rasters = []
-#        attribute_dict = defaultdict(list)
-
-#        for item in iter(self):
-#            raster = self._get_raster_from_item(item)
-
-#            if date_time_format is None:
-#                date_time = datetime.datetime.strptime(item[time_field_name], '%Y-%m-%dT%H:%M:%S')
-#            else:
-#                date_time = datetime.datetime.strptime(item[time_field_name], date_time_format)
-
-#            selected = False
-#            if calendar_field == 'YEAR':
-#                if start <= date_time.year <= end:
-#                    selected = True
-#            elif calendar_field == 'MONTH':
-#                if start <= date_time.month <= end:
-#                    selected = True
-#            elif calendar_field == 'QUARTER':
-#                if start-1 <= (date_time.month - 1)//3 <= end-1:
-#                    selected = True
-#            elif calendar_field == 'WEEK_OF_YEAR':
-#                week_number = int(date_time.strftime('%U'))
-#                if start <= week_number+1 <= end:
-#                    selected = True
-#            elif calendar_field == 'DAY_OF_YEAR':
-#                yday = date_time.timetuple().tm_yday
-#                if start <= yday <= end:
-#                    selected = True
-#            elif calendar_field == 'DAY_OF_MONTH':
-#                mday = date_time.timetuple().tm_mday
-#                if start <= mday <= end:
-#                    selected = True
-#            elif calendar_field == 'DAY_OF_WEEK':
-#                wday = date_time.isoweekday()
-#                if start<= wday%7+1<=end:
-#                    selected = True
-#            elif calendar_field == 'HOUR':
-#                hour = date_time.timetuple().tm_hour
-#                if start <= hour <= end:
-#                    selected = True
-
-#            if selected is True:
-#                filtered_rasters.append(raster)
-#                for key, value in item.items():
-#                    if key not in ['Raster', 'Path']:
-#                        attribute_dict[key].append(value)
-
-#        if not filtered_rasters:
-#            warnings.warn(
-#                "Warning: the output is None because no items have raster properties satisfying the query")
-
-#        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
-
-#    def filter_by_geometry(self, query_geometry_or_extent):
-#        filtered_rasters = []
-#        attribute_dict = defaultdict(list)
-
-#        for item in iter(self):
-#            raster = self._get_raster_from_item(item)
-
-#            field_value = item["SHAPE"]
-#            if query_geometry_or_extent is not None:
-#                query_geometry_or_extent = _get_geometry(query_geometry_or_extent)
-#            selected = False
-#            selected = query_geometry_or_extent.contains(field_value, 'BOUNDARY')
-
-#            if selected and isinstance(selected, bool):
-#                filtered_rasters.append(raster)
-#                for key, value in item.items():
-#                    if key not in ['Raster', 'Path']:
-#                        attribute_dict[key].append(value)
-
-#        if not filtered_rasters:
-#            warnings.warn(
-#                "Warning: the output is None because no items have raster properties satisfying the query")
-#        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
-
-#    def filter_by_raster_property(self, property_name, operator, property_values):
-#        values = property_values
-#        if not isinstance(values, str) and not isinstance(values, list):
-#            raise TypeError('values must be string of list of string')
-
-#        if isinstance(values, list):
-#            for v in values:
-#                if not isinstance(v, str):
-#                    raise TypeError('values must be string of list of string')
-
-#        filtered_rasters = []
-#        attribute_dict = defaultdict(list)
-
-#        for item in iter(self):
-#            raster = self._get_raster_from_item(item)
-
-#            raster_properties = raster.properties
-#            if property_name not in raster_properties:
-#                continue
-#            property_value = raster.get_property(property_name)
-
-#            operator = operator.lower()
-#            selected = False
-#            if operator == 'equals':
-#                selected = (property_value == values)
-#            elif operator == 'less_than':
-#                selected = (property_value < values)
-#            elif operator == 'greater_than':
-#                selected = (property_value > values)
-#            elif operator == 'not_equals':
-#                selected = (property_value != values)
-#            elif operator == 'not_less_than':
-#                selected = (property_value >= values)
-#            elif operator == 'not_greater_than':
-#                selected = (property_value <= values)
-#            elif operator == 'starts_with':
-#                selected = (property_value.startswith(values))
-#            elif operator == 'ends_with':
-#                selected = (property_value.endswith(values))
-#            elif operator == 'not_starts_with':
-#                selected = (not property_value.startswith(values))
-#            elif operator == 'not_ends_with':
-#                selected = (not property_value.endswith(values))
-#            elif operator == 'contains':
-#                selected = (values in property_value)
-#            elif operator == 'not_contains':
-#                selected = (values not in property_value)
-#            elif operator == 'in':
-#                if not isinstance(values, list):
-#                    raise TypeError("Invalid values. Notet that values must be a list when operator is 'in'")
-#                selected = (property_value in values)
-#            elif operator == 'not_in':
-#                if not isinstance(values, list):
-#                    raise TypeError("Invalid values. Notet that values must be a list when operator is 'not_in'")
-#                selected = (property_value not in values)
-#            else:
-#                raise ValueError('invalid operator')
-
-#            if selected:
-#                filtered_rasters.append(raster)
-#                for key, value in item.items():
-#                    if key not in ['Raster', 'Path']:
-#                        attribute_dict[key].append(value)
-
-#        if not filtered_rasters:
-#            warnings.warn("Warning: the output is None because no items have raster properties satisfying the query")
-#        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
-
-#    def filter_by_attribute(self, field_name, operator, field_values):
-#        filtered_rasters = []
-#        attribute_dict = defaultdict(list)
-
-#        for item in iter(self):
-#            raster = self._get_raster_from_item(item)
-
-#            field_value = item[field_name]
-
-#            selected = False
-#            if operator == 'equals':
-#                selected = (field_value == field_values)
-#            elif operator == 'less_than':
-#                selected = (field_value < field_values)
-#            elif operator == 'greater_than':
-#                selected = (field_value > field_values)
-#            elif operator == 'not_equals':
-#                selected = (field_value != field_values)
-#            elif operator == 'not_less_than':
-#                selected = (field_value >= field_values)
-#            elif operator == 'not_greater_than':
-#                selected = (field_value <= field_values)
-#            elif operator == 'starts_with':
-#                selected = (field_value.startswith(field_values))
-#            elif operator == 'ends_with':
-#                selected = (field_value.endswith(field_values))
-#            elif operator == 'not_starts_with':
-#                selected = (not field_value.startswith(field_values))
-#            elif operator == 'not_ends_with':
-#                selected = (not field_value.endswith(field_values))
-#            elif operator == 'contains':
-#                selected = (field_values in field_value)
-#            elif operator == 'not_contains':
-#                selected = (field_values not in field_value)
-#            elif operator == 'in':
-#                if not isinstance(field_values, list):
-#                    raise TypeError(
-#                        "Invalid field_values. Notet that field_values must be a list when operator is 'in'")
-#                selected = (field_value in field_values)
-#            elif operator == 'not_in':
-#                if not isinstance(field_values, list):
-#                    raise TypeError(
-#                        "Invalid field_values. Notet that field_values must be a list when operator is 'not_in'")
-#                selected = (field_value not in field_values)
-#            else:
-#                raise ValueError('invalid operator')
-
-#            if selected:
-#                filtered_rasters.append(raster)
-#                for key, value in item.items():
-#                    if key not in ['Raster', 'Path']:
-#                        attribute_dict[key].append(value)
-
-#        if not filtered_rasters:
-#            warnings.warn(
-#                "Warning: the output is None because no items have raster properties satisfying the query")
-#        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
-
-
-#    def sort(self, field_name, ascending=True):
-#        newcollection = self._clone_raster_collection()
-#        newcollection._ras_coll_engine_obj._df = self._df.sort_values(by=field_name, ascending=ascending)
-
-#        return newcollection
-
-
-#    def get_field_values(self, field_name, max_count=0):
-#        if max_count ==0:
-#            max_count = self.count
+    def _as_df(self, result_offset=None, result_record_count=None, return_all_records=False):
+        import pandas as pd
+        data = {}
+        value_rasters=[]
+        value_geometries=[]
+        for field in self.fields:
+            try:
+                value = self.get_field_values(field)
+                if field=="Raster":
+                    for ele in value:
+                        value_rasters.append(Raster(ele))
+                    data[field] = value_rasters
+                elif field=="Shape":
+                    for ele in value:
+                        value_geometries.append(Geometry(ele.JSON))
+                    data["Shape"] = value_geometries
+                else:
+                    data[field] = self.get_field_values(field)
+            except:
+                continue
+        return pd.DataFrame(data=data)
+
+    def display_image(self, item=None):
+        raise RuntimeError('Not available in non server env')
+
+    def _clone_raster_collection(self):
+        new_raster_collection = RasterCollection(self._rasters, self._attribute_dict, self._where_clause, self._spatial_filter, self._ras_coll_engine, self._gis)
+        new_raster_collection._fn = self._fn
+        new_raster_collection._fnra = self._fnra
+        new_raster_collection._mosaic_rule = self._mosaic_rule
+        new_raster_collection._extent = self._extent
+        return new_raster_collection
+
+    def _object_id_name(self):
+        for ele in self.properties.fields:
+            if ("type" in ele.keys()) and ele["type"]=="esriFieldTypeOID":
+                return ele["name"]
+
+    def _repr_html_(self):
+        return self._df._repr_html_()
+
+
+    def _repr_jpeg_(self):
+        return None
+
+
+class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
+    def __init__(self, rasters=None, attribute_dict=None, where_clause=None, query_geometry=None, engine=None, gis=None):
+        #self._remote = raster.use_server_engine
+        ImageryLayer.__init__(self, rasters, gis=gis)
+        self._mosaic_rule = None
+        if gis is not None:
+            self._gis = gis
+        else:
+            self._gis=None
+        if where_clause is None:
+            self._where_clause = '1=1'
+        else:
+            self._where_clause = where_clause
+        if query_geometry is None:
+            self._spatial_filter = None
+        else:
+            self._spatial_filter = query_geometry
+        self._rasters=rasters
+        self._attribute_dict = attribute_dict
+
+        self._object_ids=None
+        self._raster_query=None
+        self._order_by_fields=None
+        
+        self._do_not_hydrate=False
+        #self._ras_coll_engine=_ImageServerRasterCollection
+        self._is_multidimensional=False
+        self._engine=_ImageServerRaster
+        self._engine_obj=_ImageServerRaster(rasters, False, gis)
+        self._ras_coll_engine = engine
+        self._df=None
+
+        if str(self.properties['capabilities']).lower().find('catalog') == -1:
+            raise RuntimeError("Image Service should have 'Catalog' capability to create a RasterCollection object.")
+        self._df=self._as_df()
+        self._start=0
+        self._lower_limit=self.properties.maxRecordCount
+        self._upper_limit=0
+        self._max_rec_count=self.properties.maxRecordCount
+        self._rep_df=None
+        self._order_by_fields=self._object_id_name() +" ASC"
+        self._count=None
+
+
+
+    @property
+    def count(self):
+        if self._count is None:
+            count = self.query(where=self._where_clause, geometry_filter=self._spatial_filter,
+                                        object_ids=self._object_ids, return_count_only=True, raster_query=self._raster_query)   
+            self._count=count
+        else:
+            count=self._count
+        return count
+
+    @property
+    def fields(self):
+        return tuple(self._df.columns.tolist())
+
+    @property
+    def _rasters_list(self):
+        ras_list=self.get_field_values("Raster")
+        return ras_list
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            item = self[self._start]
+        except IndexError:
+
+            self._start=0
+            raise StopIteration
+        self._start += 1
+        return item
+
+    def __len__(self):
+        return (self._df.to_dict('records', into=dict)).__len__
+
+    def __getitem__(self, item):
+        if item<self._max_rec_count:
+            return self._df.to_dict('records', into=dict)[item]
+        offset=self._max_rec_count
+        i=2            
+        while(item>=offset):
+            offset=self._max_rec_count*i
+            i=i+1
+        offset=offset-self._max_rec_count
+        if item>=self._upper_limit or item<self._lower_limit:
+            self._rep_df=self._as_df(result_offset=offset, result_record_count=self._max_rec_count)
+            self._upper_limit=offset+self._max_rec_count
+            self._lower_limit=offset
+        return(self._rep_df.to_dict('records', into=dict))[item-offset]
+
+    def filter_by(self, where_clause=None, query_geometry_or_extent=None, raster_query=None):
+            from arcgis.geometry.filters import intersects
+            geometry_filter=None
+            if query_geometry_or_extent is not None:
+                query_geometry_or_extent = _get_geometry(query_geometry_or_extent)
+                geometry_filter = intersects(query_geometry_or_extent)
+            #newcollection = self._clone_raster_collection()
+            if where_clause is not None:
+                where_clause = self._where_clause+" AND ("+ where_clause+")"
+            else:
+                where_clause=self._where_clause
+
+
+            if raster_query is not None and self._raster_query is not None:
+                raster_query = self._raster_query+" AND ("+ raster_query+")"
+            elif raster_query is None:
+                raster_query=self._raster_query
+            oids = super().query(where=where_clause,
+                                 geometry_filter=geometry_filter,
+                                 return_ids_only=True,
+                                 raster_query=raster_query)['objectIds']
+
+            newcollection = RasterCollection(rasters=self._url, attribute_dict=self._attribute_dict, where_clause=where_clause, query_geometry=geometry_filter, gis=self._gis)
+            newcollection._ras_coll_engine_obj._mosaic_rule = {
+                "mosaicMethod": "esriMosaicLockRaster",
+                "lockRasterIds": oids,
+                "ascending": True,
+                "mosaicOperation": "MT_FIRST"
+            }
+            newcollection._ras_coll_engine_obj._raster_query=raster_query
+            newcollection._ras_coll_engine_obj._object_ids=oids
+            #newcollection._where_clause=where_clause
+            #newcollection._spatial_filter=geometry_filter
+            #newcollection._filtered =True
+            newcollection._ras_coll_engine_obj._df= newcollection._as_df()
+            return newcollection
+
+
+    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None):
+        if time_field_name not in self.fields:
+            raise ValueError('the time_field_name is not existed. Please input a valid name for time field.')
+
+        sql_query1 = time_field_name + ' >= timestamp \'' + start_time + '\'' if start_time else ''
+        sql_query2 = time_field_name + ' <= timestamp \'' + end_time + '\'' if end_time else ''
+
+        if sql_query1 and sql_query2:
+            sql_query = sql_query1 + ' AND ' + sql_query2
+        else:
+            sql_query = sql_query1 if sql_query1 else sql_query2
+
+        return self.filter_by(sql_query)
+
+    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None):
+        """
+        filter the raster collection by a calendar_field and its start and end value (inclusive). i.e. if you would like
+        to select all the rasters that have the time stamp on Monday, specify calendar_field as 'DAY_OF_WEEK' and put start and
+        end to 1.
+
+        :param calendar_field: string, one of 'YEAR', 'MONTH', 'QUARTER', 'WEEK_OF_YEAR', 'DAY_OF_YEAR', 'DAY_OF_MONTH',
+         'DAY_OF_WEEK', 'HOUR'
+        :param start: integer, the start time. inclusive.
+        :param end: integer, default is None, if default is used, the end is set equal to start. inclusive.
+        :param time_field_name: string, the time field anme, default is 'StdTime'.
+        :param date_time_format: the time format that is used to format the time field values. Please ref the python
+                                date time standard for this argument. https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+                                Default is None and this means using the Pro standard time format '%Y-%m-%dT%H:%M:%S'
+                                and ignoring the following sub-second.
+
+        :return: a filtered raster collection.
+        """
+        # validation
+
+        calendar_field_types = ['YEAR', 'MONTH', 'QUARTER', 'WEEK_OF_YEAR', 'DAY_OF_YEAR', 'DAY_OF_MONTH', 'DAY_OF_WEEK', 'HOUR']
+        if not isinstance(calendar_field, str):
+            raise TypeError('calender_field must be string type')
+
+        if calendar_field not in calendar_field_types:
+            raise ValueError('invalid calender_field, must be one of ' + ', '.join(calendar_field_types))
+
+        if time_field_name not in self.fields:
+            raise ValueError('the time_field_name does not exist. Please input a valid name for time field.')
+
+        if end is None:
+            end = start
+        # validate start and end type
+        if not isinstance(start, int) or not isinstance(end, int):
+            raise TypeError('start and end must be numeric.')
+        if end < start:
+            raise ValueError('end must be equal or larger than start.')
+        # validate start and end value
+        if calendar_field == 'MONTH':
+            if start < 1 or start > 12 or end < 1 or end > 12:
+                raise ValueError('start and end must be between [1, 12] for MONTH filter.')
+        elif calendar_field == 'QUARTER':
+            if start < 1 or start > 4 or end < 1 or end > 4:
+                raise ValueError('start and end must be between [1, 4] for QUARTER filter.')
+        elif calendar_field == 'WEEK_OF_YEAR':
+            if start < 1 or start > 53 or end < 1 or end > 53:
+                raise ValueError('start and end must be between [1, 53] for WEEK_OF_YEAR filter.')
+        elif calendar_field == 'DAY_OF_YEAR':
+            if start < 1 or start > 366 or end < 1 or end > 366:
+                raise ValueError('start and end must be between [1, 366] for DAY_OF_YEAR filter.')
+        elif calendar_field == 'DAY_OF_MONTH':
+            if start < 1 or start > 31 or end < 1 or end > 31:
+                raise ValueError('start and end must be between [1, 31] for DAY_OF_MONTH filter.')
+        elif calendar_field == 'DAY_OF_WEEK':
+            if start < 1 or start > 7 or end < 1 or end > 7:
+                raise ValueError('start and end must be between [1, 7] for DAY_OF_WEEK filter.')
+        elif calendar_field == 'HOUR':
+            if start < 1 or start > 24 or end < 1 or end > 24:
+                raise ValueError('start and end must be between [1, 24] for HOUR filter.')
+
+        oids_dict = super().query(where=self._where_clause,
+                                    geometry_filter=self._spatial_filter,
+                                    return_ids_only=True,
+                                    raster_query=self._raster_query)
+        oid_name = oids_dict["objectIdFieldName"]
+        oids = oids_dict["objectIds"]
+        df = self._as_df()
+        filtered_rasters_oids=[]
+        newcollection = self._clone_raster_collection()
+        for index, row in df.iterrows():
+            if date_time_format is None:
+                date_time = datetime.datetime.strptime(row[time_field_name], '%Y-%m-%dT%H:%M:%S')
+            else:
+                date_time = datetime.datetime.strptime(row[time_field_name], date_time_format)
+
+            selected = False
+            if calendar_field == 'YEAR':
+                if start <= date_time.year <= end:
+                    selected = True
+            elif calendar_field == 'MONTH':
+                if start <= date_time.month <= end:
+                    selected = True
+            elif calendar_field == 'QUARTER':
+                if start-1 <= (date_time.month - 1)//3 <= end-1:
+                    selected = True
+            elif calendar_field == 'WEEK_OF_YEAR':
+                week_number = int(date_time.strftime('%U'))
+                if start <= week_number+1 <= end:
+                    selected = True
+            elif calendar_field == 'DAY_OF_YEAR':
+                yday = date_time.timetuple().tm_yday
+                if start <= yday <= end:
+                    selected = True
+            elif calendar_field == 'DAY_OF_MONTH':
+                mday = date_time.timetuple().tm_mday
+                if start <= mday <= end:
+                    selected = True
+            elif calendar_field == 'DAY_OF_WEEK':
+                wday = date_time.isoweekday()
+                if start<= wday%7+1<=end:
+                    selected = True
+            elif calendar_field == 'HOUR':
+                hour = date_time.timetuple().tm_hour
+                if start <= hour <= end:
+                    selected = True
+
+            if selected is True:
+                filtered_rasters_oids.append(row[oid_name])
+
+        where_clause = ""
+        for ele in filtered_rasters_oids:
+            where_clause += (oid_name+ " = "+str(ele)+" OR ")
+        newcollection._ras_coll_engine_obj._where_clause = where_clause[:-4]
+        newcollection._ras_coll_engine_obj._mosaic_rule = {
+            "mosaicMethod": "esriMosaicLockRaster",
+            "lockRasterIds": filtered_rasters_oids,
+            "ascending": True,
+            "mosaicOperation": "MT_FIRST"
+        }
+        newcollection._ras_coll_engine_obj._filtered =True
+        newcollection._ras_coll_engine_obj._df= newcollection._as_df()
+        return newcollection
+
+    def filter_by_geometry(self, query_geometry_or_extent):
+        return self.filter_by(query_geometry_or_extent = query_geometry_or_extent)
+
+    def filter_by_attribute(self, field_name, operator, field_values):
+        if not isinstance(field_name, str):
+            raise TypeError("field_name should be string")
+
+        from arcgis.raster._util import build_query_string
+
+        query_string = build_query_string(field_name, operator.lower(), field_values)
+        return self.filter_by(query_string)
+
+    def filter_by_raster_property(self, property_name, operator, property_values):
+        if not isinstance(property_name, str):
+            raise TypeError("property_name should be string")
+        from arcgis.raster._util import build_query_string
+        raster_query  = build_query_string(property_name, operator.lower(), property_values)
+        return self.filter_by(raster_query = raster_query)
+
+
+    def sort(self, field_name, ascending=True):
+        if ascending is True:
+            order_by_fields_string = str(field_name)+" "+"ASC"
+        else:
+            order_by_fields_string = str(field_name)+" "+"DESC"
+        newcollection = self._clone_raster_collection()
+        newcollection._ras_coll_engine_obj._order_by_fields = order_by_fields_string
+        newcollection._ras_coll_engine_obj._df= newcollection._as_df()
+
+        return newcollection
+
+
+    def get_field_values(self, field_name, max_count=0):
+        #if max_count ==0:
+        #    max_count = self.count
             
-#        df = self._df
-#        return df[field_name].tolist()[0:max_count]
+        df = self._df
+        if max_count!=0:
+            return df[field_name].tolist()[0:max_count]
+        else:
+            return df[field_name].tolist()
 
 
-#    def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
-#        if variable_field_name not in self.fields:
-#            raise ValueError('variable_field_name does not exist')
+    def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
+        md_info=super()._compute_multidimensional_info(where=self._where_clause,
+                                                    geometry_filter=self._spatial_filter,
+                                                    object_ids=self._object_ids,
+                                                    raster_query=self._raster_query,
+                                                    variable_field_name=variable_field_name,
+                                                    dimension_field_names=dimension_field_names)
 
-#        if isinstance(dimension_field_names, list):
-#            for dimension_field_name in dimension_field_names:
-#                if dimension_field_name not in self.fields:
-#                    raise ValueError('the given dimension_field_name does not exist')
-#            dimension_field_names = ','.join(dimension_field_names)
-#        else:
-#            if dimension_field_names not in self.fields:
-#                raise ValueError('the given dimension_field_names does not exist')
-#        from arcgis.raster.functions import identity
-#        lyr=identity(self._rasters_list)
-#        rasters = lyr._engine_obj._fnra['rasterFunctionArguments']['Raster']
-#        lyr._engine_obj._fn['rasterFunctionArguments']['Raster']={}
-#        lyr._engine_obj._fnra['rasterFunctionArguments']['Raster']={}
+        from arcgis.raster.functions import _simple_collection
+        lyr = _simple_collection(self, md_info)
+        #lyr._engine_obj._fnra["rasterFunctionArguments"].update({"MultidimensionalInfo":md_info})
+        #lyr._engine_obj._fn["rasterFunctionArguments"].update({"MultidimensionalInfo":md_info})
+        lyr._engine_obj._created_from_collection=True
+        lyr._engine_obj._mdinfo={"multidimensionalInfo":md_info}
+        return lyr
 
-#        lyr._engine_obj._fn['rasterFunctionArguments']['Raster'].update({"raster":rasters})
-#        lyr._engine_obj._fnra['rasterFunctionArguments']['Raster'].update({"raster":rasters})
-#        for ele_field in self.fields:
-#            if (ele_field=="Raster"):
-#                continue
-#            lyr._engine_obj._fn['rasterFunctionArguments']['Raster'].update({ele_field:[]})
-#            lyr._engine_obj._fn['rasterFunctionArguments']['Raster'].update({'variable':variable_field_name})
-#            lyr._engine_obj._fn['rasterFunctionArguments']['Raster'].update({'dimensions':dimension_field_names})
-#            lyr._engine_obj._fnra['rasterFunctionArguments']['Raster'].update({ele_field:[]})
-#            lyr._engine_obj._fnra['rasterFunctionArguments']['Raster'].update({'variable':variable_field_name})
-#            lyr._engine_obj._fnra['rasterFunctionArguments']['Raster'].update({'dimensions':dimension_field_names})
-#            for ele in self[0:self.count]:
-#                lyr._engine_obj._fn['rasterFunctionArguments']['Raster'][ele_field].append(ele[ele_field])
-#                lyr._engine_obj._fnra['rasterFunctionArguments']['Raster'][ele_field].append(ele[ele_field])
-#        return lyr
 
-#    def max(self):        
-#        from arcgis.raster.functions import max
-#        return max(self._rasters_list)
+    def max(self):
+        from arcgis.raster.functions import raster_collection_function
+        raster_function_json = _local_function_template(67)
+        return raster_collection_function(self, aggregation_function=raster_function_json)
 
 
 
-#    def min(self):
-#        from arcgis.raster.functions import min
-#        return min(self._rasters_list)
 
-#    def median(self):        
-#        from arcgis.raster.functions import median
-#        return median(self._rasters_list)
+    def min(self):
+        from arcgis.raster.functions import raster_collection_function
+        raster_function_json = _local_function_template(70)
+        return raster_collection_function(self, aggregation_function=raster_function_json)
 
 
-#    def mean(self):
-#        from arcgis.raster.functions import mean
-#        return mean(self._rasters_list)
-
-#    def majority(self):
-#        from arcgis.raster.functions import majority
-#        return majority(self._rasters_list)
-
-#    def sum(self):
-#        from arcgis.raster.functions import sum
-#        return sum(self._rasters_list)
-
-#    def mosaic(self, mosaic_method):
-#        raise RuntimeError("Local RasterCollection does not support mosaic function")
-
-#    def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
-#        from arcgis.raster.functions import arg_statistics, _pick
-#        if not isinstance(statistic_type, str) or statistic_type.upper() not in ['MAX', 'MIN', 'MEDIAN']:
-#            raise ValueError('invalid statistic_type value')
-
-#        statistic_type = statistic_type.upper()
-
-#        #statistics_type_code = {'MAX': 0, 'MIN': 1, 'MEDIAN': 2}
-
-#        if isinstance(quality_rc_or_list, RasterCollection):
-#            if quality_rc_or_list.count != self.count:
-#                raise ValueError('the quality collection must have same number of items with the calling collection')
-
-#            if 'Raster' in quality_rc_or_list.fields:
-#                rasters = quality_rc_or_list.get_field_values('Raster')
-#            #elif 'Path' in quality_rc_or_list.fields:
-#                #rasters = [arcpy.Raster(path) for path in quality_rc_or_list.getFieldValues('Path')]
-#        elif isinstance(quality_rc_or_list, list):
-#            if len(quality_rc_or_list) != self.count:
-#                raise ValueError('the quality raster list must have same number of items with the calling collection')
-#            rasters = quality_rc_or_list
-#        else:
-#            raise ValueError('invalid quality_rc parameter')
-
-#        arg_statistics_result = arg_statistics(rasters, stat_type=statistic_type)
-#        arg_statistics_result = arg_statistics_result + 1  # the index in argstatistics output counts from 0, but Pick counts from 1
-
-#        rasters=self._rasters_list
-
-#        inp_list = [arg_statistics_result]
-#        for ele in rasters:
-#            inp_list.append(ele)
-#        return _pick(inp_list)
-
-#    def select_bands(self, band_ids_or_names):
-#        from arcgis.raster.functions import raster_collection_function, extract_band
-#        by_bandID_or_bandName = 0  # 1: by band id; 2: by band name
-#        if not (isinstance(band_ids_or_names, list) or isinstance(band_ids_or_names, str) or isinstance(
-#                band_ids_or_names, int)):
-#            raise TypeError('bands must be either a list, a single band ID or a single band Name')
-#        if isinstance(band_ids_or_names, list):
-#            for band in band_ids_or_names:
-#                if not (isinstance(band, int) or isinstance(band, str)):
-#                    raise TypeError('elements in band_ids_or_names must be integer or string type')
-#                if isinstance(band, int) and by_bandID_or_bandName == 0:
-#                    by_bandID_or_bandName = 1
-#                elif isinstance(band, int) and by_bandID_or_bandName == 2:
-#                    raise TypeError('elements in band_ids_or_names should either all be integer or string type')
-#                if isinstance(band, str) and by_bandID_or_bandName == 0:
-#                    by_bandID_or_bandName = 2
-#                elif isinstance(band, str) and by_bandID_or_bandName == 1:
-#                    raise TypeError('elements in band_ids_or_names should either all be integer or string type')
-
-#        elif isinstance(band_ids_or_names, str):
-#            by_bandID_or_bandName = 2
-#        else:
-#            by_bandID_or_bandName = 1
-
-#        rasters=self._rasters_list
-
-#        from arcgis.raster.functions import extract_band
-#        if by_bandID_or_bandName == 1:
-#            new_rasters = [extract_band(raster, band_ids=band_ids_or_names) for raster in rasters]
-#        elif by_bandID_or_bandName == 2:
-#            new_rasters = [extract_band(raster, band_names=band_ids_or_names) for raster in rasters]
-
-#        in_raster_collection_dict = {}
-#        for field_name in self.fields:
-#            if field_name == 'Raster' or field_name == 'Path':
-#                continue
-#            in_raster_collection_dict[field_name] = self.get_field_values(field_name)
-
-#        return RasterCollection(new_rasters, in_raster_collection_dict)
+    def median(self):
+        from arcgis.raster.functions import raster_collection_function
+        raster_function_json = _local_function_template(69)
+        return raster_collection_function(self, aggregation_function=raster_function_json)
 
 
-#    def map(self, func):
-#        res = map(func, iter(self))
-#        rasters = []
-#        attribute_dict = defaultdict(list)
-#        for item in res:
-#            rasters.append(item['raster'])
-#            for key, value in item.items():
-#                if key != 'raster':
-#                    attribute_dict[key].append(value)
 
-#        return RasterCollection(rasters, attribute_dict)
+    def mean(self):
+        from arcgis.raster.functions import raster_collection_function
+        raster_function_json = _local_function_template(68)
+        return raster_collection_function(self, aggregation_function=raster_function_json)
+
+
+    def majority(self):
+        from arcgis.raster.functions import raster_collection_function
+        raster_function_json = _local_function_template(66)
+        return raster_collection_function(self, aggregation_function=raster_function_json)
+
+
+    def sum(self):
+        from arcgis.raster.functions import raster_collection_function
+        raster_function_json = _local_function_template(74)
+        return raster_collection_function(self, aggregation_function=raster_function_json)
+
+
+    def mosaic(self, mosaic_method):
+        return (super().mosaic_by(op=mosaic_method))
+
+    def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
+        from arcgis.raster.functions import arg_statistics, _pick
+        if not isinstance(statistic_type, str) or statistic_type.upper() not in ['MAX', 'MIN', 'MEDIAN']:
+            raise ValueError('invalid statistic_type value')
+
+        statistic_type = statistic_type.upper()
+
+        #statistics_type_code = {'MAX': 0, 'MIN': 1, 'MEDIAN': 2}
+
+        if isinstance(quality_rc_or_list, RasterCollection):
+            if quality_rc_or_list.count != self.count:
+                raise ValueError('the quality collection must have same number of items with the calling collection')
+
+            if 'Raster' in quality_rc_or_list.fields:
+                rasters = quality_rc_or_list.get_field_values('Raster')
+            #elif 'Path' in quality_rc_or_list.fields:
+                #rasters = [arcpy.Raster(path) for path in quality_rc_or_list.getFieldValues('Path')]
+        elif isinstance(quality_rc_or_list, list):
+            if len(quality_rc_or_list) != self.count:
+                raise ValueError('the quality raster list must have same number of items with the calling collection')
+            rasters = quality_rc_or_list
+        else:
+            raise ValueError('invalid quality_rc parameter')
+
+        arg_statistics_result = arg_statistics(rasters, stat_type=statistic_type)
+        arg_statistics_result = arg_statistics_result + 1  # the index in argstatistics output counts from 0, but Pick counts from 1
+
+        if 'Raster' in self.fields:
+            rasters = self.get_field_values('Raster')
+        elif 'Path' in self.fields:
+            rasters = self.get_field_values('Path')
+        else:
+            raise ValueError('invalid raster collection')
+
+        inp_list = [arg_statistics_result]
+        for ele in rasters:
+            inp_list.append(ele)
+        return _pick(inp_list)
+
+    def select_bands(self, band_ids_or_names):
+        from arcgis.raster.functions import raster_collection_function, extract_band
+        by_bandID_or_bandName = 0  # 1: by band id; 2: by band name
+        if not (isinstance(band_ids_or_names, list) or isinstance(band_ids_or_names, str) or isinstance(
+                band_ids_or_names, int)):
+            raise TypeError('bands must be either a list, a single band ID or a single band Name')
+        if isinstance(band_ids_or_names, list):
+            for band in band_ids_or_names:
+                if not (isinstance(band, int) or isinstance(band, str)):
+                    raise TypeError('elements in band_ids_or_names must be integer or string type')
+                if isinstance(band, int) and by_bandID_or_bandName == 0:
+                    by_bandID_or_bandName = 1
+                elif isinstance(band, int) and by_bandID_or_bandName == 2:
+                    raise TypeError('elements in band_ids_or_names should either all be integer or string type')
+                if isinstance(band, str) and by_bandID_or_bandName == 0:
+                    by_bandID_or_bandName = 2
+                elif isinstance(band, str) and by_bandID_or_bandName == 1:
+                    raise TypeError('elements in band_ids_or_names should either all be integer or string type')
+
+        elif isinstance(band_ids_or_names, str):
+            by_bandID_or_bandName = 2
+        else:
+            by_bandID_or_bandName = 1
+
+        rasters=self.get_field_values("Raster")
+        from arcgis.raster.functions import extract_band
+        if by_bandID_or_bandName == 1:
+            new_rasters = [extract_band(raster, band_ids=band_ids_or_names) for raster in rasters]
+        elif by_bandID_or_bandName == 2:
+            new_rasters = [extract_band(raster, band_names=band_ids_or_names) for raster in rasters]
+
+        in_raster_collection_dict = {}
+        for field_name in self.fields:
+            if field_name == 'Raster' or field_name == 'Path':
+                continue
+            in_raster_collection_dict[field_name] = self.get_field_values(field_name)
+
+        return RasterCollection(new_rasters, in_raster_collection_dict)
+
+
+    def map(self, func):
+        if isinstance(func, _arcgis.raster.functions.RFT) or isinstance(func, dict):
+            from arcgis.raster.functions import raster_collection_function
+            layer = raster_collection_function(self, item_function=func)
+
+            newcollection = self._clone_raster_collection()
+            newcollection._fn = layer._fn
+            newcollection._fnra = layer._fnra
+            return newcollection   
+        else:
+            res = map(func, iter(self))
+            rasters = []
+            attribute_dict = defaultdict(list)
+            for item in res:
+                rasters.append(item['raster'])
+                for key, value in item.items():
+                    if key != 'raster':
+                        attribute_dict[key].append(value)
+
+            return RasterCollection(rasters, attribute_dict)
+          
+
+    def _as_df(self, result_offset=None, result_record_count=None, return_all_records=False):
+        import pandas as pd
+        df=super().query(where=self._where_clause,
+                        geometry_filter=self._spatial_filter,
+                        object_ids=self._object_ids,
+                        order_by_fields=self._order_by_fields,
+                        return_all_records=return_all_records,
+                        result_offset=result_offset,
+                        result_record_count=result_record_count,
+                        return_geometry=True,
+                        as_df=True,
+                        raster_query=self._raster_query)
+        date_field_names=[]
+        if len(df.index)>0:
+            for ele in self.properties.fields:
+                if ("type" in ele.keys()) and ele["type"]=="esriFieldTypeDate":
+                    if "name" in ele.keys():
+                        date_field_names.append(ele["name"])
+            for ele in date_field_names:
+                df[ele] = pd.to_datetime(df[ele], unit='ms').dt.strftime('%Y-%m-%dT%H:%M:%S')
+
+            #pos = self.url.find("/ImageServer",0)
+            #for i in range (0, len(df.index)):
+                #df.loc[i, "Raster"] = self.url[0:(pos+12)]+"/"+str(df["OBJECTID"].loc[i])+self.url[(pos+12):]
+
+            from arcgis.raster.functions import _raster_item
+            oid_name=self._object_id_name()
+            for i in range (0, len(df.index)):
+                #self._do_not_hydrate=True
+                df.loc[i, "Raster"] = _raster_item(self,int(df[oid_name].loc[i]))
+                df.loc[i, "Raster"].token = self._token
+                df.loc[i, "Raster"]._do_not_hydrate = True
+
+        return df
+
+    def display_image(self, item=None):
+        if item is not None:
+            newcollection = self._clone_raster_collection()
+            newcollection._mosaic_rule = {
+                "mosaicMethod": "esriMosaicLockRaster",
+                "lockRasterIds": [item],
+                "ascending": True,
+                "mosaicOperation": "MT_FIRST"
+            }
+        else:
+            newcollection = self
+
+        bbox_sr = None
+        if 'spatialReference' in newcollection.extent:
+            bbox_sr = newcollection.extent['spatialReference']
+        if not newcollection._uses_gbl_function:
+            byte_array = (newcollection.export_image(bbox=newcollection._extent, bbox_sr=bbox_sr, size=[1200, 450], export_format='jpeg', f='image'))
+            try:
+                from IPython.display import Image
+                return Image(byte_array)
+            except:
+                return byte_array
+
+    def _clone_raster_collection(self):
+        new_raster_collection = RasterCollection(self._url, self._attribute_dict, self._where_clause, self._spatial_filter, self._ras_coll_engine, self._gis)
+
+        new_raster_collection._lazy_token = self._token
+        new_raster_collection._fn = self._fn
+        new_raster_collection._fnra = self._fnra
+        new_raster_collection._mosaic_rule = self._mosaic_rule
+        new_raster_collection._extent = self._extent
+        new_raster_collection._raster_query=self._raster_query
+
+        return new_raster_collection
+
+    def _object_id_name(self):
+        for ele in self.properties.fields:
+            if ("type" in ele.keys()) and ele["type"]=="esriFieldTypeOID":
+                return ele["name"]
+
+    def _repr_html_(self):
+        return self._df._repr_html_()
+
+    def _repr_jpeg_(self):
+        return None
+
+def _get_shape(ele):
+    boundary=Geometry(ele._engine_obj.query_boundary()["shape"])
+    if isinstance(boundary, Envelope):
+        boundary=boundary.polygon
+    return boundary
+
+class _LocalRasterCollection(ImageryLayer, RasterCollection):
+    def __init__(self, rasters=None, attribute_dict=None, where_clause=None, query_geometry=None, engine=None, gis=None):
+        #self._remote = raster.use_server_engine
+        ImageryLayer.__init__(self, rasters, gis=gis)
+        self._mosaic_rule = None
+        if gis is not None:
+            self._gis = gis
+        else:
+            self._gis=None
+        if where_clause is None:
+            self._where_clause = '1=1'
+        else:
+            self._where_clause = where_clause
+        if query_geometry is None:
+            self._spatial_filter = None
+        else:
+            self._spatial_filter = query_geometry
+
+        #self._attribute_dict = attribute_dict
+        self._rasters=rasters
+        self._object_ids=None
+        self._order_by_fields=None
+        self._is_multidimensional=False
+        #self._do_not_hydrate=False
+        self._engine=_ImageServerRaster
+        self._engine_obj=_ImageServerRaster(rasters, False, gis)
+
+        self._ras_coll_engine=engine
+       #self._engine=_ImageServerRaster
+        #self._engine_obj=_ImageServerRaster(rasters, False, gis)
+        ids = list(range(1,len(rasters)+1))
+        arcgis_rasters=[]
+        if attribute_dict is not None:
+            if not isinstance(attribute_dict, dict):
+                raise TypeError('attribute_dict must be dict type')
+
+        shapes=[]
+        for ele in rasters:
+            if not isinstance(ele, Raster):
+                ele = Raster(ele)
+                ele._do_not_hydrate = True
+            arcgis_rasters.append(ele)
+        data = {"Raster":arcgis_rasters, "ID":ids}
+
+        if "SHAPE" not in attribute_dict.keys():
+            if not isinstance(ele._engine_obj, _ArcpyRaster):
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor(max_workers=len(rasters)) as executor:
+    
+                    future_to_url = (executor.submit(_get_shape,ele) for ele in arcgis_rasters)
+                    for future in concurrent.futures.as_completed(future_to_url):
+                        shapes.append(future.result())
+
+            if shapes !=[]:
+                data.update({"SHAPE":shapes})
+        data.update(attribute_dict)
+        self._attribute_dict = data
+        import pandas as pd
+        df_obj = pd.DataFrame(data)
+        self._df = df_obj
+
+
+    @property
+    def count(self):
+        count = len(self._df.index)            
+        return count
+
+    @property
+    def fields(self):
+        return tuple(self._df.columns.tolist())
+
+    @property
+    def _rasters_list(self):
+        ras_list=self.get_field_values("Raster")
+        return ras_list
+
+    def __iter__(self):
+        return iter(self._df.to_dict('records', into=dict))
+
+
+    def __next__(self):
+        return self._df.to_dict('records', into=dict)[item]
+
+
+    def __len__(self):
+        return (self._df.to_dict('records', into=dict)).__len__
+
+    def __getitem__(self, item):
+        return self._df.to_dict('records', into=dict)[item]
+
+
+    def filter_by(self, where_clause=None, query_geometry_or_extent=None, raster_query=None):        
+        newcollection = self._clone_raster_collection()
+        if where_clause is not None:
+            if "LIKE" in where_clause or "NOT LIKE" in where_clause:
+                raise RuntimeError("Local RasterCollection does not support LIKE or NOT LIKE in where_clause.")
+            newcollection._ras_coll_engine_obj._df = self._df.query(where_clause)
+        if query_geometry_or_extent is not None:
+            newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj.filter_by_geometry(query_geometry_or_extent)._as_df()
+        if raster_query is not None:
+            props_list=[]
+            for ele in self:
+                props_list.append(ele["Raster"].properties)
+            import pandas as pd
+            new_pd=pd.DataFrame.from_dict(props_list)
+            df=self._as_df()
+            frames=[df, new_pd]
+            result = pd.concat(frames, axis=1)
+            result.query(raster_query)
+            #newcollection=self.filter_by_attribute("ID", "contains", list(result['ID']) )
+            filtered_rasters = []
+            attribute_dict = defaultdict(list)
+
+            for item in iter(self):
+                raster = self._get_raster_from_item(item)
+
+                field_value = item["ID"]
+                selected = False
+                selected = (field_value in list(result['ID']))
+                if selected:
+                    filtered_rasters.append(raster)
+                    for key, value in item.items():
+                        if key not in ['Raster', 'Path']:
+                            attribute_dict[key].append(value)
+            newcollection= RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
+        return newcollection
+
+
+    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None):
+        if date_time_format is None:
+            if start_time:
+                start_time = datetime.datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S')
+            if end_time:
+                end_time = datetime.datetime.strptime(end_time, '%Y-%m-%dT%H:%M:%S')
+        else:
+            if start_time:
+                start_time = datetime.datetime.strptime(start_time, date_time_format)
+            if end_time:
+                end_time = datetime.datetime.strptime(end_time, date_time_format)
+
+        filtered_rasters = []
+        attribute_dict = defaultdict(list)
+
+        for item in iter(self):
+            raster = self._get_raster_from_item(item)
+
+            if date_time_format is None:
+                date_time = datetime.datetime.strptime(item[time_field_name], '%Y-%m-%dT%H:%M:%S')
+            else:
+                date_time = datetime.datetime.strptime(item[time_field_name], date_time_format)
+
+            if start_time and date_time < start_time:
+                continue
+            elif end_time and date_time > end_time:
+                continue
+            else:
+                filtered_rasters.append(raster)
+                for key, value in item.items():
+                    if key not in ['Raster', 'Path']:
+                        attribute_dict[key].append(value)
+
+        if not filtered_rasters:
+            warnings.warn(
+                "Warning: the output is None because no items have raster properties satisfying the query")
+
+        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
+
+
+    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None):
+        """
+        filter the raster collection by a calendar_field and its start and end value (inclusive). i.e. if you would like
+        to select all the rasters that have the time stamp on Monday, specify calendar_field as 'DAY_OF_WEEK' and put start and
+        end to 1.
+
+        :param calendar_field: string, one of 'YEAR', 'MONTH', 'QUARTER', 'WEEK_OF_YEAR', 'DAY_OF_YEAR', 'DAY_OF_MONTH',
+         'DAY_OF_WEEK', 'HOUR'
+        :param start: integer, the start time. inclusive.
+        :param end: integer, default is None, if default is used, the end is set equal to start. inclusive.
+        :param time_field_name: string, the time field anme, default is 'StdTime'.
+        :param date_time_format: the time format that is used to format the time field values. Please ref the python
+                                date time standard for this argument. https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+                                Default is None and this means using the Pro standard time format '%Y-%m-%dT%H:%M:%S'
+                                and ignoring the following sub-second.
+
+        :return: a filtered raster collection.
+        """
+        # validation
+        filtered_rasters = []
+        attribute_dict = defaultdict(list)
+
+        for item in iter(self):
+            raster = self._get_raster_from_item(item)
+
+            if date_time_format is None:
+                date_time = datetime.datetime.strptime(item[time_field_name], '%Y-%m-%dT%H:%M:%S')
+            else:
+                date_time = datetime.datetime.strptime(item[time_field_name], date_time_format)
+
+            selected = False
+            if calendar_field == 'YEAR':
+                if start <= date_time.year <= end:
+                    selected = True
+            elif calendar_field == 'MONTH':
+                if start <= date_time.month <= end:
+                    selected = True
+            elif calendar_field == 'QUARTER':
+                if start-1 <= (date_time.month - 1)//3 <= end-1:
+                    selected = True
+            elif calendar_field == 'WEEK_OF_YEAR':
+                week_number = int(date_time.strftime('%U'))
+                if start <= week_number+1 <= end:
+                    selected = True
+            elif calendar_field == 'DAY_OF_YEAR':
+                yday = date_time.timetuple().tm_yday
+                if start <= yday <= end:
+                    selected = True
+            elif calendar_field == 'DAY_OF_MONTH':
+                mday = date_time.timetuple().tm_mday
+                if start <= mday <= end:
+                    selected = True
+            elif calendar_field == 'DAY_OF_WEEK':
+                wday = date_time.isoweekday()
+                if start<= wday%7+1<=end:
+                    selected = True
+            elif calendar_field == 'HOUR':
+                hour = date_time.timetuple().tm_hour
+                if start <= hour <= end:
+                    selected = True
+
+            if selected is True:
+                filtered_rasters.append(raster)
+                for key, value in item.items():
+                    if key not in ['Raster', 'Path']:
+                        attribute_dict[key].append(value)
+
+        if not filtered_rasters:
+            warnings.warn(
+                "Warning: the output is None because no items have raster properties satisfying the query")
+
+        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
+
+    def filter_by_geometry(self, query_geometry_or_extent):
+        filtered_rasters = []
+        attribute_dict = defaultdict(list)
+
+        for item in iter(self):
+            raster = self._get_raster_from_item(item)
+
+            field_value = item["SHAPE"]
+            if query_geometry_or_extent is not None:
+                query_geometry_or_extent = _get_geometry(query_geometry_or_extent)
+            selected = False
+            selected = query_geometry_or_extent.contains(field_value, 'BOUNDARY')
+
+            if selected and isinstance(selected, bool):
+                filtered_rasters.append(raster)
+                for key, value in item.items():
+                    if key not in ['Raster', 'Path']:
+                        attribute_dict[key].append(value)
+
+        if not filtered_rasters:
+            warnings.warn(
+                "Warning: the output is None because no items have raster properties satisfying the query")
+        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
+
+    def filter_by_raster_property(self, property_name, operator, property_values):
+        values = property_values
+        if not isinstance(values, str) and not isinstance(values, list):
+            raise TypeError('values must be string of list of string')
+
+        if isinstance(values, list):
+            for v in values:
+                if not isinstance(v, str):
+                    raise TypeError('values must be string of list of string')
+
+        filtered_rasters = []
+        attribute_dict = defaultdict(list)
+
+        for item in iter(self):
+            raster = self._get_raster_from_item(item)
+
+            raster_properties = raster.properties
+            if property_name not in raster_properties:
+                continue
+            property_value = raster.get_property(property_name)
+
+            operator = operator.lower()
+            selected = False
+            if operator == 'equals':
+                selected = (property_value == values)
+            elif operator == 'less_than':
+                selected = (property_value < values)
+            elif operator == 'greater_than':
+                selected = (property_value > values)
+            elif operator == 'not_equals':
+                selected = (property_value != values)
+            elif operator == 'not_less_than':
+                selected = (property_value >= values)
+            elif operator == 'not_greater_than':
+                selected = (property_value <= values)
+            elif operator == 'starts_with':
+                selected = (property_value.startswith(values))
+            elif operator == 'ends_with':
+                selected = (property_value.endswith(values))
+            elif operator == 'not_starts_with':
+                selected = (not property_value.startswith(values))
+            elif operator == 'not_ends_with':
+                selected = (not property_value.endswith(values))
+            elif operator == 'contains':
+                selected = (values in property_value)
+            elif operator == 'not_contains':
+                selected = (values not in property_value)
+            elif operator == 'in':
+                if not isinstance(values, list):
+                    raise TypeError("Invalid values. Notet that values must be a list when operator is 'in'")
+                selected = (property_value in values)
+            elif operator == 'not_in':
+                if not isinstance(values, list):
+                    raise TypeError("Invalid values. Notet that values must be a list when operator is 'not_in'")
+                selected = (property_value not in values)
+            else:
+                raise ValueError('invalid operator')
+
+            if selected:
+                filtered_rasters.append(raster)
+                for key, value in item.items():
+                    if key not in ['Raster', 'Path']:
+                        attribute_dict[key].append(value)
+
+        if not filtered_rasters:
+            warnings.warn("Warning: the output is None because no items have raster properties satisfying the query")
+        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
+
+    def filter_by_attribute(self, field_name, operator, field_values):
+        filtered_rasters = []
+        attribute_dict = defaultdict(list)
+
+        for item in iter(self):
+            raster = self._get_raster_from_item(item)
+
+            field_value = item[field_name]
+
+            selected = False
+            if operator == 'equals':
+                selected = (field_value == field_values)
+            elif operator == 'less_than':
+                selected = (field_value < field_values)
+            elif operator == 'greater_than':
+                selected = (field_value > field_values)
+            elif operator == 'not_equals':
+                selected = (field_value != field_values)
+            elif operator == 'not_less_than':
+                selected = (field_value >= field_values)
+            elif operator == 'not_greater_than':
+                selected = (field_value <= field_values)
+            elif operator == 'starts_with':
+                selected = (field_value.startswith(field_values))
+            elif operator == 'ends_with':
+                selected = (field_value.endswith(field_values))
+            elif operator == 'not_starts_with':
+                selected = (not field_value.startswith(field_values))
+            elif operator == 'not_ends_with':
+                selected = (not field_value.endswith(field_values))
+            elif operator == 'contains':
+                selected = (field_values in field_value)
+            elif operator == 'not_contains':
+                selected = (field_values not in field_value)
+            elif operator == 'in':
+                if not isinstance(field_values, list):
+                    raise TypeError(
+                        "Invalid field_values. Notet that field_values must be a list when operator is 'in'")
+                selected = (field_value in field_values)
+            elif operator == 'not_in':
+                if not isinstance(field_values, list):
+                    raise TypeError(
+                        "Invalid field_values. Notet that field_values must be a list when operator is 'not_in'")
+                selected = (field_value not in field_values)
+            else:
+                raise ValueError('invalid operator')
+
+            if selected:
+                filtered_rasters.append(raster)
+                for key, value in item.items():
+                    if key not in ['Raster', 'Path']:
+                        attribute_dict[key].append(value)
+
+        if not filtered_rasters:
+            warnings.warn(
+                "Warning: the output is None because no items have raster properties satisfying the query")
+        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
+
+
+    def sort(self, field_name, ascending=True):
+        newcollection = self._clone_raster_collection()
+        newcollection._ras_coll_engine_obj._df = self._df.sort_values(by=field_name, ascending=ascending)
+
+        return newcollection
+
+
+    def get_field_values(self, field_name, max_count=0):
+        if max_count ==0:
+            max_count = self.count
+            
+        df = self._df
+        return df[field_name].tolist()[0:max_count]
+
+
+    def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
+        if variable_field_name not in self.fields:
+            raise ValueError('variable_field_name does not exist')
+
+        if isinstance(dimension_field_names, list):
+            for dimension_field_name in dimension_field_names:
+                if dimension_field_name not in self.fields:
+                    raise ValueError('the given dimension_field_name does not exist')
+            dimension_field_names = ','.join(dimension_field_names)
+        else:
+            if dimension_field_names not in self.fields:
+                raise ValueError('the given dimension_field_names does not exist')
+        from arcgis.raster.functions import _simple_collection
+        lyr=_simple_collection(self._rasters_list)
+        rasters = lyr._engine_obj._fnra['rasterFunctionArguments']['Raster']
+        lyr._engine_obj._fn['rasterFunctionArguments']['Raster']={}
+        lyr._engine_obj._fnra['rasterFunctionArguments']['Raster']={}
+
+        lyr._engine_obj._fn['rasterFunctionArguments']['Raster'].update({"rasters":rasters})
+        lyr._engine_obj._fnra['rasterFunctionArguments']['Raster'].update({"rasters":rasters})
+        for ele_field in self.fields:
+            if (ele_field=="Raster"):
+                continue
+            lyr._engine_obj._fn['rasterFunctionArguments']['Raster'].update({ele_field:[]})
+            lyr._engine_obj._fn['rasterFunctionArguments']['Raster'].update({'variable':variable_field_name})
+            lyr._engine_obj._fn['rasterFunctionArguments']['Raster'].update({'dimensions':dimension_field_names})
+            lyr._engine_obj._fnra['rasterFunctionArguments']['Raster'].update({ele_field:[]})
+            lyr._engine_obj._fnra['rasterFunctionArguments']['Raster'].update({'variable':variable_field_name})
+            lyr._engine_obj._fnra['rasterFunctionArguments']['Raster'].update({'dimensions':dimension_field_names})
+            for ele in self[0:self.count]:
+                lyr._engine_obj._fn['rasterFunctionArguments']['Raster'][ele_field].append(ele[ele_field])
+                lyr._engine_obj._fnra['rasterFunctionArguments']['Raster'][ele_field].append(ele[ele_field])
+        fn = lyr._engine_obj._fn['rasterFunctionArguments']['Raster']
+        fnra = lyr._engine_obj._fnra['rasterFunctionArguments']['Raster']
+        lyr._engine_obj._fn['rasterFunctionArguments']['Raster'] = json.dumps(fn)
+        lyr._engine_obj._fnra['rasterFunctionArguments']['Raster'] = json.dumps(fnra)
+        return lyr
+
+
+    def max(self):        
+        from arcgis.raster.functions import max
+        return max(self._rasters_list)
+
+
+
+    def min(self):
+        from arcgis.raster.functions import min
+        return min(self._rasters_list)
+
+    def median(self):        
+        from arcgis.raster.functions import median
+        return median(self._rasters_list)
+
+
+    def mean(self):
+        from arcgis.raster.functions import mean
+        return mean(self._rasters_list)
+
+    def majority(self):
+        from arcgis.raster.functions import majority
+        return majority(self._rasters_list)
+
+    def sum(self):
+        from arcgis.raster.functions import sum
+        return sum(self._rasters_list)
+
+    def mosaic(self, mosaic_method):
+        raise RuntimeError("Local RasterCollection does not support mosaic function")
+
+    def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
+        from arcgis.raster.functions import arg_statistics, _pick
+        if not isinstance(statistic_type, str) or statistic_type.upper() not in ['MAX', 'MIN', 'MEDIAN']:
+            raise ValueError('invalid statistic_type value')
+
+        statistic_type = statistic_type.upper()
+
+        #statistics_type_code = {'MAX': 0, 'MIN': 1, 'MEDIAN': 2}
+
+        if isinstance(quality_rc_or_list, RasterCollection):
+            if quality_rc_or_list.count != self.count:
+                raise ValueError('the quality collection must have same number of items with the calling collection')
+
+            if 'Raster' in quality_rc_or_list.fields:
+                rasters = quality_rc_or_list.get_field_values('Raster')
+            #elif 'Path' in quality_rc_or_list.fields:
+                #rasters = [arcpy.Raster(path) for path in quality_rc_or_list.getFieldValues('Path')]
+        elif isinstance(quality_rc_or_list, list):
+            if len(quality_rc_or_list) != self.count:
+                raise ValueError('the quality raster list must have same number of items with the calling collection')
+            rasters = quality_rc_or_list
+        else:
+            raise ValueError('invalid quality_rc parameter')
+
+        arg_statistics_result = arg_statistics(rasters, stat_type=statistic_type)
+        arg_statistics_result = arg_statistics_result + 1  # the index in argstatistics output counts from 0, but Pick counts from 1
+
+        rasters=self._rasters_list
+
+        inp_list = [arg_statistics_result]
+        for ele in rasters:
+            inp_list.append(ele)
+        return _pick(inp_list)
+
+    def select_bands(self, band_ids_or_names):
+        from arcgis.raster.functions import raster_collection_function, extract_band
+        by_bandID_or_bandName = 0  # 1: by band id; 2: by band name
+        if not (isinstance(band_ids_or_names, list) or isinstance(band_ids_or_names, str) or isinstance(
+                band_ids_or_names, int)):
+            raise TypeError('bands must be either a list, a single band ID or a single band Name')
+        if isinstance(band_ids_or_names, list):
+            for band in band_ids_or_names:
+                if not (isinstance(band, int) or isinstance(band, str)):
+                    raise TypeError('elements in band_ids_or_names must be integer or string type')
+                if isinstance(band, int) and by_bandID_or_bandName == 0:
+                    by_bandID_or_bandName = 1
+                elif isinstance(band, int) and by_bandID_or_bandName == 2:
+                    raise TypeError('elements in band_ids_or_names should either all be integer or string type')
+                if isinstance(band, str) and by_bandID_or_bandName == 0:
+                    by_bandID_or_bandName = 2
+                elif isinstance(band, str) and by_bandID_or_bandName == 1:
+                    raise TypeError('elements in band_ids_or_names should either all be integer or string type')
+
+        elif isinstance(band_ids_or_names, str):
+            by_bandID_or_bandName = 2
+        else:
+            by_bandID_or_bandName = 1
+
+        rasters=self._rasters_list
+
+        from arcgis.raster.functions import extract_band
+        if by_bandID_or_bandName == 1:
+            new_rasters = [extract_band(raster, band_ids=band_ids_or_names) for raster in rasters]
+        elif by_bandID_or_bandName == 2:
+            new_rasters = [extract_band(raster, band_names=band_ids_or_names) for raster in rasters]
+
+        in_raster_collection_dict = {}
+        for field_name in self.fields:
+            if field_name == 'Raster' or field_name == 'Path':
+                continue
+            in_raster_collection_dict[field_name] = self.get_field_values(field_name)
+
+        return RasterCollection(new_rasters, in_raster_collection_dict)
+
+
+    def map(self, func):
+        res = map(func, iter(self))
+        rasters = []
+        attribute_dict = defaultdict(list)
+        for item in res:
+            rasters.append(item['raster'])
+            for key, value in item.items():
+                if key != 'raster':
+                    attribute_dict[key].append(value)
+
+        return RasterCollection(rasters, attribute_dict)
 
 
 
                 
           
 
-#    def as_df(self, result_offset=None, result_record_count=None, return_all_records=False):
-#        return self._df
+    def _as_df(self, result_offset=None, result_record_count=None, return_all_records=False):
+        return self._df
 
 
-#    #def display_image(self, item=None):
-#    #    if not raster.use_server:
-#    #        raise RuntimeError('Not available in non server env')
+    #def display_image(self, item=None):
+    #    if not raster.use_server:
+    #        raise RuntimeError('Not available in non server env')
 
-#    def _get_raster_from_item(self, item):
-#        if 'Raster' in item:
-#            raster = item["Raster"]
-#        else:
-#            raise RuntimeError('invalid raster collection')
-#        return raster
+    def _get_raster_from_item(self, item):
+        if 'Raster' in item:
+            raster = item["Raster"]
+        else:
+            raise RuntimeError('invalid raster collection')
+        return raster
 
-#    def _clone_raster_collection(self):
-#        new_raster_collection = RasterCollection(self._rasters, self._attribute_dict, self._where_clause, self._spatial_filter, self._ras_coll_engine, self._gis)
-#        return new_raster_collection
+    def _clone_raster_collection(self):
+        new_raster_collection = RasterCollection(self._rasters, self._attribute_dict, self._where_clause, self._spatial_filter, self._ras_coll_engine, self._gis)
+        return new_raster_collection
 
-#    def _object_id_name(self):
-#        for ele in self.properties.fields:
-#            if ("type" in ele.keys()) and ele["type"]=="esriFieldTypeOID":
-#                return ele["name"]
+    def _object_id_name(self):
+        for ele in self.properties.fields:
+            if ("type" in ele.keys()) and ele["type"]=="esriFieldTypeOID":
+                return ele["name"]
 
-#    def _repr_html_(self):
-#        return self._df._repr_html_()
+    def _repr_html_(self):
+        return self._df._repr_html_()
 
-#    def _repr_jpeg_(self):
-#        return None
+    def _repr_jpeg_(self):
+        return None
 
 
 

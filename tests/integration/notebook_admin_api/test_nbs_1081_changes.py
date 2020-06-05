@@ -65,10 +65,8 @@ class TestUserScheduleTasks1081(unittest.TestCase):
         
         if len(items) > 0:
             task = st.create(title='props_test', task_type="ExecuteNotebook", item=items[0], cron='2 2 2 2 ?')
-            assert task.enable(enabled=True, reset=True)
-            assert task.enable(enabled=True, reset=False)
-            assert task.enable(enabled=False, reset=True)
-            assert task.enable(enabled=True, reset=False)
+            assert task.enable(enabled=True)
+            assert task.enable(enabled=False)
             task.delete()
     #----------------------------------------------------------------------
     def test_update(self):

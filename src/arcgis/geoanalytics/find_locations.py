@@ -10,7 +10,12 @@ import arcgis as _arcgis
 from arcgis import env as _env
 from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.geoprocessing._support import _execute_gp_tool
-from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob
+from ._util import (_id_generator, 
+                    _feature_input, 
+                    _set_context, 
+                    _create_output_service, 
+                    GAJob, 
+                    _prevent_bds_item)
 import datetime
 _log = _logging.getLogger(__name__)
 
@@ -130,6 +135,7 @@ def geocode_locations(input_layer,
     from arcgis.gis import Item
     from arcgis.geocoding._functions import Geocoder
     kwargs = locals()
+    input_layer = _prevent_bds_item(input_layer)
     tool_name = "GeocodeLocations"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url

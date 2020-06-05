@@ -75,6 +75,16 @@ class TestItemCopy(unittest.TestCase):
             assert new_item.url != web_app_item.url
             assert new_item.delete()
     #----------------------------------------------------------------------
+    def test_copy_notebook_item(self):
+        """tests copying the notebook"""
+        for gis in self._gis_objs:
+            items = gis.content.search("type: Notebook")
+            if len(items) > 0:
+                item = items[0]
+                item_new = item.copy()
+                assert item_new
+                assert item_new.delete()
+    #----------------------------------------------------------------------
     @classmethod
     def tearDownClass(cls):
         for k,v in cls._app_data.items():

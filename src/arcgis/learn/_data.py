@@ -315,49 +315,57 @@ def prepare_tabulardata(
     ):
 
     """
-    Prepares a databunch object from dataframe and fields_mapping dictionary.
-    The first two inputs can be prepared using process_dataframe function.
+    Prepares a tabular data object from input_features and optionally rasters.
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    input_features          Required input feature layer or spatially enabled dataframe.
+    input_features          Required Feature Layer Object or spatially enabled dataframe.
                             This contains features denoting the value of the dependent variable.
     ---------------------   -------------------------------------------
-    variable_predict        Required String, optionally 2-sized tuple
-                            denoting field_name, Categorical/Continuous.
-                            For example:
-                                ("Field_Name", True)
-                            By default: Automatically deduces the type.
+    variable_predict        Required String, denoting the field_name of
+                            the variable to predict.
     ---------------------   -------------------------------------------
     explanatory_variables   Optional list containing field names from input_features
                             By default the field type is continuous.
                             To override field type to categorical, pass
-                            a 2-sized tuple containing:
+                            a 2-sized tuple in the list containing:
                                 1. field to be taken as input from the input_features.
                                 2. True/False denoting Categorical/Continuous variable.
+                            For example:
+                                ["Field_1", ("Field_2", True)]
+                            Here Field_1 is treated as continuous and
+                            Field_2 as categorical.
     ---------------------   -------------------------------------------
     explanatory_rasters     Optional list containing Raster objects.
                             By default the rasters are continuous.
                             To mark a raster categorical, pass a 2-sized tuple containing:
                                 1. Raster object.
                                 2. True/False denoting Categorical/Continuous variable.
+                            For example:
+                                [raster_1, (raster_2, True)]
+                            Here raster_1 is treated as continuous and
+                            raster_2 as categorical.
     ---------------------   -------------------------------------------
     date_field              Optional field_name.
-                            This field contains the date in the input_layer.
+                            This field contains the date in the input_features.
+                            The field type can be a string or date time field.
                             If specified, the field will be split into
                             Year, month, week, day, dayofweek, dayofyear,
                             is_month_end, is_month_start, is_quarter_end,
                             is_quarter_start, is_year_end, is_year_start,
-                            hour, minute, second, elapsed.
-                            If specified here,
-                            no need to specify in the feature_variables list.
+                            hour, minute, second, elapsed and these will be added
+                            to the prepared data as columns.
+                            All fields other than elapsed and dayofyear are treated
+                            as categorical.
     ---------------------   -------------------------------------------
-    distance_features       Optional list of feature_layers.
-                            These layers are used for calculation of field "NEAR_DIST_1",
-                            "NEAR_DIST_2" etc, in the output dataframe.
-                            These field contains the nearest feature distance
-                            from the input_layer feature.
+    distance_features       Optional list of Feature Layer objects.
+                            Distance is calculated from features in these layers
+                            to features in input_features.
+                            Nearest distance to each feature is added in the prepared
+                            data.
+                            Field names in the prepared data added are
+                            "NEAR_DIST_1", "NEAR_DIST_2" etc.
     ---------------------   -------------------------------------------
     preprocessors           For Fastai: Optional transforms list.
                             For Scikit-learn: supply a column transformer object.
@@ -459,8 +467,8 @@ def prepare_data(path,
                             for satellite imagery well). If transforms is set
                             to `False` no transformation will take place and 
                             `chip_size` parameter will also not take effect.
-                            If the dataset_type is 'PointCloud'. To add custom
-                            transforms use Transforms3d class from arcgis.learn.
+                            If the dataset_type is 'PointCloud', use 
+                            `Transform3d` class from `arcgis.learn`.
     ---------------------   -------------------------------------------
     collate_fn              Optional function. Passed to PyTorch to collate data
                             into batches(usually default works).
@@ -509,6 +517,12 @@ def prepare_data(path,
                             used for calculating imagery statistics for  
                             normalizing the data. 
                             Default is 0.3 (30%) of data.
+    ---------------------   -------------------------------------------
+    downsample_factor       Optional integer. Factor to downsample the images 
+                            for image SuperResolution. 
+                            for example: if value is 2 and image size 256x256,
+                            it will create label images of size 128x128.
+                            Default is 4
     =====================   ===========================================
 
     :returns: data object
@@ -556,7 +570,13 @@ def prepare_data(path,
         raise Exception("Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid esri files")
     
     stats_file = path / 'esri_accumulated_stats.json'
-    if dataset_type != "Imagenet" and has_esri_files:
+    if dataset_type == "superres" and has_esri_files:
+
+        json_file = path/ 'esri_model_definition.emd'
+        with open(json_file) as f:
+            emd = json.load(f)
+
+    elif dataset_type != "Imagenet" and has_esri_files:
         with open(stats_file) as f:
             stats = json.load(f)
             dataset_type = stats['MetaDataMode']
@@ -881,23 +901,28 @@ def prepare_data(path,
             val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
     elif dataset_type == "superres":
-        path_lr = path/'images'
-        path_hr = path/'labels'
+        path_hr = path/'images'
+        path_lr = path/'labels'
         il = ImageList.from_folder(path_hr)
-        size_hr = il[0].shape[1]    #il.sizes[0][0]
-        if not (path_lr).exists():
-            print("downsampling...")
-            parallel(partial(resize_one, path_lr=path_lr, size=size_hr/kwargs.get('downsample_factor'), path_hr=path_hr), il.items, max_workers=0)
-        elif kwargs.get('downsample_factor') is not None:
-            print("downsampling...")
-            parallel(partial(resize_one, path_lr=path_lr, size=size_hr/kwargs.get('downsample_factor'), path_hr=path_hr), il.items, max_workers=0)
+        img_size = il[0].shape[1]
+        if chip_size > img_size:
+            chip_size = img_size
+        downsample = kwargs.get('downsample_factor', 4)
+        parallel(partial(resize_one, path_lr=path_lr, size=img_size/downsample, path_hr=path_hr, img_size=img_size), il.items, max_workers=0)
 
         data = ImageImageList.from_folder(path_lr)\
-            .split_by_rand_pct(val_split_pct, seed=42)\
+            .split_by_rand_pct(val_split_pct, seed=seed)\
             .label_from_func(lambda x: path_hr/x.name)
-
+        if transforms is None:
+            ranges = (0, 1)
+            train_tfms = [
+                crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges),
+                brightness(change=(0.4, 0.6)),
+                contrast(scale=(0.75, 1.5))
+                ]
+            val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
+            transforms = (train_tfms, val_tfms)
         kwargs_transforms['tfm_y'] = True
-        kwargs_transforms['size'] = size_hr
         
     elif dataset_type in ['ner_json','BIO','IOB','LBIOU','BILUO']:
         if batch_size == 64:

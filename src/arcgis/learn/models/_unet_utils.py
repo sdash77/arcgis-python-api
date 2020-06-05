@@ -119,19 +119,22 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
     color_array[1:, 3] = alpha
 
     # Size for plotting
-    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
     idx = 0
     for r in range(nrows):
         for c in range(ncols):
+            if nrows == 1 and ncols == 1:
+                axi = axs
+            else:
+                axi = axs[r][c]
             if idx < symbology_x_batch.shape[0]:
-                axi  = ax[r][c]
                 axi.imshow(symbology_x_batch[idx])
                 y_rgb = color_array[y_batch[idx][0]]#.cpu().numpy()
                 #y_rgb = _class_array_to_rbg(y_batch[idx][0], self._multispectral_color_mapping, nodata)
                 axi.imshow(y_rgb, alpha=alpha)
                 axi.axis('off')
             else:
-                ax[r][c].axis('off')
+                axi.axis('off')
             idx+=1
 
 class ArcGISImageSegment(Image):

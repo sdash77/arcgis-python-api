@@ -3,10 +3,13 @@ import random
 import json
 import pickle
 import warnings
+import math
 from pathlib import Path
 
-from .._utils.tabular_data import TabularDataObject
+import arcgis
 from arcgis.features import FeatureLayer
+
+from .._utils.tabular_data import TabularDataObject
 
 HAS_SK_LEARN = True
 try:
@@ -133,7 +136,7 @@ class MLModel(object):
 
     def score(self):
         """
-        :returns output from scikit-learn's model.score()
+        :returns output from scikit-learn's model.score(), R2 score in case of regression and Accuracy in case of classification.
         """
         if self._validation_data is None or self._validation_labels is None:
             raise_data_exception()
@@ -143,7 +146,7 @@ class MLModel(object):
     def save(self, name_or_path):
         """
         Saves the model, creates an Esri Model Definition. Uses pickle to save the model.
-        Using protocol level 2.Protocol level is backward compatible.
+        Using protocol level 2. Protocol level is backward compatible.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -290,8 +293,8 @@ class MLModel(object):
             distance_features=None,
             output_layer_name="Prediction Layer",
             gis=None,
-            predict_features=True,
-            output_raster_folder_path=None,
+            prediction_type='features',
+            output_raster_path=None,
             match_field_names=None):
         """
 
@@ -300,11 +303,11 @@ class MLModel(object):
         =================================   =========================================================================
         **Argument**                        **Description**
         ---------------------------------   -------------------------------------------------------------------------
-        input_features                      Optional Feature Layer or spatial dataframe. Required is predict_features=True.
+        input_features                      Optional Feature Layer or spatial dataframe. Required if prediction_type='features'.
                                             Contains features with location and
                                             some or all fields required to infer the dependent variable value.
         ---------------------------------   -------------------------------------------------------------------------
-        explanatory_rasters                 Optional list. Required if predict_features=False.
+        explanatory_rasters                 Optional list. Required if prediction_type='raster'.
                                             Contains a list of raster objects containing
                                             some or all fields required to infer the dependent variable value.
         ---------------------------------   -------------------------------------------------------------------------
@@ -312,7 +315,7 @@ class MLModel(object):
                                             that contains the date, time for the input features.
                                             Same as `prepare_tabulardata()`.
         ---------------------------------   -------------------------------------------------------------------------
-        distance_features                   Optional List of Feature Layers.
+        distance_features                   Optional List of Feature Layer objects.
                                             These layers are used for calculation of field "NEAR_DIST_1",
                                             "NEAR_DIST_2" etc in the output dataframe.
                                             These fields contain the nearest feature distance
@@ -324,15 +327,15 @@ class MLModel(object):
         gis                                 Optional GIS Object. Used for publishing the item.
                                             If not specified then active gis user is taken.
         ---------------------------------   -------------------------------------------------------------------------
-        predict_features                    Optional Boolean.
-                                            Set True to make output feature layer predictions.
-                                            When True, feature_layer argument is required.
+        prediction_type                     Optional String.
+                                            Set 'features' to make output feature layer predictions.
+                                            With this feature_layer argument is required.
 
-                                            Set False, to make prediction raster.
-                                            When False, rasters must be specified.
+                                            Set 'raster', to make prediction raster.
+                                            With this rasters must be specified.
         ---------------------------------   -------------------------------------------------------------------------
-        output_raster_folder_path           Optional Folder path.
-                                            Required when predict_features=False, saves
+        output_raster_path                  Optional path.
+                                            Required when prediction_type='raster', saves
                                             the output raster to this path.
         ---------------------------------   -------------------------------------------------------------------------
         match_field_names                   Optional dictionary.
@@ -345,12 +348,12 @@ class MLModel(object):
                                                 }
         =================================   =========================================================================
 
-        :returns Feature Layer predict_features=True or creates an output raster.
+        :returns Feature Layer if prediction_type='features' else creates an output raster.
 
         """
 
         rasters = explanatory_rasters if explanatory_rasters else []
-        if predict_features:
+        if prediction_type == 'features':
 
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
@@ -360,10 +363,10 @@ class MLModel(object):
             if not rasters:
                 raise Exception("Rasters required for predict_features=False")
 
-            if not output_raster_folder_path:
+            if not output_raster_path:
                 raise Exception("Please specify output_raster_folder_path to save the output.")
 
-            return self._predict_rasters(output_raster_folder_path, rasters, match_field_names)
+            return self._predict_rasters(output_raster_path, rasters, match_field_names)
 
     def _predict_features(
             self,
@@ -477,38 +480,60 @@ class MLModel(object):
 
         arcpy.env.outputCoordinateSystem = rasters[0].extent['spatialReference']['wkt']
 
-        lower_point_x = rasters[0].extent['xmin']
-        lower_point_y = rasters[0].extent['ymin']
+        xmin = rasters[0].extent['xmin']
+        xmax = rasters[0].extent['xmax']
+        ymin = rasters[0].extent['ymin']
+        ymax = rasters[0].extent['ymax']
+        min_cell_size_x = rasters[0].mean_cell_width
+        min_cell_size_y = rasters[0].mean_cell_height
 
-        max_raster_rows = rasters[0].rows
-        max_raster_columns = rasters[0].columns
-
-        x_cell_size = rasters[0].mean_cell_width
-        y_cell_size = rasters[0].mean_cell_height
+        default_sr = rasters[0].extent['spatialReference']
 
         for raster in rasters:
-            if raster.rows > max_raster_rows:
-                max_raster_rows = raster.rows
-                y_cell_size = raster.mean_cell_height
+            point_upper = arcgis.geometry.Point(
+                {'x': raster.extent['xmin'], 'y': raster.extent['ymax'], 'sr': raster.extent['spatialReference']})
+            point_lower = arcgis.geometry.Point(
+                {'x': raster.extent['xmax'], 'y': raster.extent['ymin'], 'sr': raster.extent['spatialReference']})
+            cell_size = arcgis.geometry.Point(
+                {'x': raster.mean_cell_width, 'y': raster.mean_cell_height, 'sr': raster.extent['spatialReference']})
 
-            if raster.columns > max_raster_columns:
-                max_raster_columns = raster.columns
-                x_cell_size = raster.mean_cell_width
+            points = arcgis.geometry.project([point_upper, point_lower, cell_size], raster.extent['spatialReference'],
+                                             default_sr)
+            point_upper = points[0]
+            point_lower = points[1]
+            cell_size = points[2]
 
-            if raster.extent['xmin'] < lower_point_x:
-                lower_point_x = raster.extent['xmin']
+            if xmin > point_upper.x:
+                xmin = point_upper.x
+            if ymax < point_upper.y:
+                ymax = point_upper.y
+            if xmax < point_lower.x:
+                xmax = point_lower.x
+            if ymin > point_lower.y:
+                ymin = point_lower.y
 
-            if raster.extent['ymin'] < lower_point_y:
-                lower_point_y = raster.extent['ymin']
+            if min_cell_size_x > cell_size.x:
+                min_cell_size_x = cell_size.x
+
+            if min_cell_size_y > cell_size.y:
+                min_cell_size_y = cell_size.y
+
+        max_raster_columns = math.ceil((xmax-xmin)/min_cell_size_x)
+        max_raster_rows = math.ceil((ymax-ymin)/min_cell_size_y)
+
+        point_upper = arcgis.geometry.Point({'x': xmin, 'y': ymax, 'sr': default_sr})
+        cell_size = arcgis.geometry.Point({'x': min_cell_size_x, 'y': min_cell_size_y, 'sr': default_sr})
 
         raster_data = {}
         for raster in rasters:
             field_name = raster.name
+            point_upper_translated = arcgis.geometry.project([point_upper], default_sr, raster.extent['spatialReference'])[0]
+            cell_size_translated = arcgis.geometry.project([cell_size], default_sr, raster.extent['spatialReference'])[0]
             if field_name in fields_needed:
-                raster_data[field_name] = raster.read(ncols=max_raster_columns, nrows=max_raster_rows)
+                raster_data[field_name] = raster.read(origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns, nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
             elif match_field_names and match_field_names.get(raster.name):
                 field_name = match_field_names.get(raster.name)
-                raster_data[field_name] = raster.read(ncols=max_raster_columns, nrows=max_raster_rows)
+                raster_data[field_name] = raster.read(origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns, nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
             else:
                 continue
 
@@ -535,8 +560,9 @@ class MLModel(object):
 
         predictions = self._predict(processed_numpy)
 
-        predictions = predictions.reshape([max_raster_rows, max_raster_columns])
-        processed_raster = arcpy.NumPyArrayToRaster(predictions, arcpy.Point(lower_point_x, lower_point_y), x_cell_size=x_cell_size, y_cell_size=y_cell_size)
+        predictions = np.array(predictions.reshape([max_raster_rows, max_raster_columns]), dtype='float64')
+
+        processed_raster = arcpy.NumPyArrayToRaster(predictions, arcpy.Point(xmin, ymin), x_cell_size=min_cell_size_x, y_cell_size=min_cell_size_y)
         processed_raster.save(output_folder_path)
 
         return True

@@ -61,8 +61,8 @@ def try_imports(list_of_modules):
         for module in list_of_modules:
             importlib.import_module(module)
     except Exception as e:
-        raise Exception(f"""This function requires {' '.join(list_of_modules)}. Install plotly, laspy and h5py using 'conda install -c esri -c plotly laspy=1.6.0 plotly=4.5.0 plotly-orca=1.2.1 psutil h5py=2.10.0' and install transforms3d using `pip install transforms3d`.
-                            \n On Ubuntu systems, Also install sudo apt install xvfb""")
+        raise Exception(f"""This function requires {' '.join(list_of_modules)}. Install plotly and laspy using 'conda install -c esri -c plotly laspy=1.6.0 plotly=4.5.0 plotly-orca=1.2.1 psutil' and install transforms3d and h5py using `pip install transforms3d==0.3.1 h5py==2.10.0`.
+\n On Linux systems, Also install `xvfb` \n Additionally visit: https://developers.arcgis.com/python/guide/point-cloud-segmentation-using-pointcnn/ for step by step setup.""")
 
 def try_import(module):
     try:
@@ -73,7 +73,7 @@ def try_import(module):
         elif module == 'laspy':
             raise Exception("This function requires laspy. Install it using 'conda install -c esri laspy=1.6.0'")
         elif module == 'h5py':
-            raise Exception(f"This function requires h5py. Install it using 'conda install h5py=2.10.0'")
+            raise Exception(f"This function requires h5py. Install it using 'pip install h5py==2.10.0'")
         else:
             raise Exception(f"This function requires {module}. Please install it in your environment.")
 
@@ -238,7 +238,8 @@ def show_point_cloud_batch(self, rows=2, figsize=(6,12), color_mapping=None, **k
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional rows. Number of rows to show. Default
-                            value is 2.
+                            value is 2 and maximum value is the `batch_size`
+                            passed in `prepare_data`. 
     ---------------------   -------------------------------------------
     color_mapping           Optional dictionary. Mapping from class value
                             to RGB values. Default value
@@ -253,7 +254,7 @@ def show_point_cloud_batch(self, rows=2, figsize=(6,12), color_mapping=None, **k
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    mask_class              Optional array of integers. Array containing
+    mask_class              Optional list of integers. Array containing
                             class values to mask. Use this parameter to 
                             display the classes of interest.
                             Default value is []. 
@@ -360,7 +361,8 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional rows. Number of rows to show. Default
-                            value is 2.
+                            value is 2 and maximum value is the `batch_size`
+                            passed in `prepare_data`. 
     ---------------------   -------------------------------------------
     color_mapping           Optional dictionary. Mapping from class value
                             to RGB values. Default value
@@ -375,7 +377,7 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    mask_class              Optional array of integers. Array containing
+    mask_class              Optional list of integers. Array containing
                             class values to mask. Use this parameter to 
                             display the classes of interest.
                             Default value is []. 
@@ -923,8 +925,28 @@ def save_xyz_label_to_las(filename_las, xyz, xyz_offset, encoding, labels):
         
     f.close()
 
+def prediction_remap_classes(labels, reclassify_classes, inverse_class_mapping):
+    if reclassify_classes == {}:
+        return labels
+    else:
+        labels = np.vectorize(inverse_class_mapping.get)(labels)
+        labels = np.vectorize(reclassify_classes.get)(labels)
+        return labels
 
-def write_resulting_las(in_las_filename, out_las_filename, labels, num_classes, data):
+def prediction_selective_classify(labels, las_file, selective_classify):
+    all_indexes = list(range(len(labels)))
+    classification = las_file.classification
+    return np.vectorize(lambda i:labels[i] if labels[i] in selective_classify\
+                                        else classification[i])(all_indexes)
+
+def write_resulting_las(in_las_filename, 
+                        out_las_filename, 
+                        labels, 
+                        num_classes, 
+                        data,
+                        print_metrics,
+                        reclassify_classes={}, 
+                        selective_classify=[]):
     try_import('laspy')
     import laspy
     false_positives = [0] * num_classes
@@ -936,21 +958,38 @@ def write_resulting_las(in_las_filename, out_las_filename, labels, num_classes, 
     f_out = laspy.file.File(out_las_filename, mode='rw')
     i = 0
     classification = []
-    for p in f:
-        p = f[i]
-        try:
-            false_positives[labels[i]] += int(p.classification != inverse_class_mapping[labels[i]])
-            true_positives[labels[i]] += int(p.classification == inverse_class_mapping[labels[i]])
-            false_negatives[data.class_mapping[p.classification]] += int(p.classification != inverse_class_mapping[labels[i]])
-        except:
-            pass
-
-        classification.append(inverse_class_mapping[labels[i]])
-        i += 1
-    f.close()
-    f_out.classification = classification
-    f_out.close()
+    warn_flag = False
     
+    ## remap classes
+    old_labels = labels.copy()
+    labels = prediction_remap_classes(labels, reclassify_classes, inverse_class_mapping)
+
+    if print_metrics:
+        for p in f:
+            p = f[i]
+            current_class = inverse_class_mapping[old_labels[i]] 
+            if reclassify_classes != {}:
+                current_class = reclassify_classes[current_class]       
+            try:
+                false_positives[old_labels[i]] += int(p.classification != current_class)
+                true_positives[old_labels[i]] += int(p.classification == current_class)
+                false_negatives[data.class_mapping[p.classification]] += int(p.classification != current_class)
+            except (IndexError, KeyError) as _:
+                warn_flag = True
+
+            i += 1
+
+    if selective_classify != []:
+        #current_class if current_class in selective_classify else p.classification
+        labels = prediction_selective_classify(labels, f, selective_classify)
+            
+    f.close()
+    f_out.classification = labels.tolist()
+    f_out.close()
+
+    # if print_metrics and warn_flag:
+    #     logger.warning(f"Some classes in your las file {in_las_filename} do not match the classes the model is trained on")
+    #     print_metrics = False
     return false_positives, true_positives, false_negatives
 
 def calculate_metrics(false_positives, true_positives, false_negatives):
@@ -1004,7 +1043,7 @@ def get_predictions(pointcnn_model, data, batch_idx, points_batch, sample_num, b
         
     return predictions
 
-def inference_las(path, pointcnn_model, out_path=None, print_metrics=False):
+def inference_las(path, pointcnn_model, out_path=None, print_metrics=False, remap_classes={}, selective_classify=[]):
     try_import("h5py")
     import h5py
     import pandas as pd    
@@ -1018,7 +1057,22 @@ def inference_las(path, pointcnn_model, out_path=None, print_metrics=False):
         out_path = path / 'results'
     else:    
         out_path = Path(out_path)
-        
+
+    reclassify_classes = remap_classes
+    if reclassify_classes != {}:
+        if not all([k in pointcnn_model._data.classes for k in reclassify_classes.keys()]):
+            raise Exception(f"`remap_classes` dictionary keys are not present in dataset with classes {pointcnn_model._data.classes}.")
+        reclassify_classes = {k:reclassify_classes.get(k, k) for k in pointcnn_model._data.class_mapping}
+
+    if selective_classify != []:
+        if reclassify_classes != {}:
+            values_to_check = np.unique(np.array(list(reclassify_classes.values()))).tolist()
+        else:
+            values_to_check = list(pointcnn_model._data.classes)
+
+        if not all([k in values_to_check for k in selective_classify]):
+            raise Exception(f"`selective_classify` can only contain values from these class values {values_to_check}.")
+
     prepare_las_data(path.parent,
                      block_size=pointcnn_model._data.block_size[0],
                      max_point_num=pointcnn_model._data.max_point,
@@ -1109,10 +1163,11 @@ def inference_las(path, pointcnn_model, out_path=None, print_metrics=False):
                     label_length2 = np.max([label_length2, np.max(indices[i][:data_num[i]])])
                 label_length2 += 1
                 if label_length < label_length2:
-                    # expanding labels and confidence arrays, as the new file appears having mode of them
-                    for i in range(label_length2 - label_length):
-                        merged_label = np.append(merged_label, 0)
-                        merged_confidence = np.append(merged_confidence, 0.0)
+                    # expanding labels and confidence arrays, as the new file appears having more of them.
+                    labels_more = np.zeros((label_length2 - label_length), dtype=merged_label.dtype)
+                    conf_more = np.zeros((label_length2 - label_length), dtype=merged_confidence.dtype)
+                    merged_label = np.append(merged_label, labels_more)
+                    merged_confidence = np.append(merged_confidence, conf_more)
                     label_length = label_length2
             
             for i in range(labels_seg.shape[0]):
@@ -1136,16 +1191,41 @@ def inference_las(path, pointcnn_model, out_path=None, print_metrics=False):
                                                                                    output_path,
                                                                                    merged_label,
                                                                                    pointcnn_model._data.c,
-                                                                                   pointcnn_model._data)
+                                                                                   pointcnn_model._data,
+                                                                                   print_metrics,
+                                                                                   reclassify_classes,
+                                                                                   selective_classify)
             global_false_positives = np.add(global_false_positives, false_positives)
             global_true_positives = np.add(global_true_positives, true_positives)
             global_false_negatives = np.add(global_false_negatives, false_negatives)
+
     if print_metrics:
-        precision, recall, f_1 = calculate_metrics(global_false_positives, global_true_positives, global_false_negatives)
-        data = [precision, recall, f_1]
         index = ['precision', 'recall', 'f1_score']
-        inverse_class_mapping = {v:k for k,v in pointcnn_model._data.class_mapping.items()} 
-        df = pd.DataFrame(data, columns=[inverse_class_mapping[cval] for cval in range(pointcnn_model._data.c)], index=index)
+        inverse_class_mapping = {v:k for k,v in pointcnn_model._data.class_mapping.items()}
+        unique_mapped_classes = np.unique(np.array(list(reclassify_classes.values())))
+        if len(unique_mapped_classes) == len(pointcnn_model._data.classes) or remap_classes == {}:
+            precision, recall, f_1 = calculate_metrics(global_false_positives, global_true_positives, global_false_negatives)
+            data = [precision, recall, f_1]
+            column_names = [inverse_class_mapping[cval] for cval in range(pointcnn_model._data.c)]
+            if reclassify_classes != {}:
+                remapping_class_mapping = {v:reclassify_classes[k] for k,v in pointcnn_model._data.class_mapping.items()}
+                column_names = [remapping_class_mapping[cval] for cval in range(pointcnn_model._data.c)]
+            df = pd.DataFrame(data, columns=column_names, index=index)
+        else:
+            inverse_reclassify_classes = {}
+            for k, v in reclassify_classes.items():
+                current_value = inverse_reclassify_classes.get(v, [])
+                current_value.append(k)
+                inverse_reclassify_classes[v] = current_value   
+            map_dict = {u: [pointcnn_model._data.class_mapping[k] for k in inverse_reclassify_classes[u]] for u in unique_mapped_classes}
+            global_false_positives =  recompute_globals(global_false_positives, map_dict)
+            global_true_positives = recompute_globals(global_true_positives, map_dict)
+            global_false_negatives = recompute_globals(global_false_negatives, map_dict)
+            precision, recall, f_1 = calculate_metrics(global_false_positives, global_true_positives, global_false_negatives)
+            data = [precision, recall, f_1]
+            column_names = list(map_dict.keys())
+            df = pd.DataFrame(data, columns=column_names, index=index)            
+
         from IPython.display import display
         display(df)
 
@@ -1156,6 +1236,9 @@ def inference_las(path, pointcnn_model, out_path=None, print_metrics=False):
         os.remove(fn)        
 
     return out_path
+
+def recompute_globals(global_count, map_dict):
+    return [sum([global_count[ci] for ci in v]) for k,v in map_dict.items()]
 
 def raise_maxpoint_warning(idx_file, kwargs, logger, max_display_point, save_html=False):
     if not save_html:

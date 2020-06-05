@@ -72,12 +72,20 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs): # parameters adjusted in k
     color_array = self._multispectral_color_array
 
     # Size for plotting
-    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
     idx = 0
     for r in range(nrows):
         for c in range(ncols):
             if idx < symbology_x_batch.shape[0]:
-                axi = ax[r][c]
+                axi = axs
+                if nrows == 1:
+                    axi = axi
+                else:
+                    axi = axi[r]
+                if ncols == 1:
+                    axi = axi
+                else:
+                    axi = axi[c]
                 axi.imshow(symbology_x_batch[idx].cpu().numpy())
                 title = f"{self.classes[y_batch[idx].item()]}"
                 axi.set_title(title)

@@ -19,7 +19,7 @@ def _evaluate_spatial_input(input_points):
     :return: FeatureSet
     """
     try:
-        from arcgis.features.geo_accessor import _is_geoenabled
+        from arcgis.features.geo._accessor import _is_geoenabled
         from pandas import DataFrame
     except ImportError as ie:
         _log.warning("One or more of the libraries needed for this feature is not available. "

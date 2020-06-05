@@ -111,10 +111,15 @@ def show_batch_classified_tiles(self, rows=3, alpha=0.7, **kwargs):
     idx = 0
     for r in range(nrows):
         for c in range(ncols):
-            if nrows==1 and ncols==1:
-                axi = axs
+            axi = axs
+            if nrows == 1:
+                axi = axi
             else:
-                axi  = axs[r][c]
+                axi = axi[r]
+            if ncols == 1:
+                axi = axi
+            else:
+                axi = axi[c]
             axi.axis('off')
             if idx < symbology_x_batch.shape[0]:
                 axi.imshow(symbology_x_batch[idx].cpu().numpy())

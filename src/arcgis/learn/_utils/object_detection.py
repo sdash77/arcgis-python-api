@@ -1,4 +1,5 @@
 
+import logging
 from .env import HAS_TENSORFLOW
 if HAS_TENSORFLOW:
     import tensorflow as tf

@@ -1067,6 +1067,8 @@ def summarize_raster_within(input_zone_layer,
                             ignore_missing_values=True,
                             output_name=None,
                             context=None,
+                            process_as_multidimensional=False,
+                            percentile_value=90,
                             *,
                             gis=None,
                             future=False,
@@ -1103,7 +1105,7 @@ def summarize_raster_within(input_zone_layer,
                                              layer. 
                                              
                                              statistic_type can be one of the following:
-                                             ['Mean', 'Majority', 'Maximum', 'Median', 'Minimum', 'Minority', 'Range', 'STD', 'SUM', 'Variety']
+                                             ['Mean', 'Majority', 'Maximum', 'Median', 'Minimum', 'Minority', 'Range', 'STD', 'SUM', 'Variety', 'Percentile']
 
                                              Mean: Calculates the average of all cells in the value raster that belongs to 
                                              the same zone as the output cell. This is the default.
@@ -1134,6 +1136,11 @@ def summarize_raster_within(input_zone_layer,
 
                                              Variety: Finds the variety of all cells in the value raster that belong to 
                                              the same zone as the output cell.
+
+                                             Percentile: Finds a percentile of all cells in the value raster that 
+                                             belong to the same zone as the output cell. The 90th percentile 
+                                             is calculated by default. You can specify other values (from 0 to 100) 
+                                             using the percentile_value parameter.
 
                                              If the input_raster_layer_to_summarize is floating-point type, the zonal calculations 
                                              for Majority, Median, Mean, and Variety cannot be computed.
@@ -1198,6 +1205,23 @@ def summarize_raster_within(input_zone_layer,
                                                 Example:
                                                     {'resamplingMethod': "Nearest"} 
     ------------------------------------     --------------------------------------------------------------------
+    process_as_multidimensional              Optional bool, Process as multidimensional if set to True, 
+                                             if the input is multidimensional raster.
+                                             
+                                             True - Statistics will be calculated from the current slice of a 
+                                             multidimensional image service. This is the default.
+                                             
+                                             False - Statistics will be calculated for all dimensions 
+                                             (such as time or depth) of a multidimensional image service.
+    ------------------------------------     --------------------------------------------------------------------
+    percentile_value                         Optional int, The percentile to calculate. The default is 90, for the 90th percentile. 
+                                             The values can range from 0 to 100. The 0th percentile is essentially 
+                                             equivalent to the Minimum statistic, and the 100th percentile is equivalent to Maximum. 
+                                             A value of 50 will produce essentially the same result as the Median statistic.
+                             
+                                             This parameter is honoured only available if the statistics_type parameter is 
+                                             set to Percentile.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not speficied, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -1224,6 +1248,8 @@ def summarize_raster_within(input_zone_layer,
                                                              statistic_type=statistic_type,
                                                              ignore_missing_values=ignore_missing_values,
                                                              context=context,
+                                                             process_as_multidimensional=process_as_multidimensional,
+                                                             percentile_value=percentile_value,
                                                              future=future,
                                                              **kwargs)
 

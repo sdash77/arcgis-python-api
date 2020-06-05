@@ -13,7 +13,7 @@ Functions can be applied to various rasters (or images), including the following
 # Raster dataset layers
 # Mosaic datasets
 # Rasters within mosaic datasets
-from .._layer import ImageryLayer, Raster, _ArcpyRaster
+from .._layer import ImageryLayer, Raster, _ArcpyRaster, RasterCollection
 from .utility import _raster_input, _get_raster, _replace_raster_url, _get_raster_url, _get_raster_ra, \
                      _pixel_type_string_to_long
 from arcgis.gis import Item
@@ -58,7 +58,7 @@ hidden_inputs = ["ToolName","PrimaryInputParameterName", "OutputRasterParameterN
 
 def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_name='Raster'):
 
-    if isinstance(layer, Raster):
+    if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
         return _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2, variable_name)
     if isinstance(layer, Item):
         layer = layer.layers[0]
@@ -105,7 +105,7 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     return newlyr
 
 def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
-    if isinstance(layer, Raster):
+    if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
         return _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra)
     if isinstance(layer, Item):
         layer = layer.layers[0]
@@ -2496,20 +2496,20 @@ def con(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     return local(rasters, 78, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-#def _pick(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
-#    """
-#    The value from a position raster is used to determine from which raster in 
-#    a list of input rasters the output cell value will be obtained.
-#    The arguments for this function are as follows:
+def _pick(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+    """
+    The value from a position raster is used to determine from which raster in 
+    a list of input rasters the output cell value will be obtained.
+    The arguments for this function are as follows:
 
-#    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-#    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
-#    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
-#    :param astype: output pixel type
-#    :return: the output raster
+    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
+    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
+    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
+    :param astype: output pixel type
+    :return: the output raster
 
-#    """
-#    return local(rasters, 84, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    """
+    return local(rasters, 84, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 ###############################################  LOCAL FUNCTIONS  ######################################################
 
@@ -5220,6 +5220,32 @@ def interpolate_irregular_data(point_feature, value_field=None, cell_size=0, int
     newlyr._fn = template_dict
     newlyr._fnra = template_dict
     return newlyr
+
+def _simple_collection(raster, md_info=None):
+    """"
+    The function is used to define the source raster as part of the default
+    mosaicking behavior of the mosaic dataset. This function is a no-op function
+    and takes no arguments except a raster. For more information, see
+    (http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/identity-function.htm)
+    :param raster: the input raster / imagery layer
+    :return: the innput raster
+    """
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "SimpleCollection",
+        "rasterFunctionArguments": {
+            "Raster" : raster,
+        },
+        "variableName": "Rasters"
+    }
+
+    if md_info is not None:
+        template_dict["rasterFunctionArguments"]['MultidimensionalInfo'] = md_info
+
+
+    return _clone_layer(layer, template_dict, raster_ra)
 
 class RFT:
     def __init__(self, raster_function_template,gis=None):

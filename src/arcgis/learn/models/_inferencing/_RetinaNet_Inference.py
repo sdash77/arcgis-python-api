@@ -335,7 +335,7 @@ class ChildObjectDetector:
 
         num_boxes = 0
         for chip_idx, (clas, bbox) in enumerate(zip(batch_classes, batch_bboxes)):
-            pp_output = self.model._analyze_pred(pred=(clas, bbox), thresh=self.thres, nms_overlap=self.nms_overlap)
+            pp_output = self.retinanet._analyze_pred(pred=(clas, bbox), thresh=self.thres, nms_overlap=self.nms_overlap)
             image_bbox = _reconstruct(pp_output, dummy_x, pad_idx=0, classes=['background'] + class_names)
             if not image_bbox is None:            
                 for feature_idx in range(len(image_bbox.data[0])):
