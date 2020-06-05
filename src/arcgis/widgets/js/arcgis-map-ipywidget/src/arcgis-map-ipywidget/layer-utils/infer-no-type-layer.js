@@ -121,9 +121,16 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                 typedLayer.id = noTypeLayer._hashFromPython;
                 resolve(typedLayer);}
             else if (noTypeLayer.type == "CSV"){
-                var typedLayer = new CSVLayer({url: noTypeLayer.url});
-                typedLayer.id = noTypeLayer._hashFromPython;
-                resolve(typedLayer);}
+                inferRenderer(noTypeLayer.layerDefinition.drawingInfo.renderer.type,
+                    noTypeLayer.layerDefinition.drawingInfo.renderer).then((renderer) => {
+                    var typedLayer = new CSVLayer({url: noTypeLayer.url,
+                                                   renderer: renderer});
+                    typedLayer.id = noTypeLayer._hashFromPython;
+                    resolve(typedLayer);
+                }).catch((err) => {
+                    var typedLayer = new CSVLayer({url: noTypeLayer.url});
+                    typedLayer.id = noTypeLayer._hashFromPython;
+                    resolve(typedLayer);})}
             else if ((noTypeLayer.type == "FeatureLayer") ||
                      (noTypeLayer.type == "Feature Layer")) {
                 //TODO: clean up this Feature layer stuff, seperate into new file

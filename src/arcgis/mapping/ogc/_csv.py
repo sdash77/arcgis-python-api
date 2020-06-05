@@ -279,9 +279,6 @@ class CSVLayer(BaseOpenData):
                 'objectIDField': "__OBJECTID",
                 'drawingInfo': {
                     "renderer" : self.renderer._json()}},
-            "longitudeField" : self.longitude,
-            "latitudeField" :self.latitude,
-            'renderer' : self.renderer._json(),
             'id' : self._id,
             'title' : self.title,
             'opacity' : self.opacity,
