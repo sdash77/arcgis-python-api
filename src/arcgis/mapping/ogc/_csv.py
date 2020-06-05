@@ -274,7 +274,11 @@ class CSVLayer(BaseOpenData):
             "delimiter" : self.delimiter,
             "copyright" : self.copyright or "",
             "definitionExpression" : self.sql_expression or "",
-            "fields" : self.fields,
+            'layerDefinition' : {
+                'fields' : self.fields,
+                'objectIDField': "__OBJECTID",
+                'drawingInfo': {
+                    "renderer" : self.renderer._json()}},
             "longitudeField" : self.longitude,
             "latitudeField" :self.latitude,
             'renderer' : self.renderer._json(),
