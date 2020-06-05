@@ -1231,6 +1231,7 @@ class MapView(widgets.DOMWidget):
         from arcgis.gis import Layer
         from arcgis.gis import Item
         from arcgis._impl.common._mixins import PropertyMap
+        from arcgis.mapping.ogc._base import BaseOGC
 
         output_layers = []
         if isinstance(arg, Raster):
@@ -1241,6 +1242,8 @@ class MapView(widgets.DOMWidget):
                 return output_layers
 
         if isinstance(arg, Layer):
+            output_layers.append(arg)
+        if isinstance(arg, BaseOGC):
             output_layers.append(arg)
         elif isinstance(arg, Item):
             for layer in arg.layers:

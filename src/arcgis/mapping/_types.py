@@ -550,22 +550,7 @@ class WebMap(collections.OrderedDict):
 
         #region
         if isinstance(layer, BaseOGC):
-            if isinstance(layer, WMSLayer):
-                lyr = layer._lyr_json
-                new_layer["layers"] = [{"name": subLyr.Name,
-                                        "title": subLyr.Title} for subLyr in layer.layers]
-                new_layer["url"] = lyr["url"]
-                new_layer["visibleLayers"] = []
-                if new_layer["layers"]:
-                    # Only have the first layer be the visible layer
-                    new_layer["visibleLayers"].append(
-                        new_layer["layers"][0]["name"])
-                new_layer["extent"] = layer._extents[0]
-                new_layer["spatialReferences"] = layer._spatial_references
-            elif isinstance(layer, WMTSLayer):
-                new_layer = {**new_layer, **layer.__text__}
-            else:
-                new_layer = {**new_layer, **layer._operational_layer_json}
+            new_layer = {**new_layer, **layer._operational_layer_json}
         #endregion
 
         # region Process popup info

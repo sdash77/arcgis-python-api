@@ -50,6 +50,7 @@ class WMTSLayer(BaseOGC):
         else:
             gis = GIS()
         assert isinstance(gis, GIS)
+        self._id = kwargs.pop('id', uuid.uuid4().hex)
         self._version = version
         self._con = gis._con
         self._title = kwargs.pop("title", "WMTS Layer")
@@ -236,3 +237,6 @@ class WMTSLayer(BaseOGC):
                 "tileMatrixSet": [tile_matrix.Identifier,]
             }
         }
+    @property
+    def _operational_layer_json(self):
+        return self.__text__

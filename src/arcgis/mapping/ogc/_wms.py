@@ -206,3 +206,16 @@ class WMSLayer(BaseOGC):
             "maxScale" : self.scale[1],
             "opacity" : self.opacity
         }
+    @property
+    def _operational_layer_json(self) -> dict:
+        new_layer = self._lyr_json
+        new_layer["layers"] = [{"name": subLyr.Name,
+                                "title": subLyr.Title} for subLyr in self.layers]
+        new_layer["visibleLayers"] = []
+        if new_layer["layers"]:
+            # Only have the first layer be the visible layer
+            new_layer["visibleLayers"].append(
+                new_layer["layers"][0]["name"])
+        new_layer["extent"] = self._extents[0]
+        new_layer["spatialReferences"] = self._spatial_references
+        return new_layer
