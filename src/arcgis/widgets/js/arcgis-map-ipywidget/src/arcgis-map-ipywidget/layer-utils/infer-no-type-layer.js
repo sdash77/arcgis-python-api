@@ -36,6 +36,7 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                                 'esri/layers/WMSLayer',
                                 'esri/layers/GeoRSSLayer',
                                 'esri/layers/GeoJSONLayer',
+                                'esri/layers/CSVLayer',
                                 'esri/layers/support/RasterFunction',
                                 'esri/layers/support/MosaicRule'],
         options).then(([ImageryLayer,
@@ -49,6 +50,7 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                         WMSLayer,
                         GeoRSSLayer,
                         GeoJSONLayer,
+                        CSVLayer,
                         RasterFunction,
                         MosaicRule]) => {
             if (noTypeLayer.type === "ImageryLayer"){
@@ -111,11 +113,15 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                 var typedLayer = new WMSLayer(noTypeLayer);
                 resolve(typedLayer);}
             else if (noTypeLayer.type == "GeoRSS"){
-                var typedLayer = new GeoRSSLayer(noTypeLayer.url);
+                var typedLayer = new GeoRSSLayer({url: noTypeLayer.url});
                 typedLayer.id = noTypeLayer._hashFromPython;
                 resolve(typedLayer);}
             else if (noTypeLayer.type == "GeoJSON"){
-                var typedLayer = new GeoJSONLayer(noTypeLayer.url);
+                var typedLayer = new GeoJSONLayer({url: noTypeLayer.url});
+                typedLayer.id = noTypeLayer._hashFromPython;
+                resolve(typedLayer);}
+            else if (noTypeLayer.type == "CSV"){
+                var typedLayer = new CSVLayer({url: noTypeLayer.url});
                 typedLayer.id = noTypeLayer._hashFromPython;
                 resolve(typedLayer);}
             else if ((noTypeLayer.type == "FeatureLayer") ||
