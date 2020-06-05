@@ -42,7 +42,7 @@ class KMLLayer(BaseOGC):
     #----------------------------------------------------------------------
     @property
     def _lyr_json(self) -> dict:
-        """Dictionary representing the layer for the MapView widget"""
+        """Represents the MapView's widget JSON format"""
         add_layer =  {
             "type" : self._type,
             'url' : self._url,
@@ -59,5 +59,5 @@ class KMLLayer(BaseOGC):
 
     @property
     def _operational_layer_json(self) -> dict:
-        """Dictionary representing the operational layer for the WebMap class"""
+        """Represents the WebMap's JSON format"""
         return self._lyr_json

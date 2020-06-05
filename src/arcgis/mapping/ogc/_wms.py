@@ -190,11 +190,7 @@ class WMSLayer(BaseOGC):
     #----------------------------------------------------------------------
     @property
     def _lyr_json(self) -> dict:
-        """
-        represents the map widget's JSON format
-
-        :returns: dict
-        """
+        """Represents the MapView's widget JSON format"""
         return {
             "type": self._type,
             "id" : self._id,
@@ -208,6 +204,7 @@ class WMSLayer(BaseOGC):
         }
     @property
     def _operational_layer_json(self) -> dict:
+        """Represents the WebMap's JSON format"""
         new_layer = self._lyr_json
         new_layer["layers"] = [{"name": subLyr.Name,
                                 "title": subLyr.Title} for subLyr in self.layers]

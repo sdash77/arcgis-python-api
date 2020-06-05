@@ -154,11 +154,7 @@ class WMTSLayer(BaseOGC):
     #----------------------------------------------------------------------
     @property
     def _lyr_json(self):
-        """
-        represents the map widget's JSON format
-
-        :returns: dict
-        """
+        """Represents the MapView's widget JSON format"""
         return {
             "id" : self._id,
             "title" : self._title or "WMTS Layer",
@@ -239,4 +235,5 @@ class WMTSLayer(BaseOGC):
         }
     @property
     def _operational_layer_json(self):
+        """Represents the WebMap's JSON format"""
         return self.__text__

@@ -119,11 +119,7 @@ class BaseOGC(object):
     #----------------------------------------------------------------------
     @property
     def _lyr_json(self) -> dict:
-        """
-        represents the map widget's JSON format
-
-        :returns: dict
-        """
+        """Represents the MapView's JSON format"""
         return {
             "id" : uuid.uuid4().hex,
             "title" : self._title or "Layer",
@@ -133,6 +129,11 @@ class BaseOGC(object):
             "maxScale" : self.scale[1],
             "opacity" : self.opacity
         }
+    @property
+    def _operational_layer_json(self) -> dict:
+        """Represents the WebMap's JSON format"""
+        return self._lyr_json
+
 ###########################################################################
 class BaseOpenData(BaseOGC):
     """
