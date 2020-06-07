@@ -467,7 +467,7 @@ class _DeepCloner():
             self._graph[item.id] = item_definition
             
             notebook = item_definition.data
-            with open(notebook, 'r') as file:
+            with open(notebook, 'r', encoding='utf8') as file:
                 notebook_json = file.read()
                 item_ids = set(re.findall('[0-9A-F]{32}', notebook_json, re.IGNORECASE))
                 for id in item_ids:
@@ -3118,7 +3118,7 @@ class _NotebookDefinition(_ItemDefinition):
                 notebook = self.data
                 notebook_json = ""
 
-                with open(notebook, 'r') as file:
+                with open(notebook, 'r', encoding='utf8') as file:
                     notebook_json = file.read()
 
                 for key, value in self._clone_mapping['Item IDs'].items():
@@ -3128,7 +3128,7 @@ class _NotebookDefinition(_ItemDefinition):
                 notebook_json = re.sub(self._source_url, _get_org_url(self.target), notebook_json, 0, re.IGNORECASE)
 
                 new_notebook = os.path.join(os.path.dirname(notebook), '{0}.ipynb'.format(new_item.id))
-                with open(new_notebook, 'w') as file:
+                with open(new_notebook, 'w', encoding='utf8') as file:
                     file.write(notebook_json)
 
                 # Update python notebook

@@ -1,12 +1,10 @@
-
 import os
 import traceback
 import json
 import math
 
 HAS_FASTAI = False
-try:
-    from .. import models
+try:    
     from .env import raise_fastai_import_error
     from fastai.vision.data import ImageList
     from fastai.vision import Image, imagenet_stats
@@ -14,7 +12,7 @@ try:
     import numpy as np
     from matplotlib import pyplot as plt
     HAS_FASTAI = True
-except Exception as e:
+except Exception:
     import_exception = traceback.format_exc()
     pass
 
@@ -177,6 +175,7 @@ def denorm_x(imagetensor_batch, self=None):
     -------------------------
     returns denormalized imagetensor_batch
     """
+    from .. import models
     if isinstance(self, models._arcgis_model.ArcGISModel):
         data = self._data
     else:
@@ -220,6 +219,7 @@ def dynamic_range_adjustment(imagetensor_batch):
 ## Image Stretching Functions end ##
 
 def load_model(emd_path, data=None):
+    from .. import models
     # if not HAS_FASTAI:
     #     raise_fastai_import_error(import_exception=import_exception)
         

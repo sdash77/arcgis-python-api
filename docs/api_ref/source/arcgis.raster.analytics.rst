@@ -167,3 +167,11 @@ analyze_changes_using_ccdc
 detect_change_using_change_analysis_raster
 ------------------------------------------
 .. automethod:: arcgis.raster.analytics.detect_change_using_change_analysis_raster
+
+manage_multidimensional_raster
+------------------------------
+.. automethod:: arcgis.raster.analytics.manage_multidimensional_raster
+
+sample
+------
+.. automethod:: arcgis.raster.analytics.sample

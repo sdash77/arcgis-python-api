@@ -3,6 +3,7 @@ from pathlib import Path
 from ._codetemplate import image_classifier_prf
 from ._arcgis_model import ArcGISModel
 import types
+from functools import partial
 import logging
 logger = logging.getLogger()
 
@@ -77,7 +78,11 @@ class PSPNetClassifier(ArcGISModel):
                             augmentation and mixup loss. Default: False
     ---------------------   -------------------------------------------
     focal_loss              Optional boolean. If True, it will use focal loss.
-                            Default: False                                                         
+                            Default: False
+    ---------------------   -------------------------------------------
+    ignore_classes          Optional list. It will contain the list of class
+                            values on which model will not incur loss.
+                            Default: []                                                                             
     =====================   ===========================================    
 
     :returns: `PSPNetClassifier` Object
@@ -90,6 +95,23 @@ class PSPNetClassifier(ArcGISModel):
             backbone = models.resnet50
       
         super().__init__(data, backbone)
+
+        self._ignore_classes = kwargs.get('ignore_classes', [])
+        if self._ignore_classes != [] and len(data.classes) <= 3:
+            raise Exception(f"`ignore_classes` parameter can only be used when the dataset has more than 2 classes.")
+
+        data_classes = list(self._data.class_mapping.keys())
+        if 0 not in list(data.class_mapping.values()):
+            self._ignore_mapped_class = [data_classes.index(k) + 1 for k in self._ignore_classes if k != 0]
+        else:
+            self._ignore_mapped_class = [data_classes.index(k) + 1 for k in self._ignore_classes]
+        if self._ignore_classes != []:
+            if 0 not in self._ignore_mapped_class:
+                self._ignore_mapped_class.insert(0, 0)
+            global accuracy
+            accuracy = partial(accuracy, ignore_mapped_class=self._ignore_mapped_class)       
+
+
         self.mixup = kwargs.get('mixup', False)
         self.class_balancing = kwargs.get('class_balancing', False)
         self.focal_loss = kwargs.get('focal_loss', False)        
@@ -119,12 +141,14 @@ class PSPNetClassifier(ArcGISModel):
             if self.class_balancing and data.class_weight is not None:
                 class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(self._device)
                 self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
-            
-            if unet_aux_loss:
-               self.learn.loss_func = self._psp_loss 
+
         else:
-            self.learn = _pspnet_learner(data, backbone=self._backbone, chip_size=self._data.chip_size, pyramid_sizes=pyramid_sizes, pretrained=True, metrics=accuracy)
-            self.learn.loss_func = self._psp_loss
+            self.learn = _pspnet_learner(data, 
+                                         backbone=self._backbone, 
+                                         chip_size=self._data.chip_size, 
+                                         pyramid_sizes=pyramid_sizes, 
+                                         pretrained=True, 
+                                         metrics=accuracy)
 
         if self.focal_loss:
             self.learn.loss_func = FocalLoss(self.learn.loss_func)
@@ -136,6 +160,22 @@ class PSPNetClassifier(ArcGISModel):
         if self.class_balancing:
             if self._data.class_weight is None:
                 logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
+            elif getattr(data, 'overflow_encountered', False):
+                logger.warning("Overflow Encountered. Ignoring `class_balancing` parameter.")
+                class_weight = [1] * len(data.classes)
+
+        if self._ignore_classes != []:
+            if not self.class_balancing:
+                class_weight = torch.tensor([1] * data.c).float().to(self._device)
+            class_weight[self._ignore_mapped_class] = 0.
+        else:
+            class_weight = None
+
+        self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
+        self._final_class_weight = class_weight
+
+        if unet_aux_loss or not use_unet:
+            self.learn.loss_func = self._psp_loss
 
         self.learn.model = self.learn.model.to(self._device)
         self.freeze()
@@ -212,12 +252,7 @@ class PSPNetClassifier(ArcGISModel):
     def _psp_loss(self, outputs, targets, **kwargs):
         targets = targets.squeeze(1).detach()
 
-        if self.class_balancing and self._data.class_weight is not None:
-            class_weight = torch.tensor([self._data.class_weight.mean()] + self._data.class_weight.tolist()).float().to(self._device)
-        else:
-            class_weight = None
-
-        criterion = nn.CrossEntropyLoss(weight=class_weight).to(self._device)
+        criterion = nn.CrossEntropyLoss(weight=self._final_class_weight).to(self._device)
 
         if self.learn.model.training: # returns a tuple of aux_logits and main_logits while training
             out = outputs[0]
@@ -274,6 +309,7 @@ class PSPNetClassifier(ArcGISModel):
         _emd_template["ModelConfiguration"] = "_psp"
         _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
         _emd_template["ExtractBands"] = [0, 1, 2]
+        _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
 
         _emd_template['Classes'] = []
         class_data = {}
@@ -295,7 +331,7 @@ class PSPNetClassifier(ArcGISModel):
         self._check_requisites()
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
-        self.learn.show_results(rows=rows, **kwargs)   
+        self.learn.show_results(rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs)
 
     def _show_results_multispectral(self, rows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
         ax = show_results_multispectral(
@@ -344,14 +380,19 @@ class PSPNetClassifier(ArcGISModel):
         :returns: `dict` if mean is False otherwise `float`
         """
         num_classes = torch.arange(self._data.c)
-        miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress)
+        miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress, self._ignore_mapped_class)
         if mean:
             return np.mean(miou)
-        return dict(zip(['0'] + self._data.classes[1:], miou))
+        if self._ignore_mapped_class == []:
+            return dict(zip(['0'] + self._data.classes[1:], miou))
+        else:
+            class_values = [0] + list(self._data.class_mapping.keys())
+            return {class_values[i]: miou[i] for i in range(len(miou)) if i not in self._ignore_mapped_class} 
+
 
     def per_class_metrics(self):
         """
         Computer per class precision, recall and f1-score on validation set.
         """
         ## Calling imported function `per_class_metrics`        
-        return per_class_metrics(self)
+        return per_class_metrics(self, ignore_mapped_class=self._ignore_mapped_class)

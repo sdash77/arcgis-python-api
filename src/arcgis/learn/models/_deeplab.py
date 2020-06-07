@@ -30,6 +30,7 @@ try:
     from torchvision.models.segmentation.fcn import FCNHead
     from ._deeplab_utils import Deeplab, compute_miou
     from .._utils.common import get_multispectral_data_params_from_emd
+    from ._psp_utils import accuracy
 
     HAS_FASTAI = True
 except Exception as e:
@@ -96,7 +97,11 @@ class DeepLab(ArcGISModel):
                             augmentation and mixup loss. Default: False
     ---------------------   -------------------------------------------
     focal_loss              Optional boolean. If True, it will use focal loss.
-                            Default: False                                                         
+                            Default: False
+    ---------------------   -------------------------------------------
+    ignore_classes          Optional list. It will contain the list of class
+                            values on which model will not incur loss.
+                            Default: []                                                       
     =====================   ===========================================     
 
     :returns: ``DeepLab`` Object
@@ -104,14 +109,29 @@ class DeepLab(ArcGISModel):
     def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
         # Set default backbone to be 'resnet101'
         if backbone is None:
-            backbone = models.resnet101
+            backbone = models.resnet101          
+
+        super().__init__(data, backbone)
+
+        self._ignore_classes = kwargs.get('ignore_classes', [])
+        if self._ignore_classes != [] and len(data.classes) <= 3:
+            raise Exception(f"`ignore_classes` parameter can only be used when the dataset has more than 2 classes.")
+
+        data_classes = list(self._data.class_mapping.keys())
+        if 0 not in list(data.class_mapping.values()):
+            self._ignore_mapped_class = [data_classes.index(k) + 1 for k in self._ignore_classes if k != 0]
+        else:
+            self._ignore_mapped_class = [data_classes.index(k) + 1 for k in self._ignore_classes]
+        if self._ignore_classes != []:
+            if 0 not in self._ignore_mapped_class:
+                self._ignore_mapped_class.insert(0, 0)
+            global accuracy
+            accuracy = partial(accuracy, ignore_mapped_class=self._ignore_mapped_class)  
 
         self.mixup = kwargs.get('mixup', False)
         self.class_balancing = kwargs.get('class_balancing', False)
-        self.focal_loss = kwargs.get('focal_loss', False)               
+        self.focal_loss = kwargs.get('focal_loss', False)
 
-        super().__init__(data, backbone)
-        
         _backbone = self._backbone
         if hasattr(self, '_orig_backbone'):
             _backbone = self._orig_backbone
@@ -130,17 +150,37 @@ class DeepLab(ArcGISModel):
         if not _isnotebook() and os.name=='posix':
             _set_ddp_multigpu(self)
             if self._multigpu_training:
-                self.learn = Learner(data, model, metrics=self._accuracy).to_distributed(self._rank_distributed)
+                self.learn = Learner(data, model, metrics=accuracy).to_distributed(self._rank_distributed)
             else:
-                self.learn = Learner(data, model, metrics=self._accuracy)
+                self.learn = Learner(data, model, metrics=accuracy)
         else:
-            self.learn = Learner(data, model, metrics=self._accuracy)
+            self.learn = Learner(data, model, metrics=accuracy)
 
         self.learn.loss_func = self._deeplab_loss
 
+        ## setting class_weight if present in data
+        if self.class_balancing and self._data.class_weight is not None:
+            class_weight = torch.tensor([self._data.class_weight.mean()] + self._data.class_weight.tolist()).float().to(self._device)
+        else:
+            class_weight = None        
+
+        ## Raising warning in apropriate case
         if self.class_balancing:
             if self._data.class_weight is None:
                 logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
+            elif getattr(data, 'overflow_encountered', False):
+                logger.warning("Overflow Encountered. Ignoring `class_balancing` parameter.")
+                class_weight = [1] * len(data.classes)
+        
+        ## Setting class weights for ignored classes
+        if self._ignore_classes != []:
+            if not self.class_balancing:
+                class_weight = torch.tensor([1] * data.c).float().to(self._device)
+            class_weight[self._ignore_mapped_class] = 0.
+        else:
+            class_weight = None
+
+        self._final_class_weight = class_weight
 
         if self.focal_loss:
             self.learn.loss_func = FocalLoss(self.learn.loss_func)
@@ -216,8 +256,8 @@ class DeepLab(ArcGISModel):
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_deeplab_infrencing"
         _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
-
         _emd_template["ExtractBands"] = [0, 1, 2]
+        _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
         _emd_template['Classes'] = []
         class_data = {}
         for i, class_name in enumerate(self._data.classes[1:]):  # 0th index is background
@@ -251,12 +291,7 @@ class DeepLab(ArcGISModel):
     def _deeplab_loss(self, outputs, targets, **kwargs):
         targets = targets.squeeze(1).detach()
 
-        if self.class_balancing and self._data.class_weight is not None:
-            class_weight = torch.tensor([self._data.class_weight.mean()] + self._data.class_weight.tolist()).float().to(self._device)
-        else:
-            class_weight = None
-
-        criterion = nn.CrossEntropyLoss(weight=class_weight).to(self._device)
+        criterion = nn.CrossEntropyLoss(weight=self._final_class_weight).to(self._device)
         if self.learn.model.training:
             out = outputs[0]
             aux = outputs[1]
@@ -298,7 +333,7 @@ class DeepLab(ArcGISModel):
         self._check_requisites()
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
-        self.learn.show_results(rows=rows, **kwargs) 
+        self.learn.show_results(rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs)
 
     def _show_results_multispectral(self, rows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
         ax = show_results_multispectral(
@@ -307,13 +342,6 @@ class DeepLab(ArcGISModel):
             alpha=alpha, 
             **kwargs
         )
-
-    def _accuracy(self, input, target, void_code=0, class_mapping=None): 
-        if self.learn.model.training: # while training
-            input = input[0]
-
-        target = target.squeeze(1)
-        return (input.argmax(dim=1) == target).float().mean()
 
     def mIOU(self, mean=False, show_progress=True):
 
@@ -334,14 +362,19 @@ class DeepLab(ArcGISModel):
         :returns: `dict` if mean is False otherwise `float`
         """
         num_classes = torch.arange(self._data.c)
-        miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress)
+        miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress, self._ignore_mapped_class)
         if mean:
             return np.mean(miou)
-        return dict(zip(['0'] + self._data.classes[1:], miou))
+        if self._ignore_mapped_class == []:
+            return dict(zip(['0'] + self._data.classes[1:], miou))
+        else:
+            class_values = [0] + list(self._data.class_mapping.keys())
+            return {class_values[i]: miou[i] for i in range(len(miou)) if i not in self._ignore_mapped_class} 
+
 
     def per_class_metrics(self):
         """
         Computer per class precision, recall and f1-score on validation set.
         """
         ## Calling imported function `per_class_metrics`
-        return per_class_metrics(self)            
+        return per_class_metrics(self, ignore_mapped_class=self._ignore_mapped_class)

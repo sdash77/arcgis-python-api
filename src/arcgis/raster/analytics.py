@@ -488,15 +488,15 @@ def _set_output_raster(output_name, task, gis, output_properties=None):
     return output_raster, output_service
 
 def _save_ra(raster_function,output_name=None, other_outputs=None,gis=None, future=False, **kwargs):
-    if raster_function['rasterFunctionArguments']['toolName'] is "FlowDirection_sa":
+    if raster_function['rasterFunctionArguments']['toolName'] == "FlowDirection_sa":
         return _flow_direction_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, future=future, **kwargs)
-    if raster_function['rasterFunctionArguments']['toolName'] is "CalculateTravelCost_sa":
+    if raster_function['rasterFunctionArguments']['toolName'] == "CalculateTravelCost_sa":
         return _calculate_travel_cost_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis,future=future, **kwargs)
-    if raster_function['rasterFunctionArguments']['toolName'] is "CalculateDistance_sa":
+    if raster_function['rasterFunctionArguments']['toolName'] == "CalculateDistance_sa":
         return _calculate_distance_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis,future=future, **kwargs)
-    if raster_function['rasterFunctionArguments']['toolName'] is "DistanceAccumulation_sa":
+    if raster_function['rasterFunctionArguments']['toolName'] == "DistanceAccumulation_sa":
         return _distance_accumulation_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, **kwargs)
-    if raster_function['rasterFunctionArguments']['toolName'] is "DistanceAllocation_sa":
+    if raster_function['rasterFunctionArguments']['toolName'] == "DistanceAllocation_sa":
         return _distance_allocation_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, **kwargs)
 
 
@@ -1067,6 +1067,8 @@ def summarize_raster_within(input_zone_layer,
                             ignore_missing_values=True,
                             output_name=None,
                             context=None,
+                            process_as_multidimensional=False,
+                            percentile_value=90,
                             *,
                             gis=None,
                             future=False,
@@ -1103,7 +1105,7 @@ def summarize_raster_within(input_zone_layer,
                                              layer. 
                                              
                                              statistic_type can be one of the following:
-                                             ['Mean', 'Majority', 'Maximum', 'Median', 'Minimum', 'Minority', 'Range', 'STD', 'SUM', 'Variety']
+                                             ['Mean', 'Majority', 'Maximum', 'Median', 'Minimum', 'Minority', 'Range', 'STD', 'SUM', 'Variety', 'Percentile']
 
                                              Mean: Calculates the average of all cells in the value raster that belongs to 
                                              the same zone as the output cell. This is the default.
@@ -1134,6 +1136,11 @@ def summarize_raster_within(input_zone_layer,
 
                                              Variety: Finds the variety of all cells in the value raster that belong to 
                                              the same zone as the output cell.
+
+                                             Percentile: Finds a percentile of all cells in the value raster that 
+                                             belong to the same zone as the output cell. The 90th percentile 
+                                             is calculated by default. You can specify other values (from 0 to 100) 
+                                             using the percentile_value parameter.
 
                                              If the input_raster_layer_to_summarize is floating-point type, the zonal calculations 
                                              for Majority, Median, Mean, and Variety cannot be computed.
@@ -1198,6 +1205,23 @@ def summarize_raster_within(input_zone_layer,
                                                 Example:
                                                     {'resamplingMethod': "Nearest"} 
     ------------------------------------     --------------------------------------------------------------------
+    process_as_multidimensional              Optional bool, Process as multidimensional if set to True, 
+                                             if the input is multidimensional raster.
+                                             
+                                             True - Statistics will be calculated from the current slice of a 
+                                             multidimensional image service. This is the default.
+                                             
+                                             False - Statistics will be calculated for all dimensions 
+                                             (such as time or depth) of a multidimensional image service.
+    ------------------------------------     --------------------------------------------------------------------
+    percentile_value                         Optional int, The percentile to calculate. The default is 90, for the 90th percentile. 
+                                             The values can range from 0 to 100. The 0th percentile is essentially 
+                                             equivalent to the Minimum statistic, and the 100th percentile is equivalent to Maximum. 
+                                             A value of 50 will produce essentially the same result as the Median statistic.
+                             
+                                             This parameter is honoured only available if the statistics_type parameter is 
+                                             set to Percentile.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not speficied, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -1224,6 +1248,8 @@ def summarize_raster_within(input_zone_layer,
                                                              statistic_type=statistic_type,
                                                              ignore_missing_values=ignore_missing_values,
                                                              context=context,
+                                                             process_as_multidimensional=process_as_multidimensional,
+                                                             percentile_value=percentile_value,
                                                              future=future,
                                                              **kwargs)
 
@@ -5121,7 +5147,7 @@ def optimal_region_connections(input_region_data,
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_region_data                       Required ImageryLayer or Feature Layer object. Portal Item can be passed.
+    input_region_data                        Required ImageryLayer or Feature Layer object. Portal Item can be passed.
                                              The input regions to be connected by the optimal network.
 
                                              If the region input is a raster, the regions are defined by groups 
@@ -5180,13 +5206,13 @@ def optimal_region_connections(input_region_data,
                                              attribute table store specific information about the path. 
                                              Those fields are the following:
                                               
-                                              - PATHID—Unique identifier for the path
+                                              - PATHID - Unique identifier for the path
 
-                                              - PATHCOST—Total accumulative distance or cost for the path
+                                              - PATHCOST - Total accumulative distance or cost for the path
 
-                                              - REGION1—The first region the path connects
+                                              - REGION1 - The first region the path connects
 
-                                              - REGION2—The other region the path connects
+                                              - REGION2 - The other region the path connects
 
                                              This information provides insight into the paths within the network.
 
@@ -5208,13 +5234,13 @@ def optimal_region_connections(input_region_data,
                                              attribute table store specific information about the path. 
                                              Those fields are the following:
 
-                                              - PATHID—Unique identifier for the path
+                                              - PATHID - Unique identifier for the path
 
-                                              - PATHCOST—Total accumulative distance or cost for the path
+                                              - PATHCOST - Total accumulative distance or cost for the path
 
-                                              - REGION1—The first region the path connects
+                                              - REGION1 - The first region the path connects
 
-                                              - REGION2—The other region the path connects
+                                              - REGION2 - The other region the path connects
 
                                              This information provides insight into the paths within the 
                                              network and is particularly useful when deciding which paths 
@@ -5232,9 +5258,7 @@ def optimal_region_connections(input_region_data,
                                              results will be returned asynchronously.
     ====================================     ====================================================================
 
-    :return: Returns the following as a named tuple - 
-             - output_optimum_network_features
-             - output_neighbor_network_features
+    :return: Returns the following as a named tuple - output_optimum_network_features, output_neighbor_network_features
 
     """
 
@@ -5629,4 +5653,234 @@ def detect_change_using_change_analysis_raster(input_change_analysis_raster=None
                                                                                 context=context,
                                                                                 future=future,
                                                                                 **kwargs)
+
+
+def manage_multidimensional_raster(target_multidimensional_raster, 
+                                   manage_mode='APPEND_SLICES', 
+                                   variables=None, 
+                                   input_multidimensional_rasters=None, 
+                                   dimension_name=None, 
+                                   dimension_value=None, 
+                                   dimension_description=None, 
+                                   dimension_unit=None,
+                                   *,
+                                   gis=None,
+                                   future=False,
+                                   **kwargs):
+    """
+    Function edits a multidimensional raster by adding or deleting variables or dimensions.
+    Function available in ArcGIS Image Server 10.8.1 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    target_multidimensional_raster           Required ImageryLayer object. The input multidimensional raster.
+                                             Portal Item can be passed.
+    ------------------------------------     --------------------------------------------------------------------
+    manage_mode                              Optional string. Specifies the type of modification that will be performed 
+                                             on the target raster.
+
+                                                - ADD_DIMENSION - Add a new dimension to the multidimensional raster information.
+
+                                                - APPEND_SLICES - Add slices from another multidimensional raster. 
+                                                                  Slices are added to the end of the slices for a dimension. 
+                                                                  This is the default.
+
+                                                - APPEND_VARIABLES - Add one or more variable from another multidimensional raster. 
+
+                                                - REPLACE_SLICES - Replace existing slices from another multidimensional raster, 
+                                                                   at specific dimension values.
+
+                                                - DELETE_VARIABLES - Delete one or more variables from the multidimensional raster.
+
+                                                - REMOVE_DIMENSION - Convert a single slice multidimensional raster into a dimensionless raster.
+    ------------------------------------     --------------------------------------------------------------------
+    variables                                Optional List. The variable or variables that will be modified in the 
+                                             target multidimensional raster. This is required if the operation 
+                                             being performed is a modification of an existing variable. 
+
+                                             If no variable is specified, the first variable in the target 
+                                             multidimensional raster will be modified. 
+    ------------------------------------     --------------------------------------------------------------------
+    input_multidimensional_rasters           Optional list of input multidimensional raster. This is required 
+                                             when manage_mode is set to APPEND_SLICES, REPLACE_SLICES, or APPEND_VARIABLES. 
+    ------------------------------------     --------------------------------------------------------------------
+    dimension_name                           Optional string. The name of the dimension to be added to the dataset. 
+                                             This is required if manage_mode is set to ADD_DIMENSION.
+    ------------------------------------     --------------------------------------------------------------------
+    dimension_value                          Optional string. The value of the dimension to be added. 
+                                             This is required if manage_mode is set to ADD_DIMENSION.
+    ------------------------------------     --------------------------------------------------------------------
+    dimension_description                    Optional string. The description of the dimension to be added. 
+                                             This is required if manage_mode is set to ADD_DIMENSION.
+    ------------------------------------     --------------------------------------------------------------------
+    dimension_unit                           Optional string. The unit of the dimension to be modified.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Keyword only parameter. Optional GIS object. the GIS on which this tool runs. If not specified, 
+                                             the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    :return:
+    output_raster : Imagery Layer URL 
+
+    """
+
+    #task = "ManageMultidimensionalRaster"
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.manage_multidimensional_raster(target_multidimensional_raster=target_multidimensional_raster, 
+                                                                    manage_mode=manage_mode, 
+                                                                    variables=variables, 
+                                                                    input_multidimensional_rasters=input_multidimensional_rasters, 
+                                                                    dimension_name=dimension_name, 
+                                                                    dimension_value=dimension_value, 
+                                                                    dimension_description=dimension_description, 
+                                                                    dimension_unit=dimension_unit,
+                                                                    future=future,
+                                                                    **kwargs)
+
+
+def sample(input_rasters, 
+           input_location_data, 
+           resampling_type='NEAREST', 
+           unique_id_field=None, 
+           acquisition_definition=None, 
+           statistics_type='MEAN', 
+           percentile_value=None, 
+           buffer_distance=None, 
+           layout='ROW_WISE', 
+           generate_feature_class=False,
+           process_as_multidimensional=None,
+           output_name=None, 
+           context=None,
+           *,
+           gis=None,
+           future=False,
+           **kwargs):
+
+    """
+    Function creates a table that shows the values of cells from a raster, 
+    or set of rasters, for defined locations. The locations are defined by raster cells, 
+    polygon features, polyline features, or by a set of points.
+    The input rasters can be two-dimensional or multidimensional. 
+    The structure of the output table changes when the input rasters are multidimensional.
+    Function available in ArcGIS Image Server 10.8.1 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_rasters                            Required list of ImageryLayer object. List of portal items can be passed.
+    ------------------------------------     --------------------------------------------------------------------
+    input_location_data                      Required ImageryLayer or FeatureLayer object. 
+                                             Data identifying positions at which you want a sample taken.
+                                             Polyline and polygon feature services are supported when
+                                             processAsMultidimensional is set to True in the context. 
+    ------------------------------------     --------------------------------------------------------------------
+    resampling_type                          Optional str. Resampling algorithm used when sampling a raster.
+                                              - NEAREST: Nearest neighbor assignment. This is the default.
+                                              - BILINEAR: Bilinear interpolation
+                                              - CUBIC: Cubic convolution
+                                             Examples:
+                                                "NEAREST"
+    ------------------------------------     --------------------------------------------------------------------
+    unique_id_field                          Optional int. A field containing a different value for every 
+                                             location or feature in the input location raster or point features.
+                                             Example:
+                                                "FID"
+    ------------------------------------     --------------------------------------------------------------------
+    acquisition_definition                   Optional dictionary. Specify the time, depth or other acquisition 
+                                             data associated with the location features.
+                                             Only the following combinations are supported: 
+                                             - Dimension + Start field or value
+                                             - Dimension + Start field or value + End field or value
+                                             - Dimension + Start field or value + Relative value or days before + Relative value or days after
+                                             Relative value or days before and Relative value or days after only support non-negative values.
+                                             Statistics will be calculated for variables within this dimension range. 
+                                             
+                                             Syntax: a list of dictionary objects.
+                                             [{"dimension":  "Dimension",
+                                             "startFieldOrVal": "Start field or value", 
+                                             "endFieldOrVal": "End field or value", 
+                                             "relValOrDaysBefore": "Relative value or days before", 
+                                             "relValOrDaysAfter": "Relative value or days after"}]
+                                             Example:
+                                             [{"dimension":  "Dimension",
+                                             "startFieldOrVal": "1999-01-01T00:00:00", 
+                                             "endFieldOrVal": "2019-01-01T00:00:00"}]
+    ------------------------------------     --------------------------------------------------------------------
+    statistics_type                          Optional string.
+                                             The type of statistic to be calculated.
+                                                - MINIMUM - Finds the minimum within the specified range.
+                                                - MAXIMUM - Finds the maximum within the specified range.
+                                                - MEDIAN - Finds the median within the specified range.
+                                                - MEAN - Calculates the average for the specified range. This is the default.
+                                                - SUM - Calculates the sum of the variables within the specified range.
+                                                - MAJORITY - Finds the value that occurs most frequently.
+                                                - MINORITY - Finds the value that occurs least frequently.
+                                                - STD - Calculates the standard deviation.
+                                                - PERCENTILE - Calculates a defined percentile within the specified range.
+    ------------------------------------     --------------------------------------------------------------------
+    percentile_value                         Optional int. The percentile to calculate when the  
+                                             statistics_type parameter is set to PERCENTILE.
+                                             This value can range from 0 to 100. The default is 90. 
+    ------------------------------------     --------------------------------------------------------------------
+    buffer_distance                          Optional int. The specified distance around the location data 
+                                             features. The buffer distance is specified in the linear unit 
+                                             of the location feature's spatial reference. If the feature 
+                                             uses a geographic reference, the unit will be in degrees.
+                                             Statistics will be calculated within this buffer area. 
+    ------------------------------------     --------------------------------------------------------------------
+    layout                                   Optional string. Specifies whether sampled values appear in rows or 
+                                             columns in the output table. 
+                                               - ROW_WISE - Sampled values appear in separate rows in the output table. 
+                                                           This is the default.
+                                               - COLUMN_WISE - Sampled values appear in separate columns in the output table. 
+                                                               This option is only valid when the input multidimensional 
+                                                               raster contains one variable and one dimension, 
+                                                               and each slice is a single-band raster.
+    ------------------------------------     --------------------------------------------------------------------
+    generate_feature_class                   Optional bool, Boolean value to determine if this function generates 
+                                             a feature layer with sampled values or only a table with sampled values. 
+                                             By default, it is False.
+    ------------------------------------     --------------------------------------------------------------------
+    process_as_multidimensional              Optional bool, Process as multidimensional if set to True, 
+                                             if the input is multidimensional raster.
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional string. Name of the output feature item or table item to be created.
+                                             If not provided, a random name is generated by the method and used as 
+                                             the output name. 
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS object. If not speficied, the currently active connection
+                                             is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    :return: Feature Layer or Table object
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    if context is None:
+        context={}
+    if process_as_multidimensional is not None:
+        context.update({"processAsMultidimensional":process_as_multidimensional})
+
+    return gis._tools.rasteranalysis.sample(in_rasters=input_rasters, 
+                                            in_location_data= input_location_data, 
+                                            output_name=output_name, 
+                                            resampling_type=resampling_type, 
+                                            unique_id_field=unique_id_field, 
+                                            acquisition_definition=acquisition_definition, 
+                                            statistics_type=statistics_type, 
+                                            percentile_value=percentile_value, 
+                                            buffer_distance=buffer_distance, 
+                                            layout=layout, 
+                                            generate_feature_class=generate_feature_class,
+                                            context=context,
+                                            future=future,
+                                            **kwargs)
 

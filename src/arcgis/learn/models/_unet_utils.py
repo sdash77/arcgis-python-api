@@ -5,7 +5,7 @@ from fastai.layers import CrossEntropyFlat
 from fastai.basic_train import LearnerCallback
 from .._utils.common import ArcGISMSImage, get_top_padding, kwarg_fill_none, \
     find_data_loader, get_nbatches, dynamic_range_adjustment, image_tensor_checks_plotting, \
-    get_symbology_bands, predict_batch, denorm_x
+    get_symbology_bands, predict_batch, denorm_x, get_nbatches
 from .._utils.pixel_classification import analyze_pred_pixel_classification
 import torch
 import warnings
@@ -89,18 +89,12 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
         nrows = math.ceil(n_items/ncols)
     n_items = min(n_items, len(self.x))
 
-    x_batch, y_batch = [], []
-    i = 0
-    dl_iterater = iter(data_loader)
-    while i < n_items:
-        x, y = next(dl_iterater)
-        x_batch.append(x)
-        y_batch.append(y)
-        i+=self.batch_size
+    x_batch, y_batch = get_nbatches(data_loader, n_items)
     x_batch = torch.cat(x_batch)
+    y_batch = torch.cat(y_batch)
     # Denormalize X
     x_batch = (self._scaled_std_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._scaled_mean_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)
-    y_batch = torch.cat(y_batch)
+
 
     # Extract RGB Bands
     symbology_x_batch = x_batch[:, symbology_bands]
@@ -125,19 +119,22 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
     color_array[1:, 3] = alpha
 
     # Size for plotting
-    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
     idx = 0
     for r in range(nrows):
         for c in range(ncols):
+            if nrows == 1 and ncols == 1:
+                axi = axs
+            else:
+                axi = axs[r][c]
             if idx < symbology_x_batch.shape[0]:
-                axi  = ax[r][c]
                 axi.imshow(symbology_x_batch[idx])
                 y_rgb = color_array[y_batch[idx][0]]#.cpu().numpy()
                 #y_rgb = _class_array_to_rbg(y_batch[idx][0], self._multispectral_color_mapping, nodata)
                 axi.imshow(y_rgb, alpha=alpha)
                 axi.axis('off')
             else:
-                ax[r][c].axis('off')
+                axi.axis('off')
             idx+=1
 
 class ArcGISImageSegment(Image):
@@ -224,8 +221,14 @@ class ArcGISSegmentationLabelList(ImageList):
             x = map_to_contiguous(x, self.pixel_mapping)
         return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
-    def analyze_pred(self, pred, thresh:float=0.5): 
-        return pred.argmax(dim=0)[None]
+    def analyze_pred(self, pred, thresh=0.5, ignore_mapped_class=[]):
+        if ignore_mapped_class == []: 
+            return pred.argmax(dim=0)[None]
+        else:
+            for k in ignore_mapped_class:
+                pred[k] = -1
+            return pred.argmax(dim=0)[None]
+
 
     def reconstruct(self, t): 
         return ArcGISImageSegment(t, color_mapping=self.color_mapping)

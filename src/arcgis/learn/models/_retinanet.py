@@ -6,7 +6,7 @@ import random
 import statistics
 import warnings
 from .._data import _raise_fastai_import_error  
-import traceback    
+import traceback
 
 HAS_OPENCV = True
 HAS_FASTAI = True
@@ -25,8 +25,8 @@ try:
     from fastai.vision.image import open_image, bb2hw, image2np, Image, pil2tensor
     from fastai.core import ifnone
     from torchvision import models
-    from ._ssd_utils import SSDObjectCategoryList, show_results_multispectral
-    from ._retinanet_utils import RetinaNetModel, RetinaNetFocalLoss, compute_class_AP
+    from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList, show_results_multispectral
+    from ._retinanet_utils import RetinaNetModel, RetinaNetFocalLoss, compute_class_AP, get_predictions
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.basic_train import Learner
     from ._arcgis_model import SaveModelCallback, _resnet_family
@@ -163,6 +163,9 @@ class RetinaNet(ArcGISModel):
     def _model_metrics(self):
         return {'accuracy': self.average_precision_score(show_progress=False)}
 
+    def _analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ret_scores=True, device=None):
+        return get_predictions(pred, crit=self._loss_f, detect_thresh=thresh, nms_overlap=nms_overlap)
+
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
@@ -210,7 +213,7 @@ class RetinaNet(ArcGISModel):
                 warnings.simplefilter("ignore", UserWarning)
                 
                 sd = ImageList([], path=emd_path.parent.parent).split_by_idx([])
-                data = sd.label_const(0, label_cls=SSDObjectCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
+                data = sd.label_const(0, label_cls=ObjectDetectionCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
 
             data.chip_size = chip_size
             data.class_mapping = class_mapping
@@ -256,7 +259,7 @@ class RetinaNet(ArcGISModel):
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
 
-        self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
+        self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self)
 
     def _show_results_multispectral(self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs):
         ax = show_results_multispectral(
@@ -450,7 +453,7 @@ class RetinaNet(ArcGISModel):
 
         for chip in chips:
             frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
-            bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, ssd=self)[0]
+            bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, model=self)[0]
             if bbox:
                 scores = bbox.scores
                 bboxes, lbls = bbox._compute_boxes()

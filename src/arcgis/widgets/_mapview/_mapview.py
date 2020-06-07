@@ -18,7 +18,7 @@ import ipywidgets
 try:
     import pandas as pd
     from arcgis.features.geo import _is_geoenabled
-except:
+except ImportError:
     def _is_geoenabled(**kwargs):
         return False
     pd = None
@@ -40,7 +40,7 @@ log = logging.getLogger(__name__)
 
 DEFAULT_ELEMENT_HEIGHT = "400px"
 
-_DEFAULT_JS_CDN = "https://js.arcgis.com/4.11/"
+_DEFAULT_JS_CDN = "https://js.arcgis.com/4.15/"
 _js_cdn_override_global = ""
 
 def _is_iterable(obj):
@@ -244,6 +244,40 @@ class MapView(widgets.DOMWidget):
     @zoom.setter
     def zoom(self, value):
         self._zoom = value
+
+    _scale = Float(-1).tag(sync=True)
+    _readonly_scale = Float(-1).tag(sync=True)
+
+    @property
+    def scale(self):
+        """The map scale at the center of the view. If set to X, the scale
+        of the map would be 1:X.
+
+        For continuous values to apply and not get "snapped" to the closest
+        level of detail, set `mapview.snap_to_zoom = False`.
+
+        # Usage example: Sets the scale to 1:24000
+            map = gis.map()
+            map.scale = 24000
+        """
+        return self._readonly_scale
+
+    @scale.setter
+    def scale(self, value):
+        self._scale = value
+
+    _snap_to_zoom = Bool(True).tag(sync=True)
+
+    @property
+    def snap_to_zoom(self):
+        """When `True`, snap to the next level of detail when zooming in or out.
+        When `False`, the zoom is continous. Only applies in 2D mode
+        """
+        return self._snap_to_zoom
+
+    @snap_to_zoom.setter
+    def snap_to_zoom(self, value):
+        self._snap_to_zoom = value
 
     _rotation = Float(0).tag(sync=True)
     _readonly_rotation = Float(0).tag(sync=True)

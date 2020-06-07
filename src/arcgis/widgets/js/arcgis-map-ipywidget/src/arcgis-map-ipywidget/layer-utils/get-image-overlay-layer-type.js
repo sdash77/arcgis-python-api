@@ -42,6 +42,7 @@ var getImageOverlayLayerType = function(){
                     context.translate(width * pixelRatio * 0.5, height * pixelRatio * 0.5);
                     context.rotate((state.rotation * Math.PI) / 180);
                     context.translate(- width * pixelRatio * 0.5, -height * pixelRatio * 0.5);}
+
                 var i;
                 for(i=0;i<this.layer._imagesToOverlay.length; i++){
                     var imgToOverlay = this.layer._imagesToOverlay.getItemAt(i);

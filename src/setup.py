@@ -53,6 +53,7 @@ else:
         'keyring >=19',
         'lerc',
         'jupyterlab',
+        'pywin32 >=223;platform_system=="Windows"',
         'pyshp >=2',
         'requests',
         'requests-oauthlib',
@@ -159,7 +160,7 @@ kwargs = {
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    "version":'1.8.0',
+    "version":'1.8.2',
 
     "description":'ArcGIS API for Python',
     "long_description":long_description,

@@ -39,6 +39,10 @@ prepare_data
 -----------
 .. autofunction:: arcgis.learn.prepare_data
 
+prepare_tabulardata
+-----------
+.. autofunction:: arcgis.learn.prepare_tabulardata
+
 SingleShotDetector
 ------------------
 .. autoclass:: arcgis.learn.SingleShotDetector
@@ -101,8 +105,50 @@ PointCNN
     :inherited-members:
     :undoc-members:
 
+FullyConnectedNetwork
+---------------------
+.. autoclass:: arcgis.learn.FullyConnectedNetwork
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+MLModel
+-------
+.. autoclass:: arcgis.learn.MLModel
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Transform3d
 ------------------
 .. autoclass:: arcgis.learn.Transform3d
     :members:
+    :undoc-members:
+
+ModelExtension
+------------------
+.. autoclass:: arcgis.learn.ModelExtension
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+FasterRCNN
+------------------
+.. autoclass:: arcgis.learn.FasterRCNN
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+SuperResolution
+------------------
+.. autoclass:: arcgis.learn.SuperResolution
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+YOLOv3
+------------------
+.. autoclass:: arcgis.learn.YOLOv3
+    :members:
+    :inherited-members:
     :undoc-members:

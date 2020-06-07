@@ -51,16 +51,6 @@ module.exports = [
         resolve: nbResolve
     }),
     merge(common, {
-    //The legacy widget extension that uses 3.X JS API
-        entry: './src/legacy-mapview.js',
-        output: {
-            filename: 'legacy-mapview.js',
-            path: path.resolve(__dirname, 'dist'),
-            libraryTarget: 'amd'
-        },
-        resolve: nbResolve
-    }),
-    merge(common, {
      // Embeddable widgets bundle
      //
      // This bundle is generally almost identical to the notebook bundle

@@ -1,11 +1,8 @@
 import math
-
-try:
+from .env import ARCGIS_ENABLE_TF_BACKEND
+if ARCGIS_ENABLE_TF_BACKEND:
     import tensorflow as tf
     from .common_tf import get_channel_axis
-    HAS_TENSORFLOW = True
-except:
-    HAS_TENSORFLOW = False
 
 try:
     import torch
@@ -45,6 +42,10 @@ def analyze_pred_pixel_classification(self, activations):
     if self._backend == 'pytorch':
         if type(activations) == list:
             activations = torch.cat(activations)
+        
+        if self._ignore_mapped_class != []:
+            for k in self._ignore_mapped_class:
+                activations[:, k] = -1
         return activations.max(dim=1)[1].cpu().numpy()
     elif self._backend == 'tensorflow':
         if type(activations) == list:

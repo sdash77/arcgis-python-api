@@ -4,7 +4,7 @@ try:
     import torch
     import torch.nn as nn
     import math
-    from .._ssd_utils import _analyze_pred, _reconstruct
+    from ..._utils.pascal_voc_rectangles import _reconstruct
     from .util import normalize_batch
     HAS_TORCH = True
 except Exception as e:
@@ -335,11 +335,11 @@ class ChildObjectDetector:
 
         num_boxes = 0
         for chip_idx, (clas, bbox) in enumerate(zip(batch_classes, batch_bboxes)):
-            bbox_pred, preds_classes, pred_scores = _analyze_pred(pred=(clas, bbox), ssd=self.retinanet, thresh=self.thres, nms_overlap=self.nms_overlap)
-            image_bbox = _reconstruct([bbox_pred, preds_classes, pred_scores], dummy_x, pad_idx=0, classes=['background'] + class_names)
+            pp_output = self.retinanet._analyze_pred(pred=(clas, bbox), thresh=self.thres, nms_overlap=self.nms_overlap)
+            image_bbox = _reconstruct(pp_output, dummy_x, pad_idx=0, classes=['background'] + class_names)
             if not image_bbox is None:            
                 for feature_idx in range(len(image_bbox.data[0])):
-                    to_append = pred2dict(((image_bbox.data[0][feature_idx] + 1) / 2).detach().cpu().numpy(), #self.json_info["ImageHeight"]
+                    to_append = pred2dict(((image_bbox.data[0][feature_idx] + 1) / 2).detach().cpu().numpy(),
                                                 image_bbox.scores[feature_idx],
                                                 str(image_bbox.labels[feature_idx]),
                                                 image_bbox.data[1][feature_idx],

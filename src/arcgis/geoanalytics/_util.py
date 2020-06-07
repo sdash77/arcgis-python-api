@@ -4,9 +4,16 @@ import string
 import random
 
 import arcgis
-from arcgis.gis import Layer
+from arcgis.gis import Layer, Item
 from arcgis.features import FeatureCollection
 from arcgis.geoprocessing._job import GPJob
+
+
+def _prevent_bds_item(item):
+    """checks if the input is a valid input for the GeoAnalytics Tool"""
+    if isinstance(item, Item):
+        raise ValueError(f"The {item.title} is an Item. Please pass the layer instead.")
+    return item
 
 def _id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
@@ -145,19 +152,23 @@ class GAJob(object):
     gpjob             Required GPJob. The geoprocessing job.
     ----------------  ---------------------------------------------------------------
     return_service    Optional Item. The service to return to the user.
+    ----------------  ---------------------------------------------------------------
+    add_messages      Optional Boolean. At v1.8.2 a user can request the processing information to be appended to the item.
     ================  ===============================================================
 
     """
     _gpjob = None
     _return_service = None
+    _add_messages = None
     #----------------------------------------------------------------------
-    def __init__(self, gpjob, return_service=None):
+    def __init__(self, gpjob, return_service=None, add_messages=False):
         """
         initializer
         """
         assert isinstance(gpjob, GPJob)
         self._gpjob = gpjob
         self._return_service = return_service
+        self._add_messages = add_messages
     #----------------------------------------------------------------------
     def __str__(self):
         return "<%s GA Job: %s>" % (self.task, self._gpjob._jobid)
@@ -171,6 +182,15 @@ class GAJob(object):
         :returns: string
         """
         return self._gpjob.task
+    #----------------------------------------------------------------------
+    @property
+    def messages(self):
+        """
+        returns the GP messages
+
+        :returns: List
+        """
+        return self._gpjob.messages
     #----------------------------------------------------------------------
     @property
     def status(self):
@@ -219,6 +239,28 @@ class GAJob(object):
         :returns: boolean
         """
         return self._gpjob.done()
+    #----------------------------------------------------------------------
+    def process_info(self):
+        """
+        Returns the Processing Information for a GeoAnalytics job.
+        
+        :returns: List or None if process_info does not exist.
+        
+        """
+        processing_info = None
+        if self.result():
+            res = self.result()
+            if hasattr(res, "_asdict") and \
+               'process_info' in res._asdict().keys():
+                return getattr(res, "process_info")
+            else:
+                url = f"{self._gpjob._url}/jobs/{self._gpjob._jobid}"
+                params = {'f' : 'json'}
+                res = self._gpjob._gis._con.get(url, params)
+                if "results" in res and 'processInfo' in res['results']:
+                    url = f"{self._gpjob._url}/jobs/{self._gpjob._jobid}/{res['results']['processInfo']['paramUrl']}"
+                    return self._gpjob._gis._con.get(url, params)['value']  
+        return None
     #----------------------------------------------------------------------
     def result(self):
         """

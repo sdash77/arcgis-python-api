@@ -319,8 +319,24 @@ def _pspnet_learner_with_unet(data,  backbone, chip_size=224, pyramid_sizes=(1, 
         learn = Learner(data, model, **kwargs)
     return learn
 
-def accuracy(input, target): 
+def isin(target, keep_indices):
+    # import pdb; pdb.set_trace();
+    old_shape = target.shape
+    mask = torch.cat([(target.view(-1) == k)[:, None] for k in keep_indices], dim=1).any(1)
+    mask = mask.view(old_shape).contiguous()
+    return mask
+
+def accuracy(input, target, ignore_mapped_class=[]): 
     if isinstance(input, tuple): # while training
         input = input[0]
-    target = target.squeeze(1)
-    return (input.argmax(dim=1) == target).float().mean()            
+    if ignore_mapped_class == []:
+        target = target.squeeze(1)
+        return (input.argmax(dim=1) == target).float().mean()
+    else:
+        target = target.squeeze(1)
+        _, total_classes, _, _ = input.shape
+        keep_indices = [i for i in range(total_classes) if i not in ignore_mapped_class]
+        for k in ignore_mapped_class:
+            input[:, k] = -1
+        targ_mask = isin(target, keep_indices)
+        return (input.argmax(dim=1)[targ_mask] == target[targ_mask]).float().mean()        

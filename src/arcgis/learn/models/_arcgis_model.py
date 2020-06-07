@@ -14,6 +14,7 @@ import sys
 import socket
 from functools import wraps  
 import traceback    
+import inspect
 
 HAS_FASTAI = True
 HAS_TENSORBOARDX = True
@@ -73,8 +74,13 @@ def nostdout():
     sys.stdout = save_stdout
 
 
+class _EmptyDS(object):
+    def __init__(self, size):
+        self.size = (size, size)
+
+
 class _EmptyData():
-    def __init__(self, path, c, loss_func, chip_size):
+    def __init__(self, path, c, loss_func, chip_size, train_ds=True):
         self.path = path
         if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
             self.device = torch.device("cuda")
@@ -85,6 +91,9 @@ class _EmptyData():
         self.c = c
         self.loss_func = loss_func
         self.chip_size = chip_size
+
+        if train_ds:
+            self.train_ds = [[_EmptyDS(chip_size)]]
 
 
 class _MultiGPUCallback(LearnerCallback):
@@ -114,7 +123,7 @@ def _set_ddp_multigpu(model):
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--local_rank", type=int)
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
     if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
         args.rank = int(os.environ["RANK"])
         args.world_size = int(os.environ['WORLD_SIZE'])
@@ -184,8 +193,9 @@ class SaveModelCallback(TrackerCallback):
                 self.model._save('{}'.format(self.name), zip_files=False, save_html=False)
 
     def on_train_end(self, **kwargs):
-        "Load the best model."     
-
+        "Load the best model."
+        if int(os.environ.get('RANK', 0)):
+            return
         if self.every == "improvement" and self.load_best_at_end:
             try:
                 self.model.load('{}'.format(self.name))
@@ -206,9 +216,15 @@ def _get_tail(model):
     if hasattr(model, 'named_children'):
         child_name, child = next(model.named_children())
         if isinstance(child, nn.Conv2d):
-            return child_name, child                
+            return child_name, child
+            
     if hasattr(model, 'children'):
-        return _get_tail(next(model.children()))
+        for children in model.children():
+            try:
+                child_name, child =  _get_tail(children)
+                return child_name, child
+            except:
+                pass
 
 def _get_ms_tail(tail, data, type_init='random'):
     new_tail = nn.Conv2d(
@@ -244,7 +260,12 @@ def _set_tail(model, new_tail):
             setattr(model, child_name, new_tail)
             updated = True
     if hasattr(model, 'children') and not updated:
-        return _set_tail(next(model.children()), new_tail)
+        for children in model.children():
+            try:
+                _set_tail(children, new_tail)
+                return
+            except:
+                pass
 
 def _change_tail(model, data):
     tail_name, tail = _get_tail(model)
@@ -258,6 +279,7 @@ def _change_tail(model, data):
     new_tail = _get_ms_tail(tail, data, type_init=type_init)
     _set_tail(model, new_tail)
     return model
+
 
 def _get_backbone_meta(arch_name):
     _model_meta = {i.__name__:j for i, j in model_meta.items()}
@@ -319,13 +341,10 @@ class ArcGISModel(object):
             if self._data._train_tail:
                 params_iterator = self.learn.model.parameters()
                 next(params_iterator).requires_grad = True # make first conv weights learnable
-                if self.__class__.__name__ == 'MaskRCNN':
-                    iterater = self.learn.model.children()
-                    next(iterater)
-                    tail_name, first_layer = _get_tail(next(iterater))
-                else:
-                    tail_name, first_layer = _get_tail(self.learn.model)
-                if first_layer.bias is not None or self.__class__.__name__ == 'MaskRCNN':
+
+                tail_name, first_layer = _get_tail(self.learn.model)
+
+                if first_layer.bias is not None or self.__class__.__name__ == 'MaskRCNN' or self.__class__.__name__ == 'ModelExtension':
                     # make first conv bias weights learnable 
                     # In case of maskrcnn make the batch norm trainable
                     next(params_iterator).requires_grad = True
@@ -372,7 +391,6 @@ class ArcGISModel(object):
         self._backbone_initalized.trainable = False
         self._device = torch.device('cpu')
         self._data = data
-
 
     def lr_find(self, allow_plot=True):
         """
@@ -534,6 +552,13 @@ class ArcGISModel(object):
         """
         self.learn.unfreeze()
 
+    def plot_losses(self):
+        """
+        Plot validation and training losses after fitting the model.
+        """
+        if hasattr(self.learn, 'recorder'):
+            self.learn.recorder.plot_losses()
+
     def _create_emd_template(self, path):
 
         _emd_template = {}
@@ -569,9 +594,14 @@ class ArcGISModel(object):
             _emd_lr = None
 
         _emd_template["ModelFile"] = path.name
-        _emd_template["ImageHeight"] = self._data.chip_size
-        _emd_template["ImageWidth"] = self._data.chip_size
-        _emd_template["ImageSpaceUsed"] = self._data._image_space_used
+
+        if hasattr(self._data, 'chip_size'):
+            _emd_template["ImageHeight"] = self._data.chip_size
+            _emd_template["ImageWidth"] = self._data.chip_size
+
+        if hasattr(self._data, '_image_space_used'):
+            _emd_template["ImageSpaceUsed"] = self._data._image_space_used
+
         _emd_template["LearningRate"] = str(_emd_lr)
         _emd_template["ModelName"] = type(self).__name__
         _emd_template["backend"] = self._backend
@@ -580,7 +610,6 @@ class ArcGISModel(object):
             "backbone": backbone,
             "backend": self._backend
             }
-
         if _emd_template.get("ModelParameters", None) is None:
             _emd_template["ModelParameters"] = model_params
         else:
@@ -594,6 +623,12 @@ class ArcGISModel(object):
         
         if model_metrics.get('average_precision_score'):
             _emd_template['average_precision_score'] = model_metrics.get('average_precision_score')
+            
+        if model_metrics.get('psnr_metric'):
+            _emd_template['psnr_metric'] = model_metrics.get('psnr_metric')
+
+        if model_metrics.get('score'):
+            _emd_template['score'] = model_metrics.get('score')
 
         resize_to = None
         if hasattr(self._data, 'resize_to') and self._data.resize_to:
@@ -692,6 +727,16 @@ class ArcGISModel(object):
             <p><b>Average Precision Score:</b> {emd_template.get('average_precision_score')}</p>
         """
 
+        if emd_template.get('score'):
+            model_analysis = f"""
+            <p><b>Score:</b> {emd_template.get('score')}</p>
+        """
+
+        if emd_template.get('psnr_metric'):
+            model_analysis = f"""
+            <p><b>PSNR Metric:</b> {emd_template.get('psnr_metric')}</p>
+        """
+
         if model_analysis:
             HTML_TEMPLATE += f"""
             <p><b>Analysis of the model</b></p>
@@ -748,7 +793,6 @@ class ArcGISModel(object):
             else:
 
                 if isinstance(self.learn.model, (DistributedDataParallel)):
-
                     if not int(os.environ.get('RANK', 0)):
                         saved_path = self.learn.save(name,  return_path=True)
                     return
@@ -788,6 +832,10 @@ class ArcGISModel(object):
             with open(saved_path.parent / _emd_template['InferenceFunction'], 'w') as f:
                 f.write(self._code)
 
+        if _emd_template.get('ModelConfigurationFile', False):
+            with open(saved_path.parent / _emd_template['ModelConfigurationFile'], 'w') as f:
+                f.write(inspect.getsource(self.model_conf_class))
+
         if zip_files:
             _create_zip(str(zip_name), str(saved_path.parent))
 
@@ -804,7 +852,6 @@ class ArcGISModel(object):
             input_normalization = quantized is False
             return self.learn._save_tflite(name, return_path=True, model_to_save=self._get_post_processed_model(input_normalization=input_normalization), quantized=quantized, data=self._data)
         return self.learn._save_tflite(name)
-            
 
     def _get_post_processed_model(self, input_normalization=True):
         return get_post_processed_model(self, input_normalization=input_normalization)
@@ -845,7 +892,7 @@ class ArcGISModel(object):
 
         if self.__str__() == '<PointCNN>':
             self.show_results(save_html=True, save_path=model_characteristics_dir)
-        else:
+        elif hasattr(self, 'show_results'):
             self.show_results()
             plt.savefig(os.path.join(model_characteristics_dir, 'show_results.png'))
             plt.close()

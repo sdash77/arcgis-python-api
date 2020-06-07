@@ -1,7 +1,7 @@
 
 import math
-
-try:
+from .env import HAS_TENSORFLOW
+if HAS_TENSORFLOW:
     import tensorflow as tf
     from tensorflow.keras.layers import Input, Conv2D, Dropout, ReLU, BatchNormalization, \
                                         UpSampling2D, Reshape, Layer, AveragePooling2D, \
@@ -10,9 +10,6 @@ try:
     from tensorflow.keras import Model
     from .._utils.fastai_tf_fit import _tf_to_pytorch, _pytorch_to_tf_batch, _pytorch_to_tf
     from .common_tf import NormalizationLayerRGB
-    HAS_TENSORFLOW = True
-except:
-    HAS_TENSORFLOW = False
 
 from .common import get_nbatches
 
@@ -127,14 +124,17 @@ def IC_show_results(self, nrows=5, **kwargs):
     color_array = self._data._multispectral_color_array
 
     # Size for plotting
-    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
     fig.suptitle('Ground Truth\nPredictions', fontsize=title_font_size)
     plt.subplots_adjust(top=top)
     idx=0
     for r in range(nrows):
         for c in range(ncols):
+            if nrows==1:
+                axi = axs
+            else:
+                axi  = axs[r][c]
             if idx < symbology_x_batch.shape[0]:
-                axi = ax[r][c]
                 axi.imshow(symbology_x_batch[idx].cpu().numpy())
                 y = self._data.classes[y_batch[idx].item()]
                 prediction = self._data.classes[predictions_class_store[idx]]
@@ -144,7 +144,7 @@ def IC_show_results(self, nrows=5, **kwargs):
                 axi.set_title(title)
                 axi.axis('off')
             else:
-                ax[r][c].axis('off')
+                axi.axis('off')
             idx+=1
 
 ## Common section ends

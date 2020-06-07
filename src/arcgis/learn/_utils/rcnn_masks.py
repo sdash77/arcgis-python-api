@@ -4,13 +4,11 @@ import torch
 import matplotlib.pyplot as plt
 import matplotlib
 from ..models._maskrcnn_utils import ArcGISImageSegment
-from .common import get_nbatches
+from .common import get_nbatches, kwarg_fill_none
 
-def show_batch_rcnn_masks(self, rows=3, alpha=0.5, **kwargs): # parameters adjusted in kwargs 
+def show_batch_rcnn_masks(self, rows=3, alpha=0.5, **kwargs): # parameters adjusted in kwargs
     nrows = rows
-    ncols = 3
-    if kwargs.get('ncols', None) is not None:
-        ncols = kwargs.get('ncols')
+    ncols = kwarg_fill_none(kwargs, 'ncols', 3)
     
     n_items = None
     if kwargs.get('n_items', None) is not None:
@@ -99,21 +97,28 @@ def show_batch_rcnn_masks(self, rows=3, alpha=0.5, **kwargs): # parameters adjus
         symbology_x_batch = symbology_x_batch.squeeze()
 
     # Size for plotting
-    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
     idx = 0
     for r in range(nrows):
         for c in range(ncols):
-            ax_i  = ax[r][c]
+            axi = axs
+            if nrows == 1:
+                axi = axi
+            else:
+                axi = axi[r]
+            if ncols == 1:
+                axi = axi
+            else:
+                axi = axi[c]
+            axi.axis('off')
             if idx < symbology_x_batch.shape[0]:
-                ax_i.imshow(symbology_x_batch[idx].cpu().numpy())
+                axi.imshow(symbology_x_batch[idx].cpu().numpy())
                 n_instance = y_batch[idx].unique().shape[0]
                 y_merged = y_batch[idx].max(dim=0)[0].cpu().numpy()
                 cmap_fn = getattr(matplotlib.cm, cmap)
                 y_rgba = cmap_fn._resample(n_instance)(y_merged)
                 y_rgba[y_merged == 0] = 0
                 y_rgba[:, :, -1] = alpha
-                ax_i.imshow(y_rgba)
-                ax_i.axis('off')
-            else:
-                ax_i.axis('off')
+                axi.imshow(y_rgba)
+                axi.axis('off')
             idx+=1

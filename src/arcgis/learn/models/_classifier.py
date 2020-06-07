@@ -135,7 +135,6 @@ class FeatureClassifier(ArcGISModel):
             if oversample:
                 self.learn.callbacks.append(OverSamplingCallback(self.learn))
             self._arcgis_init_callback() # make first conv weights learnable
-
             # Add Mixup data augmentation
             if mixup:
                 self.learn = self.learn.mixup()
@@ -185,6 +184,7 @@ class FeatureClassifier(ArcGISModel):
     def predict(self, img_path):
         """
         Runs prediction on an Image.
+        
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -207,16 +207,12 @@ class FeatureClassifier(ArcGISModel):
 
     def _save_confusion_matrix(self, path):
         from matplotlib import pyplot as plt
-        import fastai
-        from fastprogress import fastprogress
-        from fastprogress.fastprogress import force_console_behavior, master_bar, progress_bar
 
-        fastprogress.NO_BAR = True
-        fastai.basic_train.master_bar, fastai.basic_train.progress_bar = force_console_behavior()
-        self.plot_confusion_matrix()
-        plt.savefig(os.path.join(path, 'confusion_matrix.png'))
-        plt.close()
-        fastai.basic_train.master_bar, fastai.basic_train.progress_bar = master_bar, progress_bar
+        from IPython.utils import io
+        with io.capture_output() as captured:
+            self.plot_confusion_matrix()
+            plt.savefig(os.path.join(path, 'confusion_matrix.png'))
+            plt.close()
         
     @property
     def _model_metrics(self):
@@ -1352,15 +1348,15 @@ if HAS_FASTAI:
         The OverSamplingCallback support handles unbalanced dataset (dataset with rare classes). It is used to oversample data during training.
         """
         def __init__(self,learn:Learner,weights:torch.Tensor=None):
-            super(OverSamplingCallback, self).__init__(learn)
+            super().__init__(learn)
             self.weights = weights
 
         def on_train_begin(self, **kwargs):
-            self.labels = self.learn.data.train_dl.dataset.y.items
-            _, counts = np.unique(self.labels,return_counts=True)
-            self.weights = (self.weights if self.weights is not None else
-                            torch.DoubleTensor((1/(counts + 1e-8))[self.labels]))
-            self.label_counts = np.bincount([self.learn.data.train_dl.dataset.y[i].data for i in range(len(self.learn.data.train_dl.dataset))])
-            self.total_len_oversample = int(self.learn.data.c*np.max(self.label_counts))
-            self.learn.data.train_dl.dl.batch_sampler = BatchSampler(WeightedRandomSampler(self.weights,self.total_len_oversample), self.learn.data.train_dl.batch_size,False)
-
+            ds,dl = self.data.train_ds,self.data.train_dl
+            self.labels = ds.y.items
+            assert np.issubdtype(self.labels.dtype, np.integer), "Can only oversample integer values"
+            _,self.label_counts = np.unique(self.labels,return_counts=True)
+            if self.weights is None: self.weights = torch.DoubleTensor((1/self.label_counts)[self.labels])
+            self.total_len_oversample = int(self.data.c*np.max(self.label_counts))
+            sampler = WeightedRandomSampler(self.weights, self.total_len_oversample)
+            self.data.train_dl = dl.new(shuffle=False, sampler=sampler)

@@ -1,9 +1,11 @@
-from .common_tf import NormalizationLayerRGB
-from tensorflow.keras.layers import Layer, Input
-from tensorflow.keras.models import Model
-from .object_detection import get_TFOD_post_processed_model
-from .image_classification import get_TFIC_post_processed_model
-from .pixel_classification import analyze_pred_TFPC
+from .env import HAS_TENSORFLOW
+if HAS_TENSORFLOW:
+    from .common_tf import NormalizationLayerRGB
+    from tensorflow.keras.layers import Layer, Input
+    from tensorflow.keras.models import Model
+    from .object_detection import get_TFOD_post_processed_model
+    from .image_classification import get_TFIC_post_processed_model
+    from .pixel_classification import analyze_pred_TFPC
 
 def get_post_processed_model_tf(arcgis_model, input_normalization=True):
     if arcgis_model.__class__.__name__ == 'SingleShotDetector':

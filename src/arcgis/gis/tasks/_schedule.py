@@ -84,7 +84,8 @@ class Run(BaseTask):
         status                 Optional String. The status of the run.  The allowed values are:
                                `scheduled`, `executing`, `succeeded`, `failed`, or `skipped`.
         ------------------     --------------------------------------------------------------------
-        description            Optional String. The result message to updated.
+        description            Optional String. Updates the descriptive message associated with the 
+                               current `Run`. 
         ==================     ====================================================================
 
         :returns: Bool
@@ -152,14 +153,15 @@ class Task(BaseTask):
             return res['success']
         return res
     #----------------------------------------------------------------------
-    def status(self, enabled:bool) -> bool:
+    def enable(self, enabled:bool) -> bool:
         """
-        Enables/Disables the Current Task.
+        The `enable` method allows administrators to enable or disable the scheduled task..
         
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        enabled                Required Boolean.  If True, the status of the task is set to active. If False, the task is set active to False.
+        enabled                Required Boolean.  If True, the status of the task is set to active. 
+                               If False, the task is set active to False.
         ==================     ====================================================================
         
         :returns: Bool
@@ -172,7 +174,7 @@ class Task(BaseTask):
             url = f"{self._url}/disable"
         else:
             raise ValueError("`enabled` must be a boolean value")
-        res = self._gis.post(url, params)
+        res = self._gis._con.post(url, params)
         if 'success' in res:
             return res['success']
         return res
@@ -205,8 +207,7 @@ class Task(BaseTask):
                title:str=None,
                parameters:dict=None,
                task_url:str=None,
-               is_active:bool=None,
-               reset:bool=None) -> bool:
+               is_active:bool=None) -> bool:
         """
         Updates the current Task
 
@@ -232,8 +233,6 @@ class Task(BaseTask):
         task_url               Optional String. A response URL with a set of results.
         ------------------     --------------------------------------------------------------------
         is_active              Optional Bool. Determines if the tasks is currently running.
-        ------------------     --------------------------------------------------------------------
-        reset                  Optional Bool. This will reset internal counter and reset the task's execution history.
         ==================     ====================================================================
 
         :returns: bool or Dict on error.
@@ -260,13 +259,8 @@ class Task(BaseTask):
             "dayOfWeek": None,
             "maxOccurrences": occurences or self.properties.maxOccurrences,
             "isActive" : None,
-            "resetTask" : None,
             "f": "json"
         }
-        if not reset is None:
-            params['resetTask'] = reset   
-        else:
-            params.pop('resetTask')
         if is_active is None:
             params.pop('isActive', None)
         else:
@@ -337,7 +331,7 @@ class Task(BaseTask):
             del t
         return runs
 ###########################################################################
-class UserTasks():
+class TaskManager(object):
     """
 
     Provides the functions to create, update and delete scheduled tasks.

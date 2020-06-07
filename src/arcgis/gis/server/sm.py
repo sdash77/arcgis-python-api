@@ -9,7 +9,7 @@ class ServerManager(object):
     Helper class for managing your ArcGIS Servers. This class is not created
     by users directly. An instance of this class, called 'servers',
     is available as a property of the gis.admin object. Administrators call methods
-    on this 'gis.admin.servers' object to manage and interrogate ArcGIS Servers.
+    on this :class:`ServerManager` object to manage and interrogate ArcGIS Servers.
     """
     _gis = None
     _catalog_list = None

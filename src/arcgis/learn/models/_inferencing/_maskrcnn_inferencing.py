@@ -269,7 +269,7 @@ def pixel_mask_image(model, img_normed, device, chip_size, threshold=0.5, batch_
     
     for batch_idx in range(len(predictions)):
         i, j = batch_idx//side, batch_idx % side
-        masks = predictions[batch_idx]['masks'].squeeze()
+        masks = predictions[batch_idx]['masks'].squeeze().detach().cpu().numpy()
         if masks.shape[0] != 0: # handle for prediction with n masks
             if len(masks.shape) == 2:  # for mask dimension hxw (in case of only one predicted mask)
                 masks = masks[None]

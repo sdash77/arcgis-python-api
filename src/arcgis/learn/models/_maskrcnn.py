@@ -32,6 +32,7 @@ try:
     from fastai.basic_data import DatasetType
     from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
     import os as arcgis_os
+    from .._utils.common import get_nbatches
 
     HAS_FASTAI = True
 except Exception as e:
@@ -332,6 +333,7 @@ class MaskRCNN(ArcGISModel):
         nrows = rows
         ncols=2
 
+
         type_data_loader = kwargs.get('data_loader', 'validation') # options : traininig, validation, testing
         if type_data_loader == 'training':
             data_loader = self._data.train_dl
@@ -346,6 +348,12 @@ class MaskRCNN(ArcGISModel):
         statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
 
         cmap_fn = getattr(matplotlib.cm, cmap)
+
+        x_batch, y_batch = get_nbatches(data_loader, nrows)
+        x_batch = torch.cat(x_batch)
+        y_batch = torch.cat(y_batch)
+
+        nrows = min(nrows, len(x_batch))
         
         title_font_size = 16
         if kwargs.get('top', None) is not None:
@@ -353,16 +361,7 @@ class MaskRCNN(ArcGISModel):
         else:
             top = 1 - (math.sqrt(title_font_size)/math.sqrt(100*nrows*imsize))
 
-        x_batch, y_batch = [], []
-        i = 0
-        dl_iterater = iter(data_loader)
-        while i < nrows:
-            x, y = next(dl_iterater)
-            x_batch.append(x)
-            y_batch.append(y)
-            i+=self._data.batch_size
-        x_batch = torch.cat(x_batch)
-        y_batch = torch.cat(y_batch)
+
 
         # Get Predictions
         prediction_store = []
