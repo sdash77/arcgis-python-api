@@ -10304,8 +10304,7 @@ class Item(dict):
                     'title' : title
                 }
                 
-                item = self._gis.content.add(item_properties=ip, data=nfp,  
-                                             thumbnail=item.get_thumbnail())
+                item = self._gis.content.add(item_properties=ip, data=nfp)
                 return item                
         elif item.type in FILE_BASED_ITEM_TYPES:
             fp = self.get_data()
