@@ -66,7 +66,12 @@ def common_test(test_object, model_type, output_name, data_path, old_models, **p
     # Test for accuracy if nightly_test is run
     if output_name in ['retinanet', 'ssd']:
         if os.environ['nightly_test'] == "1":
-            test_object.assertGreater(model_object.average_precision_score(mean=True), .40)
+            score = model_object.average_precision_score(mean=True)
+            results_path = os.path.abspath(os.path.join(STAGING_DIR,"accuracy_results.json"))
+            with open(results_path, 'w') as file:
+                accuracy_score = {"accuracy": score}
+                json.dump(accuracy_score, file, indent=4)
+            test_object.assertGreater(score, .40)
 
     # Load from saved model.
     model_object.load(f'post_fit_{output_name}')
