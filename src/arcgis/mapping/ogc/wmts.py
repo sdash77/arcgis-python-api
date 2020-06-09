@@ -1,12 +1,16 @@
 import json
 import uuid
-from arcgis.gis import GIS
-from arcgis import env as _env
 from urllib.parse import (urlencode, urlparse, urlunparse,
                           parse_qs, ParseResult)
 import xml.etree.cElementTree as ET
 from io import BytesIO, StringIO
+
+from arcgis.gis import GIS
+from arcgis import env as _env
+from arcgis._impl.common._mixins import PropertyMap
+
 from ._base import BaseOGC
+
 ###########################################################################
 class WMTSLayer(BaseOGC):
     """
@@ -165,19 +169,24 @@ class WMTSLayer(BaseOGC):
             "opacity" : self.opacity,
             "type" : self._type
         }
+
     #----------------------------------------------------------------------
     @property
     def __text__(self):
         """creates the item's text properties"""
+        
         layer = None
         tile_matrix = None
-        try:
+
+        if isinstance(self.properties.Capabilities.Contents.Layer, (list, tuple)):
             layer = self.properties.Capabilities.Contents.Layer[0]
             tile_matrix = self.properties.Capabilities.Contents.TileMatrixSet[0]
-        except Exception as e:
-            raise e
+        elif isinstance(self.properties.Capabilities.Contents.Layer, (dict, PropertyMap)):
             layer = self.properties.Capabilities.Contents.Layer
-            tile_matrix = self.properties.Capabilities.Contents.TileMatrixSet
+            tile_matrix = self.properties.Capabilities.Contents.TileMatrixSet                
+        else:
+            raise ValueError("Could not parse the results properly.")
+    
         url_template = (layer
                         .ResourceURL['@template']
                         .replace("{TileMatrix}", "{level}")
@@ -230,9 +239,10 @@ class WMTSLayer(BaseOGC):
             "wmtsInfo": {
                 "url": self._url,
                 "layerIdentifier": layer.Title,
-                "tileMatrixSet": [tile_matrix.Identifier,]
+                "tileMatrixSet": [tile_matrix.Identifier]
             }
         }
+
     @property
     def _operational_layer_json(self):
         """Represents the WebMap's JSON format"""

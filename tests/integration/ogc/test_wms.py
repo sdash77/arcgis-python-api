@@ -13,7 +13,7 @@ class TestWMSLayer(unittest.TestCase):
         """tests the WMS Layer methods and properties"""
         wms = WMSLayer(url=wm_url)
         assert isinstance(wms, WMSLayer)
-        assert wms.opacity == 0
+        assert wms.opacity == 1
         wms.opacity = .5
         assert wms.opacity == .5
         assert isinstance(wms.scale, tuple)
@@ -22,7 +22,7 @@ class TestWMSLayer(unittest.TestCase):
         assert isinstance(wms.title, str)
         wms.title = 'test'
         assert wms.title == 'test'
-        assert wms._esri_json
+        assert wms._lyr_json
         assert wms.properties
 
 if __name__ == "__main__":
