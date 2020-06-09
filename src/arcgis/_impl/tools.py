@@ -723,8 +723,22 @@ class _FeatureAnalysisTools(BaseAnalytics):
             summary_fields = []
         point_layer = self._feature_input(point_layer)
         polygon_layer = self._feature_input(polygon_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)
         if estimate:
             params = {}
             params["pointLayer"] = point_layer
@@ -1161,6 +1175,20 @@ class _FeatureAnalysisTools(BaseAnalytics):
             route_data_item = {"itemId": route_data_item.itemid}
         if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)
         if estimate:
             params = {}
             if context:
@@ -1325,7 +1353,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task ="CalculateDensity"
 
         params = {}
-        if output_name is not None:
+        if output_name is not None and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
         input_layer = self._feature_input(input_layer)
         if bounding_polygon_layer:
@@ -1432,8 +1460,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
         task ="CreateViewshed"
         input_layer = self._feature_input(input_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)
         if estimate:
             params = {}
 
@@ -1525,8 +1566,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)        
 
 
         if estimate:
@@ -1594,8 +1648,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layers_param = []
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)        
 
         if estimate:
             params["inputLayers"] = input_layers_param
@@ -1649,8 +1716,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
 
         input_layer = self._feature_input(input_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict        
+        assert isinstance(output_name, dict)
         if estimate:
             task ="DissolveBoundaries"
 
@@ -1732,8 +1812,22 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
 
         input_layer = self._feature_input(input_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+                
+        assert isinstance(output_name, dict)
 
         if estimate:
             params["inputLayer"] = input_layer
@@ -1881,8 +1975,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)        
 
 
         if estimate:
@@ -1944,8 +2051,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)        
 
 
         if estimate:
@@ -2007,8 +2127,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layers_param = []
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)
 
 
         if estimate:
@@ -2084,8 +2217,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)
         task ="FindHotSpots"
 
 
@@ -2200,8 +2346,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
             line_barrier_layer = self._feature_input(line_barrier_layer)
         if polygon_barrier_layer:
             polygon_barrier_layer = self._feature_input(polygon_barrier_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)        
 
 
         if estimate:
@@ -2316,8 +2475,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)
 
 
         if estimate:
@@ -2415,8 +2587,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)        
 
         if estimate:
             params["analysisLayer"] = analysis_layer
@@ -2484,8 +2669,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task ="FindSimilarLocations"
         input_layer = self._feature_input(input_layer)
         search_layer = self._feature_input(search_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)
         if estimate:
             params = {}
             params["inputLayer"] = input_layer
@@ -2554,8 +2752,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         """
         extent_layer = self._feature_input(extent_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)
         if estimate:
             task ="GenerateTessellations"
             params = {}
@@ -2647,8 +2858,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if predict_at_point_layer:
             predict_at_point_layer = self._feature_input(predict_at_point_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)
 
 
         if estimate:
@@ -2711,8 +2935,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         target_layer = self._feature_input(target_layer)
         join_layer = self._feature_input(join_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)
 
         if estimate:
             params["targetLayer"] = target_layer
@@ -2789,8 +3026,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layer = self._feature_input(input_layer)
         merge_layer = self._feature_input(merge_layer)
 
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)
 
         if estimate:
             params = {}
@@ -2858,8 +3108,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         input_layer = self._feature_input(input_layer)
         overlay_layer = self._feature_input(overlay_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)
         if estimate:
             params["inputLayer"] = input_layer
             params["overlayLayer"] = overlay_layer
@@ -2966,8 +3229,22 @@ class _FeatureAnalysisTools(BaseAnalytics):
             start_layer = self._feature_input(start_layer)
         if end_layer:
             end_layer = self._feature_input(end_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)
+        
         if point_barrier_layer:
             point_barrier_layer = self._feature_input(point_barrier_layer)
         if line_barrier_layer:
@@ -3102,8 +3379,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)
         if estimate:
             params["analysisLayer"] = analysis_layer
             params["summarizeType"] = summarize_type
@@ -3190,9 +3480,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         sum_within_layer = self._feature_input(sum_within_layer)
         summary_layer = self._feature_input(summary_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
-
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)
 
         if estimate:
             params["sumWithinLayer"] = sum_within_layer
@@ -3290,8 +3592,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layer = self._feature_input(input_layer)
         if bounding_polygon_layer:
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)
 
 
         if estimate:
@@ -3406,8 +3721,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
         sum_nearby_layer = self._feature_input(sum_nearby_layer)
         summary_layer = self._feature_input(summary_layer)
 
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
+        assert isinstance(output_name, dict)
 
 
         if estimate:
