@@ -56,7 +56,7 @@ def inspect_function_inputs(fn, **params):
     import inspect
     try:
 
-        args = inspect.getargspec(func=fn).args
+        args = list(inspect.signature(fn).parameters.keys())
     except ValueError:
         args = inspect.getfullargspec(func=fn).args
     if 'gis' in args:
