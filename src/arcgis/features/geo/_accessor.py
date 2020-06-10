@@ -1077,14 +1077,14 @@ class GeoAccessor(object):
                                     "type":"esriSLS","style":"esriSLSSolid"}
                          }
 
-        elif gt.lower() =='polygon':
+        elif gt.lower() =='polyline':
             base_renderer['symbol'] = {
                         "type": "esriSLS",
-                        "style": "esriSLSDot",
+                        "style": "esriSLSSolid",
                         "color": [0,128,0,128],
                         "width": 1
                     }
-        elif gt.lower() =='polyline':
+        elif gt.lower() =='polygon':
             base_renderer['symbol'] = {
                         "type": "esriSFS",
                         "style": "esriSFSSolid",
