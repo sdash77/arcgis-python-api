@@ -1,13 +1,16 @@
 import json
 import uuid
-from arcgis.gis import GIS
-from arcgis import env as _env
+import re
+from io import BytesIO, StringIO
+import xml.etree.cElementTree as ET
 from urllib.parse import (urlencode, urlparse, urlunparse,
                           parse_qs, ParseResult)
-import xml.etree.cElementTree as ET
-from io import BytesIO, StringIO
+
+from arcgis.gis import GIS
+from arcgis import env as _env
 from arcgis._impl.common._mixins import PropertyMap
 from ._base import BaseOGC
+
 ###########################################################################
 class WMSLayer(BaseOGC):
     """
@@ -38,6 +41,7 @@ class WMSLayer(BaseOGC):
     _reader = None
     _cap_reader = None
     _properties = None
+    _type = "WMS"
     #----------------------------------------------------------------------
     def __init__(self, url, version='1.3.0', gis=None, **kwargs):
         super(WMSLayer, self)
@@ -57,7 +61,7 @@ class WMSLayer(BaseOGC):
             url = url[:-1]
         self._url = url
         self._add_token = str(self._con._auth).lower() == "builtin"
-        self._opacity = kwargs.pop('opacity', 0)
+        self._opacity = kwargs.pop('opacity', 1)
         self._min_scale, self._max_scale = kwargs.pop('scale', (0,0))
     #----------------------------------------------------------------------
     @property
@@ -80,7 +84,7 @@ class WMSLayer(BaseOGC):
             elif text.lower().find("<html>") > -1:
                 url = self._capabilities_url(service_url=self._url)
                 text = self._con.get(url, {}, try_json=False, add_token=False)
-            elif text.lower().find("<?xml version=\"1.0\" ?>") > -1:
+            elif text.lower().find("<?xml version=") > -1:
                 pass
             else:
                 raise Exception("Could not connect to the Web Map Service")
@@ -91,6 +95,33 @@ class WMSLayer(BaseOGC):
             d = self._xml_to_dictionary(tree)
             self._properties = PropertyMap(d)
         return self._properties
+    #---------------------------------------------------------------------
+    @property
+    def _extents(self) -> list:
+        """list of extents from the service in the form of 
+        [[minx, miny], [maxx, maxy]] for each entry in the list
+        """
+        try:
+            bboxes = self.properties.WMS_Capabilities.Capability.Layer.BoundingBox
+            output = []
+            for bbox in bboxes:
+                output.append([[ float(bbox["@minx"]), float(bbox["@miny"]) ],
+                               [ float(bbox["@maxx"]), float(bbox["@maxy"]) ]])
+            return output
+        except Exception:
+            return [[[0,0], [0,0]],]
+
+    @property
+    def _spatial_references(self) -> list:
+        try:
+            crss = self.properties.WMS_Capabilities.Capability.Layer.CRS
+            output = []
+            for crs_str in crss:
+                output += [int(crs_num) for crs_num in re.findall(r"\d+", crs_str)]
+            return output
+        except Exception as e:
+            return []
+
     #----------------------------------------------------------------------
     @property
     def layers(self) -> list:
@@ -158,13 +189,10 @@ class WMSLayer(BaseOGC):
         return json.loads(d)
     #----------------------------------------------------------------------
     @property
-    def _esri_json(self) -> dict:
-        """
-        represents the map widget's JSON format
-
-        :returns: dict
-        """
+    def _lyr_json(self) -> dict:
+        """Represents the MapView's widget JSON format"""
         return {
+            "type": self._type,
             "id" : self._id,
             "title" : self._title or "WMTS Layer",
             "url" : self._url,
@@ -174,3 +202,17 @@ class WMSLayer(BaseOGC):
             "maxScale" : self.scale[1],
             "opacity" : self.opacity
         }
+    @property
+    def _operational_layer_json(self) -> dict:
+        """Represents the WebMap's JSON format"""
+        new_layer = self._lyr_json
+        new_layer["layers"] = [{"name": subLyr.Name,
+                                "title": subLyr.Title} for subLyr in self.layers]
+        new_layer["visibleLayers"] = []
+        if new_layer["layers"]:
+            # Only have the first layer be the visible layer
+            new_layer["visibleLayers"].append(
+                new_layer["layers"][0]["name"])
+        new_layer["extent"] = self._extents[0]
+        new_layer["spatialReferences"] = self._spatial_references
+        return new_layer

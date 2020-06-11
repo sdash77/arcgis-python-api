@@ -1,12 +1,16 @@
 import json
 import uuid
-from arcgis.gis import GIS
-from arcgis import env as _env
 from urllib.parse import (urlencode, urlparse, urlunparse,
                           parse_qs, ParseResult)
 import xml.etree.cElementTree as ET
 from io import BytesIO, StringIO
+
+from arcgis.gis import GIS
+from arcgis import env as _env
+from arcgis._impl.common._mixins import PropertyMap
+
 from ._base import BaseOGC
+
 ###########################################################################
 class WMTSLayer(BaseOGC):
     """
@@ -50,6 +54,7 @@ class WMTSLayer(BaseOGC):
         else:
             gis = GIS()
         assert isinstance(gis, GIS)
+        self._id = kwargs.pop('id', uuid.uuid4().hex)
         self._version = version
         self._con = gis._con
         self._title = kwargs.pop("title", "WMTS Layer")
@@ -59,8 +64,8 @@ class WMTSLayer(BaseOGC):
         self._url = url
         self._add_token = str(self._con._auth).lower() == "builtin"
         self._min_scale, self._max_scale = kwargs.pop('scale', (0,0))
-        self._opacity = kwargs.pop('opacity', 0)
-        self._type = "wms"
+        self._opacity = kwargs.pop('opacity', 1)
+        self._type = "WebTiledLayer"
     #----------------------------------------------------------------------
     @property
     def properties(self):
@@ -82,6 +87,8 @@ class WMTSLayer(BaseOGC):
             elif text.lower().find("<html>") > -1:
                 url = self._capabilities_url(service_url=self._url)
                 text = self._con.get(url, {}, try_json=False, add_token=False)
+            elif text.lower().find("<?xml version=") > -1:
+                pass
             else:
                 raise Exception("Could not connect to the WebMap Tile Service")
             sss = BytesIO()
@@ -150,12 +157,8 @@ class WMTSLayer(BaseOGC):
         return json.loads(d)
     #----------------------------------------------------------------------
     @property
-    def _esri_json(self):
-        """
-        represents the map widget's JSON format
-
-        :returns: dict
-        """
+    def _lyr_json(self):
+        """Represents the MapView's widget JSON format"""
         return {
             "id" : self._id,
             "title" : self._title or "WMTS Layer",
@@ -166,29 +169,39 @@ class WMTSLayer(BaseOGC):
             "opacity" : self.opacity,
             "type" : self._type
         }
+
     #----------------------------------------------------------------------
     @property
     def __text__(self):
         """creates the item's text properties"""
-        url_template = (self
-                        .properties
-                        .Capabilities
-                        .Contents
-                        .Layer
+        
+        layer = None
+        tile_matrix = None
+
+        if isinstance(self.properties.Capabilities.Contents.Layer, (list, tuple)):
+            layer = self.properties.Capabilities.Contents.Layer[0]
+            tile_matrix = self.properties.Capabilities.Contents.TileMatrixSet[0]
+        elif isinstance(self.properties.Capabilities.Contents.Layer, (dict, PropertyMap)):
+            layer = self.properties.Capabilities.Contents.Layer
+            tile_matrix = self.properties.Capabilities.Contents.TileMatrixSet                
+        else:
+            raise ValueError("Could not parse the results properly.")
+    
+        url_template = (layer
                         .ResourceURL['@template']
                         .replace("{TileMatrix}", "{level}")
-                        .replace("{Style}", self.properties.Capabilities.Contents.Layer.Style.Identifier)
+                        .replace("{Style}", layer.Style.Identifier)
                         .replace("{TileRow}", "{row}")
                         .replace("{TileCol}", "{col}")
                         .replace("{TileMatrixSet}",
-                                 self.properties.Capabilities.Contents.TileMatrixSet.Identifier)
+                                 tile_matrix.Identifier)
                         )
         fullExtent = [float(coord) for coord in \
-                      self.properties.Capabilities.Contents.Layer.BoundingBox.LowerCorner.strip().split(" ")] + [float(coord) for coord in \
-                                                                                                                 self.properties.Capabilities.Contents.Layer.BoundingBox.UpperCorner.strip().split(" ")]
+                      layer.BoundingBox.LowerCorner.strip().split(" ")] + [float(coord) for coord in \
+                                                                           layer.BoundingBox.UpperCorner.strip().split(" ")]
         lods = []
         WMTS_DPI = 90.71428571428571
-        for l in self.properties.Capabilities.Contents.TileMatrixSet.TileMatrix:
+        for l in tile_matrix.TileMatrix:
             lods.append({
                 "level": int(l.Identifier),
                 "levelValue": l.Identifier,
@@ -204,7 +217,7 @@ class WMTSLayer(BaseOGC):
                 "xmax": fullExtent[2],
                 "ymax": fullExtent[3],
                 "spatialReference": {
-                    "wkid": int(self.properties.Capabilities.Contents.Layer.BoundingBox['@crs'].split(":")[-1])
+                    "wkid": int(layer.BoundingBox['@crs'].split(":")[-1])
                 }
                 },
             "tileInfo": {
@@ -215,17 +228,22 @@ class WMTSLayer(BaseOGC):
                     "x": (fullExtent[2] + fullExtent[0])/2,
                     "y": (fullExtent[3] + fullExtent[1])/2,
                     "spatialReference": {
-                        "wkid": int(self.properties.Capabilities.Contents.Layer.BoundingBox['@crs'].split(":")[-1])
+                        "wkid": int(layer.BoundingBox['@crs'].split(":")[-1])
                     }
                 },
                 "spatialReference": {
-                    "wkid": int(self.properties.Capabilities.Contents.Layer.BoundingBox['@crs'].split(":")[-1])
+                    "wkid": int(layer.BoundingBox['@crs'].split(":")[-1])
                 },
                 "lods": lods
             },
             "wmtsInfo": {
                 "url": self._url,
-                "layerIdentifier": self.properties.Capabilities.Contents.Layer.Title,
-                "tileMatrixSet": self.properties.Capabilities.Contents.TileMatrixSet.Identifier
+                "layerIdentifier": layer.Title,
+                "tileMatrixSet": [tile_matrix.Identifier]
             }
         }
+
+    @property
+    def _operational_layer_json(self):
+        """Represents the WebMap's JSON format"""
+        return self.__text__

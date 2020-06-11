@@ -307,6 +307,8 @@ class WebMap(collections.OrderedDict):
         :return:
             True if layer was successfully added. Else, raises appropriate exception.
         """
+        from arcgis.mapping.ogc._base import BaseOGC
+        from arcgis.mapping.ogc import WMSLayer, WMTSLayer
         if options is None:
             options = {}
         if isinstance(layer, arcgis.features.FeatureLayer) and \
@@ -391,6 +393,12 @@ class WebMap(collections.OrderedDict):
                 return True
             else:
                 raise TypeError('FeatureLayerCollection object without layers is not supported')
+        elif isinstance(layer, BaseOGC):
+            lyr = layer._lyr_json
+            title = lyr["title"]
+            opacity = lyr["opacity"]
+            id = lyr["id"]
+            layer_type = layer._type
         else:
             raise TypeError("Input layer should either be a Layer object or an Item object. To know the supported layer types, refer" +
                             'to https://developers.arcgis.com/web-map-specification/objects/operationalLayers/')
@@ -521,7 +529,6 @@ class WebMap(collections.OrderedDict):
                                  "width": 24,
                                  "height": 24}
             #endregion
-
             #insert symbol into the layerDefinition of featureCollection - pro style
             if renderer:
                 fc_layer_definition['drawingInfo'] = {'renderer':renderer}
@@ -539,6 +546,11 @@ class WebMap(collections.OrderedDict):
                      'layerDefinition':fc_layer_definition
                      }]
             }
+        #endregion
+
+        #region
+        if isinstance(layer, BaseOGC):
+            new_layer = {**new_layer, **layer._operational_layer_json}
         #endregion
 
         # region Process popup info

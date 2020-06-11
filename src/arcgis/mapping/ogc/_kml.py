@@ -28,7 +28,7 @@ class KMLLayer(BaseOGC):
 
 
     """
-    _type = "kml"
+    _type = "KML"
     def __init__(self, url, **kwargs):
         """initializer"""
         super(KMLLayer, self)
@@ -36,15 +36,15 @@ class KMLLayer(BaseOGC):
         self._title = kwargs.pop('title', "KML Layer")
         self._id = kwargs.pop('id', uuid.uuid4().hex)
         self._min_scale, self._max_scale = kwargs.pop('scale', (-1,-1))
-        self._opacity = kwargs.pop('opacity', 0)
+        self._opacity = kwargs.pop('opacity', 1)
         self._copyright = kwargs.pop('copyright', None)
         self._gis = None
     #----------------------------------------------------------------------
     @property
-    def _esri_json(self) -> dict:
-        """creates a dictionary for web map item."""
+    def _lyr_json(self) -> dict:
+        """Represents the MapView's widget JSON format"""
         add_layer =  {
-            "type" : "kml",
+            "type" : self._type,
             'url' : self._url,
             'opacity' : self.opacity,
             'minScale' : self.scale[0],
@@ -52,4 +52,12 @@ class KMLLayer(BaseOGC):
             'id' : self._id,
             'title' : self.title
         }
+        if self.scale == (-1,-1):
+            del add_layer['minScale']
+            del add_layer['maxScale']
         return add_layer
+
+    @property
+    def _operational_layer_json(self) -> dict:
+        """Represents the WebMap's JSON format"""
+        return self._lyr_json

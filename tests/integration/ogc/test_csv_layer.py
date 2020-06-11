@@ -24,11 +24,11 @@ class TestCSVLayer(unittest.TestCase):
         assert csv.sql_expression is None
         assert csv.renderer
         assert str(csv).find("<CSV") > -1
-        assert csv.title is None
         csv.title = "test"
         assert csv.title == 'test'
-        assert csv._esri_json
+        assert csv._lyr_json
         assert csv.properties
+
     def test_csv_layer_item(self):
         gis = GIS()
         items = [gis.content.get("3f0f20ae77c0447cb5fa2a15038d0520")]
@@ -44,10 +44,9 @@ class TestCSVLayer(unittest.TestCase):
             assert csv.sql_expression is None
             assert csv.renderer
             assert str(csv).find("<CSV") > -1
-            assert csv.title is None
             csv.title = "test"
             assert csv.title == 'test'
-            assert csv._esri_json
+            assert csv._lyr_json
             assert csv.properties
             print(csv.properties)
 

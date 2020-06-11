@@ -39,7 +39,7 @@ class BaseOGC(object):
         self._gis = gis
         self._min_scale, self._max_scale = kwargs.pop('scale', (0,0))
         self._title = kwargs.pop("title", "Layer")
-        self._opacity = kwargs.pop('opacity', 0)
+        self._opacity = kwargs.pop('opacity', 1)
         self._id = kwargs.pop('id', uuid.uuid4().hex)
         self._copyright = kwargs.pop("copyright", "")
     #----------------------------------------------------------------------
@@ -50,7 +50,7 @@ class BaseOGC(object):
         
         :returns: PropertyMap
         """
-        return PropertyMap(self._esri_json)
+        return PropertyMap(self._lyr_json)
     #----------------------------------------------------------------------
     def __str__(self):
         return f"<{self.__class__.__name__} @ {self._url}>"
@@ -118,12 +118,8 @@ class BaseOGC(object):
         return self._copyright
     #----------------------------------------------------------------------
     @property
-    def _esri_json(self) -> dict:
-        """
-        represents the map widget's JSON format
-
-        :returns: dict
-        """
+    def _lyr_json(self) -> dict:
+        """Represents the MapView's JSON format"""
         return {
             "id" : uuid.uuid4().hex,
             "title" : self._title or "Layer",
@@ -133,6 +129,11 @@ class BaseOGC(object):
             "maxScale" : self.scale[1],
             "opacity" : self.opacity
         }
+    @property
+    def _operational_layer_json(self) -> dict:
+        """Represents the WebMap's JSON format"""
+        return self._lyr_json
+
 ###########################################################################
 class BaseOpenData(BaseOGC):
     """

@@ -14,7 +14,7 @@ class TestGeoRSSLayer(unittest.TestCase):
         georss = GeoRSSLayer(url=geo_rss_url)
         assert isinstance(georss, GeoRSSLayer)
         assert georss.line_symbol
-        assert georss.opacity == 0
+        assert georss.opacity == 1
         georss.opacity = .5
         assert georss.opacity == .5
         assert georss.point_symbol
@@ -25,7 +25,7 @@ class TestGeoRSSLayer(unittest.TestCase):
         assert isinstance(georss.title, str)
         georss.title = 'test'
         assert georss.title == 'test'
-        assert georss._esri_json
+        assert georss._lyr_json
         assert georss.properties
         print(georss.properties)
 
