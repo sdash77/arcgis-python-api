@@ -738,7 +738,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)
+        
         if estimate:
             params = {}
             params["pointLayer"] = point_layer
@@ -1188,7 +1188,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)
+        
         if estimate:
             params = {}
             if context:
@@ -1474,7 +1474,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)
+        
         if estimate:
             params = {}
 
@@ -1580,7 +1580,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)        
+                
 
 
         if estimate:
@@ -1662,7 +1662,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)        
+                
 
         if estimate:
             params["inputLayers"] = input_layers_param
@@ -1730,7 +1730,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict        
-        assert isinstance(output_name, dict)
+        
         if estimate:
             task ="DissolveBoundaries"
 
@@ -1827,7 +1827,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 }            
             output_name = _lyr_dict
                 
-        assert isinstance(output_name, dict)
+        
 
         if estimate:
             params["inputLayer"] = input_layer
@@ -1989,7 +1989,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)        
+                
 
 
         if estimate:
@@ -2065,7 +2065,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)        
+                
 
 
         if estimate:
@@ -2141,7 +2141,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)
+        
 
 
         if estimate:
@@ -2231,7 +2231,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)
+        
         task ="FindHotSpots"
 
 
@@ -2360,7 +2360,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)        
+                
 
 
         if estimate:
@@ -2489,7 +2489,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)
+        
 
 
         if estimate:
@@ -2601,7 +2601,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)        
+                
 
         if estimate:
             params["analysisLayer"] = analysis_layer
@@ -2683,7 +2683,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)
+        
         if estimate:
             params = {}
             params["inputLayer"] = input_layer
@@ -2766,7 +2766,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)
+        
         if estimate:
             task ="GenerateTessellations"
             params = {}
@@ -2872,7 +2872,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)
+        
 
 
         if estimate:
@@ -2949,7 +2949,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)
+        
 
         if estimate:
             params["targetLayer"] = target_layer
@@ -3040,7 +3040,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)
+        
 
         if estimate:
             params = {}
@@ -3122,7 +3122,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)
+        
         if estimate:
             params["inputLayer"] = input_layer
             params["overlayLayer"] = overlay_layer
@@ -3243,7 +3243,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)
+        
         
         if point_barrier_layer:
             point_barrier_layer = self._feature_input(point_barrier_layer)
@@ -3393,7 +3393,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)
+        
         if estimate:
             params["analysisLayer"] = analysis_layer
             params["summarizeType"] = summarize_type
@@ -3494,7 +3494,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)
+        
 
         if estimate:
             params["sumWithinLayer"] = sum_within_layer
@@ -3606,7 +3606,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)
+        
 
 
         if estimate:
@@ -3735,7 +3735,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
-        assert isinstance(output_name, dict)
+        
 
 
         if estimate:
