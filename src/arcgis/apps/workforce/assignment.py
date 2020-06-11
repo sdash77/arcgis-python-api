@@ -473,6 +473,7 @@ class Assignment(FeatureModel):
         if self._feature.attributes[self._schema.status] is not None:
             try:
                 return lut[self._feature.attributes[self._schema.status]]
+            # this supports systems that add to the assignment CVD
             except KeyError:
                 return "other"
         else:
