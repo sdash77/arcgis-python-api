@@ -471,7 +471,10 @@ class Assignment(FeatureModel):
             6: "canceled"
         }
         if self._feature.attributes[self._schema.status] is not None:
-            return lut[self._feature.attributes[self._schema.status]]
+            try:
+                return lut[self._feature.attributes[self._schema.status]]
+            except KeyError:
+                return "other"
         else:
             return None
 
