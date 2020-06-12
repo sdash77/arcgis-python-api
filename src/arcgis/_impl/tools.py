@@ -822,8 +822,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
             required_facilities_layer = self._feature_input(required_facilities_layer)
         if candidate_facilities_layer:
             candidate_facilities_layer = self._feature_input(candidate_facilities_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
         if point_barrier_layer:
             point_barrier_layer = self._feature_input(point_barrier_layer)
         if line_barrier_layer:
@@ -971,8 +984,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task ="ConnectOriginsToDestinations"
         origins_layer = self._feature_input(origins_layer)
         destinations_layer = self._feature_input(destinations_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
         if point_barrier_layer:
             point_barrier_layer = self._feature_input(point_barrier_layer)
         if line_barrier_layer:
@@ -1083,8 +1109,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task ="CreateDriveTimeAreas"
 
         input_layer = self._feature_input(input_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
         if point_barrier_layer:
             point_barrier_layer = self._feature_input(point_barrier_layer)
         if polygon_barrier_layer:
@@ -1188,6 +1227,19 @@ class _FeatureAnalysisTools(BaseAnalytics):
                     "itemId" : output_name.properties.serviceItemId,
                 }            
             output_name = _lyr_dict
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
         
         if estimate:
             params = {}
@@ -1256,8 +1308,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         task ="CreateBuffers"
         input_layer = self._feature_input(input_layer)
-        if output_name:
+        if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
+        elif output_name and isinstance(output_name, FeatureLayer):
+            _lyr_dict = {
+                "serviceProperties" : {
+                    "name" : output_name.properties.name,
+                    "serviceUrl" : output_name.container.url
+                }
+            }
+            if "serviceItemId" in output_name.properties:
+                
+                _lyr_dict["itemProperties"] = {
+                    "itemId" : output_name.properties.serviceItemId,
+                }            
+            output_name = _lyr_dict
         if estimate:
             params = {}
 
