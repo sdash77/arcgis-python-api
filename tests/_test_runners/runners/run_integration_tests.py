@@ -1,5 +1,6 @@
 import pytest
 import os
+import shutil
 import logging
 log = logging.getLogger("__main__")
 

@@ -33,7 +33,11 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                                 'esri/layers/SceneLayer',
                                 'esri/layers/FeatureLayer',
                                 'esri/tasks/support/FeatureSet',
-                                'esri/PopupTemplate',
+                                'esri/layers/WMSLayer',
+                                'esri/layers/WMTSLayer',
+                                'esri/layers/GeoRSSLayer',
+                                'esri/layers/GeoJSONLayer',
+                                'esri/layers/CSVLayer',
                                 'esri/layers/support/RasterFunction',
                                 'esri/layers/support/MosaicRule'],
         options).then(([ImageryLayer,
@@ -44,7 +48,11 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                         SceneLayer,
                         FeatureLayer,
                         FeatureSet,
-                        PopupTemplate,
+                        WMSLayer,
+                        WMTSLayer,
+                        GeoRSSLayer,
+                        GeoJSONLayer,
+                        CSVLayer,
                         RasterFunction,
                         MosaicRule]) => {
             if (noTypeLayer.type === "ImageryLayer"){
@@ -77,7 +85,7 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                             }
                             typedLayer.raster = encodedRaster;}}
                 resolve(typedLayer);}
-            else if (noTypeLayer.type == "KMLLayer") {
+            else if (noTypeLayer.type == "KMLLayer" || noTypeLayer.type == "KML") {
                 var typedLayer = new KMLLayer(noTypeLayer.url);
                 typedLayer.id = noTypeLayer._hashFromPython;
                 resolve(typedLayer);}
@@ -101,6 +109,35 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                 var typedLayer = new SceneLayer(noTypeLayer.url);
                 typedLayer.id = noTypeLayer._hashFromPython;
                 resolve(typedLayer);}
+            else if (noTypeLayer.type == "WMS"){
+                noTypeLayer.subLayers = [noTypeLayer.sublayers[0],];
+                delete noTypeLayer.type;
+                var typedLayer = new WMSLayer(noTypeLayer);
+                typedLayer.id = noTypeLayer._hashFromPython;
+                resolve(typedLayer);}
+            else if (noTypeLayer.type == "WebTiledLayer"){
+                var typedLayer = new WMTSLayer({url : noTypeLayer.url});
+                typedLayer.id = noTypeLayer._hashFromPython;
+                resolve(typedLayer);}
+            else if (noTypeLayer.type == "GeoRSS"){
+                var typedLayer = new GeoRSSLayer({url: noTypeLayer.url});
+                typedLayer.id = noTypeLayer._hashFromPython;
+                resolve(typedLayer);}
+            else if (noTypeLayer.type == "GeoJSON"){
+                var typedLayer = new GeoJSONLayer({url: noTypeLayer.url});
+                typedLayer.id = noTypeLayer._hashFromPython;
+                resolve(typedLayer);}
+            else if (noTypeLayer.type == "CSV"){
+                inferRenderer(noTypeLayer.layerDefinition.drawingInfo.renderer.type,
+                    noTypeLayer.layerDefinition.drawingInfo.renderer).then((renderer) => {
+                    var typedLayer = new CSVLayer({url: noTypeLayer.url,
+                                                   renderer: renderer});
+                    typedLayer.id = noTypeLayer._hashFromPython;
+                    resolve(typedLayer);
+                }).catch((err) => {
+                    var typedLayer = new CSVLayer({url: noTypeLayer.url});
+                    typedLayer.id = noTypeLayer._hashFromPython;
+                    resolve(typedLayer);})}
             else if ((noTypeLayer.type == "FeatureLayer") ||
                      (noTypeLayer.type == "Feature Layer")) {
                 //TODO: clean up this Feature layer stuff, seperate into new file

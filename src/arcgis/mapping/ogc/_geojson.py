@@ -37,12 +37,12 @@ class GeoJSONLayer(BaseOGC):
         """init"""
         super(GeoJSONLayer, self)
         self._url = url
-        self._type = "geojson"
+        self._type = "GeoJSON"
         self._copyright = kwargs.pop("copyright", "")
         self._title = kwargs.pop("title", "GeoJSON Layer")
         self._id = kwargs.pop('id', uuid.uuid4().hex) # hidden input, but accepted
         self._min_scale, self._max_scale = kwargs.pop('scale', (0,0))
-        self._opacity = kwargs.pop("opacity", 0)
+        self._opacity = kwargs.pop("opacity", 1)
         if 'renderer' in kwargs:
             r = kwargs.pop('renderer', None)
             if isinstance(r, dict):
@@ -64,7 +64,8 @@ class GeoJSONLayer(BaseOGC):
             self._renderer = InsensitiveDict(renderer)
     #----------------------------------------------------------------------
     @property
-    def _esri_json(self) -> dict:
+    def _lyr_json(self) -> dict:
+        """Represents the MapView widget's JSON format"""
         lyr = {
             "type" : self._type,
             "url" : self._url,
@@ -72,8 +73,14 @@ class GeoJSONLayer(BaseOGC):
             "title" : self._title,
             "id" : self._id,
             "minScale" : self.scale[0],
-            "maxScale" : self.scale[1]
+            "maxScale" : self.scale[1],
+            "opacity" : self._opacity
         }
         if self._renderer:
             lyr['renderer'] = self._renderer._json
         return lyr
+
+    @property
+    def _operational_layer_json(self) -> dict:
+        """Represents the WebMap's JSON format"""
+        return self._lyr_json

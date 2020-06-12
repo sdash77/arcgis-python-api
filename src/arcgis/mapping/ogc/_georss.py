@@ -40,7 +40,7 @@ class GeoRSSLayer(BaseOGC):
     _line_symbol = None
     _point_symbol = None
     _polygon_symbol = None
-    _type = "geo-rss"
+    _type = "GeoRSS"
     #----------------------------------------------------------------------
     def __init__(self, url, **kwargs):
         super(GeoRSSLayer, self)
@@ -50,7 +50,7 @@ class GeoRSSLayer(BaseOGC):
         assert isinstance(scale, (list, tuple)) and len(scale) == 2
         self._min_scale = scale[0]
         self._max_scale = scale[1]
-        self._opacity = kwargs.pop('opacity', 0)
+        self._opacity = kwargs.pop('opacity', 1)
         self._copyright = kwargs.pop('copyright', None)
         self._title = kwargs.pop('title', None)
         self.point_symbol = kwargs.pop('point_symbol', None)
@@ -134,10 +134,10 @@ class GeoRSSLayer(BaseOGC):
             self._polygon_symbol = InsensitiveDict(value)
     #----------------------------------------------------------------------
     @property
-    def _esri_json(self) -> dict:
-        """creates a dictionary for web map item."""
+    def _lyr_json(self) -> dict:
+        """Represents the MapView's widget JSON format"""
         add_layer =  {
-            "type" : "geo-rss",
+            "type" : self._type,
             'url' : self._url,
             'opacity' : self.opacity,
             'minScale' : self.scale[0],
@@ -149,3 +149,8 @@ class GeoRSSLayer(BaseOGC):
             'title' : self.title
         }
         return add_layer
+
+    @property
+    def _operational_layer_json(self) -> dict:
+        """Represents the WebMap's JSON format"""
+        return self._lyr_json

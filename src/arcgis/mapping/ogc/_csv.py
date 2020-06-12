@@ -46,7 +46,7 @@ class CSVLayer(BaseOpenData):
     _renderer = None
     _latitude = None
     _longitude = None
-    _type = "csv"
+    _type = "CSV"
     #----------------------------------------------------------------------
     def __init__(self, url_or_item, gis=None, **kwargs):
         """initializer"""
@@ -63,9 +63,9 @@ class CSVLayer(BaseOpenData):
         self._fields = kwargs.pop('fields', None)
         self._sql = kwargs.pop('sql_expression', None)
         self._id = kwargs.pop('id', uuid.uuid4().hex)
-        self._title = kwargs.pop('title', None)
+        self._title = kwargs.pop('title', 'CSV Layer')
         self._min_scale, self._max_scale = kwargs.pop('scale', (0,0))
-        self._opacity = kwargs.pop('opacity', 0)
+        self._opacity = kwargs.pop('opacity', 1)
     #----------------------------------------------------------------------
     def __str__(self):
         if self._item:
@@ -131,8 +131,8 @@ class CSVLayer(BaseOpenData):
         """
         from arcgis._impl.common._isd import InsensitiveDict
         if self._renderer is None:
-            from arcgis.mapping._viz import SimpleRenderer
-            sr = SimpleRenderer(geometry_type="point")._to_dict()
+            from arcgis.mapping import generate_renderer
+            sr = generate_renderer(geometry_type="point")
             self._renderer = InsensitiveDict(dict(sr))
         return self._renderer
     #----------------------------------------------------------------------
@@ -267,28 +267,40 @@ class CSVLayer(BaseOpenData):
         return self._fields
     #----------------------------------------------------------------------
     @property
-    def _esri_json(self):
-        """creates a dictionary for web map item."""
+    def _lyr_json(self):
+        """Represents the MapView's JSON format"""
         add_layer =  {
-            "type" : "csv",
+            "type" : self._type,
             "delimiter" : self.delimiter,
             "copyright" : self.copyright or "",
             "definitionExpression" : self.sql_expression or "",
-            "fields" : self.fields,
-            "longitudeField" : self.longitude,
-            "latitudeField" :self.latitude,
-            'renderer' : self.renderer._json(),
+            'layerDefinition' : {
+                'fields' : self.fields,
+                'objectIDField': "__OBJECTID",
+                'drawingInfo': {
+                    "renderer" : self.renderer._json()}},
             'id' : self._id,
             'title' : self.title,
             'opacity' : self.opacity,
             'maxScale' : self.scale[1],
-            'minScale' : self.scale[0]
+            'minScale' : self.scale[0],
+            'locationInfo' : {
+                'locationType' : 'coordinates',
+                'longitudeFieldName' : self.longitude,
+                'latitudeFieldName' : self.latitude,
+            }
         }
         if self._item:
             add_layer["portalItem"] = { "id" : self._item.itemid }
         else:
             add_layer["url"] = self._url
         return add_layer
+
+    @property
+    def _operational_layer_json(self):
+        """Represents the WebMap's JSON format"""
+        return self._lyr_json
+
     #----------------------------------------------------------------------
     def _df(self, glance=False):
         """returns the data as a pd.DataFrame"""
