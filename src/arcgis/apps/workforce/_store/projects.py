@@ -247,7 +247,7 @@ def _v2_create_project(gis, summary, title):
 
     # create the Project to return, add navigator as default integration
     project = arcgis.apps.workforce.Project(workforce_service_item)
-    project.integrations.add(integration_id="arcgis-navigator",prompt="Navigate to Assignment",url_template="arcgis-navigator://?stop=${assignment.latitude},${assignment.longitude}&stopname=${assignment.location}&callback=arcgis-workforce://&callbackprompt=Workforce")
+    project.integrations.add(integration_id="arcgis-navigator",prompt="Navigate to Assignment",url_template="https://navigator.arcgis.app?stop=${assignment.latitude},${assignment.longitude}&stopname=${assignment.location}&callback=https://workforce.arcgis.app&callbackprompt=Workforce")
     return project
 
 
@@ -301,7 +301,7 @@ def _v1_create_project_item(gis, folder_name, assignments_item, dispatchers_item
             {
                 "id": 'default-navigator',
                 "prompt": "Navigate to Assignment",
-                "urlTemplate": "arcgis-navigator://?stop=${assignment.latitude},${assignment.longitude}&stopname=${assignment.location}&callback=arcgis-workforce://&callbackprompt=Workforce",
+                "urlTemplate": "https://navigator.arcgis.app?stop=${assignment.latitude},${assignment.longitude}&stopname=${assignment.location}&callback=https://workforce.arcgis.app&callbackprompt=Workforce",
             }
         ],
         "version": "1.3.0",
