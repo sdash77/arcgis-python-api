@@ -68,6 +68,10 @@ def common_test(test_object, model_type, output_name, data_path, old_models, **p
         if os.environ['nightly_test'] == "1":
             score = model_object.average_precision_score(mean=True)
             results_path = os.path.abspath(os.path.join(STAGING_DIR,"accuracy_results.json"))
+            csv_path = os.path.abspath(os.path.join(STAGING_DIR,"accuracy_results.csv"))
+            with open(csv_path, 'a+', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow([23])
             with open(results_path, 'w') as file:
                 accuracy_score = {"accuracy": score}
                 json.dump(accuracy_score, file, indent=4)
