@@ -33,7 +33,8 @@ def run_notebook_tests(config, paths, output_dir,
                             cell_timeout_sec = config['cell_timeout_sec'],
                             jenkins_job_url = jenkins_job_url,
                             notebook_runner = notebook_runner,
-                            browser = config.get("browser", None))
+                            browser = config.get("browser", None),
+                            num_retries = config.get("num_retries", 1))
         utest_test_suite.addTest(test)
 
     # Run the actual tests, run setup/teardown if applicable
