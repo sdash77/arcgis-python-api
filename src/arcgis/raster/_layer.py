@@ -8017,6 +8017,8 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
             if query_geometry_or_extent is not None:
                 query_geometry_or_extent = _get_geometry(query_geometry_or_extent)
                 geometry_filter = intersects(query_geometry_or_extent)
+            else:
+                geometry_filter = self._spatial_filter
             #newcollection = self._clone_raster_collection()
             if where_clause is not None:
                 where_clause = self._where_clause+" AND ("+ where_clause+")"

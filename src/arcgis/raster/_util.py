@@ -392,7 +392,7 @@ def _get_geometry(data):
 
     if isinstance(data, _Geometry):
         return data
-    elif isinstance(data, arcgis.raster.Raster):
+    elif isinstance(data, _arcgis.raster.Raster):
         return _Geometry(data.extent)
     elif isinstance(data, _ImageryLayer):
         return _Geometry(data.extent)
