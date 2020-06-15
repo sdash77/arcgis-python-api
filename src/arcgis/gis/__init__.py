@@ -7772,7 +7772,11 @@ class Item(dict):
                     with _DisableLogger():
                         self._populate_layers()
                 except Exception as e:
-                    print(e)
+                    if str(e).lower().find("token required") >-1 and self._gis._con._auth.lower() == "pki":
+                        with _DisableLogger():
+                            self._populate_layers()
+                    else:
+                        print(e)
                     pass
                 return self['layers']
         elif name == 'tables':
