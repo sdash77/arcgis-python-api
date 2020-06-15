@@ -23,6 +23,7 @@ class TestNotebook(unittest.TestCase):
                  notebook_runner="nbconvert",
                  active_jupyter_backend = None, # only used with selenium
                  browser = None, # only used with selenium
+                 num_attempts = 1,
                  **kwargs):
         """notebook_file_path is the path to the notebook to test
         output_dir is where all ran notebooks and converted html go to
@@ -36,6 +37,7 @@ class TestNotebook(unittest.TestCase):
         self.notebook_file_path = notebook_file_path
         self.output_dir = output_dir
         self.jenkins_job_url = jenkins_job_url
+        self.num_attempts = num_attempts
         self.notebook_file_name_no_ext = os.path.splitext(os.path.basename(
             notebook_file_path))[0]
 
@@ -63,16 +65,28 @@ class TestNotebook(unittest.TestCase):
 
     def runTest(self):
         """The actual test that runs for checking the notebook"""
-        log.info("Testing notebook {}".format(self.notebook_file_name_no_ext))
-        result = self.runner.run_notebook()
-        self._check_notebook_for_errors(result.output_ipynb_path)
+        last_thrown_exception = ""
+        for i in range(0, self.num_attempts):
+            try:
+                log.info(f"Testing notebook {self.notebook_file_name_no_ext} "\
+                         f"for the {i+1} time")
+                result = self.runner.run_notebook()
+                self._check_notebook_for_errors(result.output_ipynb_path)
+                #If we're reached here, we've passed
+                msg = "Notebook {nb_name} passed!\n{nb_links_text}\n-----\n".format(
+                      nb_name = self.notebook_file_name_no_ext,
+                      nb_links_text = self._get_nb_links_text())
+                print(msg)
+                log.debug(msg)
+                return
+            except Exception as e:
+                last_thrown_exception = e
+                log.warn(f"\n---\nNotebook {self.notebook_file_name_no_ext} failed on "\
+                         f"attempt {i+1} of {self.num_attempts} with this exception:")
+                log.exception(e)
+        # If we've reached here, we've failed more than the # of retries
+        raise last_thrown_exception
 
-        #If we're reached here, we've passed
-        msg = "Notebook {nb_name} passed!\n{nb_links_text}\n-----\n".format(
-              nb_name = self.notebook_file_name_no_ext,
-              nb_links_text = self._get_nb_links_text())
-        print(msg)
-        log.debug(msg)
 
     def _check_notebook_for_errors(self, notebook_file_path):
         """If the output notebook has any errors, fail the test"""
