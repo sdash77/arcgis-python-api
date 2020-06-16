@@ -1119,7 +1119,7 @@ class ODCostMatrixLayer(NetworkLayer):
     OD Cost Matrix Layer is part of the Network Layer services.  It allows users
     to generate cost matrix data for a given set of input.  
     """
-    def solve_OD_cost_matrix(self, 
+    def solve_od_cost_matrix(self, 
                              origins, 
                              destinations, 
                              future=False,
@@ -1420,8 +1420,11 @@ class NetworkDataset(_GISResource):
         return self._closestFacilityLayers
     
     @property
-    def od_cost_matrix(self):
+    def od_cost_matrix_layers(self):
         """
+        List of OD Cost Matrix Layers
+        
+        :returns: List
         """
         if self._odCostMatrix is None:
             self._load_layers()
