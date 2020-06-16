@@ -1208,9 +1208,11 @@ class ODCostMatrixLayer(NetworkLayer):
         ------------------------------------     --------------------------------------------------------------------
         restriction_attribute_names              Optional String. Specify which restrictions should be honored by the service. 
         ------------------------------------     --------------------------------------------------------------------
-        restrict_u_turns                         Optional String. Restrict or permit the route from making U-turns at junctions. The default value is esriNFSBAtDeadEndsAndIntersections.
+        restrict_u_turns                         Optional String. Restrict or permit the route from making U-turns at 
+                                                 junctions. The default value is `AtDeadEndsAndIntersections`.
 
-Values: esriNFSBAtDeadEndsAndIntersections | esriNFSBAllowBacktrack | esriNFSBAtDeadEndsOnly | esriNFSBNoBacktrack
+                                                 Values: `AtDeadEndsAndIntersections`, `AllowBacktrack`, `AtDeadEndsOnly`,
+                                                 or `NoBacktrack`
         ------------------------------------     --------------------------------------------------------------------
         return_barriers                          Optional Boolean. Specify whether barriers will be returned by the service. The default value is false.
         ------------------------------------     --------------------------------------------------------------------
@@ -1286,10 +1288,21 @@ Values: esriNFSBAtDeadEndsAndIntersections | esriNFSBAllowBacktrack | esriNFSBAt
             "No Lines" : "esriNAODOutputNoLines",
             "esriNAODOutputNoLines" : "esriNAODOutputNoLines"
         }
+        allowed_restrict_uturns = {
+            "esriNFSBAtDeadEndsAndIntersections" : "esriNFSBAtDeadEndsAndIntersections",
+            "AtDeadEndsAndIntersections" : "esriNFSBAtDeadEndsAndIntersections",
+            "esriNFSBAllowBacktrack" : "esriNFSBAllowBacktrack",
+            "AllowBacktrack" : "esriNFSBAllowBacktrack",
+            "esriNFSBAtDeadEndsOnly" : "esriNFSBAtDeadEndsOnly",
+            "AtDeadEndsOnly" : "esriNFSBAtDeadEndsOnly",
+            "esriNFSBNoBacktrack" : "esriNFSBNoBacktrack",
+            "NoBacktrack" : "esriNFSBNoBacktrack",
+            
+        }
         for key in list(params.keys()):
             if params[key] is None:
                 params.pop(key)
-        url = self._url + "/retrieveTravelModes"
+        
         if "outputType" in params and params['outputType']:
             assert params['outputType'] in allowed_output_types
             params['outputType'] = allowed_output_types[params['outputType']]
@@ -1297,7 +1310,8 @@ Values: esriNFSBAtDeadEndsAndIntersections | esriNFSBAllowBacktrack | esriNFSBAt
             tod = params['time_of_day']
             if isinstance(tod, datetime.datetime):
                 params['time_of_day'] = f"{tod.timestamp() * 1000}"
-                
+        if params.get("restrictUTurns", "esriNFSBAtDeadEndsAndIntersections"):
+            params['restrictUTurns'] = allowed_restrict_uturns[params.get("restrictUTurns", "esriNFSBAtDeadEndsAndIntersections")]
         if future:
             f = self._run_async(self._con.post, **{'path' : url, 
                                                    'postdata' : params, 
@@ -1308,12 +1322,18 @@ Values: esriNFSBAtDeadEndsAndIntersections | esriNFSBAllowBacktrack | esriNFSBAt
                               token=self._token)        
     #----------------------------------------------------------------------
     def retrieve_travel_modes(self):
-        """identify all the valid travel modes that have been defined on the
-        network dataset or in the portal if the GIS server is federated"""
-        url = self._url + "/solveODCostMatrix"
+        """
+        Identify all the valid travel modes that have been defined on the
+        network dataset or in the portal if the GIS server is federated
+        
+        :returns: Dictionary
+        
+        """
+        from arcgis._impl.common._isd import InsensitiveDict
+        url = self._url + "/retrieveTravelModes"
         params = {"f":"json"}
-        return self._con.get(path=url,
-                         params=params, token=self._token)
+        return InsensitiveDict(self._con.get(path=url,
+                                             params=params, token=self._token))
 ###########################################################################
 class NetworkDataset(_GISResource):
     """
