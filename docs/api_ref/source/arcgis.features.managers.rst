@@ -73,7 +73,7 @@ WebHookServiceManager
 
 WebHook
 --------------
-.. autoclass::arcgis.features.managers.WebHook
+.. autoclass:: arcgis.features.managers.WebHook
     :inherited-members:
     :members:
     :undoc-members:
