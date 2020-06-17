@@ -14,7 +14,7 @@ try:
     import torch
     import torchvision
     from torchvision import models
-    import pandas as import pd
+    import pandas as pd
     import datetime
 except Exception:
     HAS_DEPS = False
