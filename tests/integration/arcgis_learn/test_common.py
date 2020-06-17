@@ -42,7 +42,8 @@ def updateAccuracyResults():
     data = gis.content.search(query="title:accuracy_table")
     itm = data[0]
     flayer = FeatureLayerCollection.fromitem(itm)
-    flayer.manager.overwrite(os.path.join(os.environ["accuracy_test"],'accuracy.csv'))
+    csv_path = os.path.abspath(os.path.join(os.environ["accuracy_test"],"accuracy.csv"))
+    flayer.manager.overwrite(csv_path)
 
 def convertdate(dates):
     day = dates.day
