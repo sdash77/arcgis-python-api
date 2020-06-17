@@ -14,6 +14,8 @@ try:
     import torch
     import torchvision
     from torchvision import models
+    import pandas as import pd
+    import datetime
 except Exception:
     HAS_DEPS = False
 
@@ -32,7 +34,22 @@ def setUpModule():
     setupenviron()
     print("Dependencies Installed.")
     tearDownModule()
+    updateAccuracyResults()
 
+def updateAccuracyResults():
+    from arcgis.gis import GIS
+    gis = GIS("https://deldev.maps.arcgis.com", "demos_deldev", "DelDevs12")
+    data = gis.content.search(query="title:accuracy_table")
+    itm = data[0]
+    flayer = FeatureLayerCollection.fromitem(itm)
+    flayer.manager.overwrite(os.path.join(os.environ["accuracy_test"],'accuracy.csv'))
+
+def convertdate(dates):
+    day = dates.day
+    month = dates.month
+    year = dates.year
+    dstr = str(str(month)+'/'+str(day)+'/'+str(year))
+    return dstr
 
 def common_test(test_object, model_type, output_name, data_path, old_models, **prepare_data_kwargs):
     # Prepare Data bunch.
@@ -64,18 +81,15 @@ def common_test(test_object, model_type, output_name, data_path, old_models, **p
     model_object.show_results()
 
     # Test for accuracy if nightly_test is run
-    if output_name in ['retinanet', 'ssd']:
-        if os.environ['nightly_test'] == "1":
+    if os.environ['nightly_test'] == "1":
+        if output_name in ['retinanet', 'ssd']:
             score = model_object.average_precision_score(mean=True)
-            results_path = os.path.abspath(os.path.join(STAGING_DIR,"accuracy_results.json"))
-            csv_path = os.path.abspath(os.path.join(STAGING_DIR,"accuracy_results.csv"))
-            with open(csv_path, 'a+', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerow([23])
-            with open(results_path, 'w') as file:
-                accuracy_score = {"accuracy": score}
-                json.dump(accuracy_score, file, indent=4)
-            test_object.assertGreater(score, .40)
+            csv_path = os.path.abspath(os.path.join(os.environ["accuracy_test"],"accuracy.csv"))
+
+            acc_file = pd.read_csv(csv_path)
+            row = acc_file[acc_file['Date']== convertdt(datetime.datetime.today())].index
+            acc_file.loc[row, output_name] = score
+            # test_object.assertGreater(score, .40)
 
     # Load from saved model.
     model_object.load(f'post_fit_{output_name}')
