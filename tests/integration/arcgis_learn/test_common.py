@@ -38,6 +38,7 @@ def setUpModule():
 
 def updateAccuracyResults():
     from arcgis.gis import GIS
+    from arcgis.features import FeatureLayerCollection
     gis = GIS("https://deldev.maps.arcgis.com", "demos_deldev", "DelDevs12")
     data = gis.content.search(query="title:accuracy")
     itm = data[2]
