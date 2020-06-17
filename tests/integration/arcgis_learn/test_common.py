@@ -39,8 +39,8 @@ def setUpModule():
 def updateAccuracyResults():
     from arcgis.gis import GIS
     gis = GIS("https://deldev.maps.arcgis.com", "demos_deldev", "DelDevs12")
-    data = gis.content.search(query="title:accuracy_table")
-    itm = data[0]
+    data = gis.content.search(query="title:accuracy")
+    itm = data[2]
     flayer = FeatureLayerCollection.fromitem(itm)
     csv_path = os.path.abspath(os.path.join(os.environ["accuracy_test"],"accuracy.csv"))
     flayer.manager.overwrite(csv_path)
