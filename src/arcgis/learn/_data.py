@@ -1061,6 +1061,11 @@ def prepare_data(path,
     # to consider transforms and resizing
     data.chip_size = data.train_ds[0][0].shape[-1]
 
+    if has_esri_files:
+        with open(stats_file) as f:
+            stats = json.load(f)
+            data._dataset_type = stats['MetaDataMode']
+
     if alter_class_mapping:
         new_mapping = {}
         for i, class_name in enumerate(class_mapping.keys()):

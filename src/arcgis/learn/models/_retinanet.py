@@ -95,6 +95,8 @@ class RetinaNet(ArcGISModel):
         if not self._check_backbone_support(_backbone):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
+        self._check_dataset_support(self._data)
+
         self.name = "RetinaNet"
         self._code = code
 
@@ -127,14 +129,21 @@ class RetinaNet(ArcGISModel):
     # Return a list of supported backbones names
     @property
     def supported_backbones(self):
-        """
-        Supported torchvision backbones for this model.
-        """        
+        """ Supported torchvision backbones for this model. """        
         return RetinaNet._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
         return [*_resnet_family]
+
+    @property
+    def  supported_datasets(self):
+        """ Supported dataset types for this model. """
+        return RetinaNet._supported_datasets()
+    
+    @staticmethod
+    def _supported_datasets():
+        return ['PASCAL_VOC_rectangles']     
 
     def _get_emd_params(self):
         _emd_template = {}

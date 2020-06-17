@@ -8,6 +8,7 @@ try:
     import torch
     from fastai.torch_core import split_model_idx
     from .._utils.common import get_multispectral_data_params_from_emd
+    from ._arcgis_model import _resnet_family
 
     HAS_FASTAI = True
 
@@ -219,7 +220,13 @@ class FasterRCNN(ModelExtension):
     """
     def __init__(self, data, backbone='resnet50', pretrained_path=None):
 
+        backbone_name = backbone if type(backbone) is str else backbone.__name__
+        if backbone_name not in self.supported_backbones:
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+
         super().__init__(data, MyFasterRCNN, backbone, pretrained_path)
+
+        self._check_dataset_support(self._data)
 
         idx = 27
         if self._backbone.__name__ in ['resnet18','resnet34']:
@@ -239,6 +246,24 @@ class FasterRCNN(ModelExtension):
             for p in i.parameters():
                 p.requires_grad = False
         return idx
+
+    @property
+    def supported_backbones(self):
+        """ Supported torchvision backbones for this model. """
+        return FasterRCNN._supported_backbones()
+
+    @staticmethod
+    def _supported_backbones():
+        return [*_resnet_family]
+
+    @property
+    def  supported_datasets(self):
+        """ Supported dataset types for this model. """
+        return FasterRCNN._supported_datasets()
+    
+    @staticmethod
+    def _supported_datasets():
+        return ['PASCAL_VOC_rectangles']
 
     @classmethod
     def from_model(cls, emd_path, data=None):
