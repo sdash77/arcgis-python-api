@@ -29,7 +29,7 @@ from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 
-__version__ = "1.8.0"
+__version__ = "1.8.2"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 

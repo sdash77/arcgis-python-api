@@ -77,6 +77,8 @@ class MaskRCNN(ArcGISModel):
         if not self._check_backbone_support(self._backbone):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
+        self._check_dataset_support(self._data)
+
         self._code = instance_detector_prf
 
         if self._backbone.__name__ is 'resnet50':
@@ -173,15 +175,22 @@ class MaskRCNN(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        """
-        Supported torchvision backbones for this model.
-        """        
+        """ Supported torchvision backbones for this model. """        
         return MaskRCNN._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
         return [*_resnet_family]
 
+    @property
+    def  supported_datasets(self):
+        """ Supported dataset types for this model. """
+        return MaskRCNN._supported_datasets()
+    
+    @staticmethod
+    def _supported_datasets():
+        return ['RCNN_Masks'] 
+    
     @classmethod
     def from_model(cls, emd_path, data=None):
         """

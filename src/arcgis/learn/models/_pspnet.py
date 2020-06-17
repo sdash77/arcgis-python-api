@@ -124,6 +124,8 @@ class PSPNetClassifier(ArcGISModel):
         if not self._check_backbone_support(_backbone):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")              
 
+        self._check_dataset_support(self._data)
+
         self._code = image_classifier_prf
         self.pyramid_sizes = pyramid_sizes
         self._use_unet = use_unet
@@ -194,15 +196,22 @@ class PSPNetClassifier(ArcGISModel):
     # Return a list of supported backbones names
     @property
     def supported_backbones(self):
-        """
-        Supported torchvision backbones for this model.
-        """        
+        """ Supported torchvision backbones for this model. """        
         return PSPNetClassifier._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
         return [*_resnet_family, *_densenet_family, *_vgg_family]
 
+    @property
+    def  supported_datasets(self):
+        """ Supported dataset types for this model. """
+        return PSPNetClassifier._supported_datasets()
+    
+    @staticmethod
+    def _supported_datasets():
+        return ['Classified_Tiles']    
+    
     @classmethod
     def from_model(cls, emd_path, data=None):
         """

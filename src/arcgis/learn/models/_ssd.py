@@ -158,6 +158,8 @@ class SingleShotDetector(ArcGISModel):
             if not self._check_backbone_support(self._backbone):
                 raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
+            self._check_dataset_support(self._data)
+
             if self._backbone == models.mobilenet_v2:
                 backbone_cut = -1
                 backbone_split = _mobilenet_split
@@ -244,14 +246,21 @@ class SingleShotDetector(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        """
-        Supported torchvision backbones for this model.
-        """
+        """ Supported torchvision backbones for this model. """
         return SingleShotDetector._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
         return [*_resnet_family, *_densenet_family, *_vgg_family, models.mobilenet_v2.__name__]
+
+    @property
+    def  supported_datasets(self):
+        """ Supported dataset types for this model. """
+        return SingleShotDetector._supported_datasets()
+    
+    @staticmethod
+    def _supported_datasets():
+        return ['PASCAL_VOC_rectangles']
 
     @classmethod
     def from_model(cls, emd_path, data=None):

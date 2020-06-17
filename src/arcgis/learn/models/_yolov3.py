@@ -94,6 +94,8 @@ class YOLOv3(ArcGISModel):
 
         self._model = YOLOv3_Model(self.config_model)
 
+        self._check_dataset_support(self._data)
+
         pretrained = kwargs.get('pretrained_backbone', True)
         if pretrained:
             # Download (if required) and load YOLOv3 weights pretrained on COCO dataset
@@ -133,13 +135,25 @@ class YOLOv3(ArcGISModel):
 
     def __repr__(self):
         return '<%s>' % (type(self).__name__)
-
-
+    
     @property
     def supported_backbones(self):
-        """ Supported backbones for this model. """        
+        """ Supported backbones for this model. """
+        return YOLOv3._supported_backbones()
+
+    @staticmethod
+    def _supported_backbones():
         return ['DarkNet53']
     
+    @property
+    def  supported_datasets(self):
+        """ Supported dataset types for this model. """
+        return YOLOv3._supported_datasets()
+    
+    @staticmethod
+    def _supported_datasets():
+        return ['PASCAL_VOC_rectangles'] 
+
     @property
     def _model_metrics(self):
         if getattr(self._data, "_is_coco", "") == True:
