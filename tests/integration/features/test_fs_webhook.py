@@ -1,5 +1,5 @@
 import sys, os
-sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_4086\src")
+#sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_4086\src")
 import unittest
 
 from arcgis.gis import GIS
@@ -9,7 +9,7 @@ hook_end_point_url = "https://en1dx5cd33emv.x.pipedream.net/"
 SKIPIF = False
 msg = ""
 try:
-    PROFILE = 'your_dev_online_profile'
+    PROFILE = 'your_online_profile'
     gis = GIS(profile=PROFILE, verify_cert=False)
     SKIPIF = gis.version < [8,2]
     if SKIPIF:
