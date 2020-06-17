@@ -340,8 +340,8 @@ class Connection(object):
             url = url.replace("http://", "https://")
         if params is None:
             params = {}
-        if self._auth == "IWA":
-            self._session = None
+        #if self._auth == "IWA":
+        #    self._session = None
         if self._session is None:
             self._create_session()
 
@@ -386,9 +386,6 @@ class Connection(object):
                 cert = (self._cert_file, self._key_file)
             else:
                 cert = None
-            if self._auth.lower() == 'pki':
-                self._session.cookies.clear()
-                params.pop('token', None)
             resp = self._session.get(url=url,
                                      params=params,
                                      cert=cert,
@@ -597,14 +594,12 @@ class Connection(object):
         post_json = kwargs.pop("post_json", False)
         token_as_header = kwargs.pop('token_as_header', False)
         token_header = kwargs.pop('token_header', "X-Esri-Authorization")
-        if self._auth == "IWA":
-            self._session = None
+        #if self._auth == "IWA":
+        #    self._session = None
         if 'postdata' in kwargs: # handles legacy issues
             params = kwargs.pop('postdata')
         if params is None:
             params = {}
-        if self._auth.lower() == "PKI":
-            self._session = None
         if self._session is None:
             self._create_session()
         try_json = kwargs.pop("try_json", True)
@@ -657,8 +652,6 @@ class Connection(object):
                 cert = (self._cert_file, self._key_file)
             else:
                 cert = None
-            if self._auth.lower() == 'pki':
-                self._session.cookies.clear()
             if json_encode:
                 for k,v in params.items():
                     if isinstance(v, (dict, list, tuple, bool)):
@@ -1278,19 +1271,16 @@ class Connection(object):
     #----------------------------------------------------------------------
     def generate_portal_server_token(self, serverUrl, expiration=1440):
         """generates a server token using Portal token"""
-        if self._auth.lower() == "pki":
-            from urllib.parse import unquote
-            cookies = self._session.cookies.get_dict()
-            for key, cookie in cookies.items():
-                if key.lower() == "esri_auth":
-                    auth = json.loads(unquote(cookie))
-                    if 'token' in auth:
-                        token = auth['token']
-                        break
-                del cookie
+        if self._auth.lower() in ["pki", 'iwa']:
+            postdata = {'request': 'getToken',
+                        'serverURL':serverUrl,
+                        'referer': self._referer,
+                        'f': 'json'}
+            if expiration:
+                postdata['expiration'] = expiration
         else:
             token = self.token
-        postdata = {'serverURL':serverUrl,
+            postdata = {'serverURL':serverUrl,
                     'token': token,
                     'expiration':str(expiration),
                     'f': 'json',

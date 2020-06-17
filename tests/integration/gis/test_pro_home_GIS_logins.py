@@ -3,7 +3,7 @@ GIS Connection Testing for Pro and NBAUTH files
 """
 import os
 import sys
-sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork\src")
+#sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork\src")
 import imp
 import json
 import tempfile 
