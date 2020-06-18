@@ -89,7 +89,7 @@ def common_test(test_object, model_type, output_name, data_path, old_models, **p
             csv_path = os.path.abspath(os.path.join(os.environ["accuracy_test"],"accuracy.csv"))
 
             acc_file = pd.read_csv(csv_path)
-            row = acc_file[acc_file['Date']== convertdt(datetime.datetime.today())].index
+            row = acc_file[acc_file['Date']== convertdate(datetime.datetime.today())].index
             acc_file.loc[row, output_name] = score
             # test_object.assertGreater(score, .40)
 
