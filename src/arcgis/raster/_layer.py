@@ -679,14 +679,19 @@ class ImageryLayer(Layer):
         Common data sources for multidimensional image services are mosaic
         datasets created from netCDF, GRIB, and HDF data.
         """
-        if "hasMultidimensions" in self.properties and \
-           self.properties['hasMultidimensions'] == True:
+        if ("hasMultidimensions" in self.properties and \
+           self.properties['hasMultidimensions'] == True) or self._datastore_raster:
             url = "%s/multiDimensionalInfo" % self._url
             params = {'f':'json'}
+            if self._fn is not None:
+                params['renderingRule'] = self._fn
+
             if self._datastore_raster:
                 params["Raster"]=self._uri
-            return self._con.get(path=url, params=params)
-        return None
+                if isinstance(self._uri, bytes):
+                    del params['renderingRule']
+                    params['Raster']=self._uri
+            return self._con.post(path=url, params=params)
     #----------------------------------------------------------------------
     def project(self,
                 geometries,
