@@ -55,6 +55,21 @@ class FeatureLayer(Layer):
         
     @property
     def time_filter(self):
+        """
+        Starting at Enterprise 10.7.1+, instead of querying time-enabled map 
+        service layers or time-enabled feature service layers, a time filter 
+        can be specified. Time can be filtered as a single instant or by 
+        separating the two ends of a time extent with a comma.
+        
+        ================     =================================================
+        **Input**            **Description**
+        ----------------     -------------------------------------------------
+        value                Required Datetime/List Datetime. This is a single
+                             or list of start/stop date.  
+        ================     =================================================
+        
+        :returns: String of datetime values as milliseconds from epoch
+        """
         return self._time_filter
     
     @time_filter.setter
@@ -72,7 +87,7 @@ class FeatureLayer(Layer):
                              or list of start/stop date.  
         ================     =================================================
         
-        
+        :returns: String of datetime values as milliseconds from epoch
         """
         import datetime as _dt
         v = []
