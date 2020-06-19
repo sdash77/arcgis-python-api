@@ -1067,7 +1067,9 @@ class FeatureLayer(Layer):
         if units:
             params['units'] = units
 
-        if time_filter is not None:
+        if time_filter is None and self.time_filter:
+            params['time'] = self.time_filter
+        elif time_filter is not None:
             if type(time_filter) is list:
                 starttime = _date_handler(time_filter[0])
                 endtime = _date_handler(time_filter[1])
