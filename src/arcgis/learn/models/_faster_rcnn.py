@@ -263,7 +263,7 @@ class FasterRCNN(ModelExtension):
     
     @staticmethod
     def _supported_datasets():
-        return ['PASCAL_VOC_rectangles']
+        return ['PASCAL_VOC_rectangles', 'KITTI_rectangles']
 
     @classmethod
     def from_model(cls, emd_path, data=None):

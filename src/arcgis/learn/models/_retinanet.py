@@ -143,7 +143,7 @@ class RetinaNet(ArcGISModel):
     
     @staticmethod
     def _supported_datasets():
-        return ['PASCAL_VOC_rectangles']     
+        return ['PASCAL_VOC_rectangles', 'KITTI_rectangles']     
 
     def _get_emd_params(self):
         _emd_template = {}
