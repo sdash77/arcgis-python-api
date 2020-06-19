@@ -40,8 +40,7 @@ def updateAccuracyResults():
     from arcgis.gis import GIS
     from arcgis.features import FeatureLayerCollection
     gis = GIS("https://deldev.maps.arcgis.com", "demos_deldev", "DelDevs12")
-    data = gis.content.search(query="title:accuracy")
-    itm = data[2]
+    itm = gis.content.get('b256398f166440089e4b2219a6acd6b2')
     flayer = FeatureLayerCollection.fromitem(itm)
     csv_path = os.path.abspath(os.path.join(os.environ["accuracy_test"],"accuracy.csv"))
     flayer.manager.overwrite(csv_path)
