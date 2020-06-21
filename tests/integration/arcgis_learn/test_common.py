@@ -90,6 +90,7 @@ def common_test(test_object, model_type, output_name, data_path, old_models, **p
             acc_file = pd.read_csv(csv_path)
             row = acc_file[acc_file['Date']== convertdate(datetime.datetime.today())].index
             acc_file.loc[row, output_name] = score
+            acc_file.to_csv(csv_path)
             # test_object.assertGreater(score, .40)
 
     # Load from saved model.
