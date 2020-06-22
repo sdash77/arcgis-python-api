@@ -63,11 +63,15 @@ class DataFile(object):
         ----------------  --------------------------------------------------------
         item_id           optional string,  The id of the uploaded file returned
                           as a result of the upload operation.
+                          
+        ----------------  --------------------------------------------------------
+        portal_item       optional Item. A data type item used for GP tool.
         ================  ========================================================
     """
-    def __init__(self, url=None, item_id=None):
+    def __init__(self, url=None, item_id=None, portal_item=None):
         self.url = url
         self.item_id = item_id
+        self.portal_item = portal_item
 
     def to_dict(self):
         """Converts an instance of this class to its dict representation."""
@@ -76,6 +80,11 @@ class DataFile(object):
             datafile['url'] = self.url
         if self.item_id is not None:
             datafile['itemID'] = self.item_id
+        if self.portal_item is not None and isinstance(self.portal_item, str):
+            datafile["portalItemID"] = self.portal_item
+        elif self.portal_item is not None and hasattr(self.portal_item, "itemid"):
+            datafile["portalItemID"] = self.portal_item.itemid
+            
         return datafile
 
     def __repr__(self):

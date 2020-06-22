@@ -10854,6 +10854,7 @@ class Layer(_GISResource):
     def __init__(self, url, gis=None):
         super(Layer, self).__init__(url, gis)
         self.filter = None
+        self._time_filter = None
         """optional attribute query string to select features to process by geoanalytics or spatial analysis tools"""
 
     @classmethod
@@ -10884,7 +10885,8 @@ class Layer(_GISResource):
 
         if self.filter is not None:
             lyr_dict['filter'] = self.filter
-
+        if self._time_filter is not None:
+            lyr_dict['time'] = self._time_filter
         return lyr_dict
 
     @property
@@ -10897,7 +10899,8 @@ class Layer(_GISResource):
 
         if self.filter is not None:
             lyr_dict['options'] = json.dumps({ "definition_expression": self.filter })
-
+        if self._time_filter is not None:
+            lyr_dict['time'] = self._time_filter        
         return lyr_dict
 
     @property

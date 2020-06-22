@@ -51,7 +51,66 @@ class FeatureLayer(Layer):
         self._storage = container
         self._dynamic_layer = dynamic_layer
         self.attachments = AttachmentManager(self)
-
+        self._time_filter = None
+        
+    @property
+    def time_filter(self):
+        """
+        Starting at Enterprise 10.7.1+, instead of querying time-enabled map 
+        service layers or time-enabled feature service layers, a time filter 
+        can be specified. Time can be filtered as a single instant or by 
+        separating the two ends of a time extent with a comma.
+        
+        ================     =================================================
+        **Input**            **Description**
+        ----------------     -------------------------------------------------
+        value                Required Datetime/List Datetime. This is a single
+                             or list of start/stop date.  
+        ================     =================================================
+        
+        :returns: String of datetime values as milliseconds from epoch
+        """
+        return self._time_filter
+    
+    @time_filter.setter
+    def time_filter(self, value):
+        """
+        Starting at Enterprise 10.7.1+, instead of querying time-enabled map 
+        service layers or time-enabled feature service layers, a time filter 
+        can be specified. Time can be filtered as a single instant or by 
+        separating the two ends of a time extent with a comma.
+        
+        ================     =================================================
+        **Input**            **Description**
+        ----------------     -------------------------------------------------
+        value                Required Datetime/List Datetime. This is a single
+                             or list of start/stop date.  
+        ================     =================================================
+        
+        :returns: String of datetime values as milliseconds from epoch
+        """
+        import datetime as _dt
+        v = []
+        if isinstance(value, _dt.datetime):
+            self._time_filter = f"{int(value.timestamp() * 1000)}" # means single time
+        elif isinstance(value, (tuple, list)):
+            for idx, d in enumerate(value):
+                if idx > 1:
+                    break
+                if isinstance(d, _dt.datetime):
+                    v.append(f"{int(value.timestamp() * 1000)}")
+                elif isinstance(d, str):
+                    v.append(d)
+                elif d is None:
+                    v.append("null")
+            self._time_filter = ",".join(v)
+        elif isinstance(value, str):
+            self._time_filter = value
+        elif value is None:
+            self._time_filter = None
+        else:
+            raise Exception("Invalid datetime filter")
+        
     @property
     def renderer(self):
         """
@@ -1008,7 +1067,9 @@ class FeatureLayer(Layer):
         if units:
             params['units'] = units
 
-        if time_filter is not None:
+        if time_filter is None and self.time_filter:
+            params['time'] = self.time_filter
+        elif time_filter is not None:
             if type(time_filter) is list:
                 starttime = _date_handler(time_filter[0])
                 endtime = _date_handler(time_filter[1])
