@@ -205,6 +205,11 @@ class GeometryFactory(type):
         except:
             _HASARCPY = False
         if _HASARCPY:
+            if "SRID=" in iterable:
+                wkid, iterable = iterable.split(";")
+                geom = json.loads(arcpy.FromWKT(iterable).JSON)
+                geom['spatialReference'] = {'wkid' : int(wkid.replace("SRID=",""))}
+                return geom
             return json.loads(arcpy.FromWKT(iterable).JSON)
         return {}
     
@@ -811,6 +816,40 @@ class Geometry(BaseGeometry):
             return geometry
         else:
             raise ValueError('Shapely is required to execute from_shapely.')
+    #----------------------------------------------------------------------
+    @property
+    def EWKT(self):
+        """
+        Returns the extended well-known text (EWKT) representation for OGC geometry.
+        It provides a portable representation of a geometry value as a text
+        string.
+        Any true curves in the geometry will be densified into approximate
+        curves in the WKT string.
+
+        :return: string
+        """    
+        HASARCPY, HASSHAPELY = self._check_geometry_engine()
+        if HASARCPY and \
+               isinstance(self, Envelope):
+            try:
+                p = getattr(self.as_arcpy, 'polygon', None)
+                sr = self.spatial_reference.get('wkid', 4326)
+                return f"SRID={sr};{p.WKT}"
+            except:
+                return None
+        if HASARCPY:
+            sr = self.spatial_reference.get('wkid', 4326)
+            return f"SRID={sr};{getattr(self.as_arcpy, 'WKT', None)}"            
+        elif HASSHAPELY:
+            try:
+                sr = self.spatial_reference.get('wkid', 4326)
+                return f"SRID={sr};{self.as_shapely.wkt}"
+            except:
+                sr = self.spatial_reference.get('wkid', 4326)
+                return f"SRID={sr};{self._wkt(fmt='%.16f')}"
+        else:
+            sr = self.spatial_reference.get('wkid', 4326)
+            return f"SRID={sr};{self._wkt(fmt='%.16f')}"
     #----------------------------------------------------------------------
     @property
     def WKT(self):

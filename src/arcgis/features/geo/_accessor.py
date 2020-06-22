@@ -13,7 +13,7 @@ import numpy as np
 from collections.abc import Iterable
 from ._internals import register_dataframe_accessor, register_series_accessor
 from ._array import GeoType
-from ._io.fileops import to_featureclass, from_featureclass, _sanitize_column_names
+from ._io.fileops import to_featureclass, from_featureclass, _sanitize_column_names, read_feather
 from arcgis.geometry import Geometry, SpatialReference, Envelope, Point
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
@@ -1145,6 +1145,9 @@ class GeoAccessor(object):
                              transform,
                              svg)
         return
+    @staticmethod
+    def from_feather(path, columns=None, use_threads: bool = True) -> pd.DataFrame:
+        return read_feather(path, columns, use_threads)
     #----------------------------------------------------------------------
     def set_geometry(self, col, sr=None):
         """Assigns the Geometry Column by Name or by List"""
