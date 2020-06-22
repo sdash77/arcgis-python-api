@@ -6116,6 +6116,8 @@ class Group(dict):
             A dictionary with a key notRemoved that is a list of users not removed.
         """
         users = []
+        if isinstance(usernames, (list, tuple)) == False:
+            usernames = [usernames]           
         for u in usernames:
             if isinstance(u, str):
                 users.append(u)
