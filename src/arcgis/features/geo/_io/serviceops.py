@@ -65,6 +65,8 @@ def from_featureset(fset, sr=None):
             rows.append(a)
             del a, feat
         from arcgis.features import GeoAccessor, GeoSeriesAccessor
+        if len(rows) > 0 and len(set(rows[0].keys()) - set(cols)) > 0:
+            cols = list(rows[0].keys())
         df = pd.DataFrame(data=rows, columns=cols)
         
         for fld in dt_fields:
