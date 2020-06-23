@@ -1147,6 +1147,36 @@ class GeoAccessor(object):
         return
     @staticmethod
     def from_feather(path, columns=None, use_threads: bool = True) -> pd.DataFrame:
+        """
+        Load a feather-format object from the file path.
+
+        ======================    =========================================================
+        **Argument**              **Description**
+        ----------------------    ---------------------------------------------------------
+        path                      String. Path object or file-like object. Any valid string 
+                                  path is acceptable. The string could be a URL. Valid
+                                  URL schemes include http, ftp, s3, and file. For file URLs, a host is
+                                  expected. A local file could be:
+                                  
+                                  ``file://localhost/path/to/table.feather``.
+    
+                                  If you want to pass in a path object, pandas accepts any
+                                  ``os.PathLike``.
+    
+                                  By file-like object, we refer to objects with a ``read()`` method,
+                                  such as a file handler (e.g. via builtin ``open`` function)
+                                  or ``StringIO``.
+        ----------------------    ---------------------------------------------------------
+        columns                   Sequence/List/Array. The default is `None`.  If not 
+                                  provided, all columns are read.
+        ----------------------    ---------------------------------------------------------
+        use_threads               Boolean. The default is `True`. Whether to parallelize 
+                                  reading using multiple threads.
+        ======================    =========================================================
+        
+        :returns: pd.DataFrame
+        
+        """
         return read_feather(path, columns, use_threads)
     #----------------------------------------------------------------------
     def set_geometry(self, col, sr=None):

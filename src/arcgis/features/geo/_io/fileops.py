@@ -179,7 +179,7 @@ def read_feather(path, columns=None, use_threads: bool = True) -> pd.DataFrame:
     columns : sequence, default None
         If not provided, all columns are read.
 
-        .. versionadded:: 0.24.0
+        .. versionadded:: v1.8.2 of ArcGIS API for Python
     use_threads : bool, default True
         Whether to parallelize reading using multiple threads.
 
