@@ -9265,7 +9265,7 @@ class Item(dict):
                                      'Listed2Provisioned', 'Item2Report', 'Item2Attachment',
                                      'Map2AppConfig', 'Map2Service', 'WMA2Code',
                                      'Map2FeatureCollection', 'MobileApp2Code',
-                                     'Service2Data', 'Service2Service'])
+                                     'Service2Data', 'Service2Service', 'WorkforceMap2FeatureService'])
 
     _RELATIONSHIP_DIRECTIONS = frozenset(['forward', 'reverse'])
 

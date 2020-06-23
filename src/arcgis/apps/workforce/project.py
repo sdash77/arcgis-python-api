@@ -309,7 +309,14 @@ class Project:
     def dispatcher_web_map_id(self):
         """The dispatcher webmap item id"""
         if self._is_v2_project:
-            return self._item_data['workforceDispatcherMapId']
+            related_items = self._item.related_items('WorkforceMap2FeatureService', 'reverse')
+            if len(related_items) == 2:
+                if "Workforce Dispatcher" in related_items[0].typeKeywords:
+                    return related_items[0].id
+                else:
+                    return related_items[1].id
+            else:
+                return self._item_data['workforceDispatcherMapId']
         else:
             return self._item_data['dispatcherWebMapId']
 
@@ -317,7 +324,14 @@ class Project:
     def worker_web_map_id(self):
         """The worker webmap item id"""
         if self._is_v2_project:
-            return self._item_data['workforceWorkerMapId']
+            related_items = self._item.related_items('WorkforceMap2FeatureService', 'reverse')
+            if len(related_items) == 2:
+                if "Workforce Worker" in related_items[0].typeKeywords:
+                    return related_items[0].id
+                else:
+                    return related_items[1].id
+            else:
+                return self._item_data['workforceWorkerMapId']
         else:
             return self._item_data['workerWebMapId']
 

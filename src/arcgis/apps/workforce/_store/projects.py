@@ -225,7 +225,7 @@ def _v2_create_project(gis, summary, title):
                                     "snippet": summary,
                                     "properties": {
                                         "workforceProjectGroupId": group_id,
-                                        "workforceProjectVersion": "2.0.0-beta.3",
+                                        "workforceProjectVersion": "2.0.0-beta.4",
                                         "workforceDispatcherMapId": dispatchers_webmap.id,
                                         "workforceWorkerMapId": workers_webmap.id
                                     }
@@ -245,9 +245,14 @@ def _v2_create_project(gis, summary, title):
         }
     )])
 
+    # add relationships
+    workers_webmap.add_relationship(workforce_service_item, 'WorkforceMap2FeatureService')
+    dispatchers_webmap.add_relationship(workforce_service_item, 'WorkforceMap2FeatureService')
+
     # create the Project to return, add navigator as default integration
     project = arcgis.apps.workforce.Project(workforce_service_item)
     project.integrations.add(integration_id="arcgis-navigator",prompt="Navigate to Assignment",url_template="https://navigator.arcgis.app?stop=${assignment.latitude},${assignment.longitude}&stopname=${assignment.location}&callback=https://workforce.arcgis.app&callbackprompt=Workforce")
+    
     return project
 
 
