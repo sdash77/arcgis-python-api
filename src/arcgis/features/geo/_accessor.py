@@ -13,7 +13,7 @@ import numpy as np
 from collections.abc import Iterable
 from ._internals import register_dataframe_accessor, register_series_accessor
 from ._array import GeoType
-from ._io.fileops import to_featureclass, from_featureclass, _sanitize_column_names
+from ._io.fileops import to_featureclass, from_featureclass, _sanitize_column_names, read_feather
 from arcgis.geometry import Geometry, SpatialReference, Envelope, Point
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
@@ -1145,6 +1145,48 @@ class GeoAccessor(object):
                              transform,
                              svg)
         return
+    @staticmethod
+    def from_feather(path, 
+                     spatial_column="SHAPE", 
+                     columns=None, 
+                     use_threads=True):
+        """
+        Load a feather-format object from the file path.
+
+        ======================    =========================================================
+        **Argument**              **Description**
+        ----------------------    ---------------------------------------------------------
+        path                      String. Path object or file-like object. Any valid string 
+                                  path is acceptable. The string could be a URL. Valid
+                                  URL schemes include http, ftp, s3, and file. For file URLs, a host is
+                                  expected. A local file could be:
+                                  
+                                  ``file://localhost/path/to/table.feather``.
+    
+                                  If you want to pass in a path object, pandas accepts any
+                                  ``os.PathLike``.
+    
+                                  By file-like object, we refer to objects with a ``read()`` method,
+                                  such as a file handler (e.g. via builtin ``open`` function)
+                                  or ``StringIO``.
+        ----------------------    ---------------------------------------------------------
+        spatial_column            Optional String. The default is `SHAPE`. Specifies the column
+                                  containing the geo-spatial information. 
+        ----------------------    ---------------------------------------------------------
+        columns                   Sequence/List/Array. The default is `None`.  If not 
+                                  provided, all columns are read.
+        ----------------------    ---------------------------------------------------------
+        use_threads               Boolean. The default is `True`. Whether to parallelize 
+                                  reading using multiple threads.
+        ======================    =========================================================
+        
+        :returns: pd.DataFrame
+        
+        """
+        return read_feather(path=path, 
+                            spatial_column=spatial_column, 
+                            columns=columns, 
+                            use_threads=use_threads)
     #----------------------------------------------------------------------
     def set_geometry(self, col, sr=None):
         """Assigns the Geometry Column by Name or by List"""

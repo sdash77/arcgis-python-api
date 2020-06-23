@@ -245,6 +245,24 @@ class GeoArray(ExtensionArray):
                 "'data' should be a 1-dimensional array of geometry objects."
             )
         self.data = data
+        self._validate_data()
+        
+    def _validate_data(self):
+        data = self.data
+        check = np.where(self.data != None)[0]
+        if len(check) > 0:
+            vindx = check[0]
+            if isinstance(data[vindx], Geometry) == False:
+                self.data[:] = [Geometry(d) for d in data if d]        
+
+        
+    def __arrow_array__(self, type=None):
+        """converts the data to a pyarrow array"""
+        import pyarrow
+        
+        return pyarrow.array([d.EWKT \
+                              for d in self.data if d], type=type)        
+        
 
     def _formatting_values_backport(self):
         return np.array(self._format_values(), dtype='object')  

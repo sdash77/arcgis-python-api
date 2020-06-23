@@ -157,7 +157,46 @@ def _from_xy(df, x_column, y_column, sr=None):
 def _ensure_path_string(input_path):
     """Provide hander to facilitate file path inputs to be Path object instances."""
     return str(input_path) if isinstance(input_path, Path) else input_path
+#--------------------------------------------------------------------------
+def read_feather(path, spatial_column="SHAPE", columns=None, use_threads: bool = True) -> pd.DataFrame:
+    """
+    Load a feather-format object from the file path.
 
+    Parameters
+    ----------
+    path : str, path object or file-like object
+        Any valid string path is acceptable. The string could be a URL. Valid
+        URL schemes include http, ftp, s3, and file. For file URLs, a host is
+        expected. A local file could be:
+        ``file://localhost/path/to/table.feather``.
+
+        If you want to pass in a path object, pandas accepts any
+        ``os.PathLike``.
+
+        By file-like object, we refer to objects with a ``read()`` method,
+        such as a file handler (e.g. via builtin ``open`` function)
+        or ``StringIO``.
+    spatial_column : str, Name of the geospatial column. The default is `SHAPE`. 
+       .. versionadded:: v1.8.2 of ArcGIS API for Python
+    columns : sequence, default None
+        If not provided, all columns are read.
+
+        .. versionadded:: v1.8.2 of ArcGIS API for Python
+    use_threads : bool, default True
+        Whether to parallelize reading using multiple threads.
+
+       .. versionadded:: v1.8.2 of ArcGIS API for Python
+
+    Returns
+    -------
+    type of object stored in file
+    """
+    sdf = pd.read_feather(path=path, columns=columns, use_threads=use_threads)
+    if spatial_column and \
+       spatial_column in sdf.columns:
+        sdf.spatial.set_geometry(spatial_column)
+        sdf.spatial.name
+    return sdf
 #--------------------------------------------------------------------------
 def from_table(filename, **kwargs):
     """

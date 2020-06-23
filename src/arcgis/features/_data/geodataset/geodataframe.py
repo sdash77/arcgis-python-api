@@ -61,6 +61,8 @@ except:
 
 class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     """
+        **This class is deprecated infavor of the GeoAccessor/GeoSeriesAccessor Pattern**
+    
         A Spatial Dataframe is an object to manipulate, manage and translate
         data into new forms of information for users.
 
