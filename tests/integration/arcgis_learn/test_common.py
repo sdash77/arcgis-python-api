@@ -15,7 +15,7 @@ try:
     import torchvision
     from torchvision import models
     import pandas as pd
-    import datetime
+    from datetime import datetime
 except Exception:
     HAS_DEPS = False
 
@@ -34,13 +34,14 @@ def setUpModule():
     setupenviron()
     print("Dependencies Installed.")
     tearDownModule()
-    updateAccuracyResults()
+    # updateAccuracyResults()
 
 def updateAccuracyResults():
     from arcgis.gis import GIS
     from arcgis.features import FeatureLayerCollection
+    updatecsv('Date', convertdate(datetime.today()))
     gis = GIS("https://deldev.maps.arcgis.com", "demos_deldev", "DelDevs12")
-    itm = gis.content.get('b256398f166440089e4b2219a6acd6b2')
+    itm = gis.content.get('30ca1ab53255408dbb1aea9fa6cb8c14')
     flayer = FeatureLayerCollection.fromitem(itm)
     csv_path = os.path.abspath(os.path.join(os.environ["accuracy_test"],"accuracy.csv"))
     flayer.manager.overwrite(csv_path)
@@ -51,6 +52,13 @@ def convertdate(dates):
     year = dates.year
     dstr = str(str(month)+'/'+str(day)+'/'+str(year))
     return dstr
+
+def updatecsv(output_name, score):
+    csv_path = os.path.abspath(os.path.join(os.environ["accuracy_test"],"accuracy.csv"))
+    acc_file = pd.read_csv(csv_path)
+    row = acc_file[output_name].count()
+    acc_file.loc[row, output_name] = score
+    acc_file.to_csv(csv_path)
 
 def common_test(test_object, model_type, output_name, data_path, old_models, **prepare_data_kwargs):
     # Prepare Data bunch.
@@ -70,7 +78,7 @@ def common_test(test_object, model_type, output_name, data_path, old_models, **p
 
     # Fit for 10 epochs if nightly tests are run.
     if os.environ['nightly_test'] == "1":
-        model_object.fit(5)
+        model_object.fit(15)
 
     # Fit for 5 epochs with LR.
     model_object.fit(1, lr=0.001)
@@ -85,13 +93,11 @@ def common_test(test_object, model_type, output_name, data_path, old_models, **p
     if os.environ['nightly_test'] == "1":
         if output_name in ['retinanet', 'ssd']:
             score = model_object.average_precision_score(mean=True)
-            csv_path = os.path.abspath(os.path.join(os.environ["accuracy_test"],"accuracy.csv"))
-
-            acc_file = pd.read_csv(csv_path)
-            row = acc_file[acc_file['Date']== convertdate(datetime.datetime.today())].index
-            acc_file.loc[row, output_name] = score
-            acc_file.to_csv(csv_path)
-            # test_object.assertGreater(score, .40)
+        elif output_name in ['unet', 'pspnet']:
+            score = model_object.mIOU(mean=True)
+        elif output_name in ['maskrcnn', 'featureclassifier']:
+            score = model_object.accuracy()
+        updatecsv(output_name, score)
 
     # Load from saved model.
     model_object.load(f'post_fit_{output_name}')
@@ -211,6 +217,9 @@ class Test_Common(unittest.TestCase):
         print("Test: " + self._testMethodName)
 
     def tearDown(self):
+        if os.environ['nightly_test'] == "1":
+            print("updating feature layer for accuracy dashboard\n")
+            updateAccuracyResults()
         print("------------------------------------------------------------------\n")
 
     @classmethod
@@ -225,7 +234,7 @@ class Test_Common(unittest.TestCase):
             'ssd',
             self.obj_detection_data2,
             [self.model_ssd_162, self.model_ssd_170],
-            batch_size=2,
+            batch_size=8,
             chip_size=300
         )
 
@@ -237,7 +246,7 @@ class Test_Common(unittest.TestCase):
                 os.environ["object_detection_inferencing_ssd_args"]
             )
 
-    @unittest.skipIf(True, "Preconditions not met, skipping test")
+    @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     def test_retinanet(self):
         common_test(
             self,
@@ -245,12 +254,12 @@ class Test_Common(unittest.TestCase):
             'retinanet',
             self.obj_detection_data2,
             [self.model_rn_170],
-            batch_size=2,
+            batch_size=8,
             chip_size=300
         )
         if os.environ['run_inferencing'] == '1':
             object_detection_inferencing(
-                os.path.join(self.obj_detection_data2, 'models/post_fit_rn/post_fit_rn.emd'),
+                os.path.join(self.obj_detection_data2, 'models/post_fit_retinanet/post_fit_retinanet.emd'),
                 self.obj_detection_inference_data1,
                 os.environ["object_detection_inferencing_result_rn"],
                 os.environ["object_detection_inferencing_rn_args"]
@@ -264,7 +273,7 @@ class Test_Common(unittest.TestCase):
             'unet',
             self.pixel_classification_data1,
             [self.model_unet_162, self.model_unet_170],
-            batch_size=2
+            batch_size=8
         )
         
         if os.environ['run_inferencing'] == '1':
@@ -278,15 +287,15 @@ class Test_Common(unittest.TestCase):
         common_test(
             self,
             FeatureClassifier,
-            'fc',
+            'featureclassifier',
             self.feature_classification_data1,
             [self.model_fc_162, self.model_fc_170],
-            batch_size=2
+            batch_size=8
         )
 
         if os.environ['run_inferencing'] == '1':
             classify_features_test(
-                os.path.join(self.feature_classification_data1, 'models/post_fit_fc/post_fit_fc.emd'),
+                os.path.join(self.feature_classification_data1, 'models/post_fit_featureclassifier/post_fit_featureclassifier.emd'),
                 self.feature_classification_inferencing_in_raster,
                 self.feature_classification_inferencing_data1,
                 os.environ['inferencing_result_fc']
@@ -300,7 +309,7 @@ class Test_Common(unittest.TestCase):
             'pspnet',
             self.pixel_classification_data1,
             [self.model_pspnet_170],
-            batch_size=2
+            batch_size=8
         )
 
         if os.environ['run_inferencing'] == '1':
@@ -317,7 +326,7 @@ class Test_Common(unittest.TestCase):
             'maskrcnn',
             self.maskrcnn_data1,
             [self.model_maskrcnn_170],
-            batch_size=2
+            batch_size=8
         )
 
         if os.environ['run_inferencing'] == '1':
