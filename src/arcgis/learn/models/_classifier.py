@@ -1344,7 +1344,10 @@ class FeatureClassifier(ArcGISModel):
 
     def _loss_function_tf(self, target, predictions, reduction=True):
         import tensorflow as tf
-        target_masks = tf.gather(tf.eye(self._data.c), target)
+        if target.ndim == 2:
+            target_masks = target
+        else:
+            target_masks = tf.gather(tf.eye(self._data.c), target)
         if reduction:
             return self._loss_function_tf_(target_masks, predictions)
         else:
