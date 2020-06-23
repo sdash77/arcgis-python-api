@@ -1146,7 +1146,10 @@ class GeoAccessor(object):
                              svg)
         return
     @staticmethod
-    def from_feather(path, columns=None, use_threads: bool = True) -> pd.DataFrame:
+    def from_feather(path, 
+                     spatial_column="SHAPE", 
+                     columns=None, 
+                     use_threads=True):
         """
         Load a feather-format object from the file path.
 
@@ -1167,6 +1170,9 @@ class GeoAccessor(object):
                                   such as a file handler (e.g. via builtin ``open`` function)
                                   or ``StringIO``.
         ----------------------    ---------------------------------------------------------
+        spatial_column            Optional String. The default is `SHAPE`. Specifies the column
+                                  containing the geo-spatial information. 
+        ----------------------    ---------------------------------------------------------
         columns                   Sequence/List/Array. The default is `None`.  If not 
                                   provided, all columns are read.
         ----------------------    ---------------------------------------------------------
@@ -1177,7 +1183,10 @@ class GeoAccessor(object):
         :returns: pd.DataFrame
         
         """
-        return read_feather(path, columns, use_threads)
+        return read_feather(path=path, 
+                            spatial_column=spatial_column, 
+                            columns=columns, 
+                            use_threads=use_threads)
     #----------------------------------------------------------------------
     def set_geometry(self, col, sr=None):
         """Assigns the Geometry Column by Name or by List"""

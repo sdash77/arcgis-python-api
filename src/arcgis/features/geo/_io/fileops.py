@@ -158,7 +158,7 @@ def _ensure_path_string(input_path):
     """Provide hander to facilitate file path inputs to be Path object instances."""
     return str(input_path) if isinstance(input_path, Path) else input_path
 #--------------------------------------------------------------------------
-def read_feather(path, columns=None, use_threads: bool = True) -> pd.DataFrame:
+def read_feather(path, spatial_column="SHAPE", columns=None, use_threads: bool = True) -> pd.DataFrame:
     """
     Load a feather-format object from the file path.
 
@@ -176,6 +176,8 @@ def read_feather(path, columns=None, use_threads: bool = True) -> pd.DataFrame:
         By file-like object, we refer to objects with a ``read()`` method,
         such as a file handler (e.g. via builtin ``open`` function)
         or ``StringIO``.
+    spatial_column : str, Name of the geospatial column. The default is `SHAPE`. 
+       .. versionadded:: v1.8.2 of ArcGIS API for Python
     columns : sequence, default None
         If not provided, all columns are read.
 
@@ -190,8 +192,9 @@ def read_feather(path, columns=None, use_threads: bool = True) -> pd.DataFrame:
     type of object stored in file
     """
     sdf = pd.read_feather(path=path, columns=columns, use_threads=use_threads)
-    if "SHAPE" in sdf.columns:
-        sdf.spatial.set_geometry("SHAPE")
+    if spatial_column and \
+       spatial_column in sdf.columns:
+        sdf.spatial.set_geometry(spatial_column)
         sdf.spatial.name
     return sdf
 #--------------------------------------------------------------------------

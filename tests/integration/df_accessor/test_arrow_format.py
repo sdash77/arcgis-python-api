@@ -1,5 +1,6 @@
 import os
 import sys
+import uuid
 import tempfile
 import unittest
 from arcgis.gis import GIS
@@ -70,21 +71,34 @@ class TestEWKTFunctions(unittest.TestCase):
 ###########################################################################
 class TestToFromArrow(unittest.TestCase):
     def test_to_feather(self):
-        """tests the to_feature option `__arrow_array__` gets called"""
+        """tests the to_feather option `__arrow_array__` gets called"""
         sdf = pd.DataFrame(data=feather_data)
         sdf.spatial.set_geometry('SHAPE')
         import tempfile, os
         with tempfile.TemporaryDirectory() as d:
-            fp = os.path.join(d, "test.feather")
+            fp = os.path.join(d, str(uuid.uuid4()) + ".feather")   
             sdf.to_feather(path=fp)
             assert os.path.isfile(fp)
+    def test_to_feather_spatial_column(self):
+        """tests the to_feather option `__arrow_array__` gets called and honors reading `GEOM` as geometry column"""
+        sdf = pd.DataFrame(data=feather_data)
+        sdf = sdf.rename(columns={"SHAPE" :"GEOM"})
+        sdf.spatial.set_geometry('GEOM')
+        
+        with tempfile.TemporaryDirectory() as d:
+            
+            fp = os.path.join(d, str(uuid.uuid4()) + ".feather")            
+            sdf.to_feather(path=fp)
+            assert os.path.isfile(fp)
+            sdf2 = pd.DataFrame.spatial.from_feather(fp, spatial_column='GEOM')
+            assert sdf2.spatial.name == 'GEOM'
     def test_from_feather(self):
         """tests the GeoArray auto converting the EWKT to `Geometry`"""
         sdf = pd.DataFrame(data=feather_data)
         sdf.spatial.set_geometry('SHAPE')
         import tempfile, os
         with tempfile.TemporaryDirectory() as d:
-            fp = os.path.join(d, "test.feather")
+            fp = os.path.join(d, str(uuid.uuid4()) + ".feather")   
             sdf.to_feather(path=fp)
             sdf = pd.DataFrame.spatial.from_feather(fp)
             assert sdf.spatial.bbox
