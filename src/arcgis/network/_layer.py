@@ -1114,6 +1114,227 @@ class ClosestFacilityLayer(NetworkLayer):
                               postdata=params, 
                               token=self._token)
 ###########################################################################
+class ODCostMatrixLayer(NetworkLayer):
+    """
+    OD Cost Matrix Layer is part of the Network Layer services.  It allows users
+    to generate cost matrix data for a given set of input.  
+    """
+    def solve_od_cost_matrix(self, 
+                             origins, 
+                             destinations, 
+                             future=False,
+                             **kwargs):
+        """
+        
+        The Origin Destination Cost Matrix service helps you to create an 
+        origin-destination (OD) cost matrix from multiple origins to 
+        multiple destinations. An Origin Destination Cost Matrix is a table 
+        that contains the cost, such as the travel time or travel distance,
+        from every origin to every destination. Additionally, it ranks the 
+        destinations that each origin connects to in ascending order based
+        on the minimum cost required to travel from that origin to each 
+        destination. When generating an OD Cost Matrix, you can optionally 
+        specify the maximum number of destinations to find for each origin 
+        and the maximum time or distance to travel when searching for 
+        destinations.
+
+        The results from the Origin Destination Cost Matrix service often 
+        become input for other spatial analyses where the cost to travel on
+        the street network is more appropriate than straight-line cost. 
+
+        The travel time and/or distance for each origin-destination pair is 
+        stored in the output matrix (default) or as part of the attributes 
+        of the output lines, which can have no shapes or a straight line 
+        shape. Even though the lines are straight, they always store the 
+        travel time and/or travel distance based on the street network, not
+        based on Euclidean distance.
+        
+        ====================================     ====================================================================
+        **Required Parameters**                  **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        origins                                  Required FeatureLayer/SeDF/FeatureSet. Specifies the starting points from which to travel to the destinations.
+        ------------------------------------     --------------------------------------------------------------------
+        destinations                             Required FeatureLayer/SeDF/FeatureSet. Specifies the ending point locations to travel to from the origins.
+        ------------------------------------     --------------------------------------------------------------------
+        future                                   Optional boolean. If True, the result will be a `SolveJob` object and results will be returned asynchronously.
+        ====================================     ====================================================================
+        
+        
+        The service provides a wide range of optional input values specified below:
+        
+        ====================================     ====================================================================
+        **Optional Parameters**                  **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        accumulate_attribute_names               Optional String. Specify whether the service should accumulate 
+                                                 values other than the value specified for `impedance_attribute_names`.
+
+                                                 The parameter value should be specified as a comma-separated list of 
+                                                 names. The parameter values are the same as the 
+                                                 `impedance_attribute_names` input. 
+
+                                                 Values: `Miles, Kilometers, WalkTime, TravelTime, TruckTravelTime`
+        ------------------------------------     --------------------------------------------------------------------
+        attribute_parameter_values               Optional String. Specify additional values required by an attribute or restriction.
+        ------------------------------------     --------------------------------------------------------------------
+        barriers                                 Optional FeatureLayer/SeDF/FeatureSet. Specify one or more points that act as 
+                                                 temporary restrictions or represent additional time or distance that
+                                                 may be required to travel on the underlying streets.
+        ------------------------------------     --------------------------------------------------------------------
+        default_cutoff                           Optional Float. Specify the travel time or travel distance value at 
+                                                 which to stop searching for destinations. The default value is 
+                                                 `None` which means to search until all destinations are found for 
+                                                 every origin. The units are the same as the impedance attribute 
+                                                 units.
+        ------------------------------------     --------------------------------------------------------------------
+        ignore_invalid_locations                 Optional Boolean. Specify whether invalid input locations should be ignored when finding the best solution
+        ------------------------------------     --------------------------------------------------------------------
+        impedance_attribute_name                 Optional String. Specify the impedance. The default value is `TravelTime`.
+        ------------------------------------     --------------------------------------------------------------------
+        is_UTC                                   Optional Boolean. Specify the time zone or zones of the 
+                                                 `time_of_day` parameter. The default value is false.
+        ------------------------------------     --------------------------------------------------------------------
+        output_type                              Optional String. Specify the type of output returned by the service.
+                                                 Allowed value: `Sparse Matrix` (default), `Straight Lines`, or 
+                                                 `No Lines`.
+        ------------------------------------     --------------------------------------------------------------------
+        overrides                                Optional Dict. Specify additional settings that can influence the behavior of the solver.
+        ------------------------------------     --------------------------------------------------------------------
+        polygon_barriers                         Optional FeatureLayer/SeDF/FeatureSet. Specify polygons that either prohibit 
+                                                 travel or proportionately scale the time or distance required to 
+                                                 travel on the streets intersected by the polygons.
+        ------------------------------------     --------------------------------------------------------------------
+        polyline_barriers                        Optional FeatureLayer/SeDF/FeatureSet. Specify one or more lines that prohibit 
+                                                 travel anywhere the lines intersect the streets.
+        ------------------------------------     --------------------------------------------------------------------
+        restriction_attribute_names              Optional String. Specify which restrictions should be honored by the service. 
+        ------------------------------------     --------------------------------------------------------------------
+        restrict_u_turns                         Optional String. Restrict or permit the route from making U-turns at 
+                                                 junctions. The default value is `AtDeadEndsAndIntersections`.
+
+                                                 Values: `AtDeadEndsAndIntersections`, `AllowBacktrack`, `AtDeadEndsOnly`,
+                                                 or `NoBacktrack`
+        ------------------------------------     --------------------------------------------------------------------
+        return_barriers                          Optional Boolean. Specify whether barriers will be returned by the service. The default value is false.
+        ------------------------------------     --------------------------------------------------------------------
+        return_destinations                      Optional Boolean. Specify whether origins will be returned by the service. The default value is false.
+        ------------------------------------     --------------------------------------------------------------------
+        return_origins                           Optional Boolean. Specify whether origins will be returned by the service. The default value is false.
+        ------------------------------------     --------------------------------------------------------------------
+        return_polyline_barriers                 Optional Boolean. Specify whether polyline barriers will be returned by the service. The default value is false.
+        ------------------------------------     --------------------------------------------------------------------
+        return_polygon_barriers                  Optional Boolean. Specify whether polygon barriers will be returned by the service. The default value is false.
+        ------------------------------------     --------------------------------------------------------------------
+        return_z                                 Optional Boolean. Include z values for the returned geometries if supported by the underlying network. The default value is false.
+        ------------------------------------     --------------------------------------------------------------------
+        target_destination_count                 Optional Integer. Specify the number of destinations to find per 
+                                                 origin. The default value is `None` which means to search until all 
+                                                 destinations are found for every origin.
+        ------------------------------------     --------------------------------------------------------------------
+        travel_mode                              Optional String. Choose the mode of transportation for the analysis.
+        
+        ------------------------------------     --------------------------------------------------------------------
+        time_of_day                              Optional Datetime. The `time_of_day` value represents the time at which 
+                                                 the travel begins from the input origins. 
+                                                 If a value of `now` is passed, the travel begins at current time. 
+        
+        ------------------------------------     --------------------------------------------------------------------
+        use_hierarchy                            Optional Boolean. Specify whether hierarchy should be used when finding the shortest paths. The default value is true.
+        ------------------------------------     --------------------------------------------------------------------
+        out_sr                                   Optional Integer. Specify the spatial reference of the geometries.
+        ------------------------------------     --------------------------------------------------------------------
+        return_z                                 Optional Boolean. Include z values for the returned geometries if supported by the underlying network. The default value is false.
+        ====================================     ====================================================================
+                
+        :returns: Dictionary or `NAJob` when `future=True`
+        
+        """
+        url = f"{self._url}/solveODCostMatrix"
+        ran = "Avoid Unpaved Roads, Avoid Private Roads, Driving an Automobile, Through Traffic Prohibited, Roads Under Construction Prohibited, Avoid Gates, Avoid Express Lanes, Avoid Carpool Roads"
+        params = {
+            "f" : "json",
+            "origins" : _handle_spatial_inputs(origins), 
+            "destinations": _handle_spatial_inputs(destinations),
+            "barriers" : _handle_spatial_inputs(kwargs.pop('barriers', None)),
+            "polylineBarriers": _handle_spatial_inputs(kwargs.pop('polyline_barriers', None)),
+            "polygonBarriers" : _handle_spatial_inputs(kwargs.pop('polygon_barriers', None)), 
+            "defaultCutoff" : kwargs.pop('default_cutoff', None),
+            "defaultTargetDestinationCount" : kwargs.pop('target_destination_count', None),
+            "outSR" : kwargs.pop('out_sr', None), 
+            "ignoreInvalidLocations": kwargs.pop("ignore_invalid_locations",True),
+            "accumulateAttributeNames": kwargs.pop("accumulate_attribute_names","Miles, Kilometers"),
+            "impedanceAttributeName": kwargs.pop("impedance_attribute_name", "TravelTime"),
+            "restrictionAttributeNames": kwargs.pop("restriction_attribute_names", ran),
+            "attributeParameterValues" : kwargs.pop("attribute_parameter_values", None), 
+            "restrictUTurns" : kwargs.pop("restrict_u_turns", "esriNFSBAtDeadEndsAndIntersections"),
+            "useHierarchy": kwargs.pop("use_hierarchy", True),
+            "outputType" : kwargs.pop('output_type',"Sparse Matrix"),
+            "returnOrigins": kwargs.pop("return_origins", False),
+            "returnDestinations" : kwargs.pop("return_destinations", False),
+            "returnBarriers" : kwargs.pop("return_barriers", False),
+            "returnPolylineBarriers": kwargs.pop("return_polyline_barriers", False),
+            "returnPolygonBarriers": kwargs.pop("return_polygon_barriers", False),
+            "timeOfDay" : kwargs.pop("time_of_day", None),
+            "timeOfDayIsUTC": kwargs.pop("is_UTC", False),
+            "returnZ": kwargs.pop("return_z", False),
+            "travelMode" : kwargs.pop("travel_mode", None),
+            "overrides": kwargs.pop("overrides", None),
+                        
+        }
+        allowed_output_types = {
+            "esriNAODOutputSparseMatrix" : "esriNAODOutputSparseMatrix",
+            "Sparse Matrix" : "esriNAODOutputSparseMatrix",
+            "esriNAODOutputStraightLines" : "esriNAODOutputStraightLines",
+            "Straight Lines" : "esriNAODOutputStraightLines",
+            "No Lines" : "esriNAODOutputNoLines",
+            "esriNAODOutputNoLines" : "esriNAODOutputNoLines"
+        }
+        allowed_restrict_uturns = {
+            "esriNFSBAtDeadEndsAndIntersections" : "esriNFSBAtDeadEndsAndIntersections",
+            "AtDeadEndsAndIntersections" : "esriNFSBAtDeadEndsAndIntersections",
+            "esriNFSBAllowBacktrack" : "esriNFSBAllowBacktrack",
+            "AllowBacktrack" : "esriNFSBAllowBacktrack",
+            "esriNFSBAtDeadEndsOnly" : "esriNFSBAtDeadEndsOnly",
+            "AtDeadEndsOnly" : "esriNFSBAtDeadEndsOnly",
+            "esriNFSBNoBacktrack" : "esriNFSBNoBacktrack",
+            "NoBacktrack" : "esriNFSBNoBacktrack",
+            
+        }
+        for key in list(params.keys()):
+            if params[key] is None:
+                params.pop(key)
+        
+        if "outputType" in params and params['outputType']:
+            assert params['outputType'] in allowed_output_types
+            params['outputType'] = allowed_output_types[params['outputType']]
+        if "time_of_day" in params and params['time_of_day']:
+            tod = params['time_of_day']
+            if isinstance(tod, datetime.datetime):
+                params['time_of_day'] = f"{tod.timestamp() * 1000}"
+        if params.get("restrictUTurns", "esriNFSBAtDeadEndsAndIntersections"):
+            params['restrictUTurns'] = allowed_restrict_uturns[params.get("restrictUTurns", "esriNFSBAtDeadEndsAndIntersections")]
+        if future:
+            f = self._run_async(self._con.post, **{'path' : url, 
+                                                   'postdata' : params, 
+                                                   'token' : self._token})
+            return NAJob(future=f, task="Solve OD Cost Matrix")
+        return self._con.post(path=url,
+                              postdata=params, 
+                              token=self._token)        
+    #----------------------------------------------------------------------
+    def retrieve_travel_modes(self):
+        """
+        Identify all the valid travel modes that have been defined on the
+        network dataset or in the portal if the GIS server is federated
+        
+        :returns: Dictionary
+        
+        """
+        from arcgis._impl.common._isd import InsensitiveDict
+        url = self._url + "/retrieveTravelModes"
+        params = {"f":"json"}
+        return InsensitiveDict(self._con.get(path=url,
+                                             params=params, token=self._token))
+###########################################################################
 class NetworkDataset(_GISResource):
     """
     A network dataset containing a collection of network layers including route layers,
@@ -1125,6 +1346,10 @@ class NetworkDataset(_GISResource):
             from ..gis.server._service._adminfactory import AdminServiceGen
             self.service = AdminServiceGen(service=self, gis=gis)
         except: pass
+        self._closestFacilityLayers = []
+        self._routeLayers = []
+        self._serviceAreaLayers = []
+        self._odCostMatrix = []        
         self._load_layers()
 
     @classmethod
@@ -1141,6 +1366,7 @@ class NetworkDataset(_GISResource):
         self._closestFacilityLayers = []
         self._routeLayers = []
         self._serviceAreaLayers = []
+        self._odCostMatrix = []
         params = {
             "f" : "json",
         }
@@ -1164,6 +1390,13 @@ class NetworkDataset(_GISResource):
                     self._closestFacilityLayers.append(
                         ClosestFacilityLayer(url=self._url + "/%s" % cf,
                                              gis=self._gis))
+            elif k == "odCostMatrixLayers" and json_dict[k]:
+                self._odCostMatrix = []
+                for cf in v:
+                    self._odCostMatrix.append(
+                        ODCostMatrixLayer(url=self._url + "/%s" % cf,
+                                             gis=self._gis))
+                    
     #----------------------------------------------------------------------
     @property
     def route_layers(self):
@@ -1185,3 +1418,14 @@ class NetworkDataset(_GISResource):
         if self._closestFacilityLayers is None:
             self._load_layers()
         return self._closestFacilityLayers
+    
+    @property
+    def od_cost_matrix_layers(self):
+        """
+        List of OD Cost Matrix Layers
+        
+        :returns: List
+        """
+        if self._odCostMatrix is None:
+            self._load_layers()
+        return self._odCostMatrix

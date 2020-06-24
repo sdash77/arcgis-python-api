@@ -63,6 +63,7 @@ ___*
 src/.vscode/launch.json
 src/.vscode/settings.json
 *.bz2
+.vscode/
 
 # test outputs
 tests/integration/test-results/

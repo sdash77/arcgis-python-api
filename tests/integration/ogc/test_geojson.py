@@ -13,7 +13,7 @@ class TestGeoRSSLayer(unittest.TestCase):
         """tests the georss methods and properties"""
         georss = GeoJSONLayer(url=geo_rss_url)
         assert isinstance(georss, GeoJSONLayer)
-        assert georss.opacity == 0
+        assert georss.opacity == 1
         georss.opacity = .5
         assert georss.opacity == .5
         assert isinstance(georss.scale, tuple)
@@ -22,7 +22,7 @@ class TestGeoRSSLayer(unittest.TestCase):
         assert isinstance(georss.title, str)
         georss.title = 'test'
         assert georss.title == 'test'
-        assert georss._esri_json
+        assert georss._lyr_json
         assert georss.properties
 
 if __name__ == "__main__":

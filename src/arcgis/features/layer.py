@@ -51,7 +51,66 @@ class FeatureLayer(Layer):
         self._storage = container
         self._dynamic_layer = dynamic_layer
         self.attachments = AttachmentManager(self)
-
+        self._time_filter = None
+        
+    @property
+    def time_filter(self):
+        """
+        Starting at Enterprise 10.7.1+, instead of querying time-enabled map 
+        service layers or time-enabled feature service layers, a time filter 
+        can be specified. Time can be filtered as a single instant or by 
+        separating the two ends of a time extent with a comma.
+        
+        ================     =================================================
+        **Input**            **Description**
+        ----------------     -------------------------------------------------
+        value                Required Datetime/List Datetime. This is a single
+                             or list of start/stop date.  
+        ================     =================================================
+        
+        :returns: String of datetime values as milliseconds from epoch
+        """
+        return self._time_filter
+    
+    @time_filter.setter
+    def time_filter(self, value):
+        """
+        Starting at Enterprise 10.7.1+, instead of querying time-enabled map 
+        service layers or time-enabled feature service layers, a time filter 
+        can be specified. Time can be filtered as a single instant or by 
+        separating the two ends of a time extent with a comma.
+        
+        ================     =================================================
+        **Input**            **Description**
+        ----------------     -------------------------------------------------
+        value                Required Datetime/List Datetime. This is a single
+                             or list of start/stop date.  
+        ================     =================================================
+        
+        :returns: String of datetime values as milliseconds from epoch
+        """
+        import datetime as _dt
+        v = []
+        if isinstance(value, _dt.datetime):
+            self._time_filter = f"{int(value.timestamp() * 1000)}" # means single time
+        elif isinstance(value, (tuple, list)):
+            for idx, d in enumerate(value):
+                if idx > 1:
+                    break
+                if isinstance(d, _dt.datetime):
+                    v.append(f"{int(value.timestamp() * 1000)}")
+                elif isinstance(d, str):
+                    v.append(d)
+                elif d is None:
+                    v.append("null")
+            self._time_filter = ",".join(v)
+        elif isinstance(value, str):
+            self._time_filter = value
+        elif value is None:
+            self._time_filter = None
+        else:
+            raise Exception("Invalid datetime filter")
+        
     @property
     def renderer(self):
         """
@@ -1008,7 +1067,9 @@ class FeatureLayer(Layer):
         if units:
             params['units'] = units
 
-        if time_filter is not None:
+        if time_filter is None and self.time_filter:
+            params['time'] = self.time_filter
+        elif time_filter is not None:
             if type(time_filter) is list:
                 starttime = _date_handler(time_filter[0])
                 endtime = _date_handler(time_filter[1])
@@ -2211,6 +2272,381 @@ class Table(FeatureLayer):
         The layer_id is the id of the layer in feature layer collection (feature service).
         """
         return item.tables[table_id]
+    
+    def query(self, where="1=1", 
+              out_fields="*", 
+              time_filter=None, 
+              return_count_only=False, 
+              return_ids_only=False, 
+              return_distinct_values=False, 
+              group_by_fields_for_statistics=None, 
+              statistic_filter=None, 
+              result_offset=None, 
+              result_record_count=None, 
+              object_ids=None, 
+              gdb_version=None, 
+              order_by_fields=None, 
+              out_statistics=None, 
+              return_all_records=True, 
+              historic_moment=None, 
+              sql_format=None, 
+              return_exceeded_limit_features=None, 
+              as_df=False, 
+              having=None,
+              **kwargs):
+        """
+        Queries a Table Layer based on a set of criteria.
+
+        ===============================     ====================================================================
+        **Argument**                        **Description**
+        -------------------------------     --------------------------------------------------------------------
+        where                               Optional string. The default is 1=1. The selection sql statement.
+        -------------------------------     --------------------------------------------------------------------
+        out_fields                          Optional List of field names to return. Field names can be specified
+                                            either as a List of field names or as a comma separated string.
+                                            The default is "*", which returns all the fields.
+        -------------------------------     --------------------------------------------------------------------
+        object_ids                          Optional string. The object IDs of this layer or table to be queried.
+                                            The object ID values should be a comma-separated string.
+        -------------------------------     --------------------------------------------------------------------
+        time_filter                         Optional list. The format is of [<startTime>, <endTime>] using
+                                            datetime.date, datetime.datetime or timestamp in milliseconds.
+                                            Syntax: time_filter=[<startTime>, <endTime>] ; specified as
+                                                    datetime.date, datetime.datetime or timestamp in
+                                                    milliseconds
+        -------------------------------     --------------------------------------------------------------------
+        gdb_version                         Optional string. The geodatabase version to query. This parameter
+                                            applies only if the isDataVersioned property of the layer is true.
+                                            If this is not specified, the query will apply to the published
+                                            map's version.
+        -------------------------------     --------------------------------------------------------------------
+        return_geometry                     Optional boolean. If true, geometry is returned with the query.
+                                            Default is true.
+        -------------------------------     --------------------------------------------------------------------
+        return_distinct_values              Optional boolean.  If true, it returns distinct values based on the
+                                            fields specified in out_fields. This parameter applies only if the
+                                            supportsAdvancedQueries property of the layer is true.
+        -------------------------------     --------------------------------------------------------------------
+        return_ids_only                     Optional boolean. Default is False.  If true, the response only
+                                            includes an array of object IDs. Otherwise, the response is a
+                                            feature set.
+        -------------------------------     --------------------------------------------------------------------
+        return_count_only                   Optional boolean. If true, the response only includes the count
+                                            (number of features/records) that would be returned by a query.
+                                            Otherwise, the response is a feature set. The default is false. This
+                                            option supersedes the returnIdsOnly parameter. If
+                                            returnCountOnly = true, the response will return both the count and
+                                            the extent.
+        -------------------------------     --------------------------------------------------------------------
+        order_by_fields                     Optional string. One or more field names on which the
+                                            features/records need to be ordered. Use ASC or DESC for ascending
+                                            or descending, respectively, following every field to control the
+                                            ordering.
+                                            example: STATE_NAME ASC, RACE DESC, GENDER
+        -------------------------------     --------------------------------------------------------------------
+        group_by_fields_for_statistics      Optional string. One or more field names on which the values need to
+                                            be grouped for calculating the statistics.
+                                            example: STATE_NAME, GENDER
+        -------------------------------     --------------------------------------------------------------------
+        out_statistics                      Optional string. The definitions for one or more field-based
+                                            statistics to be calculated.
+
+                                            Syntax:
+
+                                            [
+                                                {
+                                                  "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                  "onStatisticField": "Field1",
+                                                  "outStatisticFieldName": "Out_Field_Name1"
+                                                },
+                                                {
+                                                  "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                  "onStatisticField": "Field2",
+                                                  "outStatisticFieldName": "Out_Field_Name2"
+                                                }
+                                            ]
+        -------------------------------     --------------------------------------------------------------------
+        result_offset                       Optional integer. This option can be used for fetching query results
+                                            by skipping the specified number of records and starting from the
+                                            next record (that is, resultOffset + 1th). This option is ignored
+                                            if return_all_records is True (i.e. by default).
+        -------------------------------     --------------------------------------------------------------------
+        result_record_count                 Optional integer. This option can be used for fetching query results
+                                            up to the result_record_count specified. When result_offset is
+                                            specified but this parameter is not, the map service defaults it to
+                                            max_record_count. The maximum value for this parameter is the value
+                                            of the layer's max_record_count property. This option is ignored if
+                                            return_all_records is True (i.e. by default).
+        -------------------------------     --------------------------------------------------------------------
+        return_all_records                  Optional boolean. When True, the query operation will call the
+                                            service until all records that satisfy the where_clause are
+                                            returned. Note: result_offset and result_record_count will be
+                                            ignored if return_all_records is True. Also, if return_count_only,
+                                            return_ids_only, or return_extent_only are True, this parameter
+                                            will be ignored.
+        -------------------------------     --------------------------------------------------------------------
+        historic_moment                     Optional integer. The historic moment to query. This parameter
+                                            applies only if the layer is archiving enabled and the
+                                            supportsQueryWithHistoricMoment property is set to true. This
+                                            property is provided in the layer resource.
+
+                                            If historic_moment is not specified, the query will apply to the
+                                            current features.
+        -------------------------------     --------------------------------------------------------------------
+        sql_format                          Optional string.  The sql_format parameter can be either standard
+                                            SQL92 standard or it can use the native SQL of the underlying
+                                            datastore native. The default is none which means the sql_format
+                                            depends on useStandardizedQuery parameter.
+                                            Values: none | standard | native
+        -------------------------------     --------------------------------------------------------------------
+        return_exceeded_limit_features      Optional boolean. Optional parameter which is true by default. When
+                                            set to true, features are returned even when the results include
+                                            'exceededTransferLimit': True.
+
+                                            When set to false and querying with resultType = tile features are
+                                            not returned when the results include 'exceededTransferLimit': True.
+                                            This allows a client to find the resolution in which the transfer
+                                            limit is no longer exceeded without making multiple calls.
+        -------------------------------     --------------------------------------------------------------------
+        as_df                               Optional boolean.  If True, the results are returned as a DataFrame
+                                            instead of a FeatureSet.
+        -------------------------------     --------------------------------------------------------------------
+        kwargs                              Optional dict. Optional parameters that can be passed to the Query
+                                            function.  This will allow users to pass additional parameters not
+                                            explicitly implemented on the function. A complete list of functions
+                                            available is documented on the Query REST API.
+        ===============================     ====================================================================
+
+        :returns: A FeatureSet or Panda's DataFrame containing the features matching the query unless another return type is specified, such as count
+        """
+        as_raw = as_df
+        if self._dynamic_layer is None:
+            url = self._url + "/query"
+        else:
+            url = "%s/query" % self._url.split('?')[0]
+
+        params = {"f": "json"}
+        if self._dynamic_layer is not None:
+            params['layer'] = self._dynamic_layer
+        if historic_moment is not None:
+            params['historicMoment'] = historic_moment
+        if sql_format is not None:
+            params['sqlFormat'] = sql_format
+        if return_exceeded_limit_features is not None:
+            params['returnExceededLimitFeatures'] = return_exceeded_limit_features
+        params['where'] = where
+        params['returnDistinctValues'] = return_distinct_values
+        params['returnCountOnly'] = return_count_only
+        params['returnIdsOnly'] = return_ids_only
+
+        # convert out_fields to a comma separated string
+        if isinstance(out_fields, (list, tuple)):
+            out_fields = ','.join(out_fields)
+
+        if out_fields != '*' and not return_distinct_values:
+            try:
+                # Check if object id field is in out_fields.
+                # If it isn't, add it
+                object_id_field = [x.name for x in self.properties.fields if x.type == "esriFieldTypeOID"][0]
+                if object_id_field not in out_fields.split(','):
+                    out_fields = object_id_field + "," + out_fields
+            except (IndexError, AttributeError):
+                pass
+        params['outFields'] = out_fields
+        if return_count_only or return_ids_only:
+            return_all_records = False
+        if result_record_count and not return_all_records:
+            params['resultRecordCount'] = result_record_count
+        if result_offset and not return_all_records:
+            params['resultOffset'] = result_offset
+        if order_by_fields:
+            params['orderByFields'] = order_by_fields
+        if group_by_fields_for_statistics:
+            params['groupByFieldsForStatistics'] = group_by_fields_for_statistics
+        if statistic_filter and \
+                isinstance(statistic_filter, StatisticFilter):
+            params['outStatistics'] = statistic_filter.filter
+        if out_statistics:
+            params['outStatistics'] = out_statistics
+        if gdb_version:
+            params['gdbVersion'] = gdb_version
+        if object_ids:
+            params['objectIds'] = object_ids
+
+        if time_filter is None and self.time_filter:
+            params['time'] = self.time_filter
+        elif time_filter is not None:
+            if type(time_filter) is list:
+                starttime = _date_handler(time_filter[0])
+                endtime = _date_handler(time_filter[1])
+                if starttime is None:
+                    starttime = 'null'
+                if endtime is None:
+                    endtime = 'null'
+                params['time'] = "%s,%s" % (starttime, endtime)
+            elif isinstance(time_filter, dict):
+                for key, val in time_filter.items():
+                    params[key] = val
+            else:
+                params['time'] = _date_handler(time_filter)
+
+        if len(kwargs) > 0:
+            for key, val in kwargs.items():
+                if key in ('returnCountOnly', 'returnIdsOnly') and val:
+                    # If these keys are passed in as kwargs instead of parameters, set return_all_records
+                    return_all_records = False
+                params[key] = val
+                del key, val
+
+        if not return_all_records or "outStatistics" in params:
+            if as_df:
+                return self._query_df(url, params)
+            return self._query(url, params, raw=as_raw)
+
+        params['returnCountOnly'] = True
+        record_count = self._query(url, params, raw=as_raw)
+        if 'maxRecordCount' in self.properties:
+            max_records = self.properties['maxRecordCount']
+        else:
+            max_records = 1000
+
+        supports_pagination = True
+        if ('advancedQueryCapabilities' not in self.properties or \
+                'supportsPagination' not in self.properties['advancedQueryCapabilities'] or \
+                not self.properties['advancedQueryCapabilities']['supportsPagination']):
+            supports_pagination = False
+
+        params['returnCountOnly'] = False
+        if record_count == 0 and as_df:
+            from arcgis.features.geo._array import GeoArray
+            import numpy as np
+            import pandas as pd
+            _fld_lu = {
+                "esriFieldTypeSmallInteger" : np.int32,
+                "esriFieldTypeInteger" : np.int64,
+                "esriFieldTypeSingle" : np.int32,
+                "esriFieldTypeDouble" : float,
+                "esriFieldTypeString" : str,
+                "esriFieldTypeDate" : np.datetime64,
+                "esriFieldTypeOID" : np.int64,
+                "esriFieldTypeGeometry" : object,
+                "esriFieldTypeBlob" : object,
+                "esriFieldTypeRaster" : object,
+                "esriFieldTypeGUID" : str,
+                "esriFieldTypeGlobalID" : str,
+                "esriFieldTypeXML" : object
+            }
+            columns = {}
+            for fld in self.properties.fields:
+                fld = dict(fld)
+                columns[fld['name']] = _fld_lu[fld['type']]
+            if "geometryType" in self.properties and \
+               not self.properties.geometryType is None:
+                columns['SHAPE'] = object
+            df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
+            if 'SHAPE' in df.columns:
+                df['SHAPE'] = GeoArray([])
+                df.spatial.set_geometry("SHAPE")
+                df.spatial.renderer = self.renderer
+                df.spatial._meta.source = self
+            return df
+        elif record_count <= max_records:
+            if supports_pagination and record_count > 0:
+                params['resultRecordCount'] = record_count
+            if as_df:
+                import pandas as pd
+                df = self._query_df(url, params)
+                dt_fields = [fld['name'] for fld in self.properties.fields \
+                             if fld['type'] == 'esriFieldTypeDate']
+                if 'SHAPE' in df.columns:
+                    df.spatial.set_geometry('SHAPE')
+                    df.spatial.renderer = self.renderer
+                    df.spatial._meta.source = self
+                for fld in dt_fields:
+                    try:
+                        if fld in df.columns:
+                            df[fld] = pd.to_datetime(df[fld]/1000,
+                                                 infer_datetime_format=True,
+                                                 unit='s')
+                    except:
+                        if fld in df.columns:
+                            df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                return df
+
+            return self._query(url, params, raw=as_raw)
+
+        result = None
+        i = 0
+        count = 0
+        df = None
+        dfs = []
+        if not supports_pagination:
+            params['returnIdsOnly'] = True
+            oid_info = self._query(url, params, raw=as_raw)
+            params['returnIdsOnly'] = False
+            for ids in chunks(oid_info['objectIds'], max_records):
+                ids = [str(i) for i in ids]
+                sql = "%s in (%s)" % (oid_info['objectIdFieldName'], ",".join(ids))
+                params['where'] = sql
+                if not as_df:
+                    records = self._query(url, params, raw=as_raw)
+                    if result:
+                        if 'features' in result:
+                            result['features'].append(records['features'])
+                        else:
+                            result.features.extend(records.features)
+                    else:
+                        result = records
+                else:
+                    df = self._query_df(url, params)
+                    dfs.append(df)
+        else:
+            while True:
+                params['resultRecordCount'] = max_records
+                params['resultOffset'] = max_records * i
+                if not as_df:
+                    records = self._query(url, params, raw=as_raw)
+
+                    if result:
+                        if 'features' in result:
+                            result['features'].append(records['features'])
+                        else:
+                            result.features.extend(records.features)
+                    else:
+                        result = records
+
+                    if len(records.features) < max_records:
+                        break
+                else:
+
+                    df = self._query_df(url, params)
+                    count += len(df)
+                    dfs.append(df)
+                    if count == record_count:
+                        break
+                i += 1
+        if as_df:
+            import pandas as pd
+            dt_fields = [fld['name'] for fld in self.properties.fields \
+                         if fld['type'] == 'esriFieldTypeDate']
+            if len(dfs) == 1:
+                df = dfs[0]
+            else:
+                df = pd.concat(dfs, sort=True)
+                df.reset_index(drop=True, inplace=True)
+            if 'SHAPE' in df.columns:
+                df.spatial.set_geometry('SHAPE')
+                df.spatial.renderer = self.renderer
+                df.spatial._meta.source = self
+            for fld in dt_fields:
+                try:
+                    df[fld] = pd.to_datetime(df[fld]/1000,
+                                             infer_datetime_format=True,
+                                             unit='s')
+                except:
+                    df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+            return df
+        return result
 
 
 class FeatureLayerCollection(_GISResource):

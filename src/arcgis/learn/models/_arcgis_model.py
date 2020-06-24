@@ -335,6 +335,13 @@ class ArcGISModel(object):
         "Fetches the backbone name and returns True if it is in the list of supported backbones"
         backbone_name = backbone if type(backbone) is str else backbone.__name__
         return False if backbone_name not in self.supported_backbones else True
+
+    def _check_dataset_support(self, data):
+        "Fetches the dataset name and returns True if it is in the list of supported dataset type"
+        if hasattr(data, '_dataset_type'):
+            if getattr(data, '_dataset_type') not in self.supported_datasets:
+                 raise Exception (f"Enter only compatible datasets from {', '.join(self.supported_datasets)}")
+
     
     def _arcgis_init_callback(self):
         if self._is_multispectral:

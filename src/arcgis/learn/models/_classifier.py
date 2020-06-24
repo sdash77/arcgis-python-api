@@ -130,6 +130,8 @@ class FeatureClassifier(ArcGISModel):
             if not self._check_backbone_support(_backbone):
                 raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
+            self._check_dataset_support(self._data)
+
             self._code = feature_classifier_prf
             self.learn = cnn_learner(data, self._backbone, metrics=accuracy, cut=backbone_cut, split_on=backbone_split)
             if oversample:
@@ -153,14 +155,21 @@ class FeatureClassifier(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        """
-        Supported torchvision backbones for this model.
-        """
+        """ Supported torchvision backbones for this model. """
         return FeatureClassifier._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
         return [*_resnet_family, models.mobilenet_v2.__name__]
+
+    @property
+    def  supported_datasets(self):
+        """ Supported dataset types for this model. """
+        return FeatureClassifier._supported_datasets()
+    
+    @staticmethod
+    def _supported_datasets():
+        return ['Labeled_Tiles']  
 
     def show_results(self, rows=5, **kwargs):
         """
@@ -1335,7 +1344,10 @@ class FeatureClassifier(ArcGISModel):
 
     def _loss_function_tf(self, target, predictions, reduction=True):
         import tensorflow as tf
-        target_masks = tf.gather(tf.eye(self._data.c), target)
+        if target.ndim == 2:
+            target_masks = target
+        else:
+            target_masks = tf.gather(tf.eye(self._data.c), target)
         if reduction:
             return self._loss_function_tf_(target_masks, predictions)
         else:

@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 from functools import partial
 import xml.etree.ElementTree as ET
@@ -130,41 +131,89 @@ def _bb_pad_collate(samples, pad_idx=0):
     return torch.cat(imgs,0), (bboxes,labels)    
 
 
-def _get_bbox_classes(xmlfile, class_mapping , height_width=[]):
+def _get_bbox_classes(label_file, class_mapping , height_width=[], **kwargs):
+    dataset_type = kwargs.get('dataset_type', None)
 
-    tree = ET.parse(xmlfile)
-    xmlroot = tree.getroot()
-    bboxes = []
-    classes = []
-    for tag_obj in xmlroot.findall('object'):
-        bnd_box = tag_obj.find('bndbox')
-        xmin, ymin, xmax, ymax = float(bnd_box.find('xmin').text), \
-                                 float(bnd_box.find('ymin').text), \
-                                 float(bnd_box.find('xmax').text), \
-                                 float(bnd_box.find('ymax').text)
-        data_class_text = tag_obj.find('name').text
+    if dataset_type == 'KITTI_rectangles':
+        classes = []
+        truncated = []
+        occluded = []
+        obs_angle = []
+        bboxes = []
+        hwl = []
+        d_xyz = []
+        occluded = []
+        rot_yaxis = []     
+        start_space = re.compile('^\s+') #pattern to capture leading spaces
+        spaces_to_be_replaced = re.compile('(?<=\d)(\s+)(?=\d)') #pattern to capture spaces between numeric values
+
+        with open(label_file) as f: #reading the bbox and class labels
+            lines = f.readlines()
         
-        if (not data_class_text.isnumeric() and not class_mapping.get(data_class_text))\
-             or (data_class_text.isnumeric() and not(class_mapping.get(data_class_text) or class_mapping.get(int(data_class_text)))):
-            continue
+        for line in lines:
+            line = re.sub(start_space, '', line)  
+            lst = re.sub(spaces_to_be_replaced, ',', line).split(',') #reading kitti labels from string to a list
+            xmin, ymin, xmax, ymax = [float(n) for n in lst[4:8]] #reading bbox coordinates
+            hieght, width, length = [float(n) for n in lst[8:11]] 
+            x, y, z = [float(n) for n in lst[11:14]]
 
-        if data_class_text.isnumeric():
-            data_class_mapping = class_mapping[data_class_text] if class_mapping.get(data_class_text) else class_mapping[int(data_class_text)]
-        else:
-            data_class_mapping = class_mapping[data_class_text]
+            data_class_text = str(lst[0])
+            if (not data_class_text.isnumeric() and not class_mapping.get(data_class_text))\
+                or (data_class_text.isnumeric() and not(class_mapping.get(data_class_text) or class_mapping.get(int(data_class_text)))):
+                continue
+            if data_class_text.isnumeric():
+                data_class_mapping = class_mapping[data_class_text] if class_mapping.get(data_class_text) else class_mapping[int(data_class_text)]
+            else:
+                data_class_mapping = class_mapping[data_class_text]
+            
+            classes.append(data_class_mapping) #object class
+            truncated.append(float(lst[1]))    #if the object is truncated
+            obs_angle.append(float(lst[2]))    #onservation angle
+            occluded.append(float(lst[3]))     #if the object is occluded
+            bboxes.append([ymin, xmin, ymax, xmax])
+            height_width.append(((xmax - xmin)*1.25, (ymax - ymin)*1.25))
+            hwl.append([hieght, width, length])
+            d_xyz.append([x, y, z])
+            rot_yaxis.append(float(lst[14]))   #angle of rotation along y axis
+    else:
+        tree = ET.parse(label_file)
+        xmlroot = tree.getroot()
+        bboxes = []
+        classes = []
+        for tag_obj in xmlroot.findall('object'):
+            bnd_box = tag_obj.find('bndbox')
+            xmin, ymin, xmax, ymax = float(bnd_box.find('xmin').text), \
+                                    float(bnd_box.find('ymin').text), \
+                                    float(bnd_box.find('xmax').text), \
+                                    float(bnd_box.find('ymax').text)
+            data_class_text = tag_obj.find('name').text
 
-        classes.append(data_class_mapping)
-        bboxes.append([ymin, xmin, ymax, xmax])
-        height_width.append(((xmax - xmin)*1.25, (ymax - ymin)*1.25))
-    
+            if (not data_class_text.isnumeric() and not class_mapping.get(data_class_text))\
+                or (data_class_text.isnumeric() and not(class_mapping.get(data_class_text) or class_mapping.get(int(data_class_text)))):
+                continue
+
+            if data_class_text.isnumeric():
+                data_class_mapping = class_mapping[data_class_text] if class_mapping.get(data_class_text) else class_mapping[int(data_class_text)]
+            else:
+                data_class_mapping = class_mapping[data_class_text]
+
+            classes.append(data_class_mapping)
+            bboxes.append([ymin, xmin, ymax, xmax])
+            height_width.append(((xmax - xmin)*1.25, (ymax - ymin)*1.25))   
+
     if len(bboxes) == 0:
         return [[[0, 0, 0, 0]], [list(class_mapping.values())[0]]]
     return [bboxes, classes]
 
 
-def _get_bbox_lbls(imagefile, class_mapping, height_width):
-    xmlfile = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), '.xml')
-    return _get_bbox_classes(xmlfile, class_mapping, height_width)
+def _get_bbox_lbls(imagefile, class_mapping, height_width, **kwargs):
+    dataset_type = kwargs.get('dataset_type', None)    
+    if dataset_type == 'KITTI_rectangles':
+        label_suffix = '.txt'
+    else:
+        label_suffix = '.xml'
+    label_file = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), label_suffix)
+    return _get_bbox_classes(label_file, class_mapping, height_width, dataset_type=dataset_type)
 
 
 def _get_lbls(imagefile, class_mapping):
@@ -181,15 +230,31 @@ def _check_esri_files(path):
     return False
 
 
-def _get_class_mapping(path):
+def _get_class_mapping(path, **kwargs):
+    '''getting class mapping from labels, incase esri definition files and class mapping is not provided'''
+    dataset_type = kwargs.get('dataset_type', None)
     class_mapping = {}
-    for xmlfile in os.listdir(path):
-        if not xmlfile.endswith('.xml'):
-            continue
-        tree = ET.parse(os.path.join(path, xmlfile))
-        xmlroot = tree.getroot()
-        for tag_obj in xmlroot.findall('object'):
-            class_mapping[tag_obj.find('name').text] = tag_obj.find('name').text
+    if dataset_type == 'KITTI_rectangles':
+        start_space = re.compile('^\s+') #pattern to capture leading spaces
+        spaces_to_be_replaced = re.compile('(?<=\d)(\s+)(?=\d)') #pattern to capture spaces between numeric values
+
+        for txtfile in os.listdir(path): 
+            if not txtfile.endswith('.txt'):
+                continue
+            with open(os.path.join(path , txtfile)) as f:
+                lines = f.readlines()
+            for line in lines:
+                line = re.sub(start_space, '', line)
+                lst = re.sub(spaces_to_be_replaced, ',', line).split(',')
+                class_mapping[str(lst[0])] = str(lst[0])
+    else:
+        for xmlfile in os.listdir(path):
+            if not xmlfile.endswith('.xml'):
+                continue
+            tree = ET.parse(os.path.join(path, xmlfile))
+            xmlroot = tree.getroot()
+            for tag_obj in xmlroot.findall('object'):
+                class_mapping[tag_obj.find('name').text] = tag_obj.find('name').text
 
     return class_mapping
 
@@ -428,7 +493,7 @@ def prepare_data(path,
     samples in the supported dataset formats. This data object consists of 
     training and validation data sets with the specified transformations, 
     chip size, batch size, split percentage, etc. 
-    -For object detection, use Pascal_VOC_rectangles format.
+    -For object detection, use Pascal_VOC_rectangles or KITTI_rectangles format.
     -For feature categorization use Labelled Tiles or ImageNet format.
     -For pixel classification, use Classified Tiles format.
     -For entity extraction from text, use IOB, BILUO or ner_json formats. 
@@ -480,8 +545,8 @@ def prepare_data(path,
                             the `dataset_type` on its own if it contains a 
                             map.txt file. If the path does not contain the 
                             map.txt file pass either of 'PASCAL_VOC_rectangles', 
-                            'RCNN_Masks', 'Classified_Tiles', 'Labeled_Tiles', 
-                            'Imagenet' and 'PointCloud'.                    
+                            'KITTI_rectangles', 'RCNN_Masks', 'Classified_Tiles', 
+                            'Labeled_Tiles', 'Imagenet' and 'PointCloud'.                    
     ---------------------   -------------------------------------------
     resize_to               Optional integer. Resize the image to given size.
     =====================   ===========================================
@@ -635,9 +700,9 @@ def prepare_data(path,
         if emd.get('imagery_type', None) is not None: 
             _imagery_type = emd.get['imagery_type'] # Not Implemented        
 
-    elif dataset_type == 'PASCAL_VOC_rectangles' and not has_esri_files:
+    elif dataset_type in ['PASCAL_VOC_rectangles', 'KITTI_rectangles'] and not has_esri_files:
         if class_mapping is None:
-            class_mapping = _get_class_mapping(path / 'labels')
+            class_mapping = _get_class_mapping(path / 'labels', dataset_type=dataset_type)
             alter_class_mapping = True
 
     _map_space = "MAP_SPACE"
@@ -796,20 +861,24 @@ def prepare_data(path,
 
         kwargs_transforms['tfm_y'] = True
         kwargs_transforms['size'] = chip_size
-    elif dataset_type == 'PASCAL_VOC_rectangles':
+    elif dataset_type in ['PASCAL_VOC_rectangles', 'KITTI_rectangles']:
 
-        def image_without_label(imagefile, not_label_count=[0]):
-            xmlfile = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), '.xml')
-            if not os.path.exists(xmlfile):
+        def image_without_label(imagefile, dataset_type, not_label_count=[0]):
+            if dataset_type == 'KITTI_rectangles':
+                label_suffix='.txt'
+            else:
+                label_suffix='.xml'
+            label_file = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), label_suffix)
+            if not os.path.exists(label_file):
                 not_label_count[0] += 1
                 return False
             return True
-
-        remove_image_without_label = partial(image_without_label, not_label_count=not_label_count)
+        remove_image_without_label = partial(image_without_label, not_label_count=not_label_count, dataset_type=dataset_type)
         get_y_func = partial(
             _get_bbox_lbls,
             class_mapping=class_mapping,
-            height_width=height_width
+            height_width=height_width,
+            dataset_type=dataset_type
         )
 
         if _is_multispectral:
@@ -1060,6 +1129,11 @@ def prepare_data(path,
     # Assigning chip size from training dataset and not data.x 
     # to consider transforms and resizing
     data.chip_size = data.train_ds[0][0].shape[-1]
+
+    if has_esri_files:
+        with open(stats_file) as f:
+            stats = json.load(f)
+            data._dataset_type = stats['MetaDataMode']
 
     if alter_class_mapping:
         new_mapping = {}

@@ -61,5 +61,8 @@ def setupenviron():
     os.environ['run_backbones'] = '0'
     os.environ['run_inferencing'] = '0'
 
-     # Notebook Tests
+    # Notebook Tests
     os.environ["notebook_test"] = r"/home/administrator/Raster/notebook_test_model"
+
+    # Accuracy Results
+    os.environ["accuracy_test"] = r"/home/administrator/Raster"

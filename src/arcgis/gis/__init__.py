@@ -6119,6 +6119,8 @@ class Group(dict):
             A dictionary with a key notRemoved that is a list of users not removed.
         """
         users = []
+        if isinstance(usernames, (list, tuple)) == False:
+            usernames = [usernames]           
         for u in usernames:
             if isinstance(u, str):
                 users.append(u)
@@ -7775,7 +7777,11 @@ class Item(dict):
                     with _DisableLogger():
                         self._populate_layers()
                 except Exception as e:
-                    print(e)
+                    if str(e).lower().find("token required") >-1 and self._gis._con._auth.lower() == "pki":
+                        with _DisableLogger():
+                            self._populate_layers()
+                    else:
+                        print(e)
                     pass
                 return self['layers']
         elif name == 'tables':
@@ -10199,8 +10205,9 @@ class Item(dict):
                                  'Hub Site Application', 'Hub Page',
                                  'Web Mapping Application', 'Mobile Application',
                                  'Symbol Set', 'Color Set', 'Content Category Set',
-                                 'Windows Viewer Configuration', 'Notebook']
-        FILE_BASED_ITEM_TYPES = ['CityEngine Web Scene','Pro Map', 'Map Area', 'KML Collection',
+                                 'Windows Viewer Configuration']
+        FILE_BASED_ITEM_TYPES = ['Notebook', 
+                                 'CityEngine Web Scene','Pro Map', 'Map Area', 'KML Collection',
                                  'Code Attachment', 'Operations Dashboard Add In',
                                  'Native Application', 'Native Application Template', 'KML',
                                  'Native Application Installer', 'Form', 'AppBuilder Widget Package',
@@ -10283,6 +10290,31 @@ class Item(dict):
                 return Item(self._gis, itemid)
             else:
                 return None
+        elif item.type.lower() == 'notebook':
+            with tempfile.TemporaryDirectory() as d:
+                import shutil
+                
+                fp = item.download(save_path=d)
+                if fp.find("..") > -1:
+                    shutil.copy(fp, fp.replace("..", ".")) 
+                    fp = fp.replace("..", ".")
+                sfp = os.path.split(fp)
+                fname, ext = os.path.splitext(sfp[1])
+                ext = ext.replace(".", "")
+                nfp = os.path.join(sfp[0],
+                                   "%s_%s.%s" % (fname, uuid4().hex[:5], ext))                
+                os.rename(fp, nfp)
+                ip = {
+                    'type' : item.type,
+                    'tags' : ",".join(item.tags),
+                    'snippet' : snippet,
+                    'description' : description,
+                    'typeKeywords' : ",".join(item.typeKeywords),
+                    'title' : title
+                }
+                
+                item = self._gis.content.add(item_properties=ip, data=nfp)
+                return item                
         elif item.type in FILE_BASED_ITEM_TYPES:
             fp = self.get_data()
             sfp = os.path.split(fp)
@@ -10827,6 +10859,7 @@ class Layer(_GISResource):
     def __init__(self, url, gis=None):
         super(Layer, self).__init__(url, gis)
         self.filter = None
+        self._time_filter = None
         """optional attribute query string to select features to process by geoanalytics or spatial analysis tools"""
 
     @classmethod
@@ -10857,7 +10890,8 @@ class Layer(_GISResource):
 
         if self.filter is not None:
             lyr_dict['filter'] = self.filter
-
+        if self._time_filter is not None:
+            lyr_dict['time'] = self._time_filter
         return lyr_dict
 
     @property
@@ -10870,7 +10904,8 @@ class Layer(_GISResource):
 
         if self.filter is not None:
             lyr_dict['options'] = json.dumps({ "definition_expression": self.filter })
-
+        if self._time_filter is not None:
+            lyr_dict['time'] = self._time_filter        
         return lyr_dict
 
     @property

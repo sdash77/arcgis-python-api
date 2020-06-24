@@ -13,7 +13,7 @@ class TestKMLLayer(unittest.TestCase):
         """tests the KML Layer methods and properties"""
         kml = KMLLayer(url=kml_url)
         assert isinstance(kml, KMLLayer)
-        assert kml.opacity == 0
+        assert kml.opacity == 1
         kml.opacity = .5
         assert kml.opacity == .5
         assert isinstance(kml.scale, tuple)
@@ -22,7 +22,7 @@ class TestKMLLayer(unittest.TestCase):
         assert isinstance(kml.title, str)
         kml.title = 'test'
         assert kml.title == 'test'
-        assert kml._esri_json
+        assert kml._lyr_json
         assert kml.properties
 
 if __name__ == "__main__":

@@ -48,6 +48,11 @@ def from_featureset(fset, sr=None):
     if isinstance(fset, FeatureSet):
         rows = []
         sr = fset.spatial_reference
+        try:
+            gt = fset.geometry_type.replace("esriGeometry", "")
+        except:
+            gt = None
+        cols = [fld['name'] for fld in fset.fields]        
         dt_fields = [fld['name'] for fld in fset.fields if fld['type'] == 'esriFieldTypeDate']
         if sr is None:
             sr = {'wkid':4326}
@@ -60,7 +65,10 @@ def from_featureset(fset, sr=None):
             rows.append(a)
             del a, feat
         from arcgis.features import GeoAccessor, GeoSeriesAccessor
-        df = pd.DataFrame(data=rows)
+        if len(rows) > 0 and len(set(rows[0].keys()) - set(cols)) > 0:
+            cols = list(rows[0].keys())
+        df = pd.DataFrame(data=rows, columns=cols)
+        
         for fld in dt_fields:
             try:
                 df[fld] = pd.to_datetime(df[fld]/1000,
@@ -68,6 +76,8 @@ def from_featureset(fset, sr=None):
                                          unit='s')
             except:
                 df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+        if gt and not 'SHAPE' in df.columns:
+            df['SHAPE'] = None
         if 'SHAPE' in df.columns:
             df.spatial.set_geometry("SHAPE")
             df.spatial.sr = sr
