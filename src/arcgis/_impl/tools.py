@@ -947,7 +947,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                         point_barrier_layer=None,
                                         line_barrier_layer=None,
                                         polygon_barrier_layer=None,
-                                        include_route_layer=False,
+                                        include_route_layers=False,
                                         route_shape=None,
                                         future=False):
         """
@@ -1044,7 +1044,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                                           time_zone_for_time_of_day=time_zone_for_time_of_day,
                                                           output_name=output_name,
                                                           context=context,
-                                                          include_route_layers=include_route_layer,
+                                                          include_route_layers=include_route_layers,
                                                           point_barrier_layer=point_barrier_layer,
                                                           line_barrier_layer=line_barrier_layer,
                                                           polygon_barrier_layer=polygon_barrier_layer,

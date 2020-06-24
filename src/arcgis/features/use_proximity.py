@@ -27,7 +27,8 @@ def connect_origins_to_destinations(origins_layer,
                                     line_barrier_layer=None,
                                     polygon_barrier_layer=None,
                                     future=False,
-                                    route_shape='FollowStreets'):
+                                    route_shape='FollowStreets',
+                                    include_route_layers=False):
     """
     .. image:: _static/images/connect_origins_to_destinations/connect_origins_to_destinations.png
 
