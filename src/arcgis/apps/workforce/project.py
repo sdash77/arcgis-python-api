@@ -309,11 +309,14 @@ class Project:
     def dispatcher_web_map_id(self):
         """The dispatcher webmap item id"""
         if self._is_v2_project:
-            related_items = self._item.related_items('WorkforceMap2FeatureService', 'reverse')
-            for item in related_items:
-                if "Workforce Dispatcher" in item.typeKeywords:
-                    return item.id
-            return self._item_data['workforceDispatcherMapId']
+            try:
+                related_items = self._item.related_items('WorkforceMap2FeatureService', 'reverse')
+                for item in related_items:
+                    if "Workforce Dispatcher" in item.typeKeywords:
+                        return item.id
+                return self._item_data['workforceDispatcherMapId']
+            except Exception:
+                return self._item_data['workforceDispatcherMapId']
         else:
             return self._item_data['dispatcherWebMapId']
 
@@ -321,11 +324,14 @@ class Project:
     def worker_web_map_id(self):
         """The worker webmap item id"""
         if self._is_v2_project:
-            related_items = self._item.related_items('WorkforceMap2FeatureService', 'reverse')
-            for item in related_items:
-                if "Workforce Worker" in item.typeKeywords:
-                    return item.id
-            return self._item_data['workforceWorkerMapId']
+            try:
+                related_items = self._item.related_items('WorkforceMap2FeatureService', 'reverse')
+                for item in related_items:
+                    if "Workforce Worker" in item.typeKeywords:
+                        return item.id
+                return self._item_data['workforceWorkerMapId']
+            except Exception:
+                return self._item_data['workforceWorkerMapId']
         else:
             return self._item_data['workerWebMapId']
 
