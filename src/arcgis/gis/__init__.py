@@ -7440,6 +7440,13 @@ class User(dict):
         """
         if isinstance(reassign_to, User):
             reassign_to = reassign_to.username
+        
+        for l in self._gis.admin.license.all():
+            entitle = l.user_entitlement(username=self.username)
+            if 'entitlements' in entitle:
+                l.revoke(username=self.username, 
+                         entitlements=entitle['entitlements'], 
+                         suppress_email=True)        
         return self._portal.delete_user(self._user_id, reassign_to)
 
     def reassign_to(self, target_username):
