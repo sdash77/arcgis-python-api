@@ -158,7 +158,7 @@ class YOLOv3(ArcGISModel):
     def _model_metrics(self):
         if getattr(self._data, "_is_coco", "") == True:
             return {'accuracy': {'IoU': 0.50, 'AP': 0.558}}
-        return {'accuracy': self.average_precision_score(show_progress=False)}
+        return {'accuracy': self.average_precision_score(show_progress=True)}
 
     def _analyze_pred(self, pred, thresh=0.1, nms_overlap=0.1, ret_scores=True, device=None):
         """        """

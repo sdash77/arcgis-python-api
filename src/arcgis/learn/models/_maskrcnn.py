@@ -263,7 +263,7 @@ class MaskRCNN(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        return {'average_precision_score': self.average_precision_score(show_progress=False)}
+        return {'average_precision_score': self.average_precision_score(show_progress=True)}
 
     def _predict_results(self, xb):
 
