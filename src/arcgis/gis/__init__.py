@@ -8530,7 +8530,7 @@ class Item(dict):
                 ret_dict = {'everyone': self.access == 'public',
                             'org': (self.access == 'public' or self.access == 'org'),
                             'groups': []}
-                for grpid in resp['admin']:
+                for grpid in resp.get('admin', []) + resp.get("other", []) + resp.get("member", []):
                     try:
                         grp = Group(gis=self._gis, groupid=grpid['id'])
                         ret_dict['groups'].append(grp)
@@ -8550,7 +8550,7 @@ class Item(dict):
                 ret_dict = {'everyone': self.access == 'public',
                             'org': (self.access == 'public' or self.access == 'org'),
                             'groups': []}
-                for grpid in resp['admin']:
+                for grpid in resp.get('admin', []) + resp.get("other", []) + resp.get("member", []):
                     try:
                         grp = Group(gis=self._gis, groupid=grpid['id'])
                         ret_dict['groups'].append(grp)
