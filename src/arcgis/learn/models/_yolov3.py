@@ -160,11 +160,11 @@ class YOLOv3(ArcGISModel):
             return {'accuracy': {'IoU': 0.50, 'AP': 0.558}}
         return {'accuracy': self.average_precision_score(show_progress=True)}
 
-    def _analyze_pred(self, pred, thresh=0.1, nms_overlap=0.1, ret_scores=True, device=None):
+    def _analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ret_scores=True, device=None):
         """        """
         return postprocess(pred, chip_size=self.learn.data.chip_size, conf_thre=thresh, nms_thre=nms_overlap)
     
-    def show_results(self, rows=5, thresh=0.1, nms_overlap=0.1):
+    def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
         """
         Displays the results of a trained model on a part of the validation set.
 
@@ -202,8 +202,9 @@ class YOLOv3(ArcGISModel):
             alpha=alpha, 
             **kwargs
         )
+        self.learn.predicting = False # toggling the flag here because show_results_multispectral doesn't invoke callbacks
 
-    def predict(self, image_path, threshold=0.1, nms_overlap=0.1, return_scores=True, visualize=False, resize=False):
+    def predict(self, image_path, threshold=0.5, nms_overlap=0.1, return_scores=True, visualize=False, resize=False):
         """
         Predicts and displays the results of a trained model on a single image.
 
