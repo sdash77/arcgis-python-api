@@ -123,6 +123,10 @@ def IC_show_results(self, nrows=5, **kwargs):
     # Get color Array
     color_array = self._data._multispectral_color_array
 
+    # Handle Sparse Data
+    if y_batch.ndim > 1:
+        y_batch = y_batch.max(-1)[1]
+
     # Size for plotting
     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
     fig.suptitle('Ground Truth\nPredictions', fontsize=title_font_size)
