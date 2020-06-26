@@ -974,36 +974,36 @@ def _pyshp2(df, out_path, out_name):
     return None
 
 
-def _sanitize_column_names(geo, remove_special_char=True, rename_duplicates=True, inplace=False):
+def _sanitize_column_names(geo, remove_special_char=True, rename_duplicates=True, inplace=False,
+                           use_snake_case=True):
     """
-    Cleans column names by converting them to string, removing special characters, renaming columns without
-    column names with 'noname' and renaming duplicates with integer suffixes.
-
-    ==============================     ====================================================================
-    **Argument**                       **Description**
-    ------------------------------     --------------------------------------------------------------------
-    remove_special_char                Optional Boolean. Default is True. Removes any characters in column
-                                       names that are not numeric or underscores.
-    ------------------------------     --------------------------------------------------------------------
-    rename_duplicates                  Optional Boolean. Default is True. If duplicate column names are
-                                       present, numbered suffixes are added to make columns unique.
-    ------------------------------     --------------------------------------------------------------------
-    inplace                            Optional Boolean. Default is False. If True, edits the DataFrame
-                                       in place and returns Nothing. If False, returns a new DataFrame object.
-    ==============================     ====================================================================
-
-    :returns: pd.DataFrame object if inplace=False. Else None.
+    Implementation for pd.DataFrame.spatial.sanitize_column_names()
     """
-    from copy import deepcopy
     original_col_names = list(geo._data.columns)
 
     # convert to string
     new_col_names = [str(x) for x in original_col_names]
 
+    # use snake case
+    if use_snake_case:
+        import re
+        for ind, val in enumerate(new_col_names):
+            # replace Pascal and camel case using RE
+            s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', val)
+            name = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+            new_col_names[ind] = name
+
     # remove special characters
     if remove_special_char:
         for ind, val in enumerate(new_col_names):
             name = "".join(i for i in str(val) if i.isalnum() or "_" in i)
+            # remove numeral prefixes
+            for ind2, element in enumerate(name):
+                if element.isdigit():
+                    continue
+                else:
+                    name = name[ind2:]
             new_col_names[ind] = name
 
     # fill empty column names

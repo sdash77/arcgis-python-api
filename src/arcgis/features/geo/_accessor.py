@@ -3369,10 +3369,15 @@ class GeoAccessor(object):
         except Exception as e:
             raise Exception(e)
 
-    def sanitize_column_names(self, convert_to_string=True, remove_special_char=True, inplace=False):
+    def sanitize_column_names(self, convert_to_string=True, remove_special_char=True, inplace=False,
+                              use_snake_case=True):
         """
         Cleans column names by converting them to string, removing special characters, renaming columns without
-        column names to 'noname' and renaming duplicates with integer suffixes.
+        column names to 'noname', renaming duplicates with integer suffixes and switching spaces or Pascal or
+        camel cases to Python's favored snake_case style.
+
+        Snake_casing gives you consistent column names, no matter what the flavor of your backend database is
+        when you publish the DataFrame as a Feature Layer in your web GIS.
 
         ==============================     ====================================================================
         **Argument**                       **Description**
@@ -3380,13 +3385,18 @@ class GeoAccessor(object):
         convert_to_string                  Optional Boolean. Default is True. Converts column names to string
         ------------------------------     --------------------------------------------------------------------
         remove_special_char                Optional Boolean. Default is True. Removes any characters in column
-                                           names that are not numeric or underscores.
+                                           names that are not numeric or underscores. This also ensures column
+                                           names begin with alphabets by removing numeral prefixes.
         ------------------------------     --------------------------------------------------------------------
         inplace                            Optional Boolean. Default is False. If True, edits the DataFrame
                                            in place and returns Nothing. If False, returns a new DataFrame object.
+        ------------------------------     --------------------------------------------------------------------
+        use_snake_case                     Optional Boolean. Default is True. Makes column names lower case,
+                                           and replaces spaces between words with underscores. If column names
+                                           are in PascalCase or camelCase, it replaces them to snake_case.
         ==============================     ====================================================================
 
         :returns: pd.DataFrame object if inplace=False. Else None.
         """
 
-        return _sanitize_column_names(self, convert_to_string, remove_special_char, inplace)
+        return _sanitize_column_names(self, convert_to_string, remove_special_char, inplace, use_snake_case)
