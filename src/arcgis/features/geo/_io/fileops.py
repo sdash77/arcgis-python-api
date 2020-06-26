@@ -988,22 +988,32 @@ def _sanitize_column_names(geo, remove_special_char=True, rename_duplicates=True
     if use_snake_case:
         import re
         for ind, val in enumerate(new_col_names):
+            # skip reserved cols
+            if val == geo.name:
+                continue
             # replace Pascal and camel case using RE
             s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', val)
             name = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
-
+            # remove leading spaces
+            name = name.lstrip(" ")
+            # replace spaces with _
+            name = name.replace(" ", "_")
+            # clean up too many _
+            name = re.sub('_+', '_', name)
             new_col_names[ind] = name
 
     # remove special characters
     if remove_special_char:
         for ind, val in enumerate(new_col_names):
-            name = "".join(i for i in str(val) if i.isalnum() or "_" in i)
+            name = "".join(i for i in val if i.isalnum() or "_" in i)
+
             # remove numeral prefixes
             for ind2, element in enumerate(name):
                 if element.isdigit():
                     continue
                 else:
                     name = name[ind2:]
+                    break
             new_col_names[ind] = name
 
     # fill empty column names
