@@ -324,7 +324,8 @@ class ArcGISModel(object):
                 return _change_tail(self._orig_backbone(*args, **kwargs), data)
             backbone_wrapper._is_multispectral = True
             self._backbone = backbone_wrapper
-
+        if not hasattr(data, 'class_mapping') and hasattr(data, 'classes'):
+            data.class_mapping = {v:v for v in data.classes }
         self.learn = None
         self._data = data
         self._learning_rate = None
