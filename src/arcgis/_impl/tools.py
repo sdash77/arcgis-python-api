@@ -8502,24 +8502,50 @@ class _RasterAnalysisTools(BaseAnalytics):
             return gpjob
         return gpjob.result()
     #----------------------------------------------------------------------
-    #TODO: Format Inputs/ Outputs, doc
+
     def transfer_files(self,
                        input_files,
-                       output_datastore,
+                       output_datastore=None,
                        tf_filter=None,
+                       return_first_file=False,
                        context=None,
-                       future=False):
-        """Transfer Files GP Tool"""
+                       future=False,
+                       **kwargs):
+
+        """
+        Transfer Files GP Tool
+        
+        input_files: inputFiles (str). Required parameter.
+
+        output_datastore: outputDatastore (str). Optional parameter.
+
+        tf_filter: filter (str). Optional parameter.
+
+        return_first_file: returnFirstFile (bool). Optional parameter.
+
+        context: context (str). Optional parameter.
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
         task = "TransferFiles"
-        gis = gis or self._gis
+        gis = self._gis
+
         if context is None:
             context = {}
             params = {'context' : context}
             _set_raster_context(params)
             context.update(params['context'])
+
+        if isinstance(input_files,str):
+            input_files={"uri":input_files}
+
         gpjob = self._tbx.transfer_files(input_files=input_files,
                                          output_datastore=output_datastore,
                                          filter=tf_filter,
+                                         return_first_file=return_first_file,
                                          context=context,
                                          gis=gis,
                                          future=True)

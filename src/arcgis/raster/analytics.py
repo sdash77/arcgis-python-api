@@ -811,7 +811,7 @@ def generate_raster(raster_function,
                                                 Example:
                                                     {'resamplingMethod': "Nearest"} 
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not speficied, the currently active connection
+    gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -934,7 +934,7 @@ def convert_feature_to_raster(input_feature,
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not speficied, the currently active connection
+    gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -1023,7 +1023,7 @@ def copy_raster(input_raster,
                                             Example: 
                                                 {"outSR": {spatial reference}}
     --------------------------------     --------------------------------------------------------------------
-    gis                                  Optional GIS object. If not speficied, the currently active connection
+    gis                                  Optional GIS object. If not specified, the currently active connection
                                          is used.
     --------------------------------     --------------------------------------------------------------------
     future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -1222,7 +1222,7 @@ def summarize_raster_within(input_zone_layer,
                                              This parameter is honoured only available if the statistics_type parameter is 
                                              set to Percentile.
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not speficied, the currently active connection
+    gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -1334,7 +1334,7 @@ def convert_raster_to_feature(input_raster,
     ------------------------------------     --------------------------------------------------------------------
     max_vertices_per_feature                 Optional int. The vertex limit used to subdivide a polygon into smaller polygons. 
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not speficied, the currently active connection
+    gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -1504,7 +1504,7 @@ def calculate_density(input_point_or_line_features,
                                                 Example:
                                                     {'resamplingMethod': "Nearest"} 
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not speficied, the currently active connection
+    gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -1731,7 +1731,7 @@ def create_viewshed(input_elevation_surface,
                                                 Example:
                                                     {'resamplingMethod': "Nearest"} 
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not speficied, the currently active connection
+    gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -1932,7 +1932,7 @@ def interpolate_points(input_point_features,
                                                 Example:
                                                     {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not speficied, the currently active connection
+    gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -2065,7 +2065,7 @@ def classify(input_raster,
                                                 Example:
                                                     {'resamplingMethod': "Nearest"} 
     --------------------------------     --------------------------------------------------------------------
-    gis                                  Keyword only parameter. Optional GIS object. If not speficied, the currently active connection
+    gis                                  Keyword only parameter. Optional GIS object. If not specified, the currently active connection
                                          is used.
     --------------------------------     --------------------------------------------------------------------
     future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -2204,7 +2204,7 @@ def segment(input_raster, spectral_detail=15.5, spatial_detail=15, minimum_segme
                                                 Example:
                                                     {'resamplingMethod': "Nearest"} 
     --------------------------------     --------------------------------------------------------------------
-    gis                                  Keyword only parameter. Optional GIS object. If not speficied, the currently active connection
+    gis                                  Keyword only parameter. Optional GIS object. If not specified, the currently active connection
                                          is used.
     --------------------------------     --------------------------------------------------------------------
     future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -2304,7 +2304,7 @@ def train_classifier(input_raster,
                                          Example:
                                             "COLOR; MEAN"
     --------------------------------     --------------------------------------------------------------------
-    gis                                  Keyword only parameter. Optional GIS object. If not speficied, the currently active connection
+    gis                                  Keyword only parameter. Optional GIS object. If not specified, the currently active connection
                                          is used.
     --------------------------------     --------------------------------------------------------------------
     future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -2878,7 +2878,7 @@ def optimum_travel_cost_network(input_regions_raster,
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not speficied, the currently active connection
+    gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -2994,7 +2994,7 @@ def build_footprints(image_collection,
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not speficied, the currently active connection
+    gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -3053,7 +3053,7 @@ def build_overview(image_collection,
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not speficied, the currently active connection
+    gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -3114,7 +3114,7 @@ def calculate_statistics(image_collection,
                                              Function also supports following keys through context:
                                              ignoreValues, skipExisting, areaOfInterest
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not speficied, the currently active connection
+    gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -3479,7 +3479,7 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
-    reference_mean_raster                    Optional Imagery Layer object representing the reference mean raster.
+    reference_mean_raster                    Optional Imagery Layer object representing the reference mean raster. Available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
@@ -4025,19 +4025,22 @@ def generate_trend_raster(input_multidimensional_raster,
                                              leaf greenness often has one strong cycle of variation in a 
                                              single year, so the cycle length is 1 year. Hourly temperature 
                                              data has one strong cycle of variation throughout a single day, 
-                                             so the cycle length is 1 day.
+                                             so the cycle length is 1 day. Available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     cycle_unit                               Optional String. Default is "YEARS". Specifies the time unit to be 
-                                             used for the length of harmonic cycle.
+                                             used for the length of harmonic cycle. Available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     rmse                                     Optional Boolean. Default value is True. Specifies whether the root 
                                              mean square error (RMSE) of the trend fit line will be calculated.
+                                             Available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     r2                                       Optional Boolean. Default value is False. Specifies whether the 
-                                             R-squared goodness-of-fit statistic for the trend fit line will be calculated.
+                                             R-squared goodness-of-fit statistic for the trend fit line will be calculated. 
+                                             Available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     slope_p_value                            Optional Boolean. Default value is False. Specifies whether the 
-                                             p-value statistic for the slope coefficient of the trend line will be calculated.
+                                             p-value statistic for the slope coefficient of the trend line will be calculated. 
+                                             Available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
@@ -4986,7 +4989,7 @@ def define_nodata(input_raster,
                                               - True : All of the bands must have pixels of NoData in 
                                                 order for the pixel to be classified as NoData.
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not speficied, the currently active connection
+    gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -5104,7 +5107,7 @@ def optimal_path_as_line(input_destination_data,
                                              Alternatively, you can pass in the name of the output feature layer  that should be created by this method to be used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not speficied, the currently active connection
+    gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -5251,7 +5254,7 @@ def optimal_region_connections(input_region_data,
     ------------------------------------     --------------------------------------------------------------------
     context                                  Context contains additional settings that affect task execution.
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not speficied, the currently active connection
+    gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -5473,7 +5476,7 @@ def analyze_changes_using_ccdc(input_multidimensional_raster=None,
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not speficied, the currently active connection
+    gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -5617,7 +5620,7 @@ def detect_change_using_change_analysis_raster(input_change_analysis_raster=None
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not speficied, the currently active connection
+    gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -5853,7 +5856,7 @@ def sample(input_rasters,
                                              If not provided, a random name is generated by the method and used as 
                                              the output name. 
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not speficied, the currently active connection
+    gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -5883,4 +5886,92 @@ def sample(input_rasters,
                                             context=context,
                                             future=future,
                                             **kwargs)
+
+
+#def transfer_files(input_files, 
+#                   output_datastore=None, 
+#                   tf_filter=None,
+#                   return_first_file=False,
+#                   context=None,
+#                   *,
+#                   gis=None,
+#                   future=False,
+#                   **kwargs):
+
+#    """
+#    Transfers files between datastores. 
+#    The tool does not support file transfers to or from geodatabases.
+
+#    ====================================     ====================================================================
+#    **Argument**                             **Description**
+#    ------------------------------------     --------------------------------------------------------------------
+#    input_files                              Required str or list, input files or folders that will be copied to the output folder.
+#                                             It can be a string specifying the datastore path.
+
+#                                             Example:
+#                                             "/rasterStores/testcloudstore/datafolder"
+#                                             "/fileShares/testfolder/raster.tif"
+#                                             "/cloudStores/testcloud/raster.tif"
+#    ------------------------------------     --------------------------------------------------------------------
+#    output_datastore                         Optional str, datastore path of the output folder where the files will be copied.
+#                                             If not specified, the data is copied to the rasterstore.
+
+#                                             Example:
+#                                             "/rasterStores/s3cloudstore/datafolder"
+#    ------------------------------------     --------------------------------------------------------------------
+#    tf_filter                                Optional str, to specify the filter while transfering files.
+
+#                                             Example:
+#                                             "*.tif"
+#    ------------------------------------     --------------------------------------------------------------------
+#    return_first_file                        Optional bool. Available in ArcGIS Image Server 10.8.1 and higher.
+#    ------------------------------------     --------------------------------------------------------------------
+#    context                                  Context contains additional settings that affect task execution. 
+
+#                                             context parameter overwrites values set through arcgis.env parameter
+
+#                                             This function has the following settings:
+
+#                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+#                                                Raster Processing (CPU) service instances.
+
+#                                                Example:
+#                                                    Syntax example with a specified number of processing instances:
+
+#                                                    {"parallelProcessingFactor": "2"}
+
+#                                                    Syntax example with a specified percentage of total 
+#                                                    processing instances:
+
+#                                                    {"parallelProcessingFactor": "60%"}
+#    ------------------------------------     --------------------------------------------------------------------
+#    gis                                      Optional GIS object. If not specified, the currently active connection
+#                                             is used.
+#    ------------------------------------     --------------------------------------------------------------------
+#    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+#                                             results will be returned asynchronously.
+#    ====================================     ====================================================================
+
+#    :return: Output location
+
+#    .. code-block:: python
+
+#        # Usage Example 1: This example transfers raster.tif from a cloudstore location to a fileshare location.
+
+#        transfer_file = transfer_files(input_files="/cloudStores/testcloud/raster.tif", 
+#                                       output_datastore="/fileShares/testfolder", 
+#                                       tf_filter=None,
+#                                       gis=gis)
+
+#    """
+
+#    gis = _arcgis.env.active_gis if gis is None else gis
+
+#    return gis._tools.rasteranalysis.transfer_files(input_files=input_files, 
+#                                                    output_datastore=output_datastore, 
+#                                                    tf_filter=tf_filter, 
+#                                                    return_first_file=return_first_file, 
+#                                                    context=context,
+#                                                    future=future,
+#                                                    **kwargs)
 
