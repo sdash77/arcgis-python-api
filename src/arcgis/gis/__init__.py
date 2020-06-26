@@ -8080,7 +8080,8 @@ class Item(dict):
         """
         Exports a service item to the specified export format.
         Available only to users with an organizational subscription.
-        Invokable only by the service item owner or an administrator.
+        Invokable only by the service item owner or an administrator, unless a Location Tracking
+        Service or Location Tracking View.
         This is useful for long running exports that could hold up a script.
 
 
@@ -8136,6 +8137,9 @@ class Item(dict):
         if export_format == 'GeoPackage':
             export_format = 'geoPackage'
         user_id = self._user_id
+        # allow exporting of LTS / LTV even if not owner for ArcGIS Online
+        if not self._gis.properties['isPortal'] and 'Location Tracking Service' in self.typeKeywords:
+            user_id = self._gis.users.me.username
         data_path = 'content/users/%s/export' % user_id
         params = {
             "f" : "json",
