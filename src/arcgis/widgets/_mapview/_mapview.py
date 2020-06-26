@@ -509,6 +509,7 @@ class MapView(widgets.DOMWidget):
     _webscene = Dict({}).tag(sync=True)
     _trigger_webscene_save_to_this_portal_id = Unicode('').tag(sync=True)
     _readonly_webmap_from_js = Dict({}).tag(sync=True)
+
     # end webmap/webscene state
     # start miscellanous model state
     _custom_msg = Unicode('').tag(sync=True)
@@ -935,13 +936,9 @@ class MapView(widgets.DOMWidget):
         if isinstance(item, Item) and (item.type.lower() == 'web map'):
             item = WebMap(item)
         if isinstance(item, WebMap):
-            if item.item.type.lower() == 'web map':
-                self.webmap = item
-                if hasattr(item.item, 'id'):
-                    self._webmap = {"portalItem" : {
-                        "id" : item.item.id } }
-                    if hasattr(item.item, 'extent'):
-                        self.extent = item.item.extent
+            self.webmap = item
+            if hasattr(item, 'item') and hasattr(item.item, 'extent'):
+                self.extent = item.item.extent
 
     def _check_if_webscene(self, item):
         from arcgis.gis import Item
