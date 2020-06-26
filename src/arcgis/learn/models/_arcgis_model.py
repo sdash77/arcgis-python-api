@@ -183,14 +183,14 @@ class SaveModelCallback(TrackerCallback):
     def on_epoch_end(self, epoch, **kwargs):
         "Compare the value monitored to its best score and maybe save the model."
 
-        if self.every == "epoch": self.model.save('{}_{}'.format(self.name, epoch))
+        if self.every == "epoch": self.model.save('{}_{}'.format(self.name, epoch), compute_metrics=False)
         else: #every="improvement"
             current = self.get_monitor_value()
             if current is not None and self.operator(current, self.best):
                 if arcgis.env.verbose:
                     print('saving checkpoint.')
                 self.best = current
-                self.model._save('{}'.format(self.name), zip_files=False, save_html=False)
+                self.model._save('{}'.format(self.name), zip_files=False, save_html=False, compute_metrics=False)
 
     def on_train_end(self, **kwargs):
         "Load the best model."
@@ -203,7 +203,7 @@ class SaveModelCallback(TrackerCallback):
                 pass
             
             try:
-                self.model.save('{}'.format(self.name))
+                self.model.save('{}'.format(self.name), compute_metrics=False)
             except:
                 pass
 
@@ -324,12 +324,13 @@ class ArcGISModel(object):
                 return _change_tail(self._orig_backbone(*args, **kwargs), data)
             backbone_wrapper._is_multispectral = True
             self._backbone = backbone_wrapper
-
+        if not hasattr(data, 'class_mapping') and hasattr(data, 'classes'):
+            data.class_mapping = {v:v for v in data.classes }
         self.learn = None
         self._data = data
         self._learning_rate = None
         self._backend = getattr(self, '_backend', 'pytorch')
-
+        self._model_metrics_cache = None
 
     def _check_backbone_support(self, backbone):
         "Fetches the backbone name and returns True if it is in the list of supported backbones"
@@ -521,6 +522,7 @@ class ArcGISModel(object):
             lr = slice(lr/10, lr)
 
         self._learning_rate = lr
+        self._model_metrics_cache = None
         
         if arcgis.env.verbose:
             logger.info('Fitting the model.')        
@@ -566,7 +568,7 @@ class ArcGISModel(object):
         if hasattr(self.learn, 'recorder'):
             self.learn.recorder.plot_losses()
 
-    def _create_emd_template(self, path):
+    def _create_emd_template(self, path, compute_metrics=True):
 
         _emd_template = {}
         #For old models - add lr, ModelName
@@ -623,19 +625,11 @@ class ArcGISModel(object):
             for _key in model_params:
                 _emd_template["ModelParameters"][_key] = model_params[_key]
 
-        model_metrics = self._model_metrics
-
-        if model_metrics.get('accuracy'):
-            _emd_template['accuracy'] = model_metrics.get('accuracy')
-        
-        if model_metrics.get('average_precision_score'):
-            _emd_template['average_precision_score'] = model_metrics.get('average_precision_score')
-            
-        if model_metrics.get('psnr_metric'):
-            _emd_template['psnr_metric'] = model_metrics.get('psnr_metric')
-
-        if model_metrics.get('score'):
-            _emd_template['score'] = model_metrics.get('score')
+        if compute_metrics:
+            if self._model_metrics_cache == None:
+                print("Computing model metrics...")
+                self._model_metrics_cache = self._model_metrics
+            _emd_template.update(self._model_metrics_cache)
 
         resize_to = None
         if hasattr(self._data, 'resize_to') and self._data.resize_to:
@@ -760,7 +754,7 @@ class ArcGISModel(object):
         file.write(HTML_TEMPLATE)
         file.close()
 
-    def _save(self, name_or_path, framework='PyTorch', zip_files=True, save_html=True, publish=False, gis=None, **kwargs):
+    def _save(self, name_or_path, framework='PyTorch', zip_files=True, save_html=True, publish=False, gis=None, compute_metrics=True, **kwargs):
         save_format = kwargs.get('save_format', 'default') # 'default', 'tflite'
         post_processed = kwargs.get('post_processed', True) # True, False
         quantized = kwargs.get('quantized', False) # True, False
@@ -814,7 +808,7 @@ class ArcGISModel(object):
             self.learn.path = temp
             self.learn.model_dir = 'models'
 
-        _emd_template = self._create_emd_template(saved_path.with_suffix('.pth'))
+        _emd_template = self._create_emd_template(saved_path.with_suffix('.pth'), compute_metrics=compute_metrics)
 
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get('batch_size', 16)
@@ -978,7 +972,7 @@ class ArcGISModel(object):
         dummy_input = torch.randn(batch_size, 3, self._data.chip_size, self._data.chip_size, device=self._device, requires_grad=True)
         torch.onnx.export(self.learn.model, dummy_input, saved_path.with_suffix('.onnx'))
 
-    def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, **kwargs):
+    def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, compute_metrics=True, **kwargs):
         """
         Saves the model weights, creates an Esri Model Definition and Deep
         Learning Package zip for deployment to Image Server or ArcGIS Pro.   
@@ -1004,6 +998,9 @@ class ArcGISModel(object):
         gis                     Optional GIS Object. Used for publishing the item.
                                 If not specified then active gis user is taken.
         ---------------------   -------------------------------------------
+        compute_metrics         Optional boolean. Used for computing model
+                                metrics.
+        ---------------------   -------------------------------------------
         kwargs                  Optional Parameters:
                                 Boolean `overwrite` if True, it will overwrite
                                 the item on ArcGIS Online/Enterprise, default False.                                
@@ -1011,7 +1008,7 @@ class ArcGISModel(object):
         """    
         if int(os.environ.get('RANK', 0)):
             return
-        return self._save(name_or_path, framework=framework, publish=publish, gis=gis, **kwargs)
+        return self._save(name_or_path, framework=framework, publish=publish, gis=gis, compute_metrics=compute_metrics, **kwargs)
         
     def load(self, name_or_path):
         """

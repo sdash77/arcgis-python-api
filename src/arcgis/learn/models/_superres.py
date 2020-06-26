@@ -138,7 +138,7 @@ class SuperResolution(ArcGISModel):
     
     @property
     def _model_metrics(self):
-        return {'psnr_metric': '{0:1.4e}'.format(self.psnr_metric(show_progress=False))}
+        return {'psnr_metric': '{0:1.4e}'.format(self.psnr_metric(show_progress=True))}
 
     def _get_emd_params(self):
         _emd_template = {}
