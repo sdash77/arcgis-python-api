@@ -507,7 +507,10 @@ class Connection(object):
             return resp.text
     #----------------------------------------------------------------------
     def _handle_json_error(self, error, errorcode):
-        errormessage = error.get('message', 'Unknown Error')
+        errormessage = error.get('message')
+        # handles case where message exists in the dictionary but is None
+        if errormessage is None:
+            errormessage = "Unknown Error"
         #_log.error(errormessage)
         if 'details' in error and error['details'] is not None:
             if isinstance(error['details'], str):
