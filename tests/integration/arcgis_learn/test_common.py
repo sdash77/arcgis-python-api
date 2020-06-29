@@ -27,24 +27,28 @@ else:
     from arcgis.learn import SingleShotDetector, UnetClassifier, PSPNetClassifier, FeatureClassifier, RetinaNet, MaskRCNN, prepare_data
 
 ####
-
+update_dict = {"attributes":
+                {"Date": convertdate(datetime.today()),
+                "ssd": 0,
+                "retinanet": 0,
+                "unet": 0,
+                "pspnet": 0,
+                "maskrcnn": 0,
+                "featureclassifier": 0}}
 # TestModule
 @unittest.skipIf(module_skip, "Precondition check failed. Skipping Common tests")
 def setUpModule():
     setupenviron()
     print("Dependencies Installed.")
-    tearDownModule()
-    # updateAccuracyResults()
-
+    update_dict["attributes"]["Date"] = convertdate(datetime.today())
+    
 def updateAccuracyResults():
     from arcgis.gis import GIS
     from arcgis.features import FeatureLayerCollection
-    updatecsv('Date', convertdate(datetime.today()))
     gis = GIS("https://deldev.maps.arcgis.com", "demos_deldev", "DelDevs12")
-    itm = gis.content.get('30ca1ab53255408dbb1aea9fa6cb8c14')
-    flayer = FeatureLayerCollection.fromitem(itm)
-    csv_path = os.path.abspath(os.path.join(os.environ["accuracy_test"],"accuracy.csv"))
-    flayer.manager.overwrite(csv_path)
+    item = gis.content.get('30ca1ab53255408dbb1aea9fa6cb8c14')
+    data = item.tables[0]
+    data.edit_features(adds=[update_dict])
 
 def convertdate(dates):
     day = dates.day
@@ -52,13 +56,6 @@ def convertdate(dates):
     year = dates.year
     dstr = str(str(month)+'/'+str(day)+'/'+str(year))
     return dstr
-
-def updatecsv(output_name, score):
-    csv_path = os.path.abspath(os.path.join(os.environ["accuracy_test"],"accuracy.csv"))
-    acc_file = pd.read_csv(csv_path)
-    row = acc_file[output_name].count()
-    acc_file.loc[row, output_name] = score
-    acc_file.to_csv(csv_path)
 
 def common_test(test_object, model_type, output_name, data_path, old_models, **prepare_data_kwargs):
     # Prepare Data bunch.
@@ -100,7 +97,7 @@ def common_test(test_object, model_type, output_name, data_path, old_models, **p
         # TO-DO
         elif output_name in ['featureclassifier']:
             score = 0
-        updatecsv(output_name, score)
+        update_dict["attributes"][output_name] = score
 
     # Load from saved model.
     model_object.load(f'post_fit_{output_name}')
@@ -168,7 +165,7 @@ def classify_features_test(in_model_definition, in_raster, feature_layer, output
         model_arguments="batch_size 4"
     )
 
-
+@unittest.skipIf(module_skip, "Precondition check failed. Skipping Common tests")
 class Test_Common(unittest.TestCase):
     """
     Test to check if Prepare Data works correctly.
@@ -220,14 +217,13 @@ class Test_Common(unittest.TestCase):
         print("Test: " + self._testMethodName)
 
     def tearDown(self):
-        if os.environ['nightly_test'] == "1":
-            print("updating feature layer for accuracy dashboard\n")
-            updateAccuracyResults()
-        print("------------------------------------------------------------------\n")
+        print("Test:" + self._testMethodName + "is completed.\n")
+        print("----------------------------------------------\n")
 
     @classmethod
     def tearDownClass(cls):
-        print("\n==================================================================")
+        print("\n All Tests have completed")
+        print("==================================================================")
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     def test_ssd(self):
@@ -343,6 +339,9 @@ class Test_Common(unittest.TestCase):
 
 # TestModule
 def tearDownModule():
+    if os.environ['nightly_test'] == "1":
+        print("Updating feature layer for accuracy dashboard\n")
+        updateAccuracyResults()
     os.system(f'rm -rf "{os.path.join(os.environ["object_detection_data1"], "models")}"')
     os.system(f'rm -rf "{os.path.join(os.environ["object_detection_data1"], "images/models")}"')
 
@@ -370,7 +369,6 @@ def tearDownModule():
     # outputs_to_delete = os.listdir(os.path.dirname(os.environ["object_detection_inferencing_result_rn"]))
     # for output_files in outputs_to_delete:
     #     os.remove(f'{os.path.join(os.path.dirname(os.environ["object_detection_inferencing_result_rn"]), output_files)}')
-
 
     print("**End Common Arcgis Learn module Tests**")
 
