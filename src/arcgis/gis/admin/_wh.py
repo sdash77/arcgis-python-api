@@ -225,7 +225,23 @@ class WebhookManager(object):
                                            the message on your receiver.
         =================================  ===============================================================================
 
-        :returns WebHook
+        :returns a :class:`WebHook<arcgis.gis.admin.Webhook>` instance
+
+        .. code-block:: python
+
+            # Example using Zapier as the payload URL
+
+            from arcgis.gis import GIS
+
+            gis = GIS(profile="your_profile", verify_cert=False)
+
+            wh_mgr = gis.admin.webhooks
+            wh = wh_mgr.create(name="Webhook_from_API",
+                               url="https://hooks.zapier.com/hooks/catch/6694048/odqj9o3/",
+                               events=["/items/981e98b949d9432ebf26433f40948cec/move",
+                                       "/items/981e98b949d9432ebf26433f40948cec/update"]
+        
+        See `Webhook Blog Post <https://www.esri.com/arcgis-blog/products/arcgis-enterprise/administration/webhooks-dev-summit-2019/>`_ for a detailed explanation.
 
         """
         if secret is None:
