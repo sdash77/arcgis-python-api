@@ -14,18 +14,14 @@ from collections import OrderedDict
 from urllib.parse import urlparse
 import os
 import shutil
-import ipywidgets
-try:
-    import pandas as pd
-    from arcgis.features.geo import _is_geoenabled
-except ImportError:
-    def _is_geoenabled(**kwargs):
-        return False
-    pd = None
-    
+import datetime as dt
+import dateutil.parser
+
+import ipywidgets   
 from ipywidgets import widgets
 from ipywidgets.embed import embed_minimal_html
 from traitlets import Unicode, Int, List, Bool, Dict, Tuple, Float, observe
+Datetime = ipywidgets.trait_types.Datetime
 from IPython.display import display, HTML
 
 from arcgis.widgets._mapview._webscene_utils import DEFAULT_WEBSCENE_TEXT_PROPERTY
@@ -35,6 +31,15 @@ from arcgis.widgets._mapview._raster._numpy_utils import *
 from arcgis import __version__ as py_api_version
 import arcgis.mapping
 import arcgis
+
+try:
+    import pandas as pd
+    from arcgis.features.geo import _is_geoenabled
+except ImportError:
+    def _is_geoenabled(**kwargs):
+        return False
+    pd = None
+
 
 log = logging.getLogger(__name__)
 
@@ -1064,6 +1069,8 @@ class MapView(widgets.DOMWidget):
         from arcgis.mapping.ogc._base import BaseOGC
         from pandas import DataFrame
 
+        self._update_time_extent_if_applicable(item)
+
         if isinstance(item, Raster):
             if isinstance(item._engine_obj, _ImageServerRaster):
                 item=item._engine_obj
@@ -1972,33 +1979,135 @@ class MapView(widgets.DOMWidget):
         self.extent = self.extent # Sometimes setting extent will not work for the same target extent if we do it multiple times, doing this fixes that issue.
         self.extent = target_extent
 
-    # Start section of no longer supported areas
-    def _raise_time_extent_exception(self):
-        raise Exception("Time extent functionality not supported in v1.5")
+    # Start time section
 
-    @property
-    def end_time(self):
-        """This feature is not supported in >v1.5."""
-        self._raise_time_extent_exception()
+    time_slider = Bool(False).tag(sync=True)
+    """If set to `True`, will display a time slider in the widget that will
+    allow you to visualize temporal data for an applicable layer added to 
+    the map. Default: `False`.
+    """
 
-    @end_time.setter
-    def end_time(self, value):
-        self._raise_time_extent_exception()
+    time_mode = Unicode("time-window").tag(sync=True)
+    """String used for defining if the temporal data will be displayed 
+    cumulatively up to a point in time, a single instant in time, or 
+    within a time range.
+    
+    Possible values: "instant", "time-window", "cumulative-from-start",
+    "cumulative-from-end". Default: "time-window"
 
-    def set_time_extent(self, start_time, end_time):
-        """This feature is not supported in >v1.5."""
-        self._raise_time_extent_exception()
+    See https://bit.ly/3dFSPa2 for more info.
+    """
+
+    _time_info = Dict({}).tag(sync=True)
+
+    _writeonly_start_time = Datetime().tag(sync=True)
+    _readonly_start_time = Unicode("").tag(sync=True)
+    """JS can't send `Date` objects -- ISO string of time"""
 
     @property
     def start_time(self):
-        """This feature is not supported in >v1.5."""
-        self._raise_time_extent_exception()
+        """`datetime.datetime` property. If `time_mode` == `"time-window"`, 
+        represents the lower bound 'thumb' of the time slider. For all other
+        `time_mode` values, represents the single thumb on the time slider."""
+        date_as_iso = dateutil.parser.parse(self._readonly_start_time)
+        date_local = date_as_iso.astimezone()
+        return date_local
 
     @start_time.setter
     def start_time(self, value):
-        self._raise_time_extent_exception()
+        if not isinstance(value, dt.datetime):
+            raise Exception("Value must be of type `datetime.datetime`")
+        self._writeonly_start_time = dt.datetime(1,1,1)
+        self._writeonly_start_time = value
 
-    # end section of no longer supported areas
+    _writeonly_end_time = Datetime().tag(sync=True)
+    _readonly_end_time = Unicode("").tag(sync=True)
+    """JS can't send `Date` objects -- ISO string of time"""
+
+    @property
+    def end_time(self):
+        """`datetime.datetime` property. If `time_mode` == `"time-window"`, 
+        represents the upper bound 'thumb' of the time slider. For all other
+        `time_mode` values, not used."""
+
+        date_as_iso = dateutil.parser.parse(self._readonly_end_time)
+        date_local = date_as_iso.astimezone()
+        return date_local
+
+    @end_time.setter
+    def end_time(self, value):
+        if not isinstance(value, dt.datetime):
+            raise Exception("Value must be of type `datetime.datetime`")
+        self._writeonly_end_time = dt.datetime(1,1,1)
+        self._writeonly_end_time = value
+
+    def _update_time_extent_if_applicable(self, item):
+        try:
+            if hasattr(item, 'properties') and \
+                hasattr(item.properties, "timeInfo"):
+                time_info = item.properties.timeInfo
+                if hasattr(time_info, "timeExtent"):
+                    start_time = dt.datetime.fromtimestamp(time_info.timeExtent[0] / 1000)
+                    end_time = dt.datetime.fromtimestamp(time_info.timeExtent[1] / 1000)
+                    kwargs = {}
+                    if time_info.defaultTimeInterval:
+                        kwargs["interval"] = time_info.defaultTimeInterval
+                    if time_info.defaultTimeIntervalUnits:
+                        item_units = time_info.defaultTimeIntervalUnits.lower()
+                        if "mill" in item_units:
+                            kwargs["unit"] = "milliseconds"
+                        elif "sec" in item_units:
+                            kwargs["unit"] = "seconds"
+                        elif "minute" in item_units:
+                            kwargs["unit"] = "minutes"
+                        elif "hour" in item_units:
+                            kwargs["unit"] = "hours"
+                        elif "day" in item_units:
+                            kwargs["unit"] = "days"
+                        elif "week" in item_units:
+                            kwargs["unit"] = "weeks"
+                        elif "month" in item_units:
+                            kwargs["unit"] = "months"
+                        elif "year" in item_units:
+                            kwargs["unit"] = "years"
+                        elif "decad" in item_units:
+                            kwargs["unit"] = "decades"
+                        elif "centur" in item_units:
+                            kwargs["unit"] = "centuries"
+                    self.set_time_extent(start_time, end_time, **kwargs)
+        except Exception:
+            pass
+
+
+    def set_time_extent(self, start_time, end_time, interval = 1, unit = "milliseconds"):
+        """When `time_slider = True`, the time extent to display on the time slider.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        start_time             Required `datetime.datetime`. The lower bound of the time extent to
+                               display on the time slider.
+        ------------------     --------------------------------------------------------------------
+        end_time               Required `datetime.datetime`. The upper bound of the time extent to
+                               display on the time slider.
+        ------------------     --------------------------------------------------------------------
+        interval               Optional number, default `1`. The numerical value of the time
+                               extent.
+        ------------------     --------------------------------------------------------------------
+        unit                   Optional string, default `"milliseconds"`. Temporal units. Possible
+                               values: `"milliseconds"`, `"seconds"`, `"minutes"`, `"hours"`, 
+                               `"days"`, `"weeks"`, `"months"`, `"years"`, `"decades"`, 
+                               `"centuries"`
+        ==================     ====================================================================
+
+        """
+        if not (isinstance(start_time, dt.datetime) and isinstance(end_time, dt.datetime)):
+            raise Exception("`start_time` and `end_time` arguments must be of type `datetime.datetime`")
+        self._time_info = {
+            'time_extent' : [start_time, end_time],
+            'interval' : interval,
+            'unit' : unit }
+    # end time section
 
     # start local raster overlay section
 
