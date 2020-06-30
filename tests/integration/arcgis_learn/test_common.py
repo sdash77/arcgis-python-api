@@ -28,7 +28,7 @@ else:
 
 ####
 update_dict = {"attributes":
-                {"Date": convertdate(datetime.today()),
+                {"Date": "",
                 "ssd": 0,
                 "retinanet": 0,
                 "unet": 0,
@@ -40,7 +40,8 @@ update_dict = {"attributes":
 def setUpModule():
     setupenviron()
     print("Dependencies Installed.")
-    update_dict["attributes"]["Date"] = convertdate(datetime.today())
+    if os.environ['nightly_test'] == "1":
+        update_dict["attributes"]["Date"] = convertdate(datetime.today())
     
 def updateAccuracyResults():
     from arcgis.gis import GIS
