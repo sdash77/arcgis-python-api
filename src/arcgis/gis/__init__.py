@@ -3431,14 +3431,19 @@ class GroupManager(object):
                               This option can't be disabled once the group has
                               been created. Default is False.
         --------------------  ---------------------------------------------------------
-        display_settings      Optional String. Displays the following type of item on 
-                              the group page.  The allowed values are: 
-                              `apps, all, files, maps, layers, scenes, tools`.
+        display_settings      Optional String. Defines the default display for the 
+                              group page to show a certain type of items. The allowed 
+                              values are: `apps, all, files, maps, layers, scenes, tools`. 
                               The default value is `all`. 
         --------------------  ---------------------------------------------------------
-        leaving_disallowed    Optional boolean. States a member of the group can leave
-                              without having the owner or administrator remove them.
-                              The default is `False`.
+        is_open_data          Optional Boolean. Defines whether the group can be used 
+                              in the Open Data capabilities of ArcGIS Hub. The default 
+                              is False.
+        --------------------  ---------------------------------------------------------
+        leaving_disallowed    Optional boolean. Defines whether users are restricted 
+                              from choosing to leave the group. If True, only an 
+                              administrator can remove them from the group. The default 
+                              is False.
         ====================  =========================================================
 
         :return:
@@ -6395,17 +6400,19 @@ class Group(dict):
         clear_empty_fields  Optional Boolean. If True, the user can set values to
                             empty string, else, None values will be ignored.
         ------------------  ---------------------------------------------------------
-        display_settings    Optional String. Displays the following type of item on 
-                            the group page.  The allowed values are: 
-                            `apps, all, files, maps, layers, scenes, tools`.
+        display_settings    Optional String. Defines the default display for the 
+                            group page to show a certain type of items. The allowed 
+                            values are: `apps, all, files, maps, layers, scenes, tools`. 
                             The default value is `all`. 
         ------------------  ---------------------------------------------------------
-        is_open_data        Optional Boolean.  States if the group is related to 
-                            open data site.  The default is `False`.
+        is_open_data        Optional Boolean. Defines whether the group can be used 
+                            in the Open Data capabilities of ArcGIS Hub. The default 
+                            is False.
         ------------------  ---------------------------------------------------------
-        leaving_disallowed  Optional boolean. States a member of the group can leave
-                            without having the owner or administrator remove them.
-                            The default is `False`.
+        leaving_disallowed  Optional boolean. Defines whether users are restricted 
+                            from choosing to leave the group. If True, only an 
+                            administrator can remove them from the group. The default 
+                            is False.
         ==================  =========================================================
 
 
