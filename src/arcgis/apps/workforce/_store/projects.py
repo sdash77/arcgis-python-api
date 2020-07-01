@@ -5,6 +5,7 @@ from arcgis.gis import Item
 from arcgis.apps import workforce
 from arcgis.apps.workforce._store._definitions import *
 from arcgis.apps.workforce.exceptions import WorkforceError
+from warnings import warn
 import concurrent.futures
 import os
 
@@ -246,8 +247,11 @@ def _v2_create_project(gis, summary, title):
     )])
 
     # add relationships
-    workers_webmap.add_relationship(workforce_service_item, 'WorkforceMap2FeatureService')
-    dispatchers_webmap.add_relationship(workforce_service_item, 'WorkforceMap2FeatureService')
+    try:
+        workers_webmap.add_relationship(workforce_service_item, 'WorkforceMap2FeatureService')
+        dispatchers_webmap.add_relationship(workforce_service_item, 'WorkforceMap2FeatureService')
+    except Exception:
+        warn("Relationship not added. This version of ArcGIS may not support the WorkforceMap2FeatureService relationship")
 
     # create the Project to return, add navigator as default integration
     project = arcgis.apps.workforce.Project(workforce_service_item)
