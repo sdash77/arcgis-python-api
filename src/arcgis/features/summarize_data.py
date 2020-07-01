@@ -620,7 +620,7 @@ def join_features(target_layer,
     --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
     future                                                                                           Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
-    join_type                                                                                        Optional String.  Determines the type of table join performed on the datasets.  The allowed values are INNER or LEFT.
+    join_type                                                                                        Optional String.  Determines the type of join performed on the datasets.  The allowed values are INNER or LEFT.
     ============================================================================================     =================================================================================================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else feature collection.
