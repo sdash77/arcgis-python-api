@@ -3375,7 +3375,9 @@ class GroupManager(object):
                is_invitation_only=False, sort_field='avgRating',
                sort_order='desc', is_view_only=False, auto_join=False,
                provider_group_name=None, provider=None,
-               max_file_size=None, users_update_items=False):
+               max_file_size=None, users_update_items=False,
+               display_settings=None, is_open_data=False,
+               leaving_disallowed=False):
         """
         Creates a group with the values for any particular arguments that are specified.
         Only title and tags are required.
@@ -3428,16 +3430,40 @@ class GroupManager(object):
                               item's description, tags, metadata, as well as content.
                               This option can't be disabled once the group has
                               been created. Default is False.
+        --------------------  ---------------------------------------------------------
+        display_settings      Optional String. Defines the default display for the 
+                              group page to show a certain type of items. The allowed 
+                              values are: `apps, all, files, maps, layers, scenes, tools`. 
+                              The default value is `all`. 
+        --------------------  ---------------------------------------------------------
+        is_open_data          Optional Boolean. Defines whether the group can be used 
+                              in the Open Data capabilities of ArcGIS Hub. The default 
+                              is False.
+        --------------------  ---------------------------------------------------------
+        leaving_disallowed    Optional boolean. Defines whether users are restricted 
+                              from choosing to leave the group. If True, only an 
+                              administrator can remove them from the group. The default 
+                              is False.
         ====================  =========================================================
 
         :return:
             The group if successfully created, None if unsuccessful.
         """
+        display_settings_lu = {
+            "apps" : {"itemTypes":"Application"},
+            "all" : {"itemTypes":""},
+            "files" : {"itemTypes":"CSV"},
+            None : {"itemTypes":""},
+            "maps" : {"itemTypes":"Web Map"},
+            "layers" : {"itemTypes":"Layer"},
+            "scenes" : {"itemTypes":"Web Scene"},
+            "tools" : {"itemTypes":"Locator Package"}
+        }
         if max_file_size is None:
             max_file_size = 1024000
         if users_update_items is None:
             users_update_items = False
-
+        
         if type(tags) is list:
             tags = ",".join(tags)
         params = {
@@ -3445,7 +3471,9 @@ class GroupManager(object):
             'snippet' : snippet, 'access' : access, 'sortField' : sort_field,
             'sortOrder' : sort_order, 'isViewOnly' : is_view_only,
             'isinvitationOnly' : is_invitation_only,
-            'autoJoin': auto_join}
+            'autoJoin': auto_join,
+            'leavingDisallowed': leaving_disallowed
+        }
         if provider_group_name:
             params['provider'] = provider
             params['providerGroupName'] = provider_group_name
@@ -3453,10 +3481,18 @@ class GroupManager(object):
             params['capabilities'] = "updateitemcontrol"
         else:
             params['capabilities'] = ""
+        params['isOpenData'] = is_open_data
         params['MAX_FILE_SIZE'] = max_file_size
-
+        if isinstance(display_settings, str) and display_settings.lower() in display_settings_lu:
+            params['displaySettings'] = display_settings_lu[display_settings.lower()]
+        elif display_settings is None:
+            params['displaySettings'] = display_settings_lu[display_settings]
+        else:
+            raise ValueError("Display settings must be set to a valid value.")
+        #if self._gis.version >= [8,2] and display_settings:
+        #    params["itemTypes"] = display_settings
         group = self._portal.create_group_from_dict(params, thumbnail)
-
+        
         if group is not None:
             return Group(self._gis, group['id'], group)
         else:
@@ -6317,7 +6353,8 @@ class Group(dict):
 
     def update(self, title=None, tags=None, description=None, snippet=None, access=None,
                is_invitation_only=None, sort_field=None, sort_order=None, is_view_only=None,
-               thumbnail=None, max_file_size=None, users_update_items=False, clear_empty_fields=False):
+               thumbnail=None, max_file_size=None, users_update_items=False, clear_empty_fields=False,
+               display_settings=None, is_open_data=False, leaving_disallowed=False):
         """
         Updates this group with only values supplied for particular arguments.
 
@@ -6362,12 +6399,36 @@ class Group(dict):
         ------------------  ---------------------------------------------------------
         clear_empty_fields  Optional Boolean. If True, the user can set values to
                             empty string, else, None values will be ignored.
+        ------------------  ---------------------------------------------------------
+        display_settings    Optional String. Defines the default display for the 
+                            group page to show a certain type of items. The allowed 
+                            values are: `apps, all, files, maps, layers, scenes, tools`. 
+                            The default value is `all`. 
+        ------------------  ---------------------------------------------------------
+        is_open_data        Optional Boolean. Defines whether the group can be used 
+                            in the Open Data capabilities of ArcGIS Hub. The default 
+                            is False.
+        ------------------  ---------------------------------------------------------
+        leaving_disallowed  Optional boolean. Defines whether users are restricted 
+                            from choosing to leave the group. If True, only an 
+                            administrator can remove them from the group. The default 
+                            is False.
         ==================  =========================================================
 
 
         :return:
             A boolean indicating success (True) or failure (False).
         """
+        display_settings_lu = {
+            "apps" : {"itemTypes":"Application"},
+            "all" : {"itemTypes":""},
+            "files" : {"itemTypes":"CSV"},
+            None : {"itemTypes":""},
+            "maps" : {"itemTypes":"Web Map"},
+            "layers" : {"itemTypes":"Layer"},
+            "scenes" : {"itemTypes":"Web Scene"},
+            "tools" : {"itemTypes":"Locator Package"}
+        }
         if max_file_size is None:
             max_file_size = 1024000
         if users_update_items is None:
@@ -6375,12 +6436,21 @@ class Group(dict):
         if tags is not None:
             if type(tags) is list:
                 tags = ",".join(tags)
+        if isinstance(display_settings, str) and display_settings.lower() in display_settings_lu:
+            display_settings = display_settings_lu[display_settings.lower()]
+        elif display_settings is None:
+            display_settings = display_settings_lu[display_settings]
+        else:
+            raise ValueError("Display settings must be set to a valid value.")        
         resp = self._portal.update_group(self.groupid, title, tags,
                                          description, snippet, access,
                                          is_invitation_only, sort_field,
                                          sort_order, is_view_only, thumbnail,
                                          max_file_size, users_update_items,
-                                         clear_empty_fields=clear_empty_fields)
+                                         clear_empty_fields=clear_empty_fields,
+                                         display_settings=display_settings,
+                                         is_open_data=is_open_data, 
+                                         leaving_disallowed=leaving_disallowed)
         if resp:
             self._hydrate()
         return resp
