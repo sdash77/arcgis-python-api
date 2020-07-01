@@ -467,7 +467,7 @@ class SingleShotDetector(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        return {'average_precision_score': self.average_precision_score(show_progress=False)}
+        return {'average_precision_score': self.average_precision_score(show_progress=True)}
 
     def _analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ret_scores=True, device=None):
         return postprocess(pred, model=self, thresh=thresh, nms_overlap=nms_overlap, ret_scores=ret_scores, device=device)

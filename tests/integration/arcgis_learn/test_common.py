@@ -91,12 +91,15 @@ def common_test(test_object, model_type, output_name, data_path, old_models, **p
 
     # Test for accuracy if nightly_test is run
     if os.environ['nightly_test'] == "1":
-        if output_name in ['retinanet', 'ssd']:
+        score = 0
+        if output_name in ['retinanet', 'ssd', 'maskrcnn']:
             score = model_object.average_precision_score(mean=True)
+            # updatecsv(output_name, score)
         elif output_name in ['unet', 'pspnet']:
             score = model_object.mIOU(mean=True)
-        elif output_name in ['maskrcnn', 'featureclassifier']:
-            score = model_object.accuracy()
+        # TO-DO
+        elif output_name in ['featureclassifier']:
+            score = 0
         updatecsv(output_name, score)
 
     # Load from saved model.

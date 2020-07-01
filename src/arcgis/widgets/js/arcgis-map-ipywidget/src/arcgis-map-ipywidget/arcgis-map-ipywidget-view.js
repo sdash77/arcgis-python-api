@@ -64,19 +64,24 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
     loadingProgressDisplay.start();
     esriLoader.loadModules(['esri/Map',
                             'esri/views/MapView',
+                            'esri/WebMap',
+                            'esri/WebScene',
                             'esri/views/SceneView',
                             'esri/core/watchUtils',
                             'esri/widgets/Compass',
                             'esri/widgets/Legend'], options).then((
                             [Map,
                              MapView,
+                             WebMap,
+                             WebScene,
                              SceneView,
                              watchUtils,
                              Compass,
                              Legend]) => {
         loadingProgressDisplay.stop();
         this._setup_custom_buttons();
-        this._instantiate_esri_components(Map, MapView, SceneView,
+        this._instantiate_esri_components(Map, WebMap, WebScene, 
+                                          MapView, SceneView,
                                           Compass, Legend);
         this._miscellanous_setup();
         //All model specific change functions. These functions are called
@@ -180,6 +185,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             });
         })
     },
+
 
     _displayErrorBox: function(msg, browser_console_message = true){
         ///A simple message box display mechanism
@@ -324,10 +330,10 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
     _miscellanous_setup: function(){
        ///Every time the 2d map changes a basemap/ground/layer, call this function
-        this._MapView.map.allLayers.on('change', (event) => {
+        this.map.allLayers.on('change', (event) => {
             this.update_readonly_webmap();
         });
-        this._SceneView.map.allLayers.on('change', (event) => {
+        this.map.allLayers.on('change', (event) => {
             this.update_readonly_webmap();
         });
     },
@@ -388,18 +394,19 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         this.js_cdn_changed();
     },
 
-    _instantiate_esri_components: function(Map, MapView, SceneView,
+    _instantiate_esri_components: function(Map, WebMap, WebScene, MapView, SceneView,
                                            Compass, Legend){
-        this.map = new Map({ground: "world-elevation"});
         this.container = this.elements.mapElement;
         var mode = this.model.get("mode").toLowerCase();
         if(mode === "2d"){
+            this.map = new WebMap({ground: "world-elevation"});
             this._MapView = new MapView({
                 map: this.map,
                 container: this.container});
             this.activeView = this._MapView;
             this._SceneView = new SceneView({map: this.map});
         } else if(mode === "3d"){
+            this.map = new WebScene({ground: "world-elevation"});
             this._SceneView = new SceneView({
                 map: this.map,
                 container: this.container});
@@ -487,39 +494,44 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
     },
 
     mode_changed: function(){
-    try{
+    esriLoader.loadModules(['esri/WebMap', 'esri/WebScene'],
+    options).then(([WebMap, WebScene]) => { 
         console.log("updating mode...");
         var mode = this.model.get("mode").toLowerCase();
         if(mode === "3d"){
             this.elements.switchButton.src = images.sceneToMapEncoded;
             if(this.activeView.viewpoint){
                 this._SceneView.viewpoint = this.activeView.viewpoint.clone();
-                this.activeView.container = null;
-            }
+                this.activeView.container = null;}
             this._SceneView.container = this.container;
             this.activeView = this._SceneView;
+            this.map = new WebScene({ground: this.map.ground,
+                                     basemap: this.map.basemap,
+                                     layers: this.map.layers});
             this._SceneView.map = this.map
             this._MapView.map = null;
         } else {
             this.elements.switchButton.src = images.mapToSceneEncoded;
             if(this.activeView.viewpoint){
                 this._MapView.viewpoint = this.activeView.viewpoint.clone();
-                this.activeView.container = null;
-             }
+                this.activeView.container = null;}
              this._MapView.container = this.container;
              this.activeView = this._MapView;
+             this.map = new WebMap({ground: this.map.ground,
+                                    basemap: this.map.basemap,
+                                    layers: this.map.layers});
              this._MapView.map = this.map;
              this._SceneView.map = null;
              //Set the 'tilt' to 0 whenever switching to 2D mode
              this.model.set("tilt", 0);
-             this.model.save_changes();
-        }
+             this.model.save_changes();}
         this.legend_prop_changed(); //Needed to reset the legend's view
-    } catch(err){
+        this.map.allLayers.on('change', (event) => {
+            this.update_readonly_webmap();}); 
+    }).catch((err) => {
         this._displayErrorBox();
         console.warn("Error on mode_changed"); console.warn(err); 
-    }
-    },
+    });},
 
     zoom_changed: function(){
         try{
@@ -732,22 +744,8 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         console.log("Updating webmap...");
         var webmap_from_python = this.model.get("_webmap");
         if(Object.keys(webmap_from_python).length !== 0){
-            this.authenticate_to_portal().then((portal) => {
-                webmap_from_python.portalItem.portal = portal;
-                var webmap = new WebMap(webmap_from_python);
-                webmap.load().then((webmap) => {
-                    this._MapView.map = webmap;
-                    this.map = webmap;
-                    this.update_readonly_webmap();
-                }).catch((err) => {
-                    this._displayErrorBox("Error on loading webmap item");
-                    console.warn("Error on loading webmap"); console.warn(err);
-                });
-            }).catch((err) => {
-                this._displayErrorBox("Error on loading portal for webmap");
-                console.warn("Error on loading webmap"); console.warn(err);
-            });
-        }
+            this.map = WebMap.fromJSON(webmap_from_python);
+            this._MapView.map = this.map;}
     }).catch((err) => {
         this._displayErrorBox("Error on loading webmap from portal");
         console.warn("Error on loading webmap"); console.warn(err);

@@ -5,7 +5,7 @@ import json
 
 def build_collector_url(webmap=None, center=None, feature_layer=None, fields=None, search=None, portal=None,  action=None, geometry=None, callback=None, callback_prompt=None):
     """
-    Creates a url that can be used to open Collector for ArcGIS
+    Creates a url that can be used to open ArcGIS Collector
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -184,7 +184,7 @@ def _validate_collector_url(webmap, center, feature_layer, fields):
 def build_explorer_url(webmap=None, search=None, bookmark=None, center=None, scale=None, wkid=None, rotation=None,
                        markup=None, url_type="Web"):
     """
-    Creates a url that can be used to open Explorer for ArcGIS
+    Creates a url that can be used to open ArcGIS Explorer
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -273,7 +273,7 @@ def _validate_explorer_url(webmap, search, bookmark, center, scale, wkid, rotati
 def build_navigator_url(start=None, stops=None, optimize=None, navigate=None,
                         travel_mode=None, callback=None, callback_prompt=None, url_type="Web", webmap=None, route_item=None):
     """
-    Creates a url that can be used to open Navigator for ArcGIS
+    Creates a url that can be used to open ArcGIS Navigator
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -406,7 +406,7 @@ def _encode_navigator_start(start):
 
 def build_survey123_url(survey=None, center=None, fields=None):
     """
-    Creates a url that can be used to open Survey123 for ArcGIS
+    Creates a url that can be used to open ArcGIS Survey123
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -453,20 +453,47 @@ def _validate_survey123_url(survey, center, fields):
             raise ValueError("Invalid parameters -- Must specify a survey if setting fields")
 
 
-def build_tracker_url(portal_url=None):
+def build_tracker_url(portal_url=None, url_type="Web"):
     """
-        Creates a url that can be used to open Tracker for ArcGIS
+        Creates a url that can be used to open ArcGIS Tracker
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         portal_url             Optional :class:`String` The portal that should be used when tracker
                                is launched via the url scheme.
+        ------------------     --------------------------------------------------------------------
+        url_type               Optional :class:`String`. The type of url to be returned (e.g. 'Web' or 'App')
         ==================     ====================================================================
 
         :return: :class:`String`
     """
-    url = "arcgis-tracker://"
+    url = "https://tracker.arcgis.app"
+    if url_type == "App":
+        url = "arcgis-tracker://"
+    if portal_url is not None:
+        url += "?portalURL={}".format(portal_url)
+    return url
+
+
+def build_workforce_url(portal_url=None, url_type="Web"):
+    """
+        Creates a url that can be used to open ArcGIS Workforce
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        portal_url             Optional :class:`String` The portal that should be used when workforce
+                               is launched via the url scheme.
+        ------------------     --------------------------------------------------------------------
+        url_type               Optional :class:`String`. The type of url to be returned (e.g. 'Web' or 'App')
+        ==================     ====================================================================
+
+        :return: :class:`String`
+    """
+    url = "https://workforce.arcgis.app"
+    if url_type == "App":
+        url = "arcgis-workforce://"
     if portal_url is not None:
         url += "?portalURL={}".format(portal_url)
     return url

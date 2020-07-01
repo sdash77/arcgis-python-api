@@ -3835,47 +3835,47 @@ class ContentManager(object):
         *Key:Value Dictionary Options for Argument item_properties*
 
 
-        =================  =====================================================================
-        **Key**            **Value**
-        -----------------  ---------------------------------------------------------------------
-        type               Optional string. Indicates type of item, see URL 1 below for valid values.
-        -----------------  ---------------------------------------------------------------------
-        dataUrl            Optional string. The Url of the data stored on cloud storage. If given, filename is required.
-        -----------------  ---------------------------------------------------------------------
-        filename           Optional string. The name of the file on cloud storage.  This is required is dataUrl is used.
-        -----------------  ---------------------------------------------------------------------
-        typeKeywords       Optional string. Provide a lists all sub-types, see URL 1 below for valid values.
-        -----------------  ---------------------------------------------------------------------
-        description        Optional string. Description of the item.
-        -----------------  ---------------------------------------------------------------------
-        title              Optional string. Name label of the item.
-        -----------------  ---------------------------------------------------------------------
-        url                Optional string. URL to item that are based on URLs.
-        -----------------  ---------------------------------------------------------------------
-        text               Optional string. For text based items such as Feature Collections & WebMaps
-        -----------------  ---------------------------------------------------------------------
-        tags               Optional string. Tags listed as comma-separated values, or a list of strings.
-                           Used for searches on items.
-        -----------------  ---------------------------------------------------------------------
-        snippet            Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
-        -----------------  ---------------------------------------------------------------------
-        extent             Optional string. Provide comma-separated values for min x, min y, max x, max y.
-        -----------------  ---------------------------------------------------------------------
-        spatialReference   Optional string. Coordinate system that the item is in.
-        -----------------  ---------------------------------------------------------------------
-        accessInformation  Optional string. Information on the source of the content.
-        -----------------  ---------------------------------------------------------------------
-        licenseInfo        Optional string.  Any license information or restrictions regarding the content.
-        -----------------  ---------------------------------------------------------------------
-        culture            Optional string. Locale, country and language information.
-        -----------------  ---------------------------------------------------------------------
-        commentsEnabled    Optional boolean. Default is true, controls whether comments are allowed (true)
-                           or not allowed (false).
-        -----------------  ---------------------------------------------------------------------
-        culture            Optional string. Language and country information.
-        -----------------   ----------------------------------------------------------------------------
-        overwrite          Optional boolean. Default is `false`. Controls whether item can be overwritten.
-        =================  =====================================================================
+        ==========================  =====================================================================
+        **Key**                     **Value**
+        --------------------------  ---------------------------------------------------------------------
+        type                        Optional string. Indicates type of item, see URL 1 below for valid values.
+        --------------------------  ---------------------------------------------------------------------
+        dataUrl                     Optional string. The Url of the data stored on cloud storage. If given, filename is required.
+        --------------------------  ---------------------------------------------------------------------
+        filename                    Optional string. The name of the file on cloud storage.  This is required is dataUrl is used.
+        --------------------------  ---------------------------------------------------------------------
+        typeKeywords                Optional string. Provide a lists all sub-types, see URL 1 below for valid values.
+        --------------------------  ---------------------------------------------------------------------
+        description                 Optional string. Description of the item.
+        --------------------------  ---------------------------------------------------------------------
+        title                       Optional string. Name label of the item.
+        --------------------------  ---------------------------------------------------------------------
+        url                         Optional string. URL to item that are based on URLs.
+        --------------------------  ---------------------------------------------------------------------
+        text                        Optional string. For text based items such as Feature Collections & WebMaps
+        --------------------------  ---------------------------------------------------------------------
+        tags                        Optional string. Tags listed as comma-separated values, or a list of strings.
+                                    Used for searches on items.
+        --------------------------  ---------------------------------------------------------------------
+        snippet                     Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
+        --------------------------  ---------------------------------------------------------------------
+        extent                      Optional string. Provide comma-separated values for min x, min y, max x, max y.
+        --------------------------  ---------------------------------------------------------------------
+        spatialReference            Optional string. Coordinate system that the item is in.
+        --------------------------  ---------------------------------------------------------------------
+        accessInformation           Optional string. Information on the source of the content.
+        --------------------------  ---------------------------------------------------------------------
+        licenseInfo                 Optional string.  Any license information or restrictions regarding the content.
+        --------------------------  ---------------------------------------------------------------------
+        culture                     Optional string. Locale, country and language information.
+        --------------------------  ---------------------------------------------------------------------
+        commentsEnabled             Optional boolean. Default is true, controls whether comments are allowed (true)
+                                    or not allowed (false).
+        --------------------------  ---------------------------------------------------------------------
+        culture                     Optional string. Language and country information.
+        --------------------------  ---------------------------------------------------------------------
+        overwrite                   Optional boolean. Default is `false`. Controls whether item can be overwritten.
+        ==========================  =====================================================================
 
 
         URL 1:  `Item and Item Types <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm>`_
@@ -7443,6 +7443,13 @@ class User(dict):
         """
         if isinstance(reassign_to, User):
             reassign_to = reassign_to.username
+        
+        for l in self._gis.admin.license.all():
+            entitle = l.user_entitlement(username=self.username)
+            if 'entitlements' in entitle:
+                l.revoke(username=self.username, 
+                         entitlements=entitle['entitlements'], 
+                         suppress_email=True)        
         return self._portal.delete_user(self._user_id, reassign_to)
 
     def reassign_to(self, target_username):
@@ -8076,7 +8083,8 @@ class Item(dict):
         """
         Exports a service item to the specified export format.
         Available only to users with an organizational subscription.
-        Invokable only by the service item owner or an administrator.
+        Invokable only by the service item owner or an administrator, unless a Location Tracking
+        Service or Location Tracking View.
         This is useful for long running exports that could hold up a script.
 
 
@@ -8132,6 +8140,9 @@ class Item(dict):
         if export_format == 'GeoPackage':
             export_format = 'geoPackage'
         user_id = self._user_id
+        # allow exporting of LTS / LTV even if not owner for ArcGIS Online
+        if not self._gis.properties['isPortal'] and 'Location Tracking Service' in self.typeKeywords:
+            user_id = self._gis.users.me.username
         data_path = 'content/users/%s/export' % user_id
         params = {
             "f" : "json",
@@ -8526,7 +8537,7 @@ class Item(dict):
                 ret_dict = {'everyone': self.access == 'public',
                             'org': (self.access == 'public' or self.access == 'org'),
                             'groups': []}
-                for grpid in resp['admin']:
+                for grpid in resp.get('admin', []) + resp.get("other", []) + resp.get("member", []):
                     try:
                         grp = Group(gis=self._gis, groupid=grpid['id'])
                         ret_dict['groups'].append(grp)
@@ -8546,7 +8557,7 @@ class Item(dict):
                 ret_dict = {'everyone': self.access == 'public',
                             'org': (self.access == 'public' or self.access == 'org'),
                             'groups': []}
-                for grpid in resp['admin']:
+                for grpid in resp.get('admin', []) + resp.get("other", []) + resp.get("member", []):
                     try:
                         grp = Group(gis=self._gis, groupid=grpid['id'])
                         ret_dict['groups'].append(grp)

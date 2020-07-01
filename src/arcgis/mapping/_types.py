@@ -7,6 +7,8 @@ import os
 import tempfile
 from contextlib import contextmanager
 from re import search
+from uuid import uuid4
+import datetime
 
 import arcgis.features
 import arcgis.gis
@@ -16,11 +18,21 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler
 from arcgis.geometry import SpatialReference, Polygon
 from arcgis.gis import Layer, _GISResource, Item
-from arcgis.widgets import MapView
-
-from uuid import uuid4 #unique ids for layers in web map
-import datetime
 from arcgis.mapping._basemap_definitions import basemap_dict
+
+try:
+    from traitlets import HasTraits, observe
+    from arcgis.widgets._mapview._traitlets_extension import ObservableDict
+except ImportError:
+    class HasTraits:
+        pass
+    class ObservableDict(dict):
+        def tag(*args, **kwargs):
+            pass
+    def observe(_=None, *args, **kwargs):
+        return observe
+
+
 _log = logging.getLogger(__name__)
 ###########################################################################
 @contextmanager
@@ -30,7 +42,6 @@ def _tempinput(data):
     temp.close()
     yield temp.name
     os.unlink(temp.name)
-
 
 ###########################################################################
 class SceneLayer(Layer):
@@ -110,7 +121,7 @@ class _ApplicationProperties(object):
 
 
 ###########################################################################
-class WebMap(collections.OrderedDict):
+class WebMap(HasTraits, collections.OrderedDict):
     """
     Represents a web map and provides access to its basemaps and operational layers as well
     as functionality to visualize and interact with them.
@@ -165,11 +176,21 @@ class WebMap(collections.OrderedDict):
             >> []  # returns an empty list. You can add layers using the `add_layer()` method
     """
 
+    _webmapdict = ObservableDict({}).tag(sync=True)
+    @observe('_webmapdict')
+    def _webmapdict_changed(self, change):
+        try:
+            self._mapview._webmap = {}
+            self._mapview._webmap = change['new']
+        except Exception:
+            pass
+
     def __init__(self, webmapitem=None):
         """
         Constructs an empty WebMap object. If an web map Item is passed, constructs a WebMap object from item on
         ArcGIS Online or Enterprise.
         """
+        from arcgis.widgets import MapView
         if webmapitem:
             if webmapitem.type.lower() != 'web map':
                 raise TypeError("item type must be web map")
@@ -183,7 +204,6 @@ class WebMap(collections.OrderedDict):
             self._tables = None
             self._basemap = self._webmapdict["baseMap"]
             self._extent = self.item.extent
-
         else:
             #default spatial ref for current web map
             self._default_spatial_reference = {'wkid': 102100,
@@ -223,21 +243,29 @@ class WebMap(collections.OrderedDict):
             self._tables = []
             self._extent = []
 
-    # def _repr_html_(self):
-    def _ipython_display_(self, **kwargs):
-        # return '<iframe width=960 height=600 src="'+self.item._portal.url  + "/home/webmap/viewer.html?webmap=" + self.item.itemid + '"/>'
-        mapwidget = MapView(gis=self._gis, item=self.item)
-        mapwidget._setup_default_basemap(basemap=self._basemap)
-        mapwidget.mode = "2D"
-        mapwidget.hide_mode_switch = True
-        return mapwidget._ipython_display_(**kwargs)
+        # Set up map widget to use in jupyter env: have changes made to
+        # self._webmapdict get passed to the widge to render
+        self._mapview = MapView(gis=self._gis, item=self)
+        self._mapview.hide_mode_switch = True
+        self._mapview._webmap = {}
+        self._mapview._webmap = self._webmapdict
+        rotation = self._webmapdict.get('initialState', {})\
+                   .get('viewpoint', {})\
+                   .get('rotation', 0)
+        self._mapview.rotation = rotation
+
+    def _ipython_display_(self, *args, **kwargs):
+       return self._mapview._ipython_display_(*args, **kwargs)
 
     def __repr__(self):
         """
         Hidden, to enhance how the object is represented when you simply query it in non Jupyter envs.
         :return:
         """
-        return 'WebMap at ' + self.item._portal.url  + "/home/webmap/viewer.html?webmap=" + self.item.itemid
+        try:
+            return 'WebMap at ' + self.item._portal.url  + "/home/webmap/viewer.html?webmap=" + self.item.itemid
+        except Exception:
+            return super().__repr__()
 
     def __str__(self):
         return json.dumps(self, default=_date_handler)
@@ -1044,6 +1072,7 @@ class WebMap(collections.OrderedDict):
         """What basemap you would like to apply to the map (‘topo’,
                 ‘national-geographic’, etc.). See `basemaps` and `gallery_basemaps` for a full list
         """
+        from arcgis.widgets import MapView
         if isinstance(value, MapView):
             # get basemap from map widget
             if value.basemap in self.basemaps:
@@ -2533,6 +2562,7 @@ class WebScene(collections.OrderedDict):
         collections.OrderedDict.__init__(self, webscenedict)
 
     def _ipython_display_(self, **kwargs):
+        from arcgis.widgets import MapView
         mapwidget = MapView(gis=self._gis, item=self.item)
         mapwidget.mode = "3D"
         mapwidget.hide_mode_switch = True
