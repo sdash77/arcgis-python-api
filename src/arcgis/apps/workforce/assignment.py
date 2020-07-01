@@ -507,6 +507,8 @@ class Assignment(FeatureModel):
                 self.paused_date = datetime.datetime.now()
         elif value == "canceled" or value == "cancelled" or value == 6:
             self._feature.attributes[self._schema.status] = 6
+        elif value is None:
+            self._feature.attributes[self._schema.status] = None
         else:
             raise ValidationError("Invalid status", self)
 
