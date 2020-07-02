@@ -25,6 +25,79 @@ class AGOLUsageReports(BasePortalAdmin):
         self._json_dict = {}
         self._properties = PropertyMap(self._json_dict)
     #----------------------------------------------------------------------
+    def generate_report(self, 
+                        focus:str='org', 
+                        report_type:str="users",
+                        title:str=None,
+                        duration:str=None, 
+                        start_time:datetime.datetime=None,
+                        notify:bool=False,
+                        future:bool=True):
+        """
+        Generates the reports of the overall usage of the organizations. 
+        Reports define organization usage metrics for either a weekly or 
+        monthly time frame.
+        
+        
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        focus               Required String. The level to perform the report on.
+                            The allowed value is only `org`.  
+        ---------------     ----------------------------------------------------
+        report_type         Required String. The type of report to generate. The
+                            allowed values are `users`,`content`, or `credits`.
+        ---------------     ----------------------------------------------------
+        title               Optional String.  The Item's title.
+        ---------------     ----------------------------------------------------
+        duration            Optional String.  This is the timeframe to generate 
+                            the report on.  The allowed values are: `weekly` or 
+                            `monthly`.
+        ---------------     ----------------------------------------------------
+        start_time          Optional datetime.datetime. The start time to begin 
+                            reporting time.
+        ---------------     ----------------------------------------------------
+        notify              Optional Boolean. The Job will print a message upon 
+                            completing of the task.
+        ---------------     ----------------------------------------------------
+        future              Optional Boolean. Returns an asynchronous Job when 
+                            `True` when `False`, it returns an Item.
+        ===============     ====================================================
+        
+        
+        :returns: Async Job Object or Item
+        
+        """
+        url = f"{self._gis._portal.resturl}community/users/{self._gis.users.me.username}/report"
+        params = {
+            "f" : "json",
+            "reportType": focus,
+            "reportSubType": report_type
+        }
+        if title:
+            params['title'] = title
+        if duration and duration.lower() in ['weekly', 'monthly', None]:
+            params['timeDuration'] = duration
+        elif duration and not duration.lower() in ['weekly', 'monthly', None]:
+            raise ValueError("Invalid `duration` value %s" % duration)
+        if not start_time is None and isinstance(start_time, datetime.datetime):
+            params['startTime'] = local_time_to_online(start_time)
+        elif not start_time is None and isinstance(start_time, int):
+            params['startTime'] = start_time
+        
+        resp = self._con.post(url, params)
+        if 'itemId' in resp and future:
+            from arcgis._impl._async.jobs import ItemStatusJob
+            item = self._gis.content.get(resp['itemId'])
+            isj = ItemStatusJob(item=item, 
+                                task_name="Generate Report", 
+                                notify=notify, 
+                                gis=self._gis)
+            if future:
+                return isj
+            return isj.result()
+        return resp
+    #----------------------------------------------------------------------
     def credit(self,
                 start_time=None,
                 time_frame="week",
