@@ -221,7 +221,16 @@ class ArcGISSegmentationLabelList(ImageList):
             x = map_to_contiguous(x, self.pixel_mapping)
         return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
-    def analyze_pred(self, pred, thresh=0.5, ignore_mapped_class=[]):
+    def analyze_pred(self, pred, thresh=0.5, ignore_mapped_class=[], model = None, thinning=None):
+
+        if getattr(model, "_is_model_extension", False):
+
+            if thinning == None:
+                pred = model.model_conf.post_process(pred, thresh)
+            else:
+                pred = model.model_conf.post_process(pred, thresh, thinning)
+            return pred
+
         if ignore_mapped_class == []: 
             return pred.argmax(dim=0)[None]
         else:

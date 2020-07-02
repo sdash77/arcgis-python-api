@@ -152,3 +152,10 @@ YOLOv3
     :members:
     :inherited-members:
     :undoc-members:
+
+HEDEdgeDetector
+------------------
+.. autoclass:: arcgis.learn.HEDEdgeDetector
+    :members:
+    :inherited-members:
+    :undoc-members:

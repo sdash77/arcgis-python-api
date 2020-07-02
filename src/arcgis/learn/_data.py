@@ -1175,6 +1175,7 @@ def prepare_data(path,
     data.resize_to = kwargs_transforms.get('size', None)
     data.height_width = height_width
     data.downsample_factor = kwargs.get("downsample_factor")
+    data.dataset_type = dataset_type
     
     data._is_multispectral = _is_multispectral
     if data._is_multispectral:

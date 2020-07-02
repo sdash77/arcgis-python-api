@@ -4,6 +4,7 @@ try:
     import torch
     import torch.nn as nn
     import math
+    from . import util
     from .util import normalize_batch
     from pathlib import Path
     HAS_TORCH = True
@@ -277,12 +278,12 @@ class ChildObjectDetector:
         input_image = pixelBlocks['raster_pixels'].astype(np.float32)
         batch, batch_height, batch_width = \
             tile_to_batch(input_image,
-                                    self.json_info['ImageHeight'],
-                                    self.json_info['ImageWidth'],
-                                    self.padding,
-                                    fixed_tile_size=True,
-                                    batch_height=self.rectangle_height,
-                                    batch_width=self.rectangle_width)      
+                        self.json_info['ImageHeight'],
+                        self.json_info['ImageWidth'],
+                        self.padding,
+                        fixed_tile_size=True,
+                        batch_height=self.rectangle_height,
+                        batch_width=self.rectangle_width)      
 
 
         if "NormalizationStats" in self.json_info:
@@ -347,3 +348,160 @@ def detect_object(model, images, device, nms_overlap, thres, batch_size, model_i
             idx = idx+1
 
     return bounding_boxes, scores, classes
+
+
+class ChildImageClassifier:
+
+    def initialize(self, model, model_as_file):
+
+        if not HAS_TORCH:
+            raise Exception('PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision')
+
+        if arcpy.env.processorType == "GPU" and torch.cuda.is_available():
+            self.device = torch.device('cuda')
+            arcgis.env._processorType = "GPU"
+        else:
+            self.device = torch.device('cpu')
+            arcgis.env._processorType = "CPU"
+
+        if model_as_file:
+            with open(model, 'r') as f:
+                self.json_info = json.load(f)
+        else:
+            self.json_info = json.load(model)
+
+        model_path = self.json_info['ModelFile']
+        if model_as_file and not os.path.isabs(model_path):
+            model_path = os.path.abspath(os.path.join(os.path.dirname(model), model_path))
+
+        self.json_emd_file = Path(model).parent
+        self.model_extension = ModelExtension.from_model(emd_path=model)
+        self.model = self.model_extension.learn.model.to(self.device)
+        self.model.eval()
+   
+    def getParameterInfo(self, required_parameters):
+
+        required_parameters.extend(
+            [
+                {
+                    'name': 'padding',
+                    'dataType': 'numeric',
+                    'value': int(self.json_info['ImageHeight'])//4,
+                    'required': False,
+                    'displayName': 'Padding',
+                    'description': 'Padding'
+                },
+                {
+                    'name': 'batch_size',
+                    'dataType': 'numeric',
+                    'required': False,
+                    'value': 4,
+                    'displayName': 'Batch Size',
+                    'description': 'Batch Size'
+                }
+            ]
+        )
+        if self.json_info['IsEdgeDetection']:
+            required_parameters.extend(
+                [
+                    {
+                        'name': 'thinning',
+                        'dataType': 'string',
+                        'value': 'False',
+                        'required': False,
+                        'displayName': 'thinning',
+                        'description': 'If True, edges will be thined to one pixel wide'
+                    }
+                ]
+            )
+        else:
+            required_parameters.extend(
+                [
+                    {
+                    'name': 'predict_background',
+                    'dataType': 'string',
+                    'required': False,
+                    'value': 'True',
+                    'displayName': 'Predict Background',
+                    'description': 'If False, will never predict the background/NoData Class.'
+                    }
+                ]
+            )
+
+        
+        return required_parameters
+
+    def getConfiguration(self, **scalars):
+        self.padding = int(scalars.get('padding', self.json_info['ImageHeight'] // 4)) ## Default padding Imageheight//4.
+        self.batch_size = int(math.sqrt(int(scalars.get('batch_size', 4)))) ** 2  ## Default 4 batch_size
+        self.predict_background = scalars.get('predict_background', 'true').lower() in ['true', '1', 't', 'y', 'yes']  ## Default value True
+        if self.json_info['IsEdgeDetection']:
+            self.thinning = scalars.get('thinning', 'true').lower() in ['true', '1', 't', 'y', 'yes']
+        else:
+            self.thinning = None
+
+        self.rectangle_height, self.rectangle_width = calculate_rectangle_size_from_batch_size(self.batch_size)
+        ty, tx = get_tile_size(self.json_info['ImageHeight'], self.json_info['ImageWidth'],
+                                         self.padding, self.rectangle_height, self.rectangle_width)
+
+        return {
+            'extractBands': tuple(self.json_info['ExtractBands']),
+            'padding': self.padding,
+            'tx': tx,
+            'ty': ty,
+            'fixedTileSize': 1
+        }
+
+    def updatePixels(self, tlc, shape, props, **pixelBlocks): # 8 x 224 x 224 x 3
+        input_image = pixelBlocks['raster_pixels'].astype(np.float32)
+        batch, batch_height, batch_width = \
+            tile_to_batch(input_image,
+                        self.json_info['ImageHeight'],
+                        self.json_info['ImageWidth'],
+                        self.padding,
+                        fixed_tile_size=True,
+                        batch_height=self.rectangle_height,
+                        batch_width=self.rectangle_width)
+        
+        if "NormalizationStats" in self.json_info:
+            img_normed = normalize_batch(batch, self.json_info)
+        else:
+            img_normed = normalize_batch_imagenetstats(batch.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
+
+        semantic_predictions = classify_image(self.model,
+                                    img_normed,
+                                    self.device,
+                                    predict_bg=self.predict_background,
+                                    model_info=self.json_info,
+                                    emd_path=self.json_emd_file,
+                                    thinning=self.thinning)
+
+        semantic_predictions = batch_to_tile(semantic_predictions.cpu().numpy(), batch_height, batch_width)
+        return semantic_predictions
+
+def classify_image(model, images, device, predict_bg, model_info, emd_path, thinning):
+
+    modelconf = Path(model_info['ModelConfigurationFile'])
+    if not modelconf.is_absolute():
+        modelconf = emd_path / modelconf
+
+    modelconfclass = model_info['ModelFileConfigurationClass']
+    sys.path.append(os.path.dirname(modelconf))
+    model_configuration = getattr(importlib.import_module('{}'.format(modelconf.name[0:-3])), modelconfclass)()
+
+    if "NormalizationStats" in model_info:
+        batch_input = model_configuration.transform_input_multispectral(torch.tensor(images).to(device).float())
+    else:
+        batch_input = model_configuration.transform_input(torch.tensor(images).to(device).float())
+
+    pred_batch = model(batch_input)
+
+    if thinning == None:
+        preds = model_configuration.post_process(pred_batch)
+        return torch.stack(preds)
+    else:
+        preds = model_configuration.post_process(pred_batch, thinning=thinning)
+        if thinning:
+            return torch.stack(preds)
+        else:
+            return preds
