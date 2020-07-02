@@ -2992,7 +2992,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
                       context=None,
                       estimate=False,
                       records_to_match=None,
-                      future=False):
+                      future=False,
+                      join_type="INNER"):
         """
         Join Features Tool
         """
@@ -3035,9 +3036,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["outputName"] = output_name
             if context is not None:
                 params["context"] = context
+            if join_type:
+                params['join_type'] = join_type
             from arcgis.features._credits import _estimate_credits
             return _estimate_credits(task=task,
                                      parameters=params)
+        
         gpjob = self._tbx.join_features(target_layer=target_layer, join_layer=join_layer,
                                         spatial_relationship=spatial_relationship,
                                         spatial_relationship_distance=spatial_relationship_distance,
@@ -3048,7 +3052,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                         records_to_match=records_to_match,
                                         output_name=output_name,
                                         context=context, gis=self._gis,
-                                        future=True)
+                                        future=True, join_type=join_type)
         gpjob._is_fa = True
         if future:
             return gpjob
