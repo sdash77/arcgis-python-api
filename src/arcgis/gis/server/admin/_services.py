@@ -1705,7 +1705,7 @@ class ItemInformationManager(BaseServer):
         :returns: Dict
 
         """
-        url = "{base}/manifest/manifest.json"
+        url = "{base}/manifest/manifest.json".format(base=self._url)
         params = {'f' : 'json'}
 
         return self._con.get(url, params)
