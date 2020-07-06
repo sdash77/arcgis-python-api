@@ -933,6 +933,7 @@ class Service(BaseServer):
     **(This should not be created by a user)**
 
     """
+    _ii = None
     _con = None
     _frameworkProperties = None
     _recycleInterval = None
