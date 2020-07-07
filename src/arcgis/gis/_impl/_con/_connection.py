@@ -263,7 +263,7 @@ class Connection(object):
             self._session.auth = GuessAuth(None, None)
         else:
             try:
-                from .include.requests_negotiate_sspi import HttpNegotiateAuth
+                from requests_negotiate_sspi import HttpNegotiateAuth
                 HAS_KERBEROS = True
             except:
                 HAS_KERBEROS = False

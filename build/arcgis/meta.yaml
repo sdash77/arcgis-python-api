@@ -26,6 +26,7 @@ requirements:
   - requests-kerberos
   - requests-oauthlib
   - requests_ntlm
+  - requests-negotiate-sspi [win]
   - pywin32-security [win]
   - lerc
   - winkerberos      [win]
@@ -45,6 +46,7 @@ requirements:
   - requests-kerberos
   - requests-oauthlib
   - requests_ntlm
+  - requests-negotiate-sspi [win]
   - pywin32-security [win]
   - lerc
   - winkerberos      [win]
