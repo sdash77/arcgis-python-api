@@ -1,4 +1,4 @@
-__version__ = '1.8.2'
+__version__ = '1.8.3'
 
 from . import (features, geoanalytics, geocoding, geometry)
 from . import (geoprocessing, network, raster, realtime, schematics)
