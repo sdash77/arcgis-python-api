@@ -47,6 +47,8 @@ class FeatureLayer(Layer):
         if gis is None:
             import arcgis
             gis = arcgis.env.active_gis
+        if str(url).lower().endswith("/"):
+            url = url[:-1]
         super(FeatureLayer, self).__init__(url, gis)
         self._storage = container
         self._dynamic_layer = dynamic_layer

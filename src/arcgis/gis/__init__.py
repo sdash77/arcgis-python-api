@@ -10782,6 +10782,8 @@ class _GISResource(object):
 
         from ._impl._con import Connection
         self._hydrated = False
+        if str(url).lower().endswith("/"):
+            url = url[:-1]
         self.url = url
         self._url = url
 
