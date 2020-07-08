@@ -6,7 +6,7 @@ build:
   number: '0'
 package:
   name: arcgis
-  version: 1.8.2
+  version: 1.8.3
 requirements:
   build:
   - python
