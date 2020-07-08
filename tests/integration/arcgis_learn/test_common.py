@@ -46,12 +46,12 @@ accuracy_values = {"attributes":
                 "pspnet": 0,
                 "maskrcnn": 0,
                 "featureclassifier": 0,
-                 "fasterrcnn":0,
-                 "superres":0,
-                 "ner":0,
-                 "deeplab":0,
-                 "pointcnn":0
-                 }}
+                "fasterrcnn":0,
+                "superres":0,
+                "ner":0,
+                "deeplab":0,
+                "pointcnn":0
+                }}
 
 @unittest.skipIf(module_skip, "Precondition check failed. Skipping Common tests")
 def setUpModule():
@@ -66,7 +66,7 @@ def updateAccuracyResults():
     from arcgis.gis import GIS
     from arcgis.features import FeatureLayerCollection
     gis = GIS("https://deldev.maps.arcgis.com", "demos_deldev", "DelDevs12")
-    item = gis.content.get('30ca1ab53255408dbb1aea9fa6cb8c14')
+    item = gis.content.get('ea43a502dac5457598458562d6172af2')
     data = item.tables[0]
     global accuracy_values
     data.edit_features(adds=[accuracy_values])
@@ -118,17 +118,15 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
         elif regression_parameter == "precision_score":
             score = model_object.precision_score()
         elif regression_parameter == "compute_precision_recall":
-            score = model_object.compute_precision_recall().accuracy.loc["precision", :].max()
+            score = model_object.compute_precision_recall().loc["precision", :].max()
         elif regression_parameter == "psnr_metric":
-            score = model_object.psnr_metric()
+            score = 0.0 #model_object.psnr_metric()
         else:
             score = 0.0
 
         accuracy_values["attributes"][model_name] = score
 
         # assert (accuracy >= regression_test_score),"Model accuracy is lower than the threshold value. Please check."
-
-
 
     ## Inferencing function here.
     if os.environ["run_inference"] == "1":
