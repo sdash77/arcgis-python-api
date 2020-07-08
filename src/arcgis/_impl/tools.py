@@ -244,6 +244,8 @@ class BaseAnalytics(object):
                 input_param =  input_layer
         elif isinstance(input_layer, str):
             input_layer_url = input_layer
+            if input_layer_url.endswith("/"):
+                input_layer_url = input_layer_url[:-1]            
             input_param =  {"url": input_layer_url }
         else:
             raise Exception("Invalid format of input layer. url string, feature service Item, feature service instance or dict supported")
