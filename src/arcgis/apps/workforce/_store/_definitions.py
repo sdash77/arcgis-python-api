@@ -1613,7 +1613,7 @@ assignment_layer_popup_definition_v2 = json.loads(
             "tooltip": "",
             "visible": true,
             "format": {
-                "dateFormat": "longMonthDayYear"
+                "dateFormat": "shortDateLongTime"
             },
             "stringFieldOption": "textbox",
             "isEditableOnLayer": true
@@ -1665,7 +1665,7 @@ assignment_layer_popup_definition_v2 = json.loads(
             "tooltip": "",
             "visible": true,
             "format": {
-                "dateFormat": "longMonthDayYear"
+                "dateFormat": "shortDateLongTime"
             },
             "stringFieldOption": "textbox",
             "isEditableOnLayer": true
@@ -1677,7 +1677,7 @@ assignment_layer_popup_definition_v2 = json.loads(
             "tooltip": "",
             "visible": true,
             "format": {
-                "dateFormat": "longMonthDayYear"
+                "dateFormat": "shortDateLongTime"
             },
             "stringFieldOption": "textbox",
             "isEditableOnLayer": true
@@ -1689,7 +1689,7 @@ assignment_layer_popup_definition_v2 = json.loads(
             "tooltip": "",
             "visible": true,
             "format": {
-                "dateFormat": "longMonthDayYear"
+                "dateFormat": "shortDateLongTime"
             },
             "stringFieldOption": "textbox",
             "isEditableOnLayer": true
@@ -1701,7 +1701,7 @@ assignment_layer_popup_definition_v2 = json.loads(
             "tooltip": "",
             "visible": true,
             "format": {
-                "dateFormat": "longMonthDayYear"
+                "dateFormat": "shortDateLongTime"
             },
             "stringFieldOption": "textbox",
             "isEditableOnLayer": true
@@ -1713,7 +1713,7 @@ assignment_layer_popup_definition_v2 = json.loads(
             "tooltip": "",
             "visible": true,
             "format": {
-                "dateFormat": "longMonthDayYear"
+                "dateFormat": "shortDateLongTime"
             },
             "stringFieldOption": "textbox",
             "isEditableOnLayer": true
@@ -1738,7 +1738,7 @@ assignment_layer_popup_definition_v2 = json.loads(
             "isEditableOnLayer": false,
             "visible": false,
             "format": {
-                "dateFormat": "shortDateShortTime",
+                "dateFormat": "shortDateLongTime",
                 "timezone": "utc"
             }
         },
@@ -1757,7 +1757,7 @@ assignment_layer_popup_definition_v2 = json.loads(
             "isEditableOnLayer": false,
             "visible": false,
             "format": {
-                "dateFormat": "shortDateShortTime",
+                "dateFormat": "shortDateLongTime",
                 "timezone": "utc"
             }
         },
@@ -3165,7 +3165,7 @@ worker_layer_popup_definition_v2 = json.loads(
             "isEditableOnLayer": false,
             "visible": false,
             "format": {
-                "dateFormat": "shortDateShortTime",
+                "dateFormat": "shortDateLongTime",
                 "timezone": "utc"
             }
         },
@@ -3184,7 +3184,7 @@ worker_layer_popup_definition_v2 = json.loads(
             "isEditableOnLayer": false,
             "visible": false,
             "format": {
-                "dateFormat": "shortDateShortTime",
+                "dateFormat": "shortDateLongTime",
                 "timezone": "utc"
             }
         },
