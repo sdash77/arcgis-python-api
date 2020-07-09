@@ -266,8 +266,11 @@ class GIS(object):
                 # run an update to be safe.
                 pm.update(profile, url=url, username=username, password=password,
                           key_file=key_file, cert_file=cert_file, client_id=client_id)
-            url, username, password, key_file, cert_file, client_id = pm._retrieve(profile)
-
+            if profile in pm.list(): # check if the profile name was successfully added, if so, use the profile credentials
+                url, username, password, key_file, cert_file, client_id = pm._retrieve(profile)
+            else:
+                _log.info(f"Profile {profile} was not saved, using user provided credentials for the `GIS` object.")
+                
         if url is None:
             url = "https://www.arcgis.com"
         if (self._uri_validator(url) == False) and \
