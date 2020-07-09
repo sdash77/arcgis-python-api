@@ -1,24 +1,25 @@
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
-from arcgis.learn import FasterRCNN, SuperResolution, EntityRecognizer, PointCNN, SingleShotDetector, UnetClassifier, \
-    PSPNetClassifier, FeatureClassifier, RetinaNet, MaskRCNN, prepare_data, DeepLab
+from arcgis.learn import MLModel, FasterRCNN, SuperResolution, EntityRecognizer, PointCNN, SingleShotDetector, UnetClassifier, \
+    PSPNetClassifier, FeatureClassifier, RetinaNet, MaskRCNN, prepare_data, DeepLab, YOLOv3, FullyConnectedNetwork, prepare_tabulardata
+import json
 
 
-data_folder = r"/home/administrator/Raster/Test_Data/data_for_testing/train_model"
-data_folder_inference = r"/home/administrator/Raster/Test_Data/data_for_testing/train_inference"
+data_folder = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model"
+data_folder_inference = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_inference"
+authorization_path = r"/home/administrator/Raster/Test_Data/data_for_testing_1/properties/properties.json"
+
 
 colormap = {'0': [0, 0, 0], '1': [0, 255, 0], '2': [0, 255, 100], '3': [0, 0, 255], '4': [0, 255, 100],
             '5': [255, 0, 0],
             '6': [0, 150, 100], '7': [0, 150, 100], '8': [0, 150, 100], '9': [0, 150, 100], '10': [0, 150, 100]}
 
+X = ['altitude_m', 'wind_speed', 'dayl__s_', 'prcp__mm_d','srad__W_m_','swe__kg_m_','tmax__deg','tmin__deg','vp__Pa_']
 
 def setuposenviron():
-    os.environ['run_backbones'] = "0"
-    os.environ["run_nightly"] = "0"
-    os.environ["run_inference"] = "0"
-    os.environ["run_weekly"] = "0"
-
-
+    with open(authorization_path) as f:
+        authorization_data = json.load(f)
+    return authorization_data
 
 
 data = {
@@ -32,6 +33,7 @@ data = {
             "batch_size": 2
         },
         "should_test": True,
+        "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.10,
         "inferencing_parameter": {
@@ -41,10 +43,14 @@ data = {
             "model": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "ssd", "ssd_test.emd"),
             "parameters": "padding 56;threshold 0.5;nms_overlap 0.1;batch_size 4;exclude_pad_detections True",
             "path": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "ssd")
+        },
+        "inferencing_image_server": {
+            "input_raster": "613f46c64c0048f3a46258716ece76a0",
+            "model_package": "482b9654d41c4b00817d13220afac258"
         }
     },
     "rn": {
-        "model_name":"ratinanet",
+        "model_name":"retinanet",
         "datapath": "ssd_retina_data",
         "model": RetinaNet,
         "model_test": "rn_test",
@@ -53,6 +59,7 @@ data = {
              "batch_size": 2
         },
         "should_test": True,
+        "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
         "inferencing_parameter": {
@@ -62,6 +69,10 @@ data = {
             "model": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "rn", "rn_test.emd"),
             "parameters": "padding 56;threshold 0.5;nms_overlap 0.1;batch_size 4;exclude_pad_detections True",
             "path": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "ssd")
+        },
+        "inferencing_image_server": {
+             "input_raster": "613f46c64c0048f3a46258716ece76a0",
+            "model_package": "482b9654d41c4b00817d13220afac258"
         }
     },
     "unet": {
@@ -74,6 +85,7 @@ data = {
              "batch_size": 2
         },
         "should_test": True,
+        "test_feature_layer":False,
         "regression_parameter": "accuracy",
         "regression_test_score": 0.40,
         "inferencing_parameter": {
@@ -83,6 +95,10 @@ data = {
             "model": os.path.join(data_folder_inference, "ClassifyPixelsUsingDeepLearning", "unet", "unet_test.emd"),
             "parameters": "padding 56;batch_size 4;predict_background True",
             "path": os.path.join(data_folder_inference, "ClassifyPixelsUsingDeepLearning", "unet")
+        },
+        "inferencing_image_server": {
+            "input_raster": "ab399b847323487dba26809bf11ea91a",
+            "model_package": "ff4f746c0c854b829c03d43821532a5e"
         }
     },
     "deeplab": {
@@ -95,6 +111,7 @@ data = {
             "batch_size": 2
         },
         "should_test": True,
+        "test_feature_layer":False,
         "regression_parameter":"accuracy",
         "regression_test_score": 0.40,
         "inferencing_parameter": {
@@ -105,6 +122,10 @@ data = {
                                   "deeplab_test.emd"),
             "parameters": "padding 56;batch_size 4;predict_background True",
             "path": os.path.join(data_folder_inference, "ClassifyPixelsUsingDeepLearning", "deeplab")
+        },
+        "inferencing_image_server": {
+            "input_raster": "ab399b847323487dba26809bf11ea91a",
+            "model_package": "9cd665ec17fc4aac831d03908ba9e9fc"
         }
     },
     "fc": {
@@ -117,6 +138,7 @@ data = {
             "batch_size": 2
         },
         "should_test": True,
+        "test_feature_layer":False,
         "regression_parameter":"confusion_matrix",
         "regression_test_score": 0.40,
         "inferencing_parameter": {
@@ -128,6 +150,10 @@ data = {
             "feature_layer": os.path.join(data_folder_inference, "ClassifyObjectsUsingDeepLearning", "fc",
                                           "test_data.tif"),
             "path": os.path.join(data_folder_inference, "ClassifyObjectsUsingDeepLearning", "fc")
+        },
+        "inferencing_image_server": {
+            "input_raster": "pass",
+            "model_package": "pass"
         }
     },
     "pspnet": {
@@ -140,6 +166,7 @@ data = {
              "batch_size": 2
         },
         "should_test": True,
+        "test_feature_layer":False,
         "regression_parameter": "accuracy",
         "regression_test_score": 0.40,
         "inferencing_parameter": {
@@ -150,6 +177,10 @@ data = {
                                   "pspnet_test.emd"),
             "parameters": "padding 56;batch_size 4;predict_background True",
             "path": os.path.join(data_folder_inference, "ClassifyPixelsUsingDeepLearning", "pspnet")
+        },
+        "inferencing_image_server": {
+            "input_raster": "ab399b847323487dba26809bf11ea91a",
+            "model_package": "3e652c56f7d94ffabd910ded2761c50c"
         }
     },
     "maskrcnn": {
@@ -162,15 +193,20 @@ data = {
             "batch_size": 2
         },
         "should_test": True,
+        "test_feature_layer":False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
         "inferencing_parameter": {
-            "model_type": "Pass",
+            "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "maskrcnn",
                                          "input_image.tif"),
             "model": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "ssd", "maskrcnn_test.emd"),
             "parameters": "padding 56;batch_size 64;threshold 0.5;return_bboxes True",
             "path": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "maskrcnn")
+        },
+        "inferencing_image_server": {
+            "input_raster": "pass",
+            "model_package": "pass"
         }
     },
     "ner": {
@@ -184,15 +220,17 @@ data = {
             "dataset_type": 'ner_json'
         },
         "should_test": True,
+        "test_feature_layer":False,
         "regression_parameter": "precision_score",
         "regression_test_score": 0.40,
         "inferencing_parameter": {
-            "model_type": "pass",
-            "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "ssd",
-                                         "Kolovai Palms.tif"),
-            "model": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "ssd",
-                                  "palms_houses_e200.emd"),
-            "parameters": "padding 56;threshold 0.5;nms_overlap 0.1;batch_size 4;exclude_pad_detections True"
+            "model_type": "extract_entities",
+            "sample_input": os.path.join(data_folder_inference, "Others", "ner",
+                                         "Reports")
+        },
+        "inferencing_image_server": {
+            "input_raster": "pass",
+            "model_package": "pass"
         }
     },
     "pointcnn": {
@@ -207,15 +245,19 @@ data = {
              "transforms": None, "color_mapping": colormap
          },
         "should_test": True,
+        "test_feature_layer":False,
         "regression_parameter":"compute_precision_recall",
         "regression_test_score": 0.40,
         "inferencing_parameter": {
-            "model_type": "pass",
-            "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "ssd",
-                                         "Kolovai Palms.tif"),
-            "model": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "ssd",
-                                  "palms_houses_e200.emd"),
-            "parameters": "padding 56;threshold 0.5;nms_overlap 0.1;batch_size 4;exclude_pad_detections True"
+            "model_type": "predict_las",
+            "sample_input": os.path.join(data_folder_inference, "Others", "pointcnn",
+                                         "sample_input"),
+            "sample_output": os.path.join(data_folder_inference, "Others", "pointcnn",
+                                         "sample_output")
+        },
+        "inferencing_image_server": {
+            "input_raster": "pass",
+            "model_package": "pass"
         }
     },
     "superres": {
@@ -230,15 +272,21 @@ data = {
              "downsample_factor": 8
          },
         "should_test": True,
+        "test_feature_layer":False,
         "regression_parameter": "psnr_metric",
         "regression_test_score": 0.40,
         "inferencing_parameter": {
-            "model_type": "pass",
-            "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "ssd",
-                                         "Kolovai Palms.tif"),
-            "model": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "ssd",
-                                  "palms_houses_e200.emd"),
-            "parameters": "padding 56;threshold 0.5;nms_overlap 0.1;batch_size 4;exclude_pad_detections True"
+            "model_type": "ClassifyPixelsUsingDeepLearning",
+            "sample_input": os.path.join(data_folder_inference, "ClassifyPixelsUsingDeepLearning", "superres",
+                                         "input_image.jpg"),
+            "model": os.path.join(data_folder_inference, "ClassifyPixelsUsingDeepLearning", "superres",
+                                  "superres_test.emd"),
+            "parameters": "padding 56;batch_size 4;predict_background True",
+            "path": os.path.join(data_folder_inference, "ClassifyPixelsUsingDeepLearning", "superres")
+        },
+        "inferencing_image_server": {
+            "input_raster": "ab399b847323487dba26809bf11ea91a",
+            "model_package": "345f422ab0004d08b701189e0a083254"
         }
     },
     "fasterrcnn": {
@@ -251,15 +299,105 @@ data = {
             "batch_size": 4
         },
         "should_test": True,
+        "test_feature_layer":False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.10,
         "inferencing_parameter": {
-            "model_type": "pass",
+            "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "fasterrcnn",
                                          "input_image.tif"),
-            "model": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "ssd", "fasterrcnn.emd"),
+            "model": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "fasterrcnn", "fasterrcnn.emd"),
             "parameters": "padding 56;batch_size 64;threshold 0.5;return_bboxes True",
             "path": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "fasterrcnn")
+        },
+        "inferencing_image_server": {
+            "input_raster": "NO",
+            "model_package": "NO"
+        }
+    },
+    "yolov3": {
+        "model_name":"yolov3",
+        "datapath": "yolo_data",
+        "model": YOLOv3,
+        "model_test": "yolov3_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "yolo_data"),
+            "batch_size": 4
+        },
+        "should_test": True,
+        "test_feature_layer":False,
+        "regression_parameter": "average_precision_score",
+        "regression_test_score": 0.10,
+        "inferencing_parameter": {
+            "model_type": "DetectObjectsUsingDeepLearning",
+            "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "yolo",
+                                         "input_image.jpg"),
+            "model": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "yolo", "yolov3_test.emd"),
+            "parameters": "padding 56;batch_size 64;threshold 0.5;return_bboxes True",
+            "path": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "yolo")
+        },
+        "inferencing_image_server": {
+            "input_raster": "pass",
+            "model_package": "pass"
+        }
+    },
+    "fcn": {
+        "model_name": "fullyconnected",
+        "model": FullyConnectedNetwork,
+        "datapath": "fcn_data",
+        "model_test": "fcn_test",
+        "prepare_tabular_data": {
+            "explanatory_variables": X
+        },
+        "gis_content_search": {
+            "query": 'calgary_no_southland_solar owner:api_data_owner',
+            "item_type": 'feature layer'
+        },
+        "should_test": True,
+        "test_feature_layer": True,
+        "regression_parameter": "score",
+        "regression_test_score": 0.10,
+        "inferencing_parameter": {
+            "model_type": "pass",
+            "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "yolo",
+                                         "input_image.jpg"),
+            "model": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "yolo", "yolov3_test.emd"),
+            "parameters": "padding 56;batch_size 64;threshold 0.5;return_bboxes True",
+            "path": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "yolo")
+        },
+        "inferencing_image_server": {
+            "input_raster": "pass",
+            "model_package": "pass"
+        }
+    },
+    "ml": {
+        "model_name": "machine_learning",
+        "model": MLModel,
+        "datapath": "ml_data",
+        "model_test": "ml_test",
+        "prepare_tabular_data": {
+            "explanatory_variables": X,
+            "preprocessors":True
+        },
+        "gis_content_search": {
+            "query": 'calgary_no_southland_solar owner:api_data_owner',
+            "item_type": 'feature layer'
+        },
+        "should_test": True,
+        "test_feature_layer": True,
+        "regression_parameter": "score",
+        "regression_test_score": 0.10,
+        "inferencing_parameter": {
+            "model_type": "pass",
+            "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "yolo",
+                                         "input_image.jpg"),
+            "model": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "yolo", "yolov3_test.emd"),
+            "parameters": "padding 56;batch_size 64;threshold 0.5;return_bboxes True",
+            "path": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "yolo")
+        },
+        "inferencing_image_server": {
+            "input_raster": "pass",
+            "model_package": "pass"
         }
     }
 
