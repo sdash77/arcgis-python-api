@@ -52,6 +52,7 @@ class ValidationManager(object):
     def update_error(self, 
                      error_features, 
                      version=None, 
+                     return_edits=None,
                      **kwargs):
         """
         Updates errors on the validation tables.  
@@ -80,6 +81,29 @@ class ValidationManager(object):
                                 }  
                             ]
                             ```
+        ---------------     --------------------------------------------------------------------
+        return_edits        Optional Boolean. `return_edits` returns features edited due to 
+                            errors update. Results returned are organized in a layer by layer 
+                            fashion. If it is set to `True`, each layer may have edited features 
+                            returned in an editedFeatures object.
+
+                            The editedFeatures object returns full features including the original 
+                            features prior to delete, the original and current features for 
+                            updates and the current rows for inserts which may contain implicit 
+                            changes (e.g. as a result of a calculation rule ).
+
+                            The response includes no editedFeatures and `exceededTransferLimit=True`
+                            if the count of edited features to return is more than the maxRecordCount. 
+                            If clients are using this parameter to maintain a cache, they should 
+                            invalidate the cache when `exceededTransferLimit = True` is returned.
+                            If the server encounters an error when generating the list of edits is 
+                            the response, `exceededTransferLimit = True` is also returned.
+
+                            Edited features are returned in the spatial reference of the feature 
+                            service as defined by the services spatialReference object or by the
+                            spatialReference of the layers extent object.
+
+                            The default for this parameter is False.
         ===============     ====================================================================
         
         :returns: dictionary
@@ -96,7 +120,10 @@ class ValidationManager(object):
             'sessionId' : session_id,
             'errorFeatures' : error_features
         }
-        
+        if len(kwargs) > 0:
+            params.update(kwargs)
+        if not return_edits is None:
+            params['returnEdits'] = return_edits
         res = self._con.post(url, params)
         return res
     #----------------------------------------------------------------------
