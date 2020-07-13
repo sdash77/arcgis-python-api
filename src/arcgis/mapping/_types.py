@@ -936,12 +936,17 @@ class WebMap(HasTraits, collections.OrderedDict):
         if 'typeKeywords' in item_properties or 'OfflineDisabled' in self.item.typeKeywords:
             return item_properties
         else:
-            type_keywords = ""
+            type_keywords = set(self.item.typeKeywords)
             if self.layers and self._is_offline_capable_map():
-                type_keywords = "Offline"
+                type_keywords.add("Offline")
+            else:
+                type_keywords.discard("Offline")
             if self.layers and self._is_collector_ready_map():
-                type_keywords = type_keywords + ",Collector,Data Editing"
-            item_properties['typeKeywords'] = type_keywords
+                type_keywords.add("Collector")
+                type_keywords.add("Data Editing")
+            else:
+                type_keywords.discard("Collector")
+            item_properties['typeKeywords'] = list(type_keywords)
             return item_properties
     
     def _is_collector_ready_map(self):
