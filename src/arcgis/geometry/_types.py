@@ -1424,6 +1424,52 @@ class Geometry(BaseGeometry):
         return
     #----------------------------------------------------------------------
     @property
+    def points(self):
+        """
+        Returns the X/Y coordinates as an array
+
+
+        .. code-block:: python
+
+            >>> geom = Geometry({
+              'x' : 1, 'y': 2,
+              "spatialReference" : {"wkid" : 4326}
+            })
+            >>> geom.points
+            [[1,2]]
+
+        :return: List
+        """
+        
+        points = []
+        if isinstance(self, Polygon):
+            rings = self['rings']
+            if len(rings) == 0:
+                return []
+            elif len(rings) == 1:
+                return [tuple(pt) for pt in rings[0]]
+            else:
+                for i, part in enumerate(rings):
+                    points.extend([tuple(pt) for pt in part])
+                return points
+            
+        elif isinstance(self, Polyline):
+            rings = self['paths']
+            if len(rings) == 0:
+                return []
+            elif len(rings) == 1:
+                return [tuple(pt) for pt in rings[0]]
+            else:
+                for i, part in enumerate(rings):
+                    points.extend([tuple(pt) for pt in part])
+                return points
+        elif isinstance(self, MultiPoint):
+            return [tuple(pt) for pt in self['points']]
+        elif isinstance(self, Point):
+            return [[self['x'], self['y']]]
+        return []
+    #----------------------------------------------------------------------
+    @property
     def spatial_reference(self):
         """
         The spatial reference of the geometry.
@@ -2721,6 +2767,23 @@ class Polygon(Geometry):
     def __getstate__(self):
         """ pickle support """
         return dict(self)
+    #----------------------------------------------------------------------
+    def calculate_efd(self, harmonics=10, norm=False):
+        """
+        Compute the Elliptical Fourier Descriptors for a polygon.
+
+        Implements Kuhl and Giardina method of computing the coefficients
+        An, Bn, Cn, Dn for a specified number of harmonics. This code is adapted
+        from the pyefd module. See the original paper for more detail:
+    
+        Kuhl, FP and Giardina, CR (1982). Elliptic Fourier features of a closed
+        contour. Computer graphics and image processing, 18(3), 236-258.
+
+        """
+        from ._spatial_efd import  calculate_EFD, normalize_efd, process_geometry
+        x,y,d = process_geometry(self, norm=norm)
+        return calculate_EFD(x,y, harmonics=harmonics)
+    #----------------------------------------------------------------------
     @classmethod
     def _from_geojson(cls, data, sr=None):
         if sr is None:
