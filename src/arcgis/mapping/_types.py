@@ -817,6 +817,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         item_properties['type'] = 'Web Map'
         item_properties['extent'] = self._process_extent()
         item_properties['text'] = json.dumps(self._webmapdict, default=_date_handler)
+        item_properties = self._eval_map_viewer_keywords(item_properties)
 
         if 'title' not in item_properties or 'snippet' not in item_properties or 'tags' not in item_properties:
             raise RuntimeError("title, snippet and tags are required in item_properties dictionary")
@@ -920,6 +921,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                 item_properties = {}
             item_properties['text'] = json.dumps(self._webmapdict, default=_date_handler)
             item_properties['extent'] = self._process_extent()
+            item_properties = self._eval_map_viewer_keywords(item_properties)
             if 'type' in item_properties:
                 item_properties.pop('type')  # type should not be changed.
             return self.item.update(item_properties=item_properties,
@@ -929,6 +931,56 @@ class WebMap(HasTraits, collections.OrderedDict):
             raise RuntimeError('Item object missing, you should use `save()` method if you are creating a '
                                'new web map item')
 
+    def _eval_map_viewer_keywords(self, item_properties):
+        # if user passes typeKeywords, adhere to what they have set without overriding anything
+        if 'typeKeywords' in item_properties or 'OfflineDisabled' in self.item.typeKeywords:
+            return item_properties
+        else:
+            type_keywords = ""
+            if self.layers and self._is_offline_capable_map():
+                type_keywords = "Offline"
+            if self.layers and self._is_collector_ready_map():
+                type_keywords = type_keywords + ",Collector,Data Editing"
+            item_properties['typeKeywords'] = type_keywords
+            return item_properties
+    
+    def _is_collector_ready_map(self):
+        # check that one layer is an editable feature service
+        for layer in self.layers:
+            layer_object = arcgis.gis.Layer(url=layer.url, gis=self._gis)
+            if 'ArcGISFeatureLayer' in layer.layerType:
+                if any(capability in layer_object.properties.capabilities for capability in ['Create', 'Update', 'Delete', 'Editing']):
+                    return True
+        return False
+        
+    def _is_offline_capable_map(self):
+        # check that feature services are sync-enabled and tiled layers are exportable
+        try:
+            for layer in self.layers:
+                layer_object = arcgis.gis.Layer(url=layer.url, gis=self._gis)
+                if 'ArcGISFeatureLayer' in layer.layerType:
+                    if 'Sync' not in layer_object.properties.capabilities:
+                        return False
+                elif 'VectorTileLayer' in layer.layerType \
+                        or 'ArcGISMapServiceLayer' in layer.layerType \
+                        or 'ArcGISImageServiceLayer' in layer.layerType:
+                    if not self._is_exportable(layer_object):
+                        return False
+                else:
+                    return False
+            return True
+        except Exception:
+            return False
+        
+    def _is_exportable(self, layer):
+        # check SRs are equivalent and exportTilesAllowed is set to true or AGOl-hosted esri basemaps
+        if (layer.properties['spatialReference']['wkid'] == self._webmapdict['spatialReference']['wkid']) \
+                and (layer.properties['exportTilesAllowed'] or "services.arcgisonline.com" in layer.url or "server.arcgisonline.com" in layer.url):
+            return True
+        else:
+            return False
+        
+        
     @property
     def tables(self):
         """
