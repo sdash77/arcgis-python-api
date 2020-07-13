@@ -817,7 +817,8 @@ class WebMap(HasTraits, collections.OrderedDict):
         item_properties['type'] = 'Web Map'
         item_properties['extent'] = self._process_extent()
         item_properties['text'] = json.dumps(self._webmapdict, default=_date_handler)
-        item_properties = self._eval_map_viewer_keywords(item_properties)
+        if 'typeKeywords' not in item_properties:
+            item_properties['typeKeywords'] = self._eval_map_viewer_keywords(item_properties)
 
         if 'title' not in item_properties or 'snippet' not in item_properties or 'tags' not in item_properties:
             raise RuntimeError("title, snippet and tags are required in item_properties dictionary")
@@ -921,7 +922,8 @@ class WebMap(HasTraits, collections.OrderedDict):
                 item_properties = {}
             item_properties['text'] = json.dumps(self._webmapdict, default=_date_handler)
             item_properties['extent'] = self._process_extent()
-            item_properties = self._eval_map_viewer_keywords(item_properties)
+            if 'typeKeywords' not in item_properties:
+                item_properties['typeKeywords'] = self._eval_map_viewer_keywords(item_properties)
             if 'type' in item_properties:
                 item_properties.pop('type')  # type should not be changed.
             return self.item.update(item_properties=item_properties,
@@ -933,10 +935,8 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     def _eval_map_viewer_keywords(self, item_properties):
         # if user passes typeKeywords, adhere to what they have set without overriding anything
-        if 'typeKeywords' in item_properties or 'OfflineDisabled' in self.item.typeKeywords:
-            return item_properties
-        else:
-            type_keywords = set(self.item.typeKeywords)
+        type_keywords = set(self.item.typeKeywords)
+        if not 'OfflineDisabled' in self.item.typeKeywords:
             if self.layers and self._is_offline_capable_map():
                 type_keywords.add("Offline")
             else:
@@ -946,8 +946,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                 type_keywords.add("Data Editing")
             else:
                 type_keywords.discard("Collector")
-            item_properties['typeKeywords'] = list(type_keywords)
-            return item_properties
+        return list(type_keywords)
     
     def _is_collector_ready_map(self):
         # check that one layer is an editable feature service
