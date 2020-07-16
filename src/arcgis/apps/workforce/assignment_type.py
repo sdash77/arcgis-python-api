@@ -150,7 +150,7 @@ class AssignmentType(FeatureModel):
             assignment_types = self.project.assignment_types.search()
         for assignment_type in assignment_types:
             # note that code is AT guid for v2 projects
-            if (assignment_type.name.lower() == self.name.lower() and assignment_type.code != self.code):
+            if (assignment_type.name and assignment_type.name.lower() == self.name.lower() and assignment_type.code != self.code):
                 errors.append(ValidationError("AssignmentType name must be unique", self))
         return errors
 
