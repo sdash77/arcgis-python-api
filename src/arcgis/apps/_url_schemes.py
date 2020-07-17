@@ -476,17 +476,32 @@ def build_tracker_url(portal_url=None, url_type="Web"):
     return url
 
 
-def build_workforce_url(portal_url=None, url_type="Web"):
+def build_workforce_url(portal_url=None, url_type="Web", webmap=None, assignment=None, assignment_status=None):
     """
         Creates a url that can be used to open ArcGIS Workforce
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        portal_url             Optional :class:`String` The portal that should be used when workforce
+        portal_url             Optional :class:`String` The portal that should be used when Workforce
                                is launched via the url scheme.
         ------------------     --------------------------------------------------------------------
         url_type               Optional :class:`String`. The type of url to be returned (e.g. 'Web' or 'App')
+        ------------------     --------------------------------------------------------------------
+        webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
+                               The item id, webmap, or item representing the map to open in Workforce.
+                               Item can be of type Web Map or Mobile Map Package. This can be referenced
+                               at the project level using project.worker_webmap
+        ------------------     --------------------------------------------------------------------
+        assignment             Optional :class:`String`, :class:`~arcgis.apps.workforce.Assignment`.
+                               The assignment or assignment global id that should be opened in Workforce.
+                               Note that webmap must be provided for this parameter to be added to the URL.
+        ------------------     --------------------------------------------------------------------
+        assignment_status      Optional :class:`Integer`
+                               The status given to an assignment opened in Workforce. Statuses 1-5
+                               are supported (Assigned, In Progress, Completed, Declined, Paused).
+                               Note that webmap and assignment must be provided for this parameter to be
+                               added to the URL.
         ==================     ====================================================================
 
         :return: :class:`String`
@@ -496,6 +511,36 @@ def build_workforce_url(portal_url=None, url_type="Web"):
         url = "arcgis-workforce://"
     if portal_url is not None:
         url += "?portalURL={}".format(portal_url)
+    if webmap is not None:
+        if isinstance(webmap, arcgis.mapping.WebMap):
+            item_id = webmap.item.id
+        elif isinstance(webmap, arcgis.gis.Item):
+            item_id = webmap.id
+        elif isinstance(webmap, str):
+            item_id = webmap
+        else:
+            raise ValueError("Please provide either a WebMap, Item, or str to the webmap param")
+        url = url + "&mapID=" + item_id
+        # assignment id can only be set is map id is set
+        if assignment is not None:
+            if isinstance(assignment, arcgis.apps.workforce.Assignment):
+                assignment_id = assignment.global_id
+            elif isinstance(assignment, str):
+                assignment_id = assignment
+            else:
+                raise ValueError("Please provide either a workforce.Assignment or str object to the assignment param")
+            url = url + "&assignmentID=" + assignment_id
+            # status can only be set if assignment id is set
+            if assignment_status is not None:
+                if isinstance(assignment_status, str):
+                    raise ValueError("Please enter an integer for your assignment status")
+                elif isinstance(assignment_status, int):
+                    if assignment_status > 0 and assignment_status < 6:
+                        url = url + "&assignmentStatus=" + str(assignment_status)
+                    else:
+                        raise ValueError("Please provide an int between 1 and 5 for your assignment status")
+                else:
+                    raise ValueError("Please enter an integer for your assignment status")
     return url
 
 
