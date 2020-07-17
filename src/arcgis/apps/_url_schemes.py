@@ -490,7 +490,7 @@ def build_workforce_url(portal_url=None, url_type="Web", webmap=None, assignment
         ------------------     --------------------------------------------------------------------
         webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
                                The item id, webmap, or item representing the map to open in Workforce.
-                               Item can be of type Web Map or Mobile Map Package. This can be referenced
+                               Item can be of type Web Map. This can be referenced
                                at the project level using project.worker_webmap
         ------------------     --------------------------------------------------------------------
         assignment             Optional :class:`String`, :class:`~arcgis.apps.workforce.Assignment`.
