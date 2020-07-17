@@ -536,15 +536,12 @@ def build_workforce_url(portal_url=None, url_type="Web", webmap=None, assignment
             url = url + "&assignmentID=" + assignment_id
             # status can only be set if assignment id is set
             if assignment_status is not None:
-                if isinstance(assignment_status, str):
+                if not isinstance(assignment_status, int):
                     raise ValueError("Please enter an integer for your assignment status")
-                elif isinstance(assignment_status, int):
-                    if assignment_status > 0 and assignment_status < 6:
-                        url = url + "&assignmentStatus=" + str(assignment_status)
-                    else:
-                        raise ValueError("Please provide an int between 1 and 5 for your assignment status")
+                if assignment_status > 0 and assignment_status < 6:
+                    url = url + "&assignmentStatus=" + str(assignment_status)
                 else:
-                    raise ValueError("Please enter an integer for your assignment status")
+                    raise ValueError("Please provide an int between 1 and 5 for your assignment status")
     return url
 
 
