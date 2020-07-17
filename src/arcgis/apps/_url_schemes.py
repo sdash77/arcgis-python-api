@@ -511,6 +511,10 @@ def build_workforce_url(portal_url=None, url_type="Web", webmap=None, assignment
         url = "arcgis-workforce://"
     if portal_url is not None:
         url += "?portalURL={}".format(portal_url)
+    if webmap is None and (assignment is not None or assignment_status is not None):
+        raise ValueError("Assignment or assignment status provided without webmap parameter")
+    if assignment is None and assignment_status is not None:
+        raise ValueError("Assignment status provided without assignment parameter")
     if webmap is not None:
         if isinstance(webmap, arcgis.mapping.WebMap):
             item_id = webmap.item.id
