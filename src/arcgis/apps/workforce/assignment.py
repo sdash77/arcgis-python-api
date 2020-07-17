@@ -83,6 +83,20 @@ class Assignment(FeatureModel):
     worker                 Optional :class:`~arcgis.apps.workforce.Worker`.
                            The worker assigned to the assignment
     ==================     ====================================================================
+    
+    .. code-block:: python
+
+        # Get an assignment and update it
+
+        import arcgis
+        gis = arcgis.gis.GIS("https://arcgis.com", "<username>", "<password>")
+        item = gis.content.get("<item-id>")
+        project = arcgis.apps.workforce.Project(item)
+        assignment = project.assignments.search()[0]
+        assignment.update(priority="high",description="new assignment",location="100 Commercial Street, Portland, ME")
+        assignment.delete()
+
+
     """
 
     def __init__(self, project, feature=None, geometry=None, assignment_type=None,

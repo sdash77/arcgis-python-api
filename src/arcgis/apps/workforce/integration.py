@@ -31,6 +31,19 @@ class Integration(FeatureModel):
     ------------------     --------------------------------------------------------------------
     assignment_type        Optional :class:`String`. The assignment type for the integration
     ==================     ====================================================================
+    
+    .. code-block:: python
+
+        # Get an integration, update it, delete it
+
+        import arcgis
+        gis = arcgis.gis.GIS("https://arcgis.com", "<username>", "<password>")
+        item = gis.content.get("<item-id>")
+        project = arcgis.apps.workforce.Project(item)
+        integration = project.integrations.search()[0]
+        integration.update(integration_id="arcgis-navigator",prompt="Navigate to Assignment")
+        integration.delete()
+
 
     """
 

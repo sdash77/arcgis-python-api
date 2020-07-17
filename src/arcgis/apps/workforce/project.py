@@ -37,6 +37,10 @@ class Project:
         project = arcgis.apps.workforce.Project(item)
         assignments = project.assignments.search()
         workers = project.workers.search()
+        
+        # Create v1 "Classic" Workforce project and v2 "offline-enabled" project
+        v1_project = arcgis.apps.workforce.create_project('v1_project', major_version=1)
+        v2_project = arcgis.apps.workforce.create_project('v2_project', major_version=2)
 
 
     """

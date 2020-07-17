@@ -15,6 +15,19 @@ class AssignmentManager(object):
                            manage.
     ==================     ====================================================================
 
+    .. code-block:: python
+
+        # Add / get assignments using assignment manager
+
+        import arcgis
+        gis = arcgis.gis.GIS("https://arcgis.com", "<username>", "<password>")
+        item = gis.content.get("<item-id>")
+        project = arcgis.apps.workforce.Project(item)
+        assignment = project.assignments.add(assignment_type=type_1, location="100 Commercial St",
+                                            geometry={'x': -7820308, 'y': 5412450}, status=0, priority=0)
+        assignment_2 = project.assignments.get(object_id=2)
+
+
     """
 
     def __init__(self, project):
@@ -189,6 +202,18 @@ class AssignmentTypeManager:
     project                Required :class:`~arcgis.apps.workforce.Project`. The project to
                            manage.
     ==================     ====================================================================
+
+    .. code-block:: python
+
+        # Add / get assignment types using assignment type manager
+
+        import arcgis
+        gis = arcgis.gis.GIS("https://arcgis.com", "<username>", "<password>")
+        item = gis.content.get("<item-id>")
+        project = arcgis.apps.workforce.Project(item)
+        assignment_type = project.assignment_types.add(name="Tree Inspection")
+        assignment_type_2 = project.assignment_types.get(name="Fix Sign")
+
 
     """
 
@@ -386,8 +411,21 @@ class DispatcherManager:
      project                Required :class:`~arcgis.apps.workforce.Project`. The project to
                             manage.
      ==================     ====================================================================
+     
+    .. code-block:: python
+
+        # Add / get dispatchers using dispatcher manager
+
+        import arcgis
+        gis = arcgis.gis.GIS("https://arcgis.com", "<username>", "<password>")
+        item = gis.content.get("<item-id>")
+        project = arcgis.apps.workforce.Project(item)
+        dispatcher = project.dispatchers.add(name="New Dispatcher",user_id="dispatcher_username")
+        dispatcher_2 = project.dispatchers.get(user_id="dispatcher2_username")
+
 
     """
+
     def __init__(self, project):
         self.project = project
 
@@ -644,6 +682,17 @@ class WorkerManager:
      project                Required :class:`~arcgis.apps.workforce.Project`. The project to
                             manage.
      ==================     ====================================================================
+
+    .. code-block:: python
+
+        # Add / get workers using worker manager
+
+        import arcgis
+        gis = arcgis.gis.GIS("https://arcgis.com", "<username>", "<password>")
+        item = gis.content.get("<item-id>")
+        project = arcgis.apps.workforce.Project(item)
+        worker = project.workers.add(user_id="worker_username", name="Worker One", status=0)
+
 
     """
     def __init__(self, project):

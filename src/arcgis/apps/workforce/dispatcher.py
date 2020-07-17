@@ -29,6 +29,19 @@ class Dispatcher(FeatureModel):
     user_id                Optional :class:`String`. The user id of the dispatcher
     ==================     ====================================================================
 
+    .. code-block:: python
+
+        # Get a dispatcher, update it, delete it
+
+        import arcgis
+        gis = arcgis.gis.GIS("https://arcgis.com", "<username>", "<password>")
+        item = gis.content.get("<item-id>")
+        project = arcgis.apps.workforce.Project(item)
+        dispatcher = project.dispatchers.search()[0]
+        dispatcher.update(name="Dispatcher Name", contact_number="1234567890")
+        dispatcher.delete()
+
+
     """
 
     def __init__(self, project, feature=None, contact_number=None, name=None, user_id=None):

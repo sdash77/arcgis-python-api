@@ -23,6 +23,19 @@ class AssignmentType(FeatureModel):
     ------------------     --------------------------------------------------------------------
     name                   Optional :class:`String`. The name of the assignment type.
     ==================     ====================================================================
+    
+    .. code-block:: python
+
+        # Get an assignment type, update it, delete it
+
+        import arcgis
+        gis = arcgis.gis.GIS("https://arcgis.com", "<username>", "<password>")
+        item = gis.content.get("<item-id>")
+        project = arcgis.apps.workforce.Project(item)
+        assignment_type = project.assignment_types.search()[0]
+        assignment_type.update(name="Manhole Inspection")
+        assignment_type.delete()
+
 
     """
 

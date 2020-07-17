@@ -39,6 +39,18 @@ class Worker(FeatureModel):
     user_id                Optional :class:`String`. The user id of the worker
     ==================     ====================================================================
 
+    .. code-block:: python
+
+        # Get a worker, update it, delete it
+
+        import arcgis
+        gis = arcgis.gis.GIS("https://arcgis.com", "<username>", "<password>")
+        item = gis.content.get("<item-id>")
+        project = arcgis.apps.workforce.Project(item)
+        worker = project.workers.search()[0]
+        worker.update(title="Inspector",status="not_working")
+
+
     """
 
     def __init__(self, project, feature=None, geometry=None, contact_number=None,
