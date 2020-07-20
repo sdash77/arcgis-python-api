@@ -226,7 +226,7 @@ def _v2_create_project(gis, summary, title):
                                     "snippet": summary,
                                     "properties": {
                                         "workforceProjectGroupId": group_id,
-                                        "workforceProjectVersion": "2.0.0-beta.4",
+                                        "workforceProjectVersion": "2.0.0",
                                         "workforceDispatcherMapId": dispatchers_webmap.id,
                                         "workforceWorkerMapId": workers_webmap.id
                                     }
