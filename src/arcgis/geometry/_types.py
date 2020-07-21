@@ -13,6 +13,8 @@ _number_type = (int, float)
 _empty_value = [None, "NaN"]
 
 
+from arcgis.gis import _lazy_property
+
 def _is_valid(value):
     """checks if the value is valid"""
 
@@ -2768,21 +2770,11 @@ class Polygon(Geometry):
         """ pickle support """
         return dict(self)
     #----------------------------------------------------------------------
-    def calculate_efd(self, harmonics=10, norm=False):
-        """
-        Compute the Elliptical Fourier Descriptors for a polygon.
-
-        Implements Kuhl and Giardina method of computing the coefficients
-        An, Bn, Cn, Dn for a specified number of harmonics. This code is adapted
-        from the pyefd module. See the original paper for more detail:
-    
-        Kuhl, FP and Giardina, CR (1982). Elliptic Fourier features of a closed
-        contour. Computer graphics and image processing, 18(3), 236-258.
-
-        """
-        from ._spatial_efd import  calculate_EFD, normalize_efd, process_geometry
-        x,y,d = process_geometry(self, norm=norm)
-        return calculate_EFD(x,y, harmonics=harmonics)
+    @_lazy_property
+    def efd(self):
+        """returns a to work with elliptical fourier descriptors"""
+        from ._spatial_edf._edf import EFDAnalysis
+        return EFDAnalysis(geom=self, normalize=True, init=False)
     #----------------------------------------------------------------------
     @classmethod
     def _from_geojson(cls, data, sr=None):

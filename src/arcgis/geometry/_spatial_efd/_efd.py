@@ -6,9 +6,169 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os.path as path
 from shutil import copy2
+from arcgis.geometry import Polygon
 
-#--------------------------------------------------------------------------
-def rotate_contour(X, Y, rotation, centroid):
+###########################################################################
+class EFDAnalysis(object):
+    _geom = None
+    _points = None
+    _X = None
+    _Y = None
+    _centroid = None
+    #----------------------------------------------------------------------
+    def __init__(self, geom:Polygon, normalize:bool=True, init:bool=False):
+        self._geom = geom
+        self._normalize = normalize
+        if init:
+            self._X, self._Y, self._centroid = \
+                _process_geometry(geometry=geom, norm=normalize)
+    #----------------------------------------------------------------------
+    def normalize_efd(self, coeffs, size_invariant=True):
+        '''
+        Normalize the Elliptical Fourier Descriptor coefficients for a polygon.
+    
+        Implements Kuhl and Giardina method of normalizing the coefficients
+        An, Bn, Cn, Dn. Performs 3 separate normalizations. First, it makes the
+        data location invariant by re-scaling the data to a common origin.
+        Secondly, the data is rotated with respect to the major axis. Thirdly,
+        the coefficients are normalized with regard to the absolute value of A_1.
+        This code is adapted from the pyefd module. See the original paper for
+        more detail:
+    
+        Kuhl, FP and Giardina, CR (1982). Elliptic Fourier features of a closed
+        contour. Computer graphics and image processing, 18(3), 236-258.
+    
+        Args:
+            coeffs (numpy.ndarray): A numpy array of shape (n, 4) representing the
+                four coefficients for each harmonic computed.
+            size_invariant (bool): Set to True (the default) to perform the third
+                normalization and false to return the data withot this processing
+                step. Set this to False when plotting a comparison between the
+                input data and the Fourier ellipse.
+    
+        Returns:
+            tuple: A tuple consisting of a numpy.ndarray of shape (harmonics, 4)
+                representing the four coefficients for each harmonic computed and
+                the rotation in degrees applied to the normalized contour.
+        '''    
+        return _normalize_efd(coeffs, size_invariant=size_invariant)
+    #----------------------------------------------------------------------
+    @property
+    def geometry(self) -> Polygon:
+        """
+        returns the original geometry
+        
+        :returns: Polygon
+        """
+        return self._geom
+    #----------------------------------------------------------------------
+    @property
+    def normalized(self) -> bool:
+        """Gets/Sets the Normalization Parameter of the Parameters"""
+        return self._normalize
+    #----------------------------------------------------------------------
+    @normalized.setter
+    def normalized(self, norm:bool):
+        """Gets/Sets the Normalization Parameter of the Parameters"""
+        if isinstance(norm, bool) and norm != self._normalize:
+            self._normalize = norm
+        elif isinstance(norm, bool) == False:
+            raise ValueError("`norm` must be a Boolean Value (True/False)")
+    #----------------------------------------------------------------------
+    @property    
+    def X(self):
+        """the X-Coordinates"""
+        if self._X is None:
+            self._X, self._Y, self._centroid = \
+                _process_geometry(geometry=self._geom, norm=self._normalize)
+        return self._X
+    #----------------------------------------------------------------------
+    @property    
+    def Y(self):
+        """the Y-Coordinates"""
+        if self._Y is None:
+            self._X, self._Y, self._centroid = \
+                _process_geometry(geometry=self._geom, norm=self._normalize)
+        return self._Y
+    #----------------------------------------------------------------------
+    @property
+    def centroid(self) -> list:
+        """
+        Returns the centroid of the elliptical descriptor
+        
+        :returns: list
+        
+        """
+        if self._centroid is None:
+            self._X, self._Y, self._centroid = \
+                _process_geometry(geometry=self._geom, norm=self._normalize)
+        return self._centroid
+    #----------------------------------------------------------------------
+    @property
+    def nyquist(self):
+        """
+        Returns the maximum number of harmonics that can be computed for a given
+        polygon, the nyquist freqency.
+
+        See this paper for details:
+        C. Costa et al. / Postharvest Biology and Technology 54 (2009) 38-47
+        
+        :returns: Integer
+
+        """
+        return _nyquist(X=self.X)
+    #----------------------------------------------------------------------
+    def fourier_power(self, coeffs, threshold=.999):
+        '''
+        Compute the total Fourier power and find the minium number of harmonics
+        required to exceed the threshold fraction of the total power.
+    
+        This is a good method for identifying the number of harmonics to use to
+        describe a polygon. For more details see:
+    
+        C. Costa et al. / Postharvest Biology and Technology 54 (2009) 38-47
+    
+        Warning:
+            The number of coeffs must be >= the nyquist freqency.
+    
+        Args:
+            coeffs (numpy.ndarray): A numpy array of shape (n, 4) representing the
+                four coefficients for each harmonic computed.
+            
+            threshold (float): The threshold fraction of the total Fourier power,
+                the default is 0.9999.
+    
+        Returns:
+            int: The number of harmonics required to represent the contour above
+            the threshold Fourier power.
+    
+        '''
+        X = self.X
+        return _fourier_power(coeffs, X, threshold=threshold)
+    #----------------------------------------------------------------------
+    def calculate_efd(self, harmonics=10):
+        """
+        Compute the Elliptical Fourier Descriptors for a polygon.
+
+        Implements Kuhl and Giardina method of computing the coefficients
+        An, Bn, Cn, Dn for a specified number of harmonics. This code is adapted
+        from the pyefd module. See the original paper for more detail:
+    
+        Kuhl, FP and Giardina, CR (1982). Elliptic Fourier features of a closed
+        contour. Computer graphics and image processing, 18(3), 236-258.
+    
+        Args:
+            
+            harmonics (int): The number of harmonics to compute for the given
+                shape, defaults to 10.
+    
+        Returns:
+            numpy.ndarray: A numpy array of shape (harmonics, 4) representing the
+            four coefficients for each harmonic computed.
+        """
+        return _calculate_EFD(X=self.X, Y=self.Y, harmonics=harmonics)
+##########################################################################
+def _rotate_contour(X, Y, rotation, centroid):
     '''
     Rotates a contour about a point by a given amount expressed in degrees.
 
@@ -32,13 +192,13 @@ def rotate_contour(X, Y, rotation, centroid):
     rys = []
 
     for nx, ny in zip(X, Y):
-        rx, ry = rotatePoint((nx, ny), centroid, rotation)
+        rx, ry = _rotatePoint((nx, ny), centroid, rotation)
         rxs.append(rx)
         rys.append(ry)
 
     return rxs, rys
 #--------------------------------------------------------------------------
-def norm_contour(X, Y, rawCentroid):
+def _norm_contour(X, Y, rawCentroid):
     '''
     Normalize the coordinates which make up a contour.
 
@@ -59,7 +219,7 @@ def norm_contour(X, Y, rawCentroid):
     '''
 
     # find longest axis of rotated shape
-    xwidth, ywidth, xmin, ymin = getBBoxDimensions(X, Y)
+    xwidth, ywidth, xmin, ymin = _getBBoxDimensions(X, Y)
     if (xwidth > ywidth):
         normshape = xwidth
     elif (ywidth >= xwidth):
@@ -73,7 +233,7 @@ def norm_contour(X, Y, rawCentroid):
 
     return norm_x, norm_y, centroid
 #--------------------------------------------------------------------------
-def close_contour(X, Y):
+def _close_contour(X, Y):
     '''
     Close an opened polygon.
 
@@ -91,7 +251,7 @@ def close_contour(X, Y):
 
     return X, Y
 #--------------------------------------------------------------------------
-def contour_area(X, Y):
+def _contour_area(X, Y):
     '''
     Compute the area of an irregular polygon.
 
@@ -108,7 +268,7 @@ def contour_area(X, Y):
     '''
 
     # Check the contour provided is closed
-    X, Y = close_contour(X, Y)
+    X, Y = _close_contour(X, Y)
 
     Sum = 0
 
@@ -117,7 +277,7 @@ def contour_area(X, Y):
 
     return abs(0.5 * Sum)
 #--------------------------------------------------------------------------
-def contour_centroid(X, Y):
+def _contour_centroid(X, Y):
     '''
     Compute the centroid of an irregular polygon.
 
@@ -135,9 +295,9 @@ def contour_centroid(X, Y):
     '''
 
     # Check the contour provided is closed
-    X, Y = close_contour(X, Y)
+    X, Y = _close_contour(X, Y)
 
-    Area = contour_area(X, Y)
+    Area = _contour_area(X, Y)
 
     Cx = 0
     Cy = 0
@@ -155,7 +315,7 @@ def contour_centroid(X, Y):
 
     return (abs(Cx), abs(Cy))
 #--------------------------------------------------------------------------
-def calculate_EFD(X, Y, harmonics=10):
+def _calculate_EFD(X, Y, harmonics=10):
     '''
     Compute the Elliptical Fourier Descriptors for a polygon.
 
@@ -200,7 +360,7 @@ def calculate_EFD(X, Y, harmonics=10):
     coeffs = np.vstack((a_n, -1 * b_n, c_n, -1 * d_n)).T
     return coeffs
 #--------------------------------------------------------------------------
-def inverse_transform(coeffs, locus=(0, 0), n_coords=300, harmonic=10):
+def _inverse_transform(coeffs, locus=(0, 0), n_coords=300, harmonic=10):
     '''
     Perform an inverse fourier transform to convert the coefficients back into
     spatial coordinates.
@@ -259,7 +419,7 @@ def _InitPlot():
 
     return ax
 #--------------------------------------------------------------------------
-def plot_ellipse(x, y, color='k', width=1.):
+def _plot_ellipse(x, y, color='k', width=1.):
     '''
     Plots an ellipse represented as a series of x and y coordinates on a given
     axis.
@@ -278,7 +438,7 @@ def plot_ellipse(x, y, color='k', width=1.):
     plt.show();   
     return ax
 #--------------------------------------------------------------------------
-def plotComparison(coeffs, harmonic, x, y, rotation=0, color1='k',
+def _plotComparison(coeffs, harmonic, x, y, rotation=0, color1='k',
                    width1=2, color2='r', width2=1):
     '''
     Convenience function which plots an EFD ellipse and a shapefile polygon in
@@ -306,42 +466,17 @@ def plotComparison(coeffs, harmonic, x, y, rotation=0, color1='k',
             plot the shapefile. Defaults to r (red).
         width2 (float): The width of the plotted shapefile. Defaults to 1.
     '''
-    locus = calculate_dc_coefficients(x, y)
-    xt, yt = inverse_transform(coeffs, locus=locus, harmonic=harmonic)
+    locus = _calculate_dc_coefficients(x, y)
+    xt, yt = _inverse_transform(coeffs, locus=locus, harmonic=harmonic)
 
     if rotation:
-        x, y = rotate_contour(x, y, rotation, locus)
+        x, y = _rotate_contour(x, y, rotation, locus)
     ax = _InitPlot()
-    plot_ellipse(ax, xt, yt, color1, width1)
-    plot_ellipse(ax, x, y, color2, width2)
+    _plot_ellipse(ax, xt, yt, color1, width1)
+    _plot_ellipse(ax, x, y, color2, width2)
     return ax
-##--------------------------------------------------------------------------
-#def SavePlot(ax, harmonic, filename, figformat='png'):
-    #'''
-    #Wrapper around the savefig method.
-
-    #Call this method to add a title identifying the harmonic being plotted, and
-    #save the plot to a file. Note that harmonic is simply an int value to be
-    #appended to the plot title, it does not select a harmonic to plot.
-
-    #The figformat argumet can take any value which matplotlib understands,
-    #which varies by system. To see a full list suitable for your matplotlib
-    #instance, call plt.gcf().canvas.get_supported_filetypes().
-
-    #Args:
-        #ax (matplotlib.axes.Axes): Matplotlib axis instance.
-        #harmonic (int): The harmonic which is being plotted.
-        #filename (string): A complete path and filename, without an extension,
-            #for the saved plot.
-        #figformat (string): A string denoting the format to save the figure as.
-            #Defaults to png.
-
-    #'''
-    #ax.set_title('Harmonic: {0}'.format(harmonic))
-    #plt.savefig('{0}_{1}.{2}'.format(filename, harmonic, figformat))
-    #plt.clf()
 #--------------------------------------------------------------------------
-def average_coefficients(coeffList):
+def _average_coefficients(coeffList):
     '''
     Average the coefficients contained in the list of coefficient arrays,
     coeffList.
@@ -369,7 +504,7 @@ def average_coefficients(coeffList):
 
     return coeffsum
 #--------------------------------------------------------------------------
-def average_SD(coeffList, avgcoeffs):
+def _average_SD(coeffList, avgcoeffs):
     '''
     Use the coefficients contained in the list of coefficient arrays,
     coeffList, and the average coefficient values to compute the standard
@@ -397,7 +532,7 @@ def average_SD(coeffList, avgcoeffs):
 
     return (coeffsum / float(len(coeffList) - 1)) - (avgcoeffs ** 2)
 #--------------------------------------------------------------------------
-def nyquist(X):
+def _nyquist(X):
     '''
     Returns the maximum number of harmonics that can be computed for a given
     contour, the nyquist freqency.
@@ -413,7 +548,7 @@ def nyquist(X):
     '''
     return len(X) // 2
 #--------------------------------------------------------------------------
-def fourier_power(coeffs, X, threshold=0.9999):
+def _fourier_power(coeffs, X, threshold=0.9999):
     '''
     Compute the total Fourier power and find the minium number of harmonics
     required to exceed the threshold fraction of the total power.
@@ -438,7 +573,7 @@ def fourier_power(coeffs, X, threshold=0.9999):
         the threshold Fourier power.
 
     '''
-    rnyquist = nyquist(X)
+    rnyquist = _nyquist(X)
 
     totalPower = 0
     currentPower = 0
@@ -454,7 +589,7 @@ def fourier_power(coeffs, X, threshold=0.9999):
         if (currentPower / totalPower) > threshold:
             return i + 1
 #--------------------------------------------------------------------------
-def normalize_efd(coeffs, size_invariant=True):
+def _normalize_efd(coeffs, size_invariant=True):
     '''
     Normalize the Elliptical Fourier Descriptor coefficients for a polygon.
 
@@ -519,7 +654,7 @@ def normalize_efd(coeffs, size_invariant=True):
 
     return coeffs, np.degrees(psi_1)
 #--------------------------------------------------------------------------
-def calculate_dc_coefficients(X, Y):
+def _calculate_dc_coefficients(X, Y):
     '''
     Compute the dc coefficients, used as the locus when calling
     inverse_transform().
@@ -556,7 +691,7 @@ def calculate_dc_coefficients(X, Y):
     # Adding those values to the coeffs to make them relate to true origin
     return (contour[0, 0] + A0, contour[0, 1] + C0)
 #--------------------------------------------------------------------------
-def process_geometry(geometry, norm=False):
+def _process_geometry(geometry, norm=False):
     '''
     Method to handle all the geometry processing that may be needed by the rest
     of the EFD code.
@@ -585,7 +720,7 @@ def process_geometry(geometry, norm=False):
         x.append(point[0])
         y.append(point[1])
 
-    centroid = contour_centroid(x, y)
+    centroid = _contour_centroid(x, y)
 
     return x, y, centroid
 #--------------------------------------------------------------------------
@@ -616,46 +751,29 @@ def _process_geometry_norm(geometry):
         x.append(point[0])
         y.append(point[1])
 
-    centroid = contour_centroid(x, y)
-    X, Y, NormCentroid = norm_contour(x, y, centroid)
+    centroid = _contour_centroid(x, y)
+    X, Y, NormCentroid = _norm_contour(x, y, centroid)
 
     return X, Y, NormCentroid
 #--------------------------------------------------------------------------
-def writeGeometry(coeffs, x, y, harmonic, shpinstance, ID):
+def writeGeometry(coeffs, x, y, harmonic, sr=4326):
     '''
-    Write the results of inverse_transform() to a shapefile.
-
-    Will only produce spatially meaningful data if the input coefficients have
-    not been normalized.
-
-    Args:
-        coeffs (numpy.ndarray): A numpy array of shape (n, 4) representing the
-            four coefficients for each harmonic computed.
-        x (list): A list (or numpy array) of x coordinate values.
-        y (list): A list (or numpy array) of y coordinate values.
-        harmonic (int): The number of harmonics to be used to generate
-            coordinates. Must be <= coeffs.shape[0]. Supply a smaller value to
-            produce coordinates for a more generalized shape.
-        shpinstance (shapefile.Writer): A multipart polygon shapefile to write
-            the data to.
-        ID (int): An integer ID value which will be written as an attribute
-            alongside the geometry.
+    Converts the Ellipse to a Polygon
 
     Returns:
-        shpinstance with the new geometry appended.
+        Polygon.
 
     '''
 
-    locus = calculate_dc_coefficients(x, y)
-    xt, yt = inverse_transform(coeffs, locus=locus, harmonic=harmonic)
+    locus = _calculate_dc_coefficients(x, y)
+    xt, yt = _inverse_transform(coeffs, locus=locus, harmonic=harmonic)
 
     contour = [(x_, y_) for x_, y_ in zip(xt, yt)]
-    shpinstance.poly([contour])
-    shpinstance.record(ID, 'Poly_ID')
-
-    return shpinstance
+    return Polygon({'rings': [contour],
+                    'spatialReference' : sr
+                    })
 #--------------------------------------------------------------------------
-def rotatePoint(point, centerPoint, angle):
+def _rotatePoint(point, centerPoint, angle):
     '''
     Rotates a point counter-clockwise around centerPoint.
 
@@ -681,7 +799,7 @@ def rotatePoint(point, centerPoint, angle):
     temp_point = temp_point[0] + centerPoint[0], temp_point[1] + centerPoint[1]
     return temp_point[0], temp_point[1]
 #--------------------------------------------------------------------------
-def getBBoxDimensions(x, y):
+def _getBBoxDimensions(x, y):
     '''
     Returns the width in the x and y dimensions and the maximum x and y
     coordinates for the bounding box of a given list of x and y coordinates.
