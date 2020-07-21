@@ -11,7 +11,9 @@ def _execute(fn, **kwargs):
         fn(**kwargs)
     else:
         fn()
-        
+
+            
+
 class Job(object):
     """represents an asynchronous job"""
     _future = None
@@ -126,4 +128,52 @@ class GeometryJob(Job):
             self._jobid = uuid.uuid4().hex
         else:
             self._jobid = jobid
+
+class ItemStatusJob(Job):
+    """represents an Item"""   
+    _future = None
+    _gis = None
+    _task_name = None
+    _start_time = None
+    _end_time = None
+    _verbose = None
+    #----------------------------------------------------------------------
+    def __init__(self, item, task_name, jobid=None, job_type=None, notify=False, gis=None):
         
+        executor =  concurrent.futures.ThreadPoolExecutor(1)
+        future = executor.submit(self._status, *(item, jobid, job_type))
+        executor.shutdown(False)        
+        self._start_time = datetime.datetime.now()
+        self._task_name = task_name
+        self._future = future
+        if notify:
+            self._future.add_done_callback(self._notify)
+        self._future.add_done_callback(self._set_end_time)        
+        
+        self._end_time = None
+        self._url = None
+        if jobid is None:
+            self._jobid = uuid.uuid4().hex
+        else:
+            self._jobid = jobid
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return f"<{self._task_name} job>"
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return f"<{self._task_name} job>"
+    #----------------------------------------------------------------------
+    def _status(self, item, job_id, job_type):
+        """Processes the asynchronous job"""
+        #“processing” | “completed” |”failed”
+        import time
+        from arcgis.gis import Item
+        
+        while item.status(job_id=job_id, job_type=job_type).get('status') in ['processing']:
+            status = item.status(job_id=job_id, job_type=job_type).get('status')
+            if status in ['failed', 'completed']:
+                return item.status(job_id=job_id, job_type=job_type)
+            else:
+                return item
+        return item
+    #----------------------------------------------------------------------
