@@ -12,6 +12,7 @@ try:
     from fastai.vision.learner import create_body
     from fastai.vision.image import open_image
     from fastai.vision import flatten_model
+    from fastai.core import has_arg, split_kwargs_by_func
     from torchvision.models import resnet34
     from torchvision import models
     import numpy as np
@@ -81,8 +82,16 @@ class MaskRCNN(ArcGISModel):
 
         self._code = instance_detector_prf
 
+        self.maskrcnn_kwargs, kwargs = split_kwargs_by_func(kwargs, models.detection.MaskRCNN.__init__)
+
         if self._backbone.__name__ is 'resnet50':
-            model = models.detection.maskrcnn_resnet50_fpn(pretrained=True, min_size = 1.5*data.chip_size, max_size = 2*data.chip_size)
+            model = models.detection.maskrcnn_resnet50_fpn(
+                pretrained=True,
+                min_size = 1.5*data.chip_size,
+                max_size = 2*data.chip_size,
+                **self.maskrcnn_kwargs
+            )
+
             if self._is_multispectral:
                 model.backbone = _change_tail(model.backbone, data)
                 model.transform.image_mean = scaled_mean_values
@@ -97,12 +106,19 @@ class MaskRCNN(ArcGISModel):
                     min_size = 1.5*data.chip_size, 
                     max_size = 2*data.chip_size, 
                     image_mean = scaled_mean_values, 
-                    image_std = scaled_std_values
+                    image_std = scaled_std_values,
+                    **self.maskrcnn_kwargs
                 )
             else:
                 backbone_small = create_body(self._backbone)
                 backbone_small.out_channels = 512
-                model = models.detection.MaskRCNN(backbone_small, 91, min_size = 1.5*data.chip_size, max_size = 2*data.chip_size)
+                model = models.detection.MaskRCNN(
+                    backbone_small,
+                    91,
+                    min_size = 1.5*data.chip_size,
+                    max_size = 2*data.chip_size,
+                    **self.maskrcnn_kwargs
+                )
         else:
             backbone_fpn = resnet_fpn_backbone(self._backbone.__name__, True)
             if self._is_multispectral:
@@ -113,10 +129,17 @@ class MaskRCNN(ArcGISModel):
                     min_size = 1.5*data.chip_size, 
                     max_size = 2*data.chip_size, 
                     image_mean = scaled_mean_values, 
-                    image_std = scaled_std_values
+                    image_std = scaled_std_values,
+                    **self.maskrcnn_kwargs
                 )
             else:
-                model = models.detection.MaskRCNN(backbone_fpn, 91, min_size = 1.5*data.chip_size, max_size = 2*data.chip_size)
+                model = models.detection.MaskRCNN(
+                    backbone_fpn,
+                    91,
+                    min_size = 1.5*data.chip_size,
+                    max_size = 2*data.chip_size,
+                    **self.maskrcnn_kwargs
+                )
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, data.c)
         in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
@@ -221,6 +244,7 @@ class MaskRCNN(ArcGISModel):
             model_file = emd_path.parent / model_file
             
         model_params = emd['ModelParameters']
+        maskrcnn_kwargs = emd.get("MaskRCNNkwargs", {})
 
         try:
             class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
@@ -237,7 +261,7 @@ class MaskRCNN(ArcGISModel):
             data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
 
-        return cls(data, **model_params, pretrained_path=str(model_file))
+        return cls(data, **model_params, pretrained_path=str(model_file), **maskrcnn_kwargs)
 
     def _get_emd_params(self):
         import random
@@ -246,7 +270,7 @@ class MaskRCNN(ArcGISModel):
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_maskrcnn_inferencing"
         _emd_template["InferenceFunction"] = "ArcGISInstanceDetector.py"
-
+        _emd_template["MaskRCNNkwargs"] = self.maskrcnn_kwargs
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template['Classes'] = []
         class_data = {}

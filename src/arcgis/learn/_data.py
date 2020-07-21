@@ -783,17 +783,40 @@ def prepare_data(path,
 
         # Handle Multispectral
         if _is_multispectral:
-            src = (ArcGISInstanceSegmentationMSItemList.from_folder(path/'images')
+            data = (ArcGISInstanceSegmentationMSItemList.from_folder(path/'images')
                 .filter_by_func(remove_image_without_label)
                 .split_by_rand_pct(val_split_pct, seed=seed)
                 .label_from_func(get_y_func, chip_size=chip_size, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping, index_dir=index_dir))
             _show_batch_multispectral = show_batch_rcnn_masks
         else:
-            src = (ArcGISInstanceSegmentationItemList.from_folder(path/'images')
+            data = (ArcGISInstanceSegmentationItemList.from_folder(path/'images')
                 .filter_by_func(remove_image_without_label)
                 .split_by_rand_pct(val_split_pct, seed=seed)
                 .label_from_func(get_y_func, chip_size=chip_size, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping, index_dir=index_dir))
-    
+
+        if transforms is None:
+            ranges = (0, 1)
+            if _image_space_used == _map_space:
+                train_tfms = [
+                    crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges),
+                    dihedral_affine(),
+                    brightness(change=(0.4, 0.6)),
+                    contrast(scale=(1.0, 1.5)),
+                    rand_zoom(scale=(1.0, 1.2))
+                ]
+            else:
+                train_tfms = [
+                    crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges),
+                    brightness(change=(0.4, 0.6)),
+                    contrast(scale=(1.0, 1.5)),
+                    rand_zoom(scale=(1.0, 1.2))
+                ]
+            val_tfms = [crop(size=chip_size, p=1., row_pct=0.5, col_pct=0.5)]
+            transforms = (train_tfms, val_tfms)
+            kwargs_transforms['size'] = chip_size
+
+        kwargs_transforms['tfm_y'] = True
+
     elif dataset_type == 'Classified_Tiles':
 
         def get_y_func(x, ext=right):
@@ -1012,15 +1035,9 @@ def prepare_data(path,
     if _is_multispectral:
         if dataset_type == 'RCNN_Masks':
             kwargs['do_normalize'] = False
-            if transforms ==  None:
-                data = (src.transform(size=chip_size, tfm_y=True)
+
+        data = (data.transform(transforms, **kwargs_transforms)
                     .databunch(**databunch_kwargs))
-            else:
-                data = (src.transform(transforms, size=chip_size, tfm_y=True) 
-                        .databunch(**databunch_kwargs))
-        else:
-            data = (data.transform(transforms, **kwargs_transforms)
-                        .databunch(**databunch_kwargs))
         
         if len(data.x) < 300:
             norm_pct = 1
@@ -1113,13 +1130,10 @@ def prepare_data(path,
             data = data.normalize(stats=(data._scaled_mean_values, data._scaled_std_values), do_x=True, do_y=False)
         
     elif dataset_type == 'RCNN_Masks':
-        if transforms ==  None:
-            data = (src.transform(size=chip_size, tfm_y=True)
+
+        data = (data.transform(transforms, **kwargs_transforms)
                 .databunch(**databunch_kwargs))
-        else:
-            data = (src.transform(transforms, tfm_y=True) 
-                    .databunch(**databunch_kwargs))
-        data.show_batch = types.MethodType( show_batch_rcnn_masks, data )
+        data.show_batch = types.MethodType(show_batch_rcnn_masks, data)
 
     else:
         data = (data.transform(transforms, **kwargs_transforms)
