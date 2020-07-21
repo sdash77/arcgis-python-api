@@ -224,7 +224,7 @@ def build_multivariable_grid(input_layers,
                                             output_name="multi_variable_grid")
     """
     kwargs=locals()
-    input_layer = _prevent_bds_item(input_layer)
+    input_layers = [_prevent_bds_item(input_layer) for input_layer in input_layers]
     gis=_arcgis.env.active_gis if gis is None else gis
     url=gis.properties.helperServices.geoanalytics.url
 
@@ -841,7 +841,8 @@ def join_features(target_layer,
                                    output_name="LightningOutages")
     """
     kwargs = locals()
-    input_layer = _prevent_bds_item(input_layer)
+    target_layer = _prevent_bds_item(target_layer)
+    join_layer = _prevent_bds_item(join_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
 
@@ -1447,7 +1448,7 @@ def summarize_within(summarized_layer,
     """
     kwargs = locals()
 
-    input_layer = _prevent_bds_item(input_layer)
+    summarized_layer = _prevent_bds_item(summarized_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
 
