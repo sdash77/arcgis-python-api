@@ -2,6 +2,7 @@
 New Geometries Classes
 """
 import json
+import ujson as _ujson
 try:
     import numpy as np
 except ImportError as e:
@@ -133,7 +134,7 @@ class BaseGeometry(dict):
         return _is_valid(self)
 
     def _check_geometry_engine(self):
-        self._HASARCPY = True
+        self._HASARCPY = False#True
         try:
             import arcpy
         except:
@@ -194,7 +195,7 @@ class GeometryFactory(type):
         except:
             _HASARCPY = False
         if _HASARCPY:
-            return json.loads(arcpy.FromWKB(iterable).JSON)
+            return _ujson.loads(arcpy.FromWKB(iterable).JSON)
         return {}
 
     @staticmethod
@@ -207,10 +208,10 @@ class GeometryFactory(type):
         if _HASARCPY:
             if "SRID=" in iterable:
                 wkid, iterable = iterable.split(";")
-                geom = json.loads(arcpy.FromWKT(iterable).JSON)
+                geom = _ujson.loads(arcpy.FromWKT(iterable).JSON)
                 geom['spatialReference'] = {'wkid' : int(wkid.replace("SRID=",""))}
                 return geom
-            return json.loads(arcpy.FromWKT(iterable).JSON)
+            return _ujson.loads(arcpy.FromWKT(iterable).JSON)
         return {}
     
     @staticmethod
@@ -221,7 +222,7 @@ class GeometryFactory(type):
         except:
             _HASARCPY = False
         if _HASARCPY:
-            gj = json.loads(arcpy.AsShape(iterable, False).JSON)
+            gj = _ujson.loads(arcpy.AsShape(iterable, False).JSON)
             gj['spatialReference']['wkid'] = 4326
             return gj
         else:
@@ -237,14 +238,14 @@ class GeometryFactory(type):
             if isinstance(iterable, (bytearray, bytes)):
                 iterable = GeometryFactory._from_wkb(iterable)
             elif hasattr(iterable, "JSON"):
-                iterable = json.loads(getattr(iterable, "JSON"))
+                iterable = _ujson.loads(getattr(iterable, "JSON"))
             elif 'coordinates' in iterable:
                 iterable = GeometryFactory._from_gj(iterable)
             elif hasattr(iterable, "exportToString"):
                 iterable = {'wkt': iterable.exportToString()}
             elif isinstance(iterable, str) and \
                     "{" in iterable:
-                iterable = json.loads(iterable)
+                iterable = _ujson.loads(iterable)
             elif isinstance(iterable, str):  # WKT
                 iterable = GeometryFactory._from_wkt(iterable)
 
@@ -1091,7 +1092,7 @@ class Geometry(BaseGeometry):
                 return None
         elif HASARCPY:
             import arcpy
-            return Geometry(json.loads(arcpy.PointGeometry(getattr(
+            return Geometry(_ujson.loads(arcpy.PointGeometry(getattr(
                 self.as_arcpy,
                 "firstPoint",
                 None), self.spatial_reference).JSON))

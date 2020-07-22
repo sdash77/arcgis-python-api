@@ -7,7 +7,7 @@ import uuid
 from pathlib import Path
 import shutil
 import datetime
-
+import ujson as _ujson
 import numpy as np
 import pandas as pd
 
@@ -469,7 +469,7 @@ def from_featureclass(filename, **kwargs):
         }
         df.SHAPE = (
            df.SHAPE[q]
-           .apply(pd.io.json.loads)
+           .apply(_ujson.loads)
            .apply(geoms[gt])
         )
         df.spatial.set_geometry("SHAPE")
