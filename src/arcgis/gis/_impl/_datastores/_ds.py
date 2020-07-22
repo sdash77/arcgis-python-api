@@ -277,7 +277,7 @@ class PortalDataStore(object):
                                specifies the data store Id and the path of the data.  A client can
                                discover the proper paths of the data by using the `describe` method.
                                
-                               Example: { "type": "SceneServer", "serviceName": "SanFrancisco", "properties": { "cacheLoc": { "datastoreId": "fa911e3cade64ae98e968170a4fc61ba", "path": "/slc/sfsmall_v17.slc" } } }
+                               Example: {"type":"SceneServer","serviceName":"sonoma","properties":{"pathInCachedStore":"/v17_i3s/SONOMA_LiDAR.i3srest","cacheStoreId":"d7b0722fb42c494392cb1845dacc00d9"}}
         ------------------     --------------------------------------------------------------------
         server_id              Required String. The unique Id of the server to publish to.
         ------------------     --------------------------------------------------------------------
