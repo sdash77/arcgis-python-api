@@ -10,6 +10,7 @@ package:
 requirements:
   build:
   - python
+  - ujson >=3
   - setuptools
   - six
   - notebook
@@ -37,6 +38,7 @@ requirements:
   - ipywidgets >=7
   - widgetsnbextension >=3
   - pandas >=1
+  - ujson >=3
   - numpy >=1.16.2
   - pyshp >=2
   - matplotlib

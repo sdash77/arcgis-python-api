@@ -4,6 +4,7 @@ to represent features and collection of features.
 """
 import copy
 import json
+import ujson as _ujson
 import os
 import re
 import tempfile
@@ -207,7 +208,7 @@ class Feature(object):
     @classmethod
     def from_json(cls, json_str):
         """:return: a feature from a JSON string"""
-        feature = json.loads(json_str)
+        feature = _ujson.loads(json_str)
         geom = feature['geometry'] if 'geometry' in feature else None
         attribs = feature['attributes'] if 'attributes' in feature else None
         return cls(geom, attribs)
@@ -487,7 +488,7 @@ class FeatureSet(object):
                     }
                     if "SHAPE@JSON" in fields:
                         template['geometry'] = \
-                            json.loads(row[fields.index("SHAPE@JSON")])
+                            _ujson.loads(row[fields.index("SHAPE@JSON")])
 
                     features.append(
                         Feature.from_dict(template)
@@ -691,7 +692,7 @@ class FeatureSet(object):
     @staticmethod
     def from_json(json_str):
         """returns a featureset from a JSON string"""
-        return FeatureSet.from_dict(json.loads(json_str))
+        return FeatureSet.from_dict(_ujson.loads(json_str))
 
     @staticmethod
     def from_dataframe(df):
@@ -758,7 +759,7 @@ class FeatureSet(object):
             if len(geoms) > 0:
                 features.append(
                     {
-                        "geometry": json.loads(json.dumps(geoms[index])),
+                        "geometry": _ujson.loads(json.dumps(geoms[index])),
                         "attributes": row
                     })
             else:
@@ -877,7 +878,7 @@ class FeatureSet(object):
                 rings = []
                 if HASARCPY:
                     geom = arcpy.AsShape(geom)
-                    geometry = Geometry(json.loads(geom))
+                    geometry = Geometry(_ujson.loads(geom))
                 else:
                     coordkey = ([d for d in geom if d.lower() == 'coordinates']
                                     or ['coordinates']).pop()
@@ -905,7 +906,7 @@ class FeatureSet(object):
                 if HASARCPY == 'rem':
                     geom = arcpy.AsShape(geom)
                     geom['spatialReference'] = {'wkid': 4326}
-                    geometry = Geometry(json.loads(geom))
+                    geometry = Geometry(_ujson.loads(geom))
                 else:
                     coordkey = ([d for d in geom if d.lower() == 'coordinates']
                                 or ['coordinates']).pop()

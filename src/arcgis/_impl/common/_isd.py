@@ -1,4 +1,5 @@
 import json
+import ujson as _ujson
 from collections import OrderedDict
 from collections.abc import MutableMapping, Mapping
 
@@ -78,7 +79,7 @@ class InsensitiveDict(MutableMapping):
     #----------------------------------------------------------------------
     def __getstate__(self):
         """ pickle support """
-        return json.loads(self.json)    
+        return _ujson.loads(self.json)    
     #----------------------------------------------------------------------
     @classmethod
     def from_dict(cls, o):
@@ -89,7 +90,7 @@ class InsensitiveDict(MutableMapping):
     def from_json(cls, o):
         """Converts JSON string to a InsensitiveDict"""
         if isinstance(o, str):
-            o = json.loads(o)
+            o = _ujson.loads(o)
             return InsensitiveDict(o)
         return InsensitiveDict.from_dict(o)    
     #----------------------------------------------------------------------
@@ -146,5 +147,5 @@ class InsensitiveDict(MutableMapping):
     def json(self):
         """returns the value as JSON String"""
         o = self._json()#dict(self.copy())
-        return json.dumps(dict(o))
+        return _ujson.dumps(dict(o))
 
