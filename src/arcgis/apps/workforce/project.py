@@ -68,7 +68,6 @@ class Project:
             self._assignment_types = AssignmentTypeSchema(self.assignment_types_table)
             self._integration_schema = IntegrationSchema(self.integrations_table)
         self._dispatcher_schema = DispatcherSchema(self.dispatchers_layer)
-        # to do: integration schema
         self._update_cached_objects()
 
     def _update_cached_assignment_types(self):
@@ -153,7 +152,7 @@ class Project:
 
     @property
     def _supports_tracks(self):
-        return not self._is_v2_project and bool(self._item_data.get("tracks", None) is not None)
+        return not self._is_v2_project and "tracks" in self._item_data
 
     @property
     def _is_v2_project(self):

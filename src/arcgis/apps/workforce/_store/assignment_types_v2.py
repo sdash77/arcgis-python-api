@@ -33,7 +33,7 @@ def query_assignment_types(project, where='1=1'):
         :param where: An ArcGIS where clause.
         :returns: list of Assignment Types
     """
-    assignment_type_features = project.assignment_types_table.query(where, return_all_freatures=True).features
+    assignment_type_features = project.assignment_types_table.query(where, return_all_records=True).features
     return [workforce.AssignmentType(project, feature) for feature in assignment_type_features]
 
 
