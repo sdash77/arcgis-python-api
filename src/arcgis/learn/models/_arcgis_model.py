@@ -677,6 +677,8 @@ class ArcGISModel(object):
         loss_graph = os.path.join(model_characteristics_dir, 'loss_graph.png')
         show_results = os.path.join(model_characteristics_dir, 'show_results.png')
         confusion_matrix = os.path.join(model_characteristics_dir, 'confusion_matrix.png')
+        metrics_file = os.path.join(model_characteristics_dir, 'metrics.html')
+        results_file = os.path.join(model_characteristics_dir, 'results.html')
 
         encoded_losses_img = None
         if os.path.exists(loss_graph):
@@ -689,6 +691,16 @@ class ArcGISModel(object):
         confusion_matrix_img = None
         if os.path.exists(confusion_matrix):
             confusion_matrix_img = "data:image/png;base64,{0}".format(base64.b64encode(open(confusion_matrix, 'rb').read()).decode('utf-8'))
+
+        metrics_html = None
+        if os.path.exists(metrics_file):
+            with open(metrics_file,'r') as f:
+                metrics_html = f.read()
+
+        results_html = None
+        if os.path.exists(results_file):
+            with open(results_file,'r') as f:
+                results_html = f.read()
 
         html_file_path = os.path.join(path_model.parent, 'model_metrics.html')
 
@@ -748,6 +760,18 @@ class ArcGISModel(object):
             HTML_TEMPLATE += f"""
                 <p><b>Sample Results</b></p>
                 <img src="{encoded_showresults}" alt="Sample Results">
+            """
+
+        if metrics_html:
+            HTML_TEMPLATE += f"""
+                <p><b>Metrics per label</b></p>
+                {metrics_html}
+            """
+
+        if results_html:
+            HTML_TEMPLATE += f"""
+                <p><b>Sample Results</b></p>
+                {results_html}
             """
 
         file = open(html_file_path, 'w')
