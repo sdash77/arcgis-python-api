@@ -11,7 +11,7 @@ import types
 import tempfile
 import traceback
 
-from ._utils.env import ARCGIS_ENABLE_TF_BACKEND                                                                                                                                            
+from ._utils.env import ARCGIS_ENABLE_TF_BACKEND
 
 
 import_exception = None
@@ -21,14 +21,16 @@ try:
     from fastai.vision.data import imagenet_stats, ImageList, bb_pad_collate, ImageImageList
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms, flip_lr, ResizeMethod
     from fastai.vision import ImageDataBunch, parallel
+    import fastai.vision
     from fastai.torch_core import data_collate
     import torch
-    from .models._unet_utils import ArcGISSegmentationItemList, ArcGISSegmentationMSItemList, is_no_color
+    from .models._unet_utils import ArcGISSegmentationItemList, is_no_color
     from .models._maskrcnn_utils import ArcGISInstanceSegmentationItemList, ArcGISInstanceSegmentationMSItemList
     from .models._ner_utils import ner_prepare_data
     from ._utils.pascal_voc_rectangles import ObjectDetectionItemList
     from .models._superres_utils import resize_one
-    from ._utils.common import ArcGISMSImageList, ArcGISMSImage
+    from ._utils.common import ArcGISMSImage, ArcGISImageList
+    from ._utils.env import HAS_GDAL
     from ._utils.classified_tiles import show_batch_classified_tiles
     from ._utils.labeled_tiles import show_batch_labeled_tiles
     from ._utils.rcnn_masks import show_batch_rcnn_masks
@@ -599,8 +601,13 @@ def prepare_data(path,
     if not HAS_FASTAI:
         _raise_fastai_import_error()
 
+    (fastai.vision.data.image_extensions).add('.mrf')
+
     if isinstance(path, str) and not os.path.exists(path):
-        raise Exception("Invalid input path. Please ensure that the input path is correct.")
+        message = f"Invalid input path. \nCould not find the path specified \n'{path}' \nPlease ensure that the input path is correct."
+        if '\\' in path:
+            message+=f"""\n\nif you are using windows style paths please ensure you have specified paths with raw modifier. for example {"path=r'{path}'"}"""
+        raise Exception(message)
 
     if type(path) is str:
         path = Path(path)
@@ -713,7 +720,7 @@ def prepare_data(path,
         _image_space_used = _pixel_space
 
     # Multispectral check
-    imagery_type = 'RGB'
+    imagery_type = 'ASSUMED_RGB'
     if kwargs.get('imagery_type', None) is not None:
         imagery_type = kwargs.get('imagery_type')
     elif _imagery_type is not None:
@@ -736,9 +743,9 @@ def prepare_data(path,
     elif bands is not None:
         rgb_bands = [ bands.index(b) for b in ['r', 'g', 'b'] if b in bands ]
     
-    if (bands is not None) or (rgb_bands is not None) or (not imagery_type == 'RGB'):
-        if imagery_type == 'RGB':
-            imagery_type = 'multispectral'
+    if (bands is not None) or (rgb_bands is not None) or (not imagery_type in ['RGB', 'ASSUMED_RGB']):
+        if imagery_type in ['RGB', 'ASSUMED_RGB']:
+            imagery_type = 'MULTISPECTRAL'
         _is_multispectral = True
     
     if kwargs.get('norm_pct', None) is not None:
@@ -781,19 +788,12 @@ def prepare_data(path,
         if color_mapping.get(0):
             del color_mapping[0]
 
-        # Handle Multispectral
-        if _is_multispectral:
-            data = (ArcGISInstanceSegmentationMSItemList.from_folder(path/'images')
-                .filter_by_func(remove_image_without_label)
-                .split_by_rand_pct(val_split_pct, seed=seed)
-                .label_from_func(get_y_func, chip_size=chip_size, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping, index_dir=index_dir))
-            _show_batch_multispectral = show_batch_rcnn_masks
-        else:
-            data = (ArcGISInstanceSegmentationItemList.from_folder(path/'images')
-                .filter_by_func(remove_image_without_label)
-                .split_by_rand_pct(val_split_pct, seed=seed)
-                .label_from_func(get_y_func, chip_size=chip_size, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping, index_dir=index_dir))
-
+        data = (ArcGISInstanceSegmentationItemList.from_folder(path/'images')
+            .filter_by_func(remove_image_without_label)
+            .split_by_rand_pct(val_split_pct, seed=seed)
+            .label_from_func(get_y_func, chip_size=chip_size, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping, index_dir=index_dir))
+        _show_batch_multispectral = show_batch_rcnn_masks
+        
         if transforms is None:
             ranges = (0, 1)
             if _image_space_used == _map_space:
@@ -842,31 +842,20 @@ def prepare_data(path,
             
         # TODO : Handle NoData case
 
-        # Handle Multispectral
-        if _is_multispectral:
-            data = ArcGISSegmentationMSItemList.from_folder(path/'images')\
-                .filter_by_func(remove_image_without_label)\
-                .split_by_rand_pct(val_split_pct, seed=seed)\
-                .label_from_func(
-                    get_y_func, classes=(['NoData'] + list(class_mapping.values())),
-                    class_mapping=class_mapping,
-                    color_mapping=color_mapping
-                )
-            _show_batch_multispectral = show_batch_classified_tiles            
+        data = ArcGISSegmentationItemList.from_folder(path/'images')\
+            .filter_by_func(remove_image_without_label)\
+            .split_by_rand_pct(val_split_pct, seed=seed)\
+            .label_from_func(
+                get_y_func, classes=(['NoData'] + list(class_mapping.values())),
+                class_mapping=class_mapping,
+                color_mapping=color_mapping
+            )
+        _show_batch_multispectral = show_batch_classified_tiles
 
-            def classified_tiles_collate_fn(samples): # The default fastai collate_fn was causing memory leak on tensors
-                r = ( torch.stack([x[0].data for x in samples]), torch.stack([x[1].data for x in samples]) )
-                return r
-            databunch_kwargs['collate_fn'] = classified_tiles_collate_fn
-        else:
-            data = ArcGISSegmentationItemList.from_folder(path/'images')\
-                .filter_by_func(remove_image_without_label)\
-                .split_by_rand_pct(val_split_pct, seed=seed)\
-                .label_from_func(
-                    get_y_func, classes=(['NoData'] + list(class_mapping.values())),
-                    class_mapping=class_mapping,
-                    color_mapping=color_mapping
-                )
+        def classified_tiles_collate_fn(samples): # The default fastai collate_fn was causing memory leak on tensors
+            r = ( torch.stack([x[0].data for x in samples]), torch.stack([x[1].data for x in samples]) )
+            return r
+        databunch_kwargs['collate_fn'] = classified_tiles_collate_fn
 
         if transforms is None:
             if _image_space_used == _map_space:
@@ -904,17 +893,12 @@ def prepare_data(path,
             dataset_type=dataset_type
         )
 
-        if _is_multispectral:
-            data = ObjectMSItemList.from_folder(path/'images')\
-            .filter_by_func(remove_image_without_label)\
-            .split_by_rand_pct(val_split_pct, seed=seed)\
+        data = ObjectDetectionItemList.from_folder(path / 'images') \
+            .filter_by_func(remove_image_without_label) \
+            .split_by_rand_pct(val_split_pct, seed=seed) \
             .label_from_func(get_y_func)
-            _show_batch_multispectral = show_batch_pascal_voc_rectangles
-        else:
-            data = ObjectDetectionItemList.from_folder(path/'images')\
-                .filter_by_func(remove_image_without_label)\
-                .split_by_rand_pct(val_split_pct, seed=seed)\
-                .label_from_func(get_y_func)
+        _show_batch_multispectral = show_batch_pascal_voc_rectangles
+
 
         if transforms is None:
             ranges = (0, 1)
@@ -955,15 +939,10 @@ def prepare_data(path,
                 \na folder "images" should be present in the supplied path to work with "Imagenet" data_type. """
                 )
 
-        if _is_multispectral:
-            data = ArcGISMSImageList.from_folder(path/'images')\
-                .split_by_rand_pct(val_split_pct, seed=42)\
-                .label_from_func(get_y_func)
-            _show_batch_multispectral = show_batch_labeled_tiles
-        else:
-            data = ImageList.from_folder(path/'images')\
-                .split_by_rand_pct(val_split_pct, seed=42)\
-                .label_from_func(get_y_func)
+        data = ArcGISImageList.from_folder(path / 'images') \
+            .split_by_rand_pct(val_split_pct, seed=42) \
+            .label_from_func(get_y_func)
+        _show_batch_multispectral = show_batch_labeled_tiles
 
         if dataset_type == 'Imagenet':
             if class_mapping is None:
@@ -1033,6 +1012,7 @@ def prepare_data(path,
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
 
     if _is_multispectral:
+        # Normalize multispectral imagery by calculating stats
         if dataset_type == 'RCNN_Masks':
             kwargs['do_normalize'] = False
 
@@ -1078,8 +1058,6 @@ def prepare_data(path,
                     normstats[norm_pct_search][s] = normstats[norm_pct_search][s].tolist()
             with open(normstats_json_path, 'w', encoding='utf-8') as f:
                 json.dump(normstats, f, ensure_ascii=False, indent=4)
-
-                
 
         # batch_stats -> [band_min_values, band_max_values, band_mean_values, band_std_values, scaled_min_values, scaled_max_values, scaled_mean_values, scaled_std_values]
         data._band_min_values = batch_stats['band_min_values']
@@ -1130,19 +1108,48 @@ def prepare_data(path,
             data = data.normalize(stats=(data._scaled_mean_values, data._scaled_std_values), do_x=True, do_y=False)
         
     elif dataset_type == 'RCNN_Masks':
-
         data = (data.transform(transforms, **kwargs_transforms)
                 .databunch(**databunch_kwargs))
-        data.show_batch = types.MethodType(show_batch_rcnn_masks, data)
-
+        data.show_batch = types.MethodType( show_batch_rcnn_masks, data )
+        # Exceptional case
+        # We are dividing image pixel values by 255, at the time of opening it for rcnn masks
+        # Not normalizing imagery here because model will normalize image internally
+        data.train_ds.x._div = 255.
+        data.valid_ds.x._div = 255.
+        
     else:
         data = (data.transform(transforms, **kwargs_transforms)
             .databunch(**databunch_kwargs)
             .normalize(imagenet_stats))
+        # RGB Image
+        # We need to divide image pixel values by 255. at the time of opening it
+        # because same method is used to open multispectral imagery as well
+        # and that workflow depends on the imagery specific stats
+        # Inflating imagenet_stats by 255x should have also worked
+        # But fastai transforms clip image value to 1 and
+        # in fastai 1.0.60 transforms are applied before normalization
+        data.train_ds.x._div = 255.
+        data.valid_ds.x._div = 255.
+
+    # Imagery type used while opening image chips
+    data._imagery_type = imagery_type
+    data.train_ds.x._imagery_type = data._imagery_type
+    data.valid_ds.x._imagery_type = data._imagery_type
 
     # Assigning chip size from training dataset and not data.x 
     # to consider transforms and resizing
-    data.chip_size = data.train_ds[0][0].shape[-1]
+    x_shape = data.train_ds[0][0].shape
+    data.chip_size = x_shape[-1]
+
+    # Alpha channel check with GDAL
+    if HAS_GDAL and x_shape[0] == 4:
+        if data._imagery_type == 'ASSUMED_RGB':
+            message = f"""
+            Could not infer Imagery Type, Found 4 Bands in input imagery. Please set the optional parameter 'imagery_type' to an appropriate value.
+            \nIf the imagery used to export the training data is a RGB imagery, please continue training by specifying `imagery_type='RGB'`.
+            \nIf the imagery used to export the training data is a multispectral imagery containing information in the 4th band, please check the documentation for parameter 'imagery_type' to find a suitable value. 
+            """
+            raise Exception(message)
 
     if has_esri_files:
         with open(stats_file) as f:
@@ -1193,13 +1200,12 @@ def prepare_data(path,
     
     data._is_multispectral = _is_multispectral
     if data._is_multispectral:
-        data._imagery_type = imagery_type
         data._bands = bands
         data._norm_pct = norm_pct
         data._rgb_bands = rgb_bands
         data._symbology_rgb_bands = rgb_bands
 
-        # Handle invalid color mapping
+        # Handle invalid color mapping 
         data._multispectral_color_mapping = color_mapping
         if any( -1 in x for x in data._multispectral_color_mapping.values() ):
             random_color_list = np.random.randint(low=0, high=255, size=(len(data._multispectral_color_mapping), 3)).tolist()

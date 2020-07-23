@@ -131,6 +131,10 @@ class ArcGISSegmentationLabelList(ImageList):
 class ArcGISInstanceSegmentationItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."
     _label_cls, _square_show_res = ArcGISSegmentationLabelList, False
+    _div = None
+    _imagery_type = None
+    def open(self, fn):
+        return ArcGISMSImage.open(fn, div=self._div, imagery_type=self._imagery_type)
 
 class ArcGISInstanceSegmentationMSItemList(ArcGISInstanceSegmentationItemList):
     "`ItemList` suitable for segmentation tasks."

@@ -21,6 +21,10 @@ class ObjectDetectionCategoryList(ObjectCategoryList):
 class ObjectDetectionItemList(ObjectItemList):
     "`ItemList` suitable for object detection."
     _label_cls,_square_show_res = ObjectDetectionCategoryList, False
+    _div = None
+    _imagery_type = None
+    def open(self, fn):
+        return ArcGISMSImage.open(fn, div=self._div, imagery_type=self._imagery_type)
 
 
 def _reconstruct(t, x, pad_idx, classes):

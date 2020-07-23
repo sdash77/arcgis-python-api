@@ -2,19 +2,26 @@ import os
 import traceback
 import json
 import math
+import warnings
 
 HAS_FASTAI = False
 try:    
     from .env import raise_fastai_import_error
     from fastai.vision.data import ImageList
-    from fastai.vision import Image, imagenet_stats
+    from fastai.vision import Image, imagenet_stats, pil2tensor
     import torch
     import numpy as np
+    import PIL
     from matplotlib import pyplot as plt
     HAS_FASTAI = True
 except Exception:
     import_exception = traceback.format_exc()
     pass
+
+GDAL_INSTALL_MESSAGE = f"""
+\nPlease install gdal using the following command 
+\nconda install gdal=2.3.3
+""".strip()
 
 class ArcGISMSImage(Image):
 
@@ -58,11 +65,69 @@ class ArcGISMSImage(Image):
             x = x.unsqueeze(0)
         return cls(x)
 
-class ArcGISMSImageList(ImageList):
+    @classmethod
+    def open(cls, path, cast_to=np.float32, div=None, imagery_type=None):
+        path = str(os.path.abspath(path))
+        if not os.path.exists:
+            raise Exception(f"The image path {path} could not be found on disk, please verify your training data.")
+
+        read = False
+        gdal_error = None
+        pillow_error = None
+        try:
+            import gdal
+            x = gdal.Open(path).ReadAsArray()
+            # Ignore Alpha Channel
+            if x.shape[0] == 4 and imagery_type == 'RGB':
+                x = x[:3]
+            x = torch.tensor(x.astype(cast_to))
+            read = True
+        except Exception as _gdal_error:
+            gdal_error = str(_gdal_error)
+            pass
+
+        if not read:
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", UserWarning)  # EXIF warning from TiffPlugin
+                    x = PIL.Image.open(path).convert('RGB')
+                x = pil2tensor(x, cast_to)
+                read = True
+            except Exception as _pillow_error:
+                pillow_error = str(_pillow_error)
+                pass
+
+        if not read:
+            # Attach gdal error
+            message = f"""
+            Tried opening image using gdal and encountered the following error
+            \n\n{gdal_error}
+            """
+            if (gdal_error) == ModuleNotFoundError:
+                message += GDAL_INSTALL_MESSAGE
+            # Attach pillow error
+            message += f"""
+            \n===================================================================
+            \n\nTried opening image using pillow and encountered the following error
+            \n\n{pillow_error}
+            """
+
+            raise Exception(message)
+        else:
+            if len(x.shape)==2:
+                x = x.unsqueeze(0)
+            if div is not None:
+                x = x / div
+
+        return cls(x)
+
+class ArcGISImageList(ImageList):
     "`ImageList` suitable for classification tasks."
     _square_show_res = False
+    _div = None
+    _imagery_type = None
     def open(self, fn):
-        return ArcGISMSImage.open_gdal(fn)
+        return ArcGISMSImage.open(fn, div=self._div, imagery_type=self._imagery_type)
 
 def get_multispectral_data_params_from_emd(data, emd):
     data._is_multispectral = emd.get('IsMultispectral', False)
