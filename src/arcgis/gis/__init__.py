@@ -6658,7 +6658,7 @@ class User(dict):
     ---------------------    ---------------------------------------------------------
     access                   Indicates the level of access of the user: private, org, or public. If private, the user descriptive information will not be available to others nor will the username be searchable.
     ---------------------    ---------------------------------------------------------
-    storageUsage             The amount of storage used for the user's subscription.
+    storageUsage             The amount of storage used for the entire organization.
     ---------------------    ---------------------------------------------------------
     storageQuota             Applicable to public users as it sets the total amount of storage available for a subscription. The maximum quota is 2GB.
     ---------------------    ---------------------------------------------------------
