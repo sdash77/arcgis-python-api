@@ -2772,7 +2772,12 @@ class Polygon(Geometry):
     #----------------------------------------------------------------------
     @_lazy_property
     def efd(self):
-        """returns a to work with elliptical fourier descriptors"""
+        """
+        Returns an `EFDAnalysis` class to work with elliptical fourier descriptors
+        
+        :returns: `EFDAnalysis`
+        
+        """
         from ._spatial_edf._edf import EFDAnalysis
         return EFDAnalysis(geom=self, normalize=True, init=False)
     #----------------------------------------------------------------------
