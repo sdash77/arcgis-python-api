@@ -1,6 +1,7 @@
 """
 New Geometries Classes
 """
+import copy
 import json
 import ujson as _ujson
 try:
@@ -134,7 +135,7 @@ class BaseGeometry(dict):
         return _is_valid(self)
 
     def _check_geometry_engine(self):
-        self._HASARCPY = False#True
+        self._HASARCPY = True
         try:
             import arcpy
         except:
@@ -634,12 +635,11 @@ class Geometry(BaseGeometry):
 
         """
         from .affine import skew
+        s = skew(geom=copy.deepcopy(self), x_angle=x_angle,
+                    y_angle=y_angle)        
         if inplace:
-            self = skew(geom=self, x_angle=x_angle,
-                        y_angle=y_angle)
-            return self
-        return skew(geom=self, x_angle=x_angle,
-                    y_angle=y_angle)
+            self.update(s)
+        return s
 
     def rotate(self, theta,
                inplace=False):
@@ -661,9 +661,10 @@ class Geometry(BaseGeometry):
 
         """
         from .affine import rotate
-        r = rotate(self, theta)
+        
+        r = rotate(copy.deepcopy(self), theta)
         if inplace:
-            self = r
+            self.update(r)
         return r
 
     def scale(self, x_scale=1, y_scale=1, inplace=False):
@@ -692,7 +693,7 @@ class Geometry(BaseGeometry):
         g = copy.copy(self)
         s = scale(g, *(x_scale, y_scale))
         if inplace:
-            self = s
+            self.update(s)
         return s
 
     def translate(self, x_offset=0,
@@ -717,9 +718,9 @@ class Geometry(BaseGeometry):
 
         """
         from .affine import translate
-        t = translate(self, x_offset, y_offset)
+        t = translate(copy.deepcopy(self), x_offset, y_offset)
         if inplace:
-            self = t
+            self.update(t)
         return t
 
     @property
@@ -765,7 +766,7 @@ class Geometry(BaseGeometry):
             return getattr(self.as_arcpy, "JSON", None)
         elif HASSHAPELY:
             try:
-                return self.as_shapely.__geo_interface__
+                return json.dumps(self.as_shapely.__geo_interface__)
             except:
                 return json.dumps(self)
 
