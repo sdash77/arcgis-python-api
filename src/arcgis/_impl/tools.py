@@ -12543,7 +12543,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=outSR or inSR)
         if future:
             return job
         else:
@@ -12597,7 +12598,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -12664,7 +12666,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -12751,7 +12754,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -12830,7 +12834,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -13065,7 +13070,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -13111,7 +13117,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -13149,7 +13156,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -13299,7 +13307,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -13353,7 +13362,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=outSR)
         if future:
             return job
         else:
@@ -13472,7 +13482,8 @@ class _GeometryService(_GISService):
                           jobid=None, 
                           task_url=url, 
                           notify=False, 
-                          gis=self._gis) 
+                          gis=self._gis,
+                          out_wkid=sr) 
         if future:  
             return job
         else:
@@ -13508,7 +13519,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -13667,7 +13679,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -13702,7 +13715,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:

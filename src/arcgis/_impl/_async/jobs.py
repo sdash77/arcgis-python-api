@@ -107,17 +107,20 @@ class GeometryJob(Job):
     _start_time = None
     _end_time = None
     _verbose = None    
+    _wkid = None
     def __init__(self, 
                  future:concurrent.futures.Future, 
                  task_name:str, 
                  jobid:str=None, 
                  task_url:str=None, 
                  notify:bool=False, 
-                 gis=None) -> None:
+                 gis=None,
+                 out_wkid:int=None) -> None:
         super(GeometryJob, self)
         self._start_time = datetime.datetime.now()
         self._task_name = task_name
         self._future = future
+        self._wkid = out_wkid
         if notify:
             self._future.add_done_callback(self._notify)
         self._future.add_done_callback(self._set_end_time)        
@@ -128,7 +131,25 @@ class GeometryJob(Job):
             self._jobid = uuid.uuid4().hex
         else:
             self._jobid = jobid
-
+    #----------------------------------------------------------------------
+    def result(self):
+        """returns the job result"""
+        from arcgis.geometry import Geometry
+        if self._wkid: # set the output sr to that wkid integer
+            sr = {'spatialReference' : { 'wkid' : self._wkid}}
+            res = self._future.result()
+            if isinstance(res, (list, tuple)):
+            
+                [g.update(sr) for g in res if not 'spatialReference' in g]
+                return [Geometry(g) for g in res]
+            elif isinstance(res, dict) and not 'spatialReference' in res:
+                res.update(sr)
+                return Geometry(res)
+            else:
+                return res
+        else:
+            return self._future.result()
+    
 class ItemStatusJob(Job):
     """represents an Item"""   
     _future = None
@@ -165,7 +186,6 @@ class ItemStatusJob(Job):
     #----------------------------------------------------------------------
     def _status(self, item, job_id, job_type):
         """Processes the asynchronous job"""
-        #“processing” | “completed” |”failed”
         import time
         from arcgis.gis import Item
         
