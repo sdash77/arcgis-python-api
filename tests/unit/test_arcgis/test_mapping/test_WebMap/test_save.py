@@ -5,7 +5,7 @@ import pytest
 from utils.mocks import MockWebMap
 from arcgis.mapping import WebMap
 
-gen_input_item_prop = {'title':'title', 'snippet':'snippet', 'tags':['tags']}
+gen_input_item_prop = {'title':'title', 'snippet':'snippet', 'tags':['tags'], 'typeKeywords': 'Offline'}
 gen_full_item_prop = {**gen_input_item_prop,
                       **{'type': 'Web Map', 'extent': '', 'text': '{}'}}
 
