@@ -6667,7 +6667,11 @@ class User(dict):
     ---------------------    ---------------------------------------------------------
     orgId                    The ID of the organization the user belongs to.
     ---------------------    ---------------------------------------------------------
-    role                     Defines the user's role in the organization.</br>Values: org_admin (organization administrator or custom role with administrative privileges) , org_publisher (organization publisher or custom role with publisher privileges) , org_user (organization user or custom role with user privileges)
+    role                     | Defines the user's role in the organization.
+                             Values:
+                               * ``org_admin`` - administrator or custom role with administrative privileges
+                               * ``org_publisher`` - publisher or custom role with publisher privileges
+                               * ``org_user`` - user or custom role with user privileges)
     ---------------------    ---------------------------------------------------------
     privileges               A JSON array of strings with predefined permissions in each. For a complete listing, see Privileges.
     ---------------------    ---------------------------------------------------------
