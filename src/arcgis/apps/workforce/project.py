@@ -224,6 +224,7 @@ class Project:
     def assignments_item(self):
         """The assignments :class:`~arcgis.gis.Item`"""
         if self._is_v2_project:
+            # this is the same item as workers_item, dispatchers_item for a v2 project - each points to the one FS
             return self.gis.content.get(self._item.id)
         else:
             return self.gis.content.get(self._item_data['assignments']['serviceItemId'])
@@ -312,6 +313,8 @@ class Project:
     def dispatcher_web_map_id(self):
         """The dispatcher webmap item id"""
         if self._is_v2_project:
+            # not all systems will support this new "Workforce2MapFeatureService" so we try/except. If the rel does
+            # not exist, we can get the webmap out of the metadata
             try:
                 related_items = self._item.related_items('WorkforceMap2FeatureService', 'reverse')
                 for item in related_items:
