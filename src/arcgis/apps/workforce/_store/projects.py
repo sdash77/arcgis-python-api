@@ -20,7 +20,7 @@ def get_project(project_id, gis):
     return workforce.Project(item)
 
 
-def create_project(title, summary=None, major_version=2, gis=None):
+def create_project(title, summary=None, major_version=None, gis=None):
     """
         Creates a new Workforce Project
 
@@ -36,7 +36,8 @@ def create_project(title, summary=None, major_version=2, gis=None):
         major_version          Optional :class:`Int`
                                The version of the Project to create. 1 represents the original
                                Workforce Project which does not support offline. 2 represents the newer
-                               Workforce Project which supports offline among other things.
+                               Workforce Project which supports offline among other things. Defaults
+                               to 2 in GIS 8.2 and higher
         ------------------     --------------------------------------------------------------------
         gis                    Optional :class:`~arcgis.gis.GIS`.
                                The authenticated GIS to use.
@@ -48,6 +49,12 @@ def create_project(title, summary=None, major_version=2, gis=None):
 
     if gis is None:
         gis = arcgis.env.active_gis
+    
+    if major_version is None:
+        if gis.version < [8, 2]:
+            major_version = 1
+        else:
+            major_version = 2
 
     if major_version == 1:
         return _v1_create_project(gis, summary, title)
