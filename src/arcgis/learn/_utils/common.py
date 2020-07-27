@@ -65,6 +65,53 @@ class ArcGISMSImage(Image):
             x = x.unsqueeze(0)
         return cls(x)
 
+    @staticmethod
+    def read_image(path):
+        path = str(os.path.abspath(path))
+        if not os.path.exists:
+            raise Exception(f"The image path {path} could not be found on disk, please verify your training data.")
+
+        gdal_error = None
+        skimage_error = None
+        try:
+            import gdal
+            return gdal.Open(path).ReadAsArray()
+        except Exception as _gdal_error:
+            gdal_error = str(_gdal_error)
+
+        try:
+            from skimage.io import imread
+            return imread(path)
+        except Exception as _skimage_error:
+            skimage_error = str(_skimage_error)
+
+        try:
+            from skimage.io import imread
+            return np.array(PIL.Image.open(path).convert('RGB'))
+        except Exception as _pillow_error:
+            pillow_error = str(_pillow_error)
+
+        # Attach gdal error
+        message = f"""
+           Tried opening image using gdal and encountered the following error
+           \n\n{gdal_error}
+           """
+        if (gdal_error) == ModuleNotFoundError:
+            message += GDAL_INSTALL_MESSAGE
+        # Attach skimage error
+        message += f"""
+           \n===================================================================
+           \n\nTried opening image using skimage and encountered the following error
+           \n\n{skimage_error}
+           """
+        # Attach pillow error
+        message += f"""
+           \n===================================================================
+           \n\nTried opening image using pillow and encountered the following error
+           \n\n{pillow_error}
+           """
+        raise Exception(message)
+
     @classmethod
     def open(cls, path, cast_to=np.float32, div=None, imagery_type=None):
         path = str(os.path.abspath(path))

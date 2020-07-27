@@ -231,7 +231,7 @@ class ArcGISSegmentationLabelList(ImageList):
 
         if not self.is_contiguous:
             x = map_to_contiguous(x, self.pixel_mapping)
-        print(x.unique())
+
         return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
     def analyze_pred(self, pred, thresh=0.5, ignore_mapped_class=[], model = None, thinning=None):
@@ -255,7 +255,10 @@ class ArcGISSegmentationLabelList(ImageList):
         return ArcGISImageSegment(t, color_mapping=self.color_mapping)
 
     def open(self, fn):
-        return ArcGISImageSegment(ArcGISMSImage.open(fn).data, color_mapping=self.color_mapping)
+        x = ArcGISMSImage.open(fn).data
+        if not self.is_contiguous:
+            x = map_to_contiguous(x, self.pixel_mapping)
+        return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
 class ArcGISSegmentationItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."

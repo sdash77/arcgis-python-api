@@ -109,13 +109,13 @@ data = {
         }
     },
     "unet": {
-        "model_name": "unet",
-        "datapath": "unet_psp_deep_data1",
+        "model_name":"unet",
+        "datapath": "unet_psp_deep_data",
         "model": UnetClassifier,
         "model_test": "unet_test",
         "prepare_data": {
-            "path": os.path.join(data_folder, "unet_psp_deep_data1"),
-            "batch_size": 2
+            "path": os.path.join(data_folder, "unet_psp_deep_data"),
+             "batch_size": 2
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -148,12 +148,12 @@ data = {
         }
     },
     "deeplab": {
-        "model_name": "deeplab",
-        "datapath": "unet_psp_deep_data1",
+        "model_name":"deeplab",
+        "datapath": "unet_psp_deep_data",
         "model": DeepLab,
         "model_test": "deeplab_test",
         "prepare_data": {
-            "path": os.path.join(data_folder, "unet_psp_deep_data1"),
+            "path": os.path.join(data_folder, "unet_psp_deep_data"),
             "batch_size": 2
         },
         "should_test": True,
@@ -229,14 +229,13 @@ data = {
         }
     },
     "pspnet": {
-        "model_name": "pspnet",
-        "datapath": "unet_psp_deep_data1",
+        "model_name":"pspnet",
+        "datapath": "unet_psp_deep_data",
         "model": PSPNetClassifier,
         "model_test": "pspnet_test",
         "prepare_data": {
-            "path": os.path.join(data_folder, "unet_psp_deep_data1"),
-            "batch_size": 2
-
+            "path": os.path.join(data_folder, "unet_psp_deep_data"),
+             "batch_size": 2
         },
         "should_test": True,
         "test_feature_layer": False,
