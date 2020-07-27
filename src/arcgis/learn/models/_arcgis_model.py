@@ -748,6 +748,7 @@ class ArcGISModel(object):
         if emd_template.get('psnr_metric'):
             model_analysis = f"""
             <p><b>PSNR Metric:</b> {emd_template.get('psnr_metric')}</p>
+            <p><b>SSIM Metric:</b> {emd_template.get('ssim_metric')}</p>
         """
 
         if model_analysis:

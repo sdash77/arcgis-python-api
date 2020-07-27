@@ -241,5 +241,7 @@ def pixel_classify_superres_image(model, tiles, device):
     tile_height, tile_width = tiles.shape[2], tiles.shape[3]
     img_normed = norm(tiles.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
     superres_predictions = superres_image(model, img_normed, device)
+    superres_predictions = (superres_predictions * torch.tensor(imagenet_stats[1]).view(1, -1, 1, 1).to(superres_predictions)) + torch.tensor(imagenet_stats[0]).view(1, -1, 1, 1).to(superres_predictions)
+    superres_predictions = superres_predictions.clamp(0, 1)
     return superres_predictions
     
