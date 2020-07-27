@@ -6658,13 +6658,20 @@ class User(dict):
     ---------------------    ---------------------------------------------------------
     access                   Indicates the level of access of the user: private, org, or public. If private, the user descriptive information will not be available to others nor will the username be searchable.
     ---------------------    ---------------------------------------------------------
-    storageUsage             The amount of storage used for the user's subscription.
+    storageUsage             | The amount of storage used for the entire organization.
+
+                             **NOTE:** This value is an estimate for the organization, not the specific user.
+                             For storage estimate of a user's items, see code example in the :attr:`items` method.
     ---------------------    ---------------------------------------------------------
     storageQuota             Applicable to public users as it sets the total amount of storage available for a subscription. The maximum quota is 2GB.
     ---------------------    ---------------------------------------------------------
     orgId                    The ID of the organization the user belongs to.
     ---------------------    ---------------------------------------------------------
-    role                     Defines the user's role in the organization.<br><br>Values: org_admin (organization administrator or custom role with administrative privileges) , org_publisher (organization publisher or custom role with publisher privileges) , org_user (organization user or custom role with user privileges)
+    role                     | Defines the user's role in the organization.
+                             Values:
+                               * ``org_admin`` - administrator or custom role with administrative privileges
+                               * ``org_publisher`` - publisher or custom role with publisher privileges
+                               * ``org_user`` - user or custom role with user privileges)
     ---------------------    ---------------------------------------------------------
     privileges               A JSON array of strings with predefined permissions in each. For a complete listing, see Privileges.
     ---------------------    ---------------------------------------------------------
@@ -7625,9 +7632,26 @@ class User(dict):
         max_items              Optional integer. The maximum number of items to be returned. The default is 100.
         ==================     ====================================================================
 
+
         :return:
            The list of items in the specified folder.
+
+        .. code-block:: python
+
+            # Example to **estimate** storage for a user's items
+
+            storage = 0
+            for item in user.items():
+                storage += item.size
+            try:
+                for f in user.folders:
+                    for f_item in user.folders(folder=f):
+                        storage += f_item.size
+                print(f"{user.username} using {storage} bytes")
+            except Exception as e:
+                print(f"{user.username} using {storage} bytes")
         """
+
         items = []
         folder_id = None
         if folder is not None:
