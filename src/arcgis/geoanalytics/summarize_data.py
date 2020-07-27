@@ -1149,7 +1149,12 @@ def summarize_attributes(input_layer,
                          output_name=None,
                          gis=None,
                          context=None,
-                         future=False):
+                         future=False,
+                         time_step_interval=None,
+                         time_step_interval_unit=None,
+                         time_step_repeat_interval=None,
+                         time_step_repeat_interval_unit=None,
+                         time_step_reference=None):
     """
     .. image:: _static/images/summarize_attributes/summarize_attributes.png
 
@@ -1200,6 +1205,32 @@ def summarize_attributes(input_layer,
     future                                                                       Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
 
                                                                                  The default value is 'False'.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    time_step_interval                                                           Optional integer. A numeric value that specifies duration of the time step interval. This option is only
+                                                                                 available if the input points are time-enabled and represent an instant in time.
+
+                                                                                 The default value is 'None'.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    time_step_interval_unit                                                      Optional string. A string that specifies units of the time step interval. This option is only available if the
+                                                                                 input points are time-enabled and represent an instant in time.
+
+                                                                                 Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+
+                                                                                 The default value is 'None'.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    time_step_repeat_interval                                                    Optional integer. A numeric value that specifies how often the time step repeat occurs.
+                                                                                 This option is only available if the input points are time-enabled and of time type instant.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    time_step_repeat_interval_unit                                               Optional string. A string that specifies the temporal unit of the step repeat.
+                                                                                 This option is only available if the input points are time-enabled and of time type instant.
+
+                                                                                 Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+
+                                                                                 The default value is 'None'.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    time_step_reference                                                          Optional datetime. A date that specifies the reference time to align the time slices to, represented in milliseconds from epoch.
+                                                                                 The default is January 1, 1970, at 12:00 a.m. (epoch time stamp 0). This option is only available if the
+                                                                                 input points are time-enabled and of time type instant.
     ===========================================================================  ===============================================================
 
     :returns: feature layer collection
@@ -1253,6 +1284,22 @@ def summarize_attributes(input_layer,
         "context": (str, "context"),
         "output": (_FeatureSet, "Output Features"),
     }
+    if gis and gis.version > [8,2]:
+        param_db["time_step_interval"] = (int, "timeStepInterval")
+        param_db["time_step_interval_unit"] = (str, "timeStepIntervalUnit")
+        param_db["time_step_repeat_interval"] = (int, "timeStepRepeatInterval")
+        param_db["time_step_repeat_interval_unit"] = (str, "timeStepRepeatIntervalUnit")
+        param_db["time_step_reference"] = (_datetime, "timeStepReference")        
+    
+    else:
+        for rk in ["time_step_interval", "time_step_interval_unit",
+                   "time_step_repeat_interval", "time_step_repeat_interval_unit",
+                   "time_step_reference"]:    
+            if rk in params:
+                params.pop(rk, None)
+    
+        
+        
     return_values = [
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
