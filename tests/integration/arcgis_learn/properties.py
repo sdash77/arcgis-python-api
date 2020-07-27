@@ -1,20 +1,23 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = '0'
-from arcgis.learn import MLModel, FasterRCNN, SuperResolution, EntityRecognizer, PointCNN, SingleShotDetector, UnetClassifier, \
-    PSPNetClassifier, FeatureClassifier, RetinaNet, MaskRCNN, prepare_data, DeepLab, YOLOv3, FullyConnectedNetwork, prepare_tabulardata
-import json
 
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+from arcgis.learn import MLModel, FasterRCNN, SuperResolution, EntityRecognizer, PointCNN, SingleShotDetector, \
+    UnetClassifier, \
+    PSPNetClassifier, FeatureClassifier, RetinaNet, MaskRCNN, prepare_data, DeepLab, YOLOv3, FullyConnectedNetwork, \
+    prepare_tabulardata
+import json
 
 data_folder = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model"
 data_folder_inference = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_inference"
 authorization_path = r"/home/administrator/Raster/Test_Data/data_for_testing_1/properties/properties.json"
 
-
 colormap = {'0': [0, 0, 0], '1': [0, 255, 0], '2': [0, 255, 100], '3': [0, 0, 255], '4': [0, 255, 100],
             '5': [255, 0, 0],
             '6': [0, 150, 100], '7': [0, 150, 100], '8': [0, 150, 100], '9': [0, 150, 100], '10': [0, 150, 100]}
 
-X = ['altitude_m', 'wind_speed', 'dayl__s_', 'prcp__mm_d','srad__W_m_','swe__kg_m_','tmax__deg','tmin__deg','vp__Pa_']
+X = ['altitude_m', 'wind_speed', 'dayl__s_', 'prcp__mm_d', 'srad__W_m_', 'swe__kg_m_', 'tmax__deg', 'tmin__deg',
+     'vp__Pa_']
+
 
 def setuposenviron():
     with open(authorization_path) as f:
@@ -24,7 +27,7 @@ def setuposenviron():
 
 data = {
     "ssd": {
-        "model_name":"ssd",
+        "model_name": "ssd",
         "datapath": "ssd_retina_data",
         "model": SingleShotDetector,
         "model_test": "ssd_test",
@@ -45,18 +48,33 @@ data = {
             "path": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "ssd")
         },
         "inferencing_image_server": {
-            "input_raster": "613f46c64c0048f3a46258716ece76a0",
-            "model_package": "482b9654d41c4b00817d13220afac258"
+            "input_raster": "163a78a453c243db964b5d7ee05a3fdb",
+            "context": {'cellSize': 1,
+                        'processorType': 'GPU',
+                        "extent": {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                                   'xmin': -19518789.277457245,
+                                   'ymin': -2403355.53258688,
+                                   'xmax': -19518642.375043556,
+                                   'ymax': -2403295.816158551},
+                        "parallelProcessingFactor": "2"
+                        },
+            "model_arguments": {
+                'padding': '56',
+                'threshold': '0.5',
+                'nms_overlap': '0.1',
+                'batch_size': '4',
+                'exclude_pad_detections': 'True'
+            }
         }
     },
     "rn": {
-        "model_name":"retinanet",
+        "model_name": "retinanet",
         "datapath": "ssd_retina_data",
         "model": RetinaNet,
         "model_test": "rn_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "ssd_retina_data"),
-             "batch_size": 2
+            "batch_size": 2
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -71,21 +89,36 @@ data = {
             "path": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "ssd")
         },
         "inferencing_image_server": {
-             "input_raster": "613f46c64c0048f3a46258716ece76a0",
-            "model_package": "482b9654d41c4b00817d13220afac258"
+            "input_raster": "163a78a453c243db964b5d7ee05a3fdb",
+            "context": {'cellSize': 1,
+                        'processorType': 'GPU',
+                        "extent": {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                                   'xmin': -19518789.277457245,
+                                   'ymin': -2403355.53258688,
+                                   'xmax': -19518642.375043556,
+                                   'ymax': -2403295.816158551},
+                        "parallelProcessingFactor": "2"
+                        },
+            "model_arguments": {
+                'padding': '56',
+                'threshold': '0.5',
+                'nms_overlap': '0.1',
+                'batch_size': '4',
+                'exclude_pad_detections': 'True'
+            }
         }
     },
     "unet": {
-        "model_name":"unet",
+        "model_name": "unet",
         "datapath": "unet_psp_deep_data1",
         "model": UnetClassifier,
         "model_test": "unet_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "unet_psp_deep_data1"),
-             "batch_size": 2
+            "batch_size": 2
         },
         "should_test": True,
-        "test_feature_layer":False,
+        "test_feature_layer": False,
         "regression_parameter": "accuracy",
         "regression_test_score": 0.40,
         "inferencing_parameter": {
@@ -98,11 +131,24 @@ data = {
         },
         "inferencing_image_server": {
             "input_raster": "ab399b847323487dba26809bf11ea91a",
-            "model_package": "ff4f746c0c854b829c03d43821532a5e"
+            "context": {
+                "extent": {'cellSize': 0.3,
+                           'processorType': 'GPU',
+                           'extent': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                                      'xmin': -13046171.4852458,
+                                      'ymin': 4033856.50520854,
+                                      'xmax': -13045909.5350487,
+                                      'ymax': 4034115.48833226},
+                           'batch_size': 1}
+            },
+            "model_args": {
+                'batch_size': 4,
+                'padding': 56
+            }
         }
     },
     "deeplab": {
-        "model_name":"deeplab",
+        "model_name": "deeplab",
         "datapath": "unet_psp_deep_data1",
         "model": DeepLab,
         "model_test": "deeplab_test",
@@ -111,8 +157,8 @@ data = {
             "batch_size": 2
         },
         "should_test": True,
-        "test_feature_layer":False,
-        "regression_parameter":"accuracy",
+        "test_feature_layer": False,
+        "regression_parameter": "accuracy",
         "regression_test_score": 0.40,
         "inferencing_parameter": {
             "model_type": "ClassifyPixelsUsingDeepLearning",
@@ -125,11 +171,24 @@ data = {
         },
         "inferencing_image_server": {
             "input_raster": "ab399b847323487dba26809bf11ea91a",
-            "model_package": "9cd665ec17fc4aac831d03908ba9e9fc"
+            "context": {
+                "extent": {'cellSize': 0.3,
+                           'processorType': 'GPU',
+                           'extent': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                                      'xmin': -13046171.4852458,
+                                      'ymin': 4033856.50520854,
+                                      'xmax': -13045909.5350487,
+                                      'ymax': 4034115.48833226},
+                           'batch_size': 1}
+            },
+            "model_args": {
+                'batch_size': 4,
+                'padding': 56
+            }
         }
     },
     "fc": {
-        "model_name":"featureclassifier",
+        "model_name": "featureclassifier",
         "datapath": "fc_data",
         "model": FeatureClassifier,
         "model_test": "fc_test",
@@ -138,8 +197,8 @@ data = {
             "batch_size": 2
         },
         "should_test": True,
-        "test_feature_layer":False,
-        "regression_parameter":"confusion_matrix",
+        "test_feature_layer": False,
+        "regression_parameter": "confusion_matrix",
         "regression_test_score": 0.40,
         "inferencing_parameter": {
             "model_type": "ClassifyObjectsUsingDeepLearning",
@@ -152,21 +211,35 @@ data = {
             "path": os.path.join(data_folder_inference, "ClassifyObjectsUsingDeepLearning", "fc")
         },
         "inferencing_image_server": {
-            "input_raster": "pass",
-            "model_package": "pass"
+            "input_raster": "ab399b847323487dba26809bf11ea91a",
+            "input_features":"6ba16b390c4641a29fbc9e216080985d",
+            "context":{
+                "extent": {'cellSize': 0.3,
+                           'processorType':'GPU',
+                           'extent': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                                         'xmin': -19518742.602406844,
+                                         'ymin': -2403911.9216141663,
+                                         'xmax': -19518595.699993156,
+                                         'ymax': -2403852.205185837}
+                          }
+            },
+            "model_args": {
+                'batch_size': 4
+            }
         }
     },
     "pspnet": {
-        "model_name":"pspnet",
+        "model_name": "pspnet",
         "datapath": "unet_psp_deep_data1",
         "model": PSPNetClassifier,
         "model_test": "pspnet_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "unet_psp_deep_data1"),
-             "batch_size": 2
+            "batch_size": 2
+
         },
         "should_test": True,
-        "test_feature_layer":False,
+        "test_feature_layer": False,
         "regression_parameter": "accuracy",
         "regression_test_score": 0.40,
         "inferencing_parameter": {
@@ -180,11 +253,24 @@ data = {
         },
         "inferencing_image_server": {
             "input_raster": "ab399b847323487dba26809bf11ea91a",
-            "model_package": "3e652c56f7d94ffabd910ded2761c50c"
+            "context": {
+                "extent": {'cellSize': 0.3,
+                           'processorType': 'GPU',
+                           'extent': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                                      'xmin': -13046171.4852458,
+                                      'ymin': 4033856.50520854,
+                                      'xmax': -13045909.5350487,
+                                      'ymax': 4034115.48833226},
+                           'batch_size': 1}
+            },
+            "model_args": {
+                'batch_size': 1,
+                'padding': 56
+            }
         }
     },
     "maskrcnn": {
-        "model_name":"maskrcnn",
+        "model_name": "maskrcnn",
         "datapath": "maskrcnn_data",
         "model": MaskRCNN,
         "model_test": "maskrcnn_test",
@@ -193,7 +279,7 @@ data = {
             "batch_size": 2
         },
         "should_test": True,
-        "test_feature_layer":False,
+        "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
         "inferencing_parameter": {
@@ -205,12 +291,27 @@ data = {
             "path": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "maskrcnn")
         },
         "inferencing_image_server": {
-            "input_raster": "pass",
-            "model_package": "pass"
+            "input_raster": "d9dcf0415d23462da80a8f47783fe9e8",
+            "context": {'cellSize': 1,
+                        'processorType': 'GPU',
+                        "extent": {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                                   'xmin': -13042106.3685066,
+                                   'ymin': -13042016.2777014,
+                                   'xmax': 4033862.48706524,
+                                   'ymax': 4033930.88199369},
+                        "parallelProcessingFactor": "2"
+                        },
+            "model_arguments": {
+                'padding': '56',
+                'threshold': '0.5',
+                'nms_overlap': '0.1',
+                'batch_size': '4',
+                'exclude_pad_detections': 'True'
+            }
         }
     },
     "ner": {
-        "model_name":"ner",
+        "model_name": "ner",
         "datapath": "ner_data",
         "model": EntityRecognizer,
         "model_test": "ner_test",
@@ -220,7 +321,7 @@ data = {
             "dataset_type": 'ner_json'
         },
         "should_test": True,
-        "test_feature_layer":False,
+        "test_feature_layer": False,
         "regression_parameter": "precision_score",
         "regression_test_score": 0.40,
         "inferencing_parameter": {
@@ -234,26 +335,26 @@ data = {
         }
     },
     "pointcnn": {
-        "model_name":"pointcnn",
+        "model_name": "pointcnn",
         "datapath": "pointcnn_data",
         "model": PointCNN,
         "model_test": "pointcnn_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "pointcnn_data", "input"),
-             "batch_size": 2,
-             "dataset_type": "PointCloud",
-             "transforms": None, "color_mapping": colormap
-         },
+            "batch_size": 2,
+            "dataset_type": "PointCloud",
+            "transforms": None, "color_mapping": colormap
+        },
         "should_test": True,
-        "test_feature_layer":False,
-        "regression_parameter":"compute_precision_recall",
+        "test_feature_layer": False,
+        "regression_parameter": "compute_precision_recall",
         "regression_test_score": 0.40,
         "inferencing_parameter": {
             "model_type": "predict_las",
             "sample_input": os.path.join(data_folder_inference, "Others", "pointcnn",
                                          "sample_input"),
             "sample_output": os.path.join(data_folder_inference, "Others", "pointcnn",
-                                         "sample_output")
+                                          "sample_output")
         },
         "inferencing_image_server": {
             "input_raster": "pass",
@@ -261,22 +362,22 @@ data = {
         }
     },
     "superres": {
-        "model_name":"superres",
+        "model_name": "superres",
         "datapath": "superres_data",
         "model": SuperResolution,
         "model_test": "superres_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "superres_data"),
-             "batch_size": 4,
-             "dataset_type": "superres",
-             "downsample_factor": 8
-         },
+            "batch_size": 4,
+            "dataset_type": "superres",
+            "downsample_factor": 8
+        },
         "should_test": True,
-        "test_feature_layer":False,
+        "test_feature_layer": False,
         "regression_parameter": "psnr_metric",
         "regression_test_score": 0.40,
         "inferencing_parameter": {
-            "model_type": "ClassifyPixelsUsingDeepLearning",
+            "model_type": "pass",
             "sample_input": os.path.join(data_folder_inference, "ClassifyPixelsUsingDeepLearning", "superres",
                                          "input_image.jpg"),
             "model": os.path.join(data_folder_inference, "ClassifyPixelsUsingDeepLearning", "superres",
@@ -286,11 +387,24 @@ data = {
         },
         "inferencing_image_server": {
             "input_raster": "ab399b847323487dba26809bf11ea91a",
-            "model_package": "345f422ab0004d08b701189e0a083254"
+            "context": {
+                "extent": {'cellSize': 0.3,
+                           'processorType': 'GPU',
+                           'extent': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                                      'xmin': -13046171.4852458,
+                                      'ymin': 4033856.50520854,
+                                      'xmax': -13045909.5350487,
+                                      'ymax': 4034115.48833226},
+                           'batch_size': 1}
+            },
+            "model_args": {
+                'batch_size': 1,
+                'padding': 56
+            }
         }
     },
     "fasterrcnn": {
-        "model_name":"fasterrcnn",
+        "model_name": "fasterrcnn",
         "datapath": "fasterrcnn_data",
         "model": FasterRCNN,
         "model_test": "fasterrcnn_test",
@@ -299,24 +413,40 @@ data = {
             "batch_size": 4
         },
         "should_test": True,
-        "test_feature_layer":False,
+        "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.10,
         "inferencing_parameter": {
             "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "fasterrcnn",
                                          "input_image.tif"),
-            "model": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "fasterrcnn", "fasterrcnn.emd"),
+            "model": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "fasterrcnn",
+                                  "fasterrcnn.emd"),
             "parameters": "padding 56;batch_size 64;threshold 0.5;return_bboxes True",
             "path": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "fasterrcnn")
         },
         "inferencing_image_server": {
-            "input_raster": "NO",
-            "model_package": "NO"
+            "input_raster": "d9dcf0415d23462da80a8f47783fe9e8",
+            "context": {'cellSize': 1,
+                        'processorType': 'GPU',
+                        "extent": {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                                   'xmin': -13042106.3685066,
+                                   'ymin': -13042016.2777014,
+                                   'xmax': 4033862.48706524,
+                                   'ymax': 4033930.88199369},
+                        "parallelProcessingFactor": "2"
+                        },
+            "model_arguments": {
+                'padding': '56',
+                'threshold': '0.5',
+                'nms_overlap': '0.1',
+                'batch_size': '4',
+                'exclude_pad_detections': 'True'
+            }
         }
     },
     "yolov3": {
-        "model_name":"yolov3",
+        "model_name": "yolov3",
         "datapath": "yolo_data",
         "model": YOLOv3,
         "model_test": "yolov3_test",
@@ -325,7 +455,7 @@ data = {
             "batch_size": 4
         },
         "should_test": True,
-        "test_feature_layer":False,
+        "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.10,
         "inferencing_parameter": {
@@ -337,8 +467,23 @@ data = {
             "path": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "yolo")
         },
         "inferencing_image_server": {
-            "input_raster": "pass",
-            "model_package": "pass"
+            "input_raster": "d9dcf0415d23462da80a8f47783fe9e8",
+            "context": {'cellSize': 1,
+                        'processorType': 'GPU',
+                        "extent": {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                                   'xmin': -13042106.3685066,
+                                   'ymin': -13042016.2777014,
+                                   'xmax': 4033862.48706524,
+                                   'ymax': 4033930.88199369},
+                        "parallelProcessingFactor": "2"
+                        },
+            "model_arguments": {
+                'padding': '56',
+                'threshold': '0.5',
+                'nms_overlap': '0.1',
+                'batch_size': '4',
+                'exclude_pad_detections': 'True'
+            }
         }
     },
     "fcn": {
@@ -358,12 +503,7 @@ data = {
         "regression_parameter": "score",
         "regression_test_score": 0.10,
         "inferencing_parameter": {
-            "model_type": "pass",
-            "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "yolo",
-                                         "input_image.jpg"),
-            "model": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "yolo", "yolov3_test.emd"),
-            "parameters": "padding 56;batch_size 64;threshold 0.5;return_bboxes True",
-            "path": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "yolo")
+            "model_type": "pass"
         },
         "inferencing_image_server": {
             "input_raster": "pass",
@@ -377,7 +517,7 @@ data = {
         "model_test": "ml_test",
         "prepare_tabular_data": {
             "explanatory_variables": X,
-            "preprocessors":True
+            "preprocessors": True
         },
         "gis_content_search": {
             "query": 'calgary_no_southland_solar owner:api_data_owner',
@@ -388,12 +528,7 @@ data = {
         "regression_parameter": "score",
         "regression_test_score": 0.10,
         "inferencing_parameter": {
-            "model_type": "pass",
-            "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "yolo",
-                                         "input_image.jpg"),
-            "model": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "yolo", "yolov3_test.emd"),
-            "parameters": "padding 56;batch_size 64;threshold 0.5;return_bboxes True",
-            "path": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "yolo")
+            "model_type": "pass"
         },
         "inferencing_image_server": {
             "input_raster": "pass",

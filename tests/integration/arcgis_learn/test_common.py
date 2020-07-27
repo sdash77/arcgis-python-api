@@ -12,7 +12,8 @@ from parameterized import parameterized
 from fastai.vision.learner import ClassificationInterpretation
 import random
 import string
-from arcgis.learn import classify_pixels, detect_objects
+from sys import platform
+from arcgis.learn import classify_pixels, detect_objects, classify_objects
 import_exception = None
 
 try:
@@ -160,6 +161,9 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
     # Fit for 1 epochs with LR.
     model_object.fit(1, lr=0.001)
 
+    # save model
+    model_object.save(f'{model_test}')
+
     ## Check model with all supported backbones
     if os.environ['run_backbones'] == "1":
         print("Testing for all backbones")
@@ -189,13 +193,13 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
         elif regression_parameter == "compute_precision_recall":
             result = model_object.compute_precision_recall().loc["precision", :].max()
         elif regression_parameter == "psnr_metric":
-            result = 0.0
+            result = model_object.show_metrics()[-1]
         else:
             result = 0.0
 
         accuracy_values["attributes"][model_name] = result
 
-        # assert (accuracy >= regression_test_score),"Model accuracy is lower than the threshold value. Please check."
+        assert (result >= regression_test_score),"Model accuracy is lower than the threshold value. Please check."
 
 
 
@@ -204,22 +208,67 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
         from arcpy.ia import DetectObjectsUsingDeepLearning, ClassifyPixelsUsingDeepLearning, ClassifyObjectsUsingDeepLearning
         # Inferencing from image server
         from arcgis.gis import GIS
-        from arcgis.learn import Model
-        gis = GIS('https://datascienceadv.dev.geocloud.com/portal', authorization_data["for_inferencing"]["username"],authorization_data["for_inferencing"]["password"])
+        from arcgis.learn import Model, detect_objects
+        gis = GIS('https://ndhlnagsb01.esri.com/portal', authorization_data["for_inferencing"]["username"],authorization_data["for_inferencing"]["password"], verify_cert=False)
 
         letters = string.ascii_lowercase
         output_name = ''.join(random.choice(letters) for i in range(9))
 
         if inferencing_parameter["model_type"] == "DetectObjectsUsingDeepLearning":
-            DetectObjectsUsingDeepLearning(
-                    inferencing_parameter["sample_input"],
-                os.path.join(inferencing_parameter["path"], output_name+ ".shp"),
-                inferencing_parameter["model"],
-                inferencing_parameter["parameters"]
+            model_path = os.path.join(data_folder, data_path, f'models/{model_test}/{model_test}.dlpk')
 
-            )
+            model_package = gis.content.add(
+                item_properties={"type": "Deep Learning Package", "typeKeywords": "Deep Learning",
+                                 "title": model_test,
+                                 "tags": "deeplearning, Detect object using deep learning", 'overwrite': 'True'}, data=model_path,
+                folder="model_inference")
+
+            detect_objects_model = Model(model_package)
+            detect_objects_model.install()
+            input_raster = gis.content.get(inferencing_image_server["input_raster"])
+
+            detect_objects(input_raster.url,
+                           model=detect_objects_model,
+                           model_arguments=inferencing_image_server["model_arguments"],
+                           output_name='test_model_'+output_name,
+                           folder="model_inference",
+                           context=inferencing_image_server["context"],
+                           gis=gis)
+
+            if "win" in platform:
+                DetectObjectsUsingDeepLearning(
+                        inferencing_parameter["sample_input"],
+                    os.path.join(inferencing_parameter["path"], output_name+ ".shp"),
+                    inferencing_parameter["model"],
+                    inferencing_parameter["parameters"]
+
+                )
+
+
 
         elif inferencing_parameter["model_type"] == "ClassifyPixelsUsingDeepLearning":
+
+            model_path = os.path.join(data_folder, data_path, f'models/{model_test}/{model_test}.dlpk')
+
+            model_package = gis.content.add(
+                item_properties={"type": "Deep Learning Package", "typeKeywords": "Deep Learning",
+                                 "title": model_test,
+                                 "tags": "deeplearning, classify pxel using deeplearning", 'overwrite': 'True'}, data=model_path,
+                folder="model_inference")
+
+            classify_pixel_model = Model(model_package)
+            classify_pixel_model.install()
+            input_raster = gis.content.get(inferencing_image_server["input_raster"])
+
+            classify_pixels(input_raster=input_raster.url,
+                            model=classify_pixel_model,
+                            output_name='test_model_'+output_name,
+                            context=inferencing_image_server["context"],
+                            model_arguments=inferencing_image_server["model_args"],
+                            folder="model_inference",
+                            gis=gis)
+
+            if "win" in platform:
                 ClassifyPixelsUsingDeepLearning(
                     inferencing_parameter["sample_input"],
                     inferencing_parameter["model"],
@@ -227,44 +276,43 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
                     "PROCESS_AS_MOSAICKED_IMAGE"
                 )
 
-                model_item = gis.content.get(inferencing_image_server["model_package"])
-                classify_pixel_model = Model(model_item)
-                classify_pixel_model.install()
-                classify_pixel_model.query_info()
-
-                input_raster = gis.content.get(inferencing_image_server["input_raster"])
-
-                ext = {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
-                       'xmin': -13046171.4852458,
-                       'ymin': 4033856.50520854,
-                       'xmax': -13045909.5350487,
-                       'ymax': 4034115.48833226}
-
-                context = {'cellSize': 0.3,
-                           'processorType': 'GPU',
-                           'extent': ext,
-                           'batch_size': 4}
-
-                classify_pixels(input_raster=input_raster.url,
-                                model=classify_pixel_model,
-                                output_name=output_name,
-                                context=context,
-                                folder="model_inferencing",
-                                gis=gis)
-
-
 
         elif inferencing_parameter["model_type"] == "ClassifyObjectsUsingDeepLearning":
-            ClassifyObjectsUsingDeepLearning(
-                inferencing_parameter["sample_input"],
-                inferencing_parameter["path"],
-                inferencing_parameter["model"],
-                in_features=inferencing_parameter["feature_layer"],
-                class_label_field="ClassLabel",
-                processing_mode="PROCESS_AS_MOSAICKED_IMAGE",
-                model_arguments="batch_size 4"
 
-            )
+            model_path = os.path.join(data_folder, data_path, f'models/{model_test}/{model_test}.dlpk')
+
+            model_package = gis.content.add(
+                item_properties={"type": "Deep Learning Package", "typeKeywords": "Deep Learning",
+                                 "title": model_test,
+                                 "tags": "deeplearning, Classify object using deep learning", 'overwrite': 'True'},
+                data=model_path,
+                folder="model_inference")
+
+            classify_pixel_model = Model(model_package)
+            classify_pixel_model.install()
+            input_raster = gis.content.get(inferencing_image_server["input_raster"])
+            input_feature = gis.content.get(inferencing_image_server["input_features"])
+            classify_objects(input_raster=input_raster.url,
+                             model=model_package,
+                             input_features=input_feature,
+                             class_value_field='status',
+                             model_arguments=inferencing_image_server["model_args"],
+                             output_name='test_model_'+output_name,
+                             context=inferencing_image_server["context"],
+                            folder="model_inference",
+                            gis=gis)
+
+            if "win" in platform:
+                ClassifyObjectsUsingDeepLearning(
+                    inferencing_parameter["sample_input"],
+                    inferencing_parameter["path"],
+                    inferencing_parameter["model"],
+                    in_features=inferencing_parameter["feature_layer"],
+                    class_label_field="ClassLabel",
+                    processing_mode="PROCESS_AS_MOSAICKED_IMAGE",
+                    model_arguments="batch_size 4"
+
+                )
         elif inferencing_parameter["model_type"] == "extract_entities":
             model_object.extract_entities(inferencing_parameter["sample_input"])
         elif inferencing_parameter["model_type"] == "predict_las":
@@ -276,8 +324,7 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
         else:
             pass
 
-    # save model
-    model_object.save(f'{model_test}')
+
     # Load from saved model.
     model_object.load(f'{model_test}')
 
@@ -309,6 +356,9 @@ class TestTraining(unittest.TestCase):
         print("Test: " + self._testMethodName)
 
     def tearDown(self):
+        torch.cuda.empty_cache()
+        # for key, val in data.items():
+        #     os.system(f'rm -rf "{os.path.join(data_folder, val["datapath"], "models")}"')
         print("Test:" + self._testMethodName + "is completed.\n")
         print("------------------------------------------------------------------\n")
 
@@ -324,7 +374,10 @@ class TestTraining(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        print("\n All Tests have completed")
+        torch.cuda.empty_cache()
+        # for key, val in data.items():
+        #     os.system(f'rm -rf "{os.path.join(data_folder, val["datapath"], "models")}"')
+        print("\n All Tests have completed.")
         print("==================================================================")
 
 
@@ -332,11 +385,12 @@ class TestTraining(unittest.TestCase):
 
 ## Remove all model directories
 def tearDownModule():
+    torch.cuda.empty_cache()
     if os.environ['run_nightly'] == "1":
         print("Updating feature layer for accuracy dashboard\n")
         updateAccuracyResults()
-    for key, val in data.items():
-        os.system(f'rm -rf "{os.path.join(data_folder,val["datapath"],"models")}"')
+    # for key, val in data.items():
+    #     os.system(f'rm -rf "{os.path.join(data_folder,val["datapath"],"models")}"')
 
     print("**End Common Arcgis Learn module Training**")
 
