@@ -60,6 +60,8 @@ def create_project(title, summary=None, major_version=None, gis=None):
         return _v1_create_project(gis, summary, title)
 
     elif major_version == 2:
+        if gis.version < [7, 1]:
+            raise ValueError("Offline Workforce Projects not supported at GIS lower than 7.1")
         return _v2_create_project(gis, summary, title)
 
     else:
