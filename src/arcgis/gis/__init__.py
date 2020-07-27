@@ -7835,7 +7835,16 @@ class Item(dict):
                     for lyr in svc.properties.layers:
                         if self.type == 'Scene Service':
                             lyr_url = svc.url + '/layers/' + str(lyr.id)
-                            lyr = SceneLayer(lyr_url, self._gis)
+                            category = None
+                            if "Point" in self.typeKeywords:
+                                category = "Point"
+                            if "3DObject" in self.typeKeywords:
+                                category = "3DObject"
+                            if "IntegratedMesh" in self.typeKeywords:
+                                category = "IntegratedMesh"
+                            if "PointCloud" in self.typeKeywords:
+                                category = "PointCloud"
+                            lyr = SceneLayer(lyr_url, self._gis, category)
                         else:
                             lyr_url = svc.url+'/'+str(lyr.id)
                             lyr = Layer(lyr_url, self._gis)
