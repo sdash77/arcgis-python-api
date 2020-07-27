@@ -132,7 +132,8 @@ class Server(BaseServer):
                                      url=url,
                                      initialize=initialize,
                                      **kwargs)
-
+        if url.endswith("/"):
+            url = url[:-1]
         self._catalog = kwargs.pop('servicesdirectory', None)
         if not url.lower().endswith('/admin'):
             url = "%s/admin" % url
