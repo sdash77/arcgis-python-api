@@ -1,4 +1,3 @@
-
 from arcgis._impl.common._isd import InsensitiveDict
 ###########################################################################
 class APIKey(object):
@@ -20,12 +19,21 @@ class APIKey(object):
         return self.__str__()    
     #----------------------------------------------------------------------
     @property
-    def properties(self) -> InsensitiveDict:
+    def properties(self):
         if self._properties is None:
             self._properties = InsensitiveDict(self._item.app_info)
         return self._properties
     #----------------------------------------------------------------------
-    def delete(self) -> bool:
+    @property
+    def apikey(self):
+        """
+        Returns the API Key value for the current key.
+        
+        :returns: String
+        """
+        return self.properties.apiKey
+    #----------------------------------------------------------------------
+    def delete(self):
         return self._item.delete()
     #----------------------------------------------------------------------
     def reset(self):
@@ -41,7 +49,58 @@ class APIKey(object):
         self._properties = None
         return self._gis._con.post(url, params)
     #----------------------------------------------------------------------
-    def update(self, http_referers:list=None, privileges:list=None) -> dict:
+    def update(self, http_referers=None, privileges=None):
+        """
+        Updates the API Key's properties
+        
+        ================  ===============================================================================
+        **Parameter**     **Description**
+        ----------------  -------------------------------------------------------------------------------
+        http_referers     Optional List. A list of the http referrers for which usage of the 
+                          API Key will be restricted to.
+                          
+                          **Example**
+                            
+                          ```
+                          [
+                          "https://foo.com",
+                          "https://bar.com"
+                          ]
+                          ```
+                          
+                          Note: Http Referrers can be configured for non apiKey type apps as 
+                          well. The list configured here will be used to validate the app 
+                          tokens sent in while accessing the sharing API. The referrer checks 
+                          will not be applied to user tokens.
+        ----------------  -------------------------------------------------------------------------------
+        privileges        Optional List. A list of the privileges that will be available for 
+                          this API key.
+                          
+                          **Example**
+                          
+                          ```   
+                          
+                          [
+                          "portal:apikey:basemaps",
+                          "portal:app:access:item:itemId",
+                          "premium:user:geocode",
+                          "premium:user:networkanalysis"
+                          ]
+                          
+                          ```
+
+                          Note: Privileges can be configured for non  `API Key` type apps as 
+                          well. The list configured here will be used to grant access to items
+                          when item endpoint is accessed with app tokens. The checks will not 
+                          be applied to user tokens and they can continue accessing items 
+                          based on the current item sharing model. With app tokens, all items 
+                          of app owner can be accessed if the privileges list is not 
+                          configured.
+        ================  ===============================================================================
+        
+        :returns: dict
+        
+        """
         url = f"{ self._gis._portal.resturl}oauth2/apps/{self.properties.client_id}/update"
         if http_referers is None and privileges is None:
             return self.properties
@@ -71,7 +130,7 @@ class APIKeyManager(object):
     def __repr__(self):
         return self.__str__()
     #----------------------------------------------------------------------
-    def get(self, api_key:str) -> APIKey:
+    def get(self, api_key):
         """
         Returns a Single API Key based on the Key Value
         """
@@ -81,12 +140,12 @@ class APIKeyManager(object):
         return None
     #----------------------------------------------------------------------
     def create(self, 
-               title:str, 
-               tags:list, 
-               description:str=None, 
-               http_referers:list=None, 
-               redirect_uris:list=None, 
-               privileges:list=None) -> APIKey:
+               title, 
+               tags, 
+               description=None, 
+               http_referers=None, 
+               redirect_uris=None, 
+               privileges=None):
         """
         Generates a new API Key for the Organization.
         
@@ -212,7 +271,7 @@ class APIKeyManager(object):
         return res
     #----------------------------------------------------------------------
     @property
-    def keys(self) -> tuple:
+    def keys(self):
         """
         Returns a tuple of API Keys Registered with the Organization
         
