@@ -112,6 +112,20 @@ ResourceManager
     :undoc-members:
     :show-inheritance:
 
+APIKeyManager
+---------------------------
+.. autoclass:: arcgis.gis._impl.APIKeyManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+APIKey
+---------------------------
+.. autoclass:: arcgis.gis._impl.APIKey
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 ProfileManager
 ---------------------------
 .. autoclass:: arcgis.gis._impl._profile.ProfileManager
