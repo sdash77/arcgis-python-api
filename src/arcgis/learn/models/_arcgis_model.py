@@ -35,6 +35,8 @@ try:
     from fastai.torch_core import get_model
     from torch.nn.parallel import DistributedDataParallel
     from .._utils.common import get_post_processed_model
+    from .._utils.segmentation_loss_functions import dice
+    import pandas as pd
 except ImportError as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
@@ -523,7 +525,7 @@ class ArcGISModel(object):
 
         self._learning_rate = lr
         self._model_metrics_cache = None
-        
+        if self._data._dataset_type == 'Classified_Tiles' and dice not in self.learn.metrics: self.learn.metrics.extend([dice])
         if arcgis.env.verbose:
             logger.info('Fitting the model.')        
         
@@ -657,7 +659,8 @@ class ArcGISModel(object):
                 if _emd_template["NormalizationStats"][_stat] is not None:
                     _emd_template["NormalizationStats"][_stat] = _emd_template["NormalizationStats"][_stat].tolist()
             _emd_template["DoNormalize"] = self._data._do_normalize
-
+        if self._data._dataset_type == 'Classified_Tiles':
+            _emd_template['per_class_metrics'] = self.per_class_metrics().to_json()
         return _emd_template
 
     @staticmethod
@@ -750,6 +753,12 @@ class ArcGISModel(object):
             <p><b>PSNR Metric:</b> {emd_template.get('psnr_metric')}</p>
             <p><b>SSIM Metric:</b> {emd_template.get('ssim_metric')}</p>
         """
+        
+        if emd_template.get('per_class_metrics'):
+            html_table = pd.read_json(emd_template.get('per_class_metrics')).to_html()
+            model_analysis = f"""
+            <p><b>Per class metrics:</b> {html_table}</p>
+        """    
 
         if model_analysis:
             HTML_TEMPLATE += f"""
