@@ -11,6 +11,10 @@ build_explorer_url
 --------------
 .. autofunction:: arcgis.apps.build_explorer_url
 
+build_field_maps_url
+--------------
+.. autofunction:: arcgis.apps.build_field_maps_url
+
 build_navigator_url
 --------------
 .. autofunction:: arcgis.apps.build_navigator_url
