@@ -15,3 +15,4 @@ from ._model_extension import ModelExtension
 from ._faster_rcnn import FasterRCNN
 from ._superres import SuperResolution
 from ._hed import HEDEdgeDetector
+from ._bdcn import BDCNEdgeDetector
