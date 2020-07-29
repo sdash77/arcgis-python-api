@@ -347,7 +347,7 @@ def build_field_maps_url(portal=None, action=None, webmap=None, scale=None, book
 
     :return: :class:`String`
     """
-    _validate_field_maps_url(portal, action, webmap, scale, bookmark, wkid, center, search, feature_layer, fields,
+    _validate_field_maps_url(action, webmap, scale, bookmark, wkid, center, search, feature_layer, fields,
                              geometry, use_antenna_height, use_loc_profile, feature_id, callback,
                              callback_prompt, anonymous)
     params = []
@@ -397,6 +397,7 @@ def build_field_maps_url(portal=None, action=None, webmap=None, scale=None, book
     if feature_id:
         params.append("featureID=" + feature_id)
     if callback:
+        callback = _encode_parameters(callback)
         params.append("callback=" + callback)
         if callback_prompt:
             params.append("callbackPrompt=" + _encode_string(callback_prompt))
@@ -406,7 +407,7 @@ def build_field_maps_url(portal=None, action=None, webmap=None, scale=None, book
     return url
     
     
-def _validate_field_maps_url(portal=None, action=None, webmap=None, scale=None, bookmark=None, wkid=None,
+def _validate_field_maps_url(action=None, webmap=None, scale=None, bookmark=None, wkid=None,
                          center=None, search=None, feature_layer=None, fields=None, geometry=None,
                          use_antenna_height=None, use_location_profile=None, feature_id=None, callback=None,
                          callback_prompt=None, anonymous=None):
@@ -738,3 +739,18 @@ def build_workforce_url(portal_url=None, url_type="Web", webmap=None, assignment
 def _encode_string(string):
     # allow for template values (e.g. "{assignment.location}"
     return urllib.parse.quote(str(string), safe="${},:")
+
+
+def _encode_parameters(orig_string):
+    # encode url parameters specifically, and then encode entire string
+    parsed_url = urllib.parse.urlparse(orig_string)
+    params = []
+    return_url = parsed_url.scheme + "://"
+    params_dict = urllib.parse.parse_qs(parsed_url.query)
+    for k, v in params_dict.items():
+        params.append(k + "=" + _encode_string(v[0]))
+    if params:
+        params_url = "?" + "&".join(params)
+        return return_url + urllib.parse.quote(str(params_url), safe="${}:?")
+    else:
+        return orig_string
