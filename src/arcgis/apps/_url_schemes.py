@@ -152,10 +152,7 @@ def _build_collector_url_for_addFeature_action(params, feature_layer, geometry, 
         params.append("geometry=" + geometry)
 
     if fields:
-        attributes = []
-        for k, v in fields.items():
-            attributes.append(_encode_string('"{}":"{}"'.format(k, v)))
-        params.append("featureAttributes=%7B" + ",".join(attributes) + "%7D")
+        params.append("featureAttributes=%7B" + urllib.parse.quote(json.dumps(fields), safe="${},:") + "%7D")
 
     if callback:
         params.append("callback=" + callback)
@@ -269,6 +266,199 @@ def _validate_explorer_url(webmap, search, bookmark, center, scale, wkid, rotati
     if (wkid or rotation or markup) and not (center and scale):
         raise ValueError("Invalid parameters -- wkid, rotation, or markup requires center and scale")
 
+
+def build_field_maps_url(portal=None, action=None, webmap=None, scale=None, bookmark=None, wkid=None,
+                         center=None, search=None, feature_layer=None, fields=None, geometry=None,
+                         use_antenna_height=None, use_loc_profile=None, feature_id=None, callback=None,
+                         callback_prompt=None, anonymous=None):
+    """
+    Creates a url that can be used to open ArcGIS Field Maps
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    portal                 Optional :class:`String`, :class:`~arcgis.gis.GIS`.
+                           The URL of the portal the mobile worker must be connected to.
+    ------------------     --------------------------------------------------------------------
+    action                 Optional :class:`String` What the app should do, if anything, once open
+                           and the user is signed in. This correlates to the URL param "referenceContext"
+                           The following values are supported: addFeature, center, open, search, updateFeature.
+    ------------------     --------------------------------------------------------------------
+    webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
+                           The item id, webmap, or item representing the map to open in Field Maps.
+                           Item can be of type Web Map or Mobile Map Package.
+    ------------------     --------------------------------------------------------------------
+    scale                  Optional :class:`Int`. The scale at which to open the map. Requires center.
+    ------------------     --------------------------------------------------------------------
+    bookmark               Optional :class:`String`. The name of the bookmark in the map to open.
+    ------------------     --------------------------------------------------------------------
+    wkid                   Optional :class:`String`. The WKID of the spatial reference. Defaults
+                           to 4326 (WGS84) if not specified
+    ------------------     --------------------------------------------------------------------
+    center                 Optional :class:`String`, :class:`list`, :class:`tuple`.
+                           Requires itemID and scale.
+                           The center can be provided in the following formats:
+                           - Comma-separated latitude/longitude (y/x) pair in WGS84 (WKID: 4326).
+                           - Address to be reverse geocoded by the organization's default geocoder
+                           (MMPKs with locators will not utilize geocoder).
+                           - Feature search result. Field Maps will automatically center on the top search result.
+    ------------------     --------------------------------------------------------------------
+    search                 Optional :class:`String`. The location to search for.
+    ------------------     --------------------------------------------------------------------
+    feature_layer          Optional :class:`String` or :class:`~arcgis.features.FeatureLayer`.
+                           The feature layer url as string or the feature layer representing the layer to open
+                           for collection.
+    ------------------     --------------------------------------------------------------------
+    fields                 Optional :class:`Dict`. The feature attributes dictionary {"field":"value"}
+    ------------------     --------------------------------------------------------------------
+    geometry               Optional :class:`String` or :class:`Dict`. Defines the location for the newly collectoed
+                           or edited feature
+                           Requires webmap, action=addFeature, and feature_layer.
+                           Value is a coordinate containing x, y (z if available) or JSON representation of a geometry
+                           (point line or polygon)
+                           For example "34.058030,-117.195940,1200" or
+                           {"rings":[[[-117.1961714,34.0547155],[-117.1961714,34.0587155],[-117.2001714,34.0587155],
+                           [-117.2001714,34.0547155]]], "spatialReference":{"wkid":4326}}
+    ------------------     --------------------------------------------------------------------
+    use_antenna_height     Optional :class:`bool`. If the antenna height of the current receiver
+                           should be subtracted from the z-value of each vertex of the location. If not provided,
+                           default to False
+    ------------------     --------------------------------------------------------------------
+    use_loc_profile        Optional :class:`bool`. If the current location profile should be used to
+                           transform the location. If not provided, default to False
+    ------------------     --------------------------------------------------------------------
+    feature_id             Optional :class:`String`. Uniquely identifies the feature within the layer to be updated.
+                           Must be a GlobalID field.
+    ------------------     --------------------------------------------------------------------
+    callback               Optional :class:`String`. The URL to call when capturing the asset or
+                           observation is complete.
+                           Requires webmap, action=addFeature or updateFeature, and feature_layer to be set.
+                           Optionally, before calling the URL provide a prompt for the user,
+                           specified with the callback_prompt parameter.
+    ------------------     --------------------------------------------------------------------
+    callback_prompt        Optional :class:`String`. Prompt the mobile worker before executing the callback,
+                           and display this value in the prompt as where the mobile worker will be taken.
+                           Requires webmap, action=addFeature or updateFeature, feature_layer, and callback to be specified.
+    ------------------     --------------------------------------------------------------------
+    anonymous              Optional :class:`bool`. Used when calling a
+                           map or mmpk that is shared publicly and will not require a
+                           sign-in to access. Accepts values of true or false.
+    ==================     ====================================================================
+
+    :return: :class:`String`
+    """
+    _validate_field_maps_url(portal, action, webmap, scale, bookmark, wkid, center, search, feature_layer, fields,
+                             geometry, use_antenna_height, use_loc_profile, feature_id, callback,
+                             callback_prompt, anonymous)
+    params = []
+    url = "https://fieldmaps.arcgis.app"
+    if portal:
+        if isinstance(portal,arcgis.gis.GIS):
+            portal = portal.url
+        params.append("portalURL=" + portal)
+    if action:
+        params.append("referenceContext=" + action)
+    if webmap is not None:
+        if isinstance(webmap, arcgis.mapping.WebMap):
+            webmap = webmap.item.id
+        elif isinstance(webmap, arcgis.gis.Item):
+            webmap = webmap.id
+        params.append("itemID=" + webmap)
+    if scale:
+        params.append("scale=" + str(scale))
+    if bookmark:
+        params.append("bookmark=" + bookmark.replace(" ", "+"))
+    if wkid:
+        params.append("wkid=" + str(wkid))
+    if center:
+        if isinstance(center, (list, tuple)):
+            center = '{},{}'.format(center[0], center[1])
+        if isinstance(center, str):
+            center = center.replace(" ", "+")
+        params.append("center=" + center)
+    if search:
+        params.append("search=" + str(search).replace(" ","+"))
+    if feature_layer:
+        if isinstance(feature_layer, arcgis.features.FeatureLayer):
+            feature_layer = feature_layer.url
+        params.append("featureSourceURL=" + feature_layer)
+    if fields:
+        params.append("featureAttributes=%7B" + urllib.parse.quote(json.dumps(fields), safe="${},:") + "%7D")
+    if geometry:
+        if isinstance(geometry, dict):
+            geometry = json.dumps(geometry)
+        if isinstance(geometry, str):
+            geometry = geometry.replace(" ", "")
+        params.append("geometry=" + _encode_string(geometry))
+    if use_antenna_height:
+        params.append("useAntennaHeight=true")
+    if use_loc_profile:
+        params.append("useLocationProfile=true")
+    if feature_id:
+        params.append("featureID=" + feature_id)
+    if callback:
+        params.append("callback=" + callback)
+        if callback_prompt:
+            params.append("callbackPrompt=" + _encode_string(callback_prompt))
+    if anonymous:
+        params.append("anonymous=true")
+    url += "?" + "&".join(params)
+    return url
+    
+    
+def _validate_field_maps_url(portal=None, action=None, webmap=None, scale=None, bookmark=None, wkid=None,
+                         center=None, search=None, feature_layer=None, fields=None, geometry=None,
+                         use_antenna_height=None, use_location_profile=None, feature_id=None, callback=None,
+                         callback_prompt=None, anonymous=None):
+    if action and action not in ['addFeature', 'center', 'open', 'search', 'updateFeature']:
+        raise ValueError("Invalid reference context. addFeature, center, open, search, and updateFeature are supported")
+    if webmap and not action:
+        raise ValueError("Cannot provide webmap without action")
+    if webmap is not None and not any([isinstance(webmap, str), isinstance(webmap, arcgis.gis.Item), isinstance(webmap, arcgis.mapping.WebMap)]):
+        raise ValueError("Invalid type for webmap parameter")
+    if search and webmap is None:
+        raise ValueError("Invalid parameters -- search requires a webmap")
+    if bookmark and webmap is None:
+        raise ValueError("Invalid parameters -- bookmark requires a webmap")
+    if (center or scale) and webmap is None:
+        raise ValueError("Invalid parameters -- center and scale requires a webmap")
+    if scale and not isinstance(scale, int):
+        raise ValueError("Scale must be an int")
+    if center and not scale:
+        raise ValueError("Invalid parameters -- URL is missing scale")
+    if scale and not center:
+        raise ValueError("Invalid parameters -- URL is missing center")
+    if wkid and not (scale and center):
+        raise ValueError("Cannot provide WKID without center and scale")
+    if wkid and not isinstance(wkid, int):
+        raise ValueError("WKID must be an int")
+    if ((search and bookmark) or
+            (search and center) or
+            (bookmark and center)):
+        raise ValueError("Invalid parameters -- URL contains conflicting parameters")
+    if (feature_layer or fields) and (action not in ['addFeature', 'updateFeature'] or webmap is None):
+        raise ValueError("Feature layer param must be used with addFeature or updateFeature and have a webmap param")
+    if action in ['addFeature', 'updateFeature'] and not feature_layer:
+        raise ValueError("Must provide feature layer if adding or updating feature")
+    if fields and not feature_layer:
+        raise ValueError("Fields cannot be provided without feature layer")
+    if fields and not isinstance(fields, dict):
+        raise ValueError("Fields must be provided as a dict")
+    if geometry and (action != "addFeature" or not feature_layer):
+        raise ValueError("Geometry requires addFeature as the action and a feature layer param provided")
+    if use_antenna_height and (action !="addFeature" or not feature_layer or not geometry):
+        raise ValueError("Use antenna height requires addFeature action, a feature layer param, and the geometry param")
+    if use_location_profile and (action != "addFeature" or not feature_layer or not geometry):
+        raise ValueError("Use antenna height requires addFeature action, a feature layer param, and the geometry param")
+    if feature_id and (action != "updateFeature" or not feature_layer):
+        raise ValueError("Feature id param requires action to be updateFeature")
+    if callback and (webmap is None or action not in ['addFeature', 'updateFeature'] or not feature_layer):
+        raise ValueError("Callback requires webmap, an action of addFeature or updateFeature, and a feature layer param")
+    if callback_prompt and not callback:
+        raise ValueError("Callback prompt requires callback")
+    if anonymous and webmap is None:
+        raise ValueError("Anonymous param requires a webmap")
+        
 
 def build_navigator_url(start=None, stops=None, optimize=None, navigate=None,
                         travel_mode=None, callback=None, callback_prompt=None, url_type="Web", webmap=None, route_item=None):

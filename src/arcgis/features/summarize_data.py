@@ -539,7 +539,8 @@ def join_features(target_layer,
                   context=None,
                   gis=None,
                   estimate=False,
-                  future=False):
+                  future=False,
+                  join_type='INNER'):
     """
     .. image:: _static/images/join_features/join_features.png
 
@@ -618,6 +619,8 @@ def join_features(target_layer,
     estimate                                                                                         Optional boolean. If True, the number of credits to run the operation will be returned.
     --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
     future                                                                                           Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
+    join_type                                                                                        Optional String.  Determines the type of join performed on the datasets.  The allowed values are INNER or LEFT.
     ============================================================================================     =================================================================================================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else feature collection.

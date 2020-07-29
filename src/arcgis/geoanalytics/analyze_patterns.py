@@ -327,7 +327,7 @@ def forest(input_layer,
     try:
         if future:
             gpjob = _execute_gp_tool(gis, "ForestBasedClassificationAndRegression", params, param_db, return_values, _use_async, url, True, future=future)
-            return GAJob(gpjob=gpjob, return_service=output_service, add_message=True)
+            return GAJob(gpjob=gpjob, return_service=output_service)
         res = _execute_gp_tool(gis, "ForestBasedClassificationAndRegression", params, param_db, return_values, _use_async, url, True, future=future)
 
         if return_tuple:
@@ -1226,7 +1226,7 @@ def find_hot_spots(
 
     """
     kwargs=locals()
-    input_layer = _prevent_bds_item(input_layer)
+    point_layer = _prevent_bds_item(point_layer)
     gis=_arcgis.env.active_gis if gis is None else gis
     url=gis.properties.helperServices.geoanalytics.url
 
@@ -1410,7 +1410,7 @@ def create_space_time_cube(point_layer: _FeatureSet,
     """
 
     kwargs=locals()
-    input_layer = _prevent_bds_item(input_layer)
+    point_layer = _prevent_bds_item(point_layer)
     gis=_arcgis.env.active_gis if gis is None else gis
     url=gis.properties.helperServices.geoanalytics.url
 

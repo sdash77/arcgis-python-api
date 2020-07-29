@@ -642,6 +642,50 @@ class Version(object):
             return res['success']
         return False
     #----------------------------------------------------------------------
+    def restore(self, rows):
+        """
+        The `restore` method allows users to restore rows from a common 
+        ancestor version.  This method is intended to be used when a 
+        `DeleteUpdate` conflicts are identified during the last reconcile.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        rows                   Required List.  An array of the rows to be restored
+        
+                               **Syntax**
+                               
+                               [ 
+
+                                    { 
+                                 
+                                       "layerId": <layerId>,                                 
+                                       "objectIds":[<objectId>] 
+                                 
+                                    } 
+                               ]
+                               
+                               
+                               
+        ==================     ====================================================================
+        
+        :returns: Boolean, String where the Boolean is the Success and the String is the Moment
+        
+        """
+        url = "%s/restoreRows" % self._url
+        params = {
+            'f' : "json",
+            'sessionID' : self._guid,
+            'rows' : rows
+        }        
+        
+        res = self._con.post(url, params)
+        
+        if 'success' in res:
+            return res['success'], res.get("moment", "")
+        return res        
+        
+    #----------------------------------------------------------------------
     def alter(self,
               owner=None,
               version=None,
@@ -690,7 +734,7 @@ class Version(object):
             return res['success']
         return False
     #----------------------------------------------------------------------
-    def differences(self, result_type):
+    def differences(self, result_type="objectIds", moment=None):
         """
         The ```differences``` operation allows you to view differences between
         the current version and the default version. The two versions can
@@ -702,6 +746,18 @@ class Version(object):
 
         Both differences and conflicts will be returned. It is the clients
         responsibility to determine which are differences, and which are conflicts.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        result_type         Required String.  Determines the type of results to return. 
+                            The default result type is `objectIds`.
+
+                            Values : `objectIds` or `features`
+        ---------------     --------------------------------------------------------------------
+        moment              Required String. Moment used to compare current version with default.
+        ===============     ====================================================================
+
 
         :returns: dict
 

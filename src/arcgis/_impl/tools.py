@@ -40,6 +40,36 @@ except ImportError:
 
 __all__ = ['_GeoanalyticsTools', '_FeatureAnalysisTools', '_GeometryService', '_RasterAnalysisTools']
 #--------------------------------------------------------------------------
+def _inspect_function_inputs(fn, **params):
+    """
+    Given any function and a set of key/value pairs, where the ```params``` is a dictionary,
+    the code inspects the input method and then returns a list of accepted inputs as
+    a new dictionary.  This method is used primarily to validate GP services and ensure
+    that the parameters given are supported in the current version of the tool.
+
+    :returns: dictionary
+
+    Example:
+
+    >>> def add(x,y):
+    >>>    return x+y
+
+    >>> valid_inputs = _inspect_function_inputs(fn=add, **{'x' : 1, 'y': 3, 'cat' : 3})
+    >>> print(valid_inputs)
+    {'x' : 1, 'y': 3}
+
+    """
+    import inspect
+    try:
+        args = list(inspect.signature(fn).parameters.keys())
+    except ValueError:
+        args = inspect.getfullargspec(func=fn).args
+    valid = {}
+    for key in params.keys():
+        if key in args:
+            valid[key] = params[key]
+    return valid
+#--------------------------------------------------------------------------
 def _id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 #--------------------------------------------------------------------------
@@ -214,6 +244,8 @@ class BaseAnalytics(object):
                 input_param =  input_layer
         elif isinstance(input_layer, str):
             input_layer_url = input_layer
+            if input_layer_url.endswith("/"):
+                input_layer_url = input_layer_url[:-1]            
             input_param =  {"url": input_layer_url }
         else:
             raise Exception("Invalid format of input layer. url string, feature service Item, feature service instance or dict supported")
@@ -2992,7 +3024,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
                       context=None,
                       estimate=False,
                       records_to_match=None,
-                      future=False):
+                      future=False,
+                      join_type=None):
         """
         Join Features Tool
         """
@@ -3035,20 +3068,15 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["outputName"] = output_name
             if context is not None:
                 params["context"] = context
+            if join_type:
+                params['join_type'] = join_type
             from arcgis.features._credits import _estimate_credits
             return _estimate_credits(task=task,
                                      parameters=params)
-        gpjob = self._tbx.join_features(target_layer=target_layer, join_layer=join_layer,
-                                        spatial_relationship=spatial_relationship,
-                                        spatial_relationship_distance=spatial_relationship_distance,
-                                        spatial_relationship_distance_units=spatial_relationship_distance_units,
-                                        attribute_relationship=attribute_relationship,
-                                        join_operation=join_operation,
-                                        summary_fields=summary_fields,
-                                        records_to_match=records_to_match,
-                                        output_name=output_name,
-                                        context=context, gis=self._gis,
-                                        future=True)
+        params = locals()    
+        params = _inspect_function_inputs(self._tbx.join_features, **params)
+        params['future'] = True
+        gpjob = self._tbx.join_features(**params)
         gpjob._is_fa = True
         if future:
             return gpjob
@@ -12515,7 +12543,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=outSR or inSR)
         if future:
             return job
         else:
@@ -12569,7 +12598,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -12636,7 +12666,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -12723,7 +12754,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -12802,7 +12834,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -13037,7 +13070,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -13083,7 +13117,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -13121,7 +13156,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -13271,7 +13307,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -13325,7 +13362,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=outSR)
         if future:
             return job
         else:
@@ -13444,7 +13482,8 @@ class _GeometryService(_GISService):
                           jobid=None, 
                           task_url=url, 
                           notify=False, 
-                          gis=self._gis) 
+                          gis=self._gis,
+                          out_wkid=sr) 
         if future:  
             return job
         else:
@@ -13480,7 +13519,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -13639,7 +13679,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:
@@ -13674,7 +13715,8 @@ class _GeometryService(_GISService):
                  jobid=None, 
                  task_url=url, 
                  notify=False, 
-                 gis=self._gis)
+                 gis=self._gis,
+                 out_wkid=sr)
         if future:
             return job
         else:

@@ -29,7 +29,7 @@ from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 
-__version__ = "1.8.2"
+__version__ = "1.8.3"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 
@@ -263,7 +263,7 @@ class Connection(object):
             self._session.auth = GuessAuth(None, None)
         else:
             try:
-                from .include.requests_negotiate_sspi import HttpNegotiateAuth
+                from requests_negotiate_sspi import HttpNegotiateAuth
                 HAS_KERBEROS = True
             except:
                 HAS_KERBEROS = False
@@ -1438,8 +1438,10 @@ class Connection(object):
             return "PORTAL"
         else:
             #Brute Force Method
-            root = baseurl.lower().split("/sharing")[0]
-            root = baseurl.lower().split('/rest')[0]
+            parsed = urlparse(baseurl)
+            root = fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
+            #root = baseurl.lower().split("/sharing")[0]
+            #root = baseurl.lower().split('/rest')[0]
             parts = ['/info', '/rest/info', '/sharing/rest/info']
             params = {"f" : "json"}
             for pt in parts:
@@ -1482,7 +1484,14 @@ class Connection(object):
                         b_parsed = b_parsed.split("/")[0]
                     if t_parsed.lower() != b_parsed.lower():
                         self._token_url = None
-                        return "FEDERATED_SERVER"
+                        if self._portal_connection:
+                            return "FEDERATED_SERVER"
+                        else:
+                            from arcgis.gis import GIS
+                            self._portal_connection = GIS(url=res['authInfo']['tokenServicesUrl'].split("/sharing/")[0],
+                                                          username=self._username, password=self._password,
+                                                          verify_cert=self._verify_cert)._con
+                            return "FEDERATED_SERVER"
                     return "SERVER"
                 elif isinstance(res, dict) and \
                      "currentVersion" in res and \

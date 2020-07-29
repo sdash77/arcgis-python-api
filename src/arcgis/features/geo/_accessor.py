@@ -2081,7 +2081,7 @@ class GeoAccessor(object):
             # return the map widget so it will be displayed below the cell in Jupyter Notebook
             return map_widget
     #----------------------------------------------------------------------
-    def to_featureclass(self, location, overwrite=True, has_z=None, has_m=None):
+    def to_featureclass(self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=True):
         """
         Exports a geo enabled dataframe to a feature class.
 
@@ -2103,16 +2103,22 @@ class GeoAccessor(object):
                                         based geometries.  If a geometry is missing a M value when true, a
                                         RuntimeError will be raised. When False, the API will not use the
                                         M value.
+        ---------------------------     --------------------------------------------------------------------
+        sanitize_columns                Optional Boolean. If True, column names will be converted to string, 
+                                        invalid characters removed and other checks will be performed. The 
+                                        default is True.
         ===========================     ====================================================================
 
         :returns: String
 
         """
-        location = os.path.abspath(path=location)
+        if location and not str(os.path.dirname(location)).lower() in ['memory', 'in_memory']:
+            location = os.path.abspath(path=location)
         return to_featureclass(self,
                                location=location,
                                overwrite=overwrite,
                                has_z=has_z,
+                               sanitize_columns=sanitize_columns,
                                has_m=has_m)
     #----------------------------------------------------------------------
     def to_table(self, location, overwrite=True):
@@ -3369,10 +3375,15 @@ class GeoAccessor(object):
         except Exception as e:
             raise Exception(e)
 
-    def sanitize_column_names(self, convert_to_string=True, remove_special_char=True, inplace=False):
+    def sanitize_column_names(self, convert_to_string=True, remove_special_char=True, inplace=False,
+                              use_snake_case=True):
         """
         Cleans column names by converting them to string, removing special characters, renaming columns without
-        column names to 'noname' and renaming duplicates with integer suffixes.
+        column names to 'noname', renaming duplicates with integer suffixes and switching spaces or Pascal or
+        camel cases to Python's favored snake_case style.
+
+        Snake_casing gives you consistent column names, no matter what the flavor of your backend database is
+        when you publish the DataFrame as a Feature Layer in your web GIS.
 
         ==============================     ====================================================================
         **Argument**                       **Description**
@@ -3380,13 +3391,18 @@ class GeoAccessor(object):
         convert_to_string                  Optional Boolean. Default is True. Converts column names to string
         ------------------------------     --------------------------------------------------------------------
         remove_special_char                Optional Boolean. Default is True. Removes any characters in column
-                                           names that are not numeric or underscores.
+                                           names that are not numeric or underscores. This also ensures column
+                                           names begin with alphabets by removing numeral prefixes.
         ------------------------------     --------------------------------------------------------------------
         inplace                            Optional Boolean. Default is False. If True, edits the DataFrame
                                            in place and returns Nothing. If False, returns a new DataFrame object.
+        ------------------------------     --------------------------------------------------------------------
+        use_snake_case                     Optional Boolean. Default is True. Makes column names lower case,
+                                           and replaces spaces between words with underscores. If column names
+                                           are in PascalCase or camelCase, it replaces them to snake_case.
         ==============================     ====================================================================
 
         :returns: pd.DataFrame object if inplace=False. Else None.
         """
 
-        return _sanitize_column_names(self, convert_to_string, remove_special_char, inplace)
+        return _sanitize_column_names(self, convert_to_string, remove_special_char, inplace, use_snake_case)

@@ -2012,7 +2012,8 @@ class Portal(object):
                      snippet=None, access=None, is_invitation_only=None,
                      sort_field=None, sort_order=None, is_view_only=None,
                      thumbnail=None, max_file_size=None, users_update_items=None,
-                     clear_empty_fields=False):
+                     clear_empty_fields=False, display_settings=None, 
+                     is_open_data=False, leaving_disallowed=False):
         """ Updates a group.
 
         .. note::
@@ -2083,13 +2084,18 @@ class Portal(object):
             properties['MAX_FILE_SIZE'] = 1024000
         if users_update_items is None:
             users_update_items = False
-
+        if leaving_disallowed in [True, False]:
+            properties["leavingDisallowed"] = leaving_disallowed
+        if is_open_data in [True, False]:
+            properties['isOpenData'] = is_open_data
         if users_update_items == False:
             properties['capabilities'] = ""
         else:
             properties['capabilities'] = "updateitemcontrol"
         properties['isinvitationOnly'] = is_invitation_only
         properties['clearEmptyFields'] = clear_empty_fields
+        if display_settings:
+            properties['displaySettings'] = display_settings
         postdata.update(properties)
         if True:
             postdata['clearEmptyFields'] = True

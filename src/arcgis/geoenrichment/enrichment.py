@@ -797,10 +797,22 @@ def enrich(study_areas,
             exceptions = [f.exception() for f in futures.done if not f.exception() is None]
             raise Exception(json.dumps(exceptions))
         if isinstance(areas, (SpatialDataFrame, pd.DataFrame)):
-            df = (pd.concat(results)
-                  .set_index(keys=areas.index, drop=True, 
-                             append=False, inplace=False, 
-                             verify_integrity=False))
+            df = pd.concat(results)
+            if len(df) != len(study_areas):
+                if "OBJECTID" in df.columns:
+                    missing_q = study_areas.OBJECTID.isin(list(set(study_areas.OBJECTID) - set(df.OBJECTID)))
+                    
+                    df = (pd.concat([df, study_areas[missing_q]]) 
+                          .set_index(keys=areas.index, drop=True, 
+                                 append=False, inplace=False, 
+                                 verify_integrity=False))
+                    
+            elif len(df) == len(study_areas):
+                df = (df
+                      .set_index(keys=areas.index, drop=True, 
+                                 append=False, inplace=False, 
+                                 verify_integrity=False))
+            
         else:
             df = pd.concat(results)
         return df

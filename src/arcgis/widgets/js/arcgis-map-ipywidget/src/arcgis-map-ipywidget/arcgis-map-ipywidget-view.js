@@ -69,7 +69,8 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                             'esri/views/SceneView',
                             'esri/core/watchUtils',
                             'esri/widgets/Compass',
-                            'esri/widgets/Legend'], options).then((
+                            'esri/widgets/Legend',
+                            'esri/widgets/TimeSlider'], options).then((
                             [Map,
                              MapView,
                              WebMap,
@@ -77,12 +78,13 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                              SceneView,
                              watchUtils,
                              Compass,
-                             Legend]) => {
+                             Legend,
+                             TimeSlider]) => {
         loadingProgressDisplay.stop();
         this._setup_custom_buttons();
         this._instantiate_esri_components(Map, WebMap, WebScene, 
                                           MapView, SceneView,
-                                          Compass, Legend);
+                                          Compass, Legend, TimeSlider);
         this._miscellanous_setup();
         //All model specific change functions. These functions are called
         //whenever that attribute on the model is updated, whether that update
@@ -117,13 +119,20 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
         //start screenshot section
         this.model.on('change:_trigger_screenshot_with_args', this._trigger_screenshot_with_args_changed, this);
-
         //end screenshot section
 
         //start image overlay section
         this.model.on('change:_overlay_this_image', this.overlay_image_changed, this);
         this.model.on('change:_image_overlays_to_remove', this.image_overlays_to_remove_changed, this);
         //end image overlay section
+
+        //start time section
+        this.model.on('change:time_slider', this.time_slider_prop_changed, this);
+        this.model.on('change:time_mode', this.time_mode_changed, this);
+        this.model.on('change:_time_info', this.time_info_changed, this);
+        this.model.on('change:_writeonly_start_time', this.start_time_changed, this);
+        this.model.on('change:_writeonly_end_time', this.end_time_changed, this);
+        //end time section
 
         //start miscellanous model section
         this.model.on('change:_portal_token', this.portal_token_changed, this);
@@ -177,6 +186,12 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                 this.webscene_changed();
                 //end webmap/webscene section
                 this.legend_prop_changed();
+                //start time section
+                this.time_slider_prop_changed();
+                this.time_mode_changed();
+                this.time_info_changed();
+                //end time section
+
                 resolve();
             }).catch((err) => {
                 this._displayErrorBox("Error while authenticating to portal on first load.");
@@ -333,9 +348,6 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         this.map.allLayers.on('change', (event) => {
             this.update_readonly_webmap();
         });
-        this.map.allLayers.on('change', (event) => {
-            this.update_readonly_webmap();
-        });
     },
 
     _postLoadSetup: function(watchUtils){
@@ -395,7 +407,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
     },
 
     _instantiate_esri_components: function(Map, WebMap, WebScene, MapView, SceneView,
-                                           Compass, Legend){
+                                           Compass, Legend, TimeSlider){
         this.container = this.elements.mapElement;
         var mode = this.model.get("mode").toLowerCase();
         if(mode === "2d"){
@@ -421,6 +433,12 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
         // Set up widgets like compass and legend
         this._MapView.ui.add(new Compass({view: this._MapView}), "top-left");
+        this._time_slider = new TimeSlider({
+            view: this.activeView,
+            container: document.createElement("div"),
+            mode: "time-window"});
+        this._time_slider.watch('values', (values) => {
+            this.time_slider_values_changed(values);});
         this._legend = new Legend({
             view: this.activeView,
             layerInfos: []});
@@ -526,6 +544,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
              this.model.set("tilt", 0);
              this.model.save_changes();}
         this.legend_prop_changed(); //Needed to reset the legend's view
+        this.time_slider_prop_changed();
         this.map.allLayers.on('change', (event) => {
             this.update_readonly_webmap();}); 
     }).catch((err) => {
@@ -917,8 +936,6 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         for(var i = 0; i<layersToInfer.length; i++){
            var layerToInfer = layersToInfer[i];
            inferNoTypeLayer(layerToInfer, this).then((typedLayer) => {
-                var layerExistsOnMap = Boolean(this.map.findLayerById(
-                    typedLayer.id));
                 console.log("Adding Layer " + noTypeLayer._hashFromPython + " " +
                     "to map.");
                 this.map.add(typedLayer);
@@ -1261,6 +1278,114 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             console.log("Error while trying to show legend.");
             console.log(err);
         }
+    },
+
+    time_slider_prop_changed: function(){
+        try{
+            console.log("time slider changed");
+            var widgetCorner = "bottom-left";
+            var timeSliderProp = this.model.get("time_slider");
+            if(timeSliderProp){
+                this.activeView.ui.empty(widgetCorner);
+                this._time_slider.view = this.activeView;
+                this.activeView.ui.add(this._time_slider, widgetCorner);
+            } else {
+                this.activeView.ui.empty(widgetCorner);}
+        } catch(err) {
+            this._displayErrorBox("Error while updating time slider");
+            console.warn("Error while trying to show time slider");
+            console.warn(err);}
+    },
+
+    time_mode_changed: function(){
+        try{
+            var timeSlider = this.model.get("time_slider");
+            if(timeSlider){
+                console.log("time mode changed");
+                var timeMode = this.model.get("time_mode");
+                var values = this._time_slider.values;
+                this._time_slider.mode = timeMode;
+                if(values.length > 0){
+                    if(timeMode === "instant"){
+                        this._time_slider.values = [values[0],];}
+                    if(timeMode === "time-window"){
+                        if(values.length == 1){
+                            this._time_slider.values = [
+                                values[0],
+                                values[0]];}}
+                    if(timeMode === "cumulative-from-start"){
+                        this._time_slider.values = [values[0],];}
+                    if(timeMode === "cumulative-from-end"){
+                        this._time_slider.value = [values[0],];}}}}
+        catch(err){
+            this._displayErrorBox("Error while updating time mode");
+            console.warn("Error while trying updating time mode"); console.warn(err);}
+    },
+
+    time_slider_values_changed: function(values){
+        if(values.length == 2){
+            this.model.set("_readonly_start_time", values[0].toISOString());
+            this.model.set("_readonly_end_time", values[1].toISOString());}
+        if(values.length == 1){
+            this.model.set("_readonly_start_time", values[0].toISOString());}
+        this.model.save_changes();
+    },
+
+    time_info_changed: function(){
+    esriLoader.loadModules(['esri/TimeExtent',
+                            'esri/TimeInterval'],
+    options).then(([TimeExtent, TimeInterval]) => {
+        var timeInfo = this.model.get("_time_info");
+        console.log("Time Info changed");
+        console.log(timeInfo);
+        if('time_extent' in timeInfo){
+            var start = new Date(timeInfo.time_extent[0]);
+            var end = new Date(timeInfo.time_extent[1]);
+            this._time_slider.fullTimeExtent = new TimeExtent({
+                                               start: start,
+                                               end: end});}
+        var intervalValue = 1;
+        var intervalUnit = 'milliseconds';
+        if('interval' in timeInfo){
+            intervalValue = timeInfo.interval;}
+        if('unit' in timeInfo){
+            intervalUnit = timeInfo.unit;}
+        this._time_slider.stops = {"interval" : new TimeInterval({
+            value: intervalValue,
+            unit: intervalUnit})};
+    }).catch((err) => {
+        this._displayErrorBox("Error while changing the time info");
+        console.warn("Error while trying to change the time info");
+        console.warn(err);});
+    },
+
+    start_time_changed: function(){
+        try{
+            console.log("start time changed");
+            var startTimeStr = this.model.get("_writeonly_start_time");
+            var startTime = new Date(startTimeStr);
+            if(this._time_slider.values.length == 1){
+                this._time_slider.values = [startTime,];}
+            if(this._time_slider.values.length == 2){
+                var endTime = this._time_slider.values[1];
+                this._time_slider.values = [startTime, endTime];}}
+        catch(err){
+            this._displayErrorBox("Error while changing `start_time`");
+            console.warn("Error while changing start_time");
+            console.warn(err);}
+    },
+
+    end_time_changed: function(){
+        try{
+            console.log("end time changed");
+            var endTimeStr = this.model.get("_writeonly_end_time");
+            var endTime = new Date(endTimeStr);
+            var startTime = this._time_slider.values[0];
+            this._time_slider.values = [startTime, endTime];}
+        catch(err){
+            this._displayErrorBox("Error while changing `end_time`");
+            console.warn("Error while changing `end_time`");
+            console.warn(err);}
     },
 
     // Start screenshot section

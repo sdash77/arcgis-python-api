@@ -24,7 +24,7 @@ try:
     from fastai.torch_core import split_model_idx
     from .._utils.classified_tiles import per_class_metrics
     from fastai.vision import flatten_model
-    from .._utils.segmentation_loss_functions import  FocalLoss, MixUpCallback
+    from .._utils.segmentation_loss_functions import  FocalLoss, MixUpCallback, DiceLoss
     from torchvision.models.segmentation.segmentation import _segm_resnet
     from torchvision.models.segmentation.deeplabv3 import DeepLabHead, DeepLabV3
     from torchvision.models.segmentation.fcn import FCNHead
@@ -99,6 +99,15 @@ class DeepLab(ArcGISModel):
     focal_loss              Optional boolean. If True, it will use focal loss.
                             Default: False
     ---------------------   -------------------------------------------
+    dice_loss_fraction      Optional float. 
+                            Min_val=0, Max_val=1 
+                            If > 0 , model will use a combination of defaut or 
+                            focal(if focal=True) loss with the specified fraction 
+                            of dice loss.
+                            E.g. 
+                            for dice = 0.3, loss = (1-0.3)*default loss + 0.3*dice
+                            Default: 0
+    ---------------------   -------------------------------------------
     ignore_classes          Optional list. It will contain the list of class
                             values on which model will not incur loss.
                             Default: []                                                       
@@ -131,7 +140,9 @@ class DeepLab(ArcGISModel):
         self.mixup = kwargs.get('mixup', False)
         self.class_balancing = kwargs.get('class_balancing', False)
         self.focal_loss = kwargs.get('focal_loss', False)
-
+        self.dice_loss_fraction = kwargs.get('dice_loss_fraction', False)
+        self.weighted_dice = kwargs.get('weighted_dice', False)
+        
         _backbone = self._backbone
         if hasattr(self, '_orig_backbone'):
             _backbone = self._orig_backbone
@@ -188,6 +199,8 @@ class DeepLab(ArcGISModel):
             self.learn.loss_func = FocalLoss(self.learn.loss_func)
         if self.mixup:
             self.learn.callbacks.append(MixUpCallback(self.learn))
+        if self.dice_loss_fraction:
+            self.learn.loss_func = DiceLoss(self.learn.loss_func, self.dice_loss_fraction,  weighted_dice=self.weighted_dice)
 
         self.learn.model = self.learn.model.to(self._device)
         self._freeze()
@@ -384,9 +397,19 @@ class DeepLab(ArcGISModel):
             return {class_values[i]: miou[i] for i in range(len(miou)) if i not in self._ignore_mapped_class} 
 
 
-    def per_class_metrics(self):
+    def per_class_metrics(self, ignore_classes=[]):
         """
         Computer per class precision, recall and f1-score on validation set.
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        self                    segmentation model object -> [PSPNetClassifier | UnetClassifier | DeepLab]
+        ---------------------   -------------------------------------------
+        ignore_classes          Optional list. It will contain the list of class
+                                values on which model will not incur loss.
+                                Default: []    
+        -------------------------------------------------------------------
+        Returns per class precision, recall and f1 scores 
         """
-        ## Calling imported function `per_class_metrics`
-        return per_class_metrics(self, ignore_mapped_class=self._ignore_mapped_class)
+        ## Calling imported function `per_class_metrics`        
+        return per_class_metrics(self, ignore_classes)

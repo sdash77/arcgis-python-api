@@ -1,14 +1,18 @@
 from pathlib import Path
 import json
 from ._arcgis_model import _EmptyData, _change_tail, ArcGISModel
-from ._codetemplate import code
+from ._codetemplate import code, image_classifier_prf
 import warnings
 import arcgis
 import sys, os, importlib
+from functools import partial
+import logging
+logger = logging.getLogger()
 
 try:
     import torch
     from torch import nn
+    import numpy as np
     from fastai.basic_train import Learner, LearnerCallback
     from fastai.torch_core import split_model_idx
     from fastai.vision import ImageList
@@ -81,15 +85,23 @@ class ModelExtension(ArcGISModel):
                 self.learn = Learner(data, model, loss_func=self.model_conf.loss)
         else:
             self.learn = Learner(data, model, loss_func=self.model_conf.loss)
-        self.learn.callbacks.append(self.train_callback(self.learn, self.model_conf.on_batch_begin))
-        self._code = code
+        self.learn.callbacks.append(self._train_callback(self.learn, self.model_conf.on_batch_begin))
+        if self._data.dataset_type == 'Classified_Tiles':
+            if getattr(self, "_is_edge_detection", False):
+                from ._hed_utils import accuracy
+            else:
+                from ._psp_utils import accuracy
+            self.learn.metrics = [accuracy]
+            self._code = image_classifier_prf
+        else:
+            self._code = code
         self._arcgis_init_callback() # make first conv weights learnable
+        self._bind_dataset_methods()
         if pretrained_path is not None:
             self.load(pretrained_path)
 
-
     if HAS_FASTAI:
-        class train_callback(LearnerCallback):
+        class _train_callback(LearnerCallback):
 
             def __init__(self, learn, on_batch_begin_fn):
                 super().__init__(learn)
@@ -108,13 +120,18 @@ class ModelExtension(ArcGISModel):
         import random
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        if self._data.dataset_type == 'Classified_Tiles':
+            _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+            _emd_template['IsEdgeDetection'] = getattr(self, "_is_edge_detection", False)
+        else:
+            _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
         _emd_template["ModelConfiguration"] = "_model_extension_inferencing"
         _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template['Classes'] = []
         _emd_template['ModelConfigurationFile'] = "ModelConfiguration.py"
         _emd_template['ModelFileConfigurationClass'] = type(self.model_conf).__name__
+        _emd_template['DatasetType'] = self._data.dataset_type
 
         class_data = {}
         for i, class_name in enumerate(self._data.classes[1:]):  # 0th index is background
@@ -190,11 +207,24 @@ class ModelExtension(ArcGISModel):
             for k, v in class_mapping.items():
                 data.classes.append(v)
             data = get_multispectral_data_params_from_emd(data, emd)
+            data.dataset_type = emd.get('DatasetType', 'PASCAL_VOC_rectangles')
         return cls(data, model_configuration, backbone, pretrained_path=str(model_file))
 
     @property
     def _model_metrics(self):
-        return {'average_precision_score': self.average_precision_score(show_progress=False)}
+        if self._data.dataset_type == 'Classified_Tiles':
+            return {'accuracy': '{0:1.4e}'.format(self._get_model_metrics())}
+        else:
+            return {'average_precision_score': self.average_precision_score(show_progress=False)}
+
+    def _get_model_metrics(self, **kwargs):
+        checkpoint = kwargs.get('checkpoint', True)
+        if not hasattr(self.learn, 'recorder'):
+            return 0.0
+        model_accuracy = self.learn.recorder.metrics[-1][0]
+        if checkpoint:
+            model_accuracy = np.max(self.learn.recorder.metrics)
+        return float(model_accuracy)
 
     def _get_y(self, bbox, clas):
         try:
@@ -218,7 +248,18 @@ class ModelExtension(ArcGISModel):
         union = self._box_sz(box_a).unsqueeze(1) + self._box_sz(box_b).unsqueeze(0) - inter
         return inter / union
 
-    def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
+    def _bind_dataset_methods(self):
+
+        if self._data.dataset_type == 'Classified_Tiles':
+            if getattr(self, "_is_edge_detection", False):
+                self.show_results = self._show_results_edge_detection
+            else:
+                self.show_results = self._show_results_segmentation
+        else:
+            self.show_results = self._show_results_object_detection
+            self.average_precision_score = self._average_precision_score
+
+    def _show_results_object_detection(self, rows=5, thresh=0.5, nms_overlap=0.1):
 
         """
         Displays the results of a trained model on a part of the validation set.
@@ -227,6 +268,28 @@ class ModelExtension(ArcGISModel):
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
         self._show_results_modified(rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self)
+
+    def _show_results_segmentation(self, rows=5, thresh=0.5, **kwargs):
+
+        """
+        Displays the results of a trained model on a part of the validation set.
+        """
+        self._check_requisites()
+        if rows > len(self._data.valid_ds):
+            rows = len(self._data.valid_ds)
+
+        self._show_results_modified(rows=rows, thresh=thresh, model=self, **kwargs)
+
+    def _show_results_edge_detection(self, rows=5, thresh=0.5, thinning=True,**kwargs):
+
+        """
+        Displays the results of a trained model on a part of the validation set.
+        """
+        self._check_requisites()
+        if rows > len(self._data.valid_ds):
+            rows = len(self._data.valid_ds)
+
+        self._show_results_modified(rows=rows, thresh=thresh, model=self, thinning=thinning, **kwargs)
 
     def _show_results_multispectral(self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs):
         ax = show_results_multispectral(
@@ -263,12 +326,12 @@ class ModelExtension(ArcGISModel):
         if has_arg(ds.y.reconstruct, 'x'):
             ys = [ds.y.reconstruct(grab_idx(y, i), x=x) for i,x in enumerate(xs)]
             zs = [ds.y.reconstruct(z, x=x) for z,x in zip(preds,xs)]
-        else :
+        else:
             ys = [ds.y.reconstruct(grab_idx(y, i)) for i in range(n_items)]
             zs = [ds.y.reconstruct(z) for z in preds]
         ds.x.show_xyzs(xs, ys, zs, **kwargs)
 
-    def average_precision_score(self, detect_thresh=0.2, iou_thresh=0.1, mean=False, show_progress=True):
+    def _average_precision_score(self, detect_thresh=0.2, iou_thresh=0.1, mean=False, show_progress=True):
 
         """
         Computes average precision on the validation set for each class.

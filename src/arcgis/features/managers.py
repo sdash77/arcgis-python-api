@@ -841,6 +841,7 @@ class SyncManager(object):
                     syncLayers_parent = parent_replica['layerServerGens']
                     for i in range(len(syncLayers_parent)):
                         syncLayers_child[i]['serverSibGen'] = syncLayers_parent[i]['serverGen']
+                        syncLayers_child[i]['syncDirection'] = "upload"
                     child_fs._synchronize_replica(
                         replica_id=child_replica_id,
                         sync_layers=syncLayers_child,
@@ -849,7 +850,8 @@ class SyncManager(object):
                         return_ids_for_adds=False,
                         data_format="sqlite",
                         asynchronous=False,
-                        edits_upload_format="sqlite")
+                        edits_upload_format="sqlite",
+                        rollback_on_failure=False)
                     return True
                 else:
                     return False

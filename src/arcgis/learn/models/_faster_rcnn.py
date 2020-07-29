@@ -313,5 +313,5 @@ class FasterRCNN(ModelExtension):
             for k, v in class_mapping.items():
                 data.classes.append(v)
             data = get_multispectral_data_params_from_emd(data, emd)
-        
+            data.dataset_type = emd.get('DatasetType', 'PASCAL_VOC_rectangles')
         return cls(data, backbone, pretrained_path=str(model_file))

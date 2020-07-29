@@ -6,7 +6,7 @@ from .._data import _raise_fastai_import_error
 
 try:
     from ._arcgis_model import ArcGISModel, _resnet_family
-    from ._superres_utils import FeatureLoss, gram_matrix, compute_psnr, get_resize, create_loss
+    from ._superres_utils import FeatureLoss, gram_matrix, compute_metrics, get_resize, create_loss
     from fastai.vision.learner import unet_learner
     from fastai.vision import nn, ImageImageList, get_transforms, imagenet_stats, NormType, open_image
     from fastai.callbacks import LossMetrics
@@ -45,6 +45,7 @@ class SuperResolution(ArcGISModel):
     def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
         super().__init__(data, backbone)
         feat_loss = create_loss(self._device.type)
+        data.c = 3
         self.learn = unet_learner(data, arch=self._backbone, wd=1e-3, loss_func=feat_loss, callback_fns=LossMetrics, blur=True, norm_type=NormType.Weight)
         self.learn.model = self.learn.model.to(self._device)
         if pretrained_path is not None:
@@ -127,7 +128,7 @@ class SuperResolution(ArcGISModel):
         chip_size = emd['ImageHeight']
         feat_loss = create_loss()
         if data is None:
-            data = (ImageImageList.from_folder(emd_path.parent.parent).split_none().label_from_func(lambda x: x).transform(get_transforms(do_flip=False),size=(chip_size, chip_size), tfm_y=True).databunch(bs=2, no_check=True).normalize(imagenet_stats, do_y=False))
+            data = (ImageImageList.from_folder(emd_path.parent.parent).split_none().label_from_func(lambda x: x).transform(get_transforms(do_flip=False),size=(chip_size, chip_size), tfm_y=True).databunch(bs=2, no_check=True).normalize(imagenet_stats, do_y=True))
             data._is_empty = True
             data.emd_path = emd_path
             data.downsample_factor = downsample_factor
@@ -138,7 +139,9 @@ class SuperResolution(ArcGISModel):
     
     @property
     def _model_metrics(self):
-        return {'psnr_metric': '{0:1.4e}'.format(self.psnr_metric(show_progress=True))}
+        psnr_ssim = self.compute_metrics(show_progress=True)
+        return {'psnr_metric': '{0:1.4e}'.format(psnr_ssim[0]),
+                'ssim_metric': '{0:1.4e}'.format(psnr_ssim[1])}
 
     def _get_emd_params(self):
         _emd_template = {}
@@ -148,13 +151,14 @@ class SuperResolution(ArcGISModel):
         _emd_template["downsample_factor"] = self._data.downsample_factor
         return _emd_template
 
-    def psnr_metric(self, accuracy=True, show_progress=True):
+    def compute_metrics(self, accuracy=True, show_progress=True):
         """
-        Computes peak signal-to-noise ratio (PSNR) on validation set.
+        Computes Peak Signal-to-Noise Ratio (PSNR) and 
+        Structural Similarity Index Measure (SSIM) on validation set.
 
         """
-        psnr = compute_psnr(self, self._data.valid_dl, show_progress)
-        return psnr
+        psnr, ssim = compute_metrics(self, self._data.valid_dl, show_progress)
+        return psnr, ssim
 
     
     def show_results(self, rows=5):
@@ -207,7 +211,7 @@ class SuperResolution(ArcGISModel):
         pred_databunch = (ImageImageList.from_folder(img_path.parent).split_none()\
         .label_from_func(lambda x: x)\
         .transform(get_transforms(do_flip=False), size=(height,width), tfm_y=True)\
-        .databunch(bs=2, no_check=True).normalize(imagenet_stats, do_y=False))
+        .databunch(bs=2, no_check=True).normalize(imagenet_stats, do_y=True))
             
         self.learn.data = pred_databunch
         

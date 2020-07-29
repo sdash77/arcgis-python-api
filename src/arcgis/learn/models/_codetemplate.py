@@ -1256,7 +1256,6 @@ class ArcGISImageClassifier:
 
     def updateRasterInfo(self, **kwargs):
         kwargs['output_info']['bandCount'] = 3
-        #todo: type is determined by the value range of classes in the json file
         kwargs['output_info']['pixelType'] = 'f4'
         return kwargs
 

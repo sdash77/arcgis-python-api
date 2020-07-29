@@ -10,9 +10,9 @@ except:
     HAS_SPACY = False
 
 from ._arcgis_model import ArcGISModel
-import os,json,logging
+import os, json, logging
 from pathlib import Path
-import random,os
+import random, os
 from ._ner_utils import *
 from time import sleep
 from copy import deepcopy
@@ -60,6 +60,7 @@ class EntityRecognizer(ArcGISModel):
         self.lang = lang
         self.optimizer = self.model.begin_training()
         if data:
+            self._is_empty = False
             self._address_tag = data._address_tag
             self._has_address = data._has_address
             self.path = data.path
@@ -73,8 +74,10 @@ class EntityRecognizer(ArcGISModel):
             self.train_ds = None
             self.val_ds = None
             self.path = '.'
+            self._is_empty = True
         self.learn = self
         self.recorder = Recorder()
+        self.model_characteristics_folder = 'ModelCharacteristics'
 
     def lr_find(self, allow_plot=True):
     
@@ -93,8 +96,8 @@ class EntityRecognizer(ArcGISModel):
             temp_optimizer = self.optimizer #preserving the current state of the model for later load
         trained = self._trained #preserving the current state of the model for later load
         recorder = deepcopy(self.recorder) #preserving the current state of the model for later load
-        self.recorder.losses,self.recorder.val_loss,self.recorder.lrs = [],[],[] #resetting the recorder
-        lrs = even_mults(start_lr,end_lr,14)
+        self.recorder.losses, self.recorder.val_loss, self.recorder.lrs = [], [], [] #resetting the recorder
+        lrs = even_mults(start_lr, end_lr, 14)
         epochs = int(np.ceil(num_it/(len(self.data.train_ds)/self.data.batch_size)))
         self.fit(lr=list(lrs), epochs=epochs*len(lrs), from_lr_find=True)
         from IPython.display import clear_output
@@ -103,13 +106,13 @@ class EntityRecognizer(ArcGISModel):
         N = smoothening #smoothening factor
         self.recorder.losses = np.convolve(self.recorder.losses, np.ones((N,))/N, mode='valid').tolist()
         self.recorder.lrs = np.convolve(self.recorder.lrs, np.ones((N,))/N, mode='valid').tolist()
-        lr,index = self._find_lr(losses_skipped=0, trailing_losses_skipped=1, section_factor=2)
+        lr, index = self._find_lr(losses_skipped=0, trailing_losses_skipped=1, section_factor=2)
 
         if allow_plot:
             self._show_lr_plot(index, losses_skipped=0, trailing_losses_skipped=1)       
         self._trained = trained    
         self.recorder = recorder
-        import spacy,shutil
+        import spacy, shutil
         self.model = spacy.load('tmp')
         shutil.rmtree('tmp', ignore_errors=True)
         return(lr)
@@ -146,7 +149,7 @@ class EntityRecognizer(ArcGISModel):
             print('Finding optimum learning rate')
             lr = self.lr_find(allow_plot=False)
 
-        if self.train_ds==None:
+        if self.train_ds == None:
             return logging.warning('Cannot fit the model on empty data.')
         TRAIN_DATA = self.train_ds.data
         VAL_DATA = self.val_ds.data
@@ -171,90 +174,101 @@ class EntityRecognizer(ArcGISModel):
 
             batch_size = self.data.batch_size
             n_iter = len(TRAIN_DATA)//batch_size
-            if 'from_lr_find' in kwargs: #'from_lr_find' kwarg specifies that the fit is call from lr_find.
+            if 'from_lr_find' in kwargs:              #'from_lr_find' kwarg specifies that the fit is call from lr_find.
                 epochs_per_lr = epochs/len(lr)
                 lr_find = True
             else:
                 self.optimizer.alpha = lr
                 lr_find = False
             mb = master_bar(range(epochs))
-            mb.write(['epoch','losses','val_loss','precision_score','recall_score','f1_score'], table=True)
+            mb.write(['epoch', 'losses', 'val_loss', 'precision_score', 'recall_score', 'f1_score'], table=True)
             losses_list = []
             
             for itn in mb:
-                if lr_find and (itn+1)%epochs_per_lr==0:
-                    self.optimizer.alpha=lr.pop(0)
-                    losses_list=[]
-                    update_recorder=True
+                if lr_find and ((itn+1)%epochs_per_lr==0 or itn==0):              #updating lr after specified iterations
+                    self.optimizer.alpha = lr.pop(0)
+                    losses_list = []
+                    update_recorder = True
                 random.shuffle(TRAIN_DATA)
                 batches = minibatch(TRAIN_DATA, size=batch_size)
                 losses = {}
-                for batch_index in progress_bar(range(n_iter),parent=mb):
+                epoch_loss = []
+                for batch_index in progress_bar(range(n_iter), parent=mb):
                     batch_index += 1
                     batch = next(batches)
                     texts, annotations = zip(*batch)
                     nlp.update(texts, annotations, sgd=self.optimizer, drop=0.35, losses=losses)
-                    processed_len=(len(batch)*batch_index)
-                    train_loss=losses['ner']/processed_len
+                    processed_len = (len(batch)*batch_index)
+                    train_loss = losses['ner']              # could be normalized with processed_len
                     if lr_find:
-                        losses_list.append(train_loss)
-                    else: # recording training loss per iteration.
-                        self.recorder.losses.append(train_loss)                       
+                        losses_list.append(train_loss/processed_len)
+                    else:              # recording training loss per iteration.
+                        epoch_loss.append(train_loss)
+                        
+                if not lr_find: self.recorder.losses.append(sum(epoch_loss)/n_iter)              #averaging loss per epoch              
+                
                 if VAL_DATA:
 
                     val_batches = minibatch(VAL_DATA, size=batch_size)
                     val_losses = {}
                     val_loss_list = []
-                    for batch_index,val_batch in enumerate(val_batches):
+                    epoch_loss = []
+                    for batch_index, val_batch in enumerate(val_batches):
                         batch_index += 1
                         processed_len_val = batch_size*(batch_index)
                         val_text, val_annotations = zip(*val_batch)
-                        nlp.update(val_text,val_annotations, sgd = None, losses = val_losses)
-                        val_loss = val_losses['ner']/(processed_len_val)
+                        nlp.update(val_text, val_annotations, sgd = None, losses = val_losses)
+                        val_loss = val_losses['ner']              # could be normalized with processed_len_val
                         if lr_find:
-                            val_loss_list.append(val_loss)
-                        else: # recording validation loss per iteration.
-                            self.recorder.val_loss.append(val_loss)
+                            val_loss_list.append(val_loss/processed_len_val)
+                        else:              # recording validation loss per iteration.
+                            epoch_loss.append(val_loss) 
+                    if not lr_find: self.recorder.val_loss.append(sum(epoch_loss)/batch_index) #averaging loss per epoch 
+                    
                 if lr_find:  
                     self.recorder.losses.append(np.min(losses_list))
                     self.recorder.lrs.append(self.optimizer.alpha)
                     self.recorder.val_loss.append(np.min(val_loss_list))
                     update_recorder = False
-                    if np.mean(losses_list) > 3*np.min(self.recorder.losses): #break the epoch if loss overshoots
+                    if np.mean(losses_list) > 2*np.min(self.recorder.losses) or len(lr)==0 : #break the epoch if loss overshoots or all the lrs are tested
                             return    
                 score = nlp.evaluate(self.train_ds)
-                precision_score,recall_score,f1_score,metrics_per_label = score.ents_p,score.ents_r,score.ents_f,score.ents_per_type
+                precision_score, recall_score, f1_score, metrics_per_label = score.ents_p, score.ents_r, score.ents_f, score.ents_per_type
                 self.recorder.metrics['precision_score'].append(precision_score)
                 self.recorder.metrics['recall_score'].append(recall_score)
                 self.recorder.metrics['f1_score'].append(f1_score)
                 self.recorder.metrics['metrics_per_label'].append(metrics_per_label)
-                line=[itn, round(train_loss,2), round(val_loss,2), round(precision_score/100,2)
-                        , round(recall_score/100,2), round(f1_score/100,2)]
-                line=[str(val) for val in line]
-                mb.write(line,table=True)
+                line = [itn, round(train_loss, 2), round(val_loss, 2), round(precision_score/100, 2)
+                        , round(recall_score/100, 2), round(f1_score/100, 2)]
+                line = [str(val) for val in line]
+                mb.write(line, table=True)
 
         if  not lr_find:
             self._trained = True
             self.model = nlp
             self.entities = list(self.model.entity.labels)
+            self.lr = lr
 
     def _create_emd(self, path):
-        path=Path(path)
+        path = Path(path)
         self._emd_template["ModelConfiguration"] = "_ner"
         self._emd_template["InferenceFunction"] = "EntityRecognizer.py"
         self._emd_template['ModelFile'] = str(Path(path).name)
         self._emd_template['ModelName'] = type(self).__name__
         self._emd_template['Labels'] = self.model.entity.labels
         self._emd_template['Lang'] = self.lang
-        self._emd_template['metrics'] = json.dumps({'precision_score':[self.recorder.metrics['precision_score'][-1]]
-                                                ,'recall_score':[self.recorder.metrics['recall_score'][-1]]
-                                                ,'f1_score':[self.recorder.metrics['f1_score'][-1]]
-                                                ,'metrics_per_label':[self.recorder.metrics['metrics_per_label'][-1]]})
+        self._emd_template['saved_path'] = str(Path(path))
+        if hasattr(self, 'lr'): self._emd_template['LearningRate'] = str(self.lr) #checking if model has lr
+        if len(self.recorder.metrics['precision_score']):  #checking if recorder has metrics
+            self._emd_template['metrics'] = json.dumps({'precision_score':[self.recorder.metrics['precision_score'][-1]]
+                                                , 'recall_score':[self.recorder.metrics['recall_score'][-1]]
+                                                , 'f1_score':[self.recorder.metrics['f1_score'][-1]]
+                                                , 'metrics_per_label':[self.recorder.metrics['metrics_per_label'][-1]]})
         if self._has_address:
             self._emd_template['address_tag'] = self._address_tag
         json.dump(self._emd_template, open(path/Path(path.stem).with_suffix('.emd'), 'w'), indent=4)
         pathstr = path/Path(path.stem).with_suffix('.emd')
-        print(f'Model has been saved to {str(path.resolve())}')
+        return str(path.resolve())
   
     def save(self, name_or_path, **kwargs):
         """
@@ -274,13 +288,31 @@ class EntityRecognizer(ArcGISModel):
         """        
         return self._save(name_or_path, **kwargs)
 
-    def _save(self, name_or_path, zip_files=True):
+    def _save_model_characteristics(self, model_characteristics_dir):
+
+        import shutil
+        import matplotlib.pyplot as plt
+
+        if not os.path.exists(model_characteristics_dir):
+                os.makedirs(model_characteristics_dir)
+
+        fig = self.plot_losses(show=False)
+        if fig:
+            fig.savefig(os.path.join(model_characteristics_dir, 'loss_graph.png'))
+        from IPython.utils import io
+        with io.capture_output() as captured:
+            self.show_results().to_html(os.path.join(model_characteristics_dir, 'results.html'))
+            metrics = self.metrics_per_label()
+            if metrics is not None:       #expecting metrics = None for older saved models. 
+                metrics.to_html(os.path.join(model_characteristics_dir, 'metrics.html'))  #writing metrics to html
+
+    def _save(self, name_or_path, zip_files=True, save_html=True):
         temp = self.path
         if not self._trained:
             return logging.error("Model needs to be fitted, before saving.")
 
         if '\\' in name_or_path or '/' in name_or_path:
-            path=Path(name_or_path)
+            path = Path(name_or_path)
             parent_path = path.parent
             name = path.parts[-1]
             self.model_dir = parent_path/name
@@ -293,12 +325,17 @@ class EntityRecognizer(ArcGISModel):
                 os.makedirs(self.model_dir)
         
         self.model.to_disk(self.model_dir)
-        self._create_emd(self.model_dir)
+        emd_path = self._create_emd(self.model_dir)
         with open(self.model_dir / self._emd_template['InferenceFunction'], 'w') as f:
             f.write(self._code)
+        
+        if save_html:
+            self._save_model_characteristics(self.model_dir.absolute() / self.model_characteristics_folder)
+            self._create_html(Path(self.model_dir.absolute()/self.model_dir.stem))
+
         if zip_files:
             _create_zip(name, str(self.model_dir))
-
+        print(f'Model has been saved to {emd_path}')
 
     def load(self, name_or_path):
         """
@@ -315,7 +352,7 @@ class EntityRecognizer(ArcGISModel):
             model_path = Path(name_or_path).parent
         else:
             model_path =  Path(self.path) /'models'/ name_or_path
-            name_or_path=Path(self.path) /'models'/ name_or_path / f'{name_or_path}.emd'
+            name_or_path = Path(self.path) /'models'/ name_or_path / f'{name_or_path}.emd'
         with open(name_or_path, 'r', encoding='utf-8') as f:
             emd = f.read()
         emd = json.loads(emd)
@@ -329,7 +366,7 @@ class EntityRecognizer(ArcGISModel):
         self.entities = list(self.model.entity.labels)
         self.model_dir = Path(name_or_path).parent.resolve()
         self.recorder = Recorder()
-        self.recorder.metrics = json.loads(emd.get('metrics'))
+        if emd.get('metrics'): self.recorder.metrics = json.loads(emd.get('metrics'))
         print(self.model)
 
     @classmethod
@@ -354,7 +391,7 @@ class EntityRecognizer(ArcGISModel):
         emd_path = Path(emd_path)
         ner = cls(data=data)
         ner.load(emd_path)
-        ner.trained = True
+        ner._trained = True
         ner.entities = list(ner.model.entity.labels)
         return ner
 
@@ -364,49 +401,49 @@ class EntityRecognizer(ArcGISModel):
         This function post processes the output dataframe from extract_entities function and returns a processed dataframe.
         """
         processed_df = pd.DataFrame(columns = unprocessed_df.columns)
-        for col in unprocessed_df.columns: ## converting all list columns to string
-            if pd.Series(filter(lambda x: x != '',unprocessed_df[col])).apply(isinstance,args = ([str])).sum() == 0: ## split if this condition
+        for col in unprocessed_df.columns:              # converting all list columns to string
+            if pd.Series(filter(lambda x: x != '', unprocessed_df[col])).apply(isinstance, args = ([str])).sum() == 0:  # split if this condition
                 processed_df[col] = unprocessed_df[col].apply(",".join)  #join the list to string and copy to the processed df
             else: 
                 processed_df[col] = unprocessed_df[col] #copy to the processed df
         return processed_df
 
-    def _post_process_address_df(self, unprocessed_df,drop):
+    def _post_process_address_df(self, unprocessed_df, drop):
         """
         This function post processes the output dataframe from extract_entities function and returns a processed dataframe with cleaned up missed detections.
         """
         address_tag = self._address_tag
-        processed_df = pd.DataFrame(columns = unprocessed_df.columns) #creating an empty processed dataframe
-        for i,adds in unprocessed_df[address_tag].iteritems(): #duplicating rows with multiple addresses to be one row per address
-            if len(adds)>0:#adding data for address documents
-                for j,add in enumerate(adds):
+        processed_df = pd.DataFrame(columns = unprocessed_df.columns)              #creating an empty processed dataframe
+        for i, adds in unprocessed_df[address_tag].iteritems():   #duplicating rows with multiple addresses to be one row per address
+            if len(adds) > 0:              #adding data for address documents
+                for j, add in enumerate(adds):
                     curr_index = len(processed_df)
                     processed_df.loc[curr_index] = unprocessed_df.loc[i]
                     processed_df.loc[curr_index][address_tag] = add
-            else: #adding data for non-address documents
+            else:               #adding data for non-address documents
                 curr_index = len(processed_df)
                 processed_df.loc[curr_index] = unprocessed_df.loc[i]
                 processed_df.loc[curr_index][address_tag] = ''
         drop_ids = []
 
-        for i,add in processed_df[address_tag].iteritems():
-            if len(add.split(' '))<2:
+        for i, add in processed_df[address_tag].iteritems():
+            if len(add.split(' ')) < 2:
                 drop_ids.append(i)
         del unprocessed_df
 
-        if drop: #flag for dropping/not-dropping documents without address.
+        if drop:               #flag for dropping/not-dropping documents without address.
             processed_df.drop(drop_ids, inplace=True)        
         cols = processed_df.columns
         processed_df.reset_index(drop=True, inplace=True)
 
-        for col in processed_df.columns: ## converting all list columns to string
-            if col != address_tag and pd.Series(filter(lambda x: x != '',processed_df[col])).apply(isinstance,args = ([str])).sum() == 0: ## split if this condition
+        for col in processed_df.columns:              # converting all list columns to string
+            if col != address_tag and pd.Series(filter(lambda x: x != '', processed_df[col])).apply(isinstance, args = ([str])).sum() == 0: ## split if this condition
                 processed_df[col] = processed_df[col].apply(",".join)  #join the list to strind and copy to the processed df
             else:
-                 processed_df[col] = processed_df[col] #copy to the processed df
+                 processed_df[col] = processed_df[col]              #copy to the processed df
         return processed_df
     
-    def _extract_entities_text(self,text):
+    def _extract_entities_text(self, text):
         """
         This function extracts entities from a string"
         
@@ -417,11 +454,11 @@ class EntityRecognizer(ArcGISModel):
         spacy's doc object
 
         Example of how to visualize the results:
-        [(ent.label_,ent.text) for ent in doc_object.ents]
+        [(ent.label_, ent.text) for ent in doc_object.ents]
         """
         return self.model(text)
     
-    def extract_entities(self, text_list,drop=True):
+    def extract_entities(self, text_list, drop=True):
         """
         Extracts the entities from [documents in the mentioned path or text_list].
         
@@ -445,7 +482,7 @@ class EntityRecognizer(ArcGISModel):
         """
 
         if self._trained:
-            df = pd.DataFrame(columns = ['TEXT','Filename']+self.entities)
+            df = pd.DataFrame(columns = ['TEXT', 'Filename']+self.entities)
 
             if isinstance(text_list, list):
                 item_list= pd.Series(text_list)
@@ -476,21 +513,21 @@ class EntityRecognizer(ArcGISModel):
             #         1. Set address tag to the address field in your data [your_model._address_tag=\'your_address_field\']\n\
             #         2. If your data does not have any address field set _has_address=False [your_model._has_address=False]')
             
-            for i,item in progress_bar(list(item_list.iteritems())):
+            for i, item in progress_bar(list(item_list.iteritems())):
                 df.loc[i] = None
-                doc = self._extract_entities_text(item) ## predicting entities using entity_extractor model
+                doc = self._extract_entities_text(item)              # predicting entities using entity_extractor model
                 text = doc.text
                 tmp_ents = {}
-                for ent in doc.ents:  ##Preparing a dataframe from results
+                for ent in doc.ents:              #Preparing a dataframe from results
                     if tmp_ents.get(ent.label_) == None:
                         tmp_ents[ent.label_] = []+[ent.text]
                     else:
                         tmp_ents[ent.label_].extend([ent.text])
 
                 df.loc[i]['TEXT'] = text
-                if isinstance(i,Iterable): #For test documents
+                if isinstance(i, Iterable):              #For test documents
                     df.loc[i]['Filename'] = i
-                else: #for show_results()
+                else:              #for show_results()
                     df.loc[i]['Filename'] = 'Example_'+str(i)
                 
                 for label in tmp_ents.keys():
@@ -498,10 +535,9 @@ class EntityRecognizer(ArcGISModel):
             
             df.fillna('', inplace=True)
             if self._has_address:
-                df = self._post_process_address_df(df,drop) #Post processing the dataframe
+                df = self._post_process_address_df(df, drop)              #Post processing the dataframe
             else: 
-                df = self._post_process_non_address_df(df)  #Post processing the dataframe
-            # df.to_csv(f'{output_path}/output.csv')
+                df = self._post_process_non_address_df(df)              #Post processing the dataframe
             return df.reset_index(drop='True')
         else:
              return logging.error("Model needs to be fitted, before extraction.")
@@ -529,6 +565,8 @@ class EntityRecognizer(ArcGISModel):
         #     return logging.warning('Model\'s address tag does not match with any field in your data, one of the below steps could resolve your issue:\n\
         #         1. Set address tag to the address field in your data [your_model._address_tag=\'your_address_field\']\n\
         #         2. If your data does not have any address field set _has_address=False [your_model._has_address=False]')
+        if self._is_empty:
+              return logging.warning('This model does not have data.')
 
         if ds_type.lower() == 'valid':
             xs = self.val_ds._random_batch(self.val_ds.x)
@@ -538,40 +576,84 @@ class EntityRecognizer(ArcGISModel):
             return self.extract_entities(xs)
         else:
             print('Please provide a valid ds_type:[\'valid\'|\'train\']')
+    
     def precision_score(self):
         if self._trained:
-            precision_pct=self.recorder.metrics['precision_score'][-1]
-            precision=round(precision_pct/100,2)
+            precision_pct = self.recorder.metrics['precision_score'][-1]
+            precision = round(precision_pct/100, 2)
             return precision
         else:
             return logging.warning('This model has not been trained')
 
     def recall_score(self):
         if self._trained:
-            recall_pct=self.recorder.metrics['recall_score'][-1]
-            recall=round(recall_pct/100,2)
+            recall_pct = self.recorder.metrics['recall_score'][-1]
+            recall = round(recall_pct/100, 2)
             return recall
         else:
             return logging.warning('This model has not been trained')
+    
     def f1_score(self):
         if self._trained:
-            f1_pct=self.recorder.metrics['f1_score'][-1]
-            f1=round(f1_pct/100,2)
+            f1_pct = self.recorder.metrics['f1_score'][-1]
+            f1 = round(f1_pct/100, 2)
             return f1
         else:
             return logging.warning('This model has not been trained')
+            
     def metrics_per_label(self):
-        if self._trained:
+
+        if self._trained: # for saving old(before metrics were implemented) models. 
+            
+            if not len(self.recorder.metrics['metrics_per_label']):
+                return None
+
             metrics_df = pd.DataFrame(self.recorder.metrics['metrics_per_label'][-1]).transpose()
-            metrics_df.columns = ['Precision_score','Recall_score','F1_score']
-            metrics_df=metrics_df.apply(lambda x: round(x/100,2))
+            metrics_df.columns = ['Precision_score', 'Recall_score', 'F1_score']
+            metrics_df = metrics_df.apply(lambda x: round(x/100, 2))
             return metrics_df
         else:
             return logging.warning('This model has not been trained')
+
+    def plot_losses(self, show=True):
+        '''
+        Plot training and validation losses.
+        
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        show                    Optional bool. Defaults to True
+                                If set to False, figure will not be plotted
+                                but will be returned, when set to True function 
+                                will plot the figure and return nothing.     
+        =====================   ===========================================
+
+        :returns: matplotlib.figure.Figure
+        '''
+
+
+        if not len(self.recorder.losses):              # return none if the recorder is empty
+            return None
+        import numpy as np
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(1, 1)
+        N = max(1, len(self.recorder.losses)//10)            #smooth with a factor of N
+        ax.plot(np.convolve(self.recorder.losses, np.ones((N,))/N, mode='valid'), label='Train')
+        ax.plot(np.convolve(self.recorder.val_loss, np.ones((N,))/N, mode='valid'), label='Validation')
+        ax.set_ylabel('Loss')
+        ax.set_xlabel('Batches processed')
+        ax.legend()
+        
+        if not show:
+            plt.close()     
+            return fig
+        else:
+            plt.show()
+
 
 class Recorder():
     def __init__(self):
         self.lrs = []
         self.losses = []
         self.val_loss = []
-        self.metrics = {'precision_score':[],'recall_score':[],'f1_score':[],'metrics_per_label':[]}
+        self.metrics = {'precision_score':[], 'recall_score':[], 'f1_score':[], 'metrics_per_label':[]}

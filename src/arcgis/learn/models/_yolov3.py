@@ -63,6 +63,8 @@ class YOLOv3(ArcGISModel):
 
     def __init__(self, data=None, pretrained_path=None, **kwargs):
 
+        self._check_dataset_support(data)
+
         if data is None:
             data = create_coco_data()
         else:
@@ -93,8 +95,6 @@ class YOLOv3(ArcGISModel):
             self.config_model['N_BANDS'] = n_bands if n_bands is not None else data.x[0].data.shape[0]
 
         self._model = YOLOv3_Model(self.config_model)
-
-        self._check_dataset_support(self._data)
 
         pretrained = kwargs.get('pretrained_backbone', True)
         if pretrained:

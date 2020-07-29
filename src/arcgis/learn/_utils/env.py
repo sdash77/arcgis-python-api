@@ -101,3 +101,10 @@ def raise_fastai_import_error(import_exception=fastai_import_exception, installa
         message = "This module requires fastai, PyTorch, torchvision and scikit-image as its dependencies."
     raise Exception(f"""{import_exception} \n\n{message}\n{installation_steps}""")
 
+
+HAS_GDAL = False
+try:
+    import gdal
+    HAS_GDAL = True
+except:
+    pass

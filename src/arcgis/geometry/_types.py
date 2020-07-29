@@ -1,7 +1,9 @@
 """
 New Geometries Classes
 """
+import copy
 import json
+import ujson as _ujson
 try:
     import numpy as np
 except ImportError as e:
@@ -194,7 +196,7 @@ class GeometryFactory(type):
         except:
             _HASARCPY = False
         if _HASARCPY:
-            return json.loads(arcpy.FromWKB(iterable).JSON)
+            return _ujson.loads(arcpy.FromWKB(iterable).JSON)
         return {}
 
     @staticmethod
@@ -207,10 +209,10 @@ class GeometryFactory(type):
         if _HASARCPY:
             if "SRID=" in iterable:
                 wkid, iterable = iterable.split(";")
-                geom = json.loads(arcpy.FromWKT(iterable).JSON)
+                geom = _ujson.loads(arcpy.FromWKT(iterable).JSON)
                 geom['spatialReference'] = {'wkid' : int(wkid.replace("SRID=",""))}
                 return geom
-            return json.loads(arcpy.FromWKT(iterable).JSON)
+            return _ujson.loads(arcpy.FromWKT(iterable).JSON)
         return {}
     
     @staticmethod
@@ -221,7 +223,7 @@ class GeometryFactory(type):
         except:
             _HASARCPY = False
         if _HASARCPY:
-            gj = json.loads(arcpy.AsShape(iterable, False).JSON)
+            gj = _ujson.loads(arcpy.AsShape(iterable, False).JSON)
             gj['spatialReference']['wkid'] = 4326
             return gj
         else:
@@ -237,14 +239,14 @@ class GeometryFactory(type):
             if isinstance(iterable, (bytearray, bytes)):
                 iterable = GeometryFactory._from_wkb(iterable)
             elif hasattr(iterable, "JSON"):
-                iterable = json.loads(getattr(iterable, "JSON"))
+                iterable = _ujson.loads(getattr(iterable, "JSON"))
             elif 'coordinates' in iterable:
                 iterable = GeometryFactory._from_gj(iterable)
             elif hasattr(iterable, "exportToString"):
                 iterable = {'wkt': iterable.exportToString()}
             elif isinstance(iterable, str) and \
                     "{" in iterable:
-                iterable = json.loads(iterable)
+                iterable = _ujson.loads(iterable)
             elif isinstance(iterable, str):  # WKT
                 iterable = GeometryFactory._from_wkt(iterable)
 
@@ -633,12 +635,11 @@ class Geometry(BaseGeometry):
 
         """
         from .affine import skew
+        s = skew(geom=copy.deepcopy(self), x_angle=x_angle,
+                    y_angle=y_angle)        
         if inplace:
-            self = skew(geom=self, x_angle=x_angle,
-                        y_angle=y_angle)
-            return self
-        return skew(geom=self, x_angle=x_angle,
-                    y_angle=y_angle)
+            self.update(s)
+        return s
 
     def rotate(self, theta,
                inplace=False):
@@ -660,9 +661,10 @@ class Geometry(BaseGeometry):
 
         """
         from .affine import rotate
-        r = rotate(self, theta)
+        
+        r = rotate(copy.deepcopy(self), theta)
         if inplace:
-            self = r
+            self.update(r)
         return r
 
     def scale(self, x_scale=1, y_scale=1, inplace=False):
@@ -691,7 +693,7 @@ class Geometry(BaseGeometry):
         g = copy.copy(self)
         s = scale(g, *(x_scale, y_scale))
         if inplace:
-            self = s
+            self.update(s)
         return s
 
     def translate(self, x_offset=0,
@@ -716,9 +718,9 @@ class Geometry(BaseGeometry):
 
         """
         from .affine import translate
-        t = translate(self, x_offset, y_offset)
+        t = translate(copy.deepcopy(self), x_offset, y_offset)
         if inplace:
-            self = t
+            self.update(t)
         return t
 
     @property
@@ -764,7 +766,7 @@ class Geometry(BaseGeometry):
             return getattr(self.as_arcpy, "JSON", None)
         elif HASSHAPELY:
             try:
-                return self.as_shapely.__geo_interface__
+                return json.dumps(self.as_shapely.__geo_interface__)
             except:
                 return json.dumps(self)
 
@@ -1091,7 +1093,7 @@ class Geometry(BaseGeometry):
                 return None
         elif HASARCPY:
             import arcpy
-            return Geometry(json.loads(arcpy.PointGeometry(getattr(
+            return Geometry(_ujson.loads(arcpy.PointGeometry(getattr(
                 self.as_arcpy,
                 "firstPoint",
                 None), self.spatial_reference).JSON))

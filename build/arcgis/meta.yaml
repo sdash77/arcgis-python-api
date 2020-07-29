@@ -6,10 +6,11 @@ build:
   number: '0'
 package:
   name: arcgis
-  version: 1.8.2
+  version: 1.8.3
 requirements:
   build:
   - python
+  - ujson >=3
   - setuptools
   - six
   - notebook
@@ -26,6 +27,7 @@ requirements:
   - requests-kerberos
   - requests-oauthlib
   - requests_ntlm
+  - requests-negotiate-sspi [win]
   - pywin32-security [win]
   - lerc
   - winkerberos      [win]
@@ -36,6 +38,7 @@ requirements:
   - ipywidgets >=7
   - widgetsnbextension >=3
   - pandas >=1
+  - ujson >=3
   - numpy >=1.16.2
   - pyshp >=2
   - matplotlib
@@ -45,6 +48,7 @@ requirements:
   - requests-kerberos
   - requests-oauthlib
   - requests_ntlm
+  - requests-negotiate-sspi [win]
   - pywin32-security [win]
   - lerc
   - winkerberos      [win]

@@ -5,7 +5,8 @@ from fastai.layers import CrossEntropyFlat
 from fastai.basic_train import LearnerCallback
 from .._utils.common import ArcGISMSImage, get_top_padding, kwarg_fill_none, \
     find_data_loader, get_nbatches, dynamic_range_adjustment, image_tensor_checks_plotting, \
-    get_symbology_bands, predict_batch, denorm_x, get_nbatches
+    get_symbology_bands, predict_batch, denorm_x, get_nbatches, GDAL_INSTALL_MESSAGE
+from .._utils.env import HAS_GDAL
 from .._utils.pixel_classification import analyze_pred_pixel_classification
 import torch
 import warnings
@@ -166,7 +167,18 @@ class ArcGISImageSegment(Image):
             color_mapping = torch.tensor(list(self.color_mapping.values()))
             color_mapping = torch.cat((color_mapping.float()/255, torch.tensor([float(alpha)] * len(color_mapping)).view(-1, 1)), dim=1)
             color_mapping = torch.cat((torch.tensor([0., 0., 0., 0.]).view(1, -1), color_mapping), dim=0)
-            ax = show_image(color_mapping[self.data[0]].permute(2, 0, 1), ax=ax, hide_axis=hide_axis, cmap=cmap, figsize=figsize,
+            try:
+                color_im = color_mapping[self.data[0]].permute(2, 0, 1)
+            except IndexError as e:
+
+                if HAS_GDAL:
+                    message = f"Encountered invalid values in training label values, please check your training data."
+                else:
+                    message = f"Encountered invalid values while reading training labels. Please install gdal for better support.\n\n" + GDAL_INSTALL_MESSAGE
+
+                raise Exception(f"{e} \n\n{message}")
+
+            ax = show_image(color_im, ax=ax, hide_axis=hide_axis, cmap=cmap, figsize=figsize,
                             interpolation='nearest', alpha=alpha, vmin=0, **kwargs)
         if title: ax.set_title(title)
 
@@ -207,7 +219,7 @@ class ArcGISSegmentationLabelList(ImageList):
         if not self.is_contiguous:
             self.pixel_mapping = [0] + list(self.class_mapping.keys())
 
-    def open(self, fn):
+    def _open_rgb(self, fn):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning) # EXIF warning from TiffPlugin
             x = PIL.Image.open(fn)
@@ -219,9 +231,19 @@ class ArcGISSegmentationLabelList(ImageList):
 
         if not self.is_contiguous:
             x = map_to_contiguous(x, self.pixel_mapping)
+
         return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
-    def analyze_pred(self, pred, thresh=0.5, ignore_mapped_class=[]):
+    def analyze_pred(self, pred, thresh=0.5, ignore_mapped_class=[], model = None, thinning=None):
+
+        if getattr(model, "_is_model_extension", False):
+
+            if thinning == None:
+                pred = model.model_conf.post_process(pred, thresh)
+            else:
+                pred = model.model_conf.post_process(pred, thresh, thinning)
+            return pred
+
         if ignore_mapped_class == []: 
             return pred.argmax(dim=0)[None]
         else:
@@ -229,13 +251,22 @@ class ArcGISSegmentationLabelList(ImageList):
                 pred[k] = -1
             return pred.argmax(dim=0)[None]
 
-
-    def reconstruct(self, t): 
+    def reconstruct(self, t):
         return ArcGISImageSegment(t, color_mapping=self.color_mapping)
+
+    def open(self, fn):
+        x = ArcGISMSImage.open(fn).data
+        if not self.is_contiguous:
+            x = map_to_contiguous(x, self.pixel_mapping)
+        return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
 class ArcGISSegmentationItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."
     _label_cls, _square_show_res = ArcGISSegmentationLabelList, False
+    _div = None
+    _imagery_type = None
+    def open(self, fn):
+        return ArcGISMSImage.open(fn, div=self._div, imagery_type=self._imagery_type)
 
 class ArcGISSegmentationMSLabelList(ArcGISSegmentationLabelList):
     def open(self, fn):
@@ -246,12 +277,6 @@ class ArcGISSegmentationMSLabelList(ArcGISSegmentationLabelList):
         if not self.is_contiguous:
             x = map_to_contiguous(x, self.pixel_mapping)
         return ArcGISImageSegment(x, color_mapping=self.color_mapping)
-
-class ArcGISSegmentationMSItemList(ImageList):
-    "`ItemList` suitable for segmentation tasks."
-    _label_cls, _square_show_res = ArcGISSegmentationMSLabelList, False
-    def open(self, fn):
-        return ArcGISMSImage.open_gdal(fn)
 
 class LabelCallback(LearnerCallback):
     def __init__(self, learn):

@@ -2004,6 +2004,95 @@ class ImageryLayer(Layer):
         return self._con.post(path=url,
                               postdata=params)
 
+
+    def statistics(self,variable=None):
+        """
+        Returns statistics of the raster.
+
+        Operation available in ArcGIS Image Server 10.8.1 and higher.
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        variable              Optional string. For an image service that has multidimensional 
+                              information, this parameter can be used to request statistics for 
+                              each variable. If not specified, it will return statistics for the 
+                              whole image service. Eligible variable names can be queried from 
+                              multidimensional_info property of the Imagery Layer object.
+        -----------------     --------------------------------------------------------------------
+
+        .. code-block:: python
+
+            # Usage Example 1: This example returns the statistics of an Imagery Layer object. 
+            lyr_input.statistics()
+
+        :returns: dictionary containing the statistics.
+
+
+        """
+        url = self._url + "/statistics"
+
+        params={'f': 'json'}
+
+        if variable is not None:
+            params['variable'] = variable
+
+        if self._datastore_raster:
+            params["Raster"]=self._uri
+
+        return self._con.post(path=url,
+                              postdata=params, token=self._token)
+
+    def get_histograms(self, variable=None):
+        """
+        Returns the histograms of each band in the imagery layer as a list of dictionaries corresponding to each band.
+        get_histograms
+        get_histograms() can return histogram for each variable if used with multidimensional ImageryLayer 
+        object by specifing value for variable parameter.
+
+        If histogram is not found, returns None. In this case, call the compute_histograms().
+        (get_histograms() is an enhanced version of the histograms property on the ImageryLayer class
+        with additional variable parameter.)
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        variable              Optional string. For an image service that has multidimensional 
+                              information, this parameter can be used to request histograms for 
+                              each variable. It will return histograms for the whole ImageryLayer
+                              if not specified.
+                              This parameter is available from 10.8.1
+        -----------------     --------------------------------------------------------------------
+
+        :return:
+            my_hist = imagery_layer.histograms(variable="water_temp")
+
+            Structure of the return value:
+            [
+             {
+              "size":256,
+              "min":560,
+              "max":24568,
+              counts: [10,99,56,42200,125,....] #length of this list corresponds 'size'
+             }
+            ]
+
+        """
+        if self.properties.hasHistograms:
+            #proceed
+            url = self._url + "/histograms"
+            params={'f':'json'}
+            if variable is not None:
+                params['variable'] = variable
+            if self._datastore_raster:
+                params["Raster"] =self._uri
+            hist_return = self._con.post(url, params, token=self._token)
+
+            #process this into a dict
+            return hist_return['histograms']
+        else:
+            return None
+
     # ----------------------------------------------------------------------
     def _add_rasters(self,
                      raster_type,
@@ -2501,19 +2590,46 @@ class ImageryLayer(Layer):
             return legend
 
     # ----------------------------------------------------------------------
-    def colormap(self):
+    def colormap(self,
+                 rendering_rule=None,
+                 variable=None):
         """
         The colormap method returns RGB color representation of pixel
         values. This method is supported if the hasColormap property of
         the layer is true.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        rendering_rule      optional dictionary. Specifies the rendering rule for how the
+                            requested image should be rendered.
+                            See the raster function objects for the JSON syntax and examples.
+                            http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Raster_function_objects/02r3000000rv000000/
+        ---------------     --------------------------------------------------------------------
+        variable            Optional String. This parameter can be used to request a 
+                            colormap for each variable for an image service that has 
+                            multidimensional information. It will return a colormap 
+                            for the whole image service if not specified. Eligible variable names 
+                            can be queried from multidimensional_info property of the Imagery Layer object.
+                            This parameter is available from 10.8.1
+        ===============     ====================================================================
+
+        :returns: dictionary
         """
         if self.properties.hasColormap:
             url = self._url + "/colormap"
             params = {
                 "f": "json"
             }
+            if rendering_rule is not None:
+                params["renderingRule"]=rendering_rule
+            if variable is not None:
+                params["variable"]=variable
             if self._datastore_raster:
                 params["Raster"]=self._uri
+                if isinstance(self._uri, bytes):
+                    if "renderingRule" in params.keys():
+                        del params['renderingRule']
             return self._con.get(url, params, token=self._token)
         else:
             return None

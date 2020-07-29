@@ -71,6 +71,16 @@ var ArcGISMapIPyWidgetModel = widgets.DOMWidgetModel.extend({
         _image_overlays_to_remove: [],
         //end image overlay section
 
+        //start time information
+        time_slider: false,
+        time_mode: "time-window",
+        _time_info: {},
+        _writeonly_start_time: "",
+        _readonly_start_time: "",
+        _writeonly_end_time: "",
+        _readonly_end_time: "",
+        //end time info
+
         //start miscellanous model state
         _portal_token: "",
         _auth_mode: "",
