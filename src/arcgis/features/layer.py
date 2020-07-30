@@ -983,6 +983,130 @@ class FeatureLayer(Layer):
         The 'partitionBy' clause normally refers to the column by which the result is 
         partitioned. 'partitionBy' can also be a value expression (column expression or 
         function) that references any of the selected columns (not aliases).
+        
+        
+        
+        ===============================     ====================================================================
+        **Argument**                        **Description**
+        -------------------------------     --------------------------------------------------------------------
+        out_analytics                       Required List. A set of analytics to calculate on the Feature Layer.
+        
+                                            The definitions for one or more field-based or expression analytics to be computed. This parameter is supported only on layers/tables that indicate supportsAnalytics is true.
+                                            Note: If outAnalyticFieldName is empty or missing, the server assigns a field name to the returned analytic field. 
+                                            
+                                            Syntax: An array of analytic definitions. An analytic definition specifies the type of analytic, the field or expression on which it is to be computed, and the resulting output field name.
+                                            Syntax
+                                            [
+                                              {
+                                                "analyticType": "<COUNT | SUM | MIN | MAX | AVG | STDDEV | VAR | FIRST_VALUE, LAST_VALUE, LAG, LEAD, PERCENTILE_CONT, PERCENTILE_DISC, PERCENT_RANK, RANK, NTILE, DENSE_RANK, EXPRESSION>",
+                                                "onAnalyticField": "Field1", 
+                                                "outAnalyticFieldName": "Out_Field_Name1",
+                                                 "analyticParameters”: {
+                                                      "orderBy": "<orderBy expression",
+                                                      "value": <double value>,// percentile value
+                                                      "partitionBy": "<field name or expression>",
+                                                      "offset": <integer>, // used by LAG/LEAD
+                                                      "windowFrame": {
+                                                         "type": "ROWS" | "RANGE",
+                                                         "extent": {
+                                                            "extentType": "PRECEDING" | "BOUNDARY",   
+                                                            "PRECEDING": {
+                                                               "type": <"UNBOUNDED" |   
+                                                                       "NUMERIC_CONSTANT" | 
+                                                                        "CURRENT_ROW">
+                                                                "value": <numeric constant value> 
+                                                             }
+                                                             "BOUNDARY": {
+                                                              "start": "UNBOUNDED_PRECEDING", 
+                                                                       "NUMERIC_PRECEDING", 
+                                                                        "CURRENT_ROW",
+                                                              "startValue": <numeric constant value>,
+                                                              "end": <"UNBOUNDED_FOLLOWING" |  
+                                                                      "NUMERIC_FOLLOWING" | 
+                                                                      "CURRENT_ROW",
+                                                              "endValue": <numeric constant value>
+                                                            }
+                                                          }
+                                                        }             
+                                                     }
+                                                }
+                                              }
+                                            ]
+                                            
+                                            
+                                            Example:
+                                            [{
+                                                  "analyticType": "FIRST_VALUE",
+                                                  "onAnalyticField": "POP1990",
+                                                  "analyticParameters": {
+                                                      "orderBy": "POP1990",
+                                                      "partitionBy": "state_name"
+                                                  },
+                                                  "outAnalyticFieldName": "FirstValue"
+                                                }
+                                            ]
+
+        
+        -------------------------------     --------------------------------------------------------------------
+        where                               Optional string. The default is 1=1. The selection sql statement.
+        -------------------------------     --------------------------------------------------------------------
+        out_fields                          Optional List of field names to return. Field names can be specified
+                                            either as a List of field names or as a comma separated string.
+                                            The default is "*", which returns all the fields.
+        -------------------------------     --------------------------------------------------------------------
+        analytic_where                      Optional String. A where clause for the query filter that applies to 
+                                            the result set of applying the source where clause and all other params.
+        -------------------------------     --------------------------------------------------------------------
+        geometry_filter                     Optional from arcgis.geometry.filter. Allows for the information to
+                                            be filtered on spatial relationship with another geometry.
+        -------------------------------     --------------------------------------------------------------------
+        out_sr                              Optional Integer. The WKID for the spatial reference of the returned
+                                            geometry.
+        -------------------------------     --------------------------------------------------------------------
+        out_sr                              Optional Integer.  The output spatial reference `wkid`.
+        -------------------------------     --------------------------------------------------------------------
+        return_geometry                     Optional boolean. If true, geometry is returned with the query.
+                                            Default is true.
+        -------------------------------     --------------------------------------------------------------------
+        order_by                            Optional string. One or more field names on which the
+                                            features/records need to be ordered. Use ASC or DESC for ascending
+                                            or descending, respectively, following every field to control the
+                                            ordering.
+                                            example: STATE_NAME ASC, RACE DESC, GENDER
+        -------------------------------     --------------------------------------------------------------------
+        result_type                         Optional string. The result_type parameter can be used to control
+                                            the number of features returned by the query operation.
+                                            Values: None | standard | tile
+        -------------------------------     --------------------------------------------------------------------
+        cache_hint                          Optional Boolean. If you are performing the same query multiple times, 
+                                            a user can ask the server to cache the call to obtain the results 
+                                            quicker.  The default is `False`.
+        -------------------------------     --------------------------------------------------------------------
+        result_offset                       Optional integer. This option can be used for fetching query results
+                                            by skipping the specified number of records and starting from the
+                                            next record (that is, resultOffset + 1th). 
+        -------------------------------     --------------------------------------------------------------------
+        result_record_count                 Optional integer. This option can be used for fetching query results
+                                            up to the result_record_count specified. When result_offset is
+                                            specified but this parameter is not, the map service defaults it to
+                                            max_record_count. The maximum value for this parameter is the value
+                                            of the layer's max_record_count property. 
+        -------------------------------     --------------------------------------------------------------------
+        quantization_parameters             Optional dict. Used to project the geometry onto a virtual grid,
+                                            likely representing pixels on the screen.
+        -------------------------------     --------------------------------------------------------------------
+        sql_format                          Optional string.  The sql_format parameter can be either standard
+                                            SQL92 standard or it can use the native SQL of the underlying
+                                            datastore native. The default is none which means the sql_format
+                                            depends on useStandardizedQuery parameter.
+                                            Values: none | standard | native
+        -------------------------------     --------------------------------------------------------------------
+        future                              Optional Boolean. This determines if a `Future` object is returned 
+                                            (True) the method returns the results directly (False).
+        ===============================     ====================================================================
+        
+        
+        :returns: pd.DataFrame
 
         """
         
