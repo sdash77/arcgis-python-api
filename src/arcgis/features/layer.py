@@ -736,7 +736,311 @@ class FeatureLayer(Layer):
             res = self._con.post(url, params)
             return res
         return None
+    
+    def _qa_worker(self, url, params):
+        """Processes the job, gets the status and returns the results"""
+        
+        count = self.query(where=params.get("where", "1=1"), return_count_only=True)
+        if 'maxRecordCount' in self.properties:
+            max_records = self.properties['maxRecordCount']
+        else:
+            max_records = 1000
+        
+        jobs = {}
+        failed = {}
+        retry_count = 0
+        records = []
+        parts = []
+        df = None
+        if count > max_records:
+            oid_info = self.query(where=params.get("where", "1=1"), 
+                              geometry_filter=params.get("geometry_filter", None), 
+                              time_filter=params.get("time_filter", None),
+                              return_ids_only=True)
+            for ids in chunks(oid_info['objectIds'], max_records):
+                ids = [str(i) for i in ids]
+                sql = "%s in (%s)" % (oid_info['objectIdFieldName'], ",".join(ids))
+                params['where'] = sql            
+                jobs[sql] = self._con.post(url, params)
+            for where, submit_job in jobs.items():
+                if 'statusUrl' in submit_job:
+                    jobs[where] = self._status_via_url(self._con, submit_job['statusUrl'], {'f' : 'json'})
+            for where, download_json in jobs.items():
+                if 'resultUrl' in download_json:
+                    jobs[where] = self._con.get(download_json['resultUrl'], {'f' : 'json'})
+            for where, json_file in jobs.items():
+                if isinstance(json_file, str) and \
+                   os.path.isfile(json_file):
+                    with open(json_file, 'r') as reader:
+                        feature_dict = json.loads(reader.read())
+                        parts.append(feature_dict)
+                    os.remove(json_file)
+                else:
+                    if isinstance(json_file, str):
+                        feature_dict = json.loads(json_file)
+                    else:
+                        feature_dict = json_file
+                    parts.append(feature_dict)                    
+                del where, json_file
+            
+            
+        else:
+            submit_job = self._con.post(url, params)
+            if 'statusUrl' in submit_job:
+                status_job = self._status_via_url(self._con, submit_job['statusUrl'], {'f' : 'json'})
+            else:
+                raise Exception(f"Job Failed: {submit_job}")
+            if 'resultUrl' in status_job:
+                download_json = self._con.get(status_job['resultUrl'], {'f' : 'json'})
+            else:
+                raise Exception(f"Job Failed: {result_json}")
+            if isinstance(download_json, str) and os.path.isfile(download_json):
+                with open(download_json, 'r') as reader:
+                    feature_dict = json.loads(reader.read())
+                    parts.append(feature_dict)
+                os.remove(download_json)
+            else:
+                if isinstance(download_json, str):
+                    feature_dict = json.loads(json_file)
+                else:
+                    feature_dict = download_json
+                parts.append(feature_dict)                    
+        # process the parts into a Spatially Enabled DataFrame            
+        #
+        import pandas as pd
+        def _process_result(featureset_dict):
+            """converts the Dictionary to an SeDF"""
+            import pandas as pd
+            import arcgis
+            import numpy as np
+            from datetime import datetime as _datetime
+            _fld_lu = {
+                "esriFieldTypeSmallInteger" : np.int32,
+                "esriFieldTypeInteger" : np.int64,
+                "esriFieldTypeSingle" : np.int32,
+                "esriFieldTypeDouble" : float,
+                "esriFieldTypeString" : str,
+                "esriFieldTypeDate" : _datetime,
+                "esriFieldTypeOID" : np.int64,
+                "esriFieldTypeGeometry" : object,
+                "esriFieldTypeBlob" : object,
+                "esriFieldTypeRaster" : object,
+                "esriFieldTypeGUID" : str,
+                "esriFieldTypeGlobalID" : str,
+                "esriFieldTypeXML" : object
+            }
+            def feature_to_row(feature, sr):
+                """:return: a feature from a dict"""
+                from arcgis.geometry import Geometry
+                geom = feature['geometry'] if 'geometry' in feature else None
+                attribs = feature['attributes'] if 'attributes' in feature else {}
+                if 'centroid' in feature:
+                    if attribs is None:
+                        attribs = {'centroid' : feature['centroid']}
+                    elif 'centroid' in attribs:
+                        import uuid
+                        fld = "centroid_" + uuid.uuid4().hex[:2]
+                        attribs[fld] = feature['centroid']
+                    else:
+                        attribs['centroid'] = feature['centroid']
+                if geom:
+                    if "spatialReference" not in geom:
+                        geom["spatialReference"] = sr
+                    attribs['SHAPE'] = Geometry(geom)
+                return attribs            
+            
+            if len(featureset_dict['features']) == 0:
+                return pd.DataFrame([])
+            sr = None
+            if 'spatialReference' in featureset_dict:
+                sr = featureset_dict['spatialReference']
+    
+            df = None
+            dtypes = None
+            geom = None
+            names = None
+            dfields = []
+            rows = [feature_to_row(row, sr) \
+                    for row in featureset_dict['features']]
+            if len(rows) == 0:
+                return None
+            df = pd.DataFrame.from_records(data=rows)
+            if 'fields' in featureset_dict:
+                dtypes = {}
+                names = []
+                fields = featureset_dict['fields']
+                for fld in fields:
+                    if fld['type'] != "esriFieldTypeGeometry":
+                        dtypes[fld['name']] = _fld_lu[fld['type']]
+                        names.append(fld['name'])
+                    if fld['type'] == 'esriFieldTypeDate':
+                        dfields.append(fld['name'])
+            if 'SHAPE' in df:
+                df.spatial.set_geometry('SHAPE')
+            if len(dfields) > 0:
+                df[dfields] = df[dfields].apply(pd.to_datetime, unit='ms')
+            return df
+        
+        if len(parts) == 1:
+            return _process_result(featureset_dict=parts[0])
+        elif len(parts) == 0:
+            return pd.DataFrame([])
+        else:
+            results = pd.concat([_process_result(df) for df in parts]).reset_index(drop=True)
+            return results
+    # ----------------------------------------------------------------------
+    def query_analytics(self, 
+                        out_analytics, #
+                        where="1=1", #
+                        out_fields="*", #
+                        analytic_where=None, #
+                        geometry_filter=None, #
+                        out_sr=None, #
+                        return_geometry=True,
+                        order_by=None,
+                        result_type=None,
+                        cache_hint=None,
+                        result_offset=None,
+                        result_record_count=None,
+                        quantization_param=None,
+                        sql_format=None,
+                        future=True,
+                        **kwargs):
+        """
+        `query_analytics` exposes the standard SQL windows functions that compute 
+        aggregate and ranking values based on a group of rows called window 
+        partition. The window function is applied to the rows after the 
+        partitioning and ordering of the rows. `query_analytics` defines a 
+        window or user-specified set of rows within a query result set. 
+        `query_analytics` can be used to compute aggregated values such as moving 
+        averages, cumulative aggregates, or running totals.
+        
+        **SQL Windows Function**
+        
+        A window function performs a calculation across a set of rows (SQL partition
+        or window) that are related to the current row. Unlike regular aggregate 
+        functions, use of a window function does not return single output row. The 
+        rows retain their separate identities with each calculation appended to the 
+        rows as a new field value. The window function can access more than just 
+        the current row of the query result.
+        
+        `query_analytics` currently supports the following windows functions:
+             - Aggregate functions
+             - Analytic functions
+             - Ranking functions
+             
+        **Aggregate Functions**
+        
+        Aggregate functions are deterministic function that perform a calculation on 
+        a set of values and return a single value. They are used in the select list 
+        with optional HAVING clause. GROUP BY clause can also be used to calculate 
+        the aggregation on categories of rows. `query_analytics` can be used to 
+        calculate the aggregation on a specific range of value. Supported aggregate 
+        functions are:
+             - Min
+             - Max
+             - Sum
+             - Count
+             - AVG
+             - STDDEV
+             - VAR
 
+        **Analytic Functions**
+        
+        Several analytic functions available now in all SQL vendors to compute an 
+        aggregate value based on a group of rows or windows partition. Unlike 
+        aggregation functions, analytic functions can return single or multiple rows 
+        for each group. 
+             - CUM_DIST
+             - FIRST_VALUE
+             - LAST_VALUE
+             - LEAD
+             - LAG
+             - PERCENTILE_DISC
+             - PERCENTILE_CONT
+             - PERCENT_RANK
+
+        **Ranking Functions**
+        
+        Ranking functions return a ranking value for each row in a partition. Depending
+        on the function that is used, some rows might receive the same value as other rows.
+
+             - RANK
+             - NTILE
+             - DENSE_RANK
+             - ROW_NUMBER
+
+
+        **Partitioning**
+        
+        Partitions are extremely useful when you need to calculate the same metric over 
+        different group of rows. It is very powerful and has many potential usages. For
+        example, you can add partition by to your window specification to look at 
+        different groups of rows individually.
+        
+        'partitionBy' clause divides the query result set into partitions and the sql 
+        window function is applied to each partition.
+        The 'partitionBy' clause normally refers to the column by which the result is 
+        partitioned. 'partitionBy' can also be a value expression (column expression or 
+        function) that references any of the selected columns (not aliases).
+
+        """
+        
+        if self._gis._portal.is_arcgisonline == False:
+            raise Exception("`query_analytics` is only supported on ArcGIS Online Hosted Feature Layers.")
+        
+        url = self._url + "/queryAnalytic"
+        params = {
+            "f": "json",
+            'dataFormat' : 'json'
+        }
+        if where:
+            params['where'] = where
+        if analytic_where:
+            params['analyticWhere'] = analytic_where
+        if geometry_filter and \
+                isinstance(geometry_filter, GeometryFilter):
+            for key, val in geometry_filter.filter:
+                params[key] = val
+        elif geometry_filter and \
+                isinstance(geometry_filter, dict):
+            for key, val in geometry_filter.items():
+                params[key] = val 
+        if out_sr:
+            params['outSR'] = out_sr
+        if out_fields:
+            params['outFields'] = out_fields
+        if out_analytics:
+            params['outAnalytics'] = out_analytics
+        if order_by:
+            params['orderByFields'] = order_by
+        if result_type:
+            params['resultType'] = result_type
+        if not cache_hint is None:
+            params['cacheHint'] = cache_hint
+        if result_offset:
+            params['resultOffset'] = result_offset
+        if result_record_count:
+            params['resultRecordCount'] = result_record_count
+        if quantization_param:
+            params['quantizationParameters'] = quantization_param
+        if future:
+            params['async'] = future
+        if sql_format:
+            params['sql_format'] = sql_format
+        if len(kwargs) > 0:
+            for k,v in kwargs.items():
+                params[k] = v        
+        params['async'] = True
+        executor =  concurrent.futures.ThreadPoolExecutor(1)    
+        future_job = executor.submit(self._qa_worker, **{"url" : url, "params" : params})
+        executor.shutdown(False)
+        
+        if future == False:
+            res = future_job.result()
+            del executor
+            return res
+        return future_job
     # ----------------------------------------------------------------------
     def query(self,
               where="1=1",
@@ -1700,7 +2004,8 @@ class FeatureLayer(Layer):
                           'ExportAttachments', 'ImportAttachments', 'ProvisioningReplica',
                           'UnRegisteringReplica', 'CompletedWithErrors']
         status = con.get(url, params)
-        while not status['status'] in status_allowed:
+        while status['status'] in status_allowed and \
+              status['status'] != 'Completed':
             if status['status'] == 'Completed':
                 return status
             elif status['status'] == 'CompletedWithErrors':
