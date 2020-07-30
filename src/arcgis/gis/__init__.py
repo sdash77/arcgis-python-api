@@ -5198,6 +5198,7 @@ class ContentManager(object):
 
         *Note*: This functionality is only available for hosted vector tile layers, hosted tile layers and hosted scene 
         layers based on packages.
+
         *Note*: If you are looking to clone services, use the `clone_items()` method instead.
 
         Workflow for replace_service:
