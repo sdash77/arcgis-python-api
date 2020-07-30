@@ -525,7 +525,8 @@ class ArcGISModel(object):
 
         self._learning_rate = lr
         self._model_metrics_cache = None
-        if self._data._dataset_type == 'Classified_Tiles' and dice not in self.learn.metrics: self.learn.metrics.extend([dice])
+        if getattr(self._data, '_dataset_type', None) == 'Classified_Tiles' and dice not in self.learn.metrics:
+            self.learn.metrics.extend([dice])
         if arcgis.env.verbose:
             logger.info('Fitting the model.')        
         
@@ -659,7 +660,7 @@ class ArcGISModel(object):
                 if _emd_template["NormalizationStats"][_stat] is not None:
                     _emd_template["NormalizationStats"][_stat] = _emd_template["NormalizationStats"][_stat].tolist()
             _emd_template["DoNormalize"] = self._data._do_normalize
-        if self._data._dataset_type == 'Classified_Tiles':
+        if getattr(self._data, '_dataset_type', None) == 'Classified_Tiles':
             _emd_template['per_class_metrics'] = self.per_class_metrics().to_json()
         return _emd_template
 
