@@ -199,9 +199,9 @@ class EntityRecognizer(ArcGISModel):
                     texts, annotations = zip(*batch)
                     nlp.update(texts, annotations, sgd=self.optimizer, drop=0.35, losses=losses)
                     processed_len = (len(batch)*batch_index)
-                    train_loss = losses['ner']              # could be normalized with processed_len
+                    train_loss = losses['ner']/processed_len              # normalized with processed_len
                     if lr_find:
-                        losses_list.append(train_loss/processed_len)
+                        losses_list.append(train_loss)
                     else:              # recording training loss per iteration.
                         epoch_loss.append(train_loss)
                         
@@ -218,9 +218,9 @@ class EntityRecognizer(ArcGISModel):
                         processed_len_val = batch_size*(batch_index)
                         val_text, val_annotations = zip(*val_batch)
                         nlp.update(val_text, val_annotations, sgd = None, losses = val_losses)
-                        val_loss = val_losses['ner']              # could be normalized with processed_len_val
+                        val_loss = val_losses['ner']/processed_len_val              # normalized with processed_len_val
                         if lr_find:
-                            val_loss_list.append(val_loss/processed_len_val)
+                            val_loss_list.append(val_loss)
                         else:              # recording validation loss per iteration.
                             epoch_loss.append(val_loss) 
                     if not lr_find: self.recorder.val_loss.append(sum(epoch_loss)/batch_index) #averaging loss per epoch 
