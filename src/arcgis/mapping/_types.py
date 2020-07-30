@@ -57,11 +57,6 @@ class SceneLayer(Layer):
     ------------------     --------------------------------------------------------------------
     gis                    Optional GIS object. If not specified, the active GIS connection is
                            used.
-    ------------------     --------------------------------------------------------------------
-    category               Optional string. Specifies the category of SceneLayer.
-
-                           Possible values: `"Point"`, `"3DObject"`, `"IntegratedMesh"`, 
-                           `"PointCloud"`
     ==================     ====================================================================
 
     .. code-block:: python
@@ -77,27 +72,25 @@ class SceneLayer(Layer):
         print(s_layer.properties.layers[0].name)
         >> 'your layer name'
     """
-    _category = None
-    def __init__(self, url, gis=None, category=None):
+    def __init__(self, url, gis=None):
         """
         Constructs a SceneLayer given a web scene layer URL
         """
-        self._category = category
         super(SceneLayer, self).__init__(url, gis)
 
     @property
     def _lyr_json(self):
         out = super()._lyr_json
-        if self._category and isinstance(self._category, str):
-            cat = self._category.lower()
-            if cat == "point":
-                out["type"] = "SceneLayer"
-            if cat == "3dobject":
-                out["type"] = "SceneLayer"
-            if cat == "integratedmesh":
-                out["type"] = "IntegratedMeshLayer"
-            if cat == "pointcloud":
-                out["type"] = "PointCloudLayer"
+        layer_type = self.properties.layerType.lower()
+        # Rest API layer type is a bit different from JS API types
+        if layer_type == "point":
+            out["type"] = "SceneLayer"
+        if layer_type == "3dobject":
+            out["type"] = "SceneLayer"
+        if layer_type == "integratedmesh":
+            out["type"] = "IntegratedMeshLayer"
+        if layer_type == "pointcloud":
+            out["type"] = "PointCloudLayer"
         return out 
 
 ###########################################################################
