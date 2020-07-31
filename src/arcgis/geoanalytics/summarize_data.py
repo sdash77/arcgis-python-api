@@ -37,7 +37,8 @@ def build_multivariable_grid(input_layers,
                              bin_type="Square",
                              output_name=None,
                              gis=None,
-                             future=False):
+                             future=False,
+                             context=None):
     """
 
     .. image:: _static/images/Grid/Grid.png
@@ -223,34 +224,36 @@ def build_multivariable_grid(input_layers,
                                             bin_type='Square',
                                             output_name="multi_variable_grid")
     """
-    kwargs=locals()
+    kwargs = locals()
     input_layers = [_prevent_bds_item(input_layer) for input_layer in input_layers]
-    gis=_arcgis.env.active_gis if gis is None else gis
-    url=gis.properties.helperServices.geoanalytics.url
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
 
-    params={}
+    params = {}
     for key, value in kwargs.items():
         if key == 'variable_calculations':
-            import json
-            params[key] = json.dumps(value)
+            params[key] = _json.dumps(value)
         elif value is not None:
-            params[key]=value
+            params[key] = value
 
     if output_name is None:
-        output_service_name='Build Multi Variable Grid_' + _id_generator()
-        output_name=output_service_name.replace(' ', '_')
+        output_service_name = 'Build Multi Variable Grid_' + _id_generator()
+        output_name = output_service_name.replace(' ', '_')
     else:
-        output_service_name=output_name.replace(' ', '_')
+        output_service_name = output_name.replace(' ', '_')
 
-    output_service=_create_output_service(gis, output_name, output_service_name, 'Build Multi Variable Grid ')
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Build Multi Variable Grid ')
 
-    params['output_name']=_json.dumps({
+    params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
+    
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
-    _set_context(params)
-
-    param_db={
+    param_db = {
         "input_layers": (_FeatureSet, "inputLayers"),
         "variable_calculations" : (str, "variableCalculations"),
         "bin_type": (str, "binType"),
@@ -260,7 +263,7 @@ def build_multivariable_grid(input_layers,
         "context": (str, "context"),
         "output": (_FeatureSet, "Output Features"),
     }
-    return_values=[
+    return_values = [
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
 
@@ -437,7 +440,7 @@ def aggregate_points(point_layer,
     """
 
     kwargs = locals()
-    input_layer = _prevent_bds_item(input_layer)
+    point_layer = _prevent_bds_item(point_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
 
@@ -458,8 +461,7 @@ def aggregate_points(point_layer,
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
     if isinstance(summary_fields, list):
-        import json
-        summary_fields = json.dumps(summary_fields)
+        summary_fields = _json.dumps(summary_fields)
     _set_context(params)
 
     param_db = {
@@ -492,27 +494,16 @@ def aggregate_points(point_layer,
         output_service.delete()
         raise
 
-aggregate_points.__annotations__ = {
-                     'bin_type': str,
-                     'bin_size': float,
-                     'bin_size_unit': str,
-                     'time_step_interval': int,
-                     'time_step_interval_unit': str,
-                     'time_step_repeat_interval': int,
-                     'time_step_repeat_interval_unit': str,
-                     'time_step_reference': _datetime,
-                     'summary_fields': str,
-                     'output_name': str
-                }
+
 
 def describe_dataset(input_layer,
-                     extent_output=False,
-                     sample_size=None,
-                     output_name=None,
-                     gis=None,
-                     context=None,
-                     future=False,
-                     return_tuple=False):
+                    extent_output=False,
+                    sample_size=None,
+                    output_name=None,
+                    gis=None,
+                    context=None,
+                    future=False,
+                    return_tuple=False):
     """
     .. image:: _static/images/describe_dataset/describe_dataset.png
 
@@ -1103,8 +1094,7 @@ def reconstruct_tracks(input_layer,
         _set_context(params)
 
     if isinstance(summary_fields, list):
-        import json
-        summary_fields = json.dumps(summary_fields)
+        summary_fields = _json.dumps(summary_fields)
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
         "track_fields": (str, "trackFields"),
@@ -1114,6 +1104,8 @@ def reconstruct_tracks(input_layer,
         "time_boundary_split" : (int, "timeBoundarySplit"),
         "time_boundary_split_unit" : (str, "timeBoundarySplitUnit"),
         "time_boundary_reference" : (datetime.datetime, "timeBoundaryReference"),
+        "time_split" : (int, "timeSplit"),
+        "time_split_unit" : (int, "timeSplitUnit"),
         "distance_split": (int, "distanceSplit"),
         "distance_split_unit": (str, "distanceSplitUnit"),
         "output_name": (str, "outputName"),
@@ -1273,8 +1265,7 @@ def summarize_attributes(input_layer,
         _set_context(params)
 
     if isinstance(summary_fields, list):
-        import json
-        summary_fields = json.dumps(summary_fields)
+        summary_fields = _json.dumps(summary_fields)
 
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
@@ -1284,7 +1275,7 @@ def summarize_attributes(input_layer,
         "context": (str, "context"),
         "output": (_FeatureSet, "Output Features"),
     }
-    if gis and gis.version > [8,2]:
+    if gis and gis.version > [8, 2]:
         param_db["time_step_interval"] = (int, "timeStepInterval")
         param_db["time_step_interval_unit"] = (str, "timeStepIntervalUnit")
         param_db["time_step_repeat_interval"] = (int, "timeStepRepeatInterval")
@@ -1551,18 +1542,4 @@ def summarize_within(summarized_layer,
     except:
         output_service.delete()
         raise
-
-summarize_within.__annotations__ = {
-                     'bin_type': str,
-                     'bin_size': float,
-                     'bin_size_unit': str,
-                     'standard_summary_fields': str,
-                     'weighted_summary_fields': str,
-                     'sum_shape': bool,
-                     'shape_units': str,
-                     'group_by_field': str,
-                     'minority_majority' : bool,
-                     'percent_shape' : bool,
-                     'output_name': str
-                }
 
