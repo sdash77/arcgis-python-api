@@ -37,7 +37,8 @@ def build_multivariable_grid(input_layers,
                              bin_type="Square",
                              output_name=None,
                              gis=None,
-                             future=False):
+                             future=False,
+                             context=None):
     """
 
     .. image:: _static/images/Grid/Grid.png
@@ -246,8 +247,11 @@ def build_multivariable_grid(input_layers,
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
-
-    _set_context(params)
+    
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     param_db = {
         "input_layers": (_FeatureSet, "inputLayers"),
