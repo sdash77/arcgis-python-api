@@ -3,12 +3,21 @@ import arcgis
 import json
 
 
-def build_collector_url(webmap=None, center=None, feature_layer=None, fields=None, search=None, portal=None,  action=None, geometry=None, callback=None, callback_prompt=None):
+def build_collector_url(portal=None, action=None, webmap=None, center=None, feature_layer=None, fields=None, search=None,
+                        geometry=None, callback=None, callback_prompt=None, bookmark=None, use_antenna_height=None,
+                        use_loc_profile=None, feature_id=None, url_type="Web"):
     """
     Creates a url that can be used to open ArcGIS Collector
 
     ==================     ====================================================================
     **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    portal                 Optional :class:`String`, :class:`~arcgis.gis.GIS`.
+                           The URL of the portal the mobile worker must be connected to.
+    ------------------     --------------------------------------------------------------------
+    action                 Optional :class:`String` What the app should do, if anything, once open
+                           and the user is signed in.
+                           The following values are supported: addFeature, center, open, search, updateFeature.
     ------------------     --------------------------------------------------------------------
     webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
                            The item id, webmap, or item representing the map to open in Collector.
@@ -26,17 +35,22 @@ def build_collector_url(webmap=None, center=None, feature_layer=None, fields=Non
                            Requires webmap and action=search to be set.
                            Value must be URL encoded
     ------------------     --------------------------------------------------------------------
-    portal                 Optional :class:`String`, :class:`~arcgis.gis.GIS`.
-                           The URL of the portal the mobile worker must be connected to.
-    ------------------     --------------------------------------------------------------------
-    action                 Optional :class:`String` What the app should do, if anything, once open
-                           and the user is signed in.
-                           The following values are supported: addFeature, center, open, search.
-    ------------------     --------------------------------------------------------------------
     geometry               Optional :class:`String`. Defines the location for the newly collectoed
                            or edited feature
                            Requires webmap, action=addFeature, and feature_layer.
                            Value is a coordinate containing x, y (z if available)
+    ------------------     --------------------------------------------------------------------
+    bookmark               Optional :class:`String`. The name of the bookmark in the map to open.
+    ------------------     --------------------------------------------------------------------
+    use_antenna_height     Optional :class:`bool`. If the antenna height of the current receiver
+                           should be subtracted from the z-value of each vertex of the location. If not provided,
+                           default to False
+    ------------------     --------------------------------------------------------------------
+    use_loc_profile        Optional :class:`bool`. If the current location profile should be used to
+                           transform the location. If not provided, default to False
+    ------------------     --------------------------------------------------------------------
+    feature_id             Optional :class:`String`. Uniquely identifies the feature within the layer to be updated.
+                           Must be a GlobalID field.
     ------------------     --------------------------------------------------------------------
     callback               Optional :class:`String`. The URL to call when capturing the asset or
                            observation is complete.
@@ -48,22 +62,24 @@ def build_collector_url(webmap=None, center=None, feature_layer=None, fields=Non
                            and display this value in the prompt as where the mobile worker will be taken.
                            Requires webmap, action=addFeature, feature_layer, and callback to be specified.
                            Value must be URL encoded
+    ------------------     --------------------------------------------------------------------
+    url_type               Optional :class:`String`. The type of url to be returned (e.g. 'Web' or 'App')
     ==================     ====================================================================
 
-    Additional info can be found here: https://github.com/Esri/collector-integration
     :return: :class:`String`
     """
     params = []
-
+    url = "https://collector.arcgis.app"
     # Branch out based on the version of Collector.
-    if portal or action:
-        url = "https://collector.arcgis.app"
+    if url_type == "Web":
         if portal:
-            if isinstance(portal,arcgis.gis.GIS):
+            if isinstance(portal, arcgis.gis.GIS):
                 portal = portal.url
             params.append("portalURL=" + portal)
 
         if action:
+            if action not in ['addFeature', 'center', 'open', 'search', 'updateFeature']:
+                raise ValueError("Invalid reference context. addFeature, center, open, search, and updateFeature are supported")
             params.append("referenceContext=" + action)
             if not webmap:
                 raise ValueError("Invalid parameters -- Must specify a webmap")
@@ -75,10 +91,17 @@ def build_collector_url(webmap=None, center=None, feature_layer=None, fields=Non
                     item_id = item_id.id
                 params.append("itemID=" + item_id)
 
-            actions = {'open': lambda: _build_collector_url_for_open_action(params),
-                       'center': lambda: _build_collector_url_for_center_action(params, center),
-                       'search': lambda: _build_collector_url_for_search_action(params, search),
-                       'addFeature': lambda: _build_collector_url_for_addFeature_action(params, feature_layer, geometry, fields, callback, callback_prompt)}
+            actions = {'open': lambda: _build_url_for_open_action(params, bookmark),
+                       'center': lambda: _build_url_for_center_action(params, center),
+                       'search': lambda: _build_url_for_search_action(params, search),
+                       'addFeature': lambda: _build_url_for_add_feature_action(params, feature_layer, geometry,
+                                                                          use_antenna_height,
+                                                                          use_loc_profile,
+                                                                          fields, callback,
+                                                                          callback_prompt),
+                        'updateFeature': lambda: _build_url_for_update_feature_action(params, feature_layer, feature_id,
+                                                                                    fields, callback,
+                                                                                    callback_prompt)}
 
             params = actions.get(action)()
 
@@ -115,29 +138,36 @@ def build_collector_url(webmap=None, center=None, feature_layer=None, fields=Non
     return url
 
 
-def _build_collector_url_for_open_action(params):
+def _build_url_for_open_action(params, bookmark=None):
+    if bookmark:
+        params.append("bookmark=" + bookmark.replace(" ", "+"))
+
     return params
 
 
-def _build_collector_url_for_center_action(params, center):
+def _build_url_for_center_action(params, center, scale=None, wkid=None):
     if center:
         if isinstance(center, (list, tuple)):
             center = '{},{}'.format(center[0], center[1])
         params.append("center=" + center)
+        if scale:
+            params.append("scale=" + str(scale))
+        if wkid:
+            params.append("wkid=" + str(wkid))
         return params
     else:
         raise ValueError("Invalid parameters -- Must specify a center parameter if action = center")
 
 
-def _build_collector_url_for_search_action(params, search):
+def _build_url_for_search_action(params, search):
     if search:
-        params.append("search=" + _encode_string(search))
+        params.append("search=" + str(search).replace(" ","+"))
         return params
     else:
         raise ValueError("Invalid parameters -- Must specify a search parameter if action = search")
 
 
-def _build_collector_url_for_addFeature_action(params, feature_layer, geometry, fields, callback, callback_prompt):
+def _build_url_for_add_feature_action(params, feature_layer, geometry, fields, use_antenna_height, use_loc_profile,  callback, callback_prompt):
     if feature_layer:
         feature_source_url = feature_layer
         if isinstance(feature_layer, arcgis.features.FeatureLayer):
@@ -150,6 +180,36 @@ def _build_collector_url_for_addFeature_action(params, feature_layer, geometry, 
         if isinstance(geometry, dict):
             geometry = json.dumps(geometry)
         params.append("geometry=" + geometry)
+
+        if use_antenna_height:
+            params.append("useAntennaHeight=true")
+
+        if use_loc_profile:
+            params.append("useLocationProfile=true")
+
+    if fields:
+        params.append("featureAttributes=%7B" + urllib.parse.quote(json.dumps(fields), safe="${},:") + "%7D")
+    
+    # encode this
+    if callback:
+        params.append("callback=" + callback)
+        if callback_prompt:
+            params.append("callbackPrompt=" + _encode_string(callback_prompt))
+
+    return params
+
+
+def _build_url_for_update_feature_action(params, feature_layer, feature_id, fields, callback, callback_prompt):
+    if feature_layer:
+        feature_source_url = feature_layer
+        if isinstance(feature_layer, arcgis.features.FeatureLayer):
+            feature_source_url = feature_layer.url
+        params.append("featureSourceURL=" + feature_source_url)
+    else:
+        raise ValueError("Invalid parameters -- Must specify a feature_layer parameter if action = updateFeature")
+
+    if feature_id:
+        params.append("featureID=" + feature_id)
 
     if fields:
         params.append("featureAttributes=%7B" + urllib.parse.quote(json.dumps(fields), safe="${},:") + "%7D")
@@ -347,63 +407,125 @@ def build_field_maps_url(portal=None, action=None, webmap=None, scale=None, book
 
     :return: :class:`String`
     """
-    _validate_field_maps_url(portal, action, webmap, scale, bookmark, wkid, center, search, feature_layer, fields,
-                             geometry, use_antenna_height, use_loc_profile, feature_id, callback,
-                             callback_prompt, anonymous)
-    params = []
-    url = "https://fieldmaps.arcgis.app"
-    if portal:
-        if isinstance(portal,arcgis.gis.GIS):
-            portal = portal.url
-        params.append("portalURL=" + portal)
-    if action:
-        params.append("referenceContext=" + action)
-    if webmap is not None:
-        if isinstance(webmap, arcgis.mapping.WebMap):
-            webmap = webmap.item.id
-        elif isinstance(webmap, arcgis.gis.Item):
-            webmap = webmap.id
-        params.append("itemID=" + webmap)
-    if scale:
-        params.append("scale=" + str(scale))
-    if bookmark:
-        params.append("bookmark=" + bookmark.replace(" ", "+"))
-    if wkid:
-        params.append("wkid=" + str(wkid))
-    if center:
-        if isinstance(center, (list, tuple)):
-            center = '{},{}'.format(center[0], center[1])
-        if isinstance(center, str):
-            center = center.replace(" ", "+")
-        params.append("center=" + center)
-    if search:
-        params.append("search=" + str(search).replace(" ","+"))
-    if feature_layer:
-        if isinstance(feature_layer, arcgis.features.FeatureLayer):
-            feature_layer = feature_layer.url
-        params.append("featureSourceURL=" + feature_layer)
-    if fields:
-        params.append("featureAttributes=%7B" + urllib.parse.quote(json.dumps(fields), safe="${},:") + "%7D")
-    if geometry:
-        if isinstance(geometry, dict):
-            geometry = json.dumps(geometry)
-        if isinstance(geometry, str):
-            geometry = geometry.replace(" ", "")
-        params.append("geometry=" + _encode_string(geometry))
-    if use_antenna_height:
-        params.append("useAntennaHeight=true")
-    if use_loc_profile:
-        params.append("useLocationProfile=true")
-    if feature_id:
-        params.append("featureID=" + feature_id)
-    if callback:
-        params.append("callback=" + callback)
-        if callback_prompt:
-            params.append("callbackPrompt=" + _encode_string(callback_prompt))
-    if anonymous:
-        params.append("anonymous=true")
-    url += "?" + "&".join(params)
-    return url
+
+    def build_field_maps_url(portal=None, action=None, webmap=None, scale=None, bookmark=None, wkid=None,
+                             center=None, search=None, feature_layer=None, fields=None, geometry=None,
+                             use_antenna_height=None, use_loc_profile=None, feature_id=None, callback=None,
+                             callback_prompt=None, anonymous=None):
+        """
+        Creates a url that can be used to open ArcGIS Field Maps
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        portal                 Optional :class:`String`, :class:`~arcgis.gis.GIS`.
+                               The URL of the portal the mobile worker must be connected to.
+        ------------------     --------------------------------------------------------------------
+        action                 Optional :class:`String` What the app should do, if anything, once open
+                               and the user is signed in. This correlates to the URL param "referenceContext"
+                               The following values are supported: addFeature, center, open, search, updateFeature.
+        ------------------     --------------------------------------------------------------------
+        webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
+                               The item id, webmap, or item representing the map to open in Field Maps.
+                               Item can be of type Web Map or Mobile Map Package.
+        ------------------     --------------------------------------------------------------------
+        scale                  Optional :class:`Int`. The scale at which to open the map. Requires center.
+        ------------------     --------------------------------------------------------------------
+        bookmark               Optional :class:`String`. The name of the bookmark in the map to open.
+        ------------------     --------------------------------------------------------------------
+        wkid                   Optional :class:`String`. The WKID of the spatial reference. Defaults
+                               to 4326 (WGS84) if not specified
+        ------------------     --------------------------------------------------------------------
+        center                 Optional :class:`String`, :class:`list`, :class:`tuple`.
+                               Requires itemID and scale.
+                               The center can be provided in the following formats:
+                               - Comma-separated latitude/longitude (y/x) pair in WGS84 (WKID: 4326).
+                               - Address to be reverse geocoded by the organization's default geocoder
+                               (MMPKs with locators will not utilize geocoder).
+                               - Feature search result. Field Maps will automatically center on the top search result.
+        ------------------     --------------------------------------------------------------------
+        search                 Optional :class:`String`. The location to search for.
+        ------------------     --------------------------------------------------------------------
+        feature_layer          Optional :class:`String` or :class:`~arcgis.features.FeatureLayer`.
+                               The feature layer url as string or the feature layer representing the layer to open
+                               for collection.
+        ------------------     --------------------------------------------------------------------
+        fields                 Optional :class:`Dict`. The feature attributes dictionary {"field":"value"}
+        ------------------     --------------------------------------------------------------------
+        geometry               Optional :class:`String` or :class:`Dict`. Defines the location for the newly collectoed
+                               or edited feature
+                               Requires webmap, action=addFeature, and feature_layer.
+                               Value is a coordinate containing x, y (z if available) or JSON representation of a geometry
+                               (point line or polygon)
+                               For example "34.058030,-117.195940,1200" or
+                               {"rings":[[[-117.1961714,34.0547155],[-117.1961714,34.0587155],[-117.2001714,34.0587155],
+                               [-117.2001714,34.0547155]]], "spatialReference":{"wkid":4326}}
+        ------------------     --------------------------------------------------------------------
+        use_antenna_height     Optional :class:`bool`. If the antenna height of the current receiver
+                               should be subtracted from the z-value of each vertex of the location. If not provided,
+                               default to False
+        ------------------     --------------------------------------------------------------------
+        use_loc_profile        Optional :class:`bool`. If the current location profile should be used to
+                               transform the location. If not provided, default to False
+        ------------------     --------------------------------------------------------------------
+        feature_id             Optional :class:`String`. Uniquely identifies the feature within the layer to be updated.
+                               Must be a GlobalID field.
+        ------------------     --------------------------------------------------------------------
+        callback               Optional :class:`String`. The URL to call when capturing the asset or
+                               observation is complete.
+                               Requires webmap, action=addFeature or updateFeature, and feature_layer to be set.
+                               Optionally, before calling the URL provide a prompt for the user,
+                               specified with the callback_prompt parameter.
+        ------------------     --------------------------------------------------------------------
+        callback_prompt        Optional :class:`String`. Prompt the mobile worker before executing the callback,
+                               and display this value in the prompt as where the mobile worker will be taken.
+                               Requires webmap, action=addFeature or updateFeature, feature_layer, and callback to be specified.
+        ------------------     --------------------------------------------------------------------
+        anonymous              Optional :class:`bool`. Used when calling a
+                               map or mmpk that is shared publicly and will not require a
+                               sign-in to access. Accepts values of true or false.
+        ==================     ====================================================================
+        :return: :class:`String`
+        """
+    
+        params = []
+        url = "https://fieldmaps.arcgis.app"
+    
+        if anonymous:
+            params.append("anonymous=true")
+    
+        if portal:
+            if isinstance(portal, arcgis.gis.GIS):
+                portal = portal.url
+            params.append("portalURL=" + portal)
+    
+        if action:
+            params.append("referenceContext=" + action)
+            if not webmap:
+                raise ValueError("Invalid parameters -- Must specify a webmap")
+            else:
+                item_id = webmap
+                if isinstance(item_id, arcgis.mapping.WebMap):
+                    item_id = item_id.item.id
+                elif isinstance(item_id, arcgis.gis.Item):
+                    item_id = item_id.id
+                params.append("itemID=" + item_id)
+        
+            actions = {'open': lambda: _build_url_for_open_action(params, bookmark),
+                       'center': lambda: _build_url_for_center_action(params, center, scale, wkid),
+                       'search': lambda: _build_url_for_search_action(params, search),
+                       'addFeature': lambda: _build_url_for_add_feature_action(params, feature_layer, geometry,
+                                                                              use_antenna_height,
+                                                                              use_loc_profile,
+                                                                              fields, callback,
+                                                                              callback_prompt),
+                       'updateFeature': lambda: _build_url_for_update_feature_action(params, feature_layer, feature_id,
+                                                                                    fields, callback,
+                                                                                    callback_prompt)}
+        
+            params = actions.get(action)()
+    
+        url += "?" + "&".join(params)
+        return url
     
     
 def _validate_field_maps_url(portal=None, action=None, webmap=None, scale=None, bookmark=None, wkid=None,
