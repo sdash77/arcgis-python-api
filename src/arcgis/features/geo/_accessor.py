@@ -2081,7 +2081,7 @@ class GeoAccessor(object):
             # return the map widget so it will be displayed below the cell in Jupyter Notebook
             return map_widget
     #----------------------------------------------------------------------
-    def to_featureclass(self, location, overwrite=True, has_z=None, has_m=None):
+    def to_featureclass(self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=True):
         """
         Exports a geo enabled dataframe to a feature class.
 
@@ -2103,16 +2103,22 @@ class GeoAccessor(object):
                                         based geometries.  If a geometry is missing a M value when true, a
                                         RuntimeError will be raised. When False, the API will not use the
                                         M value.
+        ---------------------------     --------------------------------------------------------------------
+        sanitize_columns                Optional Boolean. If True, column names will be converted to string, 
+                                        invalid characters removed and other checks will be performed. The 
+                                        default is True.
         ===========================     ====================================================================
 
         :returns: String
 
         """
-        location = os.path.abspath(path=location)
+        if location and not str(os.path.dirname(location)).lower() in ['memory', 'in_memory']:
+            location = os.path.abspath(path=location)
         return to_featureclass(self,
                                location=location,
                                overwrite=overwrite,
                                has_z=has_z,
+                               sanitize_columns=sanitize_columns,
                                has_m=has_m)
     #----------------------------------------------------------------------
     def to_table(self, location, overwrite=True):

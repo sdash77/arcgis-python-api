@@ -12,7 +12,11 @@ module.exports = {
               use: ['to-string-loader', 'css-loader'],
             },
             { test: /\.tsx?$/,
-              loader: "ts-loader" }
+              loader: "ts-loader" 
+            },
+            {   test   : /\.(ttf|eot|svg|woff(2)?)(\?[a-z0-9=&.]+)?$/,
+                loader : 'file-loader'
+            }
         ]
     },
     externals: ["@jupyter-widgets/base", "@phosphor/widgets"],

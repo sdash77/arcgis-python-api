@@ -1,55 +1,204 @@
 import torch
 import numpy as np
-from .pointcloud_data import calculate_metrics
-import pandas as pd
 import math
 
-def calculate_precision_recall(all_y, all_pred, false_positives, true_positives, false_negatives, class_mapping, ignore_mapped_class):
-    
-    for i in range(len(all_y)): 
-        if all_y[i] in ignore_mapped_class:
-            continue       
-        false_positives[all_pred[i]] += int(all_y[i] != all_pred[i])
-        true_positives[all_pred[i]] += int(all_y[i] == all_pred[i])
-        false_negatives[all_y[i]] += int(all_y[i] != all_pred[i])
 
-    precision, recall, f_1 = calculate_metrics(false_positives, true_positives, false_negatives)
-    data = [precision, recall, f_1]
-    index = ['precision', 'recall', 'f1_score']
-    class_mapping = {z+1:v for z, v in enumerate(class_mapping.values()) if z+1 not in ignore_mapped_class}
-    if ignore_mapped_class == []:
-        columns = ['background']+[class_mapping[i] for i in range(1, len(false_negatives))]
-    else:
-        columns = [class_mapping[i] for i in range(1, len(false_negatives)) if i not in ignore_mapped_class]
-        data = np.array(data)
-        data = data[:, np.logical_not(np.isin(np.arange(len(false_negatives)), ignore_mapped_class))]
-    df = pd.DataFrame(data, columns=columns, index=index) 
-    return df        
+def calculate_intersection(preds, targs, mode): 
+    """
+    Calculates intersection between preds and targs.
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    preds                   Required torch.tensor. 
+                            Predictions form a segmentation model.
+                            file.
+    ---------------------   -------------------------------------------
+    targs                   Required torch.tensor. 
+                            A batch of ground truth segmentation mask.
+    ---------------------   -------------------------------------------
+    mode                    Required str.
+                            Possible values = 'per_class' or 'mean' 
+                            'per_class' = Per class metrics are calculated.
+                            'mean, = Mean metrics are calculated.
+    -------------------------------------------------------------------
+    Returns intersection between preds and targs -> torch.tensor
+    """
 
-def per_class_metrics(self, **kwargs):
+    if mode == 'per_class': 
+        dim = 2
+        assert targs.ndim == 3
+    if mode == 'mean': 
+        dim = 1
+        assert targs.ndim == 2
+
+    return (preds * targs).sum(dim=dim)
+
+
+def calculate_union(preds, targs, intersection, mode): 
+    """
+    Calculates union between preds and targs.
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    preds                   Required torch.tensor. 
+                            Predictions form a segmentation model.
+                            file.
+    ---------------------   -------------------------------------------
+    targs                   Required torch.tensor. 
+                            A batch of ground truth segmentation mask.
+    ---------------------   -------------------------------------------
+    intersection            Required torch.tensor. 
+                            Intersection between preds and targs
+                            calculate_intersection(preds, targs, mode)
+    ---------------------   -------------------------------------------
+    mode                    Required str.
+                            Possible values = 'per_class' or 'mean' 
+                            'per_class' = Per class metrics are calculated.
+                            'mean, = Mean metrics are calculated.
+    -------------------------------------------------------------------
+    Returns union between preds and targs -> torch.tensor
+    """
+    if mode == 'per_class': 
+        dim = 2
+        assert targs.ndim == 3
+    if mode == 'mean': 
+        dim = 1
+        assert targs.ndim == 2
+
+    return (preds + targs).sum(dim=dim) - intersection
+
+def confusion_matrix(preds, targs, intersection, mode):
+    """
+    Calculates true positive, false positive and false negetive
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    preds                   Required torch.tensor. 
+                            Predictions form a segmentation model.
+                            file.
+    ---------------------   -------------------------------------------
+    targs                   Required torch.tensor. 
+                            A batch of ground truth segmentation mask.
+    ---------------------   -------------------------------------------
+    mode                    Required str.
+                            Possible values = 'per_class' or 'mean' 
+                            'per_class' = Per class metrics are calculated.
+                            'mean, = Mean metrics are calculated.
+    -------------------------------------------------------------------
+    Returns true positive, false positive and false negetive -> torch.tensor, torch.tensor, torch.tensor
+    """
+
+    if mode == 'per_class': 
+        dim = 2
+        assert targs.ndim == 3
+    if mode == 'mean': 
+        dim = 1
+        assert targs.ndim == 2
+
+    TP = intersection                                #true positive
+    FP = preds.sum(dim=dim) - intersection           #flase positive
+    FN = targs.sum(dim=dim) - intersection           #false negetive
+
+    return TP, FP, FN
+
+def calculate_precision(TP, FP, eps=1e-08):
+    return TP / (TP + FP + eps)
+
+def calculate_recall(TP, FN, eps=1e-08):
+    return TP / (TP + FN + eps)
+
+def calculate_f1(precision, recall, eps=1e-08):
+    return 2 * (precision * recall) / (precision + recall + eps)
+
+def prepare_output_for_metrics(preds, targs, ignore_classes, mode):
+    """
+    This function modifies the shape of targs(ground truth segmentation mask) 
+    to match with preds(predicted output) 
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    preds                   Required torch.tensor. 
+                            Predictions form a segmentation model.
+                            file.
+    ---------------------   -------------------------------------------
+    targs                   Required torch.tensor. 
+                            A batch of ground truth segmentation mask.
+    ---------------------   -------------------------------------------
+    mode                    Required str.
+                            Possible values = 'per_class' or 'mean' 
+                            'per_class' = Per class metrics are calculated.
+                            'mean, = Mean metrics are calculated.
+    -------------------------------------------------------------------
+    Returns modeified preds and targs 
+    """
+
+    from arcgis.learn._utils.segmentation_loss_functions import  expand_outputs
+    num = preds.size(0)
+    classes = preds.size(1)
+    keep_classes = [v for v in range(classes) if v not in ignore_classes]
+    encoded_targs = expand_outputs(preds, targs)
+    preds = preds.argmax(dim=1)
+    preds = torch.nn.functional.one_hot(preds, classes).permute(0, 3, 1, 2)
+    if mode == 'per_class':
+        preds = preds.contiguous().float().view(num, classes, -1)[:, keep_classes, :]
+        encoded_targs = encoded_targs.float().view(num, classes, -1)[:, keep_classes, :]
+    if mode == 'mean':
+        preds = preds.contiguous().float().view(num, classes, -1)[:, keep_classes, :].view(num,-1)
+        encoded_targs = encoded_targs.float().view(num, classes, -1)[:, keep_classes, :].view(num,-1)
+    return  preds, encoded_targs
+
+def calculate_metrics(preds, targs, mode,  ignore_classes=[]):
+    """
+    Calculates precision, recall and f1 scores.
+    """
+
+    preds, targs = prepare_output_for_metrics(preds, targs, ignore_classes, mode)
+    intersection = calculate_intersection(preds, targs, mode)
+    union = calculate_union(preds, targs, intersection, mode)
+    TP, FP, FN = confusion_matrix(preds, targs, intersection, mode) 
+    precision = calculate_precision(TP, FP, eps=1e-08)
+    recall = calculate_recall(TP, FN, eps=1e-08)
+    f1 = calculate_f1(precision, recall, eps=1e-08)
+    return precision, recall, f1
+
+
+   
+
+def per_class_metrics(self, ignore_classes=[], **kwargs):
+    """
+    Computes per class precision, recall and f1 scores 
+    """
+    import pandas as pd
     dl = kwargs.get('dl', None)
-    ignore_mapped_class = kwargs.get('ignore_mapped_class', [])
+    ignore_mapped_class = kwargs.get('ignore_mapped_class', ignore_classes)
+    keep_classes = [c for i,c in  enumerate(self._data.classes) if i not in ignore_mapped_class]
     model = self.learn.model.eval()
-    all_y = []
-    all_pred = []    
-    false_positives = [0] * self._data.c
-    true_positives = [0] * self._data.c
-    false_negatives = [0] * self._data.c
+    precision_list = []
+    recall_list = []
+    f1_list = []
     for batch in self._data.valid_dl if dl is None else dl:
         x, y = batch
-        y = y.cpu().numpy()
+        y = y.to('cpu')
         with torch.no_grad():
-            predictions = model(x).detach()
-            for k in ignore_mapped_class:
-                predictions[:, k] = -1
-            predictions = predictions.argmax(dim=1).cpu().numpy()
-        all_y.append(y.reshape(-1))
-        all_pred.append(predictions.reshape(-1))
+            predictions = model(x).detach().to('cpu')
+            precision, recall, f1 = calculate_metrics(predictions, y, mode='per_class', ignore_classes=ignore_mapped_class)
+            precision_list.append(precision.mean(0))
+            recall_list.append(recall.mean(0))
+            f1_list.append(f1.mean(0))
 
-    all_y = np.concatenate(all_y)
-    all_pred = np.concatenate(all_pred)
+    precision=torch.stack(tuple(precision_list)).mean(0)  
+    recall=torch.stack(tuple(recall_list)).mean(0)   
+    f1=torch.stack(tuple(f1_list)).mean(0)     
 
-    return calculate_precision_recall(all_y, all_pred, false_positives, true_positives, false_negatives, self._data.class_mapping, ignore_mapped_class)
+    columns = keep_classes
+    df= pd.DataFrame(columns=columns)
+    df.loc['precision'] = precision.tolist()
+    df.loc['recall'] = recall.tolist()
+    df.loc['f1'] = f1.tolist()
+    return df
+    
+
+
 
 def show_batch_classified_tiles(self, rows=3, alpha=0.7, **kwargs):
     import matplotlib.pyplot as plt

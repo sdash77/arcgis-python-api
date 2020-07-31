@@ -159,3 +159,10 @@ HEDEdgeDetector
     :members:
     :inherited-members:
     :undoc-members:
+
+BDCNEdgeDetector
+------------------
+.. autoclass:: arcgis.learn.BDCNEdgeDetector
+    :members:
+    :inherited-members:
+    :undoc-members:

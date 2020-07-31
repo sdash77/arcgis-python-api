@@ -327,7 +327,7 @@ def forest(input_layer,
     try:
         if future:
             gpjob = _execute_gp_tool(gis, "ForestBasedClassificationAndRegression", params, param_db, return_values, _use_async, url, True, future=future)
-            return GAJob(gpjob=gpjob, return_service=output_service, add_message=True)
+            return GAJob(gpjob=gpjob, return_service=output_service)
         res = _execute_gp_tool(gis, "ForestBasedClassificationAndRegression", params, param_db, return_values, _use_async, url, True, future=future)
 
         if return_tuple:
@@ -1033,25 +1033,25 @@ def calculate_density(
                                                radius_unit="Yards")
 
     """
-    kwargs=locals()
+    kwargs = locals()
     input_layer = _prevent_bds_item(input_layer)
-    gis=_arcgis.env.active_gis if gis is None else gis
-    url=gis.properties.helperServices.geoanalytics.url
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
 
-    params={}
+    params = {}
     for key, value in kwargs.items():
         if value is not None:
-            params[key]=value
+            params[key] = value
 
     if output_name is None:
-        output_service_name='Calculate Density Analysis_' + _id_generator()
-        output_name=output_service_name.replace(' ', '_')
+        output_service_name = 'Calculate Density Analysis_' + _id_generator()
+        output_name = output_service_name.replace(' ', '_')
     else:
-        output_service_name=output_name.replace(' ', '_')
+        output_service_name = output_name.replace(' ', '_')
 
-    output_service=_create_output_service(gis, output_name, output_service_name, 'Calculate Density')
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Calculate Density')
 
-    params['output_name']=_json.dumps({
+    params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
@@ -1060,7 +1060,7 @@ def calculate_density(
     else:
         _set_context(params)
 
-    param_db={
+    param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
         "fields": (str, "fields"),
         "weight": (str, "weight"),
@@ -1079,7 +1079,7 @@ def calculate_density(
         "context": (str, "context"),
         "output": (_FeatureSet, "Output Features"),
     }
-    return_values=[
+    return_values = [
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
 
@@ -1094,37 +1094,20 @@ def calculate_density(
         raise
 
 
-calculate_density.__annotations__={
-    'fields': str,
-    'weight': str,
-    'bin_type': str,
-    'bin_size': float,
-    'bin_size_unit': str,
-    'time_step_interval': int,
-    'time_step_interval_unit': str,
-    'time_step_repeat_interval': int,
-    'time_step_repeat_interval_unit': str,
-    'time_step_reference': _datetime,
-    'radius': float,
-    'radius_unit': str,
-    'area_units': str,
-    'output_name': str}
-
 #--------------------------------------------------------------------------
-def find_hot_spots(
-    point_layer,
-    bin_size=5,
-    bin_size_unit="Miles",
-    neighborhood_distance=5,
-    neighborhood_distance_unit="Miles",
-    time_step_interval=None,
-    time_step_interval_unit=None,
-    time_step_alignment=None,
-    time_step_reference=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False):
+def find_hot_spots(point_layer,
+                   bin_size=5,
+                   bin_size_unit="Miles",
+                   neighborhood_distance=5,
+                   neighborhood_distance_unit="Miles",
+                   time_step_interval=None,
+                   time_step_interval_unit=None,
+                   time_step_alignment=None,
+                   time_step_reference=None,
+                   output_name=None,
+                   gis=None,
+                   context=None,
+                   future=False):  
     """
     .. image:: _static/images/geo_find_hot_spots/geo_find_hot_spots.png
 
@@ -1226,7 +1209,7 @@ def find_hot_spots(
 
     """
     kwargs=locals()
-    input_layer = _prevent_bds_item(input_layer)
+    point_layer = _prevent_bds_item(point_layer)
     gis=_arcgis.env.active_gis if gis is None else gis
     url=gis.properties.helperServices.geoanalytics.url
 
@@ -1410,7 +1393,7 @@ def create_space_time_cube(point_layer: _FeatureSet,
     """
 
     kwargs=locals()
-    input_layer = _prevent_bds_item(input_layer)
+    point_layer = _prevent_bds_item(point_layer)
     gis=_arcgis.env.active_gis if gis is None else gis
     url=gis.properties.helperServices.geoanalytics.url
 

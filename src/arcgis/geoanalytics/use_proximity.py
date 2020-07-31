@@ -162,10 +162,12 @@ def create_buffers(input_layer,
         if key != 'field':
             if value is not None:
                 params[key] = value
+        elif key == 'field' and value:
+            params[key] = value
         else:
             params['distance'] = None
             params['distance_unit'] = None
-
+    
     if output_name is None:
         output_service_name = 'Create Buffers Analysis_' + _id_generator()
         output_name = output_service_name.replace(' ', '_')

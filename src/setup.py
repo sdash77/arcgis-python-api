@@ -52,6 +52,7 @@ else:
         'matplotlib',
         'keyring >=19',
         'lerc',
+        'ujson >=3',
         'jupyterlab',
         'pywin32 >=223;platform_system=="Windows"',
         'pyshp >=2',

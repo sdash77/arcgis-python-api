@@ -207,10 +207,81 @@ from functools import partial
 from fastai.basic_train import LearnerCallback
 import numpy as np
 import torch
+from arcgis.learn._utils.classified_tiles import calculate_intersection, calculate_union, confusion_matrix, calculate_precision, calculate_recall, calculate_f1, calculate_metrics
 
+
+
+def expand_outputs(preds,trues):
+
+    encoded_trues=preds.detach()*0
+    encoded_trues.scatter_(1, trues, 1)
+    return encoded_trues
+
+
+def dice(preds, targs, eps=1e-8, iou=False, soft=False, ignore_classes=[0], weighted=False,  **kwargs,):
+    
+    """
+    Calculates dice coefficient over a batch.
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    preds                   Required torch.tensor. 
+                            Predictions form a segmentation model.
+                            file.
+    ---------------------   -------------------------------------------
+    targs                   Required torch.tensor. 
+                            A batch of ground truth segmentation mask.
+    ---------------------   -------------------------------------------
+    eps                     Optional float. 
+                            A very small floating point number to avoid deviding 
+                            by zero errors.
+                            Default : 1e-08
+    ---------------------   -------------------------------------------
+    iou                     Optional Bool.
+                            False: Compute Dice coefficient.
+                            True:  Compute mean IOU
+    ---------------------   -------------------------------------------
+    ignore_classes=[0],     Optional List.
+                            A list of classes(ignore_mapped_class) on which needs to be skipped for
+                            dice calculation.
+    ---------------------   -------------------------------------------
+    weighted=False          Optional Bool.
+                            Not implemented
+                            Default False.
+    =====================   ===========================================
+
+    :returns: Dice Coefficient->Rank 0 torch.tensor
+    """
+
+    num = preds.size(0)
+    classes = preds.size(1)
+    preds = F.softmax(preds, dim=1)                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+    keep_classes = [v for v in range(classes) if v not in ignore_classes]
+    encoded_targs = expand_outputs(preds, targs)
+
+    if weighted:
+        #need to work on a weighted metric and loss function
+        pass
+
+
+    if not soft: #for metric calculation
+        preds = preds.argmax(dim=1)
+        preds = torch.nn.functional.one_hot(preds, classes).permute(0, 3, 1, 2)
+ 
+    preds= preds.contiguous().float().view(num, classes, -1)[:,keep_classes,:].view(num,-1)
+    encoded_targs = encoded_targs.float().view(num, classes, -1)[:,keep_classes,:].view(num,-1)
+    intersection = calculate_intersection(preds, encoded_targs, mode='mean')
+    union = calculate_union(preds, encoded_targs, intersection, mode='mean')
+
+    if not iou: score = 2. * intersection / (union + intersection + eps)
+    else: score = intersection / (union + eps)
+
+    score[union == 0.] = 1.
+    mean_per_img = score.mean(dim=0)
+    return mean_per_img.mean()
 
 # Below loss functions are implementations from https://github.com/simongrest/farm-pin-crop-detection-challenge 
-
 class FocalLoss(nn.Module):
     def __init__(self, crit, alpha=1, gamma=2):
         super().__init__()
@@ -227,6 +298,29 @@ class FocalLoss(nn.Module):
             return F_loss
         else:
             return torch.mean(F_loss)
+
+class DiceLoss(nn.Module):
+    def __init__(self, crit, pct, weighted_dice):
+        super().__init__()
+        self.crit = crit
+        self.pct = pct
+        self.weighted_dice = weighted_dice
+    
+    def forward(self, inputs, targets, **kwargs):
+        weighted = self.weighted_dice
+        if weighted:
+            ignore_mapped_class = kwargs.get('ignore_mapped_class', [])
+        else:
+            ignore_mapped_class = kwargs.get('ignore_mapped_class', [0])
+
+        dice_complement = self.crit(inputs, targets)
+        if isinstance(inputs, tuple): # handling for aux_loss=True 
+            inputs=inputs[0]
+        dice_c=dice(inputs, targets, soft=True, weighted=weighted, ignore_classes=ignore_mapped_class)
+        
+        dice_loss = torch.clamp(1 - dice_c,0,1)
+        loss = (1-self.pct) * dice_complement + self.pct * dice_loss
+        return loss
 
 class MixUpCallback(LearnerCallback):
     "Callback that creates the mixed-up input and target."
