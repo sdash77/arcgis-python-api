@@ -4,7 +4,7 @@ import json
 
 
 def build_collector_url(portal=None, action=None, webmap=None, center=None, feature_layer=None, fields=None, search=None,
-                        geometry=None, callback=None, callback_prompt=None, bookmark=None, use_antenna_height=None,
+                        geometry=None, callback=None, callback_prompt=None, use_antenna_height=None,
                         use_loc_profile=None, feature_id=None, url_type="Web"):
     """
     Creates a url that can be used to open ArcGIS Collector
@@ -39,8 +39,6 @@ def build_collector_url(portal=None, action=None, webmap=None, center=None, feat
                            or edited feature
                            Requires webmap, action=addFeature, and feature_layer.
                            Value is a coordinate containing x, y (z if available)
-    ------------------     --------------------------------------------------------------------
-    bookmark               Optional :class:`String`. The name of the bookmark in the map to open.
     ------------------     --------------------------------------------------------------------
     use_antenna_height     Optional :class:`bool`. If the antenna height of the current receiver
                            should be subtracted from the z-value of each vertex of the location. If not provided,
@@ -91,7 +89,7 @@ def build_collector_url(portal=None, action=None, webmap=None, center=None, feat
                     item_id = item_id.id
                 params.append("itemID=" + item_id)
 
-            actions = {'open': lambda: _build_url_for_open_action(params, bookmark),
+            actions = {'open': lambda: _build_url_for_open_action(params),
                        'center': lambda: _build_url_for_center_action(params, center),
                        'search': lambda: _build_url_for_search_action(params, search),
                        'addFeature': lambda: _build_url_for_add_feature_action(params, feature_layer, geometry,
