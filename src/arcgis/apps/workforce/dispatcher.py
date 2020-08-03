@@ -29,6 +29,19 @@ class Dispatcher(FeatureModel):
     user_id                Optional :class:`String`. The user id of the dispatcher
     ==================     ====================================================================
 
+    .. code-block:: python
+
+        # Get a dispatcher, update it, delete it
+
+        import arcgis
+        gis = arcgis.gis.GIS("https://arcgis.com", "<username>", "<password>")
+        item = gis.content.get("<item-id>")
+        project = arcgis.apps.workforce.Project(item)
+        dispatcher = project.dispatchers.search()[0]
+        dispatcher.update(name="Dispatcher Name", contact_number="1234567890")
+        dispatcher.delete()
+
+
     """
 
     def __init__(self, project, feature=None, contact_number=None, name=None, user_id=None):
@@ -43,7 +56,7 @@ class Dispatcher(FeatureModel):
         return "{} ({})".format(self.name, self.user_id)
 
     def __repr__(self):
-        return "<Dispatcher {}>".format(self.object_id)
+        return "<Dispatcher {}>".format(self.name)
 
     def update(self, contact_number=None, name=None, user_id=None):
         """
@@ -111,7 +124,7 @@ class Dispatcher(FeatureModel):
 
     def _validate_for_remove(self, **kwargs):
         errors = super()._validate_for_remove(**kwargs)
-        where = "{} = {}".format(self.project._assignment_schema.dispatcher_id,self.object_id)
+        where = "{} = '{}'".format(self.project._assignment_schema.dispatcher_id,self.id)
         assignments = workforce._store.query_assignments(self.project, where=where)
         if assignments:
             errors.append(ValidationError("Cannot remove a Dispatcher that has assignments", self))

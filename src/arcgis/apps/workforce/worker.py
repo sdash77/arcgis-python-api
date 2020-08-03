@@ -39,6 +39,18 @@ class Worker(FeatureModel):
     user_id                Optional :class:`String`. The user id of the worker
     ==================     ====================================================================
 
+    .. code-block:: python
+
+        # Get a worker, update it, delete it
+
+        import arcgis
+        gis = arcgis.gis.GIS("https://arcgis.com", "<username>", "<password>")
+        item = gis.content.get("<item-id>")
+        project = arcgis.apps.workforce.Project(item)
+        worker = project.workers.search()[0]
+        worker.update(title="Inspector",status="not_working")
+
+
     """
 
     def __init__(self, project, feature=None, geometry=None, contact_number=None,
@@ -58,7 +70,7 @@ class Worker(FeatureModel):
         return "{} ({})".format(self.name, self.user_id)
 
     def __repr__(self):
-        return "<Worker {}>".format(self.object_id)
+        return "<Worker {}>".format(self.id)
 
     def update(self, geometry=None, contact_number=None,
                  name=None, notes=None, status=None, title=None, user_id=None):
@@ -196,7 +208,7 @@ class Worker(FeatureModel):
 
     def _validate_for_remove(self, **kwargs):
         errors = super()._validate_for_remove(**kwargs)
-        assignments = _store.query_assignments(self.project, "{} = {}".format(self.project._assignment_schema.worker_id, self.object_id))
+        assignments = _store.query_assignments(self.project, "{} = '{}'".format(self.project._assignment_schema.worker_id, self.id))
         if assignments:
             errors.append(ValidationError("Cannot remove a Worker that has assignments", self))
         return errors

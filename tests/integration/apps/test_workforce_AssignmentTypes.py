@@ -138,7 +138,7 @@ class Test_Workforce_Assignment_Types(unittest.TestCase):
     def test_batch_add_assignment_type(self):
         try:
             assignment_type = AssignmentType(
-                project,
+                self.project,
                 name="Removal"
             )
             self.project.assignment_types.batch_add([assignment_type])

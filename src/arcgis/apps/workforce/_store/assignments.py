@@ -64,7 +64,6 @@ def add_assignments(project, assignments):
     project._update_cached_objects()
     use_global_ids = True
     for assignment in assignments:
-        assignment.project = project
         validate(assignment._validate_for_add)
         if assignment.global_id is None:
             use_global_ids = False
@@ -132,6 +131,13 @@ def update_assignment(project, assignment, geometry=None, assignment_type=None,
     Sets the properties of an assignment and updates the item on the server
     """
     project._update_cached_objects()
+    if status:
+        # logic for resetting stale dates if reassigning
+        if assignment.status == "declined" and worker and worker != assignment.worker:
+            assignment.declined_date = None
+        if assignment.status == "paused" and worker and worker != assignment.worker:
+            assignment.paused_date = None
+        assignment.status = status
     if geometry:
         assignment.geometry = geometry
     if assigned_date:
@@ -157,7 +163,7 @@ def update_assignment(project, assignment, geometry=None, assignment_type=None,
     if paused_date:
         assignment.paused_date = paused_date
     if priority:
-        assignment._priority = priority
+        assignment.priority = priority
     if status:
         assignment.status = status
     if work_order_id:

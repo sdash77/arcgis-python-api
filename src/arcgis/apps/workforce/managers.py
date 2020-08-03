@@ -15,6 +15,19 @@ class AssignmentManager(object):
                            manage.
     ==================     ====================================================================
 
+    .. code-block:: python
+
+        # Add / get assignments using assignment manager
+
+        import arcgis
+        gis = arcgis.gis.GIS("https://arcgis.com", "<username>", "<password>")
+        item = gis.content.get("<item-id>")
+        project = arcgis.apps.workforce.Project(item)
+        assignment = project.assignments.add(assignment_type=type_1, location="100 Commercial St",
+                                            geometry={'x': -7820308, 'y': 5412450}, status=0, priority=0)
+        assignment_2 = project.assignments.get(object_id=2)
+
+
     """
 
     def __init__(self, project):
@@ -190,6 +203,18 @@ class AssignmentTypeManager:
                            manage.
     ==================     ====================================================================
 
+    .. code-block:: python
+
+        # Add / get assignment types using assignment type manager
+
+        import arcgis
+        gis = arcgis.gis.GIS("https://arcgis.com", "<username>", "<password>")
+        item = gis.content.get("<item-id>")
+        project = arcgis.apps.workforce.Project(item)
+        assignment_type = project.assignment_types.add(name="Tree Inspection")
+        assignment_type_2 = project.assignment_types.get(name="Fix Sign")
+
+
     """
 
     def __init__(self, project):
@@ -210,7 +235,10 @@ class AssignmentTypeManager:
 
         :return: :class:`~arcgis.apps.workforce.AssignmentType`
         """
-        return get_assignment_type(self.project, code, name)
+        if not self.project._is_v2_project:
+            return get_assignment_type(self.project, code=code, name=name)
+        else:
+            return get_assignment_type_v2(self.project, code=code, name=name)
 
     def search(self):
         """
@@ -218,7 +246,10 @@ class AssignmentTypeManager:
 
          :return: :class:`List` of :class:`~arcgis.apps.workforce.AssignmentType`
          """
-        return get_assignment_types(self.project)
+        if not self.project._is_v2_project:
+            return get_assignment_types(self.project)
+        else:
+            return get_assignment_types_v2(self.project)
 
     def add(self, coded_value=None, name=None):
         """
@@ -228,14 +259,17 @@ class AssignmentTypeManager:
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         coded_value            Optional :class:`dict`. The dictionary storing the code and
-                               name of the type.
+                               name of the type. Only works for v1 projects.
         ------------------     --------------------------------------------------------------------
         name                   Optional :class:`String`. The name of the assignment type.
         ==================     ====================================================================
 
         :return: :class:`~arcgis.apps.workforce.AssignmentType`
         """
-        return add_assignment_type(self.project, coded_value, name)
+        if not self.project._is_v2_project:
+            return add_assignment_type(self.project, coded_value=coded_value, name=name)
+        else:
+            return add_assignment_type_v2(self.project, name=name)
 
     def batch_add(self, assignment_types):
         """
@@ -250,7 +284,10 @@ class AssignmentTypeManager:
 
          :return: :class:`List` of :class:`~arcgis.apps.workforce.AssignmentTypes`
          """
-        return add_assignment_types(self.project, assignment_types)
+        if not self.project._is_v2_project:
+            return add_assignment_types(self.project, assignment_types)
+        else:
+            return add_assignment_types_v2(self.project, assignment_types)
 
     def batch_update(self, assignment_types):
         """
@@ -266,7 +303,10 @@ class AssignmentTypeManager:
 
          :return: :class:`List` of :class:`~arcgis.apps.workforce.AssignmentType`
          """
-        return update_assignment_types(self.project, assignment_types)
+        if not self.project._is_v2_project:
+            return update_assignment_types(self.project, assignment_types)
+        else:
+            return update_assignment_types_v2(self.project, assignment_types)
 
     def batch_delete(self, assignment_types):
         """
@@ -280,7 +320,10 @@ class AssignmentTypeManager:
                                 The list of assignment types to remove.
          ==================     ====================================================================
          """
-        return delete_assignment_types(self.project, assignment_types)
+        if not self.project._is_v2_project:
+            return delete_assignment_types(self.project, assignment_types)
+        else:
+            return delete_assignment_types_v2(self.project, assignment_types)
 
 
 class AssignmentAttachmentManager(object):
@@ -368,8 +411,21 @@ class DispatcherManager:
      project                Required :class:`~arcgis.apps.workforce.Project`. The project to
                             manage.
      ==================     ====================================================================
+     
+    .. code-block:: python
+
+        # Add / get dispatchers using dispatcher manager
+
+        import arcgis
+        gis = arcgis.gis.GIS("https://arcgis.com", "<username>", "<password>")
+        item = gis.content.get("<item-id>")
+        project = arcgis.apps.workforce.Project(item)
+        dispatcher = project.dispatchers.add(name="New Dispatcher",user_id="dispatcher_username")
+        dispatcher_2 = project.dispatchers.get(user_id="dispatcher2_username")
+
 
     """
+
     def __init__(self, project):
         self.project = project
 
@@ -432,7 +488,6 @@ class DispatcherManager:
         """
         return add_dispatcher(self.project, feature, contact_number, name, user_id)
 
-
     def batch_add(self, dispatchers):
         """
         Adds the list of dispatchers to the project.
@@ -493,6 +548,8 @@ class TrackManager:
      ==================     ====================================================================
     """
     def __init__(self, project):
+        if not project._supports_tracks:
+            raise WorkforceError("This Workforce Project does not support tracks.")
         self.project = project
 
     def get(self, object_id=None, global_id=None):
@@ -626,6 +683,17 @@ class WorkerManager:
                             manage.
      ==================     ====================================================================
 
+    .. code-block:: python
+
+        # Add / get workers using worker manager
+
+        import arcgis
+        gis = arcgis.gis.GIS("https://arcgis.com", "<username>", "<password>")
+        item = gis.content.get("<item-id>")
+        project = arcgis.apps.workforce.Project(item)
+        worker = project.workers.add(user_id="worker_username", name="Worker One", status=0)
+
+
     """
     def __init__(self, project):
         self.project = project
@@ -667,7 +735,7 @@ class WorkerManager:
 
     def batch_add(self, workers):
         """
-          Adds the list of dispatchers to the project.
+          Adds the list of workers to the project.
 
 
           ==================     ====================================================================
@@ -713,7 +781,7 @@ class WorkerManager:
 
     def batch_update(self, workers):
         """
-          Adds the list of dispatchers to update in the project.
+          Adds the list of workers to update in the project.
 
 
           ==================     ====================================================================
@@ -746,8 +814,14 @@ class AssignmentIntegrationManager:
     """
      This manages the assignment integrations in the project
      It can be accessed from the project as :py:attr:`~arcgis.apps.workforce.Project.integrations`
-
-     An integration in Workforce consists of a formatted dictionary. Two examples are shown below:
+    
+     For a version 2 (offline-enabled project), an integration is represented by an object
+     :class:`~arcgis.apps.workforce.Integration`
+     object and can be updated in the same fashion as Assignment, AssignmentType, Dispatcher, Project,
+     and Worker objects.
+     
+     For a version 1 project, an integration in Workforce consists of a formatted dictionary.
+     Two examples are shown below:
 
      .. code-block:: python
 
@@ -777,6 +851,9 @@ class AssignmentIntegrationManager:
     """
     def __init__(self, project):
         self.project = project
+        # A version 2 Workforce project stores integrations in a table in its base feature layer collection
+        if self.project._is_v2_project:
+            self.integration_table = project.integrations_table
 
     def get(self, integration_id):
         """
@@ -785,28 +862,42 @@ class AssignmentIntegrationManager:
           ==================     ====================================================================
           **Argument**           **Description**
           ------------------     --------------------------------------------------------------------
-          integration_id         Required :class:`string`. The id of the integration
+          integration_id         Required :class:`string`. The id of the integration. This is field
+                                 'appid' for a Version 2 Workforce project.
           ==================     ====================================================================
 
-          :returns: :class:`dict` or :class:`None`
+          :returns: Version 1: :class:`dict` or :class:`None`, Version 2: :class:`Integration`
 
          """
-        for integration in self.project._item_data["assignmentIntegrations"]:
-            if integration_id == integration["id"]:
-                return integration
-        return None
+        if self.project._is_v2_project:
+            return get_integration(self.project, integration_id)
+        else:
+            for integration in self.project._item_data["assignmentIntegrations"]:
+                if integration_id == integration["id"]:
+                    return integration
+            return None
 
-    def search(self):
+    def search(self, where="1=1"):
         """
             This returns all of the assignment integrations for the project
+            
+            ==================     ====================================================================
+            **Argument**           **Description**
+            ------------------     --------------------------------------------------------------------
+            where                  Optional :class:`string`. ArcGIS where clause - version 2 projects
+                                   only. Defaults to "1=1"
+            ------------------     --------------------------------------------------------------------
 
             :returns: :class:`List` A list of the integrations.
         """
-        return self.project._item_data["assignmentIntegrations"]
+        if self.project._is_v2_project:
+            return query_integrations(self.project, where=where)
+        else:
+            return self.project._item_data["assignmentIntegrations"]
 
     def add(self, integration_id, prompt, url_template=None, assignment_types=None):
         """
-            This adds an integration to the project/
+            This adds an integration to the project
 
             ==================     ====================================================================
             **Argument**           **Description**
@@ -815,28 +906,45 @@ class AssignmentIntegrationManager:
             ------------------     --------------------------------------------------------------------
             prompt                 Required: :class:`string`. The prompt to display.
             ------------------     --------------------------------------------------------------------
-            url_template           Optional: :class:`string`. The url template that is used for app linking.
+            url_template           Required for version 2 Workforce projects. Optional for version 1.
+                                   :class:`string`. The url template that is used for app linking.
             ------------------     --------------------------------------------------------------------
-            assignment_types       Optional: :class:`dict`. A dictionary containing assignment type
+            assignment_types       Optional: :class:`string` or :class:`list`
+                                   Version 2 Projects:
+                                   String which is a globalid representing an assignment type. This is
+                                   stored at assignment_type.code. If you pass a list for this object,
+                                   it will add multiple integrations, with identical integration_id,
+                                   prompt, and url_template values, with differring assignment_types
+                                   values.
+                                   
+                                   Version 1 Projects: :class:`dict`.
+                                   A dictionary containing assignment type
                                    codes as keys and a dictionaries that contains a "urlTemplate" for each
                                    code as values. If provided, this will override any general url_template specified.
             ==================     ====================================================================
 
-            :returns: :class:`dict` A dictionary representing the assignment integration
+            :returns: :class:`dict` Version 1: dict representing the integration, Version 2: :class:`Integration`
         """
-        integration = dict()
-        if integration_id:
-            integration["id"] = integration_id
-        if prompt:
-            integration["prompt"] = prompt
-        if assignment_types:
-            integration["assignmentTypes"] = assignment_types
-        elif url_template:
-            integration["urlTemplate"] = url_template
-        self._validate(integration)
-        self.project._item_data["assignmentIntegrations"].append(integration)
-        self.project._update_data()
-        return integration
+        if self.project._is_v2_project:
+            if isinstance(assignment_types, list):
+                integration = [add_integration(project=self.project, integration_id=integration_id, prompt=prompt, url_template=url_template, assignment_type=a) for a in assignment_types]
+            else:
+                integration = add_integration(project=self.project, integration_id=integration_id, prompt=prompt, url_template=url_template, assignment_type=assignment_types)
+            return integration
+        else:
+            integration = dict()
+            if integration_id:
+                integration["id"] = integration_id
+            if prompt:
+                integration["prompt"] = prompt
+            if assignment_types:
+                integration["assignmentTypes"] = assignment_types
+            if url_template:
+                integration["urlTemplate"] = url_template
+            new_integration = self._validate(integration)
+            self.project._item_data["assignmentIntegrations"].append(new_integration)
+            self.project._update_data()
+            return new_integration
 
     def batch_add(self, integrations):
         """
@@ -848,11 +956,14 @@ class AssignmentIntegrationManager:
 
             :returns: :class:`List` The list of integrations that were added
         """
-        for integration in integrations:
-            self._validate(integration)
-            self.project._item_data["assignmentIntegrations"].append(integration)
-        self.project._update_data()
-        return integrations
+        if self.project._is_v2_project:
+            return add_integrations(self.project, integrations)
+        else:
+            for integration in integrations:
+                new_integration = self._validate(integration)
+                self.project._item_data["assignmentIntegrations"].append(new_integration)
+            self.project._update_data()
+            return integrations
 
     def batch_delete(self, integrations):
         """
@@ -862,25 +973,29 @@ class AssignmentIntegrationManager:
             integrations            Required :class:`List` of :class:`dict`. The integrations to delete
             ==================     ====================================================================
         """
-        self.project._item_data["assignmentIntegrations"] = [e for e in self.project._item_data["assignmentIntegrations"] if e not in integrations]
-        self.project._update_data()
+        if self.project._is_v2_project:
+            delete_integrations(project=self.project, integrations=integrations)
+        else:
+            self.project._item_data["assignmentIntegrations"] = [e for e in self.project._item_data["assignmentIntegrations"] if e not in integrations]
+            self.project._update_data()
 
     def _validate(self, integration):
-        """Validates an integration before adding it"""
+        """Validates an integration for a version 1 project before adding it. Returns integration (that may have
+        been modified in this validation method"""
         if "id" not in integration:
             raise ValidationError("Assignment integration must contain an id", self)
         elif integration["id"] in [at["id"] for at in self.project._item_data["assignmentIntegrations"]]:
-            raise ValidationError("Assignment integration contains duplicate id", self)
+            raise ValidationError("Assignment integration contains duplicate id for version 1 project", self)
         if "prompt" not in integration:
             raise ValidationError("Assignment integration must contain a prompt", self)
         if "assignmentTypes" in integration:
             copy_dict = integration["assignmentTypes"].copy()
             for key, value in copy_dict.items():
                 if isinstance(key, str):
+                    if "urlTemplate" not in value:
+                        raise ValidationError("Assignment integration must contain a urlTemplate", self)
                     if key not in [at.name for at in self.project.assignment_types.search()]:
                         raise ValidationError("Invalid assignment type in integration", self)
-                    elif "urlTemplate" not in value:
-                        raise ValidationError("Assignment integration must contain a urlTemplate", self)
                     # swap the name for the code
                     integration["assignmentTypes"][self.project.assignment_types.get(name=key).code] = integration[
                         "assignmentTypes"].pop(key)
@@ -891,6 +1006,6 @@ class AssignmentIntegrationManager:
                         raise ValidationError("Assignment integration must contain a urlTemplate", self)
                 else:
                     raise ValidationError("Invalid assignment type", self)
-
         elif "urlTemplate" not in integration:
             raise ValidationError("Assignment integration must contain a urlTemplate", self)
+        return integration
