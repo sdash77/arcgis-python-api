@@ -1166,6 +1166,9 @@ def prepare_data(path,
         with open(stats_file) as f:
             stats = json.load(f)
             data._dataset_type = stats['MetaDataMode']
+    
+    if dataset_type == "superres":
+        data._dataset_type = "SuperResolution"
 
     if alter_class_mapping:
         new_mapping = {}
