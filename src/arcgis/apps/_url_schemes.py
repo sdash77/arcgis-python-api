@@ -147,13 +147,15 @@ def _build_url_for_open_action(params, bookmark=None):
 
 def _build_url_for_center_action(params, center, scale=None, wkid=None):
     if center:
-        if isinstance(center, (list, tuple)):
-            center = '{},{}'.format(center[0], center[1])
-        params.append("center=" + center)
         if scale:
             params.append("scale=" + str(scale))
         if wkid:
             params.append("wkid=" + str(wkid))
+        if isinstance(center, (list, tuple)):
+            center = '{},{}'.format(center[0], center[1])
+        if isinstance(center, str):
+            center = center.replace(" ", "+")
+        params.append("center=" + center)
         return params
     else:
         raise ValueError("Invalid parameters -- Must specify a center parameter if action = center")
@@ -167,7 +169,7 @@ def _build_url_for_search_action(params, search):
         raise ValueError("Invalid parameters -- Must specify a search parameter if action = search")
 
 
-def _build_url_for_add_feature_action(params, feature_layer, geometry, fields, use_antenna_height, use_loc_profile,  callback, callback_prompt):
+def _build_url_for_add_feature_action(params, feature_layer, geometry, use_antenna_height, use_loc_profile, fields, callback, callback_prompt):
     if feature_layer:
         feature_source_url = feature_layer
         if isinstance(feature_layer, arcgis.features.FeatureLayer):
@@ -179,7 +181,9 @@ def _build_url_for_add_feature_action(params, feature_layer, geometry, fields, u
     if geometry:
         if isinstance(geometry, dict):
             geometry = json.dumps(geometry)
-        params.append("geometry=" + geometry)
+        if isinstance(geometry, str):
+            geometry = geometry.replace(" ", "")
+        params.append("geometry=" + _encode_string(geometry))
 
         if use_antenna_height:
             params.append("useAntennaHeight=true")
@@ -190,9 +194,8 @@ def _build_url_for_add_feature_action(params, feature_layer, geometry, fields, u
     if fields:
         params.append("featureAttributes=%7B" + urllib.parse.quote(json.dumps(fields), safe="${},:") + "%7D")
     
-    # encode this
     if callback:
-        params.append("callback=" + callback)
+        params.append("callback=" + _encode_parameters(callback))
         if callback_prompt:
             params.append("callbackPrompt=" + _encode_string(callback_prompt))
 
@@ -215,7 +218,7 @@ def _build_url_for_update_feature_action(params, feature_layer, feature_id, fiel
         params.append("featureAttributes=%7B" + urllib.parse.quote(json.dumps(fields), safe="${},:") + "%7D")
 
     if callback:
-        params.append("callback=" + callback)
+        params.append("callback=" + _encode_parameters(callback))
         if callback_prompt:
             params.append("callbackPrompt=" + _encode_string(callback_prompt))
 
@@ -407,12 +410,12 @@ def build_field_maps_url(portal=None, action=None, webmap=None, scale=None, book
 
     :return: :class:`String`
     """
+    _validate_field_maps_url(action, webmap, scale, bookmark, wkid, center, search, feature_layer, fields,
+                             geometry, use_antenna_height, use_loc_profile, feature_id, callback,
+                             callback_prompt, anonymous)
 
     params = []
     url = "https://fieldmaps.arcgis.app"
-
-    if anonymous:
-        params.append("anonymous=true")
 
     if portal:
         if isinstance(portal, arcgis.gis.GIS):
@@ -421,15 +424,12 @@ def build_field_maps_url(portal=None, action=None, webmap=None, scale=None, book
 
     if action:
         params.append("referenceContext=" + action)
-        if not webmap:
-            raise ValueError("Invalid parameters -- Must specify a webmap")
-        else:
-            item_id = webmap
-            if isinstance(item_id, arcgis.mapping.WebMap):
-                item_id = item_id.item.id
-            elif isinstance(item_id, arcgis.gis.Item):
-                item_id = item_id.id
-            params.append("itemID=" + item_id)
+        item_id = webmap
+        if isinstance(item_id, arcgis.mapping.WebMap):
+            item_id = item_id.item.id
+        elif isinstance(item_id, arcgis.gis.Item):
+            item_id = item_id.id
+        params.append("itemID=" + item_id)
     
         actions = {'open': lambda: _build_url_for_open_action(params, bookmark),
                    'center': lambda: _build_url_for_center_action(params, center, scale, wkid),
@@ -444,7 +444,9 @@ def build_field_maps_url(portal=None, action=None, webmap=None, scale=None, book
                                                                                 callback_prompt)}
     
         params = actions.get(action)()
-
+        
+    if anonymous:
+        params.append("anonymous=true")
     url += "?" + "&".join(params)
     return url
     
@@ -481,8 +483,6 @@ def _validate_field_maps_url(action=None, webmap=None, scale=None, bookmark=None
         raise ValueError("Invalid parameters -- URL contains conflicting parameters")
     if (feature_layer or fields) and (action not in ['addFeature', 'updateFeature'] or webmap is None):
         raise ValueError("Feature layer param must be used with addFeature or updateFeature and have a webmap param")
-    if action in ['addFeature', 'updateFeature'] and not feature_layer:
-        raise ValueError("Must provide feature layer if adding or updating feature")
     if fields and not feature_layer:
         raise ValueError("Fields cannot be provided without feature layer")
     if fields and not isinstance(fields, dict):

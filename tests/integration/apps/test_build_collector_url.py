@@ -86,7 +86,7 @@ class Test_Collector_Integrations(unittest.TestCase):
         try:
             url = build_collector_url(webmap=self.webmap,
                                       center=self.center,
-                                      feature_layer=self.feature_layer)
+                                      feature_layer=self.feature_layer, url_type="App")
             self.assertEqual(url, "arcgis-collector://?itemID={}&center={}&featureSourceURL={}".format(
                 self.webmap,
                 self.center,
@@ -105,7 +105,7 @@ class Test_Collector_Integrations(unittest.TestCase):
     def test_collector_center(self):
         try:
             url = build_collector_url(webmap=self.webmap,
-                                      center=self.center)
+                                      center=self.center, url_type="App")
             self.assertEqual(url, "arcgis-collector://?itemID={}&center={}".format(
                 self.webmap,
                 self.center
@@ -122,7 +122,7 @@ class Test_Collector_Integrations(unittest.TestCase):
 
     def test_collector_item_id(self):
         try:
-            url = build_collector_url(webmap=self.webmap)
+            url = build_collector_url(webmap=self.webmap, url_type="App")
             self.assertEqual(url, "arcgis-collector://?itemID={}".format(
                 self.webmap
             ))
@@ -138,7 +138,7 @@ class Test_Collector_Integrations(unittest.TestCase):
 
     def test_collector_no_params(self):
         try:
-            url = build_collector_url()
+            url = build_collector_url(url_type="App")
             self.assertEqual(url, "arcgis-collector://")
         except AssertionError as assertErrorException:
             test_skip = True
@@ -154,6 +154,7 @@ class Test_Collector_Integrations(unittest.TestCase):
         try:
             url = build_collector_url(webmap=self.webmap,
                                       center=self.center,
+                                      url_type="App",
                                       feature_layer=self.feature_layer,
                                       fields= {
                                        "name": "test name"
@@ -178,6 +179,7 @@ class Test_Collector_Integrations(unittest.TestCase):
         try:
             url = build_collector_url(webmap=self.webmap,
                                       center=self.center,
+                                      url_type="App",
                                       feature_layer=self.feature_layer,
                                       fields=collections.OrderedDict([
                                        ("name", "test name"),
@@ -203,6 +205,7 @@ class Test_Collector_Integrations(unittest.TestCase):
         try:
             url = build_collector_url(webmap=self.webmap,
                                       center="${assignment.latitude},${assignment.longitude}",
+                                      url_type="App",
                                       feature_layer=self.feature_layer,
                                       fields={
                                        "address": "${assignment.location}"
@@ -226,7 +229,7 @@ class Test_Collector_Integrations(unittest.TestCase):
     def test_collector_exception_no_item_id_center(self):
         try:
             with self.assertRaises(ValueError):
-                build_collector_url(center=self.center)
+                build_collector_url(center=self.center, url_type="App")
         except AssertionError as assertErrorException:
             test_skip = True
             raise assertErrorException
@@ -240,7 +243,7 @@ class Test_Collector_Integrations(unittest.TestCase):
     def test_collector_exception_no_item_id_feature_source_url(self):
         try:
             with self.assertRaises(ValueError):
-                build_collector_url(feature_layer=self.feature_layer)
+                build_collector_url(feature_layer=self.feature_layer, url_type="App")
         except AssertionError as assertErrorException:
             test_skip = True
             raise assertErrorException
@@ -254,7 +257,7 @@ class Test_Collector_Integrations(unittest.TestCase):
     def test_collector_exception_no_item_id_fields(self):
         try:
             with self.assertRaises(ValueError):
-                build_collector_url(fields={"name": "test"})
+                build_collector_url(fields={"name": "test"}, url_type="App")
         except AssertionError as assertErrorException:
             test_skip = True
             raise assertErrorException
@@ -269,7 +272,7 @@ class Test_Collector_Integrations(unittest.TestCase):
         try:
             with self.assertRaises(ValueError):
                 build_collector_url(center=self.center,
-                                 fields={"name": "test"})
+                                 fields={"name": "test"}, url_type="App")
         except AssertionError as assertErrorException:
             test_skip = True
             raise assertErrorException
@@ -284,7 +287,7 @@ class Test_Collector_Integrations(unittest.TestCase):
         try:
             with self.assertRaises(ValueError):
                 build_collector_url(webmap=self.webmap,
-                                    fields={"name": "test"})
+                                    fields={"name": "test"}, url_type="App")
         except AssertionError as assertErrorException:
             test_skip = True
             raise assertErrorException
