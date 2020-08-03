@@ -1001,7 +1001,7 @@ class FeatureLayer(Layer):
                                                 "analyticType": "<COUNT | SUM | MIN | MAX | AVG | STDDEV | VAR | FIRST_VALUE, LAST_VALUE, LAG, LEAD, PERCENTILE_CONT, PERCENTILE_DISC, PERCENT_RANK, RANK, NTILE, DENSE_RANK, EXPRESSION>",
                                                 "onAnalyticField": "Field1", 
                                                 "outAnalyticFieldName": "Out_Field_Name1",
-                                                 "analyticParameters”: {
+                                                 "analyticParameters": {
                                                       "orderBy": "<orderBy expression",
                                                       "value": <double value>,// percentile value
                                                       "partitionBy": "<field name or expression>",
