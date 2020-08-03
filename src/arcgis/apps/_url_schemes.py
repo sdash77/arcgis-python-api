@@ -347,7 +347,7 @@ def build_field_maps_url(portal=None, action=None, webmap=None, scale=None, book
 
     :return: :class:`String`
     """
-    _validate_field_maps_url(portal, action, webmap, scale, bookmark, wkid, center, search, feature_layer, fields,
+    _validate_field_maps_url(action, webmap, scale, bookmark, wkid, center, search, feature_layer, fields,
                              geometry, use_antenna_height, use_loc_profile, feature_id, callback,
                              callback_prompt, anonymous)
     params = []
@@ -397,6 +397,7 @@ def build_field_maps_url(portal=None, action=None, webmap=None, scale=None, book
     if feature_id:
         params.append("featureID=" + feature_id)
     if callback:
+        callback = _encode_parameters(callback)
         params.append("callback=" + callback)
         if callback_prompt:
             params.append("callbackPrompt=" + _encode_string(callback_prompt))
@@ -406,7 +407,7 @@ def build_field_maps_url(portal=None, action=None, webmap=None, scale=None, book
     return url
     
     
-def _validate_field_maps_url(portal=None, action=None, webmap=None, scale=None, bookmark=None, wkid=None,
+def _validate_field_maps_url(action=None, webmap=None, scale=None, bookmark=None, wkid=None,
                          center=None, search=None, feature_layer=None, fields=None, geometry=None,
                          use_antenna_height=None, use_location_profile=None, feature_id=None, callback=None,
                          callback_prompt=None, anonymous=None):
@@ -666,17 +667,32 @@ def build_tracker_url(portal_url=None, url_type="Web"):
     return url
 
 
-def build_workforce_url(portal_url=None, url_type="Web"):
+def build_workforce_url(portal_url=None, url_type="Web", webmap=None, assignment=None, assignment_status=None):
     """
         Creates a url that can be used to open ArcGIS Workforce
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        portal_url             Optional :class:`String` The portal that should be used when workforce
+        portal_url             Optional :class:`String` The portal that should be used when Workforce
                                is launched via the url scheme.
         ------------------     --------------------------------------------------------------------
         url_type               Optional :class:`String`. The type of url to be returned (e.g. 'Web' or 'App')
+        ------------------     --------------------------------------------------------------------
+        webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
+                               The item id, webmap, or item representing the map to open in Workforce.
+                               Item can be of type Web Map. This can be referenced
+                               at the project level using project.worker_webmap
+        ------------------     --------------------------------------------------------------------
+        assignment             Optional :class:`String`, :class:`~arcgis.apps.workforce.Assignment`.
+                               The assignment or assignment global id that should be opened in Workforce.
+                               Note that webmap must be provided for this parameter to be added to the URL.
+        ------------------     --------------------------------------------------------------------
+        assignment_status      Optional :class:`Integer`
+                               The status given to an assignment opened in Workforce. Statuses 1-5
+                               are supported (Assigned, In Progress, Completed, Declined, Paused).
+                               Note that webmap and assignment must be provided for this parameter to be
+                               added to the URL.
         ==================     ====================================================================
 
         :return: :class:`String`
@@ -686,9 +702,55 @@ def build_workforce_url(portal_url=None, url_type="Web"):
         url = "arcgis-workforce://"
     if portal_url is not None:
         url += "?portalURL={}".format(portal_url)
+    if webmap is None and (assignment is not None or assignment_status is not None):
+        raise ValueError("Assignment or assignment status provided without webmap parameter")
+    if assignment is None and assignment_status is not None:
+        raise ValueError("Assignment status provided without assignment parameter")
+    if webmap is not None:
+        if isinstance(webmap, arcgis.mapping.WebMap):
+            item_id = webmap.item.id
+        elif isinstance(webmap, arcgis.gis.Item):
+            item_id = webmap.id
+        elif isinstance(webmap, str):
+            item_id = webmap
+        else:
+            raise ValueError("Please provide either a WebMap, Item, or str to the webmap param")
+        url = url + "&mapID=" + item_id
+        # assignment id can only be set is map id is set
+        if assignment is not None:
+            if isinstance(assignment, arcgis.apps.workforce.Assignment):
+                assignment_id = assignment.global_id
+            elif isinstance(assignment, str):
+                assignment_id = assignment
+            else:
+                raise ValueError("Please provide either a workforce.Assignment or str object to the assignment param")
+            url = url + "&assignmentID=" + assignment_id
+            # status can only be set if assignment id is set
+            if assignment_status is not None:
+                if not isinstance(assignment_status, int):
+                    raise ValueError("Please enter an integer for your assignment status")
+                if assignment_status > 0 and assignment_status < 6:
+                    url = url + "&assignmentStatus=" + str(assignment_status)
+                else:
+                    raise ValueError("Please provide an int between 1 and 5 for your assignment status")
     return url
 
 
 def _encode_string(string):
     # allow for template values (e.g. "{assignment.location}"
     return urllib.parse.quote(str(string), safe="${},:")
+
+
+def _encode_parameters(orig_string):
+    # encode url parameters specifically, and then encode entire string
+    parsed_url = urllib.parse.urlparse(orig_string)
+    params = []
+    return_url = parsed_url.scheme + "://"
+    params_dict = urllib.parse.parse_qs(parsed_url.query)
+    for k, v in params_dict.items():
+        params.append(k + "=" + _encode_string(v[0]))
+    if params:
+        params_url = "?" + "&".join(params)
+        return return_url + urllib.parse.quote(str(params_url), safe="${}:?")
+    else:
+        return orig_string

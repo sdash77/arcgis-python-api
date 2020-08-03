@@ -1,4 +1,4 @@
-""" Defines Exception subclasses for errors raised by the workorce-python-api.
+""" Defines Exception subclasses for errors raised by the workforce-python-api.
 """
 
 
@@ -7,6 +7,22 @@ class WorkforceError(Exception):
     Abstract base class for exceptions thrown by the workforce-python-api
     """
 
+    def __init__(self, message):
+        """
+        :param message: A human readable message describing the error.
+        """
+
+        super().__init__(self)
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
+
+class WorkforceWarning(Warning):
+    """
+    Abstract base class for warnings thrown by the workforce module
+    """
     def __init__(self, message):
         """
         :param message: A human readable message describing the error.

@@ -27,6 +27,10 @@ build_tracker_url
 --------------
 .. autofunction:: arcgis.apps.build_tracker_url
 
+build_workforce_url
+--------------
+.. autofunction:: arcgis.apps.build_workforce_url
+
 Submodules
 ----------
 .. toctree::

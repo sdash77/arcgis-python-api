@@ -44,7 +44,7 @@ class _DeepCloner():
     A class to handle all of the deep cloning actions
     """
     def __init__(self, target, items=None, folder=None, item_extent=None, service_extent=None,
-                 use_org_basemap=False, copy_data=True, search_existing_items=True, item_mapping=None, group_mapping=None, owner=None):
+                 use_org_basemap=False, copy_data=True, copy_global_ids=False, search_existing_items=True, item_mapping=None, group_mapping=None, owner=None):
         self._graph = {}
         self.folder = folder
         self.owner = owner
@@ -55,6 +55,7 @@ class _DeepCloner():
         self._service_extent = service_extent
         self._use_org_basemap = use_org_basemap
         self._copy_data = copy_data
+        self._copy_global_ids = copy_global_ids
         self._search_existing_items=search_existing_items
         self._clone_mapping = {'Item IDs': {}, 'Group IDs': {}, 'Services': {}, 'Web Tools' : {}}
         if item_mapping is not None:
@@ -356,7 +357,7 @@ class _DeepCloner():
 
                     item_definition = _FeatureServiceDefinition(self.target, self._clone_mapping, dict(item), service_definition, layers_definition, is_view,
                                                                 view_sources, view_source_fields, features=None, data=data, folder=self.folder, thumbnail=None, 
-                                                                portal_item=item, copy_data=self._copy_data, item_extent=self._item_extent, service_extent=self._service_extent, 
+                                                                portal_item=item, copy_data=self._copy_data, copy_global_ids=self._copy_global_ids, item_extent=self._item_extent, service_extent=self._service_extent,
                                                                 search_existing=self._search_existing_items, owner=self.owner)
                         
                     for source_fs_definition in source_fs_definitions:
@@ -372,7 +373,7 @@ class _DeepCloner():
                     layers_definition['tables'].append(properties)
 
                 item_definition = _FeatureServiceDefinition(self.target, self._clone_mapping, dict(item), service_definition, layers_definition, is_view, features=None, data=data, folder=self.folder,
-                                                            thumbnail=None, portal_item=item, copy_data=self._copy_data, item_extent=self._item_extent, service_extent=self._service_extent, search_existing=self._search_existing_items, owner=self.owner)
+                                                            thumbnail=None, portal_item=item, copy_data=self._copy_data, copy_global_ids=self._copy_global_ids, item_extent=self._item_extent, service_extent=self._service_extent, search_existing=self._search_existing_items, owner=self.owner)
             self._graph[item.id] = item_definition
 
         # If the item is a workforce find the group, maps and services that support the project
@@ -840,7 +841,7 @@ class _DeepCloner():
             data = item.get_data()
 
             return _FeatureServiceDefinition(self.target, self._clone_mapping, dict(item), service_definition, layers_definition, features=None,
-                                             data=data, thumbnail=None, portal_item=item, folder=self.folder, copy_data=self._copy_data, item_extent=self._item_extent, service_extent=self._service_extent, search_existing=self._search_existing_items, owner=self.owner)
+                                             data=data, thumbnail=None, portal_item=item, folder=self.folder, copy_data=self._copy_data, copy_global_ids=self._copy_global_ids, item_extent=self._item_extent, service_extent=self._service_extent, search_existing=self._search_existing_items, owner=self.owner)
 
         # If the item is a feature collection get the FeatureCollectionDefintion
         elif item['type'] == 'Feature Collection':
@@ -1312,7 +1313,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
     Represents the definition of a hosted feature service within ArcGIS Online or Portal.
     """
 
-    def __init__(self, target, clone_mapping, info, service_definition, layers_definition, is_view=False, view_sources={}, view_source_fields={}, features=None, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, copy_data=False, item_extent=None, service_extent=None, search_existing=True, owner=None):
+    def __init__(self, target, clone_mapping, info, service_definition, layers_definition, is_view=False, view_sources={}, view_source_fields={}, features=None, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, copy_data=False, copy_global_ids=False, item_extent=None, service_extent=None, search_existing=True, owner=None):
         super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing, owner)
         self._service_definition = service_definition
         self._service_extent = service_extent
@@ -1322,6 +1323,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
         self._view_sources = view_sources
         self._view_source_fields = view_source_fields
         self.copy_data = copy_data
+        self._copy_global_ids = copy_global_ids
 
     @property
     def service_definition(self):
@@ -1432,7 +1434,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             # Add the features to the layer in chunks
             add_results = []
             for features_chunk in [layer_features[i:i+chunk_size] for i in range(0, len(layer_features), chunk_size)]:
-                edits = layer.edit_features(adds=features_chunk)
+                edits = layer.edit_features(adds=features_chunk, use_global_ids=self._copy_global_ids)
                 add_results += edits['addResults']
                 time.sleep(1)
             layer_ids.remove(layer_id)
@@ -1482,7 +1484,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             add_results = []
             for features_chunk in [layer_features[i:i+chunk_size] for i in range(0, len(layer_features), chunk_size)]:
                 try:
-                    edits = layers[layer_id].edit_features(adds=features_chunk)
+                    edits = layers[layer_id].edit_features(adds=features_chunk, use_global_ids=self._copy_global_ids)
                     add_results += edits['addResults']
                     time.sleep(1)
                 except Exception as e:
@@ -1491,7 +1493,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         temp_chunk = 1
                     
                     for chunk in [features_chunk[i:i+temp_chunk] for i in range(0, len(features_chunk), temp_chunk)]:
-                        edits = layers[layer_id].edit_features(adds=chunk)
+                        edits = layers[layer_id].edit_features(adds=chunk, use_global_ids=self._copy_global_ids)
                         add_results += edits['addResults']
             object_id_field = layers[layer_id].properties['objectIdField']
             object_id_mapping[layer_id] = {layer_features[i]['attributes'][object_id_field] : add_results[i]['objectId'] for i in range(0, len(layer_features))}

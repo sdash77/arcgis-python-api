@@ -86,6 +86,7 @@ def update_tracks(project, tracks):
 
 
 def update_track(project, track, geometry=None, accuracy=None):
+    """Updates individual track and submits changes to the server"""
     if accuracy:
         track.accuracy = accuracy
     if geometry:

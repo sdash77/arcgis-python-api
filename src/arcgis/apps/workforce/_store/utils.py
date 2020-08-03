@@ -2,7 +2,6 @@
 """
 
 from arcgis.features import FeatureSet
-
 from ... import workforce
 
 

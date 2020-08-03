@@ -1,4 +1,4 @@
-""" Defines store functions for working with Workers.
+""" Defines store functions for working with Dispatchers.
 """
 
 import math

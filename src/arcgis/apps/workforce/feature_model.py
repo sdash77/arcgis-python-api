@@ -2,7 +2,6 @@
 """
 
 from arcgis.features import Feature
-
 from .exceptions import ValidationError
 from .model import Model
 from .utils import to_arcgis_date, from_arcgis_date
@@ -26,8 +25,14 @@ class FeatureModel(Model):
 
     @property
     def id(self):
-        """The object id of the feature"""
-        return self.object_id
+        """The object (version 1) or global id (version 2) of the feature"""
+        # Returns global ID in upper case form if it exists for v2 project, otherwise returns nothing
+        if self.project._is_v2_project and self.global_id is not None:
+            return self.global_id.upper()
+        elif not self.project._is_v2_project:
+            return self.object_id
+        else:
+            return None
 
     @property
     def feature(self):
@@ -84,7 +89,7 @@ class FeatureModel(Model):
 
     def _validate_object_id(self):
         errors = []
-        if self.object_id is None:
+        if self.project._is_v2_project and self.object_id is None:
             errors.append(ValidationError('Model requires an object_id', self))
         return errors
 
