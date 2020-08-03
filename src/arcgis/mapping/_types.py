@@ -77,6 +77,22 @@ class SceneLayer(Layer):
         Constructs a SceneLayer given a web scene layer URL
         """
         super(SceneLayer, self).__init__(url, gis)
+
+    @property
+    def _lyr_json(self):
+        out = super()._lyr_json
+        layer_type = self.properties.layerType.lower()
+        # Rest API layer type is a bit different from JS API types
+        if layer_type == "point":
+            out["type"] = "SceneLayer"
+        if layer_type == "3dobject":
+            out["type"] = "SceneLayer"
+        if layer_type == "integratedmesh":
+            out["type"] = "IntegratedMeshLayer"
+        if layer_type == "pointcloud":
+            out["type"] = "PointCloudLayer"
+        return out 
+
 ###########################################################################
 class _ApplicationProperties(object):
     """

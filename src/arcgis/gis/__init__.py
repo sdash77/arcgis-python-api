@@ -5222,8 +5222,10 @@ class ContentManager(object):
         layer with the staging with minimal downtime. This operation has the option to keep a backup of the production
         tile layer.
 
+        *Note*: This functionality is only available for hosted vector tile layers, hosted tile layers and hosted scene 
+        layers based on packages.
+
         *Note*: If you are looking to clone services, use the `clone_items()` method instead.
-        *Note*: This functionality is only available for Vector Tile Services.
 
         Workflow for replace_service:
 
