@@ -2706,6 +2706,8 @@ class MapImageLayerManager(_GISResource):
     """
 
     def __init__(self, url, gis=None, map_img_lyr=None):
+        if url.split("/")[-1].isdigit():
+            url = url.replace(f"/{url.split('/')[-1]}", "")
         super(MapImageLayerManager, self).__init__(url, gis)
         self._ms = map_img_lyr
 
@@ -3045,7 +3047,8 @@ class MapImageLayer(Layer):
             #part1 = url[:res[1]]
             #part2 = url[res[1]:]
             #adminURL = url.replace("/rest/", "/admin/").replace("/MapServer", ".MapServer")#"%s%s%s" % (part1, addText, part2)
-
+            if adminURL.split("/")[-1].isdigit():
+                url = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
             self._admin = MapImageLayerManager(adminURL, self._gis, self)
         return self._admin
 
