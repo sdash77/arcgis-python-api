@@ -177,23 +177,18 @@ def _build_url_for_add_feature_action(params, feature_layer, geometry, use_anten
         params.append("featureSourceURL=" + feature_source_url)
     else:
         raise ValueError("Invalid parameters -- Must specify a feature_layer parameter if action = addFeature")
-
     if geometry:
         if isinstance(geometry, dict):
             geometry = json.dumps(geometry)
         if isinstance(geometry, str):
             geometry = geometry.replace(" ", "")
         params.append("geometry=" + _encode_string(geometry))
-
         if use_antenna_height:
             params.append("useAntennaHeight=true")
-
         if use_loc_profile:
             params.append("useLocationProfile=true")
-
     if fields:
         params.append("featureAttributes=%7B" + urllib.parse.quote(json.dumps(fields), safe="${},:") + "%7D")
-    
     if callback:
         params.append("callback=" + _encode_parameters(callback))
         if callback_prompt:
@@ -210,18 +205,15 @@ def _build_url_for_update_feature_action(params, feature_layer, feature_id, fiel
         params.append("featureSourceURL=" + feature_source_url)
     else:
         raise ValueError("Invalid parameters -- Must specify a feature_layer parameter if action = updateFeature")
-
     if feature_id:
         params.append("featureID=" + feature_id)
-
     if fields:
         params.append("featureAttributes=%7B" + urllib.parse.quote(json.dumps(fields), safe="${},:") + "%7D")
-
     if callback:
         params.append("callback=" + _encode_parameters(callback))
         if callback_prompt:
             params.append("callbackPrompt=" + _encode_string(callback_prompt))
-
+            
     return params
 
 
