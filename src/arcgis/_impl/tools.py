@@ -2023,6 +2023,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                                            "snippet": "Analysis file item generated from running the Extract Data tool.",
                                                            "folderId": ""}}
             output_name = params['outputName']
+        elif isinstance(output_name, dict) and 'title' in output_name:
+            params["outputName"] = {"itemProperties": output_name}
+            output_name = params['outputName']
         else:
             params["outputName"] = {"serviceProperties": {"name": output_name }}
             output_name = params['outputName']
