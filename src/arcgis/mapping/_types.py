@@ -2217,11 +2217,15 @@ class OfflineMapAreaManager(object):
                         break
         update_items = {
             "properties": {
-                "extent": _extent,
                 "status":"processing",
                 "packageRefreshSchedule": refresh_schedule
             }
         }
+        update_items['properties'].update(item.properties)
+        if _extent and not 'extent' in item.properties:
+            update_items['properties']['extent'] = _extent
+        if area and not 'area' in item.properties:
+            update_items['properties']['area'] = _extent
         item.update(item_properties=update_items)
         # End Item Update Refresh Call
 
