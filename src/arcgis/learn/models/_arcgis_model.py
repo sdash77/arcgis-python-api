@@ -827,13 +827,13 @@ class ArcGISModel(object):
                 """
                 raise Exception(_err_msg)
             else:
-
+                with_opt = getattr(self, "with_opt", True)
                 if isinstance(self.learn.model, (DistributedDataParallel)):
                     if not int(os.environ.get('RANK', 0)):
-                        saved_path = self.learn.save(name,  return_path=True)
+                        saved_path = self.learn.save(name,  return_path=True, with_opt=with_opt)
                     return
 
-                saved_path = self.learn.save(name,  return_path=True)
+                saved_path = self.learn.save(name,  return_path=True, with_opt=with_opt)
 
             # undoing changes to self.learn.path
         except Exception as e:
@@ -928,6 +928,8 @@ class ArcGISModel(object):
 
         if self.__str__() == '<PointCNN>':
             self.show_results(save_html=True, save_path=model_characteristics_dir)
+        elif self.__str__() == "<TextClassifier>":
+            pass
         elif hasattr(self, 'show_results'):
             self.show_results()
             plt.savefig(os.path.join(model_characteristics_dir, 'show_results.png'))

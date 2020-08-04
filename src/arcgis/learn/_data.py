@@ -40,6 +40,7 @@ try:
     from fastai.tabular.transform import FillMissing, Categorify, Normalize
     from fastai.tabular import cont_cat_split, add_datepart
     from ._utils.tabular_data import TabularDataObject
+    from ._utils.text_data import TextDataObject
     import random
     import PIL
     HAS_FASTAI = True
@@ -100,6 +101,7 @@ def get_installation_command():
 def _raise_fastai_import_error(import_exception=import_exception):
     installation_steps = get_installation_command()
     raise Exception(f"""{import_exception} \n\nThis module requires fastai, PyTorch, torchvision and scikit-image as its dependencies.\n{installation_steps}""")
+
 
 class _ImagenetCollater():
     def __init__(self, chip_size):
@@ -366,6 +368,105 @@ def _extract_bands_tfm(tensor_batch, band_indices):
     x_batch = tensor_batch[0][:, band_indices]
     y_batch = tensor_batch[1]
     return (x_batch, y_batch)
+
+
+def prepare_textdata(
+        task,
+        data,
+        text_cols,
+        label_cols,
+        train_file="train.csv",
+        valid_file="valid.csv",
+        val_split_pct=0.1,
+        seed=42,
+        batch_size=16,
+        process_labels=False,
+        remove_html_tags=False,
+        remove_urls=False
+    ):
+    """
+    Prepares a text data object from the files present at data folder
+
+    =====================   =================================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------------
+    task                    Required string. The task for which the dataset is
+                            prepared. Available choice at this point is "classification"
+    ---------------------   -------------------------------------------------
+    data                    Required directory path. The directory path where
+                            the train, test and validation files are present.
+    ---------------------   -------------------------------------------------
+    text_cols               Required string. The column that will be used as
+                            feature.
+    ---------------------   -------------------------------------------------
+    label_cols              Required list. The list of columns denoting the
+                            class label to predict. Provide a list of columns
+                            in case of multi-label classification problem
+    ---------------------   -------------------------------------------------
+    train_file              Optional string. The file name containing the
+                            training data.
+                            Default value is `train.csv`
+    ---------------------   -------------------------------------------------
+    valid_file              Optional string. The file name containing the
+                            validation data.
+    ---------------------   -------------------------------------------------
+    val_split_pct           Optional float. Percentage of training data to keep
+                            as validation.
+                            By default 10% data is kept for validation.
+    ---------------------   -------------------------------------------------
+    seed                    Optional integer. Random seed for reproducible
+                            train-validation split.
+                            Default value is 42.
+    ---------------------   -------------------------------------------------
+    batch_size              Optional integer. Batch size for mini batch gradient
+                            descent (Reduce it if getting CUDA Out of Memory
+                            Errors).
+                            Default value is 16.
+    ---------------------   -------------------------------------------------
+    process_labels          Optional boolean. If true, default processing functions
+                            will be called on label columns as well.
+                            Default value is False.
+    ---------------------   -------------------------------------------------
+    remove_html_tags        Optional boolean. If true, remove html tags from text.
+                            Default value is False.
+    ---------------------   -------------------------------------------------
+    remove_urls             Optional boolean. If true, remove urls from text.
+                            Default value is False.
+    =====================   =================================================
+
+    :returns: `TextData` object
+
+    """
+    # allowed_tasks = ["classification", "summarization", "translation",
+    #                  "question-answering", "ner", "text-generation"]
+
+    if not HAS_FASTAI:
+        _raise_fastai_import_error(import_exception)
+
+    # if task not in allowed_tasks:
+    #     raise Exception(f"Wrong task choosen. Allowed tasks are {allowed_tasks}")
+
+    if isinstance(label_cols, (str, bytes)):
+        label_cols = [label_cols]
+
+    if task == "classification":
+        return TextDataObject.prepare_data_for_classification(
+            data,
+            text_cols,
+            label_cols,
+            train_file=train_file,
+            valid_file=valid_file,
+            val_split_pct=val_split_pct,
+            seed=seed,
+            batch_size=batch_size,
+            process_labels=process_labels,
+            remove_html_tags=remove_html_tags,
+            remove_urls=remove_urls
+        )
+    else:
+        logger = logging.getLogger()
+        logger.info(f"Wrong task - {task} provided. This function can handle only `classification` task currently")
+
 
 
 def prepare_tabulardata(
