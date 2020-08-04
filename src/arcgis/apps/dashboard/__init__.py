@@ -1,18 +1,4 @@
-from . import hub
-from . import workforce
-from . import storymap
-from . import survey123
-from . import tracker
-from . import dashboard
-
-from . _url_schemes import build_collector_url
-from . _url_schemes import build_field_maps_url
-from . _url_schemes import build_explorer_url
-from . _url_schemes import build_navigator_url
-from . _url_schemes import build_survey123_url
-from . _url_schemes import build_tracker_url
-from . _url_schemes import build_workforce_url
-
+from .dashboard import *
 from arcgis.apps.dashboard._serialchart._serial_chart import SerialChart
 from arcgis.apps.dashboard._header._header import Header
 from arcgis.apps.dashboard._sidepanel.side_panel import SidePanel
@@ -28,14 +14,3 @@ from arcgis.apps.dashboard._map_legend._map_legend import MapLegend
 from arcgis.apps.dashboard._gauge._gauge import Gauge
 from arcgis.apps.dashboard._list._list import List
 from arcgis.apps.dashboard._utils._basewidget import add_row, add_column
-try:
-    from arcgis.widgets._mapview import MapView
-except ImportError as e:
-    import logging
-    log = logging.getLogger()
-    import_error = e
-    class MapView:
-        def __init__(self, *args, **kwargs):
-            log.warning("MapView class replaced with a non-functional "\
-                        "placeholder due to the following import error:")
-            raise import_error

@@ -1,0 +1,1 @@
+from arcgis.apps.dashboard._map_legend._map_legend import MapLegend

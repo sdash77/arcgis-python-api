@@ -206,7 +206,28 @@ class WebMap(HasTraits, collections.OrderedDict):
         Constructs an empty WebMap object. If an web map Item is passed, constructs a WebMap object from item on
         ArcGIS Online or Enterprise.
         """
+
+        #Dashboard items.
+        self.id = str(uuid4())
+        self.type = "mapWidget"
+
+        self._pop_ups = False
+        self._navigation = False
+        self._scale_bar = "none"
+        self._bookmarks = False
+        self._legend = False
+        self._layer_visibility = False
+        self._basemap_switcher = False
+        self._search = False
+        self._zoom = False
+        self._events = Events._create_events()
+
+        self._height = 1
+        self._width = 1
+        #Dashboard items end here.
+
         from arcgis.widgets import MapView
+
         if webmapitem:
             if webmapitem.type.lower() != 'web map':
                 raise TypeError("item type must be web map")
@@ -269,6 +290,10 @@ class WebMap(HasTraits, collections.OrderedDict):
                    .get('viewpoint', {})\
                    .get('rotation', 0)
         self._mapview.rotation = rotation
+
+    @property
+    def events(self):
+        return self._events
 
     def _ipython_display_(self, *args, **kwargs):
        return self._mapview._ipython_display_(*args, **kwargs)
@@ -1265,6 +1290,229 @@ class WebMap(HasTraits, collections.OrderedDict):
         :return:
         """
         return OfflineMapAreaManager(self.item, self._gis)
+
+    @property
+    def pop_ups(self):
+        """
+        :return: True if popups are enabled for dashboard widget.
+        """
+        return self._pop_ups
+
+    @pop_ups.setter
+    def pop_ups(self, value):
+        """
+        Set popup True or False for dashboard widget.
+        """
+        self._pop_ups = value
+        if value in [0, '0', False, 'false']:
+            self._pop_ups = False
+
+    @property
+    def bookmarks(self):
+        """
+        :return: True if bookmarks are enabled for dashboard widget.
+        """
+        return self._bookmarks
+
+    @bookmarks.setter
+    def bookmarks(self, value):
+        """
+        Set bookmarks True or False for dashboard widget.
+        """
+        self._bookmarks = value
+        if value in [0, '0', False, 'false']:
+            self._bookmarks = False
+
+    @property
+    def legend(self):
+        """
+        :return: True if legend visibility is enabled for dashboard widget.
+        """
+        return self._legend
+
+    @legend.setter
+    def legend(self, value):
+        """
+        Set legend visibility to True or False.
+        """
+        self._legend = value
+        if value in [0, '0', False, 'false']:
+            self._legend = False
+
+    @property
+    def layer_visibility(self):
+        """
+        :return: True if layer visibility is enabled for dashboard widget.
+        """
+        return self._layer_visibility
+
+    @layer_visibility.setter
+    def layer_visibility(self, value):
+        """
+        Set layer visibility for dashboard widget.
+        """
+        self._layer_visibility = value
+        if value in [0, '0', False, 'false']:
+            self._layer_visibility = False
+
+    @property
+    def basemap_switcher(self):
+        """
+        :return: True if Basemap switcher is enabled.
+        """
+        return self._basemap_switcher
+
+    @basemap_switcher.setter
+    def basemap_switcher(self, value):
+        """
+        Set basemap switcher True or False, for dashboard widget.
+        """
+        self._basemap_switcher = value
+        if value in [0, '0', False, 'false']:
+            self._basemap_switcher = False
+
+    @property
+    def search(self):
+        """
+        :return: True if search is enabled for dashboard widget.
+        """
+        return self._search
+
+    @search.setter
+    def search(self, value):
+        """
+        Set search True or False, for dashboard widget.
+        """
+        self._search = value
+        if value in [0, '0', False, 'false']:
+            self._search = False
+
+    @property
+    def zoom(self):
+        """
+        :return: zoom enabled or disabled for dashboard widget.
+        """
+        return self._zoom
+
+    @zoom.setter
+    def zoom(self, value):
+        """
+        Enable or disable zoom for dashboard widget.
+        """
+        self._zoom = value
+        if value in [0, '0', False, 'false']:
+            self._zoom = False
+
+    @property
+    def navigation(self):
+        """
+        :return: navigation enabled or disabled.
+        """
+        return self._navigation
+
+    @navigation.setter
+    def navigation(self, value):
+        """
+        Enable or disable navigation for dashboard widget.
+        """
+        if value in [0, '0', False, 'false']:
+            self._navigation = False
+        self._navigation = True
+
+    @property
+    def scale_bar(self):
+        """
+        :return: Scale bar from ("none", "ruler", "scale")
+        """
+        return self._scale_bar
+
+    @scale_bar.setter
+    def scale_bar(self, value):
+        """
+        Set scale bar for dashboard widget.
+        Choose from "line" or "ruler" or set "none" to disable.
+        """
+        self._scale_bar = value
+        if value not in ["none", "line", "ruler"]:
+            self._scale_bar = "none"
+
+    @property
+    def height(self):
+        """
+        :return: Height of the widget
+        """
+        return self._height
+
+    @height.setter
+    def height(self, value):
+        """
+        Set height of the widget, between 0 and 1.
+        """
+        if value > 1:
+            self._height = 1
+        elif value < 0:
+            self._height = 0
+        else:
+            self._height = value
+
+    @property
+    def width(self):
+        """
+        :return: Width of the widget
+        """
+        return self._width
+
+    @width.setter
+    def width(self, value):
+        """
+        Set width of the widget, between 0 and 1.
+        """
+        if value > 1:
+            self._width = 1
+        elif value < 0:
+            self._width = 0
+        else:
+            self._width = value
+
+    def _convert_to_json(self):
+        data = {
+            "events":[],
+            "type": "mapWidget",
+            "flashRepeats": 3,
+            "itemId": self.item.id,
+            "mapTools": [],
+            "showNavigation": self.navigation,
+            "showPopup": self.pop_ups,
+            "scalebarStyle": self.scale_bar,
+            "layers": [{"type": "featureLayerDataSource", "layerId": layer['id']} for layer in self.layers],
+            "id": self.id,
+            "name": self.item.title,
+            "caption": self.item.name,
+            "showLastUpdate": True,
+            "noDataVerticalAlignment": "middle",
+            "showCaptionWhenNoData": False,
+            "showDescriptionWhenNoData": False
+        }
+
+        if self.bookmarks:
+            data['mapTools'].append({"type": "bookmarksTool"})
+
+        if self.legend:
+            data['mapTools'].append({"type": "legendTool"})
+
+        if self.layer_visibility:
+            data['mapTools'].append({'type': "mapContentsTool"})
+
+        if self.basemap_switcher:
+            data['mapTools'].append({"type": "basemapGalleryTool"})
+
+        if self.search:
+            data['mapTools'].append({"type": "searchTool"})
+        
+        if self.events.enable:
+            data["events"].append({"type":self.events.type, "actions":self.events.synced_widgets})
+
+        return data
 
 ###########################################################################
 class PackagingJob(object):
@@ -4080,3 +4328,63 @@ class MapImageLayer(Layer):
                         return gpRes['folders']
                 else:
                     return None
+###########################################################################
+
+class Events(object):
+
+    @classmethod
+    def _create_events(cls, enable=False):
+        events = Events()
+
+        events._enable = False
+        events._type = "extentChanged"
+        events._actions = []
+
+        events.enable = enable
+
+        return events
+
+    @property
+    def enable(self):
+        return self._enable
+
+    @enable.setter
+    def enable(self, value):
+        self._enable = bool(value)
+
+    @property
+    def type(self):
+        return self._type
+
+    @property
+    def synced_widgets(self):
+        return self._actions
+
+    def sync_widget(self, widgets):
+
+        if self.enable == False:
+            raise Exception("Please enable events")
+
+        else:
+            if isinstance(widgets, list):
+                for widget in widgets:
+                    if widget.type == "mapWidget":
+                        action_type = "setExtent"
+                        self._actions.append({"type":action_type, "targetId":widget.id})
+                    else:
+                        action_type = "filter"
+                        widget_id = str(widget.id)+'#main'
+                        self._actions.append({"type":action_type, "by":"geometry", "targetId":widget_id})
+            else:
+                if widgets.type == "mapWidget":
+                    action_type = "setExtent"
+                    self._actions.append({"type":action_type, "targetId":widgets.id})
+                else:
+                    action_type = "filter"
+                    widget_id = str(widgets.id)+'#main'
+                    self._actions.append({"type":action_type, "by":"geometry", "targetId":widget_id})
+
+
+
+
+
