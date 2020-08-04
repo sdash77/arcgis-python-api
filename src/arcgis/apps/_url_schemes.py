@@ -4,8 +4,7 @@ import json
 
 
 def build_collector_url(portal=None, action=None, webmap=None, center=None, feature_layer=None, fields=None, search=None,
-                        geometry=None, callback=None, callback_prompt=None, use_antenna_height=None,
-                        use_loc_profile=None, feature_id=None, url_type="Web"):
+                        geometry=None, callback=None, callback_prompt=None, feature_id=None):
     """
     Creates a url that can be used to open ArcGIS Collector
 
@@ -40,16 +39,6 @@ def build_collector_url(portal=None, action=None, webmap=None, center=None, feat
                            Requires webmap, action=addFeature, and feature_layer.
                            Value is a coordinate containing x, y (z if available)
     ------------------     --------------------------------------------------------------------
-    use_antenna_height     Optional :class:`bool`. If the antenna height of the current receiver
-                           should be subtracted from the z-value of each vertex of the location. If not provided,
-                           default to False
-    ------------------     --------------------------------------------------------------------
-    use_loc_profile        Optional :class:`bool`. If the current location profile should be used to
-                           transform the location. If not provided, default to False
-    ------------------     --------------------------------------------------------------------
-    feature_id             Optional :class:`String`. Uniquely identifies the feature within the layer to be updated.
-                           Must be a GlobalID field.
-    ------------------     --------------------------------------------------------------------
     callback               Optional :class:`String`. The URL to call when capturing the asset or
                            observation is complete.
                            Requires webmap, action=addFeature, and feature_layer to be set.
@@ -60,8 +49,6 @@ def build_collector_url(portal=None, action=None, webmap=None, center=None, feat
                            and display this value in the prompt as where the mobile worker will be taken.
                            Requires webmap, action=addFeature, feature_layer, and callback to be specified.
                            Value must be URL encoded
-    ------------------     --------------------------------------------------------------------
-    url_type               Optional :class:`String`. The type of url to be returned (e.g. 'Web' or 'App')
     ==================     ====================================================================
 
     :return: :class:`String`
@@ -69,15 +56,15 @@ def build_collector_url(portal=None, action=None, webmap=None, center=None, feat
     params = []
     url = "https://collector.arcgis.app"
     # Branch out based on the version of Collector.
-    if url_type == "Web":
+    if portal or action:
         if portal:
             if isinstance(portal, arcgis.gis.GIS):
                 portal = portal.url
             params.append("portalURL=" + portal)
 
         if action:
-            if action not in ['addFeature', 'center', 'open', 'search', 'updateFeature']:
-                raise ValueError("Invalid reference context. addFeature, center, open, search, and updateFeature are supported")
+            if action not in ['addFeature', 'center', 'open', 'search']:
+                raise ValueError("Invalid reference context. addFeature, center, open, and search are supported")
             params.append("referenceContext=" + action)
             if not webmap:
                 raise ValueError("Invalid parameters -- Must specify a webmap")
@@ -90,16 +77,12 @@ def build_collector_url(portal=None, action=None, webmap=None, center=None, feat
                 params.append("itemID=" + item_id)
 
             actions = {'open': lambda: _build_url_for_open_action(params),
-                       'center': lambda: _build_url_for_center_action(params, center),
-                       'search': lambda: _build_url_for_search_action(params, search),
-                       'addFeature': lambda: _build_url_for_add_feature_action(params, feature_layer, geometry,
-                                                                          use_antenna_height,
-                                                                          use_loc_profile,
-                                                                          fields, callback,
-                                                                          callback_prompt),
-                        'updateFeature': lambda: _build_url_for_update_feature_action(params, feature_layer, feature_id,
-                                                                                    fields, callback,
-                                                                                    callback_prompt)}
+                       'center': lambda: _build_url_for_center_action(params, center=center),
+                       'search': lambda: _build_url_for_search_action(params, search=search),
+                       'addFeature': lambda: _build_url_for_add_feature_action(params, feature_layer=feature_layer,
+                                                                               geometry=geometry,
+                                                                               callback=callback,
+                                                                               callback_prompt=callback_prompt)}
 
             params = actions.get(action)()
 
@@ -167,7 +150,7 @@ def _build_url_for_search_action(params, search):
         raise ValueError("Invalid parameters -- Must specify a search parameter if action = search")
 
 
-def _build_url_for_add_feature_action(params, feature_layer, geometry, use_antenna_height, use_loc_profile, fields, callback, callback_prompt):
+def _build_url_for_add_feature_action(params, feature_layer, geometry, use_antenna_height=None, use_loc_profile=None, fields=None, callback=None, callback_prompt=None):
     if feature_layer:
         feature_source_url = feature_layer
         if isinstance(feature_layer, arcgis.features.FeatureLayer):
@@ -436,7 +419,7 @@ def build_field_maps_url(portal=None, action=None, webmap=None, scale=None, book
         params = actions.get(action)()
         
     if anonymous:
-        params.append("anonymous=true")
+        params.append("anonymousAccess=true")
     url += "?" + "&".join(params)
     return url
     
