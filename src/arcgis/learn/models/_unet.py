@@ -289,6 +289,7 @@ class UnetClassifier(ArcGISModel):
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_unet"
+        _emd_template["ModelType"] = "ImageClassification"
         _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
