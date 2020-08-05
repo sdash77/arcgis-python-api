@@ -53,8 +53,8 @@ class Gauge(_BaseWidget):
     @classmethod
     def _from_json(cls, widget_json):
         gis = arcgis.env.active_gis
-        itemid = json_data["datasets"]["datasource"]["itemid"]
-        name = json_data["name"]
+        itemid = widget_json["datasets"]["datasource"]["itemid"]
+        name = widget_json["name"]
         item = gis.content.get(itemid)
         title = widget_json["caption"]
         description = widget_json["description"]

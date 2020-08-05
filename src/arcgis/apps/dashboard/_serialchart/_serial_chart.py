@@ -60,16 +60,16 @@ class SerialChart(_BaseWidget):
     @classmethod
     def _from_json(cls, widget_json):
         gis = arcgis.env.active_gis
-        itemid = json_data["datasets"]["datasource"]["itemid"]
-        name = json_data["name"]
+        itemid = widget_json["datasets"]["datasource"]["itemid"]
+        name = widget_json["name"]
         item = gis.content.get(itemid)
         title = widget_json["caption"]
         categories_from = widget_json["categoryType"]
         description = widget_json["description"]
         schart = SerialChart(item, name, 0, categories_from, title, description)
         schart.data.category_field = widget_json["category"]["fieldName"]
-        scart.legend.visibility = widget_json["legend"]["enabled"]
-        scart.legend.placement = widget_json["legend"]["position"]
+        schart.legend.visibility = widget_json["legend"]["enabled"]
+        schart.legend.placement = widget_json["legend"]["position"]
         schart.max_features = widget_json["dataset"]["maxFeatures"]
         
         return schart

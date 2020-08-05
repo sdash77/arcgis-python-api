@@ -151,15 +151,15 @@ class Dashboard(object):
 
     def from_dashboard(self, dashboard_item):
         widget_map = {
-            "indicatorWidget": Indicator,
-            "gaugeWidget": Gauge,
-            "pieChartWidget": PieChart,
-            "serialChartWidget": SerialChart,
-            "detailsWidget": Details,
-            "richTextWidget": RichText,
-            "listWidget": List,
-            "embeddedContentWidget": EmbeddedContent,
-            "legendWidget": MapLegend
+            "indicatorWidget": arcgis.apps.dashboard.Indicator,
+            "gaugeWidget": arcgis.apps.dashboard.Gauge,
+            "pieChartWidget": arcgis.apps.dashboard.PieChart,
+            "serialChartWidget": arcgis.apps.dashboard.SerialChart,
+            "detailsWidget": arcgis.apps.dashboard.Details,
+            "richTextWidget": arcgis.apps.dashboard.RichText,
+            "listWidget": arcgis.apps.dashboard.List,
+            "embeddedContentWidget": arcgis.apps.dashboard.EmbeddedContent,
+            "legendWidget": arcgis.apps.dashboard.MapLegend
         }
         item_json = dashboard_item.get_data()
         for widget_json in item_json["widgets"]:
@@ -170,7 +170,7 @@ class Dashboard(object):
 
     @staticmethod
     def _publish_random(widget):
-        from arcgis.apps import add_row
+        from arcgis.apps.dashboard import add_row
         gis = arcgis.env.active_gis
         import random
         import string
