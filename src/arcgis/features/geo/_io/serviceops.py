@@ -114,7 +114,10 @@ def from_layer(layer,
         raise ValueError("Invalid inputs: must be FeatureLayer or Table")
     sdf = layer.query(where=query, as_df=True)
     sdf.spatial._meta.source = layer
-    sdf.spatial.renderer = dict(layer.properties.drawingInfo.renderer)
+    if 'drawingInfo' in layer.properties:
+        sdf.spatial.renderer = dict(layer.properties.drawingInfo.renderer)
+    else:
+        sdf.spatial.renderer = dict({})
     return sdf
 #----------------------------------------------------------------------
 def to_layer(df,
