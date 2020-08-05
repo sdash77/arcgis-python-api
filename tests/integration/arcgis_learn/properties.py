@@ -9,6 +9,7 @@ import json
 
 data_folder = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model"
 data_folder_inference = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_inference"
+data_folder_ms = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model_ms"
 authorization_path = r"/home/administrator/Raster/Test_Data/data_for_testing_1/properties/properties.json"
 
 colormap = {'0': [0, 0, 0], '1': [0, 255, 0], '2': [0, 255, 100], '3': [0, 0, 255], '4': [0, 255, 100],
@@ -29,16 +30,22 @@ data = {
     "ssd": {
         "model_name": "ssd",
         "datapath": "ssd_retina_data",
+        "datapath_ms": "ssd_retina_yolo_fasterrcnn_data",
         "model": SingleShotDetector,
         "model_test": "ssd_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "ssd_retina_data"),
             "batch_size": 2
         },
+        "prepare_data_ms": {
+            "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
+            "batch_size": 2,
+            "imagery_type": 'multispectral'
+        },
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
-        "regression_test_score": 0.10,
+        "regression_test_score": 0.40,
         "inferencing_parameter": {
             "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "ssd",
@@ -70,11 +77,17 @@ data = {
     "rn": {
         "model_name": "retinanet",
         "datapath": "ssd_retina_data",
+        "datapath_ms": "ssd_retina_yolo_fasterrcnn_data",
         "model": RetinaNet,
         "model_test": "rn_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "ssd_retina_data"),
             "batch_size": 2
+        },
+        "prepare_data_ms": {
+            "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
+            "batch_size": 2,
+            "imagery_type": 'multispectral'
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -111,11 +124,17 @@ data = {
     "unet": {
         "model_name":"unet",
         "datapath": "unet_psp_deep_data",
+        "datapath_ms": "unet_psp_deeplab_superres_data",
         "model": UnetClassifier,
         "model_test": "unet_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "unet_psp_deep_data"),
              "batch_size": 2
+        },
+        "prepare_data_ms": {
+            "path": os.path.join(data_folder_ms, "unet_psp_deeplab_superres_data"),
+            "batch_size": 2,
+            "imagery_type": 'multispectral'
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -150,11 +169,17 @@ data = {
     "deeplab": {
         "model_name":"deeplab",
         "datapath": "unet_psp_deep_data",
+        "datapath_ms":"unet_psp_deeplab_superres_data",
         "model": DeepLab,
         "model_test": "deeplab_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "unet_psp_deep_data"),
             "batch_size": 2
+        },
+        "prepare_data_ms": {
+            "path": os.path.join(data_folder_ms, "unet_psp_deeplab_superres_data"),
+            "batch_size": 2,
+            "imagery_type": 'multispectral'
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -190,11 +215,17 @@ data = {
     "fc": {
         "model_name": "featureclassifier",
         "datapath": "fc_data",
+        "datapath_ms": "fc_data",
         "model": FeatureClassifier,
         "model_test": "fc_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "fc_data"),
             "batch_size": 2
+        },
+        "prepare_data_ms": {
+            "path": os.path.join(data_folder_ms, "fc_data"),
+            "batch_size": 2,
+            "imagery_type": 'multispectral'
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -231,11 +262,17 @@ data = {
     "pspnet": {
         "model_name":"pspnet",
         "datapath": "unet_psp_deep_data",
+        "datapath_ms": "unet_psp_deeplab_superres_data",
         "model": PSPNetClassifier,
         "model_test": "pspnet_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "unet_psp_deep_data"),
              "batch_size": 2
+        },
+        "prepare_data_ms": {
+            "path": os.path.join(data_folder_ms, "unet_psp_deeplab_superres_data"),
+            "batch_size": 2,
+            "imagery_type": 'multispectral'
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -271,11 +308,17 @@ data = {
     "maskrcnn": {
         "model_name": "maskrcnn",
         "datapath": "maskrcnn_data",
+        "datapath_ms": "maskrcnn_data",
         "model": MaskRCNN,
         "model_test": "maskrcnn_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "maskrcnn_data"),
             "batch_size": 2
+        },
+        "prepare_data_ms": {
+            "path": os.path.join(data_folder_ms, "maskrcnn_data"),
+            "batch_size": 2,
+            "imagery_type": 'multispectral'
         },
         "should_test": True,
         "test_feature_layer": False,
@@ -313,12 +356,13 @@ data = {
         "model_name": "ner",
         "datapath": "ner_data",
         "model": EntityRecognizer,
-        "model_test": "ner_test",
+        "model_test": "ner_model_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "ner_data", "updated_labelled.json"),
             "batch_size": 8,
             "dataset_type": 'ner_json'
         },
+        "prepare_data_ms": False,
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "precision_score",
@@ -344,6 +388,7 @@ data = {
             "dataset_type": "PointCloud",
             "transforms": None, "color_mapping": colormap
         },
+        "prepare_data_ms": False,
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "compute_precision_recall",
@@ -363,6 +408,7 @@ data = {
     "superres": {
         "model_name": "superres",
         "datapath": "superres_data",
+        "datapath_ms":"unet_psp_deeplab_superres_data",
         "model": SuperResolution,
         "model_test": "superres_test",
         "prepare_data": {
@@ -371,6 +417,7 @@ data = {
             "dataset_type": "superres",
             "downsample_factor": 8
         },
+        "prepare_data_ms": False,
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "psnr_metric",
@@ -405,16 +452,22 @@ data = {
     "fasterrcnn": {
         "model_name": "fasterrcnn",
         "datapath": "fasterrcnn_data",
+        "datapath_ms": "ssd_retina_yolo_fasterrcnn_data",
         "model": FasterRCNN,
         "model_test": "fasterrcnn_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "fasterrcnn_data"),
             "batch_size": 4
         },
+        "prepare_data_ms": {
+            "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
+            "batch_size": 2,
+            "imagery_type": 'multispectral'
+        },
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
-        "regression_test_score": 0.10,
+        "regression_test_score": 0.40,
         "inferencing_parameter": {
             "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "fasterrcnn",
@@ -447,16 +500,22 @@ data = {
     "yolov3": {
         "model_name": "yolov3",
         "datapath": "yolo_data",
+        "datapath_ms": "ssd_retina_yolo_fasterrcnn_data",
         "model": YOLOv3,
         "model_test": "yolov3_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "yolo_data"),
             "batch_size": 4
         },
+        "prepare_data_ms": {
+            "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
+            "batch_size": 2,
+            "imagery_type": 'multispectral'
+        },
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
-        "regression_test_score": 0.10,
+        "regression_test_score": 0.40,
         "inferencing_parameter": {
             "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "yolo",
@@ -500,9 +559,9 @@ data = {
         "should_test": True,
         "test_feature_layer": True,
         "regression_parameter": "score",
-        "regression_test_score": 0.10,
+        "regression_test_score": 0.40,
         "inferencing_parameter": {
-            "model_type": "pass"
+            "model_type": "prediction_layer"
         },
         "inferencing_image_server": {
             "input_raster": "pass",
@@ -525,9 +584,9 @@ data = {
         "should_test": True,
         "test_feature_layer": True,
         "regression_parameter": "score",
-        "regression_test_score": 0.10,
+        "regression_test_score": 0.40,
         "inferencing_parameter": {
-            "model_type": "pass"
+            "model_type": "prediction_layer"
         },
         "inferencing_image_server": {
             "input_raster": "pass",
