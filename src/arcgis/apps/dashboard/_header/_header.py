@@ -1,5 +1,4 @@
 import arcgis
-from arcgis.apps.dashboard import Dashboard
 
 class Header(object):
 
@@ -95,6 +94,7 @@ class Header(object):
         # Header ends here.
 
     def _repr_html_(self):
+        from arcgis.apps.dashboard import Dashboard
         url = Dashboard._publish_random(self)
         return f"""<iframe src={url} width=300 height=300>"""
 

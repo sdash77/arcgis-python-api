@@ -1,5 +1,4 @@
 import uuid
-from .._utils._basewidget import _BaseWidget
 
 class MapLegend(object):
 

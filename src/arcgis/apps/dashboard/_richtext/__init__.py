@@ -1,1 +1,1 @@
-from arcgis.apps.dashboard._richtext._richtext import RichText
+from ._richtext import RichText

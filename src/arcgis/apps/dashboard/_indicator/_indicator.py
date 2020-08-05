@@ -1,8 +1,6 @@
 import uuid
 import arcgis
-from arcgis.apps.dashboard import Dashboard
 from .._utils._basewidget import _BaseWidget
-from .._utils._basewidget import Legend
 from .._utils._basewidget import NoDataProperties
 
 class Indicator(_BaseWidget):

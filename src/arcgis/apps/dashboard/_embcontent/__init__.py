@@ -1,1 +1,1 @@
-from arcgis.apps.dashboard._embcontent._embcontent import EmbeddedContent
+from ._embcontent import EmbeddedContent

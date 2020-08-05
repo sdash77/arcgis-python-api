@@ -1,1 +1,1 @@
-from arcgis.apps.dashboard._gauge._gauge import Gauge
+from ._gauge import Gauge

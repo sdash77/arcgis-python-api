@@ -1,1 +1,1 @@
-from arcgis.apps.dashboard._details._details import Details
+from ._details import Details

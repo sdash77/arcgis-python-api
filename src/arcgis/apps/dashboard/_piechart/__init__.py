@@ -1,1 +1,1 @@
-from arcgis.apps.dashboard._piechart._pie_chart import PieChart
+from ._pie_chart import PieChart

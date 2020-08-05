@@ -1,1 +1,1 @@
-from arcgis.apps.dashboard._header._header import Header
+from ._header import Header

@@ -1,1 +1,1 @@
-from arcgis.apps.dashboard._serialchart._serial_chart import SerialChart
+from ._serial_chart import SerialChart

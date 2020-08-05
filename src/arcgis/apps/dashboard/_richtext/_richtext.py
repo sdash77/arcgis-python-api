@@ -1,6 +1,5 @@
 import uuid
 import arcgis
-from arcgis.apps.dashboard import Dashboard
 from .._utils._basewidget import _BaseWidget, NoDataProperties
 
 class RichText(object):
@@ -33,6 +32,7 @@ class RichText(object):
         self._nodata = NoDataProperties._nodata_init()
     
     def _repr_html_(self):
+        from arcgis.apps.dashboard import Dashboard
         url = Dashboard._publish_random(self)
         return f"""<iframe src={url} width=900 height=300>"""
     

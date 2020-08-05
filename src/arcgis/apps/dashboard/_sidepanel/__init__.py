@@ -1,1 +1,1 @@
-from arcgis.apps.dashboard._sidepanel.side_panel import SidePanel
+from .side_panel import SidePanel
