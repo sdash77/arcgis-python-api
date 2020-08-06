@@ -285,8 +285,12 @@ def dissolve_boundaries(input_layer,
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
-
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Merge Layers')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None     
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Merge Layers', 
+                                            output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
@@ -441,8 +445,12 @@ def merge_layers(input_layer,
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
-
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Merge Layers')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None     
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Merge Layers', 
+                                            output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
@@ -721,8 +729,12 @@ def overlay_data(input_layer,
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
-
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Overlay Layers')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None     
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Overlay Layers',
+                                            output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
@@ -946,8 +958,12 @@ def calculate_fields(input_layer,
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
-
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Calculate Fields')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None     
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Calculate Fields', 
+                                            output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
@@ -1063,7 +1079,11 @@ def copy_to_data_store(
         params['output_name'] = output_name
         output_service = True
     else:
-        output_service = _create_output_service(gis, output_name, output_service_name, 'Copy To Data Store')
+        if context is not None:
+            output_datastore = context.get('dataStore', None)
+        else:
+            output_datastore = None             
+        output_service = _create_output_service(gis, output_name, output_service_name, 'Copy To Data Store', output_datastore=output_datastore)
         params['output_name'] = _json.dumps({
             "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
             "itemProperties": {"itemId" : output_service.itemid}})
