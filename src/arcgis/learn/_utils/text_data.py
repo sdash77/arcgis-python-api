@@ -115,6 +115,7 @@ class TextDataObject:
         self._label_cols = list()
         self._databunch = None
         self._training_indexes = list()
+        self.classes = None
 
     @classmethod
     def prepare_data_for_classification(
@@ -123,10 +124,10 @@ class TextDataObject:
             text_cols,
             label_cols,
             train_file="train.csv",
-            valid_file="valid.csv",
+            valid_file=None,
             val_split_pct=0.1,
             seed=42,
-            batch_size=16,
+            batch_size=8,
             process_labels=False,
             remove_html_tags=False,
             remove_urls=False
@@ -139,7 +140,6 @@ class TextDataObject:
             raise Exception(f"Provided data directory - {data}, does not exists")
 
         training_file_path = os.path.join(data, train_file)
-        validation_file_path = os.path.join(data, valid_file)
 
         if not os.path.exists(training_file_path):
             raise Exception(f"Provided data directory does not contain {train_file} file")
@@ -147,11 +147,15 @@ class TextDataObject:
         train_df = read_file(training_file_path)
         train_df = cls._preprocess_df(train_df, text_cols, label_cols, process_labels, remove_html_tags, remove_urls)
 
-        validation_file_exists = True if os.path.exists(validation_file_path) else False
         random.seed(seed)
 
+        if valid_file is not None and os.path.exists(os.path.join(data, valid_file)):
+            validation_file_exists = True
+        else:
+            validation_file_exists = False
+
         if validation_file_exists:
-            valid_df = read_file(validation_file_path)
+            valid_df = read_file(os.path.join(data, valid_file))
             valid_df = cls._preprocess_df(valid_df, text_cols, label_cols, process_labels, remove_html_tags, remove_urls)
         else:
             validation_indexes = random.sample(range(train_df.shape[0]), round(val_split_pct * train_df.shape[0]))
@@ -169,7 +173,10 @@ class TextDataObject:
             train_df.reset_index(drop=True, inplace=True)
             valid_df.reset_index(drop=True, inplace=True)
             del temp_df
-
+        if len(label_cols)>1:
+            text_data.classes = label_cols
+        else:
+            text_data.classes = valid_df[label_cols[0]].unique().tolist()
         text_data._bs = batch_size
         text_data._text_cols = text_cols
         text_data._label_cols = label_cols

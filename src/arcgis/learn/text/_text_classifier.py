@@ -70,7 +70,11 @@ class TextClassifier(ArcGISModel):
     ---------------------   -------------------------------------------
     backbone                Optional string. Specifying the HuggingFace
                             transformer model name to be used to train the
-                            classifier. Default set to `bert-base-cased`
+                            classifier. Default set to `bert-base-cased`.
+
+                            To learn more about the available models or
+                            choose models that are suitable for your dataset,
+                            kindly visit:- https://huggingface.co/transformers/pretrained_models.html
     =====================   ===========================================
 
     **kwargs**
@@ -114,6 +118,7 @@ class TextClassifier(ArcGISModel):
         self.learn.model = self.learn.model.to(self._device)
         layer_groups = self.learn.model.get_layer_groups()
         self.learn.split(layer_groups)
+        self._freeze()
 
     @staticmethod
     def _infer_model_type(model_name):
@@ -193,16 +198,21 @@ class TextClassifier(ArcGISModel):
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         architecture            Required string. name of the transformer
-                                backbone one wish to use
+                                backbone one wish to use. To learn more about
+                                the available models or choose models that are
+                                suitable for your dataset, kindly visit:-
+                                https://huggingface.co/transformers/pretrained_models.html
         =====================   ===========================================
 
         :returns: a tuple containing the available models for the given transformer backbone
         """
+        if not HAS_FASTAI:
+            _raise_fastai_import_error(import_exception=import_exception)
         return TransformerForTextClassification._available_backbone_models(architecture)
 
-    def freeze(self):
+    def _freeze(self):
         """
-        Freeze up to last layer group of the model for fine-tuning.
+        Freeze up to last layer group to train only the last layer group of the model.
         """
         self.learn.freeze()
 
@@ -331,7 +341,12 @@ class TextClassifier(ArcGISModel):
 
     def get_accuracy_and_error_metrics(self):
         """
-        :returns: metrics for classification model.
+        Calculates the following  metrics:
+            * accuracy:   the number of correctly predicted labels in the validation set
+                          divided by the total number of items in the validation set
+            * error-rate: 1 - accuracy (which is calculated above)
+
+        :returns: a dictionary containing the metrics for classification model.
         """
 
         self._check_requisites()
@@ -394,11 +409,12 @@ class TextClassifier(ArcGISModel):
                                 of 0.25 is set. 
         =====================   ===========================================
 
-        :returns: In case of single label classification problem, a tuple
-                  containing the class label and confidence score.
-                  In case of multi label classification problem, a tuple
-                  containing the class labels, a list containing 1's for the
-                  predicted labels 0's otherwise and a score for each label
+        :returns: * In case of single label classification problem, a tuple containing
+                  the text, its predicted class label and the confidence score.
+
+                  * In case of multi label classification problem, a tuple containing
+                  the text, its predicted class labels, a list containing 1's for the
+                  predicted labels, 0's otherwise and list containing a score for each label
         """
         if self.is_multilabel_problem is False and thresh is not None:
             logger.warning("Passing a threshold value for non multi-label classification task "
@@ -418,7 +434,7 @@ class TextClassifier(ArcGISModel):
             return result
         else:
             preds = self._predict(text_or_list, thresh)
-            return [text_or_list, *preds]
+            return (text_or_list, *preds)
 
     def _save_df_to_html(self, path):
         self._check_requisites()

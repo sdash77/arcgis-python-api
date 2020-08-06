@@ -371,15 +371,15 @@ def _extract_bands_tfm(tensor_batch, band_indices):
 
 
 def prepare_textdata(
+        path,
         task,
-        data,
         text_cols,
         label_cols,
         train_file="train.csv",
-        valid_file="valid.csv",
+        valid_file=None,
         val_split_pct=0.1,
         seed=42,
-        batch_size=16,
+        batch_size=8,
         process_labels=False,
         remove_html_tags=False,
         remove_urls=False
@@ -390,11 +390,11 @@ def prepare_textdata(
     =====================   =================================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------------
+    path                    Required directory path. The directory path where
+                            the training and validation files are present.
+    ---------------------   -------------------------------------------------
     task                    Required string. The task for which the dataset is
                             prepared. Available choice at this point is "classification"
-    ---------------------   -------------------------------------------------
-    data                    Required directory path. The directory path where
-                            the train, test and validation files are present.
     ---------------------   -------------------------------------------------
     text_cols               Required string. The column that will be used as
                             feature.
@@ -404,11 +404,16 @@ def prepare_textdata(
                             in case of multi-label classification problem
     ---------------------   -------------------------------------------------
     train_file              Optional string. The file name containing the
-                            training data.
+                            training data. Supported file formats/extensions are
+                            .csv and .tsv
                             Default value is `train.csv`
     ---------------------   -------------------------------------------------
     valid_file              Optional string. The file name containing the
-                            validation data.
+                            validation data. Supported file formats/extensions
+                            are .csv and .tsv.
+                            Default value is `None`. If None then some portion
+                            of the training data will be kept for validation
+                            (based on the value of `val_split_pct` parameter)
     ---------------------   -------------------------------------------------
     val_split_pct           Optional float. Percentage of training data to keep
                             as validation.
@@ -451,7 +456,7 @@ def prepare_textdata(
 
     if task == "classification":
         return TextDataObject.prepare_data_for_classification(
-            data,
+            path,
             text_cols,
             label_cols,
             train_file=train_file,
