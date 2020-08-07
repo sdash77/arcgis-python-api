@@ -115,7 +115,6 @@ class TextDataObject:
         self._label_cols = list()
         self._databunch = None
         self._training_indexes = list()
-        self.classes = None
 
     @classmethod
     def prepare_data_for_classification(
