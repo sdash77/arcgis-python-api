@@ -1146,9 +1146,9 @@ class GeoAccessor(object):
                              svg)
         return
     @staticmethod
-    def from_feather(path, 
-                     spatial_column="SHAPE", 
-                     columns=None, 
+    def from_feather(path,
+                     spatial_column="SHAPE",
+                     columns=None,
                      use_threads=True):
         """
         Load a feather-format object from the file path.
@@ -1156,36 +1156,36 @@ class GeoAccessor(object):
         ======================    =========================================================
         **Argument**              **Description**
         ----------------------    ---------------------------------------------------------
-        path                      String. Path object or file-like object. Any valid string 
+        path                      String. Path object or file-like object. Any valid string
                                   path is acceptable. The string could be a URL. Valid
                                   URL schemes include http, ftp, s3, and file. For file URLs, a host is
                                   expected. A local file could be:
-                                  
+
                                   ``file://localhost/path/to/table.feather``.
-    
+
                                   If you want to pass in a path object, pandas accepts any
                                   ``os.PathLike``.
-    
+
                                   By file-like object, we refer to objects with a ``read()`` method,
                                   such as a file handler (e.g. via builtin ``open`` function)
                                   or ``StringIO``.
         ----------------------    ---------------------------------------------------------
         spatial_column            Optional String. The default is `SHAPE`. Specifies the column
-                                  containing the geo-spatial information. 
+                                  containing the geo-spatial information.
         ----------------------    ---------------------------------------------------------
-        columns                   Sequence/List/Array. The default is `None`.  If not 
+        columns                   Sequence/List/Array. The default is `None`.  If not
                                   provided, all columns are read.
         ----------------------    ---------------------------------------------------------
-        use_threads               Boolean. The default is `True`. Whether to parallelize 
+        use_threads               Boolean. The default is `True`. Whether to parallelize
                                   reading using multiple threads.
         ======================    =========================================================
-        
+
         :returns: pd.DataFrame
-        
+
         """
-        return read_feather(path=path, 
-                            spatial_column=spatial_column, 
-                            columns=columns, 
+        return read_feather(path=path,
+                            spatial_column=spatial_column,
+                            columns=columns,
                             use_threads=use_threads)
     #----------------------------------------------------------------------
     def set_geometry(self, col, sr=None):
@@ -1207,7 +1207,7 @@ class GeoAccessor(object):
                     self._sr = SpatialReference({'wkid' : 4326})
             self._name = col
             q = self._data[col].isna()
-            self._data.loc[q, "SHAPE"] = None
+            #self._data.loc[q, "SHAPE"] = None
             self._data[col] = GeoArray(self._data[col])
         elif isinstance(col, str) and  \
              col in self._data.columns and \
@@ -2104,8 +2104,8 @@ class GeoAccessor(object):
                                         RuntimeError will be raised. When False, the API will not use the
                                         M value.
         ---------------------------     --------------------------------------------------------------------
-        sanitize_columns                Optional Boolean. If True, column names will be converted to string, 
-                                        invalid characters removed and other checks will be performed. The 
+        sanitize_columns                Optional Boolean. If True, column names will be converted to string,
+                                        invalid characters removed and other checks will be performed. The
                                         default is True.
         ===========================     ====================================================================
 
@@ -2203,7 +2203,7 @@ class GeoAccessor(object):
         --------------------    ---------------------------------------------------------
         sr                      Optional integer. The WKID of the spatial reference.
         --------------------    ---------------------------------------------------------
-        geometry_column         Optional String.  The name of the geometry column to 
+        geometry_column         Optional String.  The name of the geometry column to
                                 convert to the arcgis.Geometry Objects (new at version 1.8.1)
         ====================    =========================================================
 
@@ -2241,7 +2241,7 @@ class GeoAccessor(object):
             df.spatial.project(sr)
             return df
         else:
-                
+
             if geocoder is None:
                 geocoder = arcgis.env.active_gis._tools.geocoders[0]
             sr = dict(geocoder.properties.spatialReference)
@@ -2264,7 +2264,7 @@ class GeoAccessor(object):
                             x = loc['x']
                             y = loc['y']
                             geoms.append(arcgis.geometry.Geometry({'x': x, 'y': y, 'spatialReference': sr}))
-    
+
                         except:
                             x, y = None, None
                             try:
@@ -3352,12 +3352,12 @@ class GeoAccessor(object):
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         HASPYPROJ = True
         try:
-            import imp 
+            import imp
             imp.find_module('pyproj')
         except ImportError:
             HASPYPROJ = False
         try:
-            
+
             if isinstance(spatial_reference, (int, str)) and HASARCPY:
                 import arcpy
                 spatial_reference = arcpy.SpatialReference(spatial_reference)
