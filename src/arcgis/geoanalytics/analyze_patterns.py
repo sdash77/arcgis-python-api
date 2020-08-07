@@ -280,7 +280,13 @@ def forest(input_layer,
     else:
         output_service_name=output_name.replace(' ', '_')
 
-    output_service=_create_output_service(gis, output_name, output_service_name, 'Forest Based Classification And Regression')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None     
+
+    output_service=_create_output_service(gis, output_name, output_service_name, 'Forest Based Classification And Regression', 
+                                          output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
@@ -475,10 +481,15 @@ def gwr(input_layer,
                 raise ValueError(f"Value: {v} not supported at this version of `GWR`")
             if v:
                 params[k] = lookup[v.lower()]
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None     
     output_service = _create_output_service(gis,
                                             params['output_trained_name'],
                                             params['output_trained_name'],
-                                            'Generalized Weighted Regression')
+                                            'Generalized Weighted Regression',
+                                            output_datastore=output_datastore)
     params['output_trained_name'] = _json.dumps(
         {
             "serviceProperties": {"name" : output_trained_name,
@@ -688,8 +699,11 @@ def glr(input_layer,
         output_name=output_service_name.replace(' ', '_')
     else:
         output_service_name=output_name.replace(' ', '_')
-
-    output_service=_create_output_service(gis, output_name, output_service_name, 'Generalized Linear Regression')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None     
+    output_service=_create_output_service(gis, output_name, output_service_name, 'Generalized Linear Regression',output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
@@ -838,7 +852,12 @@ def find_point_clusters(
     else:
         output_service_name=output_name.replace(' ', '_')
 
-    output_service=_create_output_service(gis, output_name, output_service_name, 'Find Point Clusters')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None     
+
+    output_service=_create_output_service(gis, output_name, output_service_name, 'Find Point Clusters', output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
@@ -1048,8 +1067,11 @@ def calculate_density(
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
-
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Calculate Density')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Calculate Density', output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
@@ -1223,8 +1245,11 @@ def find_hot_spots(point_layer,
         output_name=output_service_name.replace(' ', '_')
     else:
         output_service_name=output_name.replace(' ', '_')
-
-    output_service=_create_output_service(gis, output_name, output_service_name, 'Find Hotspots')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None    
+    output_service=_create_output_service(gis, output_name, output_service_name, 'Find Hotspots', output_datastore=output_datastore)
 
     params['output_name']=_json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},

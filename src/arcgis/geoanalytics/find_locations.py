@@ -195,8 +195,13 @@ def geocode_locations(input_layer,
         geocode_parameters = tbx.analyze_geocode_input(input_table=input_layer,
                                                        geocode_service_url=geocode_service_url)
         params['geocode_parameters'] = geocode_parameters
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None         
     output_service = _create_output_service(gis, output_name,
-                                            output_service_name, 'Geocoded Locations')
+                                            output_service_name, 'Geocoded Locations',
+                                            output_datastore=output_datastore)
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
@@ -382,8 +387,11 @@ def detect_incidents(input_layer,
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
-
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Detect Track Incidents')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None     
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Detect Track Incidents', output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
@@ -640,10 +648,15 @@ def find_dwell_locations(input_layer,
                 raise ValueError(f"Value: {v} not supported at this version of `find_dwell_locations`")
             if v:
                 params[k] = lookup[v.lower()]
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None     
     output_service = _create_output_service(gis,
                                             params['output_name'],
                                             params['output_name'],
-                                            'Find Dwell Locations')
+                                            'Find Dwell Locations',
+                                            output_datastore=output_datastore)
     params['output_name'] = _json.dumps(
         {
             "serviceProperties": {"name" : output_name,
@@ -824,7 +837,12 @@ def find_similar_locations(
     else:
         output_service_name = output_name.replace(' ', '_')
 
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Find Similar Locations')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None     
+
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Find Similar Locations', output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},

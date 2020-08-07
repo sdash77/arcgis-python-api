@@ -241,8 +241,12 @@ def build_multivariable_grid(input_layers,
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
-
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Build Multi Variable Grid ')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None     
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Build Multi Variable Grid ', 
+                                            output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
@@ -454,8 +458,12 @@ def aggregate_points(point_layer,
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
-
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Aggregate Points')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None     
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Aggregate Points', 
+                                            output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
@@ -597,8 +605,12 @@ def describe_dataset(input_layer,
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
-
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Merge Layers')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None     
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Describe Dataset', 
+                                            output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
@@ -847,8 +859,12 @@ def join_features(target_layer,
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
-
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Join Features')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None     
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Join Features', 
+                                            output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
@@ -1081,8 +1097,12 @@ def reconstruct_tracks(input_layer,
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
-
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Reconstruct Tracks')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None     
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Reconstruct Tracks', 
+                                            output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
@@ -1252,8 +1272,12 @@ def summarize_attributes(input_layer,
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
-
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Summarize Attributes')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None     
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Summarize Attributes', 
+                                            output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
@@ -1500,8 +1524,12 @@ def summarize_within(summarized_layer,
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
-
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Summarize Within')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None     
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Summarize Within', 
+                                            output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},

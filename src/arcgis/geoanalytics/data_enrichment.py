@@ -104,8 +104,11 @@ def enrich_from_grid(input_layer,
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
-
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Enrich Grid Layers')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None     
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Enrich Grid Layers', output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
