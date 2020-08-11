@@ -1133,7 +1133,7 @@ def inference_las(path, pointcnn_model, out_path=None, print_metrics=False, rema
     global_false_negatives = [0] * pointcnn_model._data.c
 
     for category in categories_list:
-        output_path = os.path.join(out_path ,category + "_pred" + SAVE_TO_EXT)
+        output_path = os.path.join(out_path, category + "_pred" + SAVE_TO_EXT)
         if not os.path.exists(os.path.join(out_path)):
             os.makedirs(os.path.join(out_path))
         pred_list = [pred for pred in os.listdir(out_path)

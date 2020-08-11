@@ -10,7 +10,7 @@ from arcgis.raster._util import _set_context, _id_generator
 from .models import SingleShotDetector, UnetClassifier, FeatureClassifier, RetinaNet, \
       PSPNetClassifier, EntityRecognizer, MaskRCNN, DeepLab, PointCNN, ModelExtension, \
       FasterRCNN, SuperResolution, FullyConnectedNetwork, MLModel, YOLOv3, HEDEdgeDetector, \
-      BDCNEdgeDetector
+      BDCNEdgeDetector, ImageCaptioner
 
 from ._utils.pointcloud_data import Transform3d
 from ._data import prepare_data, prepare_tabulardata, prepare_textdata

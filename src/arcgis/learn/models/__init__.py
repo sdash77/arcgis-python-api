@@ -16,3 +16,4 @@ from ._faster_rcnn import FasterRCNN
 from ._superres import SuperResolution
 from ._hed import HEDEdgeDetector
 from ._bdcn import BDCNEdgeDetector
+from ._image_captioner import ImageCaptioner
