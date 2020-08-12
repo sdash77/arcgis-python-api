@@ -7904,8 +7904,11 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         """
         # validation
         newcollection = self._clone_raster_collection()
-        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByTime(self._raster_collection.filterByCalendarRange(calendar_field=calendar_field, start=start, end=end,time_field_name=time_field_name,date_time_format=date_time_format))
-        bnewcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj._as_df()
+        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByCalendarRange(calendar_field=calendar_field, start=start, end=end,
+                                                          time_field_name=time_field_name,
+                                                          date_time_format=date_time_format)
+        # newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByTime(self._raster_collection.filterByCalendarRange(calendar_field=calendar_field, start=start, end=end,time_field_name=time_field_name,date_time_format=date_time_format))
+        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj._as_df()
         return newcollection
     
     def filter_by_geometry(self, query_geometry_or_extent):

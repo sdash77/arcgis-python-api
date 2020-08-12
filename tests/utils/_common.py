@@ -30,9 +30,9 @@ TESTS_UTILS_DIR = os.path.abspath(os.path.join(
 UNIT_TESTS_DIR = os.path.abspath(os.path.join(
     TESTS_DIR,
     "unit"))
-SANITY_TESTS_DIR = os.path.abspath(os.path.join(
+SMOKE_TESTS_DIR = os.path.abspath(os.path.join(
     TESTS_DIR,
-    "sanity"))
+    "smoke"))
 INTEGRATION_TESTS_DIR = os.path.abspath(os.path.join(
     TESTS_DIR,
     "integration"))
