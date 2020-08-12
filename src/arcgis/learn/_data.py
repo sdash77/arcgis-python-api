@@ -40,6 +40,7 @@ try:
     from fastai.tabular.transform import FillMissing, Categorify, Normalize
     from fastai.tabular import cont_cat_split, add_datepart
     from ._utils.tabular_data import TabularDataObject
+    from ._utils.text_data import TextDataObject
     import random
     import PIL
     HAS_FASTAI = True
@@ -100,6 +101,7 @@ def get_installation_command():
 def _raise_fastai_import_error(import_exception=import_exception):
     installation_steps = get_installation_command()
     raise Exception(f"""{import_exception} \n\nThis module requires fastai, PyTorch, torchvision and scikit-image as its dependencies.\n{installation_steps}""")
+
 
 class _ImagenetCollater():
     def __init__(self, chip_size):
@@ -368,6 +370,110 @@ def _extract_bands_tfm(tensor_batch, band_indices):
     return (x_batch, y_batch)
 
 
+def prepare_textdata(
+        path,
+        task,
+        text_cols,
+        label_cols,
+        train_file="train.csv",
+        valid_file=None,
+        val_split_pct=0.1,
+        seed=42,
+        batch_size=8,
+        process_labels=False,
+        remove_html_tags=False,
+        remove_urls=False
+    ):
+    """
+    Prepares a text data object from the files present at data folder
+
+    =====================   =================================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------------
+    path                    Required directory path. The directory path where
+                            the training and validation files are present.
+    ---------------------   -------------------------------------------------
+    task                    Required string. The task for which the dataset is
+                            prepared. Available choice at this point is "classification"
+    ---------------------   -------------------------------------------------
+    text_cols               Required string. The column that will be used as
+                            feature.
+    ---------------------   -------------------------------------------------
+    label_cols              Required list. The list of columns denoting the
+                            class label to predict. Provide a list of columns
+                            in case of multi-label classification problem
+    ---------------------   -------------------------------------------------
+    train_file              Optional string. The file name containing the
+                            training data. Supported file formats/extensions are
+                            .csv and .tsv
+                            Default value is `train.csv`
+    ---------------------   -------------------------------------------------
+    valid_file              Optional string. The file name containing the
+                            validation data. Supported file formats/extensions
+                            are .csv and .tsv.
+                            Default value is `None`. If None then some portion
+                            of the training data will be kept for validation
+                            (based on the value of `val_split_pct` parameter)
+    ---------------------   -------------------------------------------------
+    val_split_pct           Optional float. Percentage of training data to keep
+                            as validation.
+                            By default 10% data is kept for validation.
+    ---------------------   -------------------------------------------------
+    seed                    Optional integer. Random seed for reproducible
+                            train-validation split.
+                            Default value is 42.
+    ---------------------   -------------------------------------------------
+    batch_size              Optional integer. Batch size for mini batch gradient
+                            descent (Reduce it if getting CUDA Out of Memory
+                            Errors).
+                            Default value is 16.
+    ---------------------   -------------------------------------------------
+    process_labels          Optional boolean. If true, default processing functions
+                            will be called on label columns as well.
+                            Default value is False.
+    ---------------------   -------------------------------------------------
+    remove_html_tags        Optional boolean. If true, remove html tags from text.
+                            Default value is False.
+    ---------------------   -------------------------------------------------
+    remove_urls             Optional boolean. If true, remove urls from text.
+                            Default value is False.
+    =====================   =================================================
+
+    :returns: `TextData` object
+
+    """
+    # allowed_tasks = ["classification", "summarization", "translation",
+    #                  "question-answering", "ner", "text-generation"]
+
+    if not HAS_FASTAI:
+        _raise_fastai_import_error(import_exception)
+
+    # if task not in allowed_tasks:
+    #     raise Exception(f"Wrong task choosen. Allowed tasks are {allowed_tasks}")
+
+    if isinstance(label_cols, (str, bytes)):
+        label_cols = [label_cols]
+
+    if task == "classification":
+        return TextDataObject.prepare_data_for_classification(
+            path,
+            text_cols,
+            label_cols,
+            train_file=train_file,
+            valid_file=valid_file,
+            val_split_pct=val_split_pct,
+            seed=seed,
+            batch_size=batch_size,
+            process_labels=process_labels,
+            remove_html_tags=remove_html_tags,
+            remove_urls=remove_urls
+        )
+    else:
+        logger = logging.getLogger()
+        logger.info(f"Wrong task - {task} provided. This function can handle only `classification` task currently")
+
+
+
 def prepare_tabulardata(
         input_features,
         variable_predict,
@@ -548,7 +654,8 @@ def prepare_data(path,
                             map.txt file. If the path does not contain the 
                             map.txt file pass either of 'PASCAL_VOC_rectangles', 
                             'KITTI_rectangles', 'RCNN_Masks', 'Classified_Tiles', 
-                            'Labeled_Tiles', 'Imagenet' and 'PointCloud'.                    
+                            'Labeled_Tiles', 'Imagenet', 'PointCloud' and 
+                            'ImageCaptioning'.
     ---------------------   -------------------------------------------
     resize_to               Optional integer. Resize the image to given size.
     =====================   ===========================================
@@ -1014,6 +1121,15 @@ def prepare_data(path,
         else:
             transform_fn = transforms
         return pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type, transform_fn, **kwargs)
+    elif dataset_type == "ImageCaptioning":
+        from ._utils.image_captioning_data import prepare_captioning_dataset
+        return prepare_captioning_dataset(path,
+                                          chip_size,
+                                          batch_size,
+                                          val_split_pct,
+                                          transforms,
+                                          resize_to,
+                                          **kwargs)
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
 

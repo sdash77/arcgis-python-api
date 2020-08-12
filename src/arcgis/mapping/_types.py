@@ -77,6 +77,22 @@ class SceneLayer(Layer):
         Constructs a SceneLayer given a web scene layer URL
         """
         super(SceneLayer, self).__init__(url, gis)
+
+    @property
+    def _lyr_json(self):
+        out = super()._lyr_json
+        layer_type = self.properties.layerType.lower()
+        # Rest API layer type is a bit different from JS API types
+        if layer_type == "point":
+            out["type"] = "SceneLayer"
+        if layer_type == "3dobject":
+            out["type"] = "SceneLayer"
+        if layer_type == "integratedmesh":
+            out["type"] = "IntegratedMeshLayer"
+        if layer_type == "pointcloud":
+            out["type"] = "PointCloudLayer"
+        return out 
+
 ###########################################################################
 class _ApplicationProperties(object):
     """
@@ -190,7 +206,28 @@ class WebMap(HasTraits, collections.OrderedDict):
         Constructs an empty WebMap object. If an web map Item is passed, constructs a WebMap object from item on
         ArcGIS Online or Enterprise.
         """
+
+        #Dashboard items.
+        self.id = str(uuid4())
+        self.type = "mapWidget"
+
+        self._pop_ups = False
+        self._navigation = False
+        self._scale_bar = "none"
+        self._bookmarks = False
+        self._legend = False
+        self._layer_visibility = False
+        self._basemap_switcher = False
+        self._search = False
+        self._zoom = False
+        self._events = Events._create_events()
+
+        self._height = 1
+        self._width = 1
+        #Dashboard items end here.
+
         from arcgis.widgets import MapView
+
         if webmapitem:
             if webmapitem.type.lower() != 'web map':
                 raise TypeError("item type must be web map")
@@ -253,6 +290,10 @@ class WebMap(HasTraits, collections.OrderedDict):
                    .get('viewpoint', {})\
                    .get('rotation', 0)
         self._mapview.rotation = rotation
+
+    @property
+    def events(self):
+        return self._events
 
     def _ipython_display_(self, *args, **kwargs):
        return self._mapview._ipython_display_(*args, **kwargs)
@@ -935,8 +976,8 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     def _eval_map_viewer_keywords(self):
         # if user passes typeKeywords, adhere to what they have set without overriding anything
-        type_keywords = set(self.item.typeKeywords)
-        if 'OfflineDisabled' not in self.item.typeKeywords:
+        type_keywords = set(self.item.typeKeywords) if self.item else set([])
+        if not 'OfflineDisabled' in type_keywords:
             if self.layers and self._is_offline_capable_map():
                 type_keywords.add("Offline")
             else:
@@ -1243,7 +1284,71 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         self._webmapdict['operationalLayers'].remove(layer)
         self._layers.remove(PropertyMap(layer))
+        
+    def get_layer(self, item_id=None, title=None, layer_id=None):
+        """
+        Returns the first layer with a matching itemId, title, or layer_id in the webmap's operational layers.
+        Pass one of the three parameters into the method to return the layer.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item_id                Optional string. Pass the item_id for the operational layer you are trying
+                               to reference in the webmap.
+        ------------------     --------------------------------------------------------------------
+        title                  Optional string. Pass the title for the operational layer you are trying
+                               to reference in the webmap.
+        ------------------     --------------------------------------------------------------------
+        layer_id               Optional string. Pass the id for the operational layer you are trying
+                               to reference in the webmap.
+        ==================     ====================================================================
+        
+        :return: Layer as a dictionary
+        """
+        if item_id is None and title is None and layer_id is None:
+            raise ValueError("Please pass at least one parameter into the function")
+        if self.layers:
+            for layer in self.layers:
+                # item id is optional in the webmap spec, so we need to try/except
+                try:
+                    if (title == layer["title"]) or (layer_id == layer["id"]) or (item_id == layer["itemId"]):
+                        return layer
+                except Exception:
+                    pass
+        return None
 
+    def get_table(self, item_id=None, title=None, layer_id=None):
+        """
+        Returns the first table with a matching itemId, title, or layer_id in the webmap's tables.
+        Pass one of the three parameters into the method to return the table.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item_id                Optional string. Pass the item_id for the table you are trying
+                               to reference in the webmap.
+        ------------------     --------------------------------------------------------------------
+        title                  Optional string. Pass the title for the table you are trying
+                               to reference in the webmap.
+        ------------------     --------------------------------------------------------------------
+        layer_id               Optional string. Pass the id for the table you are trying
+                               to reference in the webmap.
+        ==================     ====================================================================
+
+        :return: Table as a dictionary
+        """
+        if item_id is None and title is None and layer_id is None:
+            raise ValueError("Please pass at least one parameter into the function")
+        if self.tables:
+            for table in self.tables:
+                # item id is optional in the webmap spec, so we need to try/except
+                try:
+                    if (title == table["title"]) or (layer_id == table["id"]) or (item_id == table["itemId"]):
+                        return table
+                except Exception:
+                    pass
+        return None
+        
     @property
     def offline_areas(self):
         """
@@ -1251,6 +1356,229 @@ class WebMap(HasTraits, collections.OrderedDict):
         :return:
         """
         return OfflineMapAreaManager(self.item, self._gis)
+
+    @property
+    def pop_ups(self):
+        """
+        :return: True if popups are enabled for dashboard widget.
+        """
+        return self._pop_ups
+
+    @pop_ups.setter
+    def pop_ups(self, value):
+        """
+        Set popup True or False for dashboard widget.
+        """
+        self._pop_ups = value
+        if value in [0, '0', False, 'false']:
+            self._pop_ups = False
+
+    @property
+    def bookmarks(self):
+        """
+        :return: True if bookmarks are enabled for dashboard widget.
+        """
+        return self._bookmarks
+
+    @bookmarks.setter
+    def bookmarks(self, value):
+        """
+        Set bookmarks True or False for dashboard widget.
+        """
+        self._bookmarks = value
+        if value in [0, '0', False, 'false']:
+            self._bookmarks = False
+
+    @property
+    def legend(self):
+        """
+        :return: True if legend visibility is enabled for dashboard widget.
+        """
+        return self._legend
+
+    @legend.setter
+    def legend(self, value):
+        """
+        Set legend visibility to True or False.
+        """
+        self._legend = value
+        if value in [0, '0', False, 'false']:
+            self._legend = False
+
+    @property
+    def layer_visibility(self):
+        """
+        :return: True if layer visibility is enabled for dashboard widget.
+        """
+        return self._layer_visibility
+
+    @layer_visibility.setter
+    def layer_visibility(self, value):
+        """
+        Set layer visibility for dashboard widget.
+        """
+        self._layer_visibility = value
+        if value in [0, '0', False, 'false']:
+            self._layer_visibility = False
+
+    @property
+    def basemap_switcher(self):
+        """
+        :return: True if Basemap switcher is enabled.
+        """
+        return self._basemap_switcher
+
+    @basemap_switcher.setter
+    def basemap_switcher(self, value):
+        """
+        Set basemap switcher True or False, for dashboard widget.
+        """
+        self._basemap_switcher = value
+        if value in [0, '0', False, 'false']:
+            self._basemap_switcher = False
+
+    @property
+    def search(self):
+        """
+        :return: True if search is enabled for dashboard widget.
+        """
+        return self._search
+
+    @search.setter
+    def search(self, value):
+        """
+        Set search True or False, for dashboard widget.
+        """
+        self._search = value
+        if value in [0, '0', False, 'false']:
+            self._search = False
+
+    @property
+    def zoom(self):
+        """
+        :return: zoom enabled or disabled for dashboard widget.
+        """
+        return self._zoom
+
+    @zoom.setter
+    def zoom(self, value):
+        """
+        Enable or disable zoom for dashboard widget.
+        """
+        self._zoom = value
+        if value in [0, '0', False, 'false']:
+            self._zoom = False
+
+    @property
+    def navigation(self):
+        """
+        :return: navigation enabled or disabled.
+        """
+        return self._navigation
+
+    @navigation.setter
+    def navigation(self, value):
+        """
+        Enable or disable navigation for dashboard widget.
+        """
+        if value in [0, '0', False, 'false']:
+            self._navigation = False
+        self._navigation = True
+
+    @property
+    def scale_bar(self):
+        """
+        :return: Scale bar from ("none", "ruler", "scale")
+        """
+        return self._scale_bar
+
+    @scale_bar.setter
+    def scale_bar(self, value):
+        """
+        Set scale bar for dashboard widget.
+        Choose from "line" or "ruler" or set "none" to disable.
+        """
+        self._scale_bar = value
+        if value not in ["none", "line", "ruler"]:
+            self._scale_bar = "none"
+
+    @property
+    def height(self):
+        """
+        :return: Height of the widget
+        """
+        return self._height
+
+    @height.setter
+    def height(self, value):
+        """
+        Set height of the widget, between 0 and 1.
+        """
+        if value > 1:
+            self._height = 1
+        elif value < 0:
+            self._height = 0
+        else:
+            self._height = value
+
+    @property
+    def width(self):
+        """
+        :return: Width of the widget
+        """
+        return self._width
+
+    @width.setter
+    def width(self, value):
+        """
+        Set width of the widget, between 0 and 1.
+        """
+        if value > 1:
+            self._width = 1
+        elif value < 0:
+            self._width = 0
+        else:
+            self._width = value
+
+    def _convert_to_json(self):
+        data = {
+            "events":[],
+            "type": "mapWidget",
+            "flashRepeats": 3,
+            "itemId": self.item.id,
+            "mapTools": [],
+            "showNavigation": self.navigation,
+            "showPopup": self.pop_ups,
+            "scalebarStyle": self.scale_bar,
+            "layers": [{"type": "featureLayerDataSource", "layerId": layer['id']} for layer in self.layers],
+            "id": self.id,
+            "name": self.item.title,
+            "caption": self.item.name,
+            "showLastUpdate": True,
+            "noDataVerticalAlignment": "middle",
+            "showCaptionWhenNoData": False,
+            "showDescriptionWhenNoData": False
+        }
+
+        if self.bookmarks:
+            data['mapTools'].append({"type": "bookmarksTool"})
+
+        if self.legend:
+            data['mapTools'].append({"type": "legendTool"})
+
+        if self.layer_visibility:
+            data['mapTools'].append({'type': "mapContentsTool"})
+
+        if self.basemap_switcher:
+            data['mapTools'].append({"type": "basemapGalleryTool"})
+
+        if self.search:
+            data['mapTools'].append({"type": "searchTool"})
+        
+        if self.events.enable:
+            data["events"].append({"type":self.events.type, "actions":self.events.synced_widgets})
+
+        return data
 
 ###########################################################################
 class PackagingJob(object):
@@ -2219,11 +2547,15 @@ class OfflineMapAreaManager(object):
                         break
         update_items = {
             "properties": {
-                "extent": _extent,
                 "status":"processing",
                 "packageRefreshSchedule": refresh_schedule
             }
         }
+        update_items['properties'].update(item.properties)
+        if _extent and not 'extent' in item.properties:
+            update_items['properties']['extent'] = _extent
+        if area and not 'area' in item.properties:
+            update_items['properties']['area'] = _extent
         item.update(item_properties=update_items)
         # End Item Update Refresh Call
 
@@ -2708,6 +3040,8 @@ class MapImageLayerManager(_GISResource):
     """
 
     def __init__(self, url, gis=None, map_img_lyr=None):
+        if url.split("/")[-1].isdigit():
+            url = url.replace(f"/{url.split('/')[-1]}", "")
         super(MapImageLayerManager, self).__init__(url, gis)
         self._ms = map_img_lyr
 
@@ -3047,7 +3381,8 @@ class MapImageLayer(Layer):
             #part1 = url[:res[1]]
             #part2 = url[res[1]:]
             #adminURL = url.replace("/rest/", "/admin/").replace("/MapServer", ".MapServer")#"%s%s%s" % (part1, addText, part2)
-
+            if adminURL.split("/")[-1].isdigit():
+                url = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
             self._admin = MapImageLayerManager(adminURL, self._gis, self)
         return self._admin
 
@@ -4063,3 +4398,63 @@ class MapImageLayer(Layer):
                         return gpRes['folders']
                 else:
                     return None
+###########################################################################
+
+class Events(object):
+
+    @classmethod
+    def _create_events(cls, enable=False):
+        events = Events()
+
+        events._enable = False
+        events._type = "extentChanged"
+        events._actions = []
+
+        events.enable = enable
+
+        return events
+
+    @property
+    def enable(self):
+        return self._enable
+
+    @enable.setter
+    def enable(self, value):
+        self._enable = bool(value)
+
+    @property
+    def type(self):
+        return self._type
+
+    @property
+    def synced_widgets(self):
+        return self._actions
+
+    def sync_widget(self, widgets):
+
+        if self.enable == False:
+            raise Exception("Please enable events")
+
+        else:
+            if isinstance(widgets, list):
+                for widget in widgets:
+                    if widget.type == "mapWidget":
+                        action_type = "setExtent"
+                        self._actions.append({"type":action_type, "targetId":widget.id})
+                    else:
+                        action_type = "filter"
+                        widget_id = str(widget.id)+'#main'
+                        self._actions.append({"type":action_type, "by":"geometry", "targetId":widget_id})
+            else:
+                if widgets.type == "mapWidget":
+                    action_type = "setExtent"
+                    self._actions.append({"type":action_type, "targetId":widgets.id})
+                else:
+                    action_type = "filter"
+                    widget_id = str(widgets.id)+'#main'
+                    self._actions.append({"type":action_type, "by":"geometry", "targetId":widget_id})
+
+
+
+
+

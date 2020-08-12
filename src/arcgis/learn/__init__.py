@@ -10,10 +10,10 @@ from arcgis.raster._util import _set_context, _id_generator
 from .models import SingleShotDetector, UnetClassifier, FeatureClassifier, RetinaNet, \
       PSPNetClassifier, EntityRecognizer, MaskRCNN, DeepLab, PointCNN, ModelExtension, \
       FasterRCNN, SuperResolution, FullyConnectedNetwork, MLModel, YOLOv3, HEDEdgeDetector, \
-      BDCNEdgeDetector
+      BDCNEdgeDetector, ImageCaptioner
 
 from ._utils.pointcloud_data import Transform3d
-from ._data import prepare_data, prepare_tabulardata
+from ._data import prepare_data, prepare_tabulardata, prepare_textdata
 from ._process_df import process_df, add_datepart
 
 def _set_param(gis, params, param_name, input_param):

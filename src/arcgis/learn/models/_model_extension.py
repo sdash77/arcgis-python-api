@@ -25,6 +25,7 @@ try:
     from .._utils.pascal_voc_rectangles import show_results_multispectral
     from .._utils.common import get_multispectral_data_params_from_emd
     from ._arcgis_model import _set_ddp_multigpu, _isnotebook
+    from ._hed_utils import accuracies
     import inspect
     HAS_FASTAI = True
     
@@ -88,10 +89,11 @@ class ModelExtension(ArcGISModel):
         self.learn.callbacks.append(self._train_callback(self.learn, self.model_conf.on_batch_begin))
         if self._data.dataset_type == 'Classified_Tiles':
             if getattr(self, "_is_edge_detection", False):
-                from ._hed_utils import accuracy
+                from ._hed_utils import accuracy, f1_score
+                self.learn.metrics = [accuracy, f1_score]
             else:
                 from ._psp_utils import accuracy
-            self.learn.metrics = [accuracy]
+                self.learn.metrics = [accuracy]
             self._code = image_classifier_prf
         else:
             self._code = code
@@ -253,6 +255,7 @@ class ModelExtension(ArcGISModel):
         if self._data.dataset_type == 'Classified_Tiles':
             if getattr(self, "_is_edge_detection", False):
                 self.show_results = self._show_results_edge_detection
+                self.compute_precision_recall = self._edge_detection_accuracies
             else:
                 self.show_results = self._show_results_segmentation
         else:
@@ -363,3 +366,23 @@ class ModelExtension(ArcGISModel):
             return statistics.mean(aps)
         else:
             return dict(zip(self._data.classes[1:], aps))
+
+    def _edge_detection_accuracies(self, thresh=0.5, buffer=3, show_progress=True):
+        """
+        Computes precision, recall and f1 score on validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        thresh                  Optional float. The probabilty above which
+                                a detection will be considered edge pixel.
+        ---------------------   -------------------------------------------
+        buffer                  Optional int. pixels in neighborhood to
+                                consider true detection.
+        =====================   ===========================================
+
+        :returns: `dict` 
+        """
+        self._check_requisites()
+        acc = accuracies(self, self._data.valid_dl, detect_thresh=thresh, buffer=buffer, show_progress=show_progress)
+        return acc

@@ -32,6 +32,8 @@ module_skip = False
 parameter = []
 parameter_fl = []
 authorization_data = {}
+check_ms = False
+current_path = ""
 if not HAS_DEPS:
     print("**Environment fails**")
     raise Exception(f"""{import_exception} \n\nThis module requires fastai, PyTorch, torchvision and scikit-image as its dependencies.""")
@@ -39,7 +41,7 @@ if not HAS_DEPS:
 else:
     from arcgis.gis import GIS
     from arcgis.features import FeatureLayerCollection
-    from integration.arcgis_learn.properties import data,data_folder, setuposenviron
+    from integration.arcgis_learn.properties import data,data_folder, setuposenviron, data_folder_ms
     from arcgis.learn import prepare_data, prepare_tabulardata
     from datetime import datetime
 
@@ -66,7 +68,6 @@ accuracy_values = {"attributes":
 def setUpModule():
     global authorization_data
     authorization_data = setuposenviron()
-    data_path = data_folder
     if os.environ['run_nightly'] == "1":
         accuracy_values["attributes"]["Date"] = convertdate(datetime.today())
     print("Setup completed successfully")
@@ -80,7 +81,7 @@ def updateAccuracyResults():
     data.edit_features(adds=[accuracy_values])
 
 
-def CommonTestUsingFL(query, model_type, prepare_tabular_data, regression_parameter, regression_test_score, inferencing_parameter, model_name, data_path, model_test):
+def CommonTestUsingFL(query, model_type, prepare_tabular_data, regression_parameter, regression_test_score, inferencing_parameter, model_name, data_path, model_test, current_path):
     gis = GIS(url="https://geosaurus.maps.arcgis.com",username= authorization_data["for_common_test_using_fl"]["username"], password= authorization_data["for_common_test_using_fl"]["password"])
     calgary_no_southland_solar = gis.content.search(**query)[
         0]
@@ -117,15 +118,15 @@ def CommonTestUsingFL(query, model_type, prepare_tabular_data, regression_parame
         model_object.fit(1, lr=0.001, checkpoint=False)
 
         # save model
-        model_object.save(f'{os.path.join(data_folder, data_path, model_test)}')
+        model_object.save(f'{os.path.join(current_path, data_path, model_test)}')
         # Load from saved model.
-        model_object.load(f'{os.path.join(data_folder, data_path, model_test)}')
+        model_object.load(f'{os.path.join(current_path, data_path, model_test)}')
 
         # From model with and without data bunch.
         model_object = model_type.from_model(
-            os.path.join(data_folder, data_path, f'{model_test}/{model_test}.emd'))
+            os.path.join(current_path, data_path, f'{model_test}/{model_test}.emd'))
         model_object = model_type.from_model(
-            os.path.join(data_folder, data_path, f'{model_test}/{model_test}.emd'),
+            os.path.join(current_path, data_path, f'{model_test}/{model_test}.emd'),
             data)
 
 
@@ -140,6 +141,9 @@ def CommonTestUsingFL(query, model_type, prepare_tabular_data, regression_parame
 
         accuracy_values["attributes"][model_name] = result
 
+    if os.environ["run_inference"] == "1":
+        model_object.predict(feature_layer, output_layer_name='prediction_layer_rf')
+
 
 
 
@@ -151,15 +155,22 @@ def convertdate(dates):
     return dstr
 
 
-def commonTestCases(model_type, model_test, data_path, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name, inferencing_image_server):
+def commonTestCases(model_type, model_test, data_path, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name, inferencing_image_server, ms_flag, current_path):
     data = prepare_data(**preparedata)
-
+    # data.show_batch()
     # Check model with all default backbone
     model_object = model_type(data)
+
+
+    # model_object.show_results()
+    # model_object.lr_find(allow_plot=False)
+
     # Fit for 1 epochs without LR.
     model_object.fit(1)
     # Fit for 1 epochs with LR.
     model_object.fit(1, lr=0.001)
+
+
 
     # save model
     model_object.save(f'{model_test}')
@@ -174,7 +185,7 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
             model_object.save(model_test + '_' + str(backbone))
             torch.cuda.empty_cache()
 
-    if os.environ['run_nightly'] == "1":
+    if os.environ['run_nightly'] == "1" and ms_flag == False:
         print("Testing for accuracy with default backbone")
         global accuracy_values
         model_object.fit(15)
@@ -204,7 +215,7 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
 
 
     ## Inferencing function here.
-    if os.environ["run_inference"] == "1":
+    if os.environ["run_inference"] == "1" and ms_flag == False:
         from arcpy.ia import DetectObjectsUsingDeepLearning, ClassifyPixelsUsingDeepLearning, ClassifyObjectsUsingDeepLearning
         # Inferencing from image server
         from arcgis.gis import GIS
@@ -215,7 +226,7 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
         output_name = ''.join(random.choice(letters) for i in range(9))
 
         if inferencing_parameter["model_type"] == "DetectObjectsUsingDeepLearning":
-            model_path = os.path.join(data_folder, data_path, f'models/{model_test}/{model_test}.dlpk')
+            model_path = os.path.join(current_path, data_path, f'models/{model_test}/{model_test}.dlpk')
 
             model_package = gis.content.add(
                 item_properties={"type": "Deep Learning Package", "typeKeywords": "Deep Learning",
@@ -248,7 +259,7 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
 
         elif inferencing_parameter["model_type"] == "ClassifyPixelsUsingDeepLearning":
 
-            model_path = os.path.join(data_folder, data_path, f'models/{model_test}/{model_test}.dlpk')
+            model_path = os.path.join(current_path, data_path, f'models/{model_test}/{model_test}.dlpk')
 
             model_package = gis.content.add(
                 item_properties={"type": "Deep Learning Package", "typeKeywords": "Deep Learning",
@@ -279,7 +290,7 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
 
         elif inferencing_parameter["model_type"] == "ClassifyObjectsUsingDeepLearning":
 
-            model_path = os.path.join(data_folder, data_path, f'models/{model_test}/{model_test}.dlpk')
+            model_path = os.path.join(current_path, data_path, f'models/{model_test}/{model_test}.dlpk')
 
             model_package = gis.content.add(
                 item_properties={"type": "Deep Learning Package", "typeKeywords": "Deep Learning",
@@ -329,21 +340,29 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
     model_object.load(f'{model_test}')
 
     # From model with and without data bunch.
-    model_object = model_type.from_model(os.path.join(data_folder,data_path, f'models/{model_test}/{model_test}.emd'))
-    model_object = model_type.from_model(os.path.join(data_folder, data_path, f'models/{model_test}/{model_test}.emd'),
+    model_object = model_type.from_model(os.path.join(current_path,data_path, f'models/{model_test}/{model_test}.emd'))
+    model_object = model_type.from_model(os.path.join(current_path, data_path, f'models/{model_test}/{model_test}.emd'),
                                          data)
 
 
 def update_parameter():
+    check_ms = False
     for key, val in data.items():
         if val["should_test"] and not val["test_feature_layer"]:
-            parameter.append([key, val["model_test"], val["model"], val["datapath"], val["prepare_data"], val["regression_parameter"], val["regression_test_score"], val["inferencing_parameter"], val["model_name"], val["inferencing_image_server"]])
+            parameter.append([key, val["model_test"], val["model"], val["datapath"], val["prepare_data"], val["regression_parameter"], val["regression_test_score"], val["inferencing_parameter"], val["model_name"], val["inferencing_image_server"], check_ms, data_folder])
+    return parameter
+
+def update_parameter_ms():
+    check_ms = True
+    for key, val in data.items():
+        if val["should_test"] and not val["test_feature_layer"] and val["prepare_data_ms"] != False:
+            parameter.append([key+"_ms", val["model_test"]+"_ms", val["model"], val["datapath_ms"], val["prepare_data_ms"], val["regression_parameter"], val["regression_test_score"], val["inferencing_parameter"], val["model_name"], val["inferencing_image_server"], check_ms, data_folder_ms])
     return parameter
 
 def update_parameter_fl():
     for key, val in data.items():
         if val["should_test"] and val["test_feature_layer"]:
-            parameter_fl.append([key, val["gis_content_search"], val["model"], val["prepare_tabular_data"], val["regression_parameter"], val["regression_test_score"], val["inferencing_parameter"], val["model_name"], val["datapath"],val["model_test"]])
+            parameter_fl.append([key, val["gis_content_search"], val["model"], val["prepare_tabular_data"], val["regression_parameter"], val["regression_test_score"], val["inferencing_parameter"], val["model_name"], val["datapath"],val["model_test"], data_folder])
     return parameter_fl
 
 class TestTraining(unittest.TestCase):
@@ -357,26 +376,35 @@ class TestTraining(unittest.TestCase):
 
     def tearDown(self):
         torch.cuda.empty_cache()
-        # for key, val in data.items():
-        #     os.system(f'rm -rf "{os.path.join(data_folder, val["datapath"], "models")}"')
+        for key, val in data.items():
+            os.system(f'rm -rf "{os.path.join(data_folder, val["datapath"], "models")}"')
+            if "datapath_ms" in val.keys():
+                os.system(f'rm -rf "{os.path.join(data_folder_ms, val["datapath_ms"], "models")}"')
         print("Test:" + self._testMethodName + "is completed.\n")
         print("------------------------------------------------------------------\n")
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter, skip_on_empty=True)
-    def test(self,name,model_test, model, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name,inferencing_image_server):
-        commonTestCases(model,model_test, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name,inferencing_image_server)
+    def test(self,name,model_test, model, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name,inferencing_image_server,ms_flag, data_folder_path):
+        commonTestCases(model,model_test, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name,inferencing_image_server, ms_flag, data_folder_path)
+
+    @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
+    @parameterized.expand(update_parameter_ms, skip_on_empty=True)
+    def test(self, name, model_test, model, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name, inferencing_image_server, ms_flag, data_folder_path):
+        commonTestCases(model, model_test, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name, inferencing_image_server, ms_flag, data_folder_path)
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter_fl, skip_on_empty=True)
-    def test_fl(self, name,query, model_type, prepare_tabular_data, regression_parameter, regression_test_score, inferencing_parameter, model_name, data_path, model_test):
-        CommonTestUsingFL(query, model_type, prepare_tabular_data, regression_parameter, regression_test_score, inferencing_parameter, model_name, data_path, model_test)
+    def test_fl(self, name,query, model_type, prepare_tabular_data, regression_parameter, regression_test_score, inferencing_parameter, model_name, data_path, model_test, data_folder_path):
+        CommonTestUsingFL(query, model_type, prepare_tabular_data, regression_parameter, regression_test_score, inferencing_parameter, model_name, data_path, model_test, data_folder_path)
 
     @classmethod
     def tearDownClass(cls):
         torch.cuda.empty_cache()
-        # for key, val in data.items():
-        #     os.system(f'rm -rf "{os.path.join(data_folder, val["datapath"], "models")}"')
+        for key, val in data.items():
+            os.system(f'rm -rf "{os.path.join(data_folder, val["datapath"], "models")}"')
+            if "datapath_ms" in val.keys():
+                os.system(f'rm -rf "{os.path.join(data_folder_ms, val["datapath_ms"], "models")}"')
         print("\n All Tests have completed.")
         print("==================================================================")
 
@@ -389,8 +417,10 @@ def tearDownModule():
     if os.environ['run_nightly'] == "1":
         print("Updating feature layer for accuracy dashboard\n")
         updateAccuracyResults()
-    # for key, val in data.items():
-    #     os.system(f'rm -rf "{os.path.join(data_folder,val["datapath"],"models")}"')
+    for key, val in data.items():
+        os.system(f'rm -rf "{os.path.join(data_folder,val["datapath"],"models")}"')
+        if "datapath_ms" in val.keys():
+            os.system(f'rm -rf "{os.path.join(data_folder_ms, val["datapath_ms"], "models")}"')
 
     print("**End Common Arcgis Learn module Training**")
 

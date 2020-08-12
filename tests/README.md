@@ -73,7 +73,7 @@ For any path contained in the `geosaurus` repository, start out your string with
 
 `config` contains miscellaneous specific options for those tests, such as 
 
-    - `blacklist` (list of glob-able paths to remove from `paths` if there is a match)
+    - `blocklist` (list of glob-able paths to remove from `paths` if there is a match)
     - `cell_timeout_sec` (if the test is a notebook test, how long to wait in seconds for a cell to finish before forcing a failure)
     - `browser` (if the test is a selenium notebook test, 3 possible values. If `firefox`, use the Firefox driver. If `chrome`, use the Chrome driver. If `dayofweek`, will pick `firefox` if the current day is Mon/Wed/Fri/Sun, and `chrome` on Tues/Thurs/Sat.)
     - `num_attempts` (if the test is a notebook test, how many times to attempt running the notebook before failing. Test will only fail if all runs of the notebook fail. Default value: 1)
@@ -82,6 +82,6 @@ For any path contained in the `geosaurus` repository, start out your string with
 
 This module contains all the Python code needed to run the specified unit/notebook/etc. tests and output the XML to the correct location..
 
-## ./unit/sanity
+## ./unit/smoke
 
 This is a special directory that will __always__ run before any tests are run. It does very basic smoke tests like making sure that the python API being imported via `import arcgis` is the module located at `../src/arcgis`, making sure each file in `../src/` is valid Python and doesn't throw any SyntaxErrors, etc.

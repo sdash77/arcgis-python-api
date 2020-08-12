@@ -877,8 +877,11 @@ class FeatureSet(object):
             elif geo_type == "MultiPolygon":
                 rings = []
                 if HASARCPY:
-                    geom = arcpy.AsShape(geom)
-                    geometry = Geometry(_ujson.loads(geom))
+                    if isinstance(geom, dict):
+                        geometry = Geometry(geom)
+                    else:
+                        geom = arcpy.AsShape(geom)
+                        geometry = Geometry(_ujson.loads(geom))
                 else:
                     coordkey = ([d for d in geom if d.lower() == 'coordinates']
                                     or ['coordinates']).pop()

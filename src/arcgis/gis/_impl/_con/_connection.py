@@ -489,7 +489,7 @@ class Connection(object):
                         data += it
                 data = json.loads(data)
                 if 'error' in data:
-                    raise Exception(resp['error'])
+                    raise Exception(data['error'])
             else:
                 data = resp.json()
             #if 'error' in data:

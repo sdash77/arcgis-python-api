@@ -2023,6 +2023,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                                            "snippet": "Analysis file item generated from running the Extract Data tool.",
                                                            "folderId": ""}}
             output_name = params['outputName']
+        elif isinstance(output_name, dict) and 'title' in output_name:
+            params["outputName"] = {"itemProperties": output_name}
+            output_name = params['outputName']
         else:
             params["outputName"] = {"serviceProperties": {"name": output_name }}
             output_name = params['outputName']
@@ -10670,10 +10673,13 @@ class _GeoanalyticsTools(_AsyncService):
         # super(RasterAnalysisTools, self).__init__(url, gis)
         super(_GeoanalyticsTools, self).__init__(url, gis)
 
-    def _create_output_service(self, output_name, task):
+    def _create_output_service(self, output_name, task, store=None):
         ok = self._gis.content.is_service_name_available(output_name, "Feature Service")
         if not ok:
             raise RuntimeError("A Feature Service by this name already exists: " + output_name)
+        if store is None:
+            from arcgis.env import output_datastore
+            store = output_datastore or "spatiotemporal"
 
         createParameters = {
             "currentVersion": 10.2,
@@ -10702,7 +10708,7 @@ class _GeoanalyticsTools(_AsyncService):
                 "tables": [],
                 "name": output_name,
                 "options": {
-                    "dataSourceType": "spatiotemporal"
+                    "dataSourceType": store
                 }
         }
 

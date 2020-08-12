@@ -27,6 +27,7 @@ def _convert_notebooks_to_html(notebooks_root_dir, output_dir, log_func):
     log.info(f"Converting notebooks to HTML, putting in {output_dir}")
     guide_notebook_dir = os.path.join(notebooks_root_dir, "guide")
     samples_notebook_dir = os.path.join(notebooks_root_dir, "samples")
+    items_metadata_yaml_path = os.path.join(notebooks_root_dir, "items_metadata.yaml")
 
     guide_html_dir = os.path.join(output_dir,
                                   "src", "python", "guide")
@@ -43,7 +44,8 @@ def _convert_notebooks_to_html(notebooks_root_dir, output_dir, log_func):
                      embed_try_it_live = True,
                      replace_img_path = True,
                      replace_video_path = True,
-                     log_func = log_func)
+                     log_func = log_func,
+                     items_metadata_yaml_path = items_metadata_yaml_path)
 
 def _make_dirs(list_of_dirs):
     for dir_ in list_of_dirs:

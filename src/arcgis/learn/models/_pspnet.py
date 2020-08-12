@@ -324,6 +324,7 @@ class PSPNetClassifier(ArcGISModel):
     def _get_emd_params(self):
         import random
         _emd_template = {"ModelParameters" : {}}
+        _emd_template["ModelType"] = "ImageClassification"
         _emd_template["ModelParameters"]["pyramid_sizes"] = self.pyramid_sizes
         _emd_template["ModelParameters"]["use_unet"] = self._use_unet
         _emd_template["ModelParameters"]["unet_aux_loss"] = self._unet_aux_loss

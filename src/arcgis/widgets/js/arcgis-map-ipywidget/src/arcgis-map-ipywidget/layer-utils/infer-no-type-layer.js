@@ -39,7 +39,9 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                                 'esri/layers/GeoJSONLayer',
                                 'esri/layers/CSVLayer',
                                 'esri/layers/support/RasterFunction',
-                                'esri/layers/support/MosaicRule'],
+                                'esri/layers/support/MosaicRule',
+                                'esri/layers/PointCloudLayer',
+                                'esri/layers/IntegratedMeshLayer'],
         options).then(([ImageryLayer,
                         KMLLayer,
                         TileLayer,
@@ -54,7 +56,9 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                         GeoJSONLayer,
                         CSVLayer,
                         RasterFunction,
-                        MosaicRule]) => {
+                        MosaicRule,
+                        PointCloudLayer,
+                        IntegratedMeshLayer]) => {
             if (noTypeLayer.type === "ImageryLayer"){
                 var typedLayer = new ImageryLayer(noTypeLayer.url);
                 typedLayer.id = noTypeLayer._hashFromPython;
@@ -105,10 +109,6 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                 var typedLayer = new VectorTileLayer(noTypeLayer.url);
                 typedLayer.id = noTypeLayer._hashFromPython;
                 resolve(typedLayer);}
-            else if (noTypeLayer.type == "SceneLayer") {
-                var typedLayer = new SceneLayer(noTypeLayer.url);
-                typedLayer.id = noTypeLayer._hashFromPython;
-                resolve(typedLayer);}
             else if (noTypeLayer.type == "WMS"){
                 noTypeLayer.subLayers = [noTypeLayer.sublayers[0],];
                 delete noTypeLayer.type;
@@ -138,6 +138,18 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                     var typedLayer = new CSVLayer({url: noTypeLayer.url});
                     typedLayer.id = noTypeLayer._hashFromPython;
                     resolve(typedLayer);})}
+            else if (noTypeLayer.type == "SceneLayer"){
+                var typedLayer = new SceneLayer({url: noTypeLayer.url});
+                typedLayer.id = noTypeLayer._hashFromPython;
+                resolve(typedLayer);}
+            else if (noTypeLayer.type == "PointCloudLayer"){
+                var typedLayer = new PointCloudLayer({url: noTypeLayer.url});
+                typedLayer.id = noTypeLayer._hashFromPython;
+                resolve(typedLayer);}
+            else if (noTypeLayer.type == "IntegratedMeshLayer"){
+                var typedLayer = new IntegratedMeshLayer({url: noTypeLayer.url});
+                typedLayer.id = noTypeLayer._hashFromPython;
+                resolve(typedLayer);}
             else if ((noTypeLayer.type == "FeatureLayer") ||
                      (noTypeLayer.type == "Feature Layer")) {
                 //TODO: clean up this Feature layer stuff, seperate into new file

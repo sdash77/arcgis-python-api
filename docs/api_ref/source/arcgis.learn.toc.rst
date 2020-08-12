@@ -43,6 +43,10 @@ prepare_tabulardata
 -----------
 .. autofunction:: arcgis.learn.prepare_tabulardata
 
+prepare_textdata
+----------------
+.. autofunction:: arcgis.learn.prepare_textdata
+
 SingleShotDetector
 ------------------
 .. autoclass:: arcgis.learn.SingleShotDetector
@@ -166,3 +170,17 @@ BDCNEdgeDetector
     :members:
     :inherited-members:
     :undoc-members:
+
+ImageCaptioner
+------------------
+.. autoclass:: arcgis.learn.ImageCaptioner
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+Submodules
+--------------
+.. toctree::
+   :maxdepth: 3
+
+   arcgis.learn.text
