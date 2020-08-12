@@ -1010,6 +1010,8 @@ def composite_band(rasters, astype=None, cellsize_type=None):
 
     :param rasters: input rasters
     :param astype: output pixel type
+    :param cellsize_type: The cell size used to create the output raster.
+                          one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
     :return: the multiband image
     """
     layer, raster, raster_ra = _raster_input(rasters)
