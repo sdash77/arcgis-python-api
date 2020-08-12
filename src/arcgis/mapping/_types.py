@@ -1282,7 +1282,71 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         self._webmapdict['operationalLayers'].remove(layer)
         self._layers.remove(PropertyMap(layer))
+        
+    def get_layer(self, item_id=None, title=None, layer_id=None):
+        """
+        Returns the first layer with a matching itemId, title, or layer_id in the webmap's operational layers.
+        Pass one of the three parameters into the method to return the layer.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item_id                Optional string. Pass the item_id for the operational layer you are trying
+                               to reference in the webmap.
+        ------------------     --------------------------------------------------------------------
+        title                  Optional string. Pass the title for the operational layer you are trying
+                               to reference in the webmap.
+        ------------------     --------------------------------------------------------------------
+        layer_id               Optional string. Pass the id for the operational layer you are trying
+                               to reference in the webmap.
+        ==================     ====================================================================
+        
+        :return: Layer as a dictionary
+        """
+        if item_id is None and title is None and layer_id is None:
+            raise ValueError("Please pass at least one parameter into the function")
+        if self.layers:
+            for layer in self.layers:
+                # item id is optional in the webmap spec, so we need to try/except
+                try:
+                    if (title == layer["title"]) or (layer_id == layer["id"]) or (item_id == layer["itemId"]):
+                        return layer
+                except Exception:
+                    pass
+        return None
 
+    def get_table(self, item_id=None, title=None, layer_id=None):
+        """
+        Returns the first table with a matching itemId, title, or layer_id in the webmap's tables.
+        Pass one of the three parameters into the method to return the table.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item_id                Optional string. Pass the item_id for the table you are trying
+                               to reference in the webmap.
+        ------------------     --------------------------------------------------------------------
+        title                  Optional string. Pass the title for the table you are trying
+                               to reference in the webmap.
+        ------------------     --------------------------------------------------------------------
+        layer_id               Optional string. Pass the id for the table you are trying
+                               to reference in the webmap.
+        ==================     ====================================================================
+
+        :return: Table as a dictionary
+        """
+        if item_id is None and title is None and layer_id is None:
+            raise ValueError("Please pass at least one parameter into the function")
+        if self.tables:
+            for table in self.tables:
+                # item id is optional in the webmap spec, so we need to try/except
+                try:
+                    if (title == table["title"]) or (layer_id == table["id"]) or (item_id == table["itemId"]):
+                        return table
+                except Exception:
+                    pass
+        return None
+        
     @property
     def offline_areas(self):
         """
