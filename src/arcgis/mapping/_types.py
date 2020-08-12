@@ -976,8 +976,8 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     def _eval_map_viewer_keywords(self, item_properties):
         # if user passes typeKeywords, adhere to what they have set without overriding anything
-        type_keywords = set(self.item.typeKeywords)
-        if not 'OfflineDisabled' in self.item.typeKeywords:
+        type_keywords = set(self.item.typeKeywords) if self.item else set([])
+        if not 'OfflineDisabled' in type_keywords:
             if self.layers and self._is_offline_capable_map():
                 type_keywords.add("Offline")
             else:
