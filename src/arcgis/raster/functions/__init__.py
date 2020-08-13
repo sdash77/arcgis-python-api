@@ -5247,6 +5247,252 @@ def _simple_collection(raster, md_info=None):
 
     return _clone_layer(layer, template_dict, raster_ra)
 
+def aggregate(raster,
+              dimension=None,
+              aggregation_function=None,
+              aggregation_definition_type="ALL",
+              interval_keyword=None,
+              interval_value=None,
+              interval_unit=None,
+              interval_ranges=None,
+              ignore_nodata=False
+              ):
+    """
+     Creates a new raster by applying an aggregation function
+    :param raster: Input Raster. 
+    :param aggregation_function: Optional String. Specifies the mathematical method that will be used
+                               to combine the aggregated slices in an interval.
+
+                                - MEAN : Calculates the mean of a pixel's values across all slices in the interval. This is the default.
+
+                                - MAXIMUM : Calculates the maximum value of a pixel across all slices in the interval.
+
+                                - MAJORITY : Calculates the value that occurred most frequently for a pixel across all slices in the interval.
+
+                                - MINIMUM : Calculates the minimum value of a pixel across all slices in the interval.
+
+                                - MINORITY : Calculates the value that occurred least frequently for a pixel across all slices in the interval.
+
+                                - MEDIAN : Calculates the median value of a pixel across all slices in the interval.
+
+                                - RANGE : Calculates the range of values for a pixel across all slices in the interval.
+
+                                - STD : Calculates the standard deviation of a pixel's values across all slices in the interval.
+
+                                - SUM : Calculates the sum of a pixel's values across all slices in the interval.
+
+                                - VARIETY : Calculates the number of unique values of a pixel across all slices in the interval.
+
+                                You may also pass custom aggregaation function. 
+                                Create an RFT object out of the raster function template item on the portal and 
+                                specify that as the input to aggregation_function or directly specify the RFT in JSON format as the 
+                                aggregation_method.
+
+    :param aggregation_definition_type: Optional String. Specifies the dimension interval for which the data
+                                        will be aggregated.
+
+                                        - ALL : The data values will be aggregated across all slices. This is the default.
+
+                                        - INTERVAL_KEYWORD : The variable data will be aggregated using a commonly known interval.
+
+                                        - INTERVAL_VALUE : The variable data will be aggregated using a user-specified interval and unit.
+
+                                        - INTERVAL_RANGES : The variable data will be aggregated between specified pairs of values or dates.
+    :param dimension: Optional String. This is the dimension along which the variables will be aggregated.
+    :param interval_keyword: Optional String. Specifies the keyword interval that will be used
+                                             when aggregating along the dimension. This parameter is required
+                                             when the aggregation_def parameter is set to INTERVAL_KEYWORD, and
+                                             the aggregation must be across time.
+
+                                             - HOURLY : The data values will be aggregated into hourly time steps, 
+                                               and the result will include every hour in the time series.
+
+                                             - DAILY : The data values will be aggregated into daily time steps, 
+                                               and the result will include every day in the time series.
+
+                                             - WEEKLY : The data values will be aggregated into weekly time steps, 
+                                               and the result will include every week in the time series.
+
+                                             - DEKADLY : Divides each month into 3 periods of 10 days each 
+                                               (last period might have more or less than 10 days)
+                                               and each month would output 3 slices.
+
+                                             - PENTADLY : Divides each month into 6 periods of 5 days each 
+                                               (last period might have more or less than 5 days)
+                                               and each month would output 6 slices.
+
+                                             - MONTHLY : The data values will be aggregated into monthly time steps, 
+                                               and the result will include every month in the time series.
+
+                                             - QUARTERLY : The data values will be aggregated into quarterly time steps, 
+                                               and the result will include every quarter in the time series.
+
+                                             - YEARLY : The data values will be aggregated into yearly time steps, 
+                                               and the result will include every year in the time series.
+
+                                             - RECURRING_DAILY : The data values will be aggregated into daily time steps, 
+                                               and the result includes each one aggregated value per day. 
+                                               The output will include, at most, 366 daily time slices
+
+                                             - RECURRING_WEEKLY : The data values will be aggregated into weekly time steps, 
+                                               and the result will include one aggregated value per week. 
+                                               The output will include, at most, 53 weekly time slices.
+
+                                             - RECURRING_MONTHLY : The data values will be aggregated into weekly time steps, 
+                                               and the result will include one aggregated value per month. 
+                                               The output will include, at most, 12 monthly time slices.
+
+                                             - RECURRING_QUARTERLY : The data values will be aggregated into weekly time steps, 
+                                               and the result will include one aggregated value per quarter. 
+                                               The output will include, at most, 4 quarterly time slices.
+
+    :param interval_value: Optional String. The size of the interval that will be used for the
+                           aggregation. This parameter is required when the aggregation_def
+                           parameter is set to INTERVAL_VALUE.
+
+                           For example, to aggregate 30 years of monthly temperature data into
+                           5-year increments, enter 5 as the interval_value, and specify
+                           interval_unit as YEARS.
+
+    :param interval_unit: Optional String. The unit that will be used for the interval value.
+                          This parameter is required when the dimension parameter is set to a
+                          time field and the aggregation_def parameter is set to INTERVAL_VALUE.
+
+                          If you are aggregating over anything other than time, this option
+                          will not be available and the unit for the interval value will match
+                          the variable unit of the input multidimensional raster data.
+
+                          - HOURS : The data values will be aggregated into hourly time slices at the interval provided.
+                          - DAYS : The data values will be aggregated into daily time slices at the interval provided.
+                          - WEEKS : The data values will be aggregated into weekly time slices at the interval provided.
+                          - MONTHS : The data values will be aggregated into monthly time slices at the interval provided.
+                          - YEARS : The data values will be aggregated into yearly time slices at the interval provided.
+    :param interval_ranges: Optional List of dictionary objects. Interval ranges specified as list of dictionary objects 
+                            that will be used to aggregate groups of values. 
+
+                            This parameter is required when the aggregation_definition parameter is set to INTERVAL_RANGE.
+                            If dimension is StdTime, then the value must be specified in human readable time format (YYYY-MM-DDTHH:MM:SS).
+
+                            Syntax: 
+                                [{"minValue":"<min value>","maxValue":"<max value>"},
+                                {"minValue":"<min value>","maxValue":"<max value>"}]
+
+                            Example:
+                                [{"minValue":"2012-01-15T03:00:00","maxValue":"2012-01-15T09:00:00"},
+                                {"minValue":"2012-01-15T12:00:00","maxValue":"2012-01-15T21:00:00"}]
+    
+    :param ignore_nodata: Optional Boolean. Specifies whether NoData values are ignored.
+
+                            - True : The function will include all valid pixels and ignore any NoData pixels.
+                                     This is the default.
+                            - False : The function will result in NoData if there are any NoData values.
+    :return: the output raster with function applied on it
+    """
+    from arcgis.raster._util import _local_function_template
+
+    layer, raster, raster_ra = _raster_input(raster)
+       
+    template_dict = {
+        "rasterFunction": "RasterCollection",
+        "rasterFunctionArguments": {
+            "RasterCollection": raster
+        },
+        "variableName": "RasterCollection"
+    }
+    
+
+    if aggregation_function is not None:
+        if isinstance(aggregation_function, RFT):
+            template_dict["rasterFunctionArguments"]["AggregationFunction"]=aggregation_function._rft_json
+        elif isinstance(aggregation_function, dict):
+            template_dict["rasterFunctionArguments"]["AggregationFunction"]=aggregation_function
+        elif isinstance(aggregation_function, str):
+            opnum = None
+            if aggregation_function.upper() == "MEAN":
+                opnum = 68 if ignore_nodata else 40
+            elif aggregation_function.upper() == "MAXIMUM":
+                opnum = 67 if ignore_nodata else 39
+            elif aggregation_function.upper() == "MAJORITY":
+                opnum = 66 if ignore_nodata else 38
+            elif aggregation_function.upper() == "MINIMUM":
+                opnum = 70 if ignore_nodata else 42
+            elif aggregation_function.upper() == "MINORITY":
+                opnum = 71 if ignore_nodata else 43
+            elif aggregation_function.upper() == "MEDIAN":
+                opnum = 69 if ignore_nodata else 41
+            elif aggregation_function.upper() == "RANGE":
+                opnum = 72 if ignore_nodata else 47
+            elif aggregation_function.upper() == "STD":
+                opnum = 73 if ignore_nodata else 54
+            elif aggregation_function.upper() == "SUM":
+                opnum = 74 if ignore_nodata else 55
+            elif aggregation_function.upper() == "VARIETY":
+                opnum = 75 if ignore_nodata else 58
+
+            if opnum is None:
+                raise RuntimeError("Invalid aggregation_function")
+            else:
+                template_dict["rasterFunctionArguments"]["AggregationFunction"] = _local_function_template(opnum)
+        if "type" not in template_dict["rasterFunctionArguments"]["AggregationFunction"]:
+            template_dict["rasterFunctionArguments"]["AggregationFunction"].update({'type':'RasterFunctionTemplate'})
+
+    aggregation_definition = {}
+    aggregation_definition.update({"definitionType": aggregation_definition_type})
+
+    if dimension is not None:
+         aggregation_definition.update({"dimension":dimension})
+
+    if aggregation_definition_type.upper() == "INTERVAL_VALUE":
+        if interval_value is None:
+            raise RuntimeError("interval_value cannot be None, if aggregation_definition_type is INTERVAL_VALUE")
+
+        aggregation_definition.update({"intervalValue":interval_value})
+        if interval_unit is not None:
+            aggregation_definition.update({"intervalUnits":interval_unit})
+
+    elif aggregation_definition_type.upper() == "INTERVAL_KEYWORD":
+        if interval_keyword is None:
+            raise RuntimeError("interval_keyword cannot be None, if aggregation_definition_type is INTERVAL_KEYWORD")
+
+        interval_keyword_val=interval_keyword
+        if interval_keyword is not None:
+            interval_keyword_allowed_values = ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY',
+                                               'RECURRING_MONTHLY', 'RECURRING_QUARTERLY', 'PENTADLY', 'DEKADLY']
+            if [element.lower() for element in interval_keyword_allowed_values].count(interval_keyword.lower()) <= 0 :
+                raise RuntimeError('interval_keyword can only be one of the following: '+str(interval_keyword_allowed_values))
+            interval_keyword_val=interval_keyword
+            for element in interval_keyword_allowed_values:
+                if interval_keyword.upper() == element:
+                    interval_keyword_val = element
+        aggregation_definition.update({"intervalKeyword":interval_keyword})
+
+    elif aggregation_definition_type.upper() == "INTERVAL_RANGES":
+        if interval_ranges is None:
+            raise RuntimeError("interval_ranges cannot be None, if aggregation_definition_type is INTERVAL_RANGES")
+            
+        min_list=[]
+        max_list=[]
+        if isinstance(interval_ranges, list):
+            for ele in interval_ranges:
+                if isinstance(ele,dict):
+                    min_list.append(ele["minValue"])
+                    max_list.append(ele["maxValue"])
+
+        if isinstance(interval_ranges, dict):
+            min_list.append(interval_ranges["minValue"])
+            max_list.append(interval_ranges["maxValue"])
+
+        aggregation_definition.update({"minValues":min_list})
+        aggregation_definition.update({"maxValues":max_list})
+
+    if aggregation_definition is not None:
+        template_dict["rasterFunctionArguments"]["AggregationDefinition"] = _json.dumps(aggregation_definition)
+
+    #if where_clause is not None:
+    #    template_dict["rasterFunctionArguments"]["WhereClause"] = where_clause
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
 class RFT:
     def __init__(self, raster_function_template,gis=None):
         try:
