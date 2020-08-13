@@ -5,7 +5,7 @@ from .._con import Connection
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis import env as _env
 from arcgis.gis._impl._jb import StatusJob
-from arcgis.gis import Item 
+from arcgis.gis import Item
 import concurrent.futures
 ###########################################################################
 class PortalDataStore(object):
@@ -41,18 +41,18 @@ class PortalDataStore(object):
     def __repr__(self):
         return "< PortalDataStore @ {url} >".format(url=self._url)
     #----------------------------------------------------------------------
-    def describe(self, 
-                 item, 
-                 server_id, 
-                 path, 
+    def describe(self,
+                 item,
+                 server_id,
+                 path,
                  store_type="datastore"):
         """
         Describe data store is used to list the contents of a data store. A
-        client can use it multiple times to discover the contents of the 
-        data store incrementally. For example, the client can request a 
-        description of the root, and then request sub-folders.  
-        
-        
+        client can use it multiple times to discover the contents of the
+        data store incrementally. For example, the client can request a
+        description of the root, and then request sub-folders.
+
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -67,14 +67,14 @@ class PortalDataStore(object):
         ==================     ====================================================================
 
         :returns: StatusJob
-                
+
         """
         if isinstance(item, Item):
             item = item.id
         params = {
-            "datastoreId" : item, 
+            "datastoreId" : item,
             "serverId" : server_id,
-            "path" : path, 
+            "path" : path,
             "type" : store_type,
             "f" : "json"
         }
@@ -84,17 +84,17 @@ class PortalDataStore(object):
         executor =  concurrent.futures.ThreadPoolExecutor(1)
         futureobj = executor.submit(self._status, **{"job_id" : res['jobId'], "key": res['key']})
         executor.shutdown(False)
-        return StatusJob(future=futureobj, 
-                         op='Describe DataStore', 
-                         jobid=res['jobId'], 
-                         gis=self._gis, 
-                         notify=_env.verbose, 
-                         extra_marker="")                                  
+        return StatusJob(future=futureobj,
+                         op='Describe DataStore',
+                         jobid=res['jobId'],
+                         gis=self._gis,
+                         notify=_env.verbose,
+                         extra_marker="")
     #----------------------------------------------------------------------
     def _status(self, job_id, key=None):
         """
         Checks the status of an export job
-        
+
         :returns: dict
         """
         params = {}
@@ -106,6 +106,14 @@ class PortalDataStore(object):
                 res = self._con.post(url, params)
                 if res['status'] == "failed":
                     raise Exception(res)
+            count = 0
+            while res['status'] in ["completed", "complete", "succeeded"] and \
+                  not 'result' in res and \
+                  count < 10:
+                res = self._con.post(url, params)
+                if 'result' in res:
+                    return res
+                count += 1
             return res
         else:
             raise Exception(res)
@@ -119,9 +127,9 @@ class PortalDataStore(object):
             self._properties = PropertyMap(res)
         return self._properties
     #----------------------------------------------------------------------
-    def register(self, 
-                 item, 
-                 server_id, 
+    def register(self,
+                 item,
+                 server_id,
                  bind=False):
         """
 
@@ -139,8 +147,8 @@ class PortalDataStore(object):
         server_id              Required String. The unique id of the server you want to register
                                the datastore with.
         ------------------     --------------------------------------------------------------------
-        bind                   Optional Boolean. Specifies whether to bind the data store item to 
-                               the federated server. For more information about binding a data 
+        bind                   Optional Boolean. Specifies whether to bind the data store item to
+                               the federated server. For more information about binding a data
                                store to additional federated servers, see `Create a data store item
                                for an existing registered data store`_. The default value is false.
         ==================     ====================================================================
@@ -260,23 +268,23 @@ class PortalDataStore(object):
             return res["layerAndDatasets"]
         return []
     #----------------------------------------------------------------------
-    def publish(self, 
-                config:dict, 
-                server_id, 
-                folder=None, 
-                description=None, 
+    def publish(self,
+                config:dict,
+                server_id,
+                folder=None,
+                description=None,
                 tags:list=None):
         """
         The publish operation is used to publish scene layers by reference to data in a data store.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        config                 Required Dictionary.  This is the service configuration property 
+        config                 Required Dictionary.  This is the service configuration property
                                and it must contain the reference to the data in the data store. It
                                specifies the data store Id and the path of the data.  A client can
                                discover the proper paths of the data by using the `describe` method.
-                               
+
                                Example: {"type":"SceneServer","serviceName":"sonoma","properties":{"pathInCachedStore":"/v17_i3s/SONOMA_LiDAR.i3srest","cacheStoreId":"d7b0722fb42c494392cb1845dacc00d9"}}
         ------------------     --------------------------------------------------------------------
         server_id              Required String. The unique Id of the server to publish to.
@@ -287,29 +295,29 @@ class PortalDataStore(object):
         ------------------     --------------------------------------------------------------------
         tags                   Optional list. An array of descriptive words that describes the newly published dataset.  This will be added to the `Item`
         ==================     ====================================================================
-        
+
         :returns: StatusJob
-        
+
         """
         url = f"{self._url}/publish"
         if isinstance(tags, list):
             tags = ",".join([str(t) for t in tags])
-        
+
         params = {
             "serviceConfiguration" : config,
-            "serverId" : server_id, 
-            "serverFolder" : folder, 
+            "serverId" : server_id,
+            "serverFolder" : folder,
             "description" : description,
             "tags" : tags,
-            "f" : "json"            
+            "f" : "json"
         }
         res = self._con.post(url, params)
         executor =  concurrent.futures.ThreadPoolExecutor(1)
         futureobj = executor.submit(self._status, **{"job_id" : res['jobId'], "key": res['key']})
         executor.shutdown(False)
-        return StatusJob(future=futureobj, op='Publish', 
-                         jobid=res['jobId'], gis=self._gis, 
-                         notify=_env.verbose, extra_marker="")           
+        return StatusJob(future=futureobj, op='Publish',
+                         jobid=res['jobId'], gis=self._gis,
+                         notify=_env.verbose, extra_marker="")
     #----------------------------------------------------------------------
     def servers(self, item):
         """
@@ -345,12 +353,12 @@ class PortalDataStore(object):
             return res['servers']
         return res
     #----------------------------------------------------------------------
-    def publish_layers(self, 
-                       item, 
-                       srv_config:dict, 
-                       server_id, 
-                       folder=None, 
-                       server_folder=None, 
+    def publish_layers(self,
+                       item,
+                       srv_config:dict,
+                       server_id,
+                       folder=None,
+                       server_folder=None,
                        future=False):
         """
         The `publish_layers` operation publishes, or syncs, the datasets from a
@@ -380,7 +388,7 @@ class PortalDataStore(object):
         ------------------     --------------------------------------------------------------------
         server_folder          Optional String. The name of the server folder.
         ------------------     --------------------------------------------------------------------
-        future                 Optional Boolean.  If False, the value is returned, else a 
+        future                 Optional Boolean.  If False, the value is returned, else a
                                `StatusJob` is returned.
         ==================     ====================================================================
 
@@ -423,8 +431,8 @@ class PortalDataStore(object):
             return True
         return False
     #----------------------------------------------------------------------
-    def unregister(self, 
-                   item, 
+    def unregister(self,
+                   item,
                    server_id):
         """
         Removes the datastore association from a server.
@@ -447,8 +455,8 @@ class PortalDataStore(object):
             return res['success']
         return res
     #----------------------------------------------------------------------
-    def refresh_server(self, 
-                       item, 
+    def refresh_server(self,
+                       item,
                        server_id):
         """
         After a data store has been registered, there may be times in which
@@ -490,10 +498,10 @@ class PortalDataStore(object):
             return res['success']
         return res
     #----------------------------------------------------------------------
-    def validate(self, 
-                 server_id, 
-                 item=None, 
-                 config=None, 
+    def validate(self,
+                 server_id,
+                 item=None,
+                 config=None,
                  future=False):
         """
         The `validate` ensures that your ArcGIS Server can connect and use
@@ -516,7 +524,7 @@ class PortalDataStore(object):
         config                 Optional dict. The connection information for a new datastore.
         ==================     ====================================================================
 
-        :returns: Boolean 
+        :returns: Boolean
 
         """
 
