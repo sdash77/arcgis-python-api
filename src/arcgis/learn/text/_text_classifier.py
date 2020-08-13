@@ -159,6 +159,7 @@ class TextClassifier(ArcGISModel):
             architecture=model_type,
             pretrained_model_name=pretrained_model_name,
             config=config,
+            pretrained_model_path=pretrained_path,
             seq_len=seq_len
         )
 
