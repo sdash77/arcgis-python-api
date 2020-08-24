@@ -2653,10 +2653,18 @@ class GeoAccessor(object):
                     row[f] = int(row[f].to_pydatetime().timestamp() * 1000)
                 except:
                     row[f] = None
-            if geom:
+            if geom and pd.notna(geom):
+
+
                 features.append(
                     {
                         "geometry" : dict(geom),
+                        "attributes" : row
+                    })
+            elif pd.notna(geom) == False:
+                features.append(
+                    {
+                        "geometry" : None,
                         "attributes" : row
                     })
             else:
@@ -2690,7 +2698,7 @@ class GeoAccessor(object):
         """gets/sets the spatial reference of the dataframe"""
         data = [getattr(g, 'spatialReference', None) or g['spatialReference'] \
                 for g in self._data[self.name] \
-                if g not in [None, np.NaN, np.nan, '']]
+                if g not in [None, np.NaN, np.nan, ''] and isinstance(g, dict)]
         srs = [SpatialReference(sr) for sr in pd.DataFrame(data).drop_duplicates().to_dict('records')]
         if len(srs) == 1:
             return srs[0]
