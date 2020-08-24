@@ -155,7 +155,7 @@ def convertdate(dates):
     return dstr
 
 
-def commonTestCases(model_type, model_test, data_path, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name, inferencing_image_server, ms_flag, current_path):
+def commonTestCases(model_type, model_test, data_path, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name, inferencing_image_server, ms_flag, current_path, num_epochs):
     data = prepare_data(**preparedata)
     # data.show_batch()
     # Check model with all default backbone
@@ -186,31 +186,32 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
             torch.cuda.empty_cache()
 
     if os.environ['run_nightly'] == "1" and ms_flag == False:
-        print("Testing for accuracy with default backbone")
-        global accuracy_values
-        model_object.fit(15)
-        if regression_parameter == "average_precision_score":
-            result = model_object.average_precision_score()
-            result = [v for k, v in sorted(result.items(), key=lambda item: item[1], reverse=True)][0]
-        elif regression_parameter == "accuracy":
-            result = model_object.accuracy()
-        elif regression_parameter == "confusion_matrix":
-            array = ClassificationInterpretation.from_learner(model_object.learn).confusion_matrix()
-            true_prediction = array.diagonal().sum()
-            all_prediction = array.sum()
-            result = true_prediction / all_prediction
-        elif regression_parameter == "precision_score":
-            result = model_object.precision_score()
-        elif regression_parameter == "compute_precision_recall":
-            result = model_object.compute_precision_recall().loc["precision", :].max()
-        elif regression_parameter == "psnr_metric":
-            result = model_object.show_metrics()[-1]
-        else:
-            result = 0.0
+        if ms_flag == False:
+            print("Testing for accuracy with default backbone")
+            global accuracy_values
+            model_object.fit(num_epochs)
+            if regression_parameter == "average_precision_score":
+                result = model_object.average_precision_score()
+                result = [v for k, v in sorted(result.items(), key=lambda item: item[1], reverse=True)][0]
+            elif regression_parameter == "accuracy":
+                result = model_object.accuracy()
+            elif regression_parameter == "confusion_matrix":
+                array = ClassificationInterpretation.from_learner(model_object.learn).confusion_matrix()
+                true_prediction = array.diagonal().sum()
+                all_prediction = array.sum()
+                result = true_prediction / all_prediction
+            elif regression_parameter == "precision_score":
+                result = model_object.precision_score()
+            elif regression_parameter == "compute_precision_recall":
+                result = model_object.compute_precision_recall().loc["precision", :].max()
+            elif regression_parameter == "psnr_metric":
+                result = model_object.compute_metrics()[-1]
+            else:
+                result = 0.0
 
-        accuracy_values["attributes"][model_name] = result
+            accuracy_values["attributes"][model_name] = result
 
-        assert (result >= regression_test_score),"Model accuracy is lower than the threshold value. Please check."
+            assert (result >= regression_test_score),"Model accuracy is lower than the threshold value. Please check."
 
 
 
@@ -349,14 +350,14 @@ def update_parameter():
     check_ms = False
     for key, val in data.items():
         if val["should_test"] and not val["test_feature_layer"]:
-            parameter.append([key, val["model_test"], val["model"], val["datapath"], val["prepare_data"], val["regression_parameter"], val["regression_test_score"], val["inferencing_parameter"], val["model_name"], val["inferencing_image_server"], check_ms, data_folder])
+            parameter.append([key, val["model_test"], val["model"], val["datapath"], val["prepare_data"], val["regression_parameter"], val["regression_test_score"], val["inferencing_parameter"], val["model_name"], val["inferencing_image_server"], check_ms, data_folder, val["regression_epochs"]])
     return parameter
 
 def update_parameter_ms():
     check_ms = True
     for key, val in data.items():
         if val["should_test"] and not val["test_feature_layer"] and val["prepare_data_ms"] != False:
-            parameter.append([key+"_ms", val["model_test"]+"_ms", val["model"], val["datapath_ms"], val["prepare_data_ms"], val["regression_parameter"], val["regression_test_score"], val["inferencing_parameter"], val["model_name"], val["inferencing_image_server"], check_ms, data_folder_ms])
+            parameter.append([key+"_ms", val["model_test"]+"_ms", val["model"], val["datapath_ms"], val["prepare_data_ms"], val["regression_parameter"], val["regression_test_score"], val["inferencing_parameter"], val["model_name"], val["inferencing_image_server"], check_ms, data_folder_ms, val["regression_epochs"]])
     return parameter
 
 def update_parameter_fl():
@@ -385,13 +386,13 @@ class TestTraining(unittest.TestCase):
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter, skip_on_empty=True)
-    def test(self,name,model_test, model, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name,inferencing_image_server,ms_flag, data_folder_path):
-        commonTestCases(model,model_test, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name,inferencing_image_server, ms_flag, data_folder_path)
+    def test(self,name,model_test, model, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name,inferencing_image_server,ms_flag, data_folder_path, num_epochs):
+        commonTestCases(model,model_test, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name,inferencing_image_server, ms_flag, data_folder_path, num_epochs)
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter_ms, skip_on_empty=True)
-    def test(self, name, model_test, model, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name, inferencing_image_server, ms_flag, data_folder_path):
-        commonTestCases(model, model_test, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name, inferencing_image_server, ms_flag, data_folder_path)
+    def test(self, name, model_test, model, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name, inferencing_image_server, ms_flag, data_folder_path, num_epochs):
+        commonTestCases(model, model_test, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name, inferencing_image_server, ms_flag, data_folder_path, num_epochs)
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter_fl, skip_on_empty=True)
