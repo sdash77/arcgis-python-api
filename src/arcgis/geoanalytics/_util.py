@@ -244,9 +244,9 @@ class GAJob(object):
     def process_info(self):
         """
         Returns the Processing Information for a GeoAnalytics job.
-        
+
         :returns: List or None if process_info does not exist.
-        
+
         """
         processing_info = None
         if self.result():
@@ -260,7 +260,7 @@ class GAJob(object):
                 res = self._gpjob._gis._con.get(url, params)
                 if "results" in res and 'processInfo' in res['results']:
                     url = f"{self._gpjob._url}/jobs/{self._gpjob._jobid}/{res['results']['processInfo']['paramUrl']}"
-                    return self._gpjob._gis._con.get(url, params)['value']  
+                    return self._gpjob._gis._con.get(url, params)['value']
         return None
     #----------------------------------------------------------------------
     def result(self):
@@ -270,8 +270,14 @@ class GAJob(object):
 
         :returns: object
         """
-        res = self._gpjob.result()
-        if self._return_service:
-            return self._return_service
-        else:
-            return res
+        try:
+
+            res = self._gpjob.result()
+            if self._return_service:
+                return self._return_service
+            else:
+                return res
+        except Exception as e:
+            if self._return_service:
+                self._return_service.delete()
+            raise e
