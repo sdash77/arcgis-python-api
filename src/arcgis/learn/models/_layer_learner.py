@@ -142,7 +142,7 @@ class FullyConnectedNetwork(ArcGISModel):
 
         return cls(data, layers=layers, pretrained_path=str(emd_path))
 
-    def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, **kwargs):
+    def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, save_optimizer=False, **kwargs):
         """
         Saves the model weights, creates an Esri Model Definition and Deep
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
@@ -164,6 +164,9 @@ class FullyConnectedNetwork(ArcGISModel):
         gis                     Optional GIS Object. Used for publishing the item.
                                 If not specified then active gis user is taken.
         ---------------------   -------------------------------------------
+        save_optimizer          Optional boolean. Used for saving the model-optimizer
+                                state along with the model. Default is set to False
+        ---------------------   -------------------------------------------
         kwargs                  Optional Parameters:
                                 Boolean `overwrite` if True, it will overwrite
                                 the item on ArcGIS Online/Enterprise, default False.
@@ -179,10 +182,9 @@ class FullyConnectedNetwork(ArcGISModel):
             os.mkdir(path)
 
         self.learn.export(os.path.join(path, os.path.basename(path) + '_exported.pth'))
-
         from IPython.utils import io
         with io.capture_output() as captured:
-            super().save(path, framework, publish, gis, **kwargs)
+            super().save(path, framework, publish, gis, save_optimizer=save_optimizer, **kwargs)
 
         return Path(path)
 

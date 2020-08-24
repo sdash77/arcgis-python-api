@@ -94,8 +94,11 @@ imagery_type_lib = {
 }
 
 def get_installation_command():
-    installation_steps = "Install them using 'conda install -c esri arcgis=1.8.1 pillow scikit-image'\n'conda install -c fastai -c pytorch fastai pytorch=1.4.0 torchvision=0.5.0 tensorflow-gpu=2.1.0'\n'conda install gdal=2.3.3'"
-
+    installation_steps = ("Install then using - 'conda install -c esri -c fastai -c pytorch arcgis=1.8.1 "
+                          "scikit-image=0.15.0 pillow=6.2.2 libtiff=4.0.10 fastai=1.0.60 pytorch=1.4.0 "
+                          "torchvision=0.5.0 scikit-learn=0.23.1 --no-pin'"
+                          "\n'conda install gdal=2.3.3'"
+                          "\n'pip install transformers==2.11.0'")
     return installation_steps 
 
 def _raise_fastai_import_error(import_exception=import_exception):
@@ -654,7 +657,8 @@ def prepare_data(path,
                             map.txt file. If the path does not contain the 
                             map.txt file pass either of 'PASCAL_VOC_rectangles', 
                             'KITTI_rectangles', 'RCNN_Masks', 'Classified_Tiles', 
-                            'Labeled_Tiles', 'Imagenet' and 'PointCloud'.                    
+                            'Labeled_Tiles', 'Imagenet', 'PointCloud' and 
+                            'ImageCaptioning'.
     ---------------------   -------------------------------------------
     resize_to               Optional integer. Resize the image to given size.
     =====================   ===========================================
@@ -1120,6 +1124,15 @@ def prepare_data(path,
         else:
             transform_fn = transforms
         return pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type, transform_fn, **kwargs)
+    elif dataset_type == "ImageCaptioning":
+        from ._utils.image_captioning_data import prepare_captioning_dataset
+        return prepare_captioning_dataset(path,
+                                          chip_size,
+                                          batch_size,
+                                          val_split_pct,
+                                          transforms,
+                                          resize_to,
+                                          **kwargs)
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
 

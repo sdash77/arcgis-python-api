@@ -526,7 +526,8 @@ class ArcGISModel(object):
         self._learning_rate = lr
         self._model_metrics_cache = None
         if getattr(self._data, '_dataset_type', None) == 'Classified_Tiles' and dice not in self.learn.metrics:
-            self.learn.metrics.extend([dice])
+            if not getattr(self, "_is_edge_detection", False):
+                self.learn.metrics.extend([dice])
         if arcgis.env.verbose:
             logger.info('Fitting the model.')        
         
@@ -661,7 +662,8 @@ class ArcGISModel(object):
                     _emd_template["NormalizationStats"][_stat] = _emd_template["NormalizationStats"][_stat].tolist()
             _emd_template["DoNormalize"] = self._data._do_normalize
         if getattr(self._data, '_dataset_type', None) == 'Classified_Tiles':
-            _emd_template['per_class_metrics'] = self.per_class_metrics().to_json()
+            if not getattr(self, "_is_edge_detection", False):
+                _emd_template['per_class_metrics'] = self.per_class_metrics().to_json()
         return _emd_template
 
     @staticmethod
@@ -789,12 +791,12 @@ class ArcGISModel(object):
         file.write(HTML_TEMPLATE)
         file.close()
 
-    def _save(self, name_or_path, framework='PyTorch', zip_files=True, save_html=True, publish=False, gis=None, compute_metrics=True, **kwargs):
+    def _save(self, name_or_path, framework='PyTorch', zip_files=True, save_html=True, publish=False, gis=None,
+              compute_metrics=True, save_optimizer=False, **kwargs):
         save_format = kwargs.get('save_format', 'default') # 'default', 'tflite'
         post_processed = kwargs.get('post_processed', True) # True, False
         quantized = kwargs.get('quantized', False) # True, False
         temp = self.learn.path
-
         if '\\' in name_or_path or '/' in name_or_path:
             path = Path(name_or_path)
             name = path.parts[-1]
@@ -827,13 +829,12 @@ class ArcGISModel(object):
                 """
                 raise Exception(_err_msg)
             else:
-                with_opt = getattr(self, "with_opt", True)
                 if isinstance(self.learn.model, (DistributedDataParallel)):
                     if not int(os.environ.get('RANK', 0)):
-                        saved_path = self.learn.save(name,  return_path=True, with_opt=with_opt)
+                        saved_path = self.learn.save(name,  return_path=True, with_opt=save_optimizer)
                     return
 
-                saved_path = self.learn.save(name,  return_path=True, with_opt=with_opt)
+                saved_path = self.learn.save(name,  return_path=True, with_opt=save_optimizer)
 
             # undoing changes to self.learn.path
         except Exception as e:
@@ -1009,7 +1010,8 @@ class ArcGISModel(object):
         dummy_input = torch.randn(batch_size, 3, self._data.chip_size, self._data.chip_size, device=self._device, requires_grad=True)
         torch.onnx.export(self.learn.model, dummy_input, saved_path.with_suffix('.onnx'))
 
-    def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, compute_metrics=True, **kwargs):
+    def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, compute_metrics=True,
+             save_optimizer=False, **kwargs):
         """
         Saves the model weights, creates an Esri Model Definition and Deep
         Learning Package zip for deployment to Image Server or ArcGIS Pro.   
@@ -1038,14 +1040,18 @@ class ArcGISModel(object):
         compute_metrics         Optional boolean. Used for computing model
                                 metrics.
         ---------------------   -------------------------------------------
+        save_optimizer          Optional boolean. Used for saving the model-optimizer
+                                state along with the model. Default is set to False
+        ---------------------   -------------------------------------------
         kwargs                  Optional Parameters:
                                 Boolean `overwrite` if True, it will overwrite
                                 the item on ArcGIS Online/Enterprise, default False.                                
         =====================   ===========================================
-        """    
+        """
         if int(os.environ.get('RANK', 0)):
             return
-        return self._save(name_or_path, framework=framework, publish=publish, gis=gis, compute_metrics=compute_metrics, **kwargs)
+        return self._save(name_or_path, framework=framework, publish=publish, gis=gis, compute_metrics=compute_metrics,
+                          save_optimizer=save_optimizer, **kwargs)
         
     def load(self, name_or_path):
         """

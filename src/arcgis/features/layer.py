@@ -484,12 +484,12 @@ class FeatureLayer(Layer):
             "f": "json",
             "attachmentId": "%s" % attachment_id
         }
-        files = {'file': file_path}
+        files = {'attachment': file_path}
         if self._dynamic_layer is not None:
-            url = self.url.split('?')[0] + "/%s/attachments" % oid
+            url = self.url.split('?')[0] + f"/{oid}/updateAttachment"
             params['layer'] = self._dynamic_layer
         else:
-            url = self._url + "/%s/attachments" % oid
+            url = self._url + f"/{oid}/updateAttachment"
         res = self._con.post(path=url,
                              postdata=params,
                              files=files, token=self._token)

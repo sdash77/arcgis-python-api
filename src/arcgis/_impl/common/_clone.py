@@ -2803,8 +2803,11 @@ class _FormDefinition(_ItemDefinition):
             for child in instance.iter():
                 child.tag = lookup.get(child.tag, child.tag)
         
-        with open(xml_file_path, 'wb') as xml_file:
-            xml_file.write(ElementTree.tostring(xml))
+        # Add all original namespaces back
+        with open(xml_file_path, 'w') as xml_file:
+            xml_string = ElementTree.tostring(xml, encoding="unicode")
+            xml_string = re.sub("<h:html\s.*>?", "<h:html " + " ".join(['{0}="{1}"'.format('xmlns' if not k else 'xmlns:' + k,v) for k, v in namespace.items()]) + ">", xml_string, 1)
+            xml_file.write(xml_string)
 
     def clone(self):
         """Clone the form in the target organization.

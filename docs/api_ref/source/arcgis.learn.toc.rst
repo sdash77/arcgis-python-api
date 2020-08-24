@@ -171,6 +171,12 @@ BDCNEdgeDetector
     :inherited-members:
     :undoc-members:
 
+ImageCaptioner
+------------------
+.. autoclass:: arcgis.learn.ImageCaptioner
+    :members:
+    :inherited-members:
+    :undoc-members:
 
 Submodules
 --------------
