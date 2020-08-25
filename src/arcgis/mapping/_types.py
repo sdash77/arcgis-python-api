@@ -19,7 +19,7 @@ from arcgis._impl.common._utils import _date_handler
 from arcgis.geometry import SpatialReference, Polygon
 from arcgis.gis import Layer, _GISResource, Item
 from arcgis.mapping._basemap_definitions import basemap_dict
-
+from arcgis.mapping._scenelyrs import SceneLayer
 try:
     from traitlets import HasTraits, observe
     from arcgis.widgets._mapview._traitlets_extension import ObservableDict
@@ -44,7 +44,7 @@ def _tempinput(data):
     os.unlink(temp.name)
 
 ###########################################################################
-class SceneLayer(Layer):
+class SceneLayerv1(Layer):
     """
     Represents a Web scene layer. Web scene layers are cached web layers that are optimized for displaying a large
     amount of 2D and 3D features. You can use scene layers to represent 3D points, point clouds, 3D objects and
