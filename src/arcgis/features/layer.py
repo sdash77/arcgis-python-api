@@ -2158,9 +2158,11 @@ class FeatureLayer(Layer):
         This operation adds, updates, and deletes features to the
         associated feature layer or table in a single call.
 
+
         .. note:
             When making large number (250+ records at once) of edits, `append` should be used over `edit_features`
             to improve performance and ensure service stability.
+
 
         =====================   ======================================================================================
         **Inputs**              **Description**
