@@ -19,7 +19,7 @@ from arcgis._impl.common._utils import _date_handler
 from arcgis.geometry import SpatialReference, Polygon
 from arcgis.gis import Layer, _GISResource, Item
 from arcgis.mapping._basemap_definitions import basemap_dict
-
+from arcgis.mapping._scenelyrs import SceneLayer
 try:
     from traitlets import HasTraits, observe
     from arcgis.widgets._mapview._traitlets_extension import ObservableDict
@@ -42,56 +42,6 @@ def _tempinput(data):
     temp.close()
     yield temp.name
     os.unlink(temp.name)
-
-###########################################################################
-class SceneLayer(Layer):
-    """
-    Represents a Web scene layer. Web scene layers are cached web layers that are optimized for displaying a large
-    amount of 2D and 3D features. You can use scene layers to represent 3D points, point clouds, 3D objects and
-    integrated mesh layers.
-
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    url                    Required string, specify the url ending in /SceneServer/
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
-                           used.
-    ==================     ====================================================================
-
-    .. code-block:: python
-
-        # USAGE EXAMPLE 1: Instantiating a SceneLayer object
-
-        from arcgis.mapping import SceneLayer
-        s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
-
-        type(s_layer)
-        >> arcgis.mapping._types.SceneLayer
-
-        print(s_layer.properties.layers[0].name)
-        >> 'your layer name'
-    """
-    def __init__(self, url, gis=None):
-        """
-        Constructs a SceneLayer given a web scene layer URL
-        """
-        super(SceneLayer, self).__init__(url, gis)
-
-    @property
-    def _lyr_json(self):
-        out = super()._lyr_json
-        layer_type = self.properties.layerType.lower()
-        # Rest API layer type is a bit different from JS API types
-        if layer_type == "point":
-            out["type"] = "SceneLayer"
-        if layer_type == "3dobject":
-            out["type"] = "SceneLayer"
-        if layer_type == "integratedmesh":
-            out["type"] = "IntegratedMeshLayer"
-        if layer_type == "pointcloud":
-            out["type"] = "PointCloudLayer"
-        return out 
 
 ###########################################################################
 class _ApplicationProperties(object):

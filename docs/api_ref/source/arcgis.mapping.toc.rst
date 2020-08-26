@@ -64,6 +64,41 @@ SceneLayer
     :undoc-members:
     :show-inheritance:
 
+BuildingLayer
+------------------
+.. autoclass:: arcgis.mapping.BuildingLayer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+IntegratedMeshLayer
+------------------
+.. autoclass:: arcgis.mapping.IntegratedMeshLayer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Object3DLayer
+------------------
+.. autoclass:: arcgis.mapping.Object3DLayer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Point3DLayer
+------------------
+.. autoclass:: arcgis.mapping.Point3DLayer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+PointCloudLayer
+------------------
+.. autoclass:: arcgis.mapping.PointCloudLayer
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 export_map
 ------------
