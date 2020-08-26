@@ -401,21 +401,3 @@ class SceneLayer(Layer, metaclass=_SceneLayerFactory):
         Constructs a SceneLayer given a web scene layer URL
         """
         super(SceneLayer, self).__init__(url, gis)
-
-
-
-#if __name__ == "__main__":
-    #gis = GIS(url="https://pyrite.esri.com/portal", username="admin", password='esri.agp', verify_cert=False)
-    #layers = {
-        #"PointCloudLayer" : "https://pyrite.esri.com/server/rest/services/pc_python1/SceneServer",
-        #"Point3DLayer" : "https://pyrite.esri.com/server/rest/services/Azu_points/SceneServer",
-        #"Object3DLayer" : "https://pyrite.esri.com/server/rest/services/pc_python3/SceneServer",
-        #"BuildingLayer" : "https://pyrite.esri.com/server/rest/services/s3_BSLfix/SceneServer",
-        #"IntegratedMeshLayer" : "https://pyrite.esri.com/server/rest/services/Azu_imesh/SceneServer",
-        #"3DObjectLayer" : "https://tiles.arcgis.com/tiles/P3ePLMYs2RVChkJx/arcgis/rest/services/Buildings_Hamburg/SceneServer"
-    #}
-    #for k, v in layers.items():
-        #print('--------------------------------------------')
-        #lyr = SceneLayer(v, gis=gis)
-        #print(lyr.__class__.__name__ == k, k, lyr.__class__.__name__)
-        #print('--------------------------------------------')
