@@ -96,6 +96,8 @@ def _create_output_service(gis, output_name, output_service_name='Analysis featu
             output_datastore = arcgis.env.output_datastore
         else:
             output_datastore = "spatiotemporal"
+    if str(output_datastore).lower().find("/bigdatafileshare/") > -1:
+        return None
     createParameters = {
             "currentVersion": 10.2,
             "serviceDescription": "",

@@ -26,8 +26,6 @@ from ._util import (_id_generator,
 
 _log = _logging.getLogger(__name__)
 
-# url = "https://dev003153.esri.com/gax/rest/services/System/GeoAnalyticsTools/GPServer"
-
 _use_async = True
 
 def build_multivariable_grid(input_layers,
@@ -248,9 +246,13 @@ def build_multivariable_grid(input_layers,
     output_service = _create_output_service(gis, output_name, output_service_name, 'Build Multi Variable Grid ',
                                             output_datastore=output_datastore)
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_service_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
 
     if context is not None:
         params["context"] = context
@@ -466,9 +468,14 @@ def aggregate_points(point_layer,
     output_service = _create_output_service(gis, output_name, output_service_name, 'Aggregate Points',
                                             output_datastore=output_datastore)
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
+
     if isinstance(summary_fields, list):
         summary_fields = _json.dumps(summary_fields)
 
@@ -510,16 +517,14 @@ def aggregate_points(point_layer,
         output_service.delete()
         raise
 
-
-
 def describe_dataset(input_layer,
-                    extent_output=False,
-                    sample_size=None,
-                    output_name=None,
-                    gis=None,
-                    context=None,
-                    future=False,
-                    return_tuple=False):
+                     extent_output=False,
+                     sample_size=None,
+                     output_name=None,
+                     gis=None,
+                     context=None,
+                     future=False,
+                     return_tuple=False):
     """
     .. image:: _static/images/describe_dataset/describe_dataset.png
 
@@ -620,9 +625,13 @@ def describe_dataset(input_layer,
     output_service = _create_output_service(gis, output_name, output_service_name, 'Describe Dataset',
                                             output_datastore=output_datastore)
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
         params["context"] = context
@@ -664,7 +673,6 @@ def describe_dataset(input_layer,
     except:
         output_service.delete()
         raise
-    return
 
 
 def join_features(target_layer,
@@ -874,9 +882,13 @@ def join_features(target_layer,
     output_service = _create_output_service(gis, output_name, output_service_name, 'Join Features',
                                             output_datastore=output_datastore)
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
         params["context"] = context
@@ -916,20 +928,6 @@ def join_features(target_layer,
     except:
         output_service.delete()
         raise
-
-join_features.__annotations__ = {
-                  'join_operation': str,
-                  'join_fields': str,
-                  'summary_fields': str,
-                  'spatial_relationship': str,
-                  'spatial_near_distance': float,
-                  'spatial_near_distance_unit': str,
-                  'temporal_relationship': str,
-                  'temporal_near_distance': int,
-                  'temporal_near_distance_unit': str,
-                  'attribute_relationship': str,
-                  'join_condition': str,
-                  'output_name': str}
 
 def reconstruct_tracks(input_layer,
                        track_fields,
@@ -1112,9 +1110,13 @@ def reconstruct_tracks(input_layer,
     output_service = _create_output_service(gis, output_name, output_service_name, 'Reconstruct Tracks',
                                             output_datastore=output_datastore)
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
         params["context"] = context
@@ -1152,16 +1154,6 @@ def reconstruct_tracks(input_layer,
     except:
         output_service.delete()
         raise
-
-
-reconstruct_tracks.__annotations__ = {
-                       'track_fields':str,
-                       'method': str,
-                       'buffer_field': str,
-                       'summary_fields': str,
-                       'time_split': int,
-                       'time_split_unit': str,
-                       'output_name': str}
 
 def summarize_attributes(input_layer,
                          fields=None,
@@ -1287,9 +1279,13 @@ def summarize_attributes(input_layer,
     output_service = _create_output_service(gis, output_name, output_service_name, 'Summarize Attributes',
                                             output_datastore=output_datastore)
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
         params["context"] = context
@@ -1335,11 +1331,6 @@ def summarize_attributes(input_layer,
     except:
         output_service.delete()
         raise
-
-summarize_attributes.__annotations__ = {
-                         'fields': str,
-                         'summary_fields': str,
-                         'output_name': str}
 
 def summarize_within(summarized_layer,
                      summary_polygons=None,
@@ -1539,10 +1530,13 @@ def summarize_within(summarized_layer,
     output_service = _create_output_service(gis, output_name, output_service_name, 'Summarize Within',
                                             output_datastore=output_datastore)
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
-
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
     if context is not None:
         params["context"] = context
     else:
