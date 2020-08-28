@@ -112,6 +112,8 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False, p
                       ```
 
                       Only built-in types are supported.
+    ----------------  ---------------------------------------------------------------
+    param_as_input    Optional Boolean. If True, the user_variable will be added if a method past. If False, the variable will not be given into the method.
     ================  ===============================================================
 
     :returns: list of dictionary of messages from the code provided.
