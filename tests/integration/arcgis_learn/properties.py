@@ -46,6 +46,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
+        "regression_epochs": 15,
         "inferencing_parameter": {
             "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "ssd",
@@ -76,12 +77,12 @@ data = {
     },
     "rn": {
         "model_name": "retinanet",
-        "datapath": "ssd_retina_data",
+        "datapath": "yolo_data",
         "datapath_ms": "ssd_retina_yolo_fasterrcnn_data",
         "model": RetinaNet,
         "model_test": "rn_test",
         "prepare_data": {
-            "path": os.path.join(data_folder, "ssd_retina_data"),
+            "path": os.path.join(data_folder, "yolo_data"),
             "batch_size": 2
         },
         "prepare_data_ms": {
@@ -92,7 +93,8 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
-        "regression_test_score": 0.40,
+        "regression_test_score": 0.20,
+        "regression_epochs": 20,
         "inferencing_parameter": {
             "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "rn",
@@ -140,6 +142,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "accuracy",
         "regression_test_score": 0.40,
+        "regression_epochs": 15,
         "inferencing_parameter": {
             "model_type": "ClassifyPixelsUsingDeepLearning",
             "sample_input": os.path.join(data_folder_inference, "ClassifyPixelsUsingDeepLearning", "unet",
@@ -185,6 +188,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "accuracy",
         "regression_test_score": 0.40,
+        "regression_epochs": 15,
         "inferencing_parameter": {
             "model_type": "ClassifyPixelsUsingDeepLearning",
             "sample_input": os.path.join(data_folder_inference, "ClassifyPixelsUsingDeepLearning", "deeplab",
@@ -231,6 +235,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "confusion_matrix",
         "regression_test_score": 0.40,
+        "regression_epochs": 15,
         "inferencing_parameter": {
             "model_type": "ClassifyObjectsUsingDeepLearning",
             "sample_input": os.path.join(data_folder_inference, "ClassifyObjectsUsingDeepLearning", "fc",
@@ -278,6 +283,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "accuracy",
         "regression_test_score": 0.40,
+        "regression_epochs": 15,
         "inferencing_parameter": {
             "model_type": "ClassifyPixelsUsingDeepLearning",
             "sample_input": os.path.join(data_folder_inference, "ClassifyPixelsUsingDeepLearning", "pspnet",
@@ -324,6 +330,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
+        "regression_epochs": 15,
         "inferencing_parameter": {
             "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "maskrcnn",
@@ -367,6 +374,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "precision_score",
         "regression_test_score": 0.40,
+        "regression_epochs": 15,
         "inferencing_parameter": {
             "model_type": "extract_entities",
             "sample_input": os.path.join(data_folder_inference, "Others", "ner",
@@ -393,6 +401,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "compute_precision_recall",
         "regression_test_score": 0.40,
+        "regression_epochs": 15,
         "inferencing_parameter": {
             "model_type": "predict_las",
             "sample_input": os.path.join(data_folder_inference, "Others", "pointcnn",
@@ -422,6 +431,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "psnr_metric",
         "regression_test_score": 0.40,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "pass",
             "sample_input": os.path.join(data_folder_inference, "ClassifyPixelsUsingDeepLearning", "superres",
@@ -468,6 +478,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
         "regression_test_score": 0.40,
+        "regression_epochs": 30,
         "inferencing_parameter": {
             "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "fasterrcnn",
@@ -515,7 +526,8 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
-        "regression_test_score": 0.40,
+        "regression_test_score": 0.15,
+        "regression_epochs": 25,
         "inferencing_parameter": {
             "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "yolo",
@@ -560,6 +572,7 @@ data = {
         "test_feature_layer": True,
         "regression_parameter": "score",
         "regression_test_score": 0.40,
+        "regression_epochs": 15,
         "inferencing_parameter": {
             "model_type": "prediction_layer"
         },
@@ -585,6 +598,7 @@ data = {
         "test_feature_layer": True,
         "regression_parameter": "score",
         "regression_test_score": 0.40,
+        "regression_epochs": 15,
         "inferencing_parameter": {
             "model_type": "prediction_layer"
         },

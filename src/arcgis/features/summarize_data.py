@@ -24,8 +24,8 @@ def aggregate_points(point_layer,
                      context=None,
                      gis=None,
                      estimate=False,
-                     future=False, 
-                     bin_type=None, 
+                     future=False,
+                     bin_type=None,
                      bin_size=None,
                      bin_size_unit=None):
     """
@@ -76,13 +76,13 @@ def aggregate_points(point_layer,
     future                                   Optional Boolean. When True, the task will be performed asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     bin_type                                 Optional String. The type of bin that will be generated and points will be aggregated into. Bin options are as follows: Hexagon and Square.
-                                             Square is the Default. When generating bins, for Square, the number and units specified determine the height and length of the square. 
-                                             For Hexagon, the number and units specified determine the distance between parallel sides. Either `bin_type` or `polygon_layer` must be 
+                                             Square is the Default. When generating bins, for Square, the number and units specified determine the height and length of the square.
+                                             For Hexagon, the number and units specified determine the distance between parallel sides. Either `bin_type` or `polygon_layer` must be
                                              specified. If `bin_type` is chosen, then `bin_size` and `bin_size_unit` specifying the size of the bins must be included.
     ------------------------------------     --------------------------------------------------------------------
     bin_size                                 Optional Float. The distance for the bins of type `bin_type` that the `point_layer` will be aggregated into.
     ------------------------------------     --------------------------------------------------------------------
-    bin_size_unit                            Optional String. The linear unit to be used with the distance value specified in `bin_size`. 
+    bin_size_unit                            Optional String. The linear unit to be used with the distance value specified in `bin_size`.
                                              Values: `Meters, Kilometers, Feet, Miles, NauticalMiles, or Yards`
     ====================================     ====================================================================
 
@@ -106,7 +106,7 @@ def aggregate_points(point_layer,
     """
     kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.aggregate_points, 
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.aggregate_points,
                                      **kwargs)
     return gis._tools.featureanalysis.aggregate_points(**params)
 #--------------------------------------------------------------------------
@@ -312,8 +312,8 @@ def summarize_nearby(sum_nearby_layer,
     """
     kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.summarize_nearby, 
-                                     **kwargs)    
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.summarize_nearby,
+                                     **kwargs)
     if isinstance(near_type, str):
         if near_type != 'StraightLine':
             route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
@@ -398,7 +398,7 @@ def summarize_center_and_dispersion(
 
     kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.summarize_center_and_dispersion, **kwargs)   
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.summarize_center_and_dispersion, **kwargs)
     return gis._tools.featureanalysis.summarize_center_and_dispersion(**params)
 #--------------------------------------------------------------------------
 def summarize_within(sum_within_layer,
@@ -413,7 +413,10 @@ def summarize_within(sum_within_layer,
                      context=None,
                      gis=None,
                      estimate=False,
-                     future=False):
+                     future=False,
+                     bin_type="Square",
+                     bin_size=None,
+                     bin_size_unit=None):
     """
     .. image:: _static/images/summarize_within/summarize_within.png
 
@@ -489,6 +492,20 @@ def summarize_within(sum_within_layer,
     estimate                                 Optional boolean. If True, the number of credits to run the operation will be returned.
     -------------------------------------    ---------------------------------------------------------
     future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    -------------------------------------    ---------------------------------------------------------
+    bin_type                                 Required string. The type of bin used to calculate density.
+
+                                             Choice list: ['Hexagon', 'Square'].
+    -------------------------------------    ---------------------------------------------------------
+    bin_size                                 Required float. The distance for the bins that the ``input_layer`` will be analyzed using.
+                                             When generating bins, for Square, the number and units specified determine the
+                                             height and length of the square. For ``Hexagon``, the number and units specified
+                                             determine the distance between parallel sides.
+    -------------------------------------    ---------------------------------------------------------
+    bin_size_unit                            Required string. The distance unit for the bins for which the density will be calculated.
+                                             The linear unit to be used with the value specified in ``bin_size``.
+
+                                             The default is 'Meters'.
     =====================================    =========================================================
 
     :returns: Item if ``output_name`` is set. else results in a Python dict with the following keys:
@@ -514,18 +531,10 @@ def summarize_within(sum_within_layer,
     kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
     params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.summarize_within, **kwargs)
-    return gis._tools.featureanalysis.summarize_within(
-                     sum_within_layer,
-                     summary_layer,
-                     sum_shape,
-                     shape_units,
-                     summary_fields,
-                     group_by_field,
-                     minority_majority,
-                     percent_shape,
-                     output_name,
-                     context,
-                     estimate=estimate, future=future)
+    if not estimate is None:
+        params['estimate'] = estimate
+    return gis._tools.featureanalysis.summarize_within(**params)
+
 #--------------------------------------------------------------------------
 def join_features(target_layer,
                   join_layer,
@@ -637,7 +646,9 @@ def join_features(target_layer,
     """
     kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.join_features, **kwargs)   
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.join_features, **kwargs)
+    if not estimate is None:
+        params['estimate'] = estimate
     if 'attribute_relationship' not in params:
         params['attribute_relationship'] = attribute_relationship
     if 'summary_fields' not in params:

@@ -157,7 +157,12 @@ class TransformerForTextClassification(ArcGISTransformer):
         transformer model for performing Sequence Classification tasks
         """
         if self._pretrained_model_path and os.path.exists(self._pretrained_model_path):
-            self._transformer = AutoModelForSequenceClassification.from_pretrained(self._pretrained_model_path)
+            base_path, extension = os.path.splitext(self._pretrained_model_path)
+            path = base_path + ".pth"
+            if extension == ".emd" and os.path.exists(path):
+                self._transformer = AutoModelForSequenceClassification.from_pretrained(path, config=self._config)
+            else:
+                self._transformer = AutoModelForSequenceClassification.from_pretrained(self._pretrained_model_path)
         else:
             self._transformer = AutoModelForSequenceClassification.\
                 from_pretrained(self._transformer_pretrained_model_name, config=self._config)

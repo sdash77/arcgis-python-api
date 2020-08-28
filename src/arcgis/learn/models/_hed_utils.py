@@ -180,8 +180,6 @@ def get_confusion_metric(gt, pred, buffer):
 
 def f1_score(pred, gt):
 
-    if isinstance(pred, tuple): # while training
-        pred = pred[0]
     gt = gt.byte().squeeze(1).cpu().numpy()
     pred = (pred[-1]>=0.5).byte().squeeze(1).cpu().numpy()
     tp, predicted_tp, actual_tp = get_confusion_metric(gt, pred, 3)

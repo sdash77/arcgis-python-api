@@ -17,11 +17,11 @@ from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.features import Table as _Table
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing import DataFile
-from ._util import (_id_generator, 
-                    _feature_input, 
-                    _set_context, 
-                    _create_output_service, 
-                    GAJob, 
+from ._util import (_id_generator,
+                    _feature_input,
+                    _set_context,
+                    _create_output_service,
+                    GAJob,
                     _prevent_bds_item)
 
 _log = _logging.getLogger(__name__)
@@ -244,14 +244,14 @@ def build_multivariable_grid(input_layers,
     if context is not None:
         output_datastore = context.get('dataStore', None)
     else:
-        output_datastore = None     
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Build Multi Variable Grid ', 
+        output_datastore = None
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Build Multi Variable Grid ',
                                             output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
-    
+
     if context is not None:
         params["context"] = context
     else:
@@ -452,7 +452,8 @@ def aggregate_points(point_layer,
     for key, value in kwargs.items():
         if value is not None:
             params[key] = value
-
+    if context is not None:
+        params["context"] = context
     if output_name is None:
         output_service_name = 'Aggregate Points Analysis_' + _id_generator()
         output_name = output_service_name.replace(' ', '_')
@@ -461,8 +462,8 @@ def aggregate_points(point_layer,
     if context is not None:
         output_datastore = context.get('dataStore', None)
     else:
-        output_datastore = None     
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Aggregate Points', 
+        output_datastore = None
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Aggregate Points',
                                             output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
@@ -470,7 +471,14 @@ def aggregate_points(point_layer,
         "itemProperties": {"itemId" : output_service.itemid}})
     if isinstance(summary_fields, list):
         summary_fields = _json.dumps(summary_fields)
-    _set_context(params)
+
+
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
+
+
 
     param_db = {
         "point_layer": (_FeatureSet, "pointLayer"),
@@ -495,7 +503,7 @@ def aggregate_points(point_layer,
     try:
         if future:
             gpjob = _execute_gp_tool(gis, "AggregatePoints", params, param_db, return_values, _use_async, url, True, future=future)
-            return GAJob(gpjob=gpjob, return_service=output_service)        
+            return GAJob(gpjob=gpjob, return_service=output_service)
         _execute_gp_tool(gis, "AggregatePoints", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
@@ -608,8 +616,8 @@ def describe_dataset(input_layer,
     if context is not None:
         output_datastore = context.get('dataStore', None)
     else:
-        output_datastore = None     
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Describe Dataset', 
+        output_datastore = None
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Describe Dataset',
                                             output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
@@ -862,8 +870,8 @@ def join_features(target_layer,
     if context is not None:
         output_datastore = context.get('dataStore', None)
     else:
-        output_datastore = None     
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Join Features', 
+        output_datastore = None
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Join Features',
                                             output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
@@ -1100,8 +1108,8 @@ def reconstruct_tracks(input_layer,
     if context is not None:
         output_datastore = context.get('dataStore', None)
     else:
-        output_datastore = None     
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Reconstruct Tracks', 
+        output_datastore = None
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Reconstruct Tracks',
                                             output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
@@ -1275,8 +1283,8 @@ def summarize_attributes(input_layer,
     if context is not None:
         output_datastore = context.get('dataStore', None)
     else:
-        output_datastore = None     
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Summarize Attributes', 
+        output_datastore = None
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Summarize Attributes',
                                             output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({
@@ -1304,17 +1312,17 @@ def summarize_attributes(input_layer,
         param_db["time_step_interval_unit"] = (str, "timeStepIntervalUnit")
         param_db["time_step_repeat_interval"] = (int, "timeStepRepeatInterval")
         param_db["time_step_repeat_interval_unit"] = (str, "timeStepRepeatIntervalUnit")
-        param_db["time_step_reference"] = (_datetime, "timeStepReference")        
-    
+        param_db["time_step_reference"] = (_datetime, "timeStepReference")
+
     else:
         for rk in ["time_step_interval", "time_step_interval_unit",
                    "time_step_repeat_interval", "time_step_repeat_interval_unit",
-                   "time_step_reference"]:    
+                   "time_step_reference"]:
             if rk in params:
                 params.pop(rk, None)
-    
-        
-        
+
+
+
     return_values = [
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
@@ -1527,8 +1535,8 @@ def summarize_within(summarized_layer,
     if context is not None:
         output_datastore = context.get('dataStore', None)
     else:
-        output_datastore = None     
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Summarize Within', 
+        output_datastore = None
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Summarize Within',
                                             output_datastore=output_datastore)
 
     params['output_name'] = _json.dumps({

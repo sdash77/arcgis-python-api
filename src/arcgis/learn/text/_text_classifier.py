@@ -107,7 +107,6 @@ class TextClassifier(ArcGISModel):
 
         model_backbone = ModelBackBone(backbone)
         super().__init__(data, model_backbone)
-        self.with_opt = False
         self.is_multilabel_problem = False
         self.thresh = kwargs.get('thresh', 0.25)
         self._use_fp16 = kwargs.get('use_fp16', False)
@@ -160,6 +159,7 @@ class TextClassifier(ArcGISModel):
             architecture=model_type,
             pretrained_model_name=pretrained_model_name,
             config=config,
+            pretrained_model_path=pretrained_path,
             seq_len=seq_len
         )
 
@@ -260,7 +260,7 @@ class TextClassifier(ArcGISModel):
         if data_is_none:cls_object._data._is_empty = True
         return cls_object
 
-    def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, **kwargs):
+    def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, save_optimizer=False, **kwargs):
         """
         Saves the model weights, creates an Esri Model Definition and Deep
         Learning Package zip for deployment.
@@ -282,6 +282,9 @@ class TextClassifier(ArcGISModel):
         gis                     Optional GIS Object. Used for publishing the item.
                                 If not specified then active gis user is taken.
         ---------------------   -------------------------------------------
+        save_optimizer          Optional boolean. Used for saving the model-optimizer
+                                state along with the model. Default is set to False.
+        ---------------------   -------------------------------------------
         kwargs                  Optional Parameters:
                                 Boolean `overwrite` if True, it will overwrite
                                 the item on ArcGIS Online/Enterprise, default False.
@@ -290,7 +293,7 @@ class TextClassifier(ArcGISModel):
         :returns: the qualified path at which the model is saved
         """
 
-        path = super().save(name_or_path, framework, publish, gis, **kwargs)
+        path = super().save(name_or_path, framework, publish, gis, save_optimizer=save_optimizer, **kwargs)
 
         self._save_df_to_html(path)
 

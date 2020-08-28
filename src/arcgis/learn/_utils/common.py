@@ -23,6 +23,61 @@ GDAL_INSTALL_MESSAGE = f"""
 \nconda install gdal=2.3.3
 """.strip()
 
+
+def read_image(path):
+    """
+    path: file path of image on disk.
+
+    returns an array of image pixel values in channel last format.
+    """
+    path = str(os.path.abspath(path))
+    if not os.path.exists:
+        raise Exception(f"The image path {path} could not be found on disk, please verify your training data.")
+
+    gdal_error = None
+    skimage_error = None
+    try:
+        import gdal
+        arr = gdal.Open(path).ReadAsArray()
+        if len(arr.shape) > 2:
+            arr = np.rollaxis(arr, 0, 3)
+        return arr
+    except Exception as _gdal_error:
+        gdal_error = str(_gdal_error)
+
+    try:
+        from skimage.io import imread
+        return imread(path)
+    except Exception as _skimage_error:
+        skimage_error = str(_skimage_error)
+
+    try:
+        from skimage.io import imread
+        return np.array(PIL.Image.open(path).convert('RGB'))
+    except Exception as _pillow_error:
+        pillow_error = str(_pillow_error)
+
+    # Attach gdal error
+    message = f"""
+       Tried opening image using gdal and encountered the following error
+       \n\n{gdal_error}
+       """
+    if (gdal_error) == ModuleNotFoundError:
+        message += GDAL_INSTALL_MESSAGE
+    # Attach skimage error
+    message += f"""
+       \n===================================================================
+       \n\nTried opening image using skimage and encountered the following error
+       \n\n{skimage_error}
+       """
+    # Attach pillow error
+    message += f"""
+       \n===================================================================
+       \n\nTried opening image using pillow and encountered the following error
+       \n\n{pillow_error}
+       """
+    raise Exception(message)
+
 class ArcGISMSImage(Image):
 
     def show(self, ax=None, rgb_bands=None):
@@ -67,50 +122,7 @@ class ArcGISMSImage(Image):
 
     @staticmethod
     def read_image(path):
-        path = str(os.path.abspath(path))
-        if not os.path.exists:
-            raise Exception(f"The image path {path} could not be found on disk, please verify your training data.")
-
-        gdal_error = None
-        skimage_error = None
-        try:
-            import gdal
-            return gdal.Open(path).ReadAsArray()
-        except Exception as _gdal_error:
-            gdal_error = str(_gdal_error)
-
-        try:
-            from skimage.io import imread
-            return imread(path)
-        except Exception as _skimage_error:
-            skimage_error = str(_skimage_error)
-
-        try:
-            from skimage.io import imread
-            return np.array(PIL.Image.open(path).convert('RGB'))
-        except Exception as _pillow_error:
-            pillow_error = str(_pillow_error)
-
-        # Attach gdal error
-        message = f"""
-           Tried opening image using gdal and encountered the following error
-           \n\n{gdal_error}
-           """
-        if (gdal_error) == ModuleNotFoundError:
-            message += GDAL_INSTALL_MESSAGE
-        # Attach skimage error
-        message += f"""
-           \n===================================================================
-           \n\nTried opening image using skimage and encountered the following error
-           \n\n{skimage_error}
-           """
-        # Attach pillow error
-        message += f"""
-           \n===================================================================
-           \n\nTried opening image using pillow and encountered the following error
-           \n\n{pillow_error}
-           """
-        raise Exception(message)
+        return read_image(path)
 
     @classmethod
     def open(cls, path, cast_to=np.float32, div=None, imagery_type=None):

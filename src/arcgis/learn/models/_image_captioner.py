@@ -253,7 +253,7 @@ class ImageCaptioner(ArcGISModel):
         =====================   ===========================================
         """
         from ._arcgis_model import _create_zip
-        zip_files = kwargs.get('zip_files', True)
+        zip_files = kwargs.pop('zip_files', True)
         path = super()._save(name_or_path,
                             framework=framework,
                             publish=publish,
