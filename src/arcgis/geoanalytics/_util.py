@@ -96,38 +96,38 @@ def _create_output_service(gis, output_name, output_service_name='Analysis featu
             output_datastore = arcgis.env.output_datastore
         else:
             output_datastore = "spatiotemporal"
-    if str(output_datastore).lower().find("/bigdatafileshare/") > -1:
+    if str(output_datastore).lower().find("/bigdatafileshares/") > -1:
         return None
     createParameters = {
-            "currentVersion": 10.2,
-            "serviceDescription": "",
-            "hasVersionedData": False,
-            "supportsDisconnectedEditing": False,
-            "hasStaticData": True,
-            "maxRecordCount": 2000,
-            "supportedQueryFormats": "JSON",
-            "capabilities": "Query",
-            "description": "",
-            "copyrightText": "",
-            "allowGeometryUpdates": False,
-            "syncEnabled": False,
-            "editorTrackingInfo": {
-                "enableEditorTracking": False,
-                "enableOwnershipAccessControl": False,
-                "allowOthersToUpdate": True,
-                "allowOthersToDelete": True
+        "currentVersion": 10.2,
+        "serviceDescription": "",
+        "hasVersionedData": False,
+        "supportsDisconnectedEditing": False,
+        "hasStaticData": True,
+        "maxRecordCount": 2000,
+        "supportedQueryFormats": "JSON",
+        "capabilities": "Query",
+        "description": "",
+        "copyrightText": "",
+        "allowGeometryUpdates": False,
+        "syncEnabled": False,
+        "editorTrackingInfo": {
+            "enableEditorTracking": False,
+            "enableOwnershipAccessControl": False,
+            "allowOthersToUpdate": True,
+            "allowOthersToDelete": True
             },
-            "xssPreventionInfo": {
-                "xssPreventionEnabled": True,
-                "xssPreventionRule": "InputOnly",
-                "xssInputRule": "rejectInvalid"
+        "xssPreventionInfo": {
+            "xssPreventionEnabled": True,
+            "xssPreventionRule": "InputOnly",
+            "xssInputRule": "rejectInvalid"
             },
-            "tables": [],
-            "name": output_service_name.replace(' ', '_'),
-            "options": {
-                "dataSourceType": output_datastore
-            }
+        "tables": [],
+        "name": output_service_name.replace(' ', '_'),
+        "options": {
+            "dataSourceType": output_datastore
         }
+    }
 
     output_service = gis.content.create_service(output_name, create_params=createParameters, service_type="featureService")
     description = "Feature Service generated from running the " + task + " tool."
