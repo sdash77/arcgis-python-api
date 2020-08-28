@@ -14,6 +14,7 @@ _look_up_types = {
     "esriFieldTypeInteger" : "int64",
     "esriFieldTypeSmallInteger" : "int32",
     "esriFieldTypeDouble" : "float64",
+    "esriFieldTypeFloat" : "float64",
     "esriFieldTypeSingle" :  "float32",
     "esriFieldTypeString" : "str",
     "esriFieldTypeGeometry" : "object",
