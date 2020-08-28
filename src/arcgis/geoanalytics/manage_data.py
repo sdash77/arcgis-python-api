@@ -16,7 +16,7 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-def run_python_script(code, layers=None, gis=None, context=None, future=False, parameters=None):
+def run_python_script(code, layers=None, gis=None, context=None, future=False, parameters=None, param_as_input=False):
     """
 
     The ``run_python_script`` method executes a Python script on your ArcGIS
@@ -137,7 +137,10 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False, p
     params = {'f': 'json'}
 
     if inspect.isfunction(code):
-        params['code'] = inspect.getsource(code) + '\n' + code.__name__ + '()'
+        if param_as_input == True:
+            params['code'] = inspect.getsource(code) + '\n' + code.__name__ + '(**user_variables)'
+        else:
+            params['code'] = inspect.getsource(code) + '\n' + code.__name__ + '()'
     elif isinstance(code, str):
         params['code'] = code
     else:
@@ -169,7 +172,7 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False, p
         param_db = {
             "layers": (_FeatureSet, "inputLayers"),
             "code" : (str, "pythonScript"),
-            "parameters" : (dict, "userParameters"),
+            "parameters" : (dict, "userVariables"),
             "context": (str, "context"),
         }
 
