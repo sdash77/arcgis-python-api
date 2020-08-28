@@ -2687,7 +2687,13 @@ class Polygon(Geometry):
             fill_color = "#66cc99" if self.is_valid else "#ff3333"
         rings = []
         s = ""
-        for ring in self['rings']:
+
+        if 'rings' not in self:
+            densify_geom = self.densify('ANGLE', -1, 0.1)
+            geom_json = json.loads(densify_geom.JSON)['rings']
+        else:
+            geom_json = self['rings']
+        for ring in geom_json:
             rings = ring
             exterior_coords = [
                 ["{},{}".format(*c) for c in rings]]
@@ -2790,7 +2796,13 @@ class Polyline(Geometry):
         if stroke_color is None:
             stroke_color = "#66cc99" if self.is_valid else "#ff3333"
         paths = []
-        for path in self['paths']:
+
+        if 'paths' not in self:
+            densify_geom = self.densify('DISTANCE', 1.0, 0.1)
+            geom_json = json.loads(densify_geom.JSON)['paths']
+        else:
+            geom_json = self['paths']
+        for path in geom_json:
             pnt_format = " ".join(["{0},{1}".format(*c) for c in path])
             s = ('<polyline fill="none" stroke="{2}" stroke-width="{1}" '
                  'points="{0}" opacity="0.8" />').format(pnt_format, 2. * scale_factor, stroke_color)
