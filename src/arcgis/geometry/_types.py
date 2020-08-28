@@ -187,7 +187,7 @@ class GeometryFactory(type):
     """
     Creates the Geometry Objects Based on JSON
     """
-    
+
     @staticmethod
     def _from_wkb(iterable):
         _HASARCPY = True
@@ -214,7 +214,7 @@ class GeometryFactory(type):
                 return geom
             return _ujson.loads(arcpy.FromWKT(iterable).JSON)
         return {}
-    
+
     @staticmethod
     def _from_gj(iterable):
         _HASARCPY = True
@@ -414,7 +414,7 @@ class Geometry(BaseGeometry):
 
             if xmin == xmax and ymin == ymax:
                 # This is a point; buffer using an arbitrary size
-                try:                
+                try:
                     xmin, ymin, xmax, ymax = self.buffer(1).extent
                 except:
                     xmin -= expand_amount
@@ -636,7 +636,7 @@ class Geometry(BaseGeometry):
         """
         from .affine import skew
         s = skew(geom=copy.deepcopy(self), x_angle=x_angle,
-                    y_angle=y_angle)        
+                    y_angle=y_angle)
         if inplace:
             self.update(s)
         return s
@@ -661,7 +661,7 @@ class Geometry(BaseGeometry):
 
         """
         from .affine import rotate
-        
+
         r = rotate(copy.deepcopy(self), theta)
         if inplace:
             self.update(r)
@@ -829,7 +829,7 @@ class Geometry(BaseGeometry):
         curves in the WKT string.
 
         :return: string
-        """    
+        """
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         if HASARCPY and \
                isinstance(self, Envelope):
@@ -841,7 +841,7 @@ class Geometry(BaseGeometry):
                 return None
         if HASARCPY:
             sr = self.spatial_reference.get('wkid', 4326)
-            return f"SRID={sr};{getattr(self.as_arcpy, 'WKT', None)}"            
+            return f"SRID={sr};{getattr(self.as_arcpy, 'WKT', None)}"
         elif HASSHAPELY:
             try:
                 sr = self.spatial_reference.get('wkid', 4326)
@@ -961,7 +961,7 @@ class Geometry(BaseGeometry):
                 # print((n, area, i, j))
             area_parts.append(area / 2.0)
             area = 0.0
-        return sum(area_parts)
+        return abs(sum(area_parts))
     #----------------------------------------------------------------------
     @property
     def centroid(self):
@@ -1128,20 +1128,20 @@ class Geometry(BaseGeometry):
     @property
     def has_z(self):
         """
-        Determines if the geometry has a `Z` value.  
-        
+        Determines if the geometry has a `Z` value.
+
         :returns: Boolean
-        
+
         """
         return self.get("hasZ", False)
     #----------------------------------------------------------------------
     @property
     def has_m(self):
         """
-        Determines if the geometry has a `M` value.  
-        
+        Determines if the geometry has a `M` value.
+
         :returns: Boolean
-        
+
         """
         return self.get("hasM", False)
     #----------------------------------------------------------------------
@@ -2744,7 +2744,7 @@ class Polygon(Geometry):
         for part in coordinates:
             part_item = []
             for ring in part:
-                for coord in ring:
+                for coord in reversed(ring):
                     part_item.append(coord)
             if part_item:
                 part_list.append(part_item)
@@ -3006,7 +3006,7 @@ class SpatialReference(BaseGeometry):
         elif 'wkid' in self and \
            'wkid' in other and \
            self['wkid'] == other['wkid']:
-            return True        
+            return True
         return False
     #----------------------------------------------------------------------
     def __ne__(self, other):
