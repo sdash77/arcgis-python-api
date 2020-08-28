@@ -942,10 +942,14 @@ class WebMap(HasTraits, collections.OrderedDict):
     def _is_collector_ready_map(self):
         # check that one layer is an editable feature service
         for layer in self.layers:
-            layer_object = arcgis.gis.Layer(url=layer.url, gis=self._gis)
-            if 'ArcGISFeatureLayer' in layer.layerType:
-                if any(capability in layer_object.properties.capabilities for capability in ['Create', 'Update', 'Delete', 'Editing']):
-                    return True
+            try:
+                layer_object = arcgis.gis.Layer(url=layer.url, gis=self._gis)
+                if 'ArcGISFeatureLayer' in layer.layerType:
+                    if any(capability in layer_object.properties.capabilities for capability in ['Create', 'Update', 'Delete', 'Editing']):
+                        return True
+            except Exception:
+                # Not every layer in self.layers has a URL (local featurelayer, SEDF, etc.)
+                continue
         return False
         
     def _is_offline_capable_map(self):
