@@ -3356,7 +3356,7 @@ def apply(raster, fn_name, **kwargs):
         "rasterFunction" : "Identity",
         "rasterFunctionArguments": {
             "Raster" : {"renderingRule":copy.deepcopy(template_dict),
-                         "url":layer._url},
+                         "url":layer._lyr_json['url']},
         }
     }
 
