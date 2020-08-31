@@ -126,7 +126,7 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False, p
                 def code(ss=None):
                     import time
                     if ss is None:
-                        s = user_variables['ss']
+                        ss = user_variables['ss']
                     res = geoanalytics.describe_dataset(input_layer=layers[0],
                                extent_output=True,
                                sample_size=ss)
@@ -187,7 +187,6 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False, p
         return msg
     except:
         raise
-    return
 
 def dissolve_boundaries(input_layer,
                         dissolve_fields=None,
@@ -318,9 +317,13 @@ def dissolve_boundaries(input_layer,
     output_service = _create_output_service(gis, output_name, output_service_name, 'Merge Layers',
                                             output_datastore=output_datastore)
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
         params["context"] = context
@@ -478,9 +481,13 @@ def merge_layers(input_layer,
     output_service = _create_output_service(gis, output_name, output_service_name, 'Merge Layers',
                                             output_datastore=output_datastore)
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
         params["context"] = context
@@ -507,9 +514,6 @@ def merge_layers(input_layer,
     except:
         output_service.delete()
         raise
-
-    return
-
 
 def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None, future=False):
     """
@@ -587,9 +591,13 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None
 
     output_service = _create_output_service(gis, output_name, output_service_name, 'Overlay Layers')
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
         params["context"] = context
@@ -616,8 +624,6 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None
     except:
         output_service.delete()
         raise
-
-    return
 
 
 def overlay_data(input_layer,
@@ -762,10 +768,13 @@ def overlay_data(input_layer,
     output_service = _create_output_service(gis, output_name, output_service_name, 'Overlay Layers',
                                             output_datastore=output_datastore)
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
-
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
     if context is not None:
         params["context"] = context
     else:
@@ -990,10 +999,14 @@ def calculate_fields(input_layer,
         output_datastore = None
     output_service = _create_output_service(gis, output_name, output_service_name, 'Calculate Fields',
                                             output_datastore=output_datastore)
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
 
     if context is not None:
         params["context"] = context
@@ -1026,8 +1039,6 @@ def calculate_fields(input_layer,
     except:
         output_service.delete()
         raise
-
-    return
 
 def copy_to_data_store(
     input_layer,
@@ -1099,11 +1110,15 @@ def copy_to_data_store(
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
     if 'context' in params and \
-       params['context'].lower().find('bigdatafileshares') > -1:
+       'dataStore' in params['context'] and \
+       params['context']['dataStore'].lower().find('/bigDataFileShares/'.lower()) > -1:
         params['output_name'] = output_name
-        output_service = True
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
     else:
         if context is not None:
             output_datastore = context.get('dataStore', None)
@@ -1116,10 +1131,7 @@ def copy_to_data_store(
 
     #_set_context(params)
 
-    if context is not None:
-        params["context"] = context
-    else:
-        _set_context(params)
+
 
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),

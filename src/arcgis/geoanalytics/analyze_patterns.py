@@ -14,11 +14,11 @@ from arcgis.geoprocessing import import_toolbox
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing import DataFile
 from arcgis import env as _env
-from ._util import (_id_generator, 
-                    _feature_input, 
-                    _set_context, 
-                    _create_output_service, 
-                    GAJob, 
+from ._util import (_id_generator,
+                    _feature_input,
+                    _set_context,
+                    _create_output_service,
+                    GAJob,
                     _prevent_bds_item)
 
 _log=_logging.getLogger(__name__)
@@ -254,7 +254,7 @@ def forest(input_layer,
         'trainandpredict' : 'TrainAndPredict'
 
     }
-    
+
     input_layer = _prevent_bds_item(input_layer)
     if str(prediction_type).lower() not in allowed_prediction_types:
         raise ValueError("Invalid Prediction type.")
@@ -273,7 +273,10 @@ def forest(input_layer,
     for key, value in kwargs.items():
         if value is not None:
             params[key]=value
-
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
     if output_name is None:
         output_service_name='Forest Based Regression_' + _id_generator()
         output_name=output_service_name.replace(' ', '_')
@@ -283,21 +286,17 @@ def forest(input_layer,
     if context is not None:
         output_datastore = context.get('dataStore', None)
     else:
-        output_datastore = None     
+        output_datastore = None
 
-    output_service=_create_output_service(gis, output_name, output_service_name, 'Forest Based Classification And Regression', 
+    output_service=_create_output_service(gis, output_name, output_service_name, 'Forest Based Classification And Regression',
                                           output_datastore=output_datastore)
-
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
-
-    if context is not None:
-        params["context"] = context
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
     else:
-        _set_context(params)
-
-
+        params['output_name'] = output_service_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
 
     param_db={
         "input_layer": (_FeatureSet, "inFeatures"),
@@ -358,20 +357,20 @@ def gwr(input_layer,
         local_weighting_scheme='BiSquare',
         output_name=None, context=None, gis=None, future=False):
     """
-    This tool performs GeographicallyWeightedRegression (GWR), which is a 
-    local form of linear regression used to model spatially varying 
+    This tool performs GeographicallyWeightedRegression (GWR), which is a
+    local form of linear regression used to model spatially varying
     relationships.
 
-    The following are examples of the types of questions you can answer 
+    The following are examples of the types of questions you can answer
     using this tool:
 
-    1. Is the relationship between educational attainment and income 
+    1. Is the relationship between educational attainment and income
        consistent across the study area?
     2. What are the key variables that explain high forest fire frequency?
-    3. Where are the districts in which children are achieving high test 
-       scores? What characteristics seem to be associated? Where is each 
+    3. Where are the districts in which children are achieving high test
+       scores? What characteristics seem to be associated? Where is each
        characteristic most important?
-    
+
     =========================================================================   ===========================================================================
     **Argument**                                                                **Description**
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -391,10 +390,10 @@ def gwr(input_layer,
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     neighborhood_selection_method                                               Optional String. The default value is 'NumberOfNeighbors'. Specifies how the
                                                                                 neighborhood size will be determined.
-                                                                                
+
                                                                                 - UserDefined - The neighborhood size will be specified by either the
                                                                                                 `number_of_neighbors` or `distance_band` parameter.
-                                                                                
+
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     neighborhood_type                                                           Specifies whether the neighborhood used is constructed as a fixed distance or allowed to vary in spatial extent depending on the density of the features.
 
@@ -432,11 +431,11 @@ def gwr(input_layer,
 
                                                                                 The default value is 'False'.
     =========================================================================   ===========================================================================
-    
+
 
     """
     input_layer = _prevent_bds_item(input_layer)
-    
+
     if gis is None and \
        _env.active_gis is None:
         raise ValueError("A `GIS is required`")
@@ -484,19 +483,23 @@ def gwr(input_layer,
     if context is not None:
         output_datastore = context.get('dataStore', None)
     else:
-        output_datastore = None     
+        output_datastore = None
     output_service = _create_output_service(gis,
                                             params['output_trained_name'],
                                             params['output_trained_name'],
                                             'Generalized Weighted Regression',
                                             output_datastore=output_datastore)
-    params['output_trained_name'] = _json.dumps(
-        {
-            "serviceProperties": {"name" : output_trained_name,
-                                  "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}
-        }
-    )
+    if output_service:
+            params['output_trained_name'] = _json.dumps(
+                {
+                    "serviceProperties": {"name" : output_trained_name,
+                                          "serviceUrl" : output_service.url},
+                    "itemProperties": {"itemId" : output_service.itemid}
+                }
+            )
+    else:
+        params['output_trained_name'] = output_trained_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_trained_name}'"
 
     if context is not None:
         params["context"] = context
@@ -702,12 +705,17 @@ def glr(input_layer,
     if context is not None:
         output_datastore = context.get('dataStore', None)
     else:
-        output_datastore = None     
+        output_datastore = None
     output_service=_create_output_service(gis, output_name, output_service_name, 'Generalized Linear Regression',output_datastore=output_datastore)
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_service_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
+
 
     if context is not None:
         params["context"] = context
@@ -855,13 +863,18 @@ def find_point_clusters(
     if context is not None:
         output_datastore = context.get('dataStore', None)
     else:
-        output_datastore = None     
+        output_datastore = None
 
     output_service=_create_output_service(gis, output_name, output_service_name, 'Find Point Clusters', output_datastore=output_datastore)
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_service_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
+
 
     if context is not None:
         params["context"] = context
@@ -1071,11 +1084,16 @@ def calculate_density(
         output_datastore = context.get('dataStore', None)
     else:
         output_datastore = None
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Calculate Density', output_datastore=output_datastore)
+    output_service = _create_output_service(gis, output_name, output_service_name,
+                                            'Calculate Density', output_datastore=output_datastore)
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_service_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
 
     if context is not None:
         params["context"] = context
@@ -1129,7 +1147,7 @@ def find_hot_spots(point_layer,
                    output_name=None,
                    gis=None,
                    context=None,
-                   future=False):  
+                   future=False):
     """
     .. image:: _static/images/geo_find_hot_spots/geo_find_hot_spots.png
 
@@ -1248,12 +1266,16 @@ def find_hot_spots(point_layer,
     if context is not None:
         output_datastore = context.get('dataStore', None)
     else:
-        output_datastore = None    
+        output_datastore = None
     output_service=_create_output_service(gis, output_name, output_service_name, 'Find Hotspots', output_datastore=output_datastore)
 
-    params['output_name']=_json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_service_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
 
     if context is not None:
         params["context"] = context

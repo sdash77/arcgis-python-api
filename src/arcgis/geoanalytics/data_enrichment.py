@@ -8,11 +8,11 @@ import logging as _logging
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.geoprocessing._support import _execute_gp_tool
-from arcgis.geoanalytics._util import (_id_generator, 
-                                       _feature_input, 
-                                       _set_context, 
-                                       _create_output_service, 
-                                       GAJob, 
+from arcgis.geoanalytics._util import (_id_generator,
+                                       _feature_input,
+                                       _set_context,
+                                       _create_output_service,
+                                       GAJob,
                                        _prevent_bds_item)
 
 _log = _logging.getLogger(__name__)
@@ -27,16 +27,16 @@ def enrich_from_grid(input_layer,
                      context=None,
                      future=False):
     """
-    .. image:: _static/images/enrich_from_grid/enrich_from_grid.png 
+    .. image:: _static/images/enrich_from_grid/enrich_from_grid.png
 
-    The Enrich From Multi-Variable Grid task joins attributes from a multivariable grid to a point layer. 
-    The multivariable grid must be created using the ``build_multivariable_grid`` task. Metadata from the 
-    multivariable grid is used to efficiently enrich the input point features, making it faster than the 
-    Join Features task. Attributes in the multivariable grid are joined to the input point features when 
+    The Enrich From Multi-Variable Grid task joins attributes from a multivariable grid to a point layer.
+    The multivariable grid must be created using the ``build_multivariable_grid`` task. Metadata from the
+    multivariable grid is used to efficiently enrich the input point features, making it faster than the
+    Join Features task. Attributes in the multivariable grid are joined to the input point features when
     the features intersect the grid.
 
-    The attributes in the multivariable grid can be used as explanatory variables when modeling spatial 
-    relationships with your input point features, and this task allows you to join those attributes to 
+    The attributes in the multivariable grid can be used as explanatory variables when modeling spatial
+    relationships with your input point features, and this task allows you to join those attributes to
     the point features quickly.
 
     .. note::
@@ -48,7 +48,7 @@ def enrich_from_grid(input_layer,
     input_layer             Required layer. The point features that will be enriched
                             by the multi-variable grid. See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------------  ---------------------------------------------------------------
-    grid_layer              Required layer. The multivariable grid layer created using the Build Multi-Variable Grid task. 
+    grid_layer              Required layer. The multivariable grid layer created using the Build Multi-Variable Grid task.
                             See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------------  ---------------------------------------------------------------
     enrichment_attributes   optional string. A list of fields in the multi-variable grid
@@ -81,11 +81,11 @@ def enrich_from_grid(input_layer,
 
             # Usage Example: To enrich a layer of crime data with a multivariable grid containing demographic information.
 
-            enrich_result = enrich_from_grid(input_layer=crime_lyr, 
+            enrich_result = enrich_from_grid(input_layer=crime_lyr,
                                              grid_layer=mvg_layer,
                                              output_name="chicago_crimes_enriched")
 
-            
+
     """
     kwargs = locals()
     input_layer = _prevent_bds_item(input_layer)
@@ -107,15 +107,19 @@ def enrich_from_grid(input_layer,
     if context is not None:
         output_datastore = context.get('dataStore', None)
     else:
-        output_datastore = None     
+        output_datastore = None
     output_service = _create_output_service(gis, output_name, output_service_name, 'Enrich Grid Layers', output_datastore=output_datastore)
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_service_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
 
     if context is not None:
-       params["context"] = context
+        params["context"] = context
     else:
         _set_context(params)
 
@@ -141,4 +145,4 @@ def enrich_from_grid(input_layer,
     except:
         output_service.delete()
         raise
-    return
+
