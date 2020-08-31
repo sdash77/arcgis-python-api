@@ -4832,6 +4832,13 @@ class Raster():
         When this property is True, they are not writable. Otherwise, they are writable. """
         return self._engine_obj.read_only
 
+    @property
+    def RAT(self):
+        """
+        Return the attribute table as a dictionary if the table exists
+        """
+        return self._engine_obj.RAT
+
     def get_raster_bands(self, band_ids_or_names=None):
         """
         Returns a Raster object for each band specified in a multiband raster.
@@ -5079,33 +5086,232 @@ class Raster():
         """
         return self._engine_obj.add_dimension(variable, new_dimension_name, dimension_value, dimension_attributes)
 
-    #def append_slices(md_raster=None):
-    #    """
-    #    Returns a list of the dimension names that the variable contains.
+    def get_colormap(self, variable_name=None):
+        """
+        Returns the color map of the raster. If the raster is multidimensional, returns the color map of a variable.
 
-    #    =================     ====================================================================
-    #    **Arguments**         **Description**
-    #    -----------------     --------------------------------------------------------------------
-    #    variable_name         required string. the name of the variable
-    #    =================     ====================================================================
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        variable_name                            Optional string. The variable name of the multidimensional raster. 
+                                                 If a variable is not specified and the raster is multidimensional, 
+                                                 the color map of the first variable will be returned.
+        ====================================     ====================================================================
 
-    #    :returns: list. The dimension names that the given variable contains
-    #    """
-    #    return self._engine_obj.append_slices(md_raster)
+        :returns (dict): The colormap of the raster or the given variable.
+        """
 
-    #def set_variable_attributes(self, variable_name, variable_attributes):
-    #    """
-    #    Returns a list of the dimension names that the variable contains.
+        return self._engine_obj.get_colormap(variable_name)
 
-    #    =================     ====================================================================
-    #    **Arguments**         **Description**
-    #    -----------------     --------------------------------------------------------------------
-    #    variable_name         required string. the name of the variable
-    #    =================     ====================================================================
+    def set_colormap(self, color_map, variable_name=None):
 
-    #    :returns: list. The dimension names that the given variable contains
-    #    """
-    #    return self._engine_obj.set_variable_attributes(variable_name, variable_attributes)
+        """
+        Sets the color map for the raster. If the raster is multidimensional, it sets the color map for a variable.
+
+        (Operation is not supported on image services)
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        color_map                                Optional (string, dict): The color map to apply to the raster. This 
+                                                 can be a string indicating the name of the color map or color ramp 
+                                                 to use, for example, NDVI or Yellow To Red, respectively. This can 
+                                                 also be a Python dictionary with a custom color map or color ramp 
+                                                 object.
+
+                                                 For example:
+
+                                                 customized colormap object, e.g., {'values': [0, 1, 2, 3, 4, 5, 6], 'colors': ['#000000', '#DCFFDF', '#B8FFBE', '#85FF90', '#50FF60','#00AB10', '#006B0A']}
+
+                                                 colorramp name, e.g., "Yellow To Red"
+
+                                                 colormap name, e.g., "NDVI"
+
+                                                 customized colorramp object, e.g., {"type": "algorithmic", "fromColor": [115, 76, 0, 255],"toColor": [255, 25, 86, 255], "algorithm": "esriHSVAlgorithm"}
+        ------------------------------------     --------------------------------------------------------------------
+        variable_name                            Optional string. The variable name of the multidimensional raster dataset. 
+                                                 If a variable is not specified and the raster is multidimensional, the color 
+                                                 map of the first variable will be set.
+        ====================================     ====================================================================
+
+        :returns: None
+        """
+        return self._engine_obj.set_colormap(color_map, variable_name)
+
+    def get_statistics(self, variable_name=None):
+        """
+        Returns the statistics of the raster. If the raster is multidimensional, returns the statistics of a variable.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        variable_name                            Optional string. The variable name of the multidimensional raster dataset. 
+                                                 If a variable is not specified and the raster is multidimensional, 
+                                                 the statistics of the first variable will be returned.
+        ====================================     ====================================================================
+
+        :returns (dict): The statistics of the raster or the given variable.
+        """
+
+        return self._engine_obj.get_statistics(variable_name)
+
+    def set_statistics(self, statistics_obj, variable_name=None):
+        """
+        Sets the statistics for the raster. If the raster is multiband, it sets the statistics for each band. 
+        If the raster is multidimensional, it sets the statistics for a variable.
+
+        (Operation is not supported on image services)
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        color_map                                Optional list of statistics objects. A list of Python dictionaries containing statistics and corresponding 
+                                                 values to set. For example, [{'min': 10, 'max': 20}] sets the minimum 
+                                                 and maximum pixel values. 
+
+                                                 If the raster is multiband, the statistics for each band will be set with 
+                                                 each dictionary in the list. The first band will use the statistics in the 
+                                                 first dictionary. The second band will use the statistics in the second 
+                                                 dictionary, and so on.
+
+                                                 min - The minimum pixel value
+                                                 max - The maximum pixel value
+                                                 mean - The mean pixel value
+                                                 median - The median pixel value
+                                                 standardDeviation - The standard deviation of the pixel values
+                                                 count - The total number of pixels
+                                                 skipX - The horizontal skip factor
+                                                 skipY - The vertical skip factor
+
+                                                 For example: 
+
+                                                 [{'min': val, 'max': val, 'mean': val, 'standardDeviation': val, 
+                                                 'median': val, 'mode': val, 'count': val}, ...]
+        ------------------------------------     --------------------------------------------------------------------
+        variable_name                            Optional string. The variable name of the multidimensional raster. 
+                                                 If a variable is not specified and the raster is multidimensional, 
+                                                 the statistics of the first variable will be set.
+        ====================================     ====================================================================
+
+        :returns: None
+        """
+
+        return self._engine_obj.set_statistics(statistics_obj, variable_name)
+
+    def get_histograms(self, variable_name=None):
+        """
+        Returns the histograms of the raster. If the raster is multidimensional, it returns the histogram of a variable. 
+        If the raster is multiband, it returns the histogram of each band.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        variable_name                            Optional string. The variable name of the multidimensional raster dataset. 
+                                                 If a variable is not specified and the raster is multidimensional, 
+                                                 the histogram of the first variable will be returned.
+        ====================================     ====================================================================
+
+        :returns (list of dict): The histogram values of the raster or variable.
+        """
+
+        return self._engine_obj.get_histograms(variable_name)
+
+    def set_histograms(self, histogram_obj, variable_name=None):
+        """
+        Set the histogram for the raster or a given variable if the raster is multidimensional.
+
+        (Operation is not supported on image services)
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        histogram_obj                            Optional list of histogram objects(dict),
+
+                                                 If the raster is multiband, the histogram for each band will be set 
+                                                 with each dictionary in the list. The first band will use the histogram 
+                                                 in the first dictionary. The second band will use the histogram in 
+                                                 the second dictionary, and so on.
+
+                                                 size - The number of bins in the histogram
+
+                                                 min - The minimum pixel value
+
+                                                 max - The maximum pixel value
+
+                                                 counts - A list containing the number of pixels in each bin, in the order of bins
+
+                                                 For example:
+
+                                                 [{'size': number_of_bins, 'min': min_val, 'max': max_val, 'counts': [pixel_count_at_each_bin, ...]}, ...]
+        ------------------------------------     --------------------------------------------------------------------
+        variable_name                            Optional string. The variable name of the multidimensional raster dataset. 
+                                                 If a variable is not specified and the raster is multidimensional, 
+                                                 the histogram will be set for the first variable.
+        ====================================     ====================================================================
+
+        :returns: None
+        """
+
+        return self._engine_obj.set_histograms(histogram_obj, variable_name)
+
+    def append_slices(self, md_raster=None):
+        """
+        Appends the slices from another multidimensional raster.
+
+        (Operation is not supported on image services)
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        md_raster             Required multidimensional raster. The multidimensional raster containing 
+                              the slices to be appended. 
+
+                              This raster must have the same variables, with the same dimension names, 
+                              as the target raster. The cell sizes, extents, and spatial reference 
+                              systems must also match. 
+
+                              The slices in this raster must be for dimension values that follow 
+                              the dimension values of the slices in the target raster.
+
+                              If a variable has two dimensions, slices will be appended along 
+                              one dimension. The other dimension must have the same number of 
+                              slices as the dimension in the target raster. 
+                              
+                              For example, if a salinity variable contains slices over time and 
+                              depth dimensions, time slices can be appended to another salinity 
+                              multidimensional raster but only if the same number of depth slices 
+                              exist in both rasters. 
+        =================     ====================================================================
+
+        :returns (string): A string containing the variable names and the associated dimensions in the multidimensional raster. 
+                           For example, if the resulting raster has 10 time slices with precipitation data, it will return 'prcp(StdTime=10)'.
+
+        """
+        return self._engine_obj.append_slices(md_raster)
+
+    def set_variable_attributes(self, variable_name, variable_attributes):
+        """
+        Sets the attribute information of a variable in a multidimensional raster (for example, description, unit, and so on).
+
+        (Operation is not supported on image services)
+
+        ====================================     ====================================================================
+        **Arguments**                            **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        variable_name                            Required string. The variable name of the multidimensional raster dataset.
+        ------------------------------------     --------------------------------------------------------------------
+        variable_attributes                      Required dict that contains attribute information to replace the current 
+                                                 attribute information of the variable.
+
+                                                 For example:
+
+                                                 {'Description': 'Daily total precipitation', 'Unit': 'mm/day'}.
+        ====================================     ====================================================================
+
+        :returns (dict): The attribute information of the variable.
+
+        """
+        return self._engine_obj.set_variable_attributes(variable_name, variable_attributes)
 
 
     @property
@@ -5946,6 +6152,10 @@ class _ImageServerRaster(ImageryLayer, Raster):
     def read_only(self):
         return True
 
+    @property
+    def RAT(self):
+        return super().attribute_table()
+
     def get_raster_bands(self, band_ids_or_names=None):
         from arcgis.raster.functions import extract_band
         return_list=[]
@@ -6187,10 +6397,36 @@ class _ImageServerRaster(ImageryLayer, Raster):
     def add_dimension(self, variable, new_dimension_name, dimension_value, dimension_attributes=None):
         raise RuntimeError('Operation is not supported on image services')
 
-    def append_slices(md_raster=None):
+    def append_slices(self, md_raster=None):
         raise RuntimeError('Operation is not supported on image services')
 
     def set_variable_attributes(self, variable_name, variable_attributes):
+        raise RuntimeError('Operation is not supported on image services')
+
+    def get_colormap(self, variable_name=None):
+        colormap = super().colormap(variable_name)
+        if (isinstance(colormap,dict)) and "colormap" in colormap.keys():
+            return {"values":colormap['colormap']}
+        else:
+            return colormap
+
+    def set_colormap(self, color_map, variable_name=None):
+        raise RuntimeError('Operation is not supported on image services')
+
+    def get_statistics(self, variable_name=None):
+        statistics = super().statistics(variable_name)
+        if (isinstance(statistics,dict)) and "statistics" in statistics.keys():
+            return statistics["statistics"]
+        else:
+            return statistics
+
+    def set_statistics(self, statistics_obj, variable_name=None):
+        raise RuntimeError('Operation is not supported on image services')
+
+    def get_histograms(self, variable_name=None):
+        return super().get_histograms(variable_name)
+
+    def set_histograms(self, histogram_obj, variable_name=None):
         raise RuntimeError('Operation is not supported on image services')
 
 
@@ -6607,6 +6843,10 @@ class _ArcpyRaster(Raster,ImageryLayer):
     def read_only(self):
         return self._raster.readOnly
 
+    @property
+    def RAT(self):
+        return self._raster.RAT
+
     def get_raster_bands(self, band_ids_or_names=None):
         raster_bands = self._raster.getRasterBands(band_ids_or_names)
         if isinstance(raster_bands, list):
@@ -6934,11 +7174,45 @@ class _ArcpyRaster(Raster,ImageryLayer):
         return self._raster.exportImage(width, height, format=export_format, extent=extent,
                                         spatial_reference=spatial_reference, mosaic_rule=mosaic_rule)
 
-    def append_slices(md_raster=None):
-        return self._raster.appendSlices(md_raster)
+    def append_slices(self, md_raster=None):
+        return self._raster.appendSlices(md_raster._engine_obj._raster)
 
     def set_variable_attributes(self, variable_name, variable_attributes):
         return self._raster.setVariableAttributes(variable_name,variable_attributes)
+
+    def get_colormap(self, variable_name=None):
+        if variable_name is None:
+            variable_name=""
+        cmap = self._raster.getColormap(variable_name)
+        if isinstance(cmap, dict):
+            if ("type" in cmap.keys()) and cmap['type'] == "RasterColormap":
+                del cmap['type']
+        return cmap
+
+    def set_colormap(self, color_map, variable_name=None):
+        if variable_name is None:
+            variable_name=""
+        return self._raster.setColormap(color_map, variable_name)
+
+    def get_statistics(self, variable_name=None):
+        if variable_name is None:
+            variable_name=""
+        return self._raster.getStatistics(variable_name)
+
+    def set_statistics(self, statistics_obj, variable_name=None):
+        if variable_name is None:
+            variable_name=""
+        return self._raster.setStatistics(statistics_obj, variable_name)
+
+    def get_histograms(self, variable_name=None):
+        if variable_name is None:
+            variable_name=""
+        return self._raster.getHistograms(variable_name)
+
+    def set_histograms(self, histogram_obj, variable_name=None):
+        if variable_name is None:
+            variable_name=""
+        return self._raster.setHistograms(histogram_obj, variable_name)
 
 
     def __sub__(self, other):

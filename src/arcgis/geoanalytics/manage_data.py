@@ -16,7 +16,7 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-def run_python_script(code, layers=None, gis=None, context=None, future=False):
+def run_python_script(code, layers=None, gis=None, context=None, future=False, parameters=None, param_as_input=False):
     """
 
     The ``run_python_script`` method executes a Python script on your ArcGIS
@@ -103,6 +103,17 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False):
     ----------------  ---------------------------------------------------------------
     future            Optional boolean. If 'True', a GPJob is returned instead of
                       results. The GPJob can be queried on the status of the execution.
+    ----------------  ---------------------------------------------------------------
+    parameters        Optional dict. A global level variable that will be loaded into the given code.
+                      The variable name is called **user_variables**.
+
+                      ```
+                      parameters= {"param1": "example", "param2": 1, "val1": 2.0, "more_params": [False, True, None], "status": 4.0}
+                      ```
+
+                      Only built-in types are supported.
+    ----------------  ---------------------------------------------------------------
+    param_as_input    Optional Boolean. If True, the user_variable will be added if a method past. If False, the variable will not be given into the method.
     ================  ===============================================================
 
     :returns: list of dictionary of messages from the code provided.
@@ -112,13 +123,15 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False):
             # Usage Example: Execute calculate_density tool using run_python_script.
 
             def density():
-                def code():
+                def code(ss=None):
                     import time
+                    if ss is None:
+                        s = user_variables['ss']
                     res = geoanalytics.describe_dataset(input_layer=layers[0],
                                extent_output=True,
-                               sample_size=1000)
+                               sample_size=ss)
                 res.write.format('webgis').save('RunPythonScriptTest_{0}'.format(time.time()))
-            run_python_script(code=code, layers=[lyr0])
+            run_python_script(code=code, layers=[lyr0], parameters={'ss' : 10000})
     """
     if layers is None:
         layers = []
@@ -126,7 +139,10 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False):
     params = {'f': 'json'}
 
     if inspect.isfunction(code):
-        params['code'] = inspect.getsource(code) + '\n' + code.__name__ + '()'
+        if param_as_input == True:
+            params['code'] = inspect.getsource(code) + '\n' + code.__name__ + '(**user_variables)'
+        else:
+            params['code'] = inspect.getsource(code) + '\n' + code.__name__ + '()'
     elif isinstance(code, str):
         params['code'] = code
     else:
@@ -140,17 +156,27 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False):
     tool_name = "RunPythonScript"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
-
+    if parameters and gis.version >= [8, 2]:
+        params['parameters'] = parameters
     if context is not None:
         params["context"] = context
     else:
         _set_context(params)
-
-    param_db = {
-        "layers": (_FeatureSet, "inputLayers"),
-        "code" : (str, "pythonScript"),
-        "context": (str, "context"),
-    }
+    if gis.version < [8, 2]:
+        if 'parameters' in params:
+            params.pop('parameters', None)
+        param_db = {
+            "layers": (_FeatureSet, "inputLayers"),
+            "code" : (str, "pythonScript"),
+            "context": (str, "context"),
+        }
+    else:
+        param_db = {
+            "layers": (_FeatureSet, "inputLayers"),
+            "code" : (str, "pythonScript"),
+            "parameters" : (dict, "userVariables"),
+            "context": (str, "context"),
+        }
 
     try:
         if future:

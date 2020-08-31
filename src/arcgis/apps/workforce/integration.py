@@ -136,3 +136,11 @@ class Integration(FeatureModel):
         elif self.assignment_type:
             if self.assignment_type not in [at.code for at in self.project.assignment_types.search()]:
                 raise ValidationError("Invalid assignment type in integration", self)
+            for integration in self.project.integrations.search():
+                if integration.integration_id == self.integration_id and not integration.assignment_type:
+                    raise ValidationError("Cannot add an integration with an assignment type when project level integration of same id exists", self)
+                if integration.integration_id == self.integration_id and integration.assignment_type.upper() == self.assignment_type.upper():
+                    raise ValidationError("Cannot add an integration with the same id and assignment type", self)
+        else:
+            if self.integration_id in [integration.integration_id for integration in self.project.integrations.search()]:
+                raise ValidationError("Cannot add project level integration when same id integration exists", self)

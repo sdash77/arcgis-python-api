@@ -375,6 +375,59 @@ class _DeepCloner():
                 item_definition = _FeatureServiceDefinition(self.target, self._clone_mapping, dict(item), service_definition, layers_definition, is_view, features=None, data=data, folder=self.folder,
                                                             thumbnail=None, portal_item=item, copy_data=self._copy_data, copy_global_ids=self._copy_global_ids, item_extent=self._item_extent, service_extent=self._service_extent, search_existing=self._search_existing_items, owner=self.owner)
             self._graph[item.id] = item_definition
+            if 'Workforce Project' in item.typeKeywords:
+                # copying global ids is necessary for WF
+                if self._copy_data:
+                    self._copy_global_ids = True
+                    
+                # get Workforce group definition
+                group_id = _deep_get(item.properties, "workforceProjectGroupId")
+                group = source.groups.get(group_id)
+                group_item_definition = self._get_group_definition(group)
+                self._graph[group_id] = group_item_definition
+                
+                # add group to graph
+                item_definition.sharing['groups'].append(group_id)
+                self._graph[item.id] = item_definition
+                item_definition.add_child(group_item_definition)
+                
+                # add webmaps to graph
+                web_maps = ['workforceWorkerMapId', 'workforceDispatcherMapId']
+                for web_map in web_maps:
+                    item_id = _deep_get(item.properties, web_map)
+                    if item_id is not None:
+                        web_map_item = source.content.get(item_id)
+                        map_item_definition = self._get_item_definitions(web_map_item)
+                        # WF layer is the parent of the maps, so remove it from the children
+                        for child in map_item_definition._children:
+                            try:
+                                if child._service_definition["serviceItemId"] == item.id:
+                                    map_item_definition._children.remove(child)
+                                    break
+                            except Exception:
+                                # this is not the layer we want since it doesn't have a service definition
+                                continue
+                        map_item_definition.sharing['groups'].append(group_id)
+                        item_definition.add_child(map_item_definition)
+                        map_item_definition.add_child(group_item_definition)
+                
+                # add integration as dependency
+                integrations_fl = FeatureLayer(url=item.url+"/4", gis=self.target)
+                integrations_df = integrations_fl.query('1=1', as_df=True)
+                for url_template in integrations_df.urltemplate.values:
+                    parsed = urlparse(url_template)
+                    try:
+                        item_id = urllib.parse.parse_qs(parsed.query)['itemID'][0]
+                        integration_item = source.content.get(item_id)
+                        if integration_item:
+                            integration_item_definition = self._get_item_definitions(integration_item)
+                            self._graph[item_id] = integration_item_definition
+                            item_definition.add_child(integration_item_definition)
+                            integration_item_definition.add_child(group_item_definition)
+                    except KeyError:
+                        # if item id doesn't exist, try at the next one
+                        continue
+                        
 
         # If the item is a workforce find the group, maps and services that support the project
         elif item['type'] == 'Workforce Project':
@@ -1570,7 +1623,34 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 name = "{0}_{1}".format(name, guid)
 
         return name
-
+    
+    def _swizzle_workforce_layers(self, wm_item_data, new_item):
+        # replace old workforce layers with new cloned layers, leave non wf layers
+        if 'operationalLayers' in wm_item_data and len(wm_item_data['operationalLayers']) > 0:
+            for i, layer in enumerate(wm_item_data['operationalLayers']):
+                if layer['id'] == "Assignments_0":
+                    wm_item_data['operationalLayers'][i]['itemId'] = new_item.id
+                    wm_item_data['operationalLayers'][i]['url'] = new_item.url + "/0"
+                elif layer['id'] == "Workers_0":
+                    wm_item_data['operationalLayers'][i]['itemId'] = new_item.id
+                    wm_item_data['operationalLayers'][i]['url'] = new_item.url + "/1"
+                else:
+                    pass
+        if 'tables' in wm_item_data and len(wm_item_data['tables']) > 0:
+            for i, table in enumerate(wm_item_data['tables']):
+                if table['id'] == "Dispatchers_0":
+                    wm_item_data['tables'][i]['itemId'] = new_item.id
+                    wm_item_data['tables'][i]['url'] = new_item.url + "/2"
+                elif table['id'] == "Assignment Types_0":
+                    wm_item_data['tables'][i]['itemId'] = new_item.id
+                    wm_item_data['tables'][i]['url'] = new_item.url + "/3"
+                elif table['id'] == "Assignment Integrations_0":
+                    wm_item_data['tables'][i]['itemId'] = new_item.id
+                    wm_item_data['tables'][i]['url'] = new_item.url + "/4"
+                else:
+                    pass
+        return wm_item_data
+    
     def clone(self):
         """Clone the feature service in the target organization.
         Keyword arguments:
@@ -2124,6 +2204,59 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     elif guid in self._clone_mapping['Item IDs']:
                         item_properties['title'] = item_properties['title'].replace(guid, self._clone_mapping['Item IDs'][guid])
 
+                # swizzle in new WF ids
+                if "Workforce Project" in item_properties['typeKeywords']:
+                    old_group_id = item_properties['properties']['workforceProjectGroupId']
+                    item_properties['properties']['workforceProjectGroupId'] = self._clone_mapping['Group IDs'][old_group_id]
+                    
+                    # set up dispatcher webmap properties
+                    old_dispatcher_webmap_id = item_properties['properties']['workforceDispatcherMapId']
+                    new_dispatcher_webmap_id = self._clone_mapping['Item IDs'][old_dispatcher_webmap_id]
+                    item_properties['properties']['workforceDispatcherMapId'] = new_dispatcher_webmap_id
+                    
+                    # replace operational layers with new data
+                    dispatcher_webmap_item = self.target.content.get(new_dispatcher_webmap_id)
+                    wm_item_data = dispatcher_webmap_item.get_data()
+                    wm_item_data = self._swizzle_workforce_layers(wm_item_data, new_item)
+                    dispatcher_webmap_item.update(item_properties={"properties": {"workforceFeatureServiceId": new_item.id}, "text": json.dumps(wm_item_data)})
+                    
+                    # set up worker webmap properties
+                    old_worker_webmap_id = item_properties['properties']['workforceWorkerMapId']
+                    new_worker_webmap_id = self._clone_mapping['Item IDs'][old_worker_webmap_id]
+                    item_properties['properties']['workforceWorkerMapId'] = new_worker_webmap_id
+                    
+                    # replace operational layers with new data
+                    worker_webmap_item = self.target.content.get(new_worker_webmap_id)
+                    wm_item_data = worker_webmap_item.get_data()
+                    wm_item_data = self._swizzle_workforce_layers(wm_item_data, new_item)
+                    worker_webmap_item.update(
+                        item_properties={"properties": {"workforceFeatureServiceId": new_item.id}, "text": json.dumps(wm_item_data)})
+
+                    # move items to folder
+                    folder_name = self._get_unique_name(self.target, new_item.title, force_add_guid_suffix=True)
+                    self.target.content.create_folder(folder_name)
+                    new_item.move(folder_name)
+                    worker_webmap_item.move(folder_name)
+                    dispatcher_webmap_item.move(folder_name)
+                    new_item.protect(True)
+                    worker_webmap_item.protect(True)
+                    dispatcher_webmap_item.protect(True)
+                    
+                    # ensure owner is dispatcher
+                    dispatchers_fl = FeatureLayer(url=new_item.url+"/2", gis=self.target)
+                    dispatchers_df = dispatchers_fl.query('1=1', as_df=True)
+                    if self.owner not in dispatchers_df.userid.values:
+                        dispatchers_fl.edit_features(adds=[arcgis.features.Feature(attributes={"name": new_item._gis.users.me.fullName,
+                                                                                   "userid": self.owner})])
+
+                    # add relationships
+                    try:
+                        worker_webmap_item.add_relationship(new_item, 'WorkforceMap2FeatureService')
+                        dispatcher_webmap_item.add_relationship(new_item, 'WorkforceMap2FeatureService')
+                    except Exception:
+                        # relationship is not required
+                        pass
+                    
                 # Update the item definition of the service
                 thumbnail = self.thumbnail
                 if not thumbnail and self.portal_item:
@@ -2142,6 +2275,38 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     if 'spatialReference' in feature_service.properties:
                         spatial_reference = feature_service.properties['spatialReference']
                     self._add_features(new_layers, relationships, layer_field_mapping, spatial_reference)
+                    
+                # once copy data has taken place, do WF necessary data migration
+                if "Workforce Project" in new_item.typeKeywords:
+                    # use wf module to migrate assignment types
+                    new_proj = arcgis.apps.workforce.Project(new_item)
+                    if not self.copy_data:
+                        at_fl = FeatureLayer(url=original_item['url'] + "/3", gis=self.target)
+                        at_features = at_fl.query('1=1')
+                        new_proj.assignment_types_table.edit_features(adds=at_features,use_global_ids=True)
+    
+                    # use wf module to migrate integrations
+                    integrations_fl = FeatureLayer(original_item['url'] + "/4", gis=self.target)
+                    integrations_features = integrations_fl.query('1=1')
+                    if not self.copy_data:
+                        new_proj.integrations_table.edit_features(adds=integrations_features, use_global_ids=True)
+    
+                    # update item ids in the integrations url
+                    new_integrations = new_proj.integrations_table.query('1=1')
+                    for i, feature in enumerate(new_integrations):
+                        try:
+                            old_url = integrations_features.features[i].attributes[new_proj._integration_schema.url_template]
+                            url_parts = list(urllib.parse.urlparse(old_url))
+                            query_dict = dict(urllib.parse.parse_qsl(url_parts[4]))
+                            old_item_id = query_dict['itemID']
+                            query_dict['itemID'] = self._clone_mapping['Item IDs'][old_item_id]
+                            url_parts[4] = urllib.parse.urlencode(query_dict, safe='${},')
+                            feature.attributes[new_proj._integration_schema.url_template] = urllib.parse.urlunparse(
+                                url_parts)
+                        except KeyError:
+                            # itemid does not necessarily exist in the url template
+                            continue
+                    new_proj.integrations_table.edit_features(updates=new_integrations)
 
             # share items
             _share_item_with_groups(new_item, self.sharing,self._clone_mapping["Group IDs"])

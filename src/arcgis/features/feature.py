@@ -873,7 +873,7 @@ class FeatureSet(object):
                 geometry["x"] = geom["coordinates"][0]
                 geometry["y"] = geom["coordinates"][1]
             elif geo_type == "Polygon":
-                geometry["rings"] = geom["coordinates"]
+                geometry["rings"] = [[pt for pt in reversed(g)] for g in geom['coordinates']]
             elif geo_type == "MultiPolygon":
                 rings = []
                 if HASARCPY:
@@ -896,11 +896,11 @@ class FeatureSet(object):
                         for idx, ring in enumerate(part):
                             if idx:
                                 part_item.append(None)
-                            for coord in ring:
+                            for coord in reversed(ring):
                                 part_item.append(coord)
                         if part_item:
-                            part_list.append([part_item])
-                    geometry["rings"] = part_list[0]
+                            part_list.append(part_item)
+                    geometry["rings"] = part_list#[0]
             elif geo_type == "MultiPoint":
                 geometry["points"] = [c[:] for c in geom["coordinates"]]
             elif geo_type == "LineString":

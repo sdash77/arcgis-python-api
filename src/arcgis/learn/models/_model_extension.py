@@ -9,6 +9,10 @@ from functools import partial
 import logging
 logger = logging.getLogger()
 
+HAS_OPENCV = True
+HAS_FASTAI = True
+HAS_ARCPY = True
+
 try:
     import torch
     from torch import nn
@@ -20,17 +24,31 @@ try:
     from fastai.basic_data import DatasetType
     from fastai.callback import Callback
     from fastai.torch_core import to_cpu, grab_idx
-    from fastai.basic_train import loss_batch 
+    from fastai.basic_train import loss_batch
+    from fastai.vision.image import open_image, bb2hw, image2np, Image, pil2tensor
+    import PIL
     from ._ssd_utils import compute_class_AP
     from .._utils.pascal_voc_rectangles import show_results_multispectral
     from .._utils.common import get_multispectral_data_params_from_emd
     from ._arcgis_model import _set_ddp_multigpu, _isnotebook
     from ._hed_utils import accuracies
+    from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
+    from .._video_utils import VideoUtils
     import inspect
     HAS_FASTAI = True
     
 except Exception as e:
     HAS_FASTAI = False
+
+try:
+    import cv2
+except Exception:
+    HAS_OPENCV = False
+
+try:
+    import arcpy
+except Exception:
+    HAS_ARCPY = False    
 
 class ModelExtension(ArcGISModel):
     """
@@ -259,8 +277,13 @@ class ModelExtension(ArcGISModel):
             else:
                 self.show_results = self._show_results_segmentation
         else:
-            self.show_results = self._show_results_object_detection
+            if self._is_multispectral:
+                self.show_results = self._show_results_multispectral
+            else:
+                self.show_results = self._show_results_object_detection
             self.average_precision_score = self._average_precision_score
+            self.predict = self._predict
+            self.predict_video = self._predict_video
 
     def _show_results_object_detection(self, rows=5, thresh=0.5, nms_overlap=0.1):
 
@@ -334,6 +357,22 @@ class ModelExtension(ArcGISModel):
             zs = [ds.y.reconstruct(z) for z in preds]
         ds.x.show_xyzs(xs, ys, zs, **kwargs)
 
+    def _predict_learn_modified(self, item, **kwargs):
+        "Return predicted class, label and probabilities for `item`."
+        batch = self.learn.data.one_item(item)
+        self.learn.model.eval()
+        pred = self.learn.model(self.model_conf.transform_input(batch[0]))
+        ds = self.learn.data.single_ds
+        analyze_kwargs,kwargs = split_kwargs_by_func(kwargs, ds.y.analyze_pred)
+        pred = ds.y.analyze_pred(pred, **analyze_kwargs)
+        x = batch[0]
+        norm = getattr(self.learn.data,'norm',False)
+        if norm:
+            x = self.learn.data.denorm(x)
+        x = ds.x.reconstruct(grab_idx(x, 0))
+        y = ds.y.reconstruct(pred[0], x) if has_arg(ds.y.reconstruct, 'x') else ds.y.reconstruct(pred[0])
+        return y
+
     def _average_precision_score(self, detect_thresh=0.2, iou_thresh=0.1, mean=False, show_progress=True):
 
         """
@@ -386,3 +425,273 @@ class ModelExtension(ArcGISModel):
         self._check_requisites()
         acc = accuracies(self, self._data.valid_dl, detect_thresh=thresh, buffer=buffer, show_progress=show_progress)
         return acc
+
+
+    def _predict(
+        self,
+        image_path,
+        threshold=0.5,
+        nms_overlap=0.1,
+        return_scores=False,
+        visualize=False,
+        resize=False
+    ):
+
+        """
+        Runs prediction on an Image.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        image_path              Required. Path to the image file to make the
+                                predictions on.
+        ---------------------   -------------------------------------------
+        threshold               Optional float. The probability above which
+                                a detection will be considered valid.
+        ---------------------   -------------------------------------------
+        nms_overlap             Optional float. The intersection over union
+                                threshold with other predicted bounding
+                                boxes, above which the box with the highest
+                                score will be considered a true positive.
+        ---------------------   -------------------------------------------
+        return_scores           Optional boolean. Will return the probability
+                                scores of the bounding box predictions if True.
+        ---------------------   -------------------------------------------
+        visualize               Optional boolean. Displays the image with
+                                predicted bounding boxes if True.
+        ---------------------   -------------------------------------------
+        resize                  Optional boolean. Resizes the image to the same size
+                                (chip_size parameter in prepare_data) that the model was trained on,
+                                before detecting objects.
+                                Note that if resize_to parameter was used in prepare_data,
+                                the image is resized to that size instead.
+
+                                By default, this parameter is false and the detections are run
+                                in a sliding window fashion by applying the model on cropped sections
+                                of the image (of the same size as the model was trained on).
+        =====================   ===========================================
+        
+        :returns:  Returns a tuple with predictions, labels and optionally confidence scores
+                   if return_scores=True. The predicted bounding boxes are returned as a list
+                   of lists containing the  xmin, ymin, width and height of each predicted object
+                   in each image. The labels are returned as a list of class values and the
+                   confidence scores are returned as a list of floats indicating the confidence
+                   of each prediction.
+        """
+        if not HAS_OPENCV:
+            raise Exception("This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24")
+
+        if isinstance(image_path, str):
+            image = cv2.imread(image_path)
+        else:
+            image = image_path
+
+        orig_height, orig_width, _ = image.shape
+        orig_frame = image.copy()
+
+        if resize and self._data.resize_to is None\
+                and self._data.chip_size is not None:
+            image = cv2.resize(image, (self._data.chip_size, self._data.chip_size))
+
+        if self._data.resize_to is not None:
+            if isinstance(self._data.resize_to, tuple):
+                image = cv2.resize(image, self._data.resize_to)
+            else:
+                image = cv2.resize(image, (self._data.resize_to, self._data.resize_to))
+
+        height, width, _ = image.shape
+
+        if self._data.chip_size is not None:
+            chips = _get_image_chips(image, self._data.chip_size)
+        else:
+            chips = [{'width': width, 'height': height, 'xmin': 0, 'ymin': 0, 'chip': image, 'predictions': []}]
+
+        include_pad_detections = False
+        if len(chips) == 1:
+            include_pad_detections = True
+
+        valid_tfms = self._data.valid_ds.tfms
+        self._data.valid_ds.tfms = []
+
+        for chip in chips:
+            frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
+            bbox = self._predict_learn_modified(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, model=self)
+            if bbox:
+                scores = bbox.scores
+                bboxes, lbls = bbox._compute_boxes()
+                bboxes.add_(1).mul_(torch.tensor([chip['height'] / 2, chip['width'] / 2, chip['height'] / 2, chip['width'] / 2])).long()
+                for index, bbox in enumerate(bboxes):
+                    if lbls is not None:
+                        label = lbls[index]
+                    else:
+                        label = 'Default'
+
+                    data = bb2hw(bbox)
+                    if include_pad_detections or not _exclude_detection((data[0], data[1], data[2], data[3]), chip['width'], chip['height']):
+                        chip['predictions'].append({
+                            'xmin': data[0],
+                            'ymin': data[1],
+                            'width': data[2],
+                            'height': data[3],
+                            'score': float(scores[index]),
+                            'label': label
+                        })
+
+        self._data.valid_ds.tfms = valid_tfms
+
+        predictions, labels, scores = _get_transformed_predictions(chips)
+
+        y_ratio = orig_height/height
+        x_ratio = orig_width/width
+
+        for index, prediction in enumerate(predictions):
+            prediction[0] = prediction[0]*x_ratio
+            prediction[1] = prediction[1]*y_ratio
+            prediction[2] = prediction[2]*x_ratio
+            prediction[3] = prediction[3]*y_ratio
+
+            # Clip xmin
+            if prediction[0] < 0: 
+                prediction[2] = prediction[2] + prediction[0]
+                prediction[0] = 1
+
+            # Clip width when xmax greater than original width
+            if prediction[0] + prediction[2] > orig_width:
+                prediction[2] = (prediction[0] + prediction[2]) - orig_width
+
+            # Clip ymin
+            if prediction[1] < 0:
+                prediction[3] = prediction[3] + prediction[1]
+                prediction[1] = 1
+
+            # Clip height when ymax greater than original height
+            if prediction[1] + prediction[3] > orig_height:
+                prediction[3] = (prediction[1] + prediction[3]) - orig_height
+
+            predictions[index] = [
+                prediction[0].item(),
+                prediction[1].item(),
+                prediction[2].item(),
+                prediction[3].item()
+            ]      
+
+        if visualize:
+            image = _draw_predictions(orig_frame, predictions, labels)
+            import matplotlib.pyplot as plt
+            plt.xticks([])
+            plt.yticks([])
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            plt.imshow(PIL.Image.fromarray(image))
+
+        if return_scores:
+            return predictions, labels, scores
+        else:
+            return predictions, labels
+
+
+    def _predict_video(
+            self,
+            input_video_path,
+            metadata_file,
+            threshold=0.5,
+            nms_overlap=0.1,
+            track=False,
+            visualize=False,
+            output_file_path=None,
+            multiplex=False,
+            multiplex_file_path=None,
+            tracker_options={
+                'assignment_iou_thrd': 0.3,
+                'vanish_frames': 40,
+                'detect_frames': 10
+            },
+            visual_options={
+                'show_scores': True,
+                'show_labels': True,
+                'thickness': 2,
+                'fontface': 0,
+                'color': (255, 255, 255)
+            },
+            resize=False
+        ):
+
+            """
+            Runs prediction on a video and appends the output VMTI predictions in the metadata file.
+
+            =====================   ===========================================
+            **Argument**            **Description**
+            ---------------------   -------------------------------------------
+            input_video_path        Required. Path to the video file to make the
+                                    predictions on.
+            ---------------------   -------------------------------------------
+            metadata_file           Required. Path to the metadata csv file where
+                                    the predictions will be saved in VMTI format.
+            ---------------------   -------------------------------------------
+            threshold               Optional float. The probability above which
+                                    a detection will be considered.
+            ---------------------   -------------------------------------------
+            nms_overlap             Optional float. The intersection over union
+                                    threshold with other predicted bounding
+                                    boxes, above which the box with the highest
+                                    score will be considered a true positive.
+            ---------------------   -------------------------------------------
+            track                   Optional bool. Set this parameter as True to
+                                    enable object tracking. 
+            ---------------------   -------------------------------------------
+            visualize               Optional boolean. If True a video is saved
+                                    with prediction results.
+            ---------------------   -------------------------------------------
+            output_file_path        Optional path. Path of the final video to be saved.
+                                    If not supplied, video will be saved at path input_video_path
+                                    appended with _prediction.
+            ---------------------   -------------------------------------------
+            multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
+            ---------------------   -------------------------------------------
+            multiplex_file_path     Optional path. Path of the multiplexed video to be saved.
+                                    By default a new file with _multiplex.MOV extension is saved
+                                    in the same folder.
+            ---------------------   -------------------------------------------
+            tracking_options        Optional dictionary. Set different parameters for
+                                    object tracking. assignment_iou_thrd parameter is used
+                                    to assign threshold for assignment of trackers, 
+                                    vanish_frames is the number of frames the object should
+                                    be absent to consider it as vanished, detect_frames 
+                                    is the number of frames an object should be detected
+                                    to track it.
+            ---------------------   -------------------------------------------
+            visual_options          Optional dictionary. Set different parameters for
+                                    visualization.
+                                    show_scores boolean, to view scores on predictions,
+                                    show_labels boolean, to view labels on predictions,
+                                    thickness integer, to set the thickness level of box,
+                                    fontface integer, fontface value from opencv values,
+                                    color tuple (B, G, R), tuple containing values between
+                                    0-255.
+            ---------------------   -------------------------------------------
+            resize                  Optional boolean. Resizes the video frames to the same size
+                                    (chip_size parameter in prepare_data) that the model was trained on,
+                                    before detecting objects.
+                                    Note that if resize_to parameter was used in prepare_data,
+                                    the video frames are resized to that size instead.
+
+                                    By default, this parameter is false and the detections are run
+                                    in a sliding window fashion by applying the model on cropped sections
+                                    of the frame (of the same size as the model was trained on).
+            =====================   ===========================================
+            
+            """
+
+            VideoUtils.predict_video(
+                self,
+                input_video_path,
+                metadata_file,
+                threshold,
+                nms_overlap,
+                track, visualize,
+                output_file_path,
+                multiplex,
+                multiplex_file_path,
+                tracker_options,
+                visual_options,
+                resize
+            )

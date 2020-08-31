@@ -3356,7 +3356,7 @@ def apply(raster, fn_name, **kwargs):
         "rasterFunction" : "Identity",
         "rasterFunctionArguments": {
             "Raster" : {"renderingRule":copy.deepcopy(template_dict),
-                         "url":layer._url},
+                         "url":layer._lyr_json['url']},
         }
     }
 
@@ -4688,7 +4688,8 @@ def _raster_item(raster, raster_id=None):
     return _clone_layer(layer, template_dict, raster_ra)
 
 def generate_trend(raster, dimension_name, regression_type=0, cycle_length = 1, cycle_unit = "YEARS",
-                   harmonic_frequency=1, polynomial_order=2, ignore_nodata=True, rmse=True, r2=False,slope_p_value=False):
+                   harmonic_frequency=1, polynomial_order=2, ignore_nodata=True, rmse=True, r2=False,slope_p_value=False,
+                   seasonal_period="DAYS"):
 
     """
     Estimates the trend for each pixel along a dimension for one or more variables in a multidimensional raster.
@@ -4734,6 +4735,10 @@ def generate_trend(raster, dimension_name, regression_type=0, cycle_length = 1, 
                           - True : The p-value will be calculated and displayed when the tool is finished running. 
                           - False : The p-value will not be calculated. This is the default.
 
+    :param seasonal_period: Optional String. Specifies the seasonal period. Default - "DAYS"
+                            Possible Options - "DAYS", "MONTHS"
+
+
     :return: output raster 
     """
     layer, raster, raster_ra = _raster_input(raster)
@@ -4748,7 +4753,7 @@ def generate_trend(raster, dimension_name, regression_type=0, cycle_length = 1, 
     if dimension_name is not None:
         template_dict["rasterFunctionArguments"]['DimensionName'] = dimension_name
 
-    regression_type_dict = {"LINEAR":0, "HARMONIC":1, "POLYNOMIAL":2}
+    regression_type_dict = {"LINEAR":0, "HARMONIC":1, "POLYNOMIAL":2, "MANN-KENDALL":3,"SEASONAL-KENDALL":4}
     if regression_type is not None:
         if isinstance(regression_type, str):
             regression_type= regression_type_dict[regression_type.upper()]
@@ -4779,6 +4784,15 @@ def generate_trend(raster, dimension_name, regression_type=0, cycle_length = 1, 
 
     if slope_p_value is not None:
         template_dict["rasterFunctionArguments"]['SlopePValue'] = slope_p_value
+
+    if seasonal_period is not None:
+        seasonal_period_allowed_values = ["DAYS", "MONTHS"]
+        if [element.lower() for element in seasonal_period_allowed_values].count(seasonal_period.lower()) <= 0 :
+            raise RuntimeError('seasonal_period can only be one of the following:  '+str(seasonal_period_allowed_values))
+        for element in seasonal_period_allowed_values:
+            if seasonal_period.lower() == element.lower():
+                seasonal_period = element
+        template_dict["rasterFunctionArguments"]['SeasonalPeriod'] = seasonal_period
 
     return _clone_layer(layer, template_dict, raster_ra)
 
