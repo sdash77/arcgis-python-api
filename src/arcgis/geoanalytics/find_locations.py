@@ -195,6 +195,12 @@ def geocode_locations(input_layer,
         geocode_parameters = tbx.analyze_geocode_input(input_table=input_layer,
                                                        geocode_service_url=geocode_service_url)
         params['geocode_parameters'] = geocode_parameters
+
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
+
     if context is not None:
         output_datastore = context.get('dataStore', None)
     else:
@@ -202,6 +208,7 @@ def geocode_locations(input_layer,
     output_service = _create_output_service(gis, output_name,
                                             output_service_name, 'Geocoded Locations',
                                             output_datastore=output_datastore)
+
     if output_service:
         params['output_name'] = _json.dumps({
             "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
@@ -209,8 +216,6 @@ def geocode_locations(input_layer,
     else:
         params['output_name'] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
-
-    _set_context(params)
 
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
