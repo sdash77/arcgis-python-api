@@ -126,7 +126,7 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False, p
                 def code(ss=None):
                     import time
                     if ss is None:
-                        s = user_variables['ss']
+                        ss = user_variables['ss']
                     res = geoanalytics.describe_dataset(input_layer=layers[0],
                                extent_output=True,
                                sample_size=ss)
