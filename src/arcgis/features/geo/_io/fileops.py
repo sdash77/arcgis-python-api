@@ -280,7 +280,7 @@ def to_table(geo, location, overwrite=True):
     fc_name = os.path.basename(location)
     df = geo._data
     if location.lower().find('.csv') > -1:
-        geo._df.to_csv(location)
+        geo._data.to_csv(location)
         return location
     elif HASARCPY:
         columns = df.columns.tolist()
