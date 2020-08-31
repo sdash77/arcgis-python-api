@@ -8929,6 +8929,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                                           input_multidimensional_raster=None,
                                           context=None,
                                           future=False,
+                                          delete_transpose=False,
                                           **kwargs):
         """
        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
@@ -8954,10 +8955,24 @@ class _RasterAnalysisTools(BaseAnalytics):
         input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
 
 
-        gpjob = self._tbx.build_multidimensional_transpose(input_multidimensional_raster=input_multidimensional_raster,
-                                                           context=context,
-                                                           gis=self._gis,
-                                                           future=True)
+        current_version = None
+        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys())):
+            current_version = self._gis._tools.rasteranalysis.properties["currentVersion"]
+
+        if((current_version is not None) and current_version<=10.81):
+            gpjob = self._tbx.build_multidimensional_transpose(input_multidimensional_raster=input_multidimensional_raster,
+                                                               context=context,
+                                                               gis=self._gis,
+                                                               future=True)
+        elif((current_version is not None) and current_version>=10.9):
+            if not isinstance(delete_transpose, bool):
+                raise RuntimeError('delete_transpose must be an instance of boolean')
+            gpjob = self._tbx.build_multidimensional_transpose(input_multidimensional_raster=input_multidimensional_raster,
+                                                               context=context,
+                                                               delete_transpose=delete_transpose,
+                                                               gis=self._gis,
+                                                               future=True)
+
         gpjob._is_ra = True
         if future:
             return gpjob
@@ -8977,6 +8992,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                               rmse=True, 
                               r2=False, 
                               slope_p_value=False,
+                              seasonal_period="DAYS",
                               future=False,
                               **kwargs):
         """
@@ -9017,7 +9033,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         trend_line_type_val = trend_line_type
         if trend_line_type is not None:
-            trend_line_type_allowed_values = ['LINEAR', 'HARMONIC', 'POLYNOMIAL']
+            trend_line_type_allowed_values = ['LINEAR', 'HARMONIC', 'POLYNOMIAL', 'MANN-KENDALL', 'SEASONAL-KENDALL']
             if [element.lower() for element in trend_line_type_allowed_values].count(trend_line_type.lower()) <= 0 :
                 raise RuntimeError('trend_line_type can only be one of the following: '+str(trend_line_type_allowed_values))
 
@@ -9038,7 +9054,20 @@ class _RasterAnalysisTools(BaseAnalytics):
                     if cycle_unit.lower() == element.lower():
                         cycle_unit = element
 
-        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]<=10.8):
+        if seasonal_period is not None:
+            if "seasonal_period" in self._tbx.choice_list.generate_trend_raster.keys():
+                seasonal_period_allowed_values = self._tbx.choice_list.generate_trend_raster["seasonal_period"]
+                if [element.lower() for element in seasonal_period_allowed_values].count(seasonal_period.lower()) <= 0 :
+                    raise RuntimeError('seasonal_period can only be one of the following:  '+str(seasonal_period_allowed_values))
+                for element in seasonal_period_allowed_values:
+                    if seasonal_period.lower() == element.lower():
+                        seasonal_period = element
+
+        current_version = None
+        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys())):
+            current_version = self._gis._tools.rasteranalysis.properties["currentVersion"]
+
+        if((current_version is not None) and current_version<=10.8):
             gpjob = self._tbx.generate_trend_raster(input_multidimensional_raster=input_multidimensional_raster,
                                                     output_name=output_raster,
                                                     dimension=dimension,
@@ -9049,7 +9078,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                     context=context,
                                                     gis=self._gis,
                                                     future=True)
-        else:
+        elif(current_version is not None) and (current_version>10.8 and current_version<10.9):
             gpjob = self._tbx.generate_trend_raster(input_multidimensional_raster=input_multidimensional_raster,
                                         output_name=output_raster,
                                         dimension=dimension,
@@ -9062,6 +9091,23 @@ class _RasterAnalysisTools(BaseAnalytics):
                                         rmse=rmse, 
                                         r2=r2, 
                                         slope_p_value=slope_p_value,
+                                        context=context,
+                                        gis=self._gis,
+                                        future=True)
+        elif((current_version is not None) and current_version>=10.9):
+            gpjob = self._tbx.generate_trend_raster(input_multidimensional_raster=input_multidimensional_raster,
+                                        output_name=output_raster,
+                                        dimension=dimension,
+                                        variables=variables,
+                                        trend_line_type=trend_line_type_val,
+                                        frequency=frequency,
+                                        ignore_nodata=ignore_nodata,
+                                        cycle_length=cycle_length, 
+                                        cycle_unit=cycle_unit,
+                                        rmse=rmse, 
+                                        r2=r2, 
+                                        slope_p_value=slope_p_value,
+                                        seasonal_period=seasonal_period,
                                         context=context,
                                         gis=self._gis,
                                         future=True)

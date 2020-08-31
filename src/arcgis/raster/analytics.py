@@ -3530,6 +3530,7 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
 
 def build_multidimensional_transpose(input_multidimensional_raster,
                                      context=None,
+                                     delete_transpose=False,
                                      *,
                                      gis=None,
                                      future=False,
@@ -3562,6 +3563,15 @@ def build_multidimensional_transpose(input_multidimensional_raster,
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
+   delete_tranpose                           Optional boolean. Specifies whether to delete an existing transpose. 
+                                             (Parameter available from 10.9)
+
+                                                - True - The transpose, if it exists, will be deleted. 
+                                                         No new transpose will be built. 
+
+                                                - False - The transpose will be built. If there is an existing transpose, 
+                                                          it will be overwritten. This is the default. 
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS object. the GIS on which this tool runs. If not specified, 
                                              the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -3585,6 +3595,7 @@ def build_multidimensional_transpose(input_multidimensional_raster,
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.rasteranalysis.build_multidimensional_transpose(input_multidimensional_raster=input_multidimensional_raster,
                                                                       context=context,
+                                                                      delete_transpose=delete_transpose,
                                                                       future=future,
                                                                       **kwargs)
 
@@ -3921,6 +3932,7 @@ def generate_trend_raster(input_multidimensional_raster,
                           rmse=True, 
                           r2=False, 
                           slope_p_value=False,
+                          seasonal_period="DAYS",
                           *,
                           gis=None,
                           future=False,
@@ -3950,6 +3962,10 @@ def generate_trend_raster(input_multidimensional_raster,
                                              - POLYNOMIAL : Fits the pixel values for a variable along a second order polynomial trend line.
 
                                              - HARMONIC : Fits the pixel values for a variable along a harmonic trend line.
+
+                                             - MANN-KENDALL :
+                                             
+                                             - SEASONAL-KENDALL : 
     ------------------------------------     --------------------------------------------------------------------
     frequency                                Optional Integer. 
 
@@ -4042,6 +4058,9 @@ def generate_trend_raster(input_multidimensional_raster,
                                              p-value statistic for the slope coefficient of the trend line will be calculated. 
                                              Available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
+    seasonal_period                          Optional String. Specifies the seasonal period. Default - "DAYS"
+                                             Possible Options - "DAYS", "MONTHS"
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -4091,6 +4110,7 @@ def generate_trend_raster(input_multidimensional_raster,
                                                           rmse=rmse, 
                                                           r2=r2, 
                                                           slope_p_value=slope_p_value,
+                                                          seasonal_period=seasonal_period,
                                                           future=future,
                                                           **kwargs)
 
