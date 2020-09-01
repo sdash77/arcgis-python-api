@@ -79,14 +79,111 @@ class TabularDataObject(object):
         tabular_data._bs = batch_size
         tabular_data._seed = seed
 
-        random.seed(seed)
-        validation_indexes = random.sample(range(len(tabular_data._dataframe)), round(val_split_pct * len(tabular_data._dataframe)))
-        tabular_data._validation_indexes = validation_indexes
+        validation_indexes = []
+        if tabular_data._dependent_variable:
+            random.seed(seed)
+            validation_indexes = random.sample(range(len(tabular_data._dataframe)), round(val_split_pct * len(tabular_data._dataframe)))
+            tabular_data._validation_indexes = validation_indexes
 
         tabular_data._training_indexes = list(set([i for i in range(len(tabular_data._dataframe))]) - set(validation_indexes))
+        if not tabular_data._dependent_variable:
+            tabular_data._validation_indexes = list(set([i for i in range(len(tabular_data._dataframe))]))
+
         tabular_data._is_empty = False
-        tabular_data._is_classification = tabular_data._is_classification()
+
+        if tabular_data._dependent_variable:
+            tabular_data._is_classification = tabular_data._is_classification()
+        else:
+            tabular_data._is_classification = True
+
         return tabular_data
+
+    @staticmethod
+    def _min_of(values):
+        if len(values) == 0:
+            return 0
+
+        if len(values) == 1:
+            return values[0]
+
+        min_value = values[0]
+        for value in values:
+            if value < min_value:
+                min_value = value
+        return min_value
+
+    @staticmethod
+    def _max_of(values):
+        if len(values) == 0:
+            return 0
+
+        return max(values)
+
+    @staticmethod
+    def _mean_of(values):
+        if len(values) == 0:
+            return 0
+
+        return sum(values) / len(values)
+
+    @staticmethod
+    def _majority_of(values):
+        if len(values) == 0:
+            return 0
+
+        return max(values, key=values.count)
+
+    @staticmethod
+    def _minority_of(values):
+        if len(values) == 0:
+            return 0
+
+        return min(values, key=values.count)
+
+    @staticmethod
+    def _sum_of(values):
+        if len(values) == 0:
+            return 0
+
+        return sum(values)
+
+    @staticmethod
+    def _std_dev_of(values):
+        if len(values) == 0:
+            return 0
+
+        import statistics
+        return statistics.stdev(values)
+
+    @staticmethod
+    def _variety(values):
+        return len(list(set(values)))
+
+    @staticmethod
+    def _get_calc(raster_type, calc_type):
+        calc_type = calc_type.lower()
+
+        cont_mapping = {
+            'min': TabularDataObject._min_of,
+            'max': TabularDataObject._max_of,
+            'mean': TabularDataObject._mean_of,
+            'majority': TabularDataObject._majority_of,
+            'minority': TabularDataObject._minority_of,
+            'std_dev': TabularDataObject._std_dev_of,
+            'sum': TabularDataObject._sum_of,
+            'variety': TabularDataObject._variety
+        }
+
+        cat_mapping = {
+            'majority': TabularDataObject._majority_of,
+            'minority': TabularDataObject._minority_of,
+            'variety': TabularDataObject._variety
+        }
+
+        if raster_type:
+            return cat_mapping.get(calc_type, TabularDataObject._majority_of)
+        else:
+            return cont_mapping.get(calc_type, TabularDataObject._mean_of)
 
     def _prepare_validation_databunch(self, dataframe):
         with warnings.catch_warnings():
@@ -113,6 +210,13 @@ class TabularDataObject(object):
             ).split_by_idx([i for i in range(int(len(dataframe)/2), len(dataframe))]).label_empty().databunch(**kwargs_variables)
 
         return databunch_half, databunch_second_half
+
+    @property
+    def _is_unsupervised(self):
+        if not self._dependent_variable:
+            return True
+
+        return False
 
     def _is_classification(self):
         if self._is_empty:
@@ -162,9 +266,11 @@ class TabularDataObject(object):
 
         dataframe = self._dataframe
 
-        labels = np.array(dataframe[self._dependent_variable])
+        labels = None
 
-        dataframe = dataframe.drop(self._dependent_variable, axis=1)
+        if self._dependent_variable:
+            labels = np.array(dataframe[self._dependent_variable])
+            dataframe = dataframe.drop(self._dependent_variable, axis=1)
 
         if not self._procs:
             numerical_transformer = make_pipeline(
@@ -186,16 +292,21 @@ class TabularDataObject(object):
             mapping = {}
             for variable in self._categorical_variables:
                 labelEncoder = LabelEncoder()
-                dataframe[variable] = labelEncoder.fit_transform(dataframe[variable])
+                dataframe[variable] = np.array(labelEncoder.fit_transform(dataframe[variable]), dtype='int64')
                 mapping[variable] = labelEncoder
             self._encoder_mapping = mapping
 
         processed_data = _procs.fit_transform(dataframe)
 
         training_data = processed_data.take(self._training_indexes, axis=0)
-        training_labels = labels.take(self._training_indexes)
+        training_labels = None
+        if self._dependent_variable:
+            training_labels = labels.take(self._training_indexes)
+
         validation_data = processed_data.take(self._validation_indexes, axis=0)
-        validation_labels = labels.take(self._validation_indexes)
+        validation_labels = None
+        if self._dependent_variable:
+            validation_labels = labels.take(self._validation_indexes)
 
         return training_data, training_labels, validation_data, validation_labels
 
@@ -223,19 +334,24 @@ class TabularDataObject(object):
 
         if self._encoder_mapping:
             for variable, encoder in self._encoder_mapping.items():
-                dataframe[variable] = encoder.fit_transform(np.array(dataframe[variable], dtype='int64'))
+                dataframe[variable] = np.array(encoder.fit_transform(dataframe[variable]), dtype='int64')
 
         processed_data = _procs.fit_transform(dataframe)
 
         return processed_data
 
-    def show_batch(self):
+    def show_batch(self, rows=None):
         """
         Shows a batch of dataframe prepared without applying transforms.
         """
 
-        random_batch = random.sample(self._training_indexes, self._bs)
-        return self._dataframe.loc[random_batch].reset_index(drop=True)
+        if not rows or rows <= 0:
+            rows = self._bs
+        elif rows > len(self._training_indexes):
+            rows = len(self._training_indexes)
+
+        random_batch = random.sample(self._training_indexes, rows)
+        return self._dataframe.loc[random_batch].sort_index()
 
     @staticmethod
     def _prepare_dataframe_from_features(
@@ -287,12 +403,14 @@ class TabularDataObject(object):
                 continuous_variables.append(f'NEAR_DIST_{count}')
                 count = count + 1
 
-        fields_to_keep = continuous_variables + categorical_variables + [dependent_variable]
+        fields_to_keep = continuous_variables + categorical_variables
+        if dependent_variable:
+            fields_to_keep = fields_to_keep + [dependent_variable]
 
         for column in dataframe_columns:
             if column not in fields_to_keep:
                 dataframe = dataframe.drop(column, axis=1)
-            elif column == dependent_variable:
+            elif dependent_variable and column == dependent_variable:
                 continue
             elif column in categorical_variables and dataframe[column].dtype == float:
                 warnings.warn(f"Changing column {column} to continuous")
@@ -357,9 +475,18 @@ class TabularDataObject(object):
         for raster in rasters:
             raster_type = 0
 
+            raster_calc = TabularDataObject._mean_of
+
             if isinstance(raster, tuple):
-                if raster[1] is True:
-                    raster_type = 1
+                if isinstance(raster[1], bool):
+                    if raster[1] is True:
+                        raster_type = 1
+                        raster_calc = TabularDataObject._majority_of
+                    if len(raster) > 2:
+                        raster_calc = TabularDataObject._get_calc(raster_type, raster[2])
+                else:
+                    raster_calc = TabularDataObject._get_calc(raster_type, raster[1])
+
                 raster = raster[0]
             rasters_data[raster.name] = []
 
@@ -386,10 +513,7 @@ class TabularDataObject(object):
                     if len(values) == 0:
                         values.append(raster.read(origin_coordinate=(shape.true_centroid['x'] - raster.mean_cell_width, shape.true_centroid['y']), ncols=1,
                                         nrows=1)[0][0][0])
-                    if raster_type == 0:
-                        value = sum(values) / len(values)
-                    else:
-                        value = max(values, key=values.count)
+                    value = raster_calc(values)
                 else:
                     raise Exception("Input features can be point or polygon only.")
 

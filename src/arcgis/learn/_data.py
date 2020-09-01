@@ -479,7 +479,7 @@ def prepare_textdata(
 
 def prepare_tabulardata(
         input_features,
-        variable_predict,
+        variable_predict=None,
         explanatory_variables=None,
         explanatory_rasters=None,
         date_field=None,
@@ -499,8 +499,9 @@ def prepare_tabulardata(
     input_features          Required Feature Layer Object or spatially enabled dataframe.
                             This contains features denoting the value of the dependent variable.
     ---------------------   -------------------------------------------
-    variable_predict        Required String, denoting the field_name of
+    variable_predict        Optional String, denoting the field_name of
                             the variable to predict.
+                            Keep none for unsupervised training using MLModel.
     ---------------------   -------------------------------------------
     explanatory_variables   Optional list containing field names from input_features
                             By default the field type is continuous.
@@ -544,7 +545,11 @@ def prepare_tabulardata(
                             "NEAR_DIST_1", "NEAR_DIST_2" etc.
     ---------------------   -------------------------------------------
     preprocessors           For Fastai: Optional transforms list.
-                            For Scikit-learn: supply a column transformer object.
+                            For Scikit-learn:
+                            1. Supply a column transformer object.
+                            2. Supply a list of tuple,
+                            For example:
+                            [('Col_1', 'Col_2', Transform1()), ('Col_3', Transform2())]
                             Categorical data is by default encoded.
                             If nothing is specified, default transforms are applied
                             to fill missing values and normalize categorical data.
@@ -566,17 +571,37 @@ def prepare_tabulardata(
     :returns: `TabularData` object
 
     """
-
+    import warnings
     if not HAS_FASTAI:
         _raise_fastai_import_error(import_exception)
 
-    dependent_variable = variable_predict
-    if isinstance(variable_predict, tuple):
-        dependent_variable = variable_predict[0]
+    HAS_COLUMN_TRANSFORMS = False
+
+    if preprocessors and isinstance(preprocessors, list):
+        for transform in preprocessors:
+            if isinstance(transform, tuple):
+                HAS_COLUMN_TRANSFORMS = True
+                break
+
+        if HAS_COLUMN_TRANSFORMS:
+            column_transforms = []
+            for transform in preprocessors:
+                if not isinstance(transform, tuple):
+                    warnings.warn("Please pass (Field_Name, transform) in the list of preprocessors")
+                    return
+                column_transforms.append(
+                    (
+                        transform[-1],
+                        list(transform[0:-1])
+                    )
+                )
+
+            from sklearn.compose import make_column_transformer
+            preprocessors = make_column_transformer(*column_transforms)
 
     return TabularDataObject.prepare_data_for_layer_learner(
         input_features,
-        dependent_variable,
+        variable_predict,
         feature_variables=explanatory_variables,
         raster_variables=explanatory_rasters,
         date_field=date_field,
@@ -586,6 +611,7 @@ def prepare_tabulardata(
         seed=seed,
         batch_size=batch_size
     )
+
 
 def prepare_data(path,
                  class_mapping=None, 

@@ -76,6 +76,10 @@ class FullyConnectedNetwork(ArcGISModel):
     """
 
     def __init__(self, data, layers=None, emb_szs=None, **kwargs):
+
+        if data._is_unsupervised:
+            raise Exception("Cannot train on unsupervised data")
+
         super().__init__(data, None)
 
         self._backbone = None
@@ -255,7 +259,7 @@ class FullyConnectedNetwork(ArcGISModel):
             match_field_names=None):
         """
 
-        Predict on data from feature layer and or raster data.
+        Predict on data from feature layer, dataframe and or raster data.
 
         =================================   =========================================================================
         **Argument**                        **Description**
@@ -286,7 +290,7 @@ class FullyConnectedNetwork(ArcGISModel):
                                             If not specified then active gis user is taken.
         ---------------------------------   -------------------------------------------------------------------------
         prediction_type                     Optional String.
-                                            Set 'features' to make output feature layer predictions.
+                                            Set 'features' or 'dataframe' to make output feature layer predictions.
                                             With this feature_layer argument is required.
 
                                             Set 'raster', to make prediction raster.
@@ -306,17 +310,17 @@ class FullyConnectedNetwork(ArcGISModel):
                                                 }
         =================================   =========================================================================
 
-        :returns Feature Layer if prediction_type='features' else creates an output raster.
+        :returns Feature Layer if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.
 
         """
 
         rasters = explanatory_rasters if explanatory_rasters else []
-        if prediction_type == 'features':
+        if prediction_type in ['features', 'dataframe']:
 
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 
-            return self._predict_features(input_features, rasters, datefield, distance_features, output_layer_name, gis, match_field_names)
+            return self._predict_features(input_features, rasters, datefield, distance_features, output_layer_name, gis, match_field_names, prediction_type)
         else:
             if not rasters:
                 raise Exception("Rasters required for predict_features=False")
@@ -334,7 +338,8 @@ class FullyConnectedNetwork(ArcGISModel):
             distance_feature_layers=None,
             output_name="Prediction Layer",
             gis=None,
-            match_field_names=None
+            match_field_names=None,
+            prediction_type="features"
     ):
         if isinstance(input_features, FeatureLayer):
             dataframe = input_features.query().sdf
@@ -397,6 +402,8 @@ class FullyConnectedNetwork(ArcGISModel):
                 raise Exception(f"Field missing {field}")
 
         dataframe["prediction_results"] = self._df_predict(processed_dataframe.copy())
+        if prediction_type == "dataframe":
+            return dataframe
 
         return dataframe.spatial.to_featurelayer(output_name, gis)
 
