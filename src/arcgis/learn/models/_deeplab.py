@@ -171,27 +171,27 @@ class DeepLab(ArcGISModel):
 
         self.learn.loss_func = self._deeplab_loss
 
-        ## setting class_weight if present in data
-        if self.class_balancing and self._data.class_weight is not None:
-            class_weight = torch.tensor([self._data.class_weight.mean()] + self._data.class_weight.tolist()).float().to(self._device)
-        else:
-            class_weight = None        
-
-        ## Raising warning in apropriate case
+        class_weight = None
         if self.class_balancing:
-            if self._data.class_weight is None:
-                logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
-            elif getattr(data, 'overflow_encountered', False):
-                logger.warning("Overflow Encountered. Ignoring `class_balancing` parameter.")
-                class_weight = [1] * len(data.classes)
-        
-        ## Setting class weights for ignored classes
+            if data.class_weight is not None:
+                # Handle condition when nodata is already at pixel value 0 in data
+                if (data.c - 1) == data.class_weight.shape[0]:
+                    class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(
+                        self._device)
+                else:
+                    class_weight = torch.tensor(data.class_weight).float().to(self._device)
+            else:
+                if getattr(data, 'overflow_encountered', False):
+                    logger.warning("Overflow Encountered. Ignoring `class_balancing` parameter.")
+                    class_weight = [1] * len(data.classes)
+                else:
+                    logger.warning(
+                        "Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
+
         if self._ignore_classes != []:
             if not self.class_balancing:
                 class_weight = torch.tensor([1] * data.c).float().to(self._device)
             class_weight[self._ignore_mapped_class] = 0.
-        else:
-            class_weight = None
 
         self._final_class_weight = class_weight
 

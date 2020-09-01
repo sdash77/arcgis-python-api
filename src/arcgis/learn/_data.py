@@ -1338,7 +1338,10 @@ def prepare_data(path,
                     data.overflow_encountered = True
                     data.class_weight = None
                 else:
-                    data.class_weight = num_pixels_per_class.sum() /num_pixels_per_class
+                    _num_pixels_per_class = np.copy(num_pixels_per_class)
+                    _num_pixels_per_class[_num_pixels_per_class==0]=1
+                    data.class_weight = num_pixels_per_class.sum() / _num_pixels_per_class
+                    data.class_weight[num_pixels_per_class==0]=0
             else:
                 data.class_weight = None
 
