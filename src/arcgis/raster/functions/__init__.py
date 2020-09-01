@@ -1028,11 +1028,11 @@ def composite_band(rasters, astype=None, cellsize_type='MaxOf'):
         template_dict["outputPixelType"] = astype.upper()
 
     cellsize_types = {
-        "FirstOf" : 0,
-        "MinOf" : 1,
-        "MaxOf" : 2,
-        "MeanOf" : 3,
-        "LastOf" : 4
+        "firstof" : 0,
+        "minof" : 1,
+        "maxof" : 2,
+        "meanof" : 3,
+        "lastof" : 4
     }      
 
     if cellsize_type is not None:
