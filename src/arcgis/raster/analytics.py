@@ -5908,6 +5908,77 @@ def sample(input_rasters,
                                             **kwargs)
 
 
+def merge_multidimensional_rasters(input_multidimensional_rasters,
+                                   resolve_overlap_method='FIRST',
+                                   output_name=None, 
+                                   context=None,
+                                   *,
+                                   gis=None,
+                                   future=False,
+                                   **kwargs):
+
+    """
+    Function merges several multidimensional rasters into one.  
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_multidimensional_rasters           Required list of ImageryLayer object. List of portal items can be passed.
+    ------------------------------------     --------------------------------------------------------------------
+    resolve_overlap_method                   Optional string. Specifies the method used to handle overlapping pixels when merging rasters spatially or dimensionally. 
+
+                                               - FIRST - The pixel value will be determined by the raster that appears first in the list of rasters. This is the default.  
+
+                                               - LAST - The pixel value will be determined by the raster that appears last in the list of rasters.  
+
+                                               - MIN - The pixel value will be determined by the lowest pixel value in the overlapping rasters.  
+
+                                               - MAX - The pixel value will be determined by the highest pixel value in the overlapping rasters.  
+
+                                               - MEAN - The pixel value will be determined by the average of the overlapping pixel values.  
+
+                                               - SUM - The pixel value will be determined by the sum of the overlapping pixel values. .  
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Optional dictionary. Context contains additional settings that affect task execution.
+                                             Dictionary can contain value for following keys:
+
+                                             - cellSize - Set the output raster cell size, or resolution
+
+                                             - extent - Sets the processing extent used by the function
+
+                                             - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
+
+                                             - processorType - Sets the processor type. "CPU" or "GPU"
+
+                                             Eg: {"processorType" : "CPU"}
+
+                                             Setting context parameter will override the values set using arcgis.env 
+                                             variable for this particular function.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ====================================     ====================================================================
+
+    :return:
+        The output imagery layer item
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.merge_multidimensional_rasters(input_multidimensional_rasters=input_multidimensional_rasters,
+                                                                    resolve_overlap_method=resolve_overlap_method,
+                                                                    output_name=output_name, 
+                                                                    context=context,
+                                                                    future=future,
+                                                                    **kwargs)
+
 #def transfer_files(input_files, 
 #                   output_datastore=None, 
 #                   tf_filter=None,
