@@ -454,8 +454,8 @@ def find_dwell_locations(input_layer,
                          context=None,
                          future=False,
                          time_boundary_split=None,
-                         time_split_unit=None,
-                         time_reference=None):
+                         time_boundary_unit=None,
+                         time_boundary_ref=None):
 
     """
 
@@ -589,17 +589,15 @@ def find_dwell_locations(input_layer,
                                  parameter was introduced in ArcGIS Enterprise 10.8.1.
 
                                  The ``time_boundary_split`` parameter defines the scale of the time boundary.
-                                 In the case above, this would be 1.
+                                 In the case above, this would be 1. See the portal documentation for
+                                 this tool to learn more.
     --------------------------   ---------------------------------------------------------------
-    time_split_unit              Optional string. The unit applied to the time boundary. This is
-                                 required if `time_boundary_split` is used.  This was introduced
-                                 in ArcGIS Enterprise 10.8.1.
+    time_boundary_unit           Optional string. The unit to detect an incident is `time_boundary_split` is used. This was introduced in ArcGIS Enterprise 10.8.1.
 
                                  Choice list: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds'].
     --------------------------   ---------------------------------------------------------------
-    time_reference               Optional datetime.detetime. The starting date/time where analysis will
-                                 begin from. The default is January 1, 1970, at 12:00 a.m. (epoch time stamp 0).
-                                 This parameter was introduced in ArcGIS Enterprise 10.8.1.
+    time_boundary_ref            Optional datetime.detetime. The starting date/time where analysis will
+                                 begin from. This parameter was introduced in ArcGIS Enterprise 10.8.1.
     ==========================   ===============================================================
 
     :returns: Output Service if future is False and GAJob if future is True
@@ -642,8 +640,8 @@ def find_dwell_locations(input_layer,
         "context" : context,
         "future" : future,
         "time_boundary_split" : time_boundary_split,
-        "time_boundary_split_unit" : time_split_unit,
-        "time_boundary_reference" : time_reference
+        "time_boundary_split_unit" : time_boundary_unit,
+        "time_boundary_reference" : time_boundary_ref
     }
 
     for k in list(params.keys()):
@@ -697,6 +695,7 @@ def find_dwell_locations(input_layer,
         output_service.delete()
         raise
     return None
+
 
 def find_similar_locations(input_layer,
                            search_layer,
