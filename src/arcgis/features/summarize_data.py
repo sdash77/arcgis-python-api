@@ -14,7 +14,7 @@ import arcgis.network as network
 
 #--------------------------------------------------------------------------
 def aggregate_points(point_layer,
-                     polygon_layer,
+                     polygon_layer=None,
                      keep_boundaries_with_no_points=True,
                      summary_fields=[],
                      group_by_field=None,
@@ -40,7 +40,7 @@ def aggregate_points(point_layer,
     ------------------------------------     --------------------------------------------------------------------
     point_layer                              Required point layer. The point features that will be aggregated into the polygons in the polygon_layer. See :ref:`Feature Input<FeatureInput>`.
     ------------------------------------     --------------------------------------------------------------------
-    polygon_layer                            Required polygon layer. The polygon features (areas) into which the input points will be aggregated. See :ref:`Feature Input<FeatureInput>`.
+    polygon_layer                            Optional polygon layer. The polygon features (areas) into which the input points will be aggregated. See :ref:`Feature Input<FeatureInput>`. The `polygon_layer` is **required** if the `bin_type`, `bin_size` and `bin_size_unit` are not specified.
     ------------------------------------     --------------------------------------------------------------------
     keep_boundaries_with_no_points           Optional boolean. A Boolean value that specifies whether the polygons that have no points within them should be returned in the output. The default is true.
     ------------------------------------     --------------------------------------------------------------------
@@ -80,7 +80,9 @@ def aggregate_points(point_layer,
                                              For Hexagon, the number and units specified determine the distance between parallel sides. Either `bin_type` or `polygon_layer` must be
                                              specified. If `bin_type` is chosen, then `bin_size` and `bin_size_unit` specifying the size of the bins must be included.
     ------------------------------------     --------------------------------------------------------------------
-    bin_size                                 Optional Float. The distance for the bins of type `bin_type` that the `point_layer` will be aggregated into.
+    bin_size                                 Optional Float. The distance for the bins of type `bin_type` that the `point_layer` will be aggregated into. When generating bins for
+                                             `Square` the number and units specified determine the height and length of the square. For `Hexagon`, the number and units specified
+                                             determine the distance between parallel sides.
     ------------------------------------     --------------------------------------------------------------------
     bin_size_unit                            Optional String. The linear unit to be used with the distance value specified in `bin_size`.
                                              Values: `Meters, Kilometers, Feet, Miles, NauticalMiles, or Yards`
