@@ -86,11 +86,11 @@ def dissolve_boundaries(
     has a State_Name attribute, you can dissolve boundaries using the State_Name attribute. Adjacent counties will be merged together
     if they have the same value for State_Name. The end result is a layer of state boundaries.
 
-    ====================================     ====================================================================
+    ====================================     =====================================================================================
     **Parameter**                            **Description**
-    ------------------------------------     --------------------------------------------------------------------
+    ------------------------------------     -------------------------------------------------------------------------------------
     input_layer                              Required layer. The layer containing polygon features that will be dissolved. See :ref:`Feature Input<FeatureInput>`.
-    ------------------------------------     --------------------------------------------------------------------
+    ------------------------------------     -------------------------------------------------------------------------------------
     dissolve_fields                          Optional list of strings. One or more fields on the input_layer that control which polygons
                                              are merged. If you don't supply dissolve_fields , or you supply an empty list of fields, polygons
                                              that share a common border (that is, they are adjacent) or polygon areas that overlap will be dissolved into one polygon.
@@ -100,14 +100,15 @@ def dissolve_boundaries(
                                              and each county has a State_Name attribute, you can dissolve boundaries using the State_Name attribute.
                                              Adjacent counties will be merged together if they have the same value for State_Name. The end result is a layer of
                                              state boundaries.If two or more fields are specified, the values in these fields must be the same for the boundary to be dissolved.
-    ------------------------------------     --------------------------------------------------------------------
+    ------------------------------------     -------------------------------------------------------------------------------------
     summary_fields                           | Optional list of strings.
                                              A list of field names and statistical summary types that you
                                              wish to calculate from the polygons that are dissolved together:
 
                                              | *["`fieldName` `summary type`", "`fieldName2` `summaryType`"]*
 
-                                             `fieldName` is the name of one of the numeric fields found in the input_layer.
+                                             `fieldName` is the name of one of the numeric fields found in the
+                                             input_layer.
                                              `summary type` is one of the following:
 
                                              * ``Sum`` - Adds the total value of all the points in each polygon
@@ -116,10 +117,10 @@ def dissolve_boundaries(
                                              * ``Max`` - Finds the largest value of all the points in each polygon.
                                              * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
 
-                                             For example, if you are dissolving counties based on `State_Name`, and each county
-                                             has a `Population` field, you can sum the `Population` for all the counties sharing
-                                             the same `State_Name` attribute. The result would be a layer of state boundaries
-                                             with total population.
+                                             For example, if you are dissolving counties based on `State_Name`, and each
+                                             county has a `Population` field, you can sum the `Population` for all the
+                                             counties sharing the same `State_Name` attribute. The result would be a
+                                             layer of state boundaries with total population.
 
                                              .. code-block:: python
                                                 :emphasize-lines: 5
@@ -130,34 +131,45 @@ def dissolve_boundaries(
                                                                         dissolve_fields="State_Name",
                                                                         summary_fields=["Population Sum"],
                                                                         output_name="US_States")
-    ------------------------------------     --------------------------------------------------------------------
+    ------------------------------------     -------------------------------------------------------------------------------------
     output_name                              Optional string. If provided, the task will create a feature service of the results.
                                              You define the name of the service. If output_name is not supplied, the task will return a feature collection.
-    ------------------------------------     --------------------------------------------------------------------
-    context                                  Optional string. Context contains additional settings that affect task execution. For dissolve_boundaries Points, there are two settings.
+    ------------------------------------     -------------------------------------------------------------------------------------
+    context                                  Optional string. Context contains additional settings that affect task execution.
+                                             For dissolve_boundaries, there are two settings:
 
-                                             #. Extent (extent)-a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
-                                             #. Output Spatial Reference (outSR) the output features will be projected into the output spatial reference.
-    ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    ------------------------------------     --------------------------------------------------------------------
+                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+
+                                             .. code-block:: python
+
+                                                # Example Usage
+
+                                                context = {"extent": {"xmin": 3164569.408035,
+                                                                      "ymin": -9187921.892449,
+                                                                      "xmax": 3174104.927313,
+                                                                      "ymax": -9175500.875353},
+                                                           "outSR": {"wkid": 3857}}
+    ------------------------------------     -------------------------------------------------------------------------------------
+    gis                                      Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     -------------------------------------------------------------------------------------
     estimate                                 Optional Boolean. If True, the number of credits to run the operation will be returned.
-    ------------------------------------     --------------------------------------------------------------------
-    multi_part_features                      Optional boolean. Specifies whether multipart features (i.e. features which share a common
-                                             attribute table but are not visibly connected) are allowed in the output feature class.
+    ------------------------------------     -------------------------------------------------------------------------------------
+    multi_part_features                      Optional boolean. Specifies whether multipart features (i.e. features which
+                                             share a common attribute table but are not visibly connected) are allowed in
+                                             the output feature class.
 
-                                             Choice list: ['True', 'False'].
+                                             | Choice list: [``True``, ``False``]
 
-                                             True: Specifies multipart features are allowed.
+                                               * ``True``: Specifies multipart features are allowed.
+                                               * ``False``: Specifies multipart features are not allowed. Instead of creating multipart features, individual features will be created for each part.
 
-                                             False: Specifies multipart features are not allowed. Instead of creating multipart features, individual features will be created for each part.
+                                             The default value is ``True``.
+    ------------------------------------     -------------------------------------------------------------------------------------
+    future                                   Optional boolean. If True, the result will be a :class:`~arcgis.geoprocessing.GPJob` object and results will be returned asynchronously.
+    ====================================     =====================================================================================
 
-                                             The default value is True.
-    ------------------------------------     --------------------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
-    ====================================     ====================================================================
-
-    :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
+    :returns: result_layer : Feature layer :class:`~arcgis.gis.Item` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
 
 
     .. code-block:: python
