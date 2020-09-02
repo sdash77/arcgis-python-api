@@ -1894,7 +1894,7 @@ class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /MapServer/<index>
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
+    gis                    Optional :class:`~arcgis.gis.GIS` object. If not specified, the active GIS connection is
                            used.
     ==================     ====================================================================
 
@@ -1902,13 +1902,13 @@ class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
 
         # USAGE EXAMPLE 1: Instantiating a Map Service Layer object
 
-        from arcgis.mapping import SceneLayer
+        from arcgis.mapping import MapServiceLayer
         ms_layer = MapServiceLayer(url='https://your_portal.com/arcgis/rest/services/service_name/MapServer/0')
 
         type(ms_layer)
         >> arcgis.mapping._types.MapTable
 
-        print(s_layer.properties.name)
+        print(ms_layer.properties.name)
         >> 'pipe_properties'
 
     """
