@@ -105,7 +105,7 @@ def dissolve_boundaries(
                                              A list of field names and statistical summary types that you
                                              wish to calculate from the polygons that are dissolved together:
 
-                                             | *["`fieldName` `summary type`", "`fieldName2` `summaryType`"]*
+                                             | *["fieldName summary type", "fieldName2 summaryType"]*
 
                                              `fieldName` is the name of one of the numeric fields found in the
                                              input_layer.
