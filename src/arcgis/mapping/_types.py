@@ -46,9 +46,9 @@ def _tempinput(data):
 ###########################################################################
 class _ApplicationProperties(object):
     """
-    This class is responsible for containing the viewing and editing 
+    This class is responsible for containing the viewing and editing
     properties of the web map. There are specific objects within this
-    object that are applicable only to Collector and Offline Mapping. 
+    object that are applicable only to Collector and Offline Mapping.
     """
     _app_prop = None
     def __init__(self, prop=None):
@@ -82,7 +82,7 @@ class _ApplicationProperties(object):
             self._app_prop['editing']['locationTracking'] = {
                 "enabled": False
             }
-            return self._app_prop['editing']['locationTracking']      
+            return self._app_prop['editing']['locationTracking']
     #----------------------------------------------------------------------
 
 
@@ -938,7 +938,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             else:
                 type_keywords.discard("Collector")
         return list(type_keywords)
-    
+
     def _is_collector_ready_map(self):
         # check that one layer is an editable feature service
         for layer in self.layers:
@@ -951,7 +951,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                 # Not every layer in self.layers has a URL (local featurelayer, SEDF, etc.)
                 continue
         return False
-        
+
     def _is_offline_capable_map(self):
         # check that feature services are sync-enabled and tiled layers are exportable
         try:
@@ -970,7 +970,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             return True
         except Exception:
             return False
-        
+
     def _is_exportable(self, layer):
         # check SRs are equivalent and exportTilesAllowed is set to true or AGOl-hosted esri basemaps
         if (layer.properties['spatialReference']['wkid'] == self._webmapdict['spatialReference']['wkid']) \
@@ -978,8 +978,8 @@ class WebMap(HasTraits, collections.OrderedDict):
             return True
         else:
             return False
-        
-        
+
+
     @property
     def tables(self):
         """
@@ -1015,7 +1015,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     def layers(self):
         """
         Operational layers in the web map
-        
+
         :return: List of Layers as dictionaries
 
         .. code-block:: python
@@ -1052,11 +1052,11 @@ class WebMap(HasTraits, collections.OrderedDict):
     def basemap(self):
         """
         Base map layers in the web map
-        
+
         :return: List of layers as dictionaries
 
         .. code-block:: python
-        
+
             # Usage example 1: Get the basemap used in the web map
 
             from arcgis.mapping import WebMap
@@ -1073,18 +1073,18 @@ class WebMap(HasTraits, collections.OrderedDict):
                 }],
                 "title": "Topographic"
                 }
-                
+
             # Usage example 2: Set the basemap used in the web map
             from arcgis.mapping import WebMap
             wm = WebMap(wm_item)
-            
+
             print(wm.basemaps)
             >> ['dark-gray', 'dark-gray-vector', 'gray', 'gray-vector', 'hybrid', 'national-geographic', 'oceans', 'osm', 'satellite', 'streets', 'streets-navigation-vector', 'streets-night-vector', 'streets-relief-vector', 'streets-vector', 'terrain', 'topo', 'topo-vector']
             wm.basemap = 'dark-gray'
             print(wm.gallery_basemaps)
             >> ['custom_dark_gray_canvas', 'imagery', 'imagery_hybrid', 'light_gray_canvas', 'custom_basemap_vector_(proxy)', 'world_imagery_(proxy)', 'world_street_map_(proxy)']
             wm.basemap = 'custom_dark_gray_canvas'
-            
+
             # Usage example 3: Set the basemap equal to an item
             from arcgis.mapping import WebMap
             wm = WebMap(wm_item)
@@ -1094,7 +1094,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             wm.basemap = image_layer_item
             wm.basemap = wm2.basemap
             wm.basemap = wm2
-            
+
         """
         if self._basemap:
             return PropertyMap(self._basemap)
@@ -1117,7 +1117,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         if tiled:
             layer_type = "ArcGIS" + layer_type.replace("ArcGIS", "Tiled")
         return layer_type
-        
+
     @basemap.setter
     def basemap(self, value):
         """What basemap you would like to apply to the map (‘topo’,
@@ -1161,7 +1161,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             self._webmapdict['baseMap'] = self._basemap
         else:
             raise RuntimeError("Basemap '{}' isn't valid".format(value))
-    
+
     @property
     def basemaps(self):
         """
@@ -1205,7 +1205,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                 return list(self._gallery_basemaps.keys())
         else:
             return []
-            
+
     def remove_table(self, table):
         """
         Removes the specified table from the web map. You can get the list of tables in map using the 'tables' property
@@ -1236,12 +1236,12 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         self._webmapdict['operationalLayers'].remove(layer)
         self._layers.remove(PropertyMap(layer))
-        
+
     def get_layer(self, item_id=None, title=None, layer_id=None):
         """
         Returns the first layer with a matching itemId, title, or layer_id in the webmap's operational layers.
         Pass one of the three parameters into the method to return the layer.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -1254,7 +1254,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         layer_id               Optional string. Pass the id for the operational layer you are trying
                                to reference in the webmap.
         ==================     ====================================================================
-        
+
         :return: Layer as a dictionary
         """
         if item_id is None and title is None and layer_id is None:
@@ -1300,7 +1300,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                 except Exception:
                     pass
         return None
-        
+
     @property
     def offline_areas(self):
         """
@@ -1526,7 +1526,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         if self.search:
             data['mapTools'].append({"type": "searchTool"})
-        
+
         if self.events.enable:
             data["events"].append({"type":self.events.type, "actions":self.events.synced_widgets})
 
@@ -1535,7 +1535,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 ###########################################################################
 class PackagingJob(object):
     """
-    Represents a Single Packaging Job.  
+    Represents a Single Packaging Job.
 
 
     ================  ===============================================================
@@ -1595,10 +1595,10 @@ class PackagingJob(object):
             print(msg)
     #----------------------------------------------------------------------
     def __str__(self):
-        return "<Packaging Job>" 
+        return "<Packaging Job>"
     #----------------------------------------------------------------------
     def __repr__(self):
-        return "<Packaging Job>" 
+        return "<Packaging Job>"
     #----------------------------------------------------------------------
     @property
     def status(self):
@@ -1690,16 +1690,16 @@ class OfflineMapAreaManager(object):
     @property
     def offline_properties(self):
         """
-        This property allows users to configure the offline properties 
-        for a webmap.  The `offline_properties` allows for the definition 
-        of how available offline editing, basemap, and read-only layers 
+        This property allows users to configure the offline properties
+        for a webmap.  The `offline_properties` allows for the definition
+        of how available offline editing, basemap, and read-only layers
         behave in the web map application.
 
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        values                 Required Dict.  The key/value object that defines the offline 
+        values                 Required Dict.  The key/value object that defines the offline
                                application properties.
         ==================     ====================================================================
 
@@ -1708,34 +1708,34 @@ class OfflineMapAreaManager(object):
         ==================     ====================================================================
         **Key**                **Values**
         ------------------     --------------------------------------------------------------------
-        download               When editing layers, the edits are always sent to the server. This 
-                               string value indicates which data is retrieved. For example, none 
+        download               When editing layers, the edits are always sent to the server. This
+                               string value indicates which data is retrieved. For example, none
                                indicates that only the schema is written since neither the features
-                               nor attachments are retrieved. For a full sync without downloading 
-                               attachments, indicate features. Lastly, the default behavior is to 
-                               have a full sync using `features_and_attachments` where both 
+                               nor attachments are retrieved. For a full sync without downloading
+                               attachments, indicate features. Lastly, the default behavior is to
+                               have a full sync using `features_and_attachments` where both
                                features and attachments are retrieved.
-                               
+
                                If property is present, must be one of the following values:
 
                                Allowed Values: [features, features_and_attachments, None]
         ------------------     --------------------------------------------------------------------
-        sync                   `sync` applies to editing layers only.  This string value indicates 
+        sync                   `sync` applies to editing layers only.  This string value indicates
                                how the data is synced.
 
-                               Allowed Values: 
-                               
+                               Allowed Values:
+
                                sync_features_and_attachments  - bidirectional sync
                                sync_features_upload_attachments - bidirection sync for feaures but upload only for attachments
                                upload_features_and_attachments - upload only for both features and attachments (initial replica is just a schema)
-                              
-                              
+
+
         ------------------     --------------------------------------------------------------------
-        reference_basemap      The filename of a basemap that has been copied to a mobile device. 
-                               This can be used instead of the default basemap for the map to 
+        reference_basemap      The filename of a basemap that has been copied to a mobile device.
+                               This can be used instead of the default basemap for the map to
                                reduce downloads.
         ------------------     --------------------------------------------------------------------
-        get_attachments        Boolean value that indicates whether to include attachments with the 
+        get_attachments        Boolean value that indicates whether to include attachments with the
                                read-only data.
         ==================     ====================================================================
 
@@ -1777,7 +1777,7 @@ class OfflineMapAreaManager(object):
             else:
                 values.pop('download')
                 values.pop('sync')
-            
+
             if "offlinebasemap" in v and \
                "referenceBasemapName" in v["offlinebasemap"]:
                 values["reference_basemap"] = v["offlinebasemap"]['referenceBasemapName']
@@ -1796,16 +1796,16 @@ class OfflineMapAreaManager(object):
     @offline_properties.setter
     def offline_properties(self, values):
         """
-        This property allows users to configure the offline properties 
-        for a webmap.  The `offline_properties` allows for the definition 
-        of how available offline editing, basemap, and read-only layers 
+        This property allows users to configure the offline properties
+        for a webmap.  The `offline_properties` allows for the definition
+        of how available offline editing, basemap, and read-only layers
         behave in the web map application.
 
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        values                 Required Dict.  The key/value object that defines the offline 
+        values                 Required Dict.  The key/value object that defines the offline
                                application properties.
         ==================     ====================================================================
 
@@ -1814,34 +1814,34 @@ class OfflineMapAreaManager(object):
         ==================     ====================================================================
         **Key**                **Values**
         ------------------     --------------------------------------------------------------------
-        download               When editing layers, the edits are always sent to the server. This 
-                               string value indicates which data is retrieved. For example, none 
+        download               When editing layers, the edits are always sent to the server. This
+                               string value indicates which data is retrieved. For example, none
                                indicates that only the schema is written since neither the features
-                               nor attachments are retrieved. For a full sync without downloading 
-                               attachments, indicate features. Lastly, the default behavior is to 
-                               have a full sync using `features_and_attachments` where both 
+                               nor attachments are retrieved. For a full sync without downloading
+                               attachments, indicate features. Lastly, the default behavior is to
+                               have a full sync using `features_and_attachments` where both
                                features and attachments are retrieved.
-                               
+
                                If property is present, must be one of the following values:
 
                                Allowed Values: [features, features_and_attachments, None]
         ------------------     --------------------------------------------------------------------
-        sync                   `sync` applies to editing layers only.  This string value indicates 
+        sync                   `sync` applies to editing layers only.  This string value indicates
                                how the data is synced.
 
-                               Allowed Values: 
-                               
+                               Allowed Values:
+
                                sync_features_and_attachments  - bidirectional sync
                                sync_features_upload_attachments - bidirection sync for feaures but upload only for attachments
                                upload_features_and_attachments - upload only for both features and attachments (initial replica is just a schema)
-                              
-                              
+
+
         ------------------     --------------------------------------------------------------------
-        reference_basemap      The filename of a basemap that has been copied to a mobile device. 
-                               This can be used instead of the default basemap for the map to 
+        reference_basemap      The filename of a basemap that has been copied to a mobile device.
+                               This can be used instead of the default basemap for the map to
                                reduce downloads.
         ------------------     --------------------------------------------------------------------
-        get_attachments        Boolean value that indicates whether to include attachments with the 
+        get_attachments        Boolean value that indicates whether to include attachments with the
                                read-only data.
         ==================     ====================================================================
 
@@ -1861,9 +1861,9 @@ class OfflineMapAreaManager(object):
             "sync_features_upload_attachments" : "syncFeaturesUploadAttachments",
             "uploadFeaturesAndAttachments" : "upload_features_and_attachments",
             "upload_features_and_attachments" : "uploadFeaturesAndAttachments"
-        }        
-        keys = {'download' : 'download', 'sync': 'sync', 
-                'reference_basemap' : "referenceBasemapName", 
+        }
+        keys = {'download' : 'download', 'sync': 'sync',
+                'reference_basemap' : "referenceBasemapName",
                 'get_attachments' : "downloadAttachments"}
         remove = set()
         if "applicationProperties" in self._web_map._webmapdict:
@@ -1925,12 +1925,12 @@ class OfflineMapAreaManager(object):
         tp = concurrent.futures.ThreadPoolExecutor(1)
         future = tp.submit(fn=fn, **inputs)
         tp.shutdown(False)
-        return future    
+        return future
     #----------------------------------------------------------------------
     def create(self, area, item_properties=None, folder=None, min_scale=None,
                max_scale=None, layers_to_ignore=None, refresh_schedule="Never",
-               refresh_rates=None, enable_updates=False, ignore_layers=None, 
-               tile_services=None, future=False):  
+               refresh_rates=None, enable_updates=False, ignore_layers=None,
+               tile_services=None, future=False):
         """
 
         Create offline map area items and packages for ArcGIS Runtime powered applications. This method creates two
@@ -2021,10 +2021,10 @@ class OfflineMapAreaManager(object):
 
                                This means every Wednesday at 11:59 PM UTC
         ------------------     --------------------------------------------------------------------
-        enable_updates         Optional Boolean.  Allows for the updating of the layers. 
+        enable_updates         Optional Boolean.  Allows for the updating of the layers.
         ------------------     --------------------------------------------------------------------
-        ignore_layers          Optional List.  A list of individual layers, specified with their 
-                               service URLs, in the map to ignore. The task generates packages for 
+        ignore_layers          Optional List.  A list of individual layers, specified with their
+                               service URLs, in the map to ignore. The task generates packages for
                                all map layers by default.
 
                                Example:
@@ -2035,9 +2035,9 @@ class OfflineMapAreaManager(object):
                                 ]
 
         ------------------     --------------------------------------------------------------------
-        tile_services          Optional List.  An array of JSON objects that contains additional 
-                               export tiles enabled tile services for which tile packages (.tpk or 
-                               .vtpk) need to be created. Each tile service is specified with its 
+        tile_services          Optional List.  An array of JSON objects that contains additional
+                               export tiles enabled tile services for which tile packages (.tpk or
+                               .vtpk) need to be created. Each tile service is specified with its
                                URL and desired level of details.
 
                                Example:
@@ -2103,41 +2103,41 @@ class OfflineMapAreaManager(object):
                env.verbose = True
 
 
-        """        
+        """
         if future:
             inputs = {
-                "area":area, 
-                "item_properties":item_properties, 
-                "folder":folder, 
+                "area":area,
+                "item_properties":item_properties,
+                "folder":folder,
                 "min_scale":min_scale,
-                "max_scale":max_scale, 
-                "layers_to_ignore":layers_to_ignore, 
+                "max_scale":max_scale,
+                "layers_to_ignore":layers_to_ignore,
                 "refresh_schedule":refresh_schedule,
-                "refresh_rates":refresh_rates, 
-                "enable_updates":enable_updates, 
-                "ignore_layers":ignore_layers, 
-                "tile_services":tile_services               
+                "refresh_rates":refresh_rates,
+                "enable_updates":enable_updates,
+                "ignore_layers":ignore_layers,
+                "tile_services":tile_services
             }
             future = self._run_async(self._create, **inputs)
             return PackagingJob(future=future)
         else:
-            return self._create(area=area, 
-                                item_properties=item_properties, 
-                                folder=folder, 
+            return self._create(area=area,
+                                item_properties=item_properties,
+                                folder=folder,
                                 min_scale=min_scale,
-                                max_scale=max_scale, 
-                                layers_to_ignore=layers_to_ignore, 
+                                max_scale=max_scale,
+                                layers_to_ignore=layers_to_ignore,
                                 refresh_schedule=refresh_schedule,
-                                refresh_rates=refresh_rates, 
-                                enable_updates=enable_updates, 
-                                ignore_layers=ignore_layers, 
-                                tile_services=tile_services) 
+                                refresh_rates=refresh_rates,
+                                enable_updates=enable_updates,
+                                ignore_layers=ignore_layers,
+                                tile_services=tile_services)
 
     #----------------------------------------------------------------------
     def _create(self, area, item_properties=None, folder=None, min_scale=None,
                 max_scale=None, layers_to_ignore=None, refresh_schedule="Never",
-                refresh_rates=None, enable_updates=False, ignore_layers=None, 
-                tile_services=None, future=False):    
+                refresh_rates=None, enable_updates=False, ignore_layers=None,
+                tile_services=None, future=False):
         """
         Create offline map area items and packages for ArcGIS Runtime powered applications. This method creates two
         different types of items. It first creates 'Map Area' items for the specified extent or bookmark. Next it
@@ -2223,11 +2223,11 @@ class OfflineMapAreaManager(object):
 
                                This means every Wednesday at 11:59 PM UTC
         ------------------     --------------------------------------------------------------------
-        enable_updates         Optional Boolean.  
+        enable_updates         Optional Boolean.
         ------------------     --------------------------------------------------------------------
         ignore_layers
         ------------------     --------------------------------------------------------------------
-        tile_services          
+        tile_services
         ------------------     --------------------------------------------------------------------
 
         ==================     ====================================================================
@@ -2460,7 +2460,7 @@ class OfflineMapAreaManager(object):
             if refresh_schedule is None:
                 output_name.pop("packageRefreshSchedule")
             if folder_id is None:
-                output_name.pop('folderId')            
+                output_name.pop('folderId')
             oma_result = pkg_tb.create_map_area(map_item_id=self._item.id,
                                                 area_type=area_type,
                                                 area=area,
@@ -2597,8 +2597,8 @@ class OfflineMapAreaManager(object):
                 feature_services = list(feature_services.values())
         # region call the SetupMapArea tool
         #pkg_tb.setup_map_area(map_area_item_id, map_layers_to_ignore=None, tile_services=None, feature_services=None, gis=None, future=False)
-        setup_oma_result = pkg_tb.setup_map_area(map_area_item_id=oma_result, 
-                                                 map_layers_to_ignore=map_layers_to_ignore, 
+        setup_oma_result = pkg_tb.setup_map_area(map_area_item_id=oma_result,
+                                                 map_layers_to_ignore=map_layers_to_ignore,
                                                  tile_services=lods,
                                                  feature_services=feature_services,
                                                  gis=self._gis,
@@ -2771,7 +2771,7 @@ class OfflineMapAreaManager(object):
             result = self._pm.create_map_area(map_item_id=item.id, future=False)
             return True
         except:
-            return False    
+            return False
     #----------------------------------------------------------------------
     def list(self):
         """
@@ -2821,7 +2821,7 @@ class OfflineMapAreaManager(object):
                                          To get the list of Map Area items related to the WebMap object, call the
                                          `list()` method.
         ----------------------------     --------------------------------------------------------------------
-        future                           Optional Boolean.  
+        future                           Optional Boolean.
         ============================     ====================================================================
 
         :return:
@@ -3282,11 +3282,11 @@ class MapImageLayer(Layer):
                 if 'subLayerIds' in lyr and lyr.subLayerIds is not None: # Group Layer
                     lyr = Layer(self.url + '/' + str(lyr.id), self._gis)
                 else:
-                    lyr = arcgis.features.FeatureLayer(self.url + '/' + str(lyr.id), self._gis, self)
+                    lyr = arcgis.mapping._msl.MapServiceLayer(self.url + '/' + str(lyr.id), self._gis)
                 layers.append(lyr)
         if self.properties.tables:
             for lyr in self.properties.tables:
-                lyr = arcgis.features.Table(self.url + '/' + str(lyr.id), self._gis, self)
+                lyr = arcgis.mapping._msl.MapServiceLayer(self.url + '/' + str(lyr.id), self._gis, self)
                 tables.append(lyr)
         # fsurl = self.url + '/layers'
         # params = { "f" : "json" }
