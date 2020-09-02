@@ -589,15 +589,17 @@ def find_dwell_locations(input_layer,
                                  parameter was introduced in ArcGIS Enterprise 10.8.1.
 
                                  The ``time_boundary_split`` parameter defines the scale of the time boundary.
-                                 In the case above, this would be 1. See the portal documentation for
-                                 this tool to learn more.
+                                 In the case above, this would be 1.
     --------------------------   ---------------------------------------------------------------
-    time_split_unit              Optional string. The unit to detect an incident is `time_boundary_split` is used. This was introduced in ArcGIS Enterprise 10.8.1.
+    time_split_unit              Optional string. The unit applied to the time boundary. This is
+                                 required if `time_boundary_split` is used.  This was introduced
+                                 in ArcGIS Enterprise 10.8.1.
 
                                  Choice list: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds'].
     --------------------------   ---------------------------------------------------------------
     time_reference               Optional datetime.detetime. The starting date/time where analysis will
-                                 begin from. This parameter was introduced in ArcGIS Enterprise 10.8.1.
+                                 begin from. The default is January 1, 1970, at 12:00 a.m. (epoch time stamp 0).
+                                 This parameter was introduced in ArcGIS Enterprise 10.8.1.
     ==========================   ===============================================================
 
     :returns: Output Service if future is False and GAJob if future is True
