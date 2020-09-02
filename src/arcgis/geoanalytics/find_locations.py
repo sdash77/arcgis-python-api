@@ -640,8 +640,8 @@ def find_dwell_locations(input_layer,
         "context" : context,
         "future" : future,
         "time_boundary_split" : time_boundary_split,
-        "time_split_unit" : time_split_unit,
-        "time_reference" : time_reference
+        "time_boundary_split_unit" : time_split_unit,
+        "time_boundary_reference" : time_reference
     }
 
     for k in list(params.keys()):
