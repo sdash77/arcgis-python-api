@@ -101,19 +101,35 @@ def dissolve_boundaries(
                                              Adjacent counties will be merged together if they have the same value for State_Name. The end result is a layer of
                                              state boundaries.If two or more fields are specified, the values in these fields must be the same for the boundary to be dissolved.
     ------------------------------------     --------------------------------------------------------------------
-    summary_fields                           Optional list of strings. A list of field names and statistical summary type that you wish to calculate from the polygons
-                                             that are dissolved together. For example, if you are dissolving counties based on State_Name, and each county had a Population field, you can sum Population.
-                                             The result would be a layer of state boundaries with total population.
+    summary_fields                           | Optional list of strings.
+                                             A list of field names and statistical summary types that you
+                                             wish to calculate from the polygons that are dissolved together:
 
-                                             fieldName is the name of one of the numeric fields found in the input_layer.
-                                             summary type is one of the following:
+                                             | *["`fieldName` `summary type`", "`fieldName2` `summaryType`"]*
 
-                                             * Sum - Adds the total value of all the points in each polygon
-                                             * Mean - Calculates the average of all the points in each polygon.
-                                             * Min - Finds the smallest value of all the points in each polygon.
-                                             * Max - Finds the largest value of all the points in each polygon.
-                                             * Stddev - Finds the standard deviation of all the points in each polygon.
-                                             Example [fieldName1 summaryType1,fieldName2 summaryType2].
+                                             `fieldName` is the name of one of the numeric fields found in the input_layer.
+                                             `summary type` is one of the following:
+
+                                             * ``Sum`` - Adds the total value of all the points in each polygon
+                                             * ``Mean`` - Calculates the average of all the points in each polygon.
+                                             * ``Min`` - Finds the smallest value of all the points in each polygon.
+                                             * ``Max`` - Finds the largest value of all the points in each polygon.
+                                             * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
+
+                                             For example, if you are dissolving counties based on `State_Name`, and each county
+                                             has a `Population` field, you can sum the `Population` for all the counties sharing
+                                             the same `State_Name` attribute. The result would be a layer of state boundaries
+                                             with total population.
+
+                                             .. code-block:: python
+                                                :emphasize-lines: 5
+
+                                                # Usage Example
+
+                                                >>> dissolve_boundaries(input_layer="US_Counties",
+                                                                        dissolve_fields="State_Name",
+                                                                        summary_fields=["Population Sum"],
+                                                                        output_name="US_States")
     ------------------------------------     --------------------------------------------------------------------
     output_name                              Optional string. If provided, the task will create a feature service of the results.
                                              You define the name of the service. If output_name is not supplied, the task will return a feature collection.
@@ -149,7 +165,7 @@ def dissolve_boundaries(
         USAGE EXAMPLE: To dissolve boundaries of polygons with same state name. The dissolved polygons are summarized using population as summary field and standard deviation as summary type.
         diss_counties = dissolve_boundaries(input_layer=usa_counties,
                                             dissolve_fields=["STATE_NAME"],
-                                            summary_fields=["POPULATION STDDEV"],
+                                            summary_fields=["POPULATION Stddev"],
                                             output_name="DissolveBoundaries")
     """
 
