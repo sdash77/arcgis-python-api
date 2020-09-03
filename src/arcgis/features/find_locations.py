@@ -518,7 +518,7 @@ def derive_new_locations(
 
         USAGE EXAMPLE: To Identify areas that are suitable cougar habitat using the criteria defined by experts.
 
-        new_loaction = derive_new_locations(input_layers=[slope, vegetation, streams, highways],
+        new_location = derive_new_locations(input_layers=[slope, vegetation, streams, highways],
                                     expressions=[{"operator":"","layer":0,"selectingLayer":1,"spatialRel":"intersects"},
                                                  {"operator":"and","layer":0,"selectingLayer":2,"spatialRel":"withinDistance","distance":500,"units":"Feet"},
                                                  {"operator":"and","layer":0,"selectingLayer":3,"spatialRel":"notWithinDistance","distance":1500,"units":"Feet"},

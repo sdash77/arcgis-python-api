@@ -147,24 +147,39 @@ def summarize_nearby(sum_nearby_layer,
     -------------------------    --------------------------------------------------------------------------------------------------------------------
     summary_layer                Required layer. Point, line, or polygon features. Features in this layer that are within the specified distance to features in the ``sum_nearby_layer`` will be summarized. See :ref:`Feature Input<FeatureInput>`.
     -------------------------    --------------------------------------------------------------------------------------------------------------------
-    near_type                    Optional string. Defines what kind of distance measurement you want to use: straight-line distance, or by measuring travel
+    near_type                    Optional string.
+                                 Defines what kind of distance measurement you want to use, either straight-line distance, travel
                                  time or travel distance along a street network using various modes of transportation known as travel modes.
+                                 The default is ``StraightLine``.
 
-                                 The default is 'StraightLine'.
+                                 Choice list:
 
-                                 Choice list: ['StraightLine', 'Driving Distance', 'Driving Time', 'Rural Driving Distance', 'Rural Driving Time', 'Trucking Distance', 'Trucking Time', 'Walking Distance', 'Walking Time']
+                                 * ``StraightLine``,
+                                 * ``Driving Distance``,
+                                 * ``Driving Time``,
+                                 * ``Rural Driving Distance``,
+                                 * ``Rural Driving Time``,
+                                 * ``Trucking Distance``,
+                                 * ``Trucking Time``,
+                                 * ``Walking Distance``,
+                                 * ``Walking Time``
     -------------------------    --------------------------------------------------------------------------------------------------------------------
-    distances                    Optional float. Float values that defines the search distance (for 'StraightLine' and distance based travel modes) or time (for time based travel modes).
-                                 You can enter a single distance value or multiple values, separating each value with a space. Features that are within (or equal to) the distances you
-                                 enter will be summarized. The units of the distance values is supplied by the units parameter.
+    distances                    Optional list of float values. Defines the search distance for 'StraightLine' and distance-based travel modes, or time
+                                 duration for time-based travel modes. You can enter single or multiple values, separating each value with a space.
+                                 Features that are within (or equal to) the distances you enter will be summarized. The unit for `distances` is
+                                 supplied by the units parameter.
     -------------------------    --------------------------------------------------------------------------------------------------------------------
-    units                        Otional string. If ``near_type`` is 'StraightLine' or a distance-based travel mode, this is the linear unit to be used with the distance value(s) specified in distances.
+    units                        Optional string. If :attr:`near_type` is `StraightLine` or a distance-based travel mode, this is the linear unit to be
+                                 used with the distance value(s) specified in distances.
 
-                                 Choice list: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
+                                 Choice list:
+                                 | [``Meters``, ``Kilometers``, ``Feet``, ``Yards``, ``Miles``]
 
-                                 If ``near_type`` is a time based travel mode, the following values can be used as units:
+                                 If ``near_type`` is a time-based travel mode, the following values can be used as units:
 
-                                 Choice list: ['Seconds', 'Minutes', 'Hours']
+                                 Choice list:
+
+                                 | [``Seconds``, ``Minutes``, ``Hours``]
 
                                  The default is 'Meters'.
     -------------------------    --------------------------------------------------------------------------------------------------------------------
