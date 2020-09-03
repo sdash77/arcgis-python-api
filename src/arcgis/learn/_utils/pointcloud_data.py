@@ -437,7 +437,8 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
             current_block = i['unnormalized_data'][:, :3]
             data_num = i['data_num'][()]   
             pc.append(current_block[:data_num])
-            labels.append(i['label_seg'][:data_num])  
+            labels.append(i['label_seg'][:data_num])
+            i.close()
             
         if pc == []:
             continue         
@@ -501,6 +502,7 @@ def read_xyzinumr_label_from_las(filename_las, extra_features):
                          axis=1)
     
     xyzirgb_num = len(xyz)
+    file.close()
     return xyz, labels, xyzirgb_num
 
 def prepare_las_data(root,
@@ -892,6 +894,7 @@ def read_xyz_label_from_las(filename_las):
         xyz[i] = [p.x, p.y, p.z]
         labels[i] = p.classification
         i += 1
+    f.close()
     return xyz, labels, xyzirgb_num, xyz_offset, encoding
 
 def save_xyz_label_to_las(filename_las, xyz, xyz_offset, encoding, labels):  
@@ -1047,195 +1050,200 @@ def inference_las(path, pointcnn_model, out_path=None, print_metrics=False, rema
     try_import("h5py")
     import h5py
     import pandas as pd    
-    ## Export data
-    path = Path(path)
+    try:
+        ## Export data
+        path = Path(path)
 
-    if len(list(path.glob('*.las'))) == 0:
-        raise Exception(f"The given path({path}) contains no las files.")
+        if len(list(path.glob('*.las'))) == 0:
+            raise Exception(f"The given path({path}) contains no las files.")
 
-    if out_path is None:
-        out_path = path / 'results'
-    else:    
-        out_path = Path(out_path)
+        if out_path is None:
+            out_path = path / 'results'
+        else:    
+            out_path = Path(out_path)
 
-    reclassify_classes = remap_classes
-    if reclassify_classes != {}:
-        if not all([k in pointcnn_model._data.classes for k in reclassify_classes.keys()]):
-            raise Exception(f"`remap_classes` dictionary keys are not present in dataset with classes {pointcnn_model._data.classes}.")
-        reclassify_classes = {k:reclassify_classes.get(k, k) for k in pointcnn_model._data.class_mapping}
-
-    if selective_classify != []:
+        reclassify_classes = remap_classes
         if reclassify_classes != {}:
-            values_to_check = np.unique(np.array(list(reclassify_classes.values()))).tolist()
-        else:
-            values_to_check = list(pointcnn_model._data.classes)
+            if not all([k in pointcnn_model._data.classes for k in reclassify_classes.keys()]):
+                raise Exception(f"`remap_classes` dictionary keys are not present in dataset with classes {pointcnn_model._data.classes}.")
+            reclassify_classes = {k:reclassify_classes.get(k, k) for k in pointcnn_model._data.class_mapping}
 
-        if not all([k in values_to_check for k in selective_classify]):
-            raise Exception(f"`selective_classify` can only contain values from these class values {values_to_check}.")
-
-    prepare_las_data(path.parent,
-                     block_size=pointcnn_model._data.block_size[0],
-                     max_point_num=pointcnn_model._data.max_point,
-                     output_path=path.parent,
-                     extra_features=pointcnn_model._data.extra_features,
-                     folder_names=[path.stem],
-                     segregate=False,
-                     print_it=False
-    )
-    ## Predict and postprocess
-    max_point_num = pointcnn_model._data.max_point
-    sample_num = pointcnn_model.sample_point_num
-    batch_size = 1 * math.ceil(max_point_num / sample_num) 
-    filenames = list(glob.glob(str(path/ "*.h5")))
-
-    mb = master_bar(range(len(filenames)))
-    for itn in mb:  
-        filename = filenames[itn]
-        data_h5 = h5py.File(filename, 'r')
-        data = data_h5['data'][...].astype(np.float32)  
-        data_num =  data_h5['data_num'][...].astype(np.int32)
-        batch_num = data.shape[0]
-        labels_pred = np.full((batch_num, max_point_num), -1, dtype=np.int32)
-        confidences_pred = np.zeros((batch_num, max_point_num), dtype=np.float32)
-
-
-        for batch_idx in progress_bar(range(batch_num), parent=mb): 
-            points_batch = data[[batch_idx] * batch_size, ...]
-            point_num = data_num[batch_idx]
-            predictions = get_predictions(pointcnn_model, data, batch_idx, points_batch, sample_num, batch_size, point_num)      
-            labels_pred[batch_idx, 0:point_num] = np.array([label for label, _ in predictions])
-            confidences_pred[batch_idx, 0:point_num] = np.array([confidence for _, confidence in predictions])
-
-        ## Saving h5 predictions file
-        if not os.path.exists(out_path):
-            os.makedirs(out_path)
-        filename_pred = os.path.join(out_path , Path(filename).stem + '_pred.h5')
-        file = h5py.File(filename_pred, 'w')
-        file.create_dataset('data_num', data=data_num)
-        file.create_dataset('label_seg', data=labels_pred)
-        file.create_dataset('confidence', data=confidences_pred)
-        has_indices = 'indices_split_to_full' in data_h5
-        if has_indices:
-            file.create_dataset('indices_split_to_full', data=data_h5['indices_split_to_full'][...])
-        file.close()
-        data_h5.close()
-
-
-    ## Merge H5 files and write las files
-    SAVE_TO_EXT = '.las'
-    LOAD_FROM_EXT = '.las'
-
-
-    categories_list = get_pred_prefixes(out_path)
-
-    global_false_positives = [0] * pointcnn_model._data.c
-    global_true_positives = [0] * pointcnn_model._data.c
-    global_false_negatives = [0] * pointcnn_model._data.c
-
-    for category in categories_list:
-        output_path = os.path.join(out_path, category + "_pred" + SAVE_TO_EXT)
-        if not os.path.exists(os.path.join(out_path)):
-            os.makedirs(os.path.join(out_path))
-        pred_list = [pred for pred in os.listdir(out_path)
-                    if category in pred and pred.split(".")[0].split("_")[-1] == 'pred' and pred[-3:] != 'las']
-
-        merged_label = None
-        merged_confidence = None
-
-        for pred_file in pred_list:
-            data = h5py.File(os.path.join(out_path, pred_file), mode='r')
-            labels_seg = data['label_seg'][...].astype(np.int64)
-            indices = data['indices_split_to_full'][...].astype(np.int64)
-            confidence = data['confidence'][...].astype(np.float32)
-            data_num = data['data_num'][...].astype(np.int64)
-
-            if merged_label is None:
-                # calculating how many labels need to be there in the output
-                label_length = 0
-                for i in range(indices.shape[0]):
-                    label_length = np.max([label_length, np.max(indices[i][:data_num[i]])])
-                label_length += 1
-                merged_label = np.zeros((label_length), dtype=int)
-                merged_confidence = np.zeros((label_length), dtype=float)
-            else:
-                label_length2 = 0
-                for i in range(indices.shape[0]):
-                    label_length2 = np.max([label_length2, np.max(indices[i][:data_num[i]])])
-                label_length2 += 1
-                if label_length < label_length2:
-                    # expanding labels and confidence arrays, as the new file appears having more of them.
-                    labels_more = np.zeros((label_length2 - label_length), dtype=merged_label.dtype)
-                    conf_more = np.zeros((label_length2 - label_length), dtype=merged_confidence.dtype)
-                    merged_label = np.append(merged_label, labels_more)
-                    merged_confidence = np.append(merged_confidence, conf_more)
-                    label_length = label_length2
-            
-            for i in range(labels_seg.shape[0]):
-                temp_label = np.zeros((data_num[i]),dtype=int)
-                pred_confidence = confidence[i][:data_num[i]]
-                temp_confidence = merged_confidence[indices[i][:data_num[i]]]
-
-                temp_label[temp_confidence >= pred_confidence] = merged_label[indices[i][:data_num[i]]][temp_confidence >= pred_confidence]
-                temp_label[pred_confidence > temp_confidence] = labels_seg[i][:data_num[i]][pred_confidence > temp_confidence]
-
-                merged_confidence[indices[i][:data_num[i]][pred_confidence > temp_confidence]] = pred_confidence[pred_confidence > temp_confidence]
-                merged_label[indices[i][:data_num[i]]] = temp_label
-
-            data.close()
-
-        if len(pred_list) > 0:
-            # concatenating source points with the final labels and writing out resulting file
-            points_path = os.path.join(path, category + LOAD_FROM_EXT)
-            
-            false_positives, true_positives, false_negatives = write_resulting_las(points_path,
-                                                                                   output_path,
-                                                                                   merged_label,
-                                                                                   pointcnn_model._data.c,
-                                                                                   pointcnn_model._data,
-                                                                                   print_metrics,
-                                                                                   reclassify_classes,
-                                                                                   selective_classify)
-            global_false_positives = np.add(global_false_positives, false_positives)
-            global_true_positives = np.add(global_true_positives, true_positives)
-            global_false_negatives = np.add(global_false_negatives, false_negatives)
-
-    if print_metrics:
-        index = ['precision', 'recall', 'f1_score']
-        inverse_class_mapping = {v:k for k,v in pointcnn_model._data.class_mapping.items()}
-        unique_mapped_classes = np.unique(np.array(list(reclassify_classes.values())))
-        if len(unique_mapped_classes) == len(pointcnn_model._data.classes) or remap_classes == {}:
-            precision, recall, f_1 = calculate_metrics(global_false_positives, global_true_positives, global_false_negatives)
-            data = [precision, recall, f_1]
-            column_names = [inverse_class_mapping[cval] for cval in range(pointcnn_model._data.c)]
+        if selective_classify != []:
             if reclassify_classes != {}:
-                remapping_class_mapping = {v:reclassify_classes[k] for k,v in pointcnn_model._data.class_mapping.items()}
-                column_names = [remapping_class_mapping[cval] for cval in range(pointcnn_model._data.c)]
-            df = pd.DataFrame(data, columns=column_names, index=index)
-        else:
-            inverse_reclassify_classes = {}
-            for k, v in reclassify_classes.items():
-                current_value = inverse_reclassify_classes.get(v, [])
-                current_value.append(k)
-                inverse_reclassify_classes[v] = current_value   
-            map_dict = {u: [pointcnn_model._data.class_mapping[k] for k in inverse_reclassify_classes[u]] for u in unique_mapped_classes}
-            global_false_positives =  recompute_globals(global_false_positives, map_dict)
-            global_true_positives = recompute_globals(global_true_positives, map_dict)
-            global_false_negatives = recompute_globals(global_false_negatives, map_dict)
-            precision, recall, f_1 = calculate_metrics(global_false_positives, global_true_positives, global_false_negatives)
-            data = [precision, recall, f_1]
-            column_names = list(map_dict.keys())
-            df = pd.DataFrame(data, columns=column_names, index=index)            
+                values_to_check = np.unique(np.array(list(reclassify_classes.values()))).tolist()
+            else:
+                values_to_check = list(pointcnn_model._data.classes)
 
-        from IPython.display import display
-        display(df)
+            if not all([k in values_to_check for k in selective_classify]):
+                raise Exception(f"`selective_classify` can only contain values from these class values {values_to_check}.")
 
+        prepare_las_data(path.parent,
+                        block_size=pointcnn_model._data.block_size[0],
+                        max_point_num=pointcnn_model._data.max_point,
+                        output_path=path.parent,
+                        extra_features=pointcnn_model._data.extra_features,
+                        folder_names=[path.stem],
+                        segregate=False,
+                        print_it=False
+        )
+        ## Predict and postprocess
+        max_point_num = pointcnn_model._data.max_point
+        sample_num = pointcnn_model.sample_point_num
+        batch_size = 1 * math.ceil(max_point_num / sample_num) 
+        filenames = list(glob.glob(str(path/ "*.h5")))
+
+        mb = master_bar(range(len(filenames)))
+        for itn in mb:  
+            filename = filenames[itn]
+            with h5py.File(filename, 'r') as data_h5:
+                has_indices = 'indices_split_to_full' in data_h5
+                data = data_h5['data'][...].astype(np.float32)  
+                data_num =  data_h5['data_num'][...].astype(np.int32)
+                indices_split_to_full = data_h5['indices_split_to_full'][...]
+            batch_num = data.shape[0]
+            labels_pred = np.full((batch_num, max_point_num), -1, dtype=np.int32)
+            confidences_pred = np.zeros((batch_num, max_point_num), dtype=np.float32)
+
+
+            for batch_idx in progress_bar(range(batch_num), parent=mb): 
+                points_batch = data[[batch_idx] * batch_size, ...]
+                point_num = data_num[batch_idx]
+                predictions = get_predictions(pointcnn_model, data, batch_idx, points_batch, sample_num, batch_size, point_num)      
+                labels_pred[batch_idx, 0:point_num] = np.array([label for label, _ in predictions])
+                confidences_pred[batch_idx, 0:point_num] = np.array([confidence for _, confidence in predictions])
+
+            ## Saving h5 predictions file
+            if not os.path.exists(out_path):
+                os.makedirs(out_path)
+            filename_pred = os.path.join(out_path , Path(filename).stem + '_pred.h5')
+            with h5py.File(filename_pred, 'w') as file:
+                file.create_dataset('data_num', data=data_num)
+                file.create_dataset('label_seg', data=labels_pred)
+                file.create_dataset('confidence', data=confidences_pred)                
+                if has_indices:
+                    file.create_dataset('indices_split_to_full', data=indices_split_to_full)
+
+
+        ## Merge H5 files and write las files
+        SAVE_TO_EXT = '.las'
+        LOAD_FROM_EXT = '.las'
+
+
+        categories_list = get_pred_prefixes(out_path)
+
+        global_false_positives = [0] * pointcnn_model._data.c
+        global_true_positives = [0] * pointcnn_model._data.c
+        global_false_negatives = [0] * pointcnn_model._data.c
+
+        for category in categories_list:
+            output_path = os.path.join(out_path, category + "_pred" + SAVE_TO_EXT)
+            if not os.path.exists(os.path.join(out_path)):
+                os.makedirs(os.path.join(out_path))
+            pred_list = [pred for pred in os.listdir(out_path)
+                        if category in pred and pred.split(".")[0].split("_")[-1] == 'pred' and pred[-3:] == '.h5']
+
+            merged_label = None
+            merged_confidence = None
+
+            for pred_file in pred_list:
+
+                with h5py.File(os.path.join(out_path, pred_file), mode='r') as data:
+                    labels_seg = data['label_seg'][...].astype(np.int64)
+                    indices = data['indices_split_to_full'][...].astype(np.int64)
+                    confidence = data['confidence'][...].astype(np.float32)
+                    data_num = data['data_num'][...].astype(np.int64)
+
+                if merged_label is None:
+                    # calculating how many labels need to be there in the output
+                    label_length = 0
+                    for i in range(indices.shape[0]):
+                        label_length = np.max([label_length, np.max(indices[i][:data_num[i]])])
+                    label_length += 1
+                    merged_label = np.zeros((label_length), dtype=int)
+                    merged_confidence = np.zeros((label_length), dtype=float)
+                else:
+                    label_length2 = 0
+                    for i in range(indices.shape[0]):
+                        label_length2 = np.max([label_length2, np.max(indices[i][:data_num[i]])])
+                    label_length2 += 1
+                    if label_length < label_length2:
+                        # expanding labels and confidence arrays, as the new file appears having more of them.
+                        labels_more = np.zeros((label_length2 - label_length), dtype=merged_label.dtype)
+                        conf_more = np.zeros((label_length2 - label_length), dtype=merged_confidence.dtype)
+                        merged_label = np.append(merged_label, labels_more)
+                        merged_confidence = np.append(merged_confidence, conf_more)
+                        label_length = label_length2
+                
+                for i in range(labels_seg.shape[0]):
+                    temp_label = np.zeros((data_num[i]),dtype=int)
+                    pred_confidence = confidence[i][:data_num[i]]
+                    temp_confidence = merged_confidence[indices[i][:data_num[i]]]
+
+                    temp_label[temp_confidence >= pred_confidence] = merged_label[indices[i][:data_num[i]]][temp_confidence >= pred_confidence]
+                    temp_label[pred_confidence > temp_confidence] = labels_seg[i][:data_num[i]][pred_confidence > temp_confidence]
+
+                    merged_confidence[indices[i][:data_num[i]][pred_confidence > temp_confidence]] = pred_confidence[pred_confidence > temp_confidence]
+                    merged_label[indices[i][:data_num[i]]] = temp_label
+
+            if len(pred_list) > 0:
+                # concatenating source points with the final labels and writing out resulting file
+                points_path = os.path.join(path, category + LOAD_FROM_EXT)
+                
+                false_positives, true_positives, false_negatives = write_resulting_las(points_path,
+                                                                                    output_path,
+                                                                                    merged_label,
+                                                                                    pointcnn_model._data.c,
+                                                                                    pointcnn_model._data,
+                                                                                    print_metrics,
+                                                                                    reclassify_classes,
+                                                                                    selective_classify)
+                global_false_positives = np.add(global_false_positives, false_positives)
+                global_true_positives = np.add(global_true_positives, true_positives)
+                global_false_negatives = np.add(global_false_negatives, false_negatives)
+
+        if print_metrics:
+            index = ['precision', 'recall', 'f1_score']
+            inverse_class_mapping = {v:k for k,v in pointcnn_model._data.class_mapping.items()}
+            unique_mapped_classes = np.unique(np.array(list(reclassify_classes.values())))
+            if len(unique_mapped_classes) == len(pointcnn_model._data.classes) or remap_classes == {}:
+                precision, recall, f_1 = calculate_metrics(global_false_positives, global_true_positives, global_false_negatives)
+                data = [precision, recall, f_1]
+                column_names = [inverse_class_mapping[cval] for cval in range(pointcnn_model._data.c)]
+                if reclassify_classes != {}:
+                    remapping_class_mapping = {v:reclassify_classes[k] for k,v in pointcnn_model._data.class_mapping.items()}
+                    column_names = [remapping_class_mapping[cval] for cval in range(pointcnn_model._data.c)]
+                df = pd.DataFrame(data, columns=column_names, index=index)
+            else:
+                inverse_reclassify_classes = {}
+                for k, v in reclassify_classes.items():
+                    current_value = inverse_reclassify_classes.get(v, [])
+                    current_value.append(k)
+                    inverse_reclassify_classes[v] = current_value   
+                map_dict = {u: [pointcnn_model._data.class_mapping[k] for k in inverse_reclassify_classes[u]] for u in unique_mapped_classes}
+                global_false_positives =  recompute_globals(global_false_positives, map_dict)
+                global_true_positives = recompute_globals(global_true_positives, map_dict)
+                global_false_negatives = recompute_globals(global_false_negatives, map_dict)
+                precision, recall, f_1 = calculate_metrics(global_false_positives, global_true_positives, global_false_negatives)
+                data = [precision, recall, f_1]
+                column_names = list(map_dict.keys())
+                df = pd.DataFrame(data, columns=column_names, index=index)            
+
+            from IPython.display import display
+            display(df)
+    except KeyboardInterrupt:
+        remove_temp_files(path, out_path)
+        raise
+
+    remove_temp_files(path, out_path)      
+
+    return out_path
+
+def remove_temp_files(path, out_path):
     for fn in glob.glob(str(path / '*.h5'), recursive=True): ## Remove h5 files in val directory.
         os.remove(fn) 
 
     for fn in glob.glob(str(out_path / '*.h5'), recursive=True):  ## Remove h5 files in results directory.
-        os.remove(fn)        
-
-    return out_path
+        os.remove(fn) 
 
 def recompute_globals(global_count, map_dict):
     return [sum([global_count[ci] for ci in v]) for k,v in map_dict.items()]
@@ -1355,6 +1363,7 @@ def show_results(self, rows, color_mapping=None, **kwargs):
             predictions = np.array(get_predictions(self, data, batch_idx, points_batch, sample_num, batch_size, point_num))
             pred_class.append(predictions[:, 0])
             pred_confidence.append(predictions[:, 1])
+            i.close()
             
         if pc == []:
             continue         
