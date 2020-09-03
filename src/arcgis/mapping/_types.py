@@ -1159,6 +1159,18 @@ class WebMap(HasTraits, collections.OrderedDict):
                 'title':value.title
             }
             self._webmapdict['baseMap'] = self._basemap
+        elif isinstance(value, Item) and value.type.title() == "Vector Tile Service":
+            self._basemap = {
+                'baseMapLayers': [{'id': 'newBasemap',
+                                   'layerType': 'VectorTileLayer',
+                                   'styleUrl': "%s/sharing/rest/content/items/%s/resources/styles/root.json" % (value._gis._portal.url, value.id),
+                                   'visibility': True,
+                                   'itemId': value.id,
+                                   'opacity': 1,
+                                   'title': value.title}],
+                'title': value.title
+            }
+            self._webmapdict['baseMap'] = self._basemap
         else:
             raise RuntimeError("Basemap '{}' isn't valid".format(value))
 
