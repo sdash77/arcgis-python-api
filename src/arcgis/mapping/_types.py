@@ -1111,10 +1111,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         else:
             layer_type = "ArcGISMapServiceLayer"
             layer = arcgis.mapping.MapImageLayer(item.url, gis=self._gis)
-        tiled = False
         if "tileInfo" in layer.properties:
-            tiled = True
-        if tiled:
             layer_type = "ArcGIS" + layer_type.replace("ArcGIS", "Tiled")
         return layer_type
 
