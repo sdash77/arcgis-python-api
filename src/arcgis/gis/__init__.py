@@ -5972,6 +5972,83 @@ class Group(dict):
             thumbnail_url_path = self._gis._public_rest_url + 'community/groups/' + self.groupid + '/info/' + thumbnail_file
             return thumbnail_url_path
 
+    def search(self,
+               query,
+               return_count=False,
+               max_items=100,
+               bbox=None,
+               categories=None,
+               category_filter=None,
+               start=1,
+               sort_field="title",
+               sort_order="ASC",
+               as_dict=False):
+        """
+        The `search` operation allows users to find content within the specific group.
+
+        ================    ===============================================================
+        **Argument**        **Description**
+        ----------------    ---------------------------------------------------------------
+        query               Required String.  The search query.
+        ----------------    ---------------------------------------------------------------
+        bbox                Optional String/List. This is the xmin,ymin,xmax,ymax bounding
+                            box to limit the search in.  Items like documents do not have
+                            bounding boxes and will not be included in the search.
+        ----------------    ---------------------------------------------------------------
+        categories          Optional String. A comma separated list of up to 8 org content
+                            categories to search items. Exact full path of each category is
+                            required, OR relationship between the categories specified.
+
+                            Each request allows a maximum of 8 categories parameters with
+                            AND relationship between the different categories parameters
+                            called.
+        ----------------    ---------------------------------------------------------------
+        category_filters    Optional String. A comma separated list of up to 3 category
+                            terms to search items that have matching categories. Up to 2
+                            `category_filters` parameter are allowed per request. It can
+                            not be used together with categories to search in a request.
+        ----------------    ---------------------------------------------------------------
+        start               Optional Int. The starting position to search from.  This is
+                            only required if paging is needed.
+        ----------------    ---------------------------------------------------------------
+        sort_field          Optional String. Responses from the `search` operation can be
+                            sorted on various fields. `avgrating` is the default.
+        ----------------    ---------------------------------------------------------------
+        sort_order          Optional String. The sequence into which a collection of
+                            records are arranged after they have been sorted. The allowed
+                            values are: asc for ascending and desc for descending.
+        ----------------    ---------------------------------------------------------------
+        as_dict             Required Boolean. If True, the response comes back as a dictionary.
+        ================    ===============================================================
+
+
+        :returns: List of Items
+        """
+        from ._impl._search import _search
+        if return_count:
+            return _search(gis=self._gis,
+                       query=query, stype="group_content",
+                       max_items=max_items,
+                       bbox=bbox,
+                       categories=categories,
+                       category_filter=category_filter,
+                       start=start,
+                       sort_field=sort_field,
+                       sort_order=sort_order,
+                       group_id=self.id,
+                       as_dict=True)['total']
+        return _search(gis=self._gis,
+                       query=query, stype="group_content",
+                       max_items=max_items,
+                       bbox=bbox,
+                       categories=categories,
+                       category_filter=category_filter,
+                       start=start,
+                       sort_field=sort_field,
+                       sort_order=sort_order,
+                       group_id=self.id,
+                       as_dict=as_dict)
+
     #----------------------------------------------------------------------
     @property
     def categories(self):
