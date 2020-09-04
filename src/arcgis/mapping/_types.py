@@ -1157,10 +1157,15 @@ class WebMap(HasTraits, collections.OrderedDict):
             }
             self._webmapdict['baseMap'] = self._basemap
         elif isinstance(value, Item) and value.type.title() == "Vector Tile Service":
+            try:
+                style_url = "%s/sharing/rest/content/items/%s/resources/styles/root.json" % (value._gis._portal.url, value.id)
+                value._gis._con.get(path=style_url)
+            except Exception:
+                style_url = value.url + "/resources/styles/root.json"
             self._basemap = {
                 'baseMapLayers': [{'id': 'newBasemap',
                                    'layerType': 'VectorTileLayer',
-                                   'styleUrl': "%s/sharing/rest/content/items/%s/resources/styles/root.json" % (value._gis._portal.url, value.id),
+                                   'styleUrl': style_url,
                                    'visibility': True,
                                    'itemId': value.id,
                                    'opacity': 1,
@@ -1168,6 +1173,22 @@ class WebMap(HasTraits, collections.OrderedDict):
                 'title': value.title
             }
             self._webmapdict['baseMap'] = self._basemap
+        elif isinstance(value, VectorTileLayer):
+            try:
+                style_url = value.url+"/resources/styles/root.json"
+                value._con.get(path=style_url)
+                self._basemap = {
+                    'baseMapLayers': [{'id': 'newBasemap',
+                                       'layerType': 'VectorTileLayer',
+                                       'styleUrl': style_url,
+                                       'visibility': True,
+                                       'opacity': 1,
+                                       'title': value.properties["name"]}],
+                    'title': value.properties["name"]
+                }
+                self._webmapdict['baseMap'] = self._basemap
+            except Exception:
+                raise RuntimeError("Basemap '{}' isn't valid".format(value))
         else:
             raise RuntimeError("Basemap '{}' isn't valid".format(value))
 
