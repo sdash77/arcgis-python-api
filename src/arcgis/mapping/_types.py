@@ -3274,6 +3274,42 @@ class MapImageLayer(Layer):
             raise TypeError("item must be a type of Map Service, not " + item.type)
         return cls(item.url, item._gis)
 
+    @property
+    def _lyr_dict(self):
+        url = self.url
+
+        if "lods" in self.properties:
+            lyr_dict =  { 'type' : 'ArcGISTiledMapServiceLayer', 'url' : url }
+
+        else:
+            lyr_dict =  { 'type' : type(self).__name__, 'url' : url }
+
+        if self._token is not None:
+            lyr_dict['serviceToken'] = self._token
+
+        if self.filter is not None:
+            lyr_dict['filter'] = self.filter
+        if self._time_filter is not None:
+            lyr_dict['time'] = self._time_filter
+        return lyr_dict
+
+    @property
+    def _lyr_json(self):
+        url = self.url
+        if self._token is not None:  # causing geoanalytics Invalid URL error
+            url += '?token=' + self._token
+
+        if "lods" in self.properties:
+            lyr_dict =  { 'type' : 'ArcGISTiledMapServiceLayer', 'url' : url }
+        else:
+            lyr_dict =  { 'type' : type(self).__name__, 'url' : url }
+
+        if self.filter is not None:
+            lyr_dict['options'] = json.dumps({ "definition_expression": self.filter })
+        if self._time_filter is not None:
+            lyr_dict['time'] = self._time_filter
+        return lyr_dict
+
     def _populate_layers(self):
         layers = []
         tables = []

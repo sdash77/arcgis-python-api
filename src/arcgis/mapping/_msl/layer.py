@@ -1380,7 +1380,42 @@ class MapRasterLayer(MapFeatureLayer):
     """
     A Map Raster Layer represents a geo-referenced image hosted in a Map Service.
     """
-    pass
+    @property
+    def _lyr_dict(self):
+        url = self.url
+
+        if "lods" in self.container.properties:
+            lyr_dict =  { 'type' : 'ArcGISTiledMapServiceLayer', 'url' : url }
+
+        else:
+            lyr_dict =  { 'type' : type(self.container).__name__, 'url' : url }
+
+        if self._token is not None:
+            lyr_dict['serviceToken'] = self._token
+
+        if self.filter is not None:
+            lyr_dict['filter'] = self.filter
+        if self._time_filter is not None:
+            lyr_dict['time'] = self._time_filter
+        return lyr_dict
+
+    @property
+    def _lyr_json(self):
+        url = self.url
+        if self._token is not None:  # causing geoanalytics Invalid URL error
+            url += '?token=' + self._token
+
+        if "lods" in self.container.properties:
+            lyr_dict =  { 'type' : 'ArcGISTiledMapServiceLayer', 'url' : self.container.url }
+
+        else:
+            lyr_dict =  { 'type' : type(self.container).__name__, 'url' : self.container.url }
+
+        if self.filter is not None:
+            lyr_dict['options'] = json.dumps({ "definition_expression": self.filter })
+        if self._time_filter is not None:
+            lyr_dict['time'] = self._time_filter
+        return lyr_dict
 ###########################################################################
 class MapTable(MapFeatureLayer):
     """
@@ -1871,18 +1906,20 @@ class _MSILayerFactory(type):
     """
     def __call__(cls,
                  url,
-                 gis=None):
+                 gis=None,
+                 container=None,
+                 dynamic_layer=None):
         lyr = Layer(url=url, gis=gis)
         props = lyr.properties
         if 'type' in props and \
            props.type.lower() == 'table':
-            return MapTable(url=url, gis=gis)
+            return MapTable(url=url, gis=gis, container=container, dynamic_layer=container)
         elif 'type' in props and \
            props.type.lower() == 'raster layer':
-            return MapRasterLayer(url=url, gis=gis)
+            return MapRasterLayer(url=url, gis=gis, container=container, dynamic_layer=container)
         elif 'type' in props and \
            props.type.lower() == 'feature layer':
-            return MapFeatureLayer(url=url, gis=gis)
+            return MapFeatureLayer(url=url, gis=gis, container=container, dynamic_layer=container)
         return lyr
 ###########################################################################
 class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
@@ -1912,9 +1949,11 @@ class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
         >> 'pipe_properties'
 
     """
-    def __init__(self, url, gis=None):
+    def __init__(self, url, gis=None, container=None, dynamic_layer=None):
         """
         Constructs a Map Services Layer given a URL and GIS
         """
-        super(MapServiceLayer, self).__init__(url, gis)
+        super(MapServiceLayer, self).__init__(url=url, gis=gis,
+                                              container=container,
+                                              dynamic_layer=container)
 

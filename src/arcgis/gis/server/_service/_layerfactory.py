@@ -14,7 +14,7 @@ from arcgis._impl.tools import _GeometryService as GeometryService
 from arcgis.network import NetworkDataset
 from arcgis.gis import Layer
 from arcgis.mapping import VectorTileLayer
-from arcgis.mapping import MapImageLayer
+from arcgis.mapping import MapImageLayer, MapServiceLayer
 from arcgis.raster import ImageryLayer
 from arcgis.schematics import SchematicLayers
 from arcgis.mapping._types import SceneLayer
@@ -65,8 +65,8 @@ class ServiceFactory(type):
             hasLayer = True
         if base_name.lower() == "mapserver":
             if hasLayer:
-                return FeatureLayer(url=url,
-                                    gis=server)
+                return MapServiceLayer(url=url,
+                                       gis=server)
             else:
                 return MapImageLayer(url=url,
                                      gis=server)
