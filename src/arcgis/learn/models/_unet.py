@@ -347,8 +347,6 @@ class UnetClassifier(ArcGISModel):
             if checkpoint:
                 model_accuracy = np.max(self.learn.recorder.metrics)
         except:
-            logger = logging.getLogger()
-            logger.debug("Cannot retrieve model accuracy.")
             model_accuracy = 0.0
 
         return float(model_accuracy)

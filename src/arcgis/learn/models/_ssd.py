@@ -424,8 +424,6 @@ class SingleShotDetector(ArcGISModel):
         try:
             gt_overlap,gt_idx = self._map_to_ground_truth(overlaps,print_it)
         except Exception as e:
-            logger = logging.getLogger()
-            logger.debug("Returning zero tensors as there is no overlap between ground truth and prior boxes")
             return torch.tensor(0., requires_grad=True).to(self._device), torch.tensor(0., requires_grad=True).to(self._device)
         gt_clas = clas[gt_idx]
         pos = gt_overlap > 0.4
