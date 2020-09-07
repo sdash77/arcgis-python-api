@@ -2234,9 +2234,33 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         thumbnail         Optional string. The URL to user's image.
         ----------------  -------------------------------------------------------------------------------
-        role              Optional string. The role for the user account. The default value is org_user.
-                          Other possible values are org_user, org_publisher, org_admin, viewer,
-                          view_only, viewplusedit or a custom role object (from gis.users.roles).
+        role              Optional string. The :class:`role <arcgis.gis.Role>` for the user account. The
+                          default value is ``org_user``. Other possible values are ``org_publisher``,
+                          ``org_admin``, ``viewer``, ``viewplusedit`` or a custom :class:`role_id <arcgis.gis.Role>`
+                          value obtained from the :func:`~RoleManager.all` method of the :class:`RoleManager` class.
+
+                           .. code-block:: python
+                              :emphasize-lines: 10,18
+
+                              # Usage Example: Assign custom role to a new user
+
+                              >>> role_mgr = gis.users.roles
+
+                              >>> for role in role_mgr.all():
+                              >>>     print(f"{role.name}  {role.role_id}")
+
+                                  Viewer              iAAAAAAAAAAAAAAA
+                                  Data Editor         iBBBBBBBBBBBBBBB
+                                  CustomRole          bKrTCjFF9tKbaFk8
+
+                              >>> gis.users.create(username='new_user_1',
+                                                   password='<strong_password>',
+                                                   firstname='New',
+                                                   lastname='User',
+                                                   email='namee@organization.com',
+                                                   description='User with custom role assigned',
+                                                   role='bKrTCjFF9tKbaFk8',
+                                                   user_type='Creator')
         ----------------  -------------------------------------------------------------------------------
         provider          Optional string. The provider for the account. The default value is arcgis.
                           The other possible value is enterprise.
@@ -2260,7 +2284,7 @@ class UserManager(object):
         ================  ===============================================================================
 
         :return:
-            The user if successfully created, None if unsuccessful.
+            The :class:`user <arcgis.gis.User>` if successfully created, None if unsuccessful.
 
         """
         kwargs = locals()
@@ -3118,7 +3142,7 @@ class UserManager(object):
         return res
 
 class RoleManager(object):
-    """Helper class to manage custom roles for users in a GIS."""
+    """Helper class to manage custom :class:`roles <arcgis.gis.Role>` for users in a GIS."""
 
     def __init__(self, gis):
         """Creates helper object to manage custom roles in the GIS"""
@@ -3143,7 +3167,7 @@ class RoleManager(object):
 
 
         :return:
-           The custom role if successfully created, None if unsuccessful.
+           The custom :class:`role <arcgis.gis.Role>` if successfully created, None if unsuccessful.
         """
         if self.exists(role_name=name) == False:
             role_id = self._portal.create_role(name, description)
@@ -3176,7 +3200,7 @@ class RoleManager(object):
         ==================     ====================================================================
 
         :return:
-           True if the role exists, and False if it does not.
+           True if the :class:`role <arcgis.gis.Role>` exists, and False if it does not.
         """
         for role in self.all():
             if role.name.lower() == role_name.lower():
@@ -3185,7 +3209,8 @@ class RoleManager(object):
 
     def all(self, max_roles=1000):
         """
-        Provides the list of all roles in the GIS.
+        Provides the list of all non-default roles in the GIS. (The ``org_admin``, ``org_user``,
+        and ``org_publisher`` roles are not returned)
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -3194,7 +3219,7 @@ class RoleManager(object):
         ==================     ====================================================================
 
         :return:
-           The list of all roles in the GIS.
+           The list of all non-default :class:`roles <arcgis.gis.Role>` in the GIS.
         """
         roles = self._portal.get_org_roles(max_roles)
         return [Role(self._gis, role['id'], role) for role in roles]
@@ -3211,7 +3236,7 @@ class RoleManager(object):
         ==================     ====================================================================
 
         :return:
-           The Role object associated with the specified role ID
+           The :class:`Role <arcgis.gis.Role>` object associated with the specified role ID
         """
         role = self._portal.con.post('portals/self/roles/' + role_id, self._portal._postdata())
         return Role(self._gis, role['id'], role)
