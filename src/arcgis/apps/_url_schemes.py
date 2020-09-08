@@ -33,7 +33,7 @@ def build_collector_url(webmap=None, center=None, feature_layer=None, fields=Non
     action                 Optional :class:`String` What the app should do, if anything, once open
                            and the user is signed in.
                            The following values are supported: addFeature, center, open, search, updateFeature.
-                           ------------------     --------------------------------------------------------------------
+    ------------------     --------------------------------------------------------------------
     geometry               Optional :class:`String`. Defines the location for the newly collectoed
                            or edited feature
                            Requires webmap, action=addFeature, and feature_layer.
