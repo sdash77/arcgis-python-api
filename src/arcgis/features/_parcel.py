@@ -716,11 +716,11 @@ class ParcelFabricManager(object):
         --------------------    --------------------------------------------------------------------
         analysis_type           Optional string. Represents the type of least squares analysis that will be run on the input parcels.
 
-                                    CONSISTENCY_CHECK – A free-network least-squares adjustment will be run to check dimensions on
+                                    CONSISTENCY_CHECK - A free-network least-squares adjustment will be run to check dimensions on
                                     parcel lines for inconsistencies and mistakes. Fixed or weighted control points will not be
                                     used by the adjustment.
 
-                                    WEIGHTED_LEAST_SQUARES–A weighted least-squares adjustment will be run to compute updated
+                                    WEIGHTED_LEAST_SQUARES - A weighted least-squares adjustment will be run to compute updated
                                     coordinates for parcel points. The parcels being adjusted should connect to at least two fixed
                                     or weighted control points.
 
@@ -801,6 +801,7 @@ class ParcelFabricManager(object):
 
                                  The default is False.
         ====================     ====================================================================
+
         :return: Dictionary
 
         """
