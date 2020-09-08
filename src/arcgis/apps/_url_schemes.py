@@ -3,20 +3,13 @@ import arcgis
 import json
 
 
-def build_collector_url(portal=None, action=None, webmap=None, center=None, feature_layer=None, fields=None, search=None,
-                        geometry=None, callback=None, callback_prompt=None, feature_id=None):
+def build_collector_url(webmap=None, center=None, feature_layer=None, fields=None, search=None,
+                        portal=None, action=None, geometry=None, callback=None, callback_prompt=None, feature_id=None):
     """
     Creates a url that can be used to open ArcGIS Collector
 
     ==================     ====================================================================
     **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    portal                 Optional :class:`String`, :class:`~arcgis.gis.GIS`.
-                           The URL of the portal the mobile worker must be connected to.
-    ------------------     --------------------------------------------------------------------
-    action                 Optional :class:`String` What the app should do, if anything, once open
-                           and the user is signed in.
-                           The following values are supported: addFeature, center, open, search, updateFeature.
     ------------------     --------------------------------------------------------------------
     webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
                            The item id, webmap, or item representing the map to open in Collector.
@@ -34,6 +27,13 @@ def build_collector_url(portal=None, action=None, webmap=None, center=None, feat
                            Requires webmap and action=search to be set.
                            Value must be URL encoded
     ------------------     --------------------------------------------------------------------
+    portal                 Optional :class:`String`, :class:`~arcgis.gis.GIS`.
+                           The URL of the portal the mobile worker must be connected to.
+    ------------------     --------------------------------------------------------------------
+    action                 Optional :class:`String` What the app should do, if anything, once open
+                           and the user is signed in.
+                           The following values are supported: addFeature, center, open, search, updateFeature.
+                           ------------------     --------------------------------------------------------------------
     geometry               Optional :class:`String`. Defines the location for the newly collectoed
                            or edited feature
                            Requires webmap, action=addFeature, and feature_layer.
