@@ -8,9 +8,9 @@ try:
 except:
     HAS_SPACY = False
 from pathlib import Path
-import json,random,os,tempfile,logging
+import json, random, os, tempfile, logging, datetime
 
-__all__=["_from_iob_tags","_from_json","ner_prepare_data","_create_zip","even_mults"]
+__all__=["_from_iob_tags","_from_json","ner_prepare_data","_create_zip","even_mults","_timelapsed"]
 
 def _raise_spacy_import_error():
     raise Exception('This module requires pandas and spacy version 2.1.8. Install it using \"pip install pandas spacy==2.1.8\"')
@@ -142,8 +142,8 @@ def ner_prepare_data(dataset_type, path, batch_size, class_mapping=None, val_spl
     elif dataset_type == 'BIO' or dataset_type == 'IOB':
         tags_collection = []
         tokens_collection = []
-        tags_df = pd.read_csv(path/'tags.csv')
-        tokens_df = pd.read_csv(path/'tokens.csv')
+        tags_df = pd.read_csv(path/'tags.csv', dtype='str')
+        tokens_df = pd.read_csv(path/'tokens.csv', dtype='str')
         
         for i,tags in tags_df.iterrows():
             tags_collection.append(list(tags.dropna()))
@@ -156,8 +156,8 @@ def ner_prepare_data(dataset_type, path, batch_size, class_mapping=None, val_spl
 
         tags_collection = []
         tokens_collection = []
-        tags_df = pd.read_csv(path/'tags.csv')
-        tokens_df = pd.read_csv(path/'tokens.csv')
+        tags_df = pd.read_csv(path/'tags.csv', dtype='str')
+        tokens_df = pd.read_csv(path/'tokens.csv', dtype='str')
         train_data = []
 
         for i,tags in tags_df.iterrows():
@@ -185,6 +185,13 @@ def ner_prepare_data(dataset_type, path, batch_size, class_mapping=None, val_spl
     data=DatabunchNER(train_data, val_split_pct=val_split_pct,batch_size=batch_size,address_tag=address_tag, test_ds=None)
     data.path=path
     return data
+
+def _timelapsed(t_start):
+    '''returns timedelta in hh:mm:ss format'''
+    b = datetime.datetime.now() - t_start
+    h,r = divmod(b.seconds, 3600)
+    m,s = divmod(r, 60)
+    return ("%02d:%02d:%02d"%(h,m,s))
 
 class _NERItemlist():
     """
@@ -227,14 +234,12 @@ class _NERItemlist():
         """
         text = item[0]
         df = pd.DataFrame(item[1].get('entities'))
-
         out_dict = {}
-        for x in df[2].unique(): out_dict[x] = df[df[2] == x][[0, 1]].values.tolist()
-
+        if len(df):
+            for x in df[2].unique(): out_dict[x] = df[df[2] == x][[0, 1]].values.tolist()
         out = {}
         out['text'] = text
-        for key in out_dict.keys():
-            
+        for key in out_dict.keys():  
             for tpl in out_dict.get(key):
                 if out.get(key) == None:
                     out[key] = []
@@ -251,9 +256,10 @@ class _NERItemlist():
         for item in data:
             lst.append(self._entities_to_dataframe(item))
         batch_df = pd.concat(lst,axis=1,sort=True).T
-        batch_df
-
-        return batch_df.fillna('')
+        text = batch_df['text']
+        batch_df.drop('text', axis=1, inplace=True)
+        batch_df.insert(loc=0, column='text', value=text)
+        return batch_df.fillna('')  
 
     
 
