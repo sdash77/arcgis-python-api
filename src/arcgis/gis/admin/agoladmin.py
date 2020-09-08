@@ -234,7 +234,7 @@ class AGOLAdminManager(object):
                 data_format='csv',
                 save_folder=None):
         """
-        Returns a CSV file containing the login history from a start_date to the present.
+        Returns a CSV file or Pandas's DataFrame containing the login history from a start_date to the present.
 
         ================  ===============================================================================
         **Argument**      **Description**
@@ -341,7 +341,7 @@ class AGOLAdminManager(object):
             while len(res['items']) > 0 and res['nextKey']:
                 params['start'] = res['nextKey']
                 res = self._gis._con.post(url, params)
-                data.extend(data['items'])
+                data.extend(res['items'])
                 if num > 0 and len(data) >= num:
                     data = data[:num]
                     break
