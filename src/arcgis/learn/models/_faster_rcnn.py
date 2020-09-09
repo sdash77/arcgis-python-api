@@ -1,12 +1,15 @@
 from pathlib import Path
 import json
+import warnings
 from ._model_extension import ModelExtension
 from ._arcgis_model import _EmptyData
 
 try:
-    from fastai.vision import flatten_model
+    from fastai.vision import flatten_model, ImageList 
+    from fastai.vision import imagenet_stats, normalize
     import torch
     from fastai.torch_core import split_model_idx
+    from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList
     from .._utils.common import get_multispectral_data_params_from_emd
     from ._arcgis_model import _resnet_family
 
@@ -193,7 +196,7 @@ class MyFasterRCNN():
             #convert bboxes in format [y1,x1,y2,x2]
             bbox = self.torch.index_select(bbox, 1, self.torch.tensor([1,0,3,2]).to(bbox.device))
             #Append the tuple in list for each image
-            post_processed_pred.append((bbox.to(device), label.to(device), score.to(device)))
+            post_processed_pred.append((bbox.data.to(device), label.to(device), score.to(device)))
             
         return post_processed_pred
 
@@ -295,6 +298,11 @@ class FasterRCNN(ModelExtension):
             model_file = emd_path.parent / model_file
         
         backbone = emd['ModelParameters']['backbone']
+        dataset_type = emd.get('DatasetType', 'PASCAL_VOC_rectangles')
+        chip_size = emd["ImageWidth"]
+        resize_to = emd.get('resize_to', None)
+        if isinstance(resize_to, list):
+            resize_to = (resize_to[0], resize_to[1])
 
         try:
             class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
@@ -303,18 +311,37 @@ class FasterRCNN(ModelExtension):
             class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']} 
             color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}                
 
+        data_passed = True
         if data is None:
-            data = _EmptyData(path=emd_path.parent.parent, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
+            
+            data_passed = False
+            train_tfms = []
+            val_tfms = []
+            ds_tfms = (train_tfms, val_tfms)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                sd = ImageList([], path=emd_path.parent.parent).split_by_idx([])
+                data = sd.label_const(0, label_cls=ObjectDetectionCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
+            # Add 1 for background class
+            data.c += 1
+            data.chip_size = chip_size
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
+            data.classes = ['background'] + list(class_mapping.values())
+            data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
-            data.classes = ['background']
-            for k, v in class_mapping.items():
-                data.classes.append(v)
             data = get_multispectral_data_params_from_emd(data, emd)
-            data.dataset_type = emd.get('DatasetType', 'PASCAL_VOC_rectangles')
-        return cls(data, backbone, pretrained_path=str(model_file))
+            data.dataset_type = dataset_type
+
+        data.resize_to = resize_to
+        frcnn = cls(data, backbone, pretrained_path=str(model_file))
+
+        if not data_passed:
+            frcnn.learn.data.single_ds.classes = frcnn._data.classes
+            frcnn.learn.data.single_ds.y.classes = frcnn._data.classes
+        
+        return frcnn
 
     def predict(
         self,
