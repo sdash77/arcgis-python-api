@@ -8401,6 +8401,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                                 future=False,
                                 process_as_multidimensional=False,
                                 percentile_value=90,
+                                percentile_interpolation_type='AUTO_DETECT',
                                 **kwargs):
         """
         Parameters
@@ -8438,6 +8439,15 @@ class _RasterAnalysisTools(BaseAnalytics):
             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
             A RuntimeError is raised if a service by that name already exists
 
+        process_as_multidimensional: processAsMultidimensional (bool). Optional parameter.  Determines how the input rasters will be processed if they are multidimensional.Unchecked—Statistics will be calculated from the current slice of a multidimensional image service. This is the default.Checked—Statistics will be calculated for all dimensions (such as time or depth) of a multidimensional image service.CURRENT_SLICE— Statistics will be calculated from the current slice of a multidimensional image service. This is the default.ALL_SLICES— Statistics will be calculated for all dimensions (such as time or depth) of a multidimensional image service.
+
+        percentile_value: percentileValue (float). Optional parameter.  
+
+        percentile_interpolation_type: percentileInterpolationType (str). Optional parameter.  
+          Choice list:AUTO_DETECT,NEAREST,LINEAR
+
+
+
         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
         future: Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
@@ -8460,7 +8470,20 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
-        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]<=10.8):
+        if percentile_interpolation_type is not None:
+            if "percentile_interpolation_type" in self._tbx.choice_list.summarize_raster_within.keys():
+                percentile_interpolation_type_allowed_values = self._tbx.choice_list.summarize_raster_within["percentile_interpolation_type"]
+                if [element.lower() for element in percentile_interpolation_type_allowed_values].count(percentile_interpolation_type.lower()) <= 0 :
+                    raise RuntimeError('percentile_interpolation_type can only be one of the following:  '+str(percentile_interpolation_type_allowed_values))
+                for element in percentile_interpolation_type_allowed_values:
+                    if percentile_interpolation_type.lower() == element.lower():
+                        percentile_interpolation_type = element
+
+        current_version = None
+        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys())):
+            current_version = self._gis._tools.rasteranalysis.properties["currentVersion"]
+
+        if((current_version is not None) and current_version<=10.8):
             gpjob = self._tbx.summarize_raster_within(input_zone_layer=input_zone_layer,
                                                       zone_field=zone_field,
                                                       input_raster_layerto_summarize=input_raster_layer_to_summarize,
@@ -8468,8 +8491,18 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                       statistic_type=statistic_type,
                                                       ignore_missing_values=ignore_missing_values,
                                                       context=context, gis=gis, future=True)
-
-        else:
+        elif(current_version is not None) and (current_version>10.8 and current_version<10.9):
+            gpjob = self._tbx.summarize_raster_within(input_zone_layer=input_zone_layer,
+                                                      zone_field=zone_field,
+                                                      input_raster_layerto_summarize=input_raster_layer_to_summarize,
+                                                      output_name=output_raster,
+                                                      statistic_type=statistic_type,
+                                                      ignore_missing_values=ignore_missing_values,
+                                                      context=context, 
+                                                      process_as_multidimensional=process_as_multidimensional,
+                                                      percentile_value=percentile_value,
+                                                      gis=gis, future=True)
+        elif((current_version is not None) and current_version>=10.9):
             gpjob = self._tbx.summarize_raster_within(input_zone_layer=input_zone_layer,
                                                       zone_field=zone_field,
                                                       input_raster_layerto_summarize=input_raster_layer_to_summarize,
@@ -8479,6 +8512,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                       context=context,
                                                       process_as_multidimensional=process_as_multidimensional,
                                                       percentile_value=percentile_value,
+                                                      percentile_interpolation_type=percentile_interpolation_type,
                                                       gis=gis, future=True)
 
         gpjob._is_ra = True

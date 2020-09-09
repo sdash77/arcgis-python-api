@@ -588,7 +588,8 @@ def zonal_statistics(in_zone_data,
                      ignore_nodata=True,
                      statistics_type='MEAN',
                      process_as_multidimensional=None,
-                     percentile_value=90):
+                     percentile_value=90,
+                     percentile_interpolation_type='AUTO_DETECT'):
 
     """"
     Calculates statistics on values of a raster within the zones of another dataset.
@@ -653,13 +654,27 @@ def zonal_statistics(in_zone_data,
                             using the percentile_value parameter.
 
     :param process_as_multidimensional: Optional bool, Process as multidimensional if set to True. (If the input is multidimensional raster.)
-    :param percentile_value: Optional int, The percentile to calculate. The default is 90, for the 90th percentile. The 
+    :param percentile_value: Optional Double, The percentile to calculate. The default is 90, for the 90th percentile. The 
                              values can range from 0 to 100. The 0th percentile is essentially equivalent to the 
                              Minimum statistic, and the 100th percentile is equivalent to Maximum. 
                              A value of 50 will produce essentially the same result as the Median statistic.
                              
                              This parameter is honoured only available if the statistics_type parameter is 
                              set to PERCENTILE.
+    :param percentile_interpolation_type: Optional str. Determines the type of percentile interpolation type when the 
+                                          number of values from the input value raster to be calculated are even.
+                                            - AUTO_DETECT - If the input value raster has integer pixel type, the 
+                                                            NEAREST method is used. If the input value raster 
+                                                            has floating point pixel type, then the LINEAR 
+                                                            method is used. This is the default.
+                                            - NEAREST - Nearest value to the desired percentile. In this case, 
+                                                        the output pixel type is same as that of the input value 
+                                                        raster.
+                                            - LINEAR - Weighted average of two surrounding values from the 
+                                                        desired percentile. In this case, the output pixel 
+                                                        type is floating point.
+
+                                            Parameter added in 10.9.
     :return: output raster with function applied
 
     """
@@ -704,6 +719,13 @@ def zonal_statistics(in_zone_data,
 
     if percentile_value is not None:
         template_dict["rasterFunctionArguments"]["percentile_value"] = percentile_value
+
+    percentile_interpolation_type_list = ["AUTO_DETECT","NEAREST","LINEAR"]
+    if percentile_interpolation_type is not None:
+        if percentile_interpolation_type.upper() not in percentile_interpolation_type_list:
+            raise RuntimeError('percentile_interpolation_type should be one of the following '+ str(percentile_interpolation_type_list))
+        template_dict["rasterFunctionArguments"]["percentile_interpolation_type"] = percentile_interpolation_type
+
 
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra['rasterFunctionArguments']["in_zone_data"] = raster_ra1

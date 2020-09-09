@@ -1069,6 +1069,7 @@ def summarize_raster_within(input_zone_layer,
                             context=None,
                             process_as_multidimensional=False,
                             percentile_value=90,
+                            percentile_interpolation_type="AUTO_DETECT",
                             *,
                             gis=None,
                             future=False,
@@ -1213,14 +1214,31 @@ def summarize_raster_within(input_zone_layer,
                                              
                                              False - Statistics will be calculated for all dimensions 
                                              (such as time or depth) of a multidimensional image service.
+                                             Parameter added in 10.8.1.
     ------------------------------------     --------------------------------------------------------------------
-    percentile_value                         Optional int, The percentile to calculate. The default is 90, for the 90th percentile. 
+    percentile_value                         Optional Double, The percentile to calculate. The default is 90, for the 90th percentile. 
                                              The values can range from 0 to 100. The 0th percentile is essentially 
                                              equivalent to the Minimum statistic, and the 100th percentile is equivalent to Maximum. 
                                              A value of 50 will produce essentially the same result as the Median statistic.
                              
                                              This parameter is honoured only available if the statistics_type parameter is 
                                              set to Percentile.
+                                             Parameter added in 10.8.1.
+    ------------------------------------     --------------------------------------------------------------------
+    percentile_interpolation_type            Optional str. Determines the type of percentile interpolation type when the 
+                                             number of values from the input value raster to be calculated are even.
+                                                - AUTO_DETECT - If the input value raster has integer pixel type, the 
+                                                                NEAREST method is used. If the input value raster 
+                                                                has floating point pixel type, then the LINEAR 
+                                                                method is used. This is the default.
+                                                - NEAREST - Nearest value to the desired percentile. In this case, 
+                                                            the output pixel type is same as that of the input value 
+                                                            raster.
+                                                - LINEAR - Weighted average of two surrounding values from the 
+                                                           desired percentile. In this case, the output pixel 
+                                                           type is floating point.
+
+                                             Parameter added in 10.9.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
@@ -1250,6 +1268,7 @@ def summarize_raster_within(input_zone_layer,
                                                              context=context,
                                                              process_as_multidimensional=process_as_multidimensional,
                                                              percentile_value=percentile_value,
+                                                             percentile_interpolation_type=percentile_interpolation_type,
                                                              future=future,
                                                              **kwargs)
 
