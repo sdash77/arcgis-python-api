@@ -405,6 +405,7 @@ class Geometry(BaseGeometry):
         if self.is_empty:
             return svg_top + '/>'
         else:
+
             # Establish SVG canvas that will fit all the data + small space
             xmin, ymin, xmax, ymax = self.extent
             # Expand bounds by a fraction of the data ranges
@@ -958,7 +959,7 @@ class Geometry(BaseGeometry):
 
                 area += part[i][0] * part[j][1]
                 area -= part[j][0] * part[i][1]
-                # print((n, area, i, j))
+
             area_parts.append(area / 2.0)
             area = 0.0
         return abs(sum(area_parts))
@@ -2877,6 +2878,10 @@ class Envelope(Geometry):
     def svg(self, scale_factor=1, fill_color=None):
         """"""
         return self.polygon.svg(scale_factor, fill_color)
+    #----------------------------------------------------------------------
+    def _repr_svg_(self):
+        """SVG representation for iPython notebook"""
+        return self.polygon._repr_svg_()
     #----------------------------------------------------------------------
     def coordinates(self):
         """returns the coordinates as a np.array"""
