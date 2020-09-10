@@ -16,10 +16,10 @@ class TestAnalyzeLSA(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Create Python API GIS object and prepare REST service URL strings
-        cls.base_server_url = "https://krennic.esri.com/server/rest/services/ApplyLSAFeet/"
-        cls.gis = GIS("https://krennic.esri.com/portal",
-                      "admin",
-                      "esri.agp",
+        cls.base_server_url = "https://rqawinbi01sv.ags.esri.com/gis/rest/services/parcels/ParcelFabric_Analyze_LSA/"
+        cls.gis = GIS("https://rqawinbi01pt.ags.esri.com/gis",
+                      "gisproadv1",
+                      "portalaccount1",
                       verify_cert=False)
         cls.services = ["FeatureServer", "ParcelFabricServer", "VersionManagementServer"]
         cls.service_urls = {url: cls.base_server_url + url for url in cls.services}
@@ -95,7 +95,7 @@ class TestAnalyzeLSA(unittest.TestCase):
         # get the fully qualified version name string as 'owner.versionName'
         _version = [
             x for x in cls.vms.all
-            if x.properties.versionName == "admin." + _version_name_txt
+            if x.properties.versionName == "gisproadv1." + _version_name_txt
         ]
         fq_version_name = _version[0].properties.versionName
         return fq_version_name
@@ -103,7 +103,7 @@ class TestAnalyzeLSA(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         for version in cls.vms.all:
-            if version.properties.versionName.startswith("admin.api-"):
+            if version.properties.versionName.startswith("gisproadv1.api-"):
                 cls.assertTrue(version.delete(), "Failed to delete branch version.")
 
 
