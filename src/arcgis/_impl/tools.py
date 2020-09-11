@@ -2282,7 +2282,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                        cell_size=None,
                        cell_size_unit=None,
                        distance_band=None,
-                       distance_band_unit=None,
+                       distance_band_units=None,
                        future=False):
         """
         The Find Hot Spots task finds statistically significant clusters of incident points, weighted points, or weighted polygons. For incident data, the analysis field (weight) is obtained by aggregation. Output is a hot spot map.
@@ -2366,8 +2366,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["cellSizeUnit"] = cell_size_unit
             if distance_band is not None:
                 params["distanceBand"] = distance_band
-            if distance_band_unit is not None:
-                params["distanceBandUnit"] = distance_band_unit
+            if distance_band_units is not None:
+                params["distanceBandUnits"] = distance_band_units
             from arcgis.features._credits import _estimate_credits
             return _estimate_credits(task=task,
                                      parameters=params)
@@ -2377,7 +2377,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                          aggregation_polygon_layer=aggregation_polygon_layer,
                                          shape_type=shape_type,
                                          cell_size=cell_size, cell_size_units=cell_size_unit,
-                                         distance_band=distance_band, distance_band_units=distance_band_unit,
+                                         distance_band=distance_band, distance_band_units=distance_band_units,
                                          output_name=output_name, context=context,
                                          gis=self._gis, future=True)
         gpjob._is_fa = True
@@ -2514,18 +2514,18 @@ class _FeatureAnalysisTools(BaseAnalytics):
                       analysis_layer,
                       analysis_field=None,
                       divided_by_field=None,
-                     bounding_polygon_layer=None,
-                     aggregation_polygon_layer=None,
-                     permutations=None,
-                     shape_type=None,
-                     cell_size=None,
-                     cell_units=None,
-                     distance_band=None,
-                     band_units=None,
-                     output_name=None,
-                     context=None,
-                     estimate=False,
-                     future=False):
+                      bounding_polygon_layer=None,
+                      aggregation_polygon_layer=None,
+                      permutations=None,
+                      shape_type=None,
+                      cell_size=None,
+                      cell_units=None,
+                      distance_band=None,
+                      distance_band_units=None,
+                      output_name=None,
+                      context=None,
+                      estimate=False,
+                      future=False):
         """
         The Find Outliers task analyzes point data (such as crime incidents, traffic accidents, or trees) or field values associated with points or area features (such as the number of people in each census tract or the total sales for retail stores). It finds statistically significant spatial clusters of high values and low values and statistically significant high or low spatial outliers within those clusters.
 
@@ -2619,8 +2619,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params['cellSizeUnits'] = cell_units
             if distance_band:
                 params['distanceBand'] = distance_band
-            if band_units:
-                params['distanceBandUnits'] = band_units
+            if distance_band_units:
+                params['distanceBandUnits'] = distance_band_units
             if context is not None:
                 params["context"] = context
             from arcgis.features._credits import _estimate_credits
@@ -2630,7 +2630,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                         divided_by_field=divided_by_field, bounding_polygon_layer=bounding_polygon_layer,
                                         aggregation_polygon_layer=aggregation_polygon_layer, permutations=permutations,
                                         shape_type=shape_type, cell_size=cell_size, cell_size_units=cell_units,
-                                        distance_band=distance_band, distance_band_units=band_units,
+                                        distance_band=distance_band, distance_band_units=distance_band_units,
                                         output_name=output_name, context=context, gis=self._gis,
                                         future=True)
         gpjob._is_fa = True
@@ -8441,9 +8441,9 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         process_as_multidimensional: processAsMultidimensional (bool). Optional parameter.  Determines how the input rasters will be processed if they are multidimensional.Unchecked—Statistics will be calculated from the current slice of a multidimensional image service. This is the default.Checked—Statistics will be calculated for all dimensions (such as time or depth) of a multidimensional image service.CURRENT_SLICE— Statistics will be calculated from the current slice of a multidimensional image service. This is the default.ALL_SLICES— Statistics will be calculated for all dimensions (such as time or depth) of a multidimensional image service.
 
-        percentile_value: percentileValue (float). Optional parameter.  
+        percentile_value: percentileValue (float). Optional parameter.
 
-        percentile_interpolation_type: percentileInterpolationType (str). Optional parameter.  
+        percentile_interpolation_type: percentileInterpolationType (str). Optional parameter.
           Choice list:AUTO_DETECT,NEAREST,LINEAR
 
 
@@ -8498,7 +8498,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                       output_name=output_raster,
                                                       statistic_type=statistic_type,
                                                       ignore_missing_values=ignore_missing_values,
-                                                      context=context, 
+                                                      context=context,
                                                       process_as_multidimensional=process_as_multidimensional,
                                                       percentile_value=percentile_value,
                                                       gis=gis, future=True)
