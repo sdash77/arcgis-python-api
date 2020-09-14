@@ -3,12 +3,14 @@ import traceback
 import json
 import math
 import warnings
-
+from zipfile import ZipFile
+import tempfile
+from pathlib import Path
 HAS_FASTAI = False
 try:    
     from .env import raise_fastai_import_error
     from fastai.vision.data import ImageList
-    from fastai.vision import Image, imagenet_stats, pil2tensor
+    from fastai.vision import Image, imagenet_stats, pil2tensor, get_files
     import torch
     import numpy as np
     import PIL
@@ -362,3 +364,24 @@ def load_model(emd_path, data=None):
     model_obj = model_cls.from_model(_emd_path, data=data)
 
     return model_obj
+
+def _temp_dlpk(dlpk_path):
+    with ZipFile(dlpk_path, 'r') as zip_obj:
+        temp_dir = tempfile.TemporaryDirectory().name
+        zip_obj.extractall(temp_dir)
+    return temp_dir
+
+def _get_emd_path(emd_path):
+    emd_path = Path(emd_path)
+    if emd_path.suffix == '.dlpk':
+        temp_path = _temp_dlpk(emd_path)
+        emd_path = Path(temp_path)
+        #return cls.from_model(temp_path)
+
+    if emd_path.suffix != '.emd':
+        list_files = get_files(emd_path, extensions=['.emd'])
+        assert(len(list_files)==1)
+        #return cls.from_model(list_files[0])
+        emd_path = list_files[0]
+    return emd_path
+        

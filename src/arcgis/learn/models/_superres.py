@@ -3,7 +3,6 @@ import json
 import traceback
 from ._arcgis_model import _EmptyData
 from .._data import _raise_fastai_import_error  
-
 try:
     from ._arcgis_model import ArcGISModel, _resnet_family
     from ._superres_utils import FeatureLoss, gram_matrix, compute_metrics, get_resize, create_loss
@@ -11,6 +10,7 @@ try:
     from fastai.vision import nn, ImageImageList, get_transforms, imagenet_stats, NormType, open_image
     from fastai.callbacks import LossMetrics
     from fastai.utils.mem import Path
+    from .._utils.common import _get_emd_path
 
     HAS_FASTAI = True
 except Exception as e:
@@ -70,7 +70,6 @@ class SuperResolution(ArcGISModel):
     def _supported_backbones():
         return [*_resnet_family]
 
-    
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
@@ -113,7 +112,7 @@ class SuperResolution(ArcGISModel):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
             
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
 

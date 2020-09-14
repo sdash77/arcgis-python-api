@@ -36,7 +36,7 @@ try:
     import PIL.Image
     import PIL.ExifTags
     from torch.nn import Module as NnModule
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     HAS_FASTAI = True
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -275,7 +275,7 @@ class FeatureClassifier(ArcGISModel):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
             
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
 

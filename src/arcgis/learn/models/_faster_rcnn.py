@@ -10,7 +10,7 @@ try:
     import torch
     from fastai.torch_core import split_model_idx
     from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from ._arcgis_model import _resnet_family
 
     HAS_FASTAI = True
@@ -287,7 +287,7 @@ class FasterRCNN(ModelExtension):
 
         :returns: `FasterRCNN` Object
         """
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
 
         with open(emd_path) as f:
             emd = json.load(f)

@@ -15,6 +15,7 @@ try:
     from ._arcgis_model import _EmptyData
     import json
     from pathlib import Path
+    from .._utils.common import _get_emd_path
     HAS_FASTAI = True
 except Exception as e:
     import_exception = traceback.format_exc()
@@ -111,7 +112,7 @@ class PointCNN(ArcGISModel):
         :returns: `PointCNN` Object
         """      
 
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
 

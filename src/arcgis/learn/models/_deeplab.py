@@ -29,7 +29,7 @@ try:
     from torchvision.models.segmentation.deeplabv3 import DeepLabHead, DeepLabV3
     from torchvision.models.segmentation.fcn import FCNHead
     from ._deeplab_utils import Deeplab, compute_miou
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from ._psp_utils import accuracy
 
     HAS_FASTAI = True
@@ -246,7 +246,7 @@ class DeepLab(ArcGISModel):
         :returns: `DeepLab` Object
         """
 
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
             

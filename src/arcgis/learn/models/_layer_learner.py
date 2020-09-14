@@ -19,6 +19,7 @@ try:
     from fastai.basic_train import Learner, load_learner
     from fastprogress.fastprogress import progress_bar
     from .._utils.tabular_data import TabularDataObject
+    from .._utils.common import _get_emd_path
     from fastai.torch_core import split_model_idx
     import torch
     from fastai.metrics import r2_score
@@ -123,7 +124,7 @@ class FullyConnectedNetwork(ArcGISModel):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
 
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
 

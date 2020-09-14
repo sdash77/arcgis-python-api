@@ -8,6 +8,7 @@ try:
     from ._image_captioning_utils import (image_captioner_learner,
                                           predict_image, get_bleu)
     from .._utils.image_captioning_data import show_results
+    from .._utils.common import _get_emd_path
     HAS_FASTAI = True
 except ImportError:
     import_exception = traceback.format_exc()
@@ -106,7 +107,7 @@ class ImageCaptioner(ArcGISModel):
         """
 
         from fastai.text.transform import Vocab
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
 

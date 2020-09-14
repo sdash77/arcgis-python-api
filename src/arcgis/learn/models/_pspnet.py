@@ -20,7 +20,7 @@ try:
     from fastai.layers import CrossEntropyFlat
     from .._utils.segmentation_loss_functions import  FocalLoss, MixUpCallback, DiceLoss
     from ._psp_utils import PSPNet, _pspnet_learner, _pspnet_learner_with_unet, accuracy
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from .._utils.classified_tiles import per_class_metrics
     import numpy as np
     from fastai.callbacks import EarlyStoppingCallback
@@ -251,7 +251,7 @@ class PSPNetClassifier(ArcGISModel):
 
         :returns: `PSPNetClassifier` Object
         """
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
             

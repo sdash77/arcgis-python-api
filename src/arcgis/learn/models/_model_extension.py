@@ -30,7 +30,7 @@ try:
     import PIL
     from ._ssd_utils import compute_class_AP
     from .._utils.pascal_voc_rectangles import show_results_multispectral, ObjectDetectionCategoryList
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from ._arcgis_model import _set_ddp_multigpu, _isnotebook
     from ._hed_utils import accuracies
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
@@ -189,7 +189,7 @@ class ModelExtension(ArcGISModel):
         :returns: `ModelExtension` Object
         """
 
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
 
         with open(emd_path) as f:
             emd = json.load(f)

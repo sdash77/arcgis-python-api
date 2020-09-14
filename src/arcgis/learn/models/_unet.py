@@ -21,7 +21,7 @@ try:
     from ._unet_utils import is_no_color, LabelCallback, _class_array_to_rbg, predict_batch, show_results_multispectral
     from fastai.callbacks import EarlyStoppingCallback
     from torch.nn import Module as NnModule
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from .._utils.classified_tiles import per_class_metrics
     from ._psp_utils import accuracy
     from ._deeplab_utils import compute_miou
@@ -252,7 +252,7 @@ class UnetClassifier(ArcGISModel):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
             
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
 

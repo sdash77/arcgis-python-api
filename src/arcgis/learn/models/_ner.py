@@ -4,6 +4,7 @@ try:
     import pandas as pd
     from fastprogress.fastprogress import master_bar, progress_bar
     from ._codetemplate import entity_recognizer_placeholder
+    from .._utils.common import _get_emd_path
     import numpy as np
     HAS_SPACY = True
 except:
@@ -393,7 +394,7 @@ class EntityRecognizer(ArcGISModel):
 
         :returns: `EntityRecognizer` Object
         """  
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         ner = cls(data=data)
         ner.load(emd_path)
         ner._trained = True

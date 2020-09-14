@@ -25,7 +25,7 @@ try:
     from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
     from fastai.basic_train import Learner
     from ._maskrcnn_utils import is_no_color, mask_rcnn_loss, train_callback, compute_class_AP
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from fastai.torch_core import split_model_idx
     import matplotlib.pyplot as plt
     import matplotlib.patches as patches
@@ -234,7 +234,7 @@ class MaskRCNN(ArcGISModel):
         :returns: `MaskRCNN` Object
         """
 
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
             
