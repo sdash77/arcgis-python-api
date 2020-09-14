@@ -30,7 +30,7 @@ try:
     from ._utils.pascal_voc_rectangles import ObjectDetectionItemList
     from .models._superres_utils import resize_one
     from ._utils.common import ArcGISMSImage, ArcGISImageList
-    from ._utils.env import HAS_GDAL
+    from ._utils.env import HAS_GDAL, raise_gdal_import_error
     from ._utils.classified_tiles import show_batch_classified_tiles
     from ._utils.labeled_tiles import show_batch_labeled_tiles
     from ._utils.rcnn_masks import show_batch_rcnn_masks
@@ -861,6 +861,9 @@ def prepare_data(path,
         imagery_type = kwargs.get('imagery_type')
     elif _imagery_type is not None:
         imagery_type = _imagery_type
+
+    if (not imagery_type in ('ASSUMED_RGB', 'RGB')) and not HAS_GDAL:
+        raise_gdal_import_error()
 
     bands = None
     if kwargs.get('bands', None) is not None:
