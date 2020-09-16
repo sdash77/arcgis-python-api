@@ -1014,6 +1014,9 @@ class MapView(widgets.DOMWidget):
         item                   Required object. You can specify Item objects, Layer objects such as
                                FeatureLayer, ImageryLayer, MapImageLayer, FeatureSet,
                                FeatureCollection, ``arcgis.raster.Raster`` objects, etc.
+
+                               Item objects will have all of their layers individually 
+                               added to the map widget.
         ------------------     --------------------------------------------------------------------
         options                Optional dict. Specify visualization options such as renderer info,
                                opacity, definition expressions. See example below
