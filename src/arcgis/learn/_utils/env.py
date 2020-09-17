@@ -50,7 +50,7 @@ def tf_set_gpu_memory_growth():
 def raise_tensorflow_import_error():
     if ARCGIS_ENABLE_TF_BACKEND:
         message = """
-        Could not find tensorflow, Please install tensorflow using the following command 
+        Could not find tensorflow, Please install tensorflow using the following command
         \nconda install -c esri tensorflow-gpu=2.1.0
         """
         ex = Exception(message)
@@ -68,7 +68,7 @@ def raise_tensorflow_import_error():
 def tf_sample_op():
     a = tf.keras.layers.Conv2D(1, (3, 3))
     a = a(tf.zeros((1, 3, 20, 20))).numpy()
-    
+
 
 ## Fastai Imports #######
 
@@ -78,7 +78,7 @@ fastai_import_exception = None
 def do_fastai_imports():
     global HAS_FASTAI
     global fastai_import_exception
-    
+
     try:
         import fastai
         import torch
@@ -91,8 +91,8 @@ def do_fastai_imports():
 
 def fastai_installation_command():
     installation_steps = "Install them using 'conda install -c esri arcgis=1.8.1 pillow scikit-image'\n'conda install -c fastai -c pytorch fastai pytorch=1.4.0 torchvision=0.5.0 tensorflow-gpu=2.1.0'\n'conda install gdal=2.3.3'"
-            
-    return installation_steps 
+
+    return installation_steps
 
 def raise_fastai_import_error(import_exception=fastai_import_exception, installation_steps=None, message=None):
     if installation_steps is None:
@@ -105,7 +105,7 @@ def raise_fastai_import_error(import_exception=fastai_import_exception, installa
 HAS_GDAL = False
 gdal_import_exception = None
 try:
-    import gdal
+    from osgeo import gdal
     HAS_GDAL = True
 except Exception as e:
     gdal_import_exception = traceback.format_exc()
