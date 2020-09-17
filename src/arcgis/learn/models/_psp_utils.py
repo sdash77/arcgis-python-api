@@ -34,13 +34,14 @@ import torch
 from torchvision import models
 
 import math
-from fastai.callbacks.hooks import hook_output
+from fastai.callbacks.hooks import hook_outputs
 from fastai.vision.learner import create_body
 from fastai.callbacks.hooks import model_sizes
 from fastai.vision import flatten_model
 from fastai.vision.models import unet
 from fastai.basic_train import Learner
 from fastai.vision import to_device
+from ._PointRend import PointRendSemSegHead
 from ._arcgis_model import _get_backbone_meta, _set_ddp_multigpu, _isnotebook
 import os as arcgis_os
 
@@ -195,9 +196,10 @@ class PSPNet(nn.Module):
     """
     Vanilla PSPNet
     """
-    def __init__(self, num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True):
+    def __init__(self, num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, pointrend=False):
         super(PSPNet, self).__init__()        
-        
+        self.pointrend = pointrend
+        self.vgg = False
         if getattr(backbone_fn, '_is_multispectral', False):
             self.backbone = create_body(backbone_fn, pretrained=pretrained, cut=_get_backbone_meta(backbone_fn.__name__)['cut'])
         else:
@@ -213,17 +215,24 @@ class PSPNet(nn.Module):
         
         if "vgg" in backbone_name:
             modify_dilation_index = -5
+            self.vgg = True
         else:
-            modify_dilation_index = -2
+            if self.pointrend:
+                modify_dilation_index = -1
+            else:
+                modify_dilation_index = -2
             
         if backbone_name == 'resnet18' or backbone_name == 'resnet34':
             module_to_check = 'conv' 
         else:
             module_to_check = 'conv2'
-        
-        ## Hook at the index where we need to get the auxillary logits out
-        self.hook = hook_output(hookable_modules[modify_dilation_index])
-        
+
+        if "vgg" in backbone_name:
+            hooks = [hookable_modules[i-1] for i, module in enumerate(hookable_modules) if isinstance(module, nn.MaxPool2d)]
+
+        else:
+            hooks = [hookable_modules[-2], hookable_modules[-3], hookable_modules[-4]]
+
         custom_idx = 0
         for i, module in enumerate(hookable_modules[modify_dilation_index:]): 
             dilation = 2 * (i + 1)
@@ -241,18 +250,23 @@ class PSPNet(nn.Module):
                     module.dilation, module.padding, module.stride = (dilation, dilation), (padding, padding), (1, 1)
                     custom_idx += 1
         
+        ## Hook at the index where we need to get the auxillary logits out along with Fine-grained features 
+        self.hook = hook_outputs(hooks)
+
         ## returns the size of various activations
         feature_sizes = model_sizes(self.backbone, size=(chip_size, chip_size))
 
-        ## Geting the stored parameters inside of the hook
-        aux_in_channels = self.hook.stored.shape[1]
-
-        ## Get number of channels in the last layer
-        num_channels = feature_sizes[-1][1]
+        if not self.vgg:
+            ## Geting the number of channel persent in stored activation inside of the hook
+            aux_in_channels = self.hook[0].stored.shape[1]
+            ## Get number of channels in the last layer
+            num_channels = feature_sizes[-1][1]
+        else:
+            aux_in_channels = self.hook[-2].stored.shape[1]
+            num_channels = self.hook[-1].stored.shape[1]
 
         penultimate_channels = num_channels / len(pyramid_sizes)
         self.ppm = _PyramidPoolingModule(num_channels, int(penultimate_channels), pyramid_sizes)
-        
         
         self.final = nn.Sequential(
             ## To handle case when the length of pyramid_sizes is odd
@@ -263,8 +277,23 @@ class PSPNet(nn.Module):
             nn.Conv2d(math.ceil(penultimate_channels), num_classes, kernel_size=1)
         )
         
-        
         self.aux_logits = nn.Conv2d(aux_in_channels, num_classes, kernel_size=1)
+
+        if self.pointrend:
+
+            if self.vgg:
+                point_num_channels = self.hook[-3].stored.shape[1] + self.hook[-4].stored.shape[1]
+                stride = chip_size / self.hook[-1].stored.shape[2]  
+            else:
+                point_num_channels = self.hook[1].stored.shape[1] + self.hook[2].stored.shape[1]
+                stride = chip_size / feature_sizes[-1][2]
+
+            subdivision_steps = math.log(stride, 2)
+            self.pointrend_head = PointRendSemSegHead(num_classes,
+                                                    point_num_channels,
+                                                    train_num_points=(chip_size/stride)**2,
+                                                    subdivision_num_points=(chip_size/(stride/2))**2,
+                                                    subdivision_steps=subdivision_steps)
         
         initialize_weights(self.aux_logits)
         initialize_weights(self.ppm, self.final)
@@ -272,26 +301,50 @@ class PSPNet(nn.Module):
     def forward(self, x):
         x_size = x.size()
         x = self.backbone(x)
-        if self.training:
-            aux_l = self.aux_logits(self.hook.stored)
-        
-        ## Remove hook to free up memory.
-        self.hook.remove()
+        features = self.hook.stored
+
         x = self.ppm(x)
         x = self.final(x)
+
+        if self.pointrend:
+            
+            if self.vgg:
+                pointrend_out = self.pointrend_head(x, [features[-4], features[-3]])
+            else:
+                pointrend_out = self.pointrend_head(x, [features[2], features[1]])
+
+        result = F.interpolate(x, x_size[2:], mode='bilinear', align_corners=True)        
+
         if self.training:
-            return F.interpolate(x, x_size[2:], mode='bilinear', align_corners=True), F.interpolate(aux_l, x_size[2:], mode='bilinear', align_corners=True)
+            
+            if self.vgg:
+                x = self.aux_logits(features[-2])
+            else:
+                x = self.aux_logits(features[0])
+
+            x = F.interpolate(x, x_size[2:], mode='bilinear', align_corners=True)
+
+            if self.pointrend:
+                return result, x, pointrend_out
+            else:
+                return result, x
+
         else:
-            return F.interpolate(x, x_size[2:], mode='bilinear', align_corners=True)
+
+            if self.pointrend:
+                return pointrend_out
+            else:
+                return result
+
 
 class DummyDistributed:
     "Dummy class to create a Learner since learner is created from fuction not a class. It will be used in case of multigpu training."
     def __getitem__(self, item):
         return eval('self.' + item)
 
-def _pspnet_learner(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, **kwargs):
+def _pspnet_learner(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, pointrend=False, **kwargs):
     "Build psp_net learner from `data` and `arch`."
-    model = to_device(PSPNet(data.c, backbone, chip_size, pyramid_sizes, pretrained), data.device)
+    model = to_device(PSPNet(data.c, backbone, chip_size, pyramid_sizes, pretrained, pointrend), data.device)
     if not _isnotebook() and arcgis_os.name=='posix':
         distributed_prep = DummyDistributed()
         _set_ddp_multigpu(distributed_prep)

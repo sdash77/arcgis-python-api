@@ -19,6 +19,9 @@ try:
     from ._unet_utils import LabelCallback
     from ._arcgis_model import _EmptyData, _change_tail
     from fastai.vision import to_device
+    from fastai.callbacks.hooks import hook_output, model_sizes
+    from torchvision.models._utils import IntermediateLayerGetter
+    from collections import OrderedDict
     import numpy as np
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.torch_core import split_model_idx
@@ -31,6 +34,7 @@ try:
     from ._deeplab_utils import Deeplab, compute_miou
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from ._psp_utils import accuracy
+    from ._PointRend import PointRendSemSegHead, PointRend_target_transform
 
     HAS_FASTAI = True
 except Exception as e:
@@ -43,22 +47,78 @@ class _DeepLabOverride(DeepLabV3):
     class to override the DeepLabV3 class such that after forwrd pass we can 
     take output as a tuple instead of dictionary in parent class.
     '''
-    def __init__(self, backbone, classifier, aux_classifier=None):
+    def __init__(self, chip_size, num_class, backbone, classifier, aux_classifier=None, pointrend=False):
         super().__init__(backbone, classifier, aux_classifier)
+        self.pointrend = pointrend
+
+        if self.pointrend:
+            return_layers = {'layer4': 'out'}
+            return_layers['layer3'] = 'aux'
+            return_layers['layer2'] = 'res2'
+            return_layers['layer1'] = 'res1'
+            self.backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
+            remove_dilation = list(self.backbone.children())[-2]
+            change_dilation = list(self.backbone.children())[-1]
+            for n, m in remove_dilation.named_modules():
+                if n == '0.conv2':
+                    m.dilation, m.padding, m.stride = (1, 1), (1, 1), (2, 2)
+                elif 'conv2' in n:
+                    m.dilation, m.padding, m.stride = (1, 1), (1, 1), (1, 1)
+                elif '0.downsample.0' in n:
+                    m.stride = (2, 2)
+
+            for n, m in change_dilation.named_modules():
+                if '0.conv2' in n:
+                    m.dilation, m.padding, m.stride = (1, 1), (1, 1), (1, 1)
+                elif 'conv2' in n:
+                    m.dilation, m.padding, m.stride = (2, 2), (2, 2), (1, 1)
+                elif '0.downsample.0' in n:
+                    m.stride = (1, 1)
+
+            self.pointrend_head = PointRendSemSegHead(num_class,
+                                                      768,
+                                                      train_num_points=(chip_size/16)**2,
+                                                      subdivision_num_points=(chip_size/8)**2,
+                                                      subdivision_steps=4)#backbone_features_channel 256+512=768
 
     def forward(self, x):
-        result = super().forward(x)
-        if self.training:
-            return result['out'], result['aux']
-        else:
-            return result['out']
 
-def _create_deeplab(num_class, pretrained=True, **kwargs):
+        if self.pointrend:
+            result = self.modified_forward(x)
+            if self.training:
+                    return result['out'], result['aux'], result['pointrend']
+            else:
+                return result['pointrend']
+        else:
+            result = super().forward(x)
+            if self.training:
+                return result['out'], result['aux']
+            else:
+                return result['out']
+
+    def modified_forward(self, x):
+
+        input_shape = x.shape[-2:]
+        features = self.backbone(x)
+        result = OrderedDict()
+        x = features["out"]
+        x = self.classifier(x)
+        result["pointrend"] = self.pointrend_head(x, [features["res1"], features["res2"]])
+        result["out"] = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
+
+        if self.aux_classifier is not None:
+            x = features["aux"]
+            x = self.aux_classifier(x)
+            result["aux"] = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
+
+        return result
+
+def _create_deeplab(chip_size, num_class, pretrained=True, pointrend=True, **kwargs):
     '''
     Create default torchvision pretrained model with resnet101.
     '''
     model = models.segmentation.deeplabv3_resnet101(pretrained=True, progress=True, **kwargs)
-    model = _DeepLabOverride(model.backbone, model.classifier, model.aux_classifier)
+    model = _DeepLabOverride(chip_size, num_class, model.backbone, model.classifier, model.aux_classifier, pointrend)
     model.classifier = DeepLabHead(2048, num_class)
     model.aux_classifier = FCNHead(1024, num_class)
 
@@ -115,13 +175,14 @@ class DeepLab(ArcGISModel):
 
     :returns: ``DeepLab`` Object
     """
-    def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
+    def __init__(self, data, backbone=None, pretrained_path=None, pointrend=False, *args, **kwargs):
         # Set default backbone to be 'resnet101'
         if backbone is None:
             backbone = models.resnet101          
 
         super().__init__(data, backbone)
 
+        self._pointrend = pointrend
         self._ignore_classes = kwargs.get('ignore_classes', [])
         if self._ignore_classes != [] and len(data.classes) <= 3:
             raise Exception(f"`ignore_classes` parameter can only be used when the dataset has more than 2 classes.")
@@ -154,11 +215,11 @@ class DeepLab(ArcGISModel):
 
         self._code = image_classifier_prf
         if self._backbone.__name__ is 'resnet101':
-            model = _create_deeplab(data.c)
+            model = _create_deeplab(data.chip_size, data.c, pointrend=self._pointrend)
             if self._is_multispectral:
                 model = _change_tail(model, data)
         else:
-            model = Deeplab(data.c, self._backbone, data.chip_size)
+            model = Deeplab(data.c, self._backbone, data.chip_size, self._pointrend)
 
         if not _isnotebook() and os.name=='posix':
             _set_ddp_multigpu(self)
@@ -277,11 +338,12 @@ class DeepLab(ArcGISModel):
 
     def _get_emd_params(self):
         import random
-        _emd_template = {}
+        _emd_template = {"ModelParameters" : {}}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_deeplab_infrencing"
         _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
         _emd_template["ModelType"] = "ImageClassification"
+        _emd_template["ModelParameters"]["pointrend"] = self._pointrend
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
         _emd_template['Classes'] = []
@@ -321,30 +383,41 @@ class DeepLab(ArcGISModel):
         if self.learn.model.training:
             out = outputs[0]
             aux = outputs[1]
+            if self._pointrend:
+                pointrend_out = outputs[2][0]
+                pointrend_coord = outputs[2][1]
+                pointrend_target = PointRend_target_transform(targets, pointrend_coord)
         else: # validation
             out = outputs
         main_loss = criterion(out, targets)
 
         if self.learn.model.training:
             aux_loss = criterion(aux, targets)
-            total_loss = main_loss + 0.4 * aux_loss
+            if self._pointrend:
+                pointrend_loss = criterion(pointrend_out, pointrend_target)
+                total_loss = main_loss + 0.4 * aux_loss + pointrend_loss
+            else:
+                total_loss = main_loss + 0.4 * aux_loss
             return total_loss
         else:
             return main_loss
 
     def _freeze(self):
         "Freezes the pretrained backbone."
-        for idx, i in enumerate(flatten_model(self.learn.model)):
-            if isinstance(i, (nn.BatchNorm2d)):
-                continue
-            if hasattr(i, 'dilation'):
-                dilation = i.dilation
-                dilation = dilation[0] if isinstance(dilation, tuple) else dilation
-                if dilation > 1:
-                    break        
-            for p in i.parameters():
-                p.requires_grad = False
-
+        if self._backbone.__name__ == 'resnet101':
+            idx=68
+        else:
+            for idx, i in enumerate(flatten_model(self.learn.model)):
+                if isinstance(i, (nn.BatchNorm2d)):
+                    continue
+                if hasattr(i, 'dilation'):
+                    dilation = i.dilation
+                    dilation = dilation[0] if isinstance(dilation, tuple) else dilation
+                    if dilation > 1:
+                        break        
+                for p in i.parameters():
+                    p.requires_grad = False
+        
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])  ## Could also call self.learn.freeze after this line because layer groups are now present.
         self.learn.create_opt(lr=3e-3)
 

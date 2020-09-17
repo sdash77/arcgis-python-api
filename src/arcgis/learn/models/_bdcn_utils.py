@@ -209,6 +209,6 @@ def cross_entropy_loss2d(inputs, targets, cuda=False, balance=1.1):
 def bdcn_loss(out, labels):
     loss = 0
     for k in range(10):
-        loss += 0.5*cross_entropy_loss2d(out[k], labels, True)/4
-    loss += 1.1*cross_entropy_loss2d(out[-1], labels, True)/4
+        loss += 0.5*cross_entropy_loss2d(out[k], labels, True)/labels.shape[0]#devide by batch size
+    loss += 1.1*cross_entropy_loss2d(out[-1], labels, True)/labels.shape[0]
     return loss

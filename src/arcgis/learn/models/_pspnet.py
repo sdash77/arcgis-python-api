@@ -27,6 +27,7 @@ try:
     from fastai.torch_core import split_model_idx
     from fastai.vision import flatten_model
     from ._deeplab_utils import compute_miou
+    from ._PointRend import PointRend_target_transform
     HAS_FASTAI = True
 except Exception as e:
     HAS_FASTAI = False
@@ -97,7 +98,7 @@ class PSPNetClassifier(ArcGISModel):
     :returns: `PSPNetClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, use_unet=True, pyramid_sizes=[1, 2, 3, 6], pretrained_path=None, unet_aux_loss=False, *args, **kwargs):
+    def __init__(self, data, backbone=None, use_unet=True, pyramid_sizes=[1, 2, 3, 6], pretrained_path=None, unet_aux_loss=False, pointrend=False, *args, **kwargs):
 
         # Set default backbone to be 'resnet50'
         if backbone is None: 
@@ -140,6 +141,7 @@ class PSPNetClassifier(ArcGISModel):
         self.pyramid_sizes = pyramid_sizes
         self._use_unet = use_unet
         self._unet_aux_loss = unet_aux_loss
+        self._pointrend = pointrend
 
         if use_unet:
             self.learn = _pspnet_learner_with_unet(data,
@@ -159,7 +161,8 @@ class PSPNetClassifier(ArcGISModel):
                                          backbone=self._backbone, 
                                          chip_size=self._data.chip_size, 
                                          pyramid_sizes=pyramid_sizes, 
-                                         pretrained=True, 
+                                         pretrained=True,
+                                         pointrend=self._pointrend,
                                          metrics=accuracy)
 
 
@@ -281,20 +284,26 @@ class PSPNetClassifier(ArcGISModel):
 
     def _psp_loss(self, outputs, targets, **kwargs):
         targets = targets.squeeze(1).detach()
-
+        
         criterion = nn.CrossEntropyLoss(weight=self._final_class_weight).to(self._device)
-
-        if self.learn.model.training: # returns a tuple of aux_logits and main_logits while training
+        if self.learn.model.training:
             out = outputs[0]
             aux = outputs[1]
+            if self._pointrend:
+                pointrend_out = outputs[2][0]
+                pointrend_coord = outputs[2][1]
+                pointrend_target = PointRend_target_transform(targets, pointrend_coord)
         else: # validation
             out = outputs
-
         main_loss = criterion(out, targets)
 
         if self.learn.model.training:
             aux_loss = criterion(aux, targets)
-            total_loss = main_loss + 0.4 * aux_loss  ## weight out the auxillary loss.
+            if self._pointrend:
+                pointrend_loss = criterion(pointrend_out, pointrend_target)
+                total_loss = main_loss + 0.4 * aux_loss + pointrend_loss
+            else:
+                total_loss = main_loss + 0.4 * aux_loss
             return total_loss
         else:
             return main_loss
@@ -335,6 +344,7 @@ class PSPNetClassifier(ArcGISModel):
         _emd_template["ModelType"] = "ImageClassification"
         _emd_template["ModelParameters"]["pyramid_sizes"] = self.pyramid_sizes
         _emd_template["ModelParameters"]["use_unet"] = self._use_unet
+        _emd_template["ModelParameters"]["pointrend"] = self._pointrend
         _emd_template["ModelParameters"]["unet_aux_loss"] = self._unet_aux_loss
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_psp"
