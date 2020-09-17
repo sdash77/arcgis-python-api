@@ -6259,7 +6259,7 @@ class Group(dict):
         else:
             return None
 
-    def add_users(self, usernames):
+    def add_users(self, usernames=None, admins=None):
         """ Adds users to this group.
 
         .. note::
@@ -6270,22 +6270,54 @@ class Group(dict):
         ============  ======================================
         **Argument**  **Description**
         ------------  --------------------------------------
-        usernames     Required list of strings or single string.
+        usernames     Optional list of strings or single string.
                       The list of usernames or single username to be added.
+        ------------  --------------------------------------
+        admins        Optional List of String, or Single String.  This is a list of users to be an administrator of the group.
         ============  ======================================
 
         :return:
            A dictionary which contains the users that were not added to the group.
         """
-        users = []
+        if usernames is None and admins is None:
+            return {
+                "notAdded": [ ]
+            }
+
+        users = None
+        ladmins = None
+
         if isinstance(usernames, (list, tuple)) == False:
             usernames = [usernames]
-        for u in usernames:
-            if isinstance(u, str):
-                users.append(u)
-            elif isinstance(u, User):
-                users.append(u.username)
-        return self._portal.add_group_users(users, self.groupid)
+
+        if admins and \
+           isinstance(admins, (list, tuple)) == False:
+            admins = [admins]
+
+        if admins:
+            ladmins = []
+            for u in admins:
+                if isinstance(u, str):
+                    ladmins.append(u)
+                elif isinstance(u, User):
+                    ladmins.append(u.username)
+        if usernames:
+            users = []
+            for u in usernames:
+                if isinstance(u, str):
+                    users.append(u)
+                elif isinstance(u, User):
+                    users.append(u.username)
+        return self._portal.add_group_users(users, self.groupid, ladmins)
+
+    def delete_group_thumbnail(self):
+        """
+        Deletes the group's thumbnail
+
+        :returns: Boolean
+
+        """
+        return self._portal.delete_group_thumbnail(self.groupid)
 
     def remove_users(self, usernames):
         """
