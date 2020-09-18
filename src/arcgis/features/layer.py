@@ -3433,7 +3433,7 @@ class FeatureLayerCollection(_GISResource):
                     return None
                 else:
                     time.sleep(1)
-        return None
+        return res
 
     def query(self,
               layer_defs_filter=None,
