@@ -181,6 +181,7 @@ class AuxPSUnet(nn.Module):
 
     def forward(self, x):  
         out = self.model(x) 
+        out = F.interpolate(out, x.shape[2:], mode='bilinear', align_corners=True)
         if self.training:
             aux_l = self.aux_logits(self.hook.stored)
             ## Remove hook to free up memory
@@ -191,6 +192,19 @@ class AuxPSUnet(nn.Module):
 
 def _add_auxillary_branch_to_psunet(model, chip_size, num_classes):
     return AuxPSUnet(model, chip_size, num_classes)
+
+class PSPUnet(nn.Module):
+    """
+    Keep model output and input size same.
+    """
+    def __init__(self, model):
+        super(PSPUnet, self).__init__()
+        self.model = model
+
+    def forward(self, x):
+        out = self.model(x)
+        out = F.interpolate(out, x.shape[2:], mode='bilinear', align_corners=True)
+        return out
 
 class PSPNet(nn.Module):
     """
@@ -359,8 +373,11 @@ def _pspnet_learner(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), 
 def _pspnet_learner_with_unet(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, unet_aux_loss=False, **kwargs):
     "Build psunet learner from `data` and `arch`."
     model = unet.DynamicUnet(encoder=_pspnet_unet(data.c, backbone, chip_size, pyramid_sizes, pretrained), n_classes=data.c, last_cross=False)
+
     if unet_aux_loss:
         model = _add_auxillary_branch_to_psunet(model, chip_size, data.c)
+    else:
+        model = PSPUnet(model)
     if not _isnotebook() and arcgis_os.name=='posix':
         distributed_prep = DummyDistributed()
         _set_ddp_multigpu(distributed_prep)
