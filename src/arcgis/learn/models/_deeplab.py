@@ -373,7 +373,8 @@ class DeepLab(ArcGISModel):
 
         model_accuracy = self.learn.recorder.metrics[-1][0]
         if checkpoint:
-            model_accuracy = np.max(self.learn.recorder.metrics)             
+            val_losses = self.learn.recorder.val_losses
+            model_accuracy = self.learn.recorder.metrics[val_losses.index(min(val_losses))][0]       
         return float(model_accuracy)
 
     def _deeplab_loss(self, outputs, targets, **kwargs):
