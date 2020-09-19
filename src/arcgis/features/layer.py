@@ -3280,14 +3280,16 @@ class FeatureLayerCollection(_GISResource):
         ================================     ====================================================================
         **Argument**                         **Description**
         --------------------------------     --------------------------------------------------------------------
-        layers                               Required List.  The list of layers and tables to include in the
-                                             replica.
+        layers                               Required List.  The list of layers (by index value) and tables to include in the
+                                             output.
         --------------------------------     --------------------------------------------------------------------
         servergen                            Required List.   The servergen numbers allow a client to specify the last
-                                             layer generation numbers for the changes received from the server.
+                                             layer generation numbers (a Unix epoch time value in milliseconds) for the
+                                             changes received from the server. All changes made after this value will be
+                                             returned.
 
                                                 + ``minServerGen``: It is the min generation of the server data changes.
-                                                  clients with layerServerGens that is less than minServerGen cannot
+                                                  Clients with layerServerGens that is less than minServerGen cannot
                                                   extract changes and would need to make a full server/layers query
                                                   instead of extracting changes.
                                                 + ``serverGen``: It is the current server generation number of the
@@ -3297,8 +3299,8 @@ class FeatureLayerCollection(_GISResource):
                                              Syntax:
                                                  servergen= [{"id": <layerId1>, "serverGen": <genNum1>}, {"id": <layerId2>, "serverGen": <genNum2>}]
 
-                                             The ``id`` value for the layer is the index of the layer from the FeatureLayerCollection's
-                                             :class:`~arcgis.gis.Item` layers property. The ``serverGen`` value is a timestamp in milliseconds.
+                                             The ``id`` value for the layer is the index of the layer from the :attr:`layers`
+                                             attribute on the :class:`~arcgis.features.FeatureLayerCollection`. The ``serverGen`` value is a Unix epoch timestamp value in milliseconds.
 
                                              .. code-block:: python
 
@@ -3330,14 +3332,15 @@ class FeatureLayerCollection(_GISResource):
                                                   in a forward direction from origin to destination.
                                                 + ``queryOption`` - Defines whether or how filters will be applied
                                                   to a layer. The queryOption was added in 10.2. See the
-                                                  Compatibility notes topic for more information.
+                                                  `Compatibility notes <https://developers.arcgis.com/rest/services-reference/sync-compatibility-notes.htm>`_ topic for more information.
+                                                  Valid values are ``None``, ``useFilter``, or ``all``. See also the
+                                                  ``layerQueries`` column in the Request Parameters table in the `Extract Changes (Feature Service) help <https://developers.arcgis.com/rest/services-reference/extract-changes-feature-service-.htm>`_
+                                                  for details and code samples.
 
-                                             Values: None, useFilter, or all
-
-                                             * When the value is none, no feature are returned based on where and filter geometry.
-                                             * If ``includeRelated`` is false, no features are returned.
-                                             * If ``includeRelated`` is true, features in this layer (that are related to the features in other layers in the replica) are returned.
-                                             * When the value is ``useFilter``, features that satisfy filtering based on geometry and ``where`` are returned. The value of ``includeRelated`` is ignored.
+                                                * When the value is none, no feature are returned based on where and filter geometry.
+                                                * If ``includeRelated`` is false, no features are returned.
+                                                * If ``includeRelated`` is true, features in this layer (that are related to the features in other layers in the replica) are returned.
+                                                * When the value is ``useFilter``, features that satisfy filtering based on geometry and ``where`` are returned. The value of ``includeRelated`` is ignored.
 
                                              .. code-block:: python
 
@@ -3351,9 +3354,9 @@ class FeatureLayerCollection(_GISResource):
         geometry                             Optional :class:`~arcgis.geometry.Geometry`/:class:`~arcgis.geometry.Extent`.
                                              The geometry to apply as the spatial filter for the changes. All the changed
                                              features in layers intersecting this geometry will be returned. The structure
-                                             of the geometry is the same as the structure of the JSON geometry objects
+                                             of the geometry is the same as the structure of the `JSON geometry objects <https://developers.arcgis.com/documentation/common-data-types/geometry-objects.htm>`_
                                              returned by the ArcGIS REST API. In addition to the JSON structures,
-                                             for envelopes and points, you can specify the geometry with a simpler
+                                             for envelopes and points you can specify the geometry with a simpler
                                              comma-separated syntax.
         --------------------------------     --------------------------------------------------------------------
         geometry_type                        Optional String. The type of geometry specified by the geometry
