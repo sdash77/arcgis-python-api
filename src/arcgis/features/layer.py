@@ -3297,6 +3297,9 @@ class FeatureLayerCollection(_GISResource):
                                              Syntax:
                                                  servergen= [{"id": <layerId1>, "serverGen": <genNum1>}, {"id": <layerId2>, "serverGen": <genNum2>}]
 
+                                             The ``id`` value for the layer is the index of the layer from the FeatureLayerCollection's
+                                             :class:`~arcgis.gis.Item` layers property. The ``serverGen`` value is a timestamp in milliseconds.
+
                                              .. code-block:: python
 
                                                 # Usage Example:
