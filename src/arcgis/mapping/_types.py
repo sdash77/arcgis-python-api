@@ -672,13 +672,14 @@ class WebMap(HasTraits, collections.OrderedDict):
         If extent is not in wgs84, it projects
         :return:
         """
+        if isinstance(self._extent, PropertyMap):
+            self._extent = dict(self._extent)
         if isinstance(self._extent, list):
             #passed from Item's extent flatten the extent. Item's extent is always in 4326, no need to project
             extent_list = [element for sublist in self._extent for element in sublist]
 
             #convert to string
             return ','.join(str(e) for e in extent_list)
-
         elif isinstance(self._extent, dict):
             #passed from MapView.extent
             if 'spatialReference' in self._extent:
