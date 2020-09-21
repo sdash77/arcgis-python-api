@@ -717,6 +717,6 @@ class Assignment(FeatureModel):
 
     def _validate_priority(self):
         errors = []
-        if not self.geometry:
+        if not self.priority:
             errors.append(ValidationError("Assignment must have priority", self))
         return errors
