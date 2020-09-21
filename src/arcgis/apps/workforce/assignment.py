@@ -575,6 +575,7 @@ class Assignment(FeatureModel):
         errors += self._validate_worker()
         errors += self._validate_dispatcher()
         errors += self._validate_status()
+        errors += self._validate_priority()
         return errors
 
     def _validate_for_add(self, **kwargs):
@@ -712,4 +713,10 @@ class Assignment(FeatureModel):
             if self.declined_comment is None or self.declined_comment.isspace():
                 message = "A DECLINED assignment must have a declined_comment"
                 errors.append(ValidationError(message, self))
+        return errors
+
+    def _validate_priority(self):
+        errors = []
+        if not self.priority:
+            errors.append(ValidationError("Assignment must have priority", self))
         return errors
