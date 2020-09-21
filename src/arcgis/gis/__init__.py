@@ -8758,8 +8758,6 @@ class Item(dict):
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        item_id           Required string. The unique identifier for the item.
-        ----------------  --------------------------------------------------------
         target_owner      Required string. The new desired owner of the item.
         ----------------  --------------------------------------------------------
         target_folder     Optional string. The folder to move the item to.
