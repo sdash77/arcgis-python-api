@@ -518,8 +518,9 @@ class Connection(object):
                 #_log.error(error['details'])
             else:
                 for errordetail in error['details']:
-                    errormessage = errormessage + "\n" + errordetail
-                    #_log.error(errordetail)
+                    if isinstance(errordetail, str):
+                        errormessage = errormessage + "\n" + errordetail
+                        #_log.error(errordetail)
 
         errormessage = errormessage + "\n(Error Code: " + str(errorcode) +")"
         raise Exception(errormessage)
