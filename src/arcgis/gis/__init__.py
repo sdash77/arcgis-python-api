@@ -5687,7 +5687,7 @@ class ResourceManager(object):
         resources = con.get(url, params=params,out_folder=save_path, file_name=file_name, try_json=False)
         return resources
 
-    def add(self, file=None, folder_name=None, file_name=None, text=None, archive=False):
+    def add(self, file=None, folder_name=None, file_name=None, text=None, archive=False, access=None):
         """The add resources operation adds new file resources to an existing item. For example, an image that is
         used as custom logo for Report Template. All the files are added to 'resources' folder of the item. File
         resources use storage space from your quota and are scanned for viruses. The item size is updated to
@@ -5717,6 +5717,12 @@ class ResourceManager(object):
         ----------------  ---------------------------------------------------------------
         archive           Optional boolean. Default is False.  If True, file resources
                           added are extracted and files are uploaded to respective folders.
+        ----------------  ---------------------------------------------------------------
+        access            Optional String. Set file resource to be private regardless of
+                          the item access level, or revert it by setting it to `inherit`
+                          which makes the item resource have the same access as the item.
+
+                          Supported values: `private` or `inherit`.
         ================  ===============================================================
 
         :return:
@@ -5756,7 +5762,8 @@ class ResourceManager(object):
         if text is not None:
             params['text'] = text
         params['archive'] = 'true' if archive else 'false'
-
+        if access and str(access) in ['inherit', 'private']:
+            params['access'] = access
         resp = self._portal.con.post(query_url, params,
                                      files=files, compress=False)
         return resp
