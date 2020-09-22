@@ -18,10 +18,16 @@ ServicesDirectory
     :undoc-members:
     :show-inheritance:
 
-
 Service
 --------------
 .. autoclass:: arcgis.gis.server.Service
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Extension
+----------------
+.. autoclass:: arcgis.gis.server.Extension
     :members:
     :undoc-members:
     :show-inheritance:
