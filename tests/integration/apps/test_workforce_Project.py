@@ -64,8 +64,12 @@ class Test_Workforce_Project(unittest.TestCase):
         cls.portal_url = _conf_reader['workforce_ago']['url']
         cls.portal_username = _conf_reader['workforce_ago']['publisher_user']
         cls.portal_password = _conf_reader['workforce_ago']['publisher_password']
-        cls.project_id = "0feae83fbe684901be229255cd5756e0"
         cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
+        t = datetime.datetime.now()
+        cls.time_stamp = str.format("Time stamp: {0}_{1}_{2}_{3}_{4}_{5}", str(t.year),
+                                    str(t.month), str(t.day), str(t.hour), str(t.minute), str(t.second))
+        cls.project = create_project(cls.time_stamp)
+        cls.project_id = cls.project.id
 
         r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
         if not r1:
@@ -105,7 +109,6 @@ class Test_Workforce_Project(unittest.TestCase):
 
             self.assertIsInstance(project.assignments_layer, FeatureLayer, "Incorrect type")
             self.assertIsInstance(project.assignments_layer_url, str, "Incorrect type")
-            self.assertIn(project.assignments_layer.properties.name, "Assignments", "Incorrect layer name")
 
             self.assertIsInstance(project.dispatcher_web_map_id, str, "Incorrect type")
             self.assertIsInstance(project.dispatcher_webmap, WebMap, "Incorrect type")
@@ -113,11 +116,9 @@ class Test_Workforce_Project(unittest.TestCase):
             self.assertIsInstance(project.dispatchers_item, Item, "Incorrect type")
             self.assertIsInstance(project.dispatchers_layer, FeatureLayer, "Incorrect type")
             self.assertIsInstance(project.dispatchers_layer_url, str, "Incorrect type")
-            self.assertIn(project.dispatchers_layer.properties.name, "Dispatchers", "Incorrect layer name")
 
             self.assertIsInstance(project.group, Group, "Incorrect type")
             self.assertIsInstance(project.group_id, str, "Incorrect type")
-            self.assertEqual(project.group.title, "Python_Regression_Project_Test", "Incorrect group title")
 
             self.assertIsInstance(project.id, str, "Incorrect type")
             self.assertEqual(project.id, self.project_id, "Incorrect project id")
@@ -129,16 +130,8 @@ class Test_Workforce_Project(unittest.TestCase):
             self.assertIsInstance(project.summary, str, "Incorrect type")
             self.assertEqual(project.summary, "Python API Regression Test", "Incorrect summary")
             self.assertIsInstance(project.title, str, "Incorrect type")
-            self.assertEqual(project.title, "Python_Regression_Project_Test", "Incorrect title")
-
-            self.assertIsInstance(project.tracks, TrackManager, "Incorrect type")
-            self.assertIsInstance(project.tracks_item, Item, "Incorrect type")
-            self.assertIsInstance(project.tracks_layer, FeatureLayer, "Incorrect type")
-            self.assertIsInstance(project.tracks_layer_url, str, "Incorrect type")
-            self.assertIn(project.tracks_layer.properties.name, "Location Tracking", "Incorrect layer name")
-
+            self.assertEqual(project.title, self.time_stamp, "Incorrect title")
             self.assertIsInstance(project.version, str, "Incorrect type")
-            self.assertEqual(project.version, "1.2.0", 'Incorrect Project Version')
 
             self.assertIsInstance(project.worker_web_map_id, str, "Incorrect type")
             self.assertIsInstance(project.worker_webmap, WebMap, "Incorrect type")
@@ -146,90 +139,6 @@ class Test_Workforce_Project(unittest.TestCase):
             self.assertIsInstance(project.workers_item, Item, "Incorrect type")
             self.assertIsInstance(project.workers_layer, FeatureLayer, "Incorrect type")
             self.assertIsInstance(project.workers_layer_url, str, "Incorrect type")
-            self.assertIn(project.workers_layer.properties.name, "Workers", "Incorrect layer name")
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
-        except Exception as testException:
-            self.fail("Error during test: " + testException.__str__())
-
-    def test_get_worker(self):
-        try:
-            project = Project(self.gis.content.get(self.project_id))
-            worker = project.workers.get(object_id=1)
-            self.assertEqual(worker.name, "ar_workforce_python_api tester", "Incorrect worker name")
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
-        except Exception as testException:
-            self.fail("Error during test: " + testException.__str__())
-
-    def test_get_dispatcher(self):
-        try:
-            project = Project(self.gis.content.get(self.project_id))
-            dispatcher = project.dispatchers.get(object_id=1)
-            self.assertIsInstance(dispatcher, Dispatcher, "Incorrect Type")
-            self.assertEqual(dispatcher.name, "ar_workforce_python_api tester", "Incorrect dispatcher name")
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
-        except Exception as testException:
-            self.fail("Error during test: " + testException.__str__())
-
-    def test_get_assignment_type(self):
-        try:
-            project = Project(self.gis.content.get(self.project_id))
-            assignment_type = project.assignment_types.get(code=1)
-            self.assertIsInstance(assignment_type, AssignmentType, "Incorrect type")
-            self.assertEqual(assignment_type.name, "Inspection")
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
-        except Exception as testException:
-            self.fail("Error during test: " + testException.__str__())
-
-    def test_get_assignment(self):
-        try:
-            project = Project(self.gis.content.get(self.project_id))
-            assignment = project.assignments.get(object_id=1)
-            self.assertIsInstance(assignment, Assignment, "Incorrect type")
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
-        except Exception as testException:
-            self.fail("Error during test: " + testException.__str__())
-
-    def test_get_tracks(self):
-        try:
-            project = Project(self.gis.content.get(self.project_id))
-            tracks = project.tracks.search()
-            self.assertIsInstance(tracks, list)
-            self.assertEqual(len(tracks), 0, "Incorrect tracks length")
 
         except AssertionError as assertErrorException:
             test_skip = True
