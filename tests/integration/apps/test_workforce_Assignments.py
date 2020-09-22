@@ -306,7 +306,6 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
             self.assertEqual(assignment.declined_comment, None, "Incorrect declined comment")
             self.assertEqual(assignment.declined_date, None, "Incorrect declined date")
             self.assertEqual(assignment.description, "test description", "Incorrect description")
-            self.assertEqual(assignment.dispatcher.id, 1, "Incorrect dispatcher id")
             self.assertEqual(assignment.due_date.date(), datetime.datetime(2018, 4, 22).date(), "Incorrect due date")
             self.assertEqual(assignment.in_progress_date.date(), datetime.datetime(2018, 4, 18).date(), "Incorrect in progress date")
             self.assertEqual(assignment.location, "here", "Incorrect location")

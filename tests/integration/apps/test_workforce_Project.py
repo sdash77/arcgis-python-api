@@ -109,7 +109,6 @@ class Test_Workforce_Project(unittest.TestCase):
 
             self.assertIsInstance(project.assignments_layer, FeatureLayer, "Incorrect type")
             self.assertIsInstance(project.assignments_layer_url, str, "Incorrect type")
-            self.assertIn(project.assignments_layer.properties.name, "Assignments", "Incorrect layer name")
 
             self.assertIsInstance(project.dispatcher_web_map_id, str, "Incorrect type")
             self.assertIsInstance(project.dispatcher_webmap, WebMap, "Incorrect type")
@@ -117,7 +116,6 @@ class Test_Workforce_Project(unittest.TestCase):
             self.assertIsInstance(project.dispatchers_item, Item, "Incorrect type")
             self.assertIsInstance(project.dispatchers_layer, FeatureLayer, "Incorrect type")
             self.assertIsInstance(project.dispatchers_layer_url, str, "Incorrect type")
-            self.assertIn(project.dispatchers_layer.properties.name, "Dispatchers", "Incorrect layer name")
 
             self.assertIsInstance(project.group, Group, "Incorrect type")
             self.assertIsInstance(project.group_id, str, "Incorrect type")
@@ -132,7 +130,7 @@ class Test_Workforce_Project(unittest.TestCase):
             self.assertIsInstance(project.summary, str, "Incorrect type")
             self.assertEqual(project.summary, "Python API Regression Test", "Incorrect summary")
             self.assertIsInstance(project.title, str, "Incorrect type")
-            self.assertEqual(project.title, "Python_Regression_Project_Test", "Incorrect title")
+            self.assertEqual(project.title, self.time_stamp, "Incorrect title")
             self.assertIsInstance(project.version, str, "Incorrect type")
 
             self.assertIsInstance(project.worker_web_map_id, str, "Incorrect type")
@@ -141,7 +139,6 @@ class Test_Workforce_Project(unittest.TestCase):
             self.assertIsInstance(project.workers_item, Item, "Incorrect type")
             self.assertIsInstance(project.workers_layer, FeatureLayer, "Incorrect type")
             self.assertIsInstance(project.workers_layer_url, str, "Incorrect type")
-            self.assertIn(project.workers_layer.properties.name, "Workers", "Incorrect layer name")
 
         except AssertionError as assertErrorException:
             test_skip = True
