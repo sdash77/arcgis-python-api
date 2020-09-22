@@ -58,6 +58,9 @@ class MaskRCNN(ArcGISModel):
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
+    ---------------------   -------------------------------------------
+    kwargs                  Optional arguments, torchvision MaskRCNN arguments can be
+                            given in form of keyword arguments.
     =====================   ===========================================
 
     :returns: ``MaskRCNN`` Object

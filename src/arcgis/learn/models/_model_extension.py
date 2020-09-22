@@ -88,13 +88,14 @@ class ModelExtension(ArcGISModel):
     :return: ``ModelExtension`` Object
     """
 
-    def __init__(self, data, model_conf, backbone=None, pretrained_path=None):
+    def __init__(self, data, model_conf, backbone=None, pretrained_path=None, **kwargs):
 
         super().__init__(data, backbone)
         self.model_conf = model_conf()
         self.model_conf_class  = model_conf
         self._backend = 'pytorch'
-        model = self.model_conf.get_model(data, backbone)
+        self._kwargs = kwargs
+        model = self.model_conf.get_model(data, backbone, **kwargs)
         if self._is_multispectral:
             model = _change_tail(model, data)
         if not _isnotebook() and os.name=='posix':
@@ -153,6 +154,7 @@ class ModelExtension(ArcGISModel):
         _emd_template['ModelConfigurationFile'] = "ModelConfiguration.py"
         _emd_template['ModelFileConfigurationClass'] = type(self.model_conf).__name__
         _emd_template['DatasetType'] = self._data.dataset_type
+        _emd_template['Kwargs'] = self._kwargs
 
         class_data = {}
         for i, class_name in enumerate(self._data.classes[1:]):  # 0th index is background
@@ -213,6 +215,7 @@ class ModelExtension(ArcGISModel):
         dataset_type = emd.get('DatasetType', 'PASCAL_VOC_rectangles')
         chip_size = emd["ImageWidth"]
         resize_to = emd.get('resize_to', None)
+        kwargs = emd.get('Kwargs', {})
         if isinstance(resize_to, list):
             resize_to = (resize_to[0], resize_to[1])
 
@@ -251,7 +254,7 @@ class ModelExtension(ArcGISModel):
             data.dataset_type = dataset_type
 
         data.resize_to = resize_to
-        mextnsn = cls(data, model_configuration, backbone, pretrained_path=str(model_file))
+        mextnsn = cls(data, model_configuration, backbone, pretrained_path=str(model_file), **kwargs)
 
         if not data_passed and dataset_type == 'PASCAL_VOC_rectangles':
             mextnsn.learn.data.single_ds.classes = mextnsn._data.classes
@@ -367,7 +370,8 @@ class ModelExtension(ArcGISModel):
         ds = self.learn.dl(ds_type).dataset
         xb,yb = self.learn.data.one_batch(ds_type, detach=False, denorm=False)
         self.learn.model.eval()
-        preds = self.learn.model(self.model_conf.transform_input(xb))
+        transform_kwargs, kwargs = split_kwargs_by_func(kwargs, self.model_conf.transform_input)
+        preds = self.learn.model(self.model_conf.transform_input(xb, **transform_kwargs))
         x,y = to_cpu(xb),to_cpu(yb)
         norm = getattr(self.learn.data,'norm',False)
         if norm:
@@ -389,8 +393,9 @@ class ModelExtension(ArcGISModel):
     def _predict_learn_modified(self, item, **kwargs):
         "Return predicted class, label and probabilities for `item`."
         batch = self.learn.data.one_item(item)
+        transform_kwargs, kwargs = split_kwargs_by_func(kwargs, self.model_conf.transform_input)
         self.learn.model.eval()
-        pred = self.learn.model(self.model_conf.transform_input(batch[0]))
+        pred = self.learn.model(self.model_conf.transform_input(batch[0], **transform_kwargs))
         ds = self.learn.data.single_ds
         analyze_kwargs,kwargs = split_kwargs_by_func(kwargs, ds.y.analyze_pred)
         pred = ds.y.analyze_pred(pred, **analyze_kwargs)
@@ -428,7 +433,14 @@ class ModelExtension(ArcGISModel):
         """
         self._check_requisites()
 
-        aps = compute_class_AP(self, self._data.valid_dl, self._data.c - 1, show_progress, detect_thresh=detect_thresh, iou_thresh=iou_thresh)
+        aps = compute_class_AP(self,
+                               self._data.valid_dl, 
+                               self._data.c - 1, 
+                               show_progress, 
+                               iou_thresh=iou_thresh, 
+                               detect_thresh=detect_thresh, 
+                               thresh=detect_thresh, 
+                               nms_overlap=iou_thresh)
         if mean:
             import statistics
             return statistics.mean(aps)
