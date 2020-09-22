@@ -3407,7 +3407,7 @@ class FeatureLayerCollection(_GISResource):
 
         .. code-block:: python
 
-           #Usage Example for extracting all changes on a version since the time it was created
+           #Usage Example for extracting all changes to a feaature layer in a particular version since the time the Feature Layer was created.
 
            from arcgis.gis import GIS
            from arcgis.features import FeatureLayerCollection
