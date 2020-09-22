@@ -78,9 +78,11 @@ class Test_Workforce_Workers(unittest.TestCase):
         cls.portal_url = _conf_reader['workforce_ago']['url']
         cls.portal_username = _conf_reader['workforce_ago']['publisher_user']
         cls.portal_password = _conf_reader['workforce_ago']['publisher_password']
-        cls.project_id = "16acf0688699498c888475833e7bc3cb"
         cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
-        cls.project = Project(cls.gis.content.get(cls.project_id))
+        t = datetime.datetime.now()
+        cls.time_stamp = str.format("Time stamp: {0}_{1}_{2}_{3}_{4}_{5}", str(t.year),
+                                    str(t.month), str(t.day), str(t.hour), str(t.minute), str(t.second))
+        cls.project = create_project(cls.time_stamp)
 
         r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
         if not r1:
@@ -105,6 +107,10 @@ class Test_Workforce_Workers(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        try:
+            cls.project.delete()
+        except Exception as e:
+            print("Failed to delete project successfully!")
         print("\n==================================================================")
 
     def test_search_worker(self):
