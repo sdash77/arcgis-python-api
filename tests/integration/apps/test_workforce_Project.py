@@ -130,7 +130,6 @@ class Test_Workforce_Project(unittest.TestCase):
             self.assertIsInstance(project.summary, str, "Incorrect type")
             self.assertEqual(project.summary, "Python API Regression Test", "Incorrect summary")
             self.assertIsInstance(project.title, str, "Incorrect type")
-            self.assertEqual(project.title, self.time_stamp, "Incorrect title")
             self.assertIsInstance(project.version, str, "Incorrect type")
 
             self.assertIsInstance(project.worker_web_map_id, str, "Incorrect type")
