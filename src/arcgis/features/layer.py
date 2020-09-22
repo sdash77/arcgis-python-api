@@ -3403,8 +3403,42 @@ class FeatureLayerCollection(_GISResource):
                                              Values: None, large, medium, or small
         ================================     ====================================================================
 
-        :returns: dictionary
+        :returns: dictionary containing the layerServerGens and an array of edits
 
+        .. code-block:: python
+
+           #Usage Example for extracting all changes to a feaature layer in a particular version since the time the Feature Layer was created.
+
+           from arcgis.gis import GIS
+           from arcgis.features import FeatureLayerCollection
+
+           >>> gis = GIS(<url>, <username>, <password>)
+
+           # Search for the Feature Service item
+           >>> fl_item = gis.content.search('title:"my_feature_layer" type:"Feature Layer"')[0]
+           >>> created_time = fl_item.created
+
+           # Get the Feature Service url
+           >>> fs=gis.content.search('title:"my_feature_layer" type:"Feature"')[0].url
+
+           # Instantiate the a FeatureLayerCollection from the url
+           >>> flc=FeatureLayerCollection(fs, gis)
+
+           # Extract the changes for the version
+           >>> extracted_changes=flc.extract_changes(layers=[0],
+                                      servergen=[{"id": 0, "serverGen": created_time}],
+                                      version="<version_owner>.<version_name>",
+                                      return_ids_only=True,
+                                      return_inserts=True,
+                                      return_updates=True,
+                                      return_deletes=True,
+                                      data_format="json")
+
+           >>> extracted_changes
+
+           {'layerServerGens': [{'id': 0, 'serverGen': 1600713614620}],
+            'edits': [{'id': 0,
+              'objectIds': {'adds': [], 'updates': [194], 'deletes': []}}]}
         """
         url = "%s/extractChanges"  % self._url
         params = {
