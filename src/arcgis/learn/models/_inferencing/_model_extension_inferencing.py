@@ -3,6 +3,7 @@ try:
     import numpy as np
     import torch
     import torch.nn as nn
+    from fastai.core import split_kwargs_by_func
     import math
     from . import util
     from .util import normalize_batch
@@ -291,35 +292,33 @@ class ChildObjectDetector:
         else:
             img_normed = normalize_batch_imagenetstats(batch.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
 
-        bounding_boxes, scores, classes = detect_object(self.model,
-                                    img_normed,
-                                    self.device,
-                                    nms_overlap=self.nms_overlap,
-                                    thres=self.thres,
-                                    batch_size=self.batch_size,
-                                    model_info=self.json_info,
-                                    emd_path=self.json_emd_file)
+        bounding_boxes, scores, classes = detect_object(self.model_extension.model_conf,
+                                                        self.model,
+                                                        img_normed,
+                                                        self.device,
+                                                        batch_size=self.batch_size,
+                                                        model_info=self.json_info,
+                                                        emd_path=self.json_emd_file,
+                                                        nms_overlap=self.nms_overlap,
+                                                        thresh=self.thres)
         
         return convert_bounding_boxes_to_coord_list(bounding_boxes), scores, classes
 
 
-def detect_object(model, images, device, nms_overlap, thres, batch_size, model_info, emd_path):
+def detect_object(model_configuration, model, images, device, batch_size, model_info, emd_path, **kwargs):
 
     tile_height, tile_width = images.shape[2], images.shape[3]
     side = math.sqrt(batch_size)
-
-    modelconf = Path(model_info['ModelConfigurationFile'])
-    if not modelconf.is_absolute():
-        modelconf = emd_path / modelconf
-
-    modelconfclass = model_info['ModelFileConfigurationClass']
-    sys.path.append(os.path.dirname(modelconf))
-    model_configuration = getattr(importlib.import_module('{}'.format(modelconf.name[0:-3])), modelconfclass)()
+    thres = kwargs.get('thresh', 0.5)
+    nms_overlap = kwargs.get('nms_overlap', 0.1)
 
     if "NormalizationStats" in model_info:
-        batch_input = model_configuration.transform_input_multispectral(torch.tensor(images).to(device).float())
+        transform_kwargs, kwargs = split_kwargs_by_func(kwargs, model_configuration.transform_input_multispectral)
+        batch_input = model_configuration.transform_input_multispectral(torch.tensor(images).to(device).float(),
+                                                                         **transform_kwargs)
     else:
-        batch_input = model_configuration.transform_input(torch.tensor(images).to(device).float())
+        transform_kwargs, kwargs = split_kwargs_by_func(kwargs, model_configuration.transform_input)
+        batch_input = model_configuration.transform_input(torch.tensor(images).to(device).float(), **transform_kwargs)
 
     pred_batch = model(batch_input)
 
@@ -468,26 +467,19 @@ class ChildImageClassifier:
         else:
             img_normed = normalize_batch_imagenetstats(batch.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
 
-        semantic_predictions = classify_image(self.model,
-                                    img_normed,
-                                    self.device,
-                                    predict_bg=self.predict_background,
-                                    model_info=self.json_info,
-                                    emd_path=self.json_emd_file,
-                                    thinning=self.thinning)
+        semantic_predictions = classify_image(self.model_extension.model_conf,
+                                            self.model,
+                                            img_normed,
+                                            self.device,
+                                            predict_bg=self.predict_background,
+                                            model_info=self.json_info,
+                                            emd_path=self.json_emd_file,
+                                            thinning=self.thinning)
 
         semantic_predictions = batch_to_tile(semantic_predictions.cpu().numpy(), batch_height, batch_width)
         return semantic_predictions
 
-def classify_image(model, images, device, predict_bg, model_info, emd_path, thinning):
-
-    modelconf = Path(model_info['ModelConfigurationFile'])
-    if not modelconf.is_absolute():
-        modelconf = emd_path / modelconf
-
-    modelconfclass = model_info['ModelFileConfigurationClass']
-    sys.path.append(os.path.dirname(modelconf))
-    model_configuration = getattr(importlib.import_module('{}'.format(modelconf.name[0:-3])), modelconfclass)()
+def classify_image(model_configuration, model, images, device, predict_bg, model_info, emd_path, thinning):
 
     if "NormalizationStats" in model_info:
         batch_input = model_configuration.transform_input_multispectral(torch.tensor(images).to(device).float())
