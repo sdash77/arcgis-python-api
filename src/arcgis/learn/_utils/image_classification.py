@@ -150,6 +150,7 @@ def IC_show_results(self, nrows=5, **kwargs):
             else:
                 axi.axis('off')
             idx+=1
+    return fig
 
 ## Common section ends
 

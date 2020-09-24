@@ -184,11 +184,14 @@ class FeatureClassifier(ArcGISModel):
    
     def _show_results_multispectral(self, rows=5, **kwargs):
         from .._utils.image_classification import IC_show_results
-        IC_show_results(
+        return_fig = kwargs.get('return_fig', False)
+        fig=IC_show_results(
             self,
             nrows=rows,
             **kwargs
         )
+        if return_fig:
+            return fig
 
     def predict(self, img_path):
         """

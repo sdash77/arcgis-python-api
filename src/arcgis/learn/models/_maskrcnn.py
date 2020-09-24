@@ -384,6 +384,8 @@ class MaskRCNN(ArcGISModel):
         statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
 
         cmap_fn = getattr(matplotlib.cm, cmap)
+        return_fig = kwargs.get('return_fig', False)
+
 
         x_batch, y_batch = get_nbatches(data_loader, nrows)
         x_batch = torch.cat(x_batch)
@@ -485,6 +487,9 @@ class MaskRCNN(ArcGISModel):
         plt.subplots_adjust(top=top)
         if self._device == torch.device('cuda'):
             torch.cuda.empty_cache()
+
+        if return_fig:
+            return fig
 
     def average_precision_score(self, detect_thresh=0.5, iou_thresh=0.5, mean=False, show_progress=True):
 

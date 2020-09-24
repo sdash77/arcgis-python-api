@@ -1304,7 +1304,11 @@ def show_results(self, rows, color_mapping=None, **kwargs):
                             value is 512
     ---------------------   -------------------------------------------
     max_display_point       Optional integer. Maximum number of points
-                            to display. Default is 20000.                               
+                            to display. Default is 20000.
+    ---------------------   -------------------------------------------
+    return_fig              Optional bool. Flag set as True when the matplotlib
+                            figure is needed as a return object. Used for TB integration
+    ---------------------   -------------------------------------------
     =====================   ===========================================
     """
     
@@ -1319,6 +1323,7 @@ def show_results(self, rows, color_mapping=None, **kwargs):
     mask_class = kwargs.get('mask_class', [])    
     save_html = kwargs.get('save_html', False)
     save_path = kwargs.get('save_path', '.')
+    return_fig = kwargs.get('return_fig', False)
     max_display_point = get_max_display_points(self._data, kwargs)
     rows = min(rows, self._data.batch_size)
     color_mapping = self._data.color_mapping if color_mapping is None else color_mapping
@@ -1428,6 +1433,8 @@ def show_results(self, rows, color_mapping=None, **kwargs):
         if idx == rows-1:
             break
         idx += 1
+    if return_fig:
+        return fig
 
 def compute_precision_recall(self):
     from ..models._pointcnn_utils import get_indices

@@ -300,7 +300,7 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
 
     # Get Number of items
     ncols = 2
-
+    return_fig = kwargs.get('return_fig', False)
     type_data_loader = kwarg_fill_none(kwargs, 'data_loader', 'validation') # options : traininig, validation, testing
     data_loader = find_data_loader(type_data_loader, self._data)
 
@@ -378,3 +378,5 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
             axi[1].imshow(p_rgb, alpha=alpha)
         axi[0].axis('off')
         axi[1].axis('off')
+    if return_fig:
+        return fig,axi

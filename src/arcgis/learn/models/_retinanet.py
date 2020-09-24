@@ -270,7 +270,8 @@ class RetinaNet(ArcGISModel):
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self)
 
     def _show_results_multispectral(self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs):
-        ax = show_results_multispectral(
+        return_fig = kwargs.get('return_fig', False)
+        fig,ax = show_results_multispectral(
             self, 
             nrows=rows, 
             thresh=thresh, 
@@ -278,6 +279,9 @@ class RetinaNet(ArcGISModel):
             alpha=alpha, 
             **kwargs
         )
+        if return_fig:
+            return fig
+
 
     def predict_video(
         self,

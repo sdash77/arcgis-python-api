@@ -188,6 +188,7 @@ def show_results_multispectral(self, nrows=5, alpha=1, **kwargs): # parameters a
         raise(e)
 
     nodata = kwargs.get('nodata', 0)
+    return_fig = kwargs.get('return_fig', False)
 
     index = kwargs.get('start_index', 0)
 
@@ -357,4 +358,4 @@ def show_results_multispectral(self, nrows=5, alpha=1, **kwargs): # parameters a
                     ax_prediction.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[predicted_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=1, foreground='black'), patheffects.Normal()])
             
         idx+=1
-    return axs
+        return fig,axs
