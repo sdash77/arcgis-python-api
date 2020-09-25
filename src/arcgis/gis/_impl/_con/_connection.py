@@ -29,6 +29,17 @@ from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 
+def _verify_ssl_url(url, params):
+    import urllib.request as urlrq
+    import urllib.parse as urlprs
+    import ssl
+    try:
+        params = urlprs.urlencode(params)
+        urlrq.urlopen(url + f"?{params}", context=ssl.SSLContext(ssl.PROTOCOL_TLSv1))
+        return False
+    except:
+        return True
+
 __version__ = "1.8.3"
 
 _DEFAULT_TOKEN = uuid.uuid4()
@@ -392,8 +403,17 @@ class Connection(object):
                                      verify=self._verify_cert)
 
         except requests.exceptions.SSLError as err:
-            raise requests.exceptions.SSLError(
-                "Please set verify_cert=False due to encountered SSL error: %s" % err)
+            if _verify_ssl_url(url, params) == False and self._verify_cert:
+                import urllib3
+                urllib3.disable_warnings()
+                self._verify_cert = False
+                resp = self._session.get(url=url,
+                                         params=params,
+                                         cert=cert,
+                                         verify=self._verify_cert)
+            else:
+                raise requests.exceptions.SSLError(
+                                "Please set verify_cert=False due to encountered SSL error: %s" % err)
         except requests.exceptions.InvalidURL as errIU:
             raise requests.exceptions.SSLError(
                 "Invalid URL provided: %s" % errIU)
@@ -809,7 +829,7 @@ class Connection(object):
         if self._cert_file:
             cert = (self._cert_file, self._key_file)
         else:
-            cert = None   
+            cert = None
         if json_encode:
             for k,v in params.items():
                 if isinstance(v, (dict, list, tuple, bool)):
@@ -827,7 +847,7 @@ class Connection(object):
             resp = self._session.put(url=url,
                                      data=params,
                                      cert=cert,
-                                     files=files)        
+                                     files=files)
         #
         return self._handle_response(resp=resp,
                                          out_path=out_path,
