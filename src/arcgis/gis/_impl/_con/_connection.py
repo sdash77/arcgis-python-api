@@ -14,14 +14,8 @@ except ImportError:
 import sys
 if sys.platform == 'win32':
     import certifi_win32
-#try:
-    #import urllib3.contrib.pyopenssl
-    #urllib3.contrib.pyopenssl.inject_into_urllib3()
-#except ImportError:
-    #pass
 
 import os
-import sys
 import copy
 import json
 import uuid
