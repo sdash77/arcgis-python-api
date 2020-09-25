@@ -11,6 +11,15 @@ try:
 except ImportError:
     HASARCPY = False
 
+import sys
+if sys.platform == 'win32':
+    import certifi_win32
+#try:
+    #import urllib3.contrib.pyopenssl
+    #urllib3.contrib.pyopenssl.inject_into_urllib3()
+#except ImportError:
+    #pass
+
 import os
 import sys
 import copy
@@ -28,17 +37,6 @@ from ._helpers import _filename_from_headers, _filename_from_url
 from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
-
-def _verify_ssl_url(url, params):
-    import urllib.request as urlrq
-    import urllib.parse as urlprs
-    import ssl
-    try:
-        params = urlprs.urlencode(params)
-        urlrq.urlopen(url + f"?{params}", context=ssl.SSLContext(ssl.PROTOCOL_TLSv1))
-        return False
-    except:
-        return True
 
 __version__ = "1.8.3"
 
@@ -248,7 +246,6 @@ class Connection(object):
         self._session.stream = True
         self._session.headers.update(self._header)
         self._session.proxies = proxies
-
         if self._referer is None and\
            (self._portal_connection and \
            str(self._portal_connection._auth).lower() == "home"):
@@ -403,17 +400,8 @@ class Connection(object):
                                      verify=self._verify_cert)
 
         except requests.exceptions.SSLError as err:
-            if _verify_ssl_url(url, params) == False and self._verify_cert:
-                import urllib3
-                urllib3.disable_warnings()
-                self._verify_cert = False
-                resp = self._session.get(url=url,
-                                         params=params,
-                                         cert=cert,
-                                         verify=self._verify_cert)
-            else:
-                raise requests.exceptions.SSLError(
-                                "Please set verify_cert=False due to encountered SSL error: %s" % err)
+            raise requests.exceptions.SSLError(
+                "Please set verify_cert=False due to encountered SSL error: %s" % err)
         except requests.exceptions.InvalidURL as errIU:
             raise requests.exceptions.SSLError(
                 "Invalid URL provided: %s" % errIU)
