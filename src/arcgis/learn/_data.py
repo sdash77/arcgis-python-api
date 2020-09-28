@@ -94,7 +94,7 @@ imagery_type_lib = {
 }
 
 def get_installation_command():
-    installation_steps = ("Install then using - 'conda install -c esri -c fastai -c pytorch arcgis=1.8.1 "
+    installation_steps = ("Install them using - 'conda install -c esri -c fastai -c pytorch arcgis=1.8.1 "
                           "scikit-image=0.15.0 pillow=6.2.2 libtiff=4.0.10 fastai=1.0.60 pytorch=1.4.0 "
                           "torchvision=0.5.0 scikit-learn=0.23.1 --no-pin'"
                           "\n'conda install gdal=2.3.3'"
@@ -206,7 +206,7 @@ def _get_bbox_classes(label_file, class_mapping , height_width=[], **kwargs):
 
             classes.append(data_class_mapping)
             bboxes.append([ymin, xmin, ymax, xmax])
-            height_width.append(((xmax - xmin)*1.25, (ymax - ymin)*1.25))   
+            height_width.append(((xmax - xmin)*1.25, (ymax - ymin)*1.25))
 
     if len(bboxes) == 0:
         return [[[0, 0, 0, 0]], [list(class_mapping.values())[0]]]
@@ -214,7 +214,7 @@ def _get_bbox_classes(label_file, class_mapping , height_width=[], **kwargs):
 
 
 def _get_bbox_lbls(imagefile, class_mapping, height_width, **kwargs):
-    dataset_type = kwargs.get('dataset_type', None)    
+    dataset_type = kwargs.get('dataset_type', None)
     if dataset_type == 'KITTI_rectangles':
         label_suffix = '.txt'
     else:
@@ -226,6 +226,18 @@ def _get_bbox_lbls(imagefile, class_mapping, height_width, **kwargs):
 def _get_lbls(imagefile, class_mapping):
     xmlfile = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), '.xml')
     return _get_bbox_classes(xmlfile, class_mapping)[1][0]
+
+
+def _get_multi_lbls(imagefile):
+    """
+    Function that returns class labels for an image for multilabel classification.
+    input: imagefile (Path)
+    returns: labels (List[str])
+    """
+    xmlfile = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), '.xml')
+    labels = ET.parse(xmlfile).getroot().find('object').find('name').text
+    labels = labels.split(',')
+    return labels
 
 
 def _check_esri_files(path):
@@ -1061,9 +1073,11 @@ def prepare_data(path,
 
         kwargs_transforms['tfm_y'] = True
         databunch_kwargs['collate_fn'] = collate_fn
-    elif dataset_type in ['Labeled_Tiles', 'Imagenet']:
+    elif dataset_type in ['Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet']:
         if dataset_type == 'Labeled_Tiles':
             get_y_func = partial(_get_lbls, class_mapping=class_mapping)
+        elif dataset_type == 'MultiLabeled_Tiles':
+            get_y_func = _get_multi_lbls
         else:
             # Imagenet
             def get_y_func(x):
