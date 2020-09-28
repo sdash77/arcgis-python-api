@@ -52,6 +52,7 @@ requirements:
   - pywin32-security [win]
   - lerc
   - winkerberos      [win]
+  - python-certifi-win32 [win]
 source:
   path: ../../src
 test:
