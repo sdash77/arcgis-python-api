@@ -8702,6 +8702,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     output_name=None,
                     context=None,
                     future=False,
+                    raster_type_name=None,
+                    raster_type_params = None,
                     **kwargs):
         """
         input_raster: inputRaster (str). Required parameter.
@@ -8731,12 +8733,29 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         gis = self._gis
 
+        use_input_rasters_by_ref = None
+        if context is not None:
+            if "byref" in context:
+                use_input_rasters_by_ref = context["byref"]
+                del context["byref"]
+
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
             context = context_param['context']
 
-        input_raster = self._layer_input(input_layer=input_raster)
+        if not isinstance(input_raster, str) and not isinstance(input_raster, list):
+            input_raster = self._layer_input(input_layer=input_raster)
+
+        else:
+            input_raster, raster_type = self._build_param_dictionary(input_rasters=input_raster,
+                                                                      raster_type_name=raster_type_name,
+                                                                      raster_type_params=raster_type_params,
+                                                                      image_collection_properties=None,
+                                                                      use_input_rasters_by_ref=use_input_rasters_by_ref)
+            if isinstance (input_raster,dict) and isinstance(raster_type, dict):
+                input_raster.update(raster_type)
+
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
         gpjob = self._tbx.copy_raster(input_raster=input_raster,

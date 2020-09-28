@@ -970,6 +970,8 @@ def copy_raster(input_raster,
                 process_as_multidimensional=None,
                 build_transpose=None,
                 context=None,
+                raster_type_name=None,
+                raster_type_params = None,
                 *,
                 gis=None,
                 future=False,
@@ -1057,6 +1059,8 @@ def copy_raster(input_raster,
                                                  output_name=output_name,
                                                  context=context,
                                                  future=future,
+                                                 raster_type_name=raster_type_name,
+                                                 raster_type_params = raster_type_params,
                                                  **kwargs)
 
 
