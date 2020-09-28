@@ -5746,7 +5746,11 @@ class _RasterAnalysisTools(BaseAnalytics):
         input_raster_specified = False
         input_rasters_dict={}
         raster_type_dict={}
+        upload_rasters_list = []
         # input rasters
+        if isinstance(input_rasters, str):
+            if os.path.exists(input_rasters):
+                input_rasters = [input_rasters]
         if isinstance(input_rasters, list):
             # extract the IDs of all the input items
             # and then convert the list to JSON
@@ -5759,8 +5763,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                 elif isinstance(item, str):
                     if 'http:' in item or 'https:' in item:
                         url_list.append(item)
+                    elif (os.path.exists(item)):
+                        upload_rasters_list.append(item)
                     else:
                         uri_list.append(item)
+            if upload_rasters_list != []:
+                from arcgis.raster._util import _upload_imagery
+                url_list = _upload_imagery(upload_rasters_list)
 
             if len(item_id_list) > 0:
                 input_rasters_dict = {"itemIds" : item_id_list }

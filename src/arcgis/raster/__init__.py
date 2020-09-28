@@ -13,5 +13,4 @@ from ._layer import ImageryLayer, ImageryLayerCacheManager, RasterManager, Image
 from .analytics import *
 from .functions import *
 from .orthomapping import *
-from ._upload_imagery import upload_imagery
 #from .charts import *
