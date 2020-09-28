@@ -6875,9 +6875,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                                 folder_dict = gis.content.create_folder(folder, owner)
                                 folder = folder_dict["title"]
                                 folderId = folder_dict["id"]
-                            image_collection =  json.dumps({"serviceProperties": {"name" : image_collection}, "itemProperties": {"folderId" : folderId}})
+                            output_service = self._create_output_image_service(image_collection, task, folder=folder)
+                            image_collection = json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+                            #image_collection =  json.dumps({"serviceProperties": {"name" : image_collection}, "itemProperties": {"folderId" : folderId}})
                         else:
-                            image_collection = json.dumps({"serviceProperties": {"name" : image_collection}})
+                            output_service = self._create_output_image_service(image_collection, task)
+                            image_collection = json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+                            #image_collection = json.dumps({"serviceProperties": {"name" : image_collection}})
 
         if out_sr is not None:
             if isinstance(out_sr, int):

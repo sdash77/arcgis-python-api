@@ -25,7 +25,7 @@ def _generate_direct_access_url(gis=None):
     
 def upload_imagery(files, gis=None):
     sas_url = _generate_direct_access_url(gis)
-
+    container = ContainerClient.from_container_url(sas_url)
     if not isinstance(files,list):
         files = [files]
 
@@ -33,19 +33,31 @@ def upload_imagery(files, gis=None):
     for file in files:
         current_time = int(time.time())
         prefix =  "_images/"+str(current_time)+"/"
-        blobname = prefix+os.path.basename(file)
 
-        container = ContainerClient.from_container_url(sas_url)
-        blob=container.get_blob_client(blobname)
+        if(os.path.isdir(file)):
+            folder = os.path.basename(file)
+            basename_len=len(os.path.dirname(file))
+            for root,d_names,f_names in os.walk(file):
+                for f in f_names:
+                    blobname = prefix + os.path.join(root, f)[basename_len+1:]
+                    filepath = os.path.join(root, f)
+                    blob=container.get_blob_client(blobname)
+                    url = blob.url.split("?", 1)[0]
+                    url_list.append(url)
+                    with open(filepath, "rb") as data:
+                        blob.upload_blob(data, blob_type="BlockBlob")
 
-        with open(file, "rb") as data:
-            blob.upload_blob(data, blob_type="BlockBlob")
-
-        url = blob.url.rsplit("?", 1)[0]
-        url_list.append(url)
+        else:
+            blobname = prefix+os.path.basename(file)
+            blob=container.get_blob_client(blobname)
+            with open(filepath, "rb") as data:
+                blob.upload_blob(data, blob_type="BlockBlob")
+            url = blob.url.split("?", 1)[0]
+            url_list.append(url)
 
     if len(url_list) == 1:
         return url_list[0]
     return url_list
+
 
 
