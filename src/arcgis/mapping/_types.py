@@ -393,7 +393,10 @@ class WebMap(HasTraits, collections.OrderedDict):
             # set the item's extent
             if not self._extent:
                 self._extent = layer.extent
-            if hasattr(layer, 'layers'):
+            if layer.type.lower() == "map service":
+                layer_type = "ArcGISMapServiceLayer"
+                item_id = layer.id
+            elif hasattr(layer, 'layers'):
                 if layer.type == 'Feature Collection':
                     options['serviceItemId'] = layer.itemid
 
