@@ -21,6 +21,7 @@ from datetime import datetime
 import logging
 from typing import Tuple
 from urllib.error import  HTTPError
+from urllib.parse import urlparse
 import concurrent.futures
 
 import arcgis.env
@@ -4126,7 +4127,8 @@ class ContentManager(object):
         -----------------------    -------------------------------------------------------------
         text                       optional string. The text in the file to be analyzed.
         -----------------------    -------------------------------------------------------------
-        file_type                  optional string. The type of the input file: shapefile, csv or excel
+        file_type                  optional string. The type of the input file: shapefile, csv, excel,
+                                   or geoPackage (Added ArcGIS API for Python 1.8.3+).
         -----------------------    -------------------------------------------------------------
         source_locale              optional string. The locale used for the geocoding service source.
         -----------------------    -------------------------------------------------------------
@@ -4184,6 +4186,9 @@ class ContentManager(object):
                 elif str(d).lower().endswith('.xls') or \
                      str(d).lower().endswith('.xlsx'):
                     params['fileType'] = 'excel'
+                elif str(d).lower().endswith('gpkg'):
+                    params['fileType'] = 'geoPackage'
+
         elif str(file_type).lower() in ['excel', 'csv']:
             params['fileType'] = file_type
         if source_country:
@@ -4770,7 +4775,135 @@ class ContentManager(object):
             else:
                 owner_name = owner
             return self._portal.delete_folder(owner_name, folder)
+    #----------------------------------------------------------------------
+    def _generate(self, gurl, params, files, gis):
+        """
+        private async logic for `generate`.
+        """
+        res = gis._con.post(gurl, params, files=files)
+        if res['status']:
+            item = gis.content.get(res['outputItemId'])
+            status = item.status(res['jobId'], "generateFeatures")
+            while status['status'] != 'completed':
+                if status['status'] == 'failed':
+                    try:
+                        item.delete()
+                        return status
+                    except:
+                        return status
+                status = item.status(res['jobId'], "generateFeatures")
+            item.update(item_properties={'title' : f"Generate Features: {res['jobId']}"})
+            return item
+        return res
+    #----------------------------------------------------------------------
+    def generate(self,
+                 item=None,
+                 file_path=None,
+                 url=None,
+                 text=None,
+                 publish_parameters=None,
+                 future=True):
+        """
+        The Generate call helps a client generate features from a CSV file, shapefile,
+        GPX, or GeoJson file types.
 
+        ===================  ==========================================================================
+        **Argument**         **Description**
+        -------------------  --------------------------------------------------------------------------
+        item                 Optional Item. An `Item` on the current portal.
+        -------------------  --------------------------------------------------------------------------
+        file_path            Optional String. The file resource location on local disk.
+        -------------------  --------------------------------------------------------------------------
+        url                  Optional String. A web resource of a 'shapefile', 'csv', 'gpx' or 'geojson' file.
+        -------------------  --------------------------------------------------------------------------
+        text                 Optional String. The source text.
+        -------------------  --------------------------------------------------------------------------
+        publish_parameters   Optional Dict.A JSON object describing the layer and service to be created
+                             as part of the `publish` operation. The appropriate value for publish
+                             parameters depends on the file type being published. For a complete
+                             description, see the  `Item`'s Publish method.
+        -------------------  --------------------------------------------------------------------------
+        future               Optional Boolean.  This allows the operation to run asynchronously allowing
+                             the user to not pause the thread and continue to perform multiple operations.
+                             The default is `True`.  When `True` the result of the method will be a
+                             concurrent `Future` object.  The `result` of the method can be obtained
+                             using the `result()` on the `Future` object.  When `False`, and Item is
+                             returned
+        ===================  ==========================================================================
+
+        :return: `Future` object when `future==True`,
+                 `Item` when `future==False`,
+                 `dict` of error messages on Exceptions
+
+        """
+        if item is None and \
+           file_path is None and \
+           text is None and \
+           url is None:
+            raise Exception("You must provide an item, file_path, text or url.")
+        gurl = f"{self._gis._portal.resturl}content/features/generate"
+        params = {
+            "f" : "json",
+            "itemid": "",
+            "sourceUrl" : "",
+            "text" : "",
+            "filetype" : "",
+            "publishParameters" : publish_parameters or "",
+            'async' : True
+        }
+        files = None
+        file_types = {
+            '.gpx' : 'gpx',
+            '.csv' : 'csv',
+            '.zip' : 'shapefile',
+            '.json' : 'geojson'
+        }
+        if item and item.type.lower() in ['shapefile', 'csv', 'gpx', 'geojson']:
+            params['itemid'] = item.itemid
+            if item.type.lower() == 'shapefile':
+                params['filetype'] = 'shapefile'
+            elif item.type.lower() == 'gpx':
+                params['filetype'] = 'gpx'
+            elif item.type.lower() == 'csv':
+                params['filetype'] = 'csv'
+            elif item.type.lower() == 'geojson':
+                params['filetype'] = 'geojson'
+            else:
+                raise Exception(f"Invalid Item Type {item.type}")
+
+        elif url:
+            params['sourceUrl'] = url
+            part = os.path.splitext(url)[-1]
+            if part in file_types:
+                params['filetype'] = file_types[part]
+            else:
+                raise Exception(f"Invalid file extension: {part}")
+        elif file_path and os.path.isfile(file_path):
+            part = os.path.splitext(url)[-1]
+            if part in file_types:
+                params['filetype'] = file_types[part]
+            else:
+                raise Exception(f"Invalid file extension: {part}")
+            files.append(('file', file_path, os.path.basename(file_path)))
+        elif text:
+            params['text'] = text
+            params['fileType'] = 'csv'
+
+        if future == True:
+            executor =  concurrent.futures.ThreadPoolExecutor(1)
+            futureobj = executor.submit(self._generate,
+                                        **{"gurl" : gurl, "params":params,
+                                           "files" : files, "gis" : self._gis})
+            executor.shutdown(False)
+            return futureobj
+        else:
+            executor =  concurrent.futures.ThreadPoolExecutor(1)
+            futureobj = executor.submit(self._generate,
+                                        **{"gurl" : gurl, "params":params,
+                                           "files" : files, "gis" : self._gis})
+            executor.shutdown(False)
+            return futureobj.result()
+    #----------------------------------------------------------------------
     def import_data(self, df, address_fields=None, folder=None, item_id=None, **kwargs):
         """
         Imports a Pandas data frame (that has an address column), or an arcgis
