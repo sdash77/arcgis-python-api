@@ -13,7 +13,10 @@ except ImportError:
 
 import sys
 if sys.platform == 'win32':
-    import certifi_win32
+    try:
+        import certifi_win32
+    except ImportError:
+        continue
 
 import os
 import copy
