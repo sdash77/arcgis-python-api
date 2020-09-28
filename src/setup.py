@@ -154,7 +154,8 @@ data_files = [('share/jupyter/nbextensions/arcgis', [
              ]
 data_files += [] if ("win" in sys.platform or "darwin" in sys.platform) else \
               [(_get_rel_site_packages_dir() + "arcgis/gis/_impl", [
-                 "arcgis/gis/_impl/_decrypt_nbauth.cpython-36m-x86_64-linux-gnu.so"])
+                 "arcgis/gis/_impl/_decrypt_nbauth.cpython-36m-x86_64-linux-gnu.so",
+                 "arcgis/gis/_impl/_decrypt_nbauth.cpython-37m-x86_64-linux-gnu.so"])
               ]
 
 kwargs = {
