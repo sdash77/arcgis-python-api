@@ -16,7 +16,7 @@ if sys.platform == 'win32':
     try:
         import certifi_win32
     except ImportError:
-        continue
+        pass
 
 import os
 import copy
