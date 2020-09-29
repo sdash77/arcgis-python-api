@@ -539,7 +539,7 @@ class RouteLayer(NetworkLayer):
         if preserve_objectid:
             params['preserveObjectID'] = preserve_objectid
         if future:
-            f = self._run_async(self._con.post, **{'path' : url, 'postdata' : params, 'token' : self._token})
+            f = self._run_async(self._con.post, **{'path' : url, 'postdata' : params, 'token' : self._gis._con.token})
             return NAJob(future=f, task="RouteLayer Solve")
         return self._con.post(path=url,
                               postdata=params)#,
@@ -819,7 +819,7 @@ class ServiceAreaLayer(NetworkLayer):
         if preserve_objectid:
             params['preserveObjectID'] = preserve_objectid
         if future:
-            f = self._run_async(self._con.post, **{'path' : url, 'postdata' : params, 'token' : self._token})
+            f = self._run_async(self._con.post, **{'path' : url, 'postdata' : params, 'token' : self._gis._con.token})
             return NAJob(future=f, task='Solve Service Area')
         return self._con.post(path=url,
                               postdata=params)
@@ -1105,8 +1105,7 @@ class ClosestFacilityLayer(NetworkLayer):
             params['preserveObjectID'] = preserve_objectid
         if future:
             f = self._run_async(self._con.post, **{'path' : url,
-                                                   'postdata' : params,
-                                                   'token' : self._token})
+                                                   'postdata' : params})
             return NAJob(future=f, task="Solve Closest Facility")
         return self._con.post(path=url,
                               postdata=params)
@@ -1311,8 +1310,7 @@ class ODCostMatrixLayer(NetworkLayer):
             params['restrictUTurns'] = allowed_restrict_uturns[params.get("restrictUTurns", "esriNFSBAtDeadEndsAndIntersections")]
         if future:
             f = self._run_async(self._con.post, **{'path' : url,
-                                                   'postdata' : params,
-                                                   'token' : self._token})
+                                                   'postdata' : params})
             return NAJob(future=f, task="Solve OD Cost Matrix")
         return self._con.post(path=url,
                               postdata=params)
