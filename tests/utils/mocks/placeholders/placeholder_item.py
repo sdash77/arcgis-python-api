@@ -1,4 +1,9 @@
-from arcgis.gis import Item
+try:
+    from arcgis.gis import Item
+except Exception:
+    class Item:
+        pass
+
 class PlaceholderItem(Item):
     type = "unspecified"
     id = "958e44bf8fb943d68b783a9f5f6b17ee"
