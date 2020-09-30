@@ -1134,8 +1134,11 @@ class Datastore(dict):
         url = self._admin_url + '/data/items' + self.datapath + "/manifest/regenerate"
         params = {'f' : 'json'}
         res = self._portal.con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if isinstance(res, dict):
+            if 'success' in res:
+                return res['success']
+            if 'status' in res:
+                return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
     def validate(self):
@@ -1158,7 +1161,12 @@ class Datastore(dict):
         path = self._admin_url + "/data/validateDataItem"
 
         res = self._portal.con.post(path, params, verify_cert=False)
-        return res['status'] == 'success'
+        if isinstance(res, dict):
+            if 'success' in res:
+                return res['success']
+            if 'status' in res:
+                return res['status'] == 'success'
+        return res
 
     @property
     def datasets(self):
