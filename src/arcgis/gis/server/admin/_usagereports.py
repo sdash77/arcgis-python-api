@@ -273,7 +273,7 @@ class ReportManager(BaseServer):
         #  Refresh the metrics object
         self._init()
         for report in self.list():
-            if report.reportname.lower() == reportname.lower():
+            if str(report.reportname).lower() == reportname.lower():
                 return report
         return res
     #----------------------------------------------------------------------
