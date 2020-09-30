@@ -58,6 +58,8 @@ hidden_inputs = ["ToolName","PrimaryInputParameterName", "OutputRasterParameterN
 
 def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_name='Raster'):
 
+    _set_multidimensional_rules(function_chain)
+
     if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
         return _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2, variable_name)
     if isinstance(layer, Item):
@@ -105,6 +107,7 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     return newlyr
 
 def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
+    _set_multidimensional_rules(function_chain, function_chain_ra)
     if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
         return _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra)
     if isinstance(layer, Item):
@@ -211,6 +214,24 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
         newlyr._engine_obj.token = layer.token
 
     return newlyr
+
+def _set_multidimensional_rules(function_chain = None, function_chain_ra = None):
+    match_variables = _arcgis.env.match_variables
+    union_dimension = _arcgis.env.union_dimension
+
+    if (match_variables is not None) and isinstance(match_variables, bool):
+        if (function_chain is not None) and 'MatchVariable' not in function_chain.keys():
+            function_chain['rasterFunctionArguments']['MatchVariable'] =  match_variables
+        if (function_chain_ra is not None) and 'MatchVariable' not in function_chain_ra.keys():
+            function_chain_ra['rasterFunctionArguments']['MatchVariable'] = match_variables
+    if (union_dimension is not None) and isinstance(union_dimension, bool):
+        if (function_chain is not None) and 'UnionDimension' not in function_chain.keys():
+            function_chain['rasterFunctionArguments']['UnionDimension'] = union_dimension
+        if (function_chain_ra is not None) and 'UnionDimension' not in function_chain.keys():
+            function_chain_ra['rasterFunctionArguments']['UnionDimension'] =  union_dimension
+
+
+
 
 def arg_statistics(rasters, stat_type=None, min_value=None, max_value=None, undefined_class=None, astype=None):
     """
@@ -6204,7 +6225,7 @@ def heat_index(temperature_raster, relative_humidity_raster, temperature_units="
 
     template_dict["rasterFunctionArguments"]["ClassName"] = "HeatIndex"
     template_dict["rasterFunctionArguments"]["PythonModule"] = "[functions]System\\HeatIndex.py"
-    template_dict["rasterFunctionArguments"]["MatchVariable"] = False
+    #template_dict["rasterFunctionArguments"]["MatchVariable"] = False
 
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra['rasterFunctionArguments']['temperature'] = raster_ra1
@@ -6272,7 +6293,7 @@ def wind_chill(temperature_raster, wind_speed_raster, temperature_units="Fahrenh
 
     template_dict["rasterFunctionArguments"]["ClassName"] = "Windchill"
     template_dict["rasterFunctionArguments"]["PythonModule"] = "[functions]System\\Windchill.py"
-    template_dict["rasterFunctionArguments"]["MatchVariable"] = False
+    #template_dict["rasterFunctionArguments"]["MatchVariable"] = False
 
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra['rasterFunctionArguments']['temperature'] = raster_ra1
