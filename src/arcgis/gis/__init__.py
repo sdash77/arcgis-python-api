@@ -2512,7 +2512,8 @@ class UserManager(object):
         if self._gis.version >= [7,2]:
             if self._gis._is_agol:
                 if user_type is None and role is None:
-                    if 'userLicenseType' in self.user_settings:
+                    if self.user_settings and \
+                       'userLicenseType' in self.user_settings:
                         user_type = self.user_settings['userLicenseType']
                         role = self.user_settings['role']
         else:
@@ -2575,9 +2576,12 @@ class UserManager(object):
             if credits == -1 and self._gis.version >= [7,2] and \
                 self._gis.properties['defaultUserCreditAssignment'] != -1:
                 credits = self._gis.properties['defaultUserCreditAssignment']
-            if not groups and self.user_settings['groups']:
-                groups = [self._gis.groups.get(g)
-                          for g in self.user_settings['groups']]
+            if not groups and \
+               self.user_settings and \
+               'groups' in self.user_settings and \
+               self.user_settings['groups']:
+                groups = [g for g in self.user_settings['groups']]
+
             params = {
                 'f': 'json',
                 'invitationList': {'invitations': [
@@ -2589,7 +2593,7 @@ class UserManager(object):
                     'email': email,
                     'role': role,
                     "userLicenseType": user_type,
-                    "groups":",".join(group.id for group in groups),
+                    "groups":",".join(groups),
                     "userCreditAssignment": credits,
 
                     }
@@ -2615,7 +2619,9 @@ class UserManager(object):
                     return None
                 else:
                     new_user = self.get(username)
-                    if not self.user_settings['userType'] == 'arcgisonly':
+                    if self.user_settings and \
+                    'userType' in self.user_settings and \
+                       not self.user_settings['userType'] == 'arcgisonly':
                         update_url = "community/users/" + username + "/update"
                         user_params = {"f":"json",
                                        "token":"token",
