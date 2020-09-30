@@ -882,7 +882,7 @@ def classify_objects(input_raster,
 def compute_accuracy_for_object_detection(detected_features, 
                                          ground_truth_features, 
                                          detected_class_value_field=None, 
-                                         ground_truth_class_valu_field=None, 
+                                         ground_truth_class_value_field=None, 
                                          min_IoU=None, 
                                          mask_features=None,
                                          out_accuracy_table_name=None, 
@@ -949,12 +949,12 @@ def compute_accuracy_for_object_detection(detected_features,
                                              to be created.
                                              Example: 
 
-                                                {“name":"accuracyReport"} 
+                                                "accuracyReport"
 
                                              In order to write accuracy report to datastore, specify the datastore path as value to uri key.
                                              
                                              Example - 
-                                                {"uri":"/fileShares/yourFileShareFolderName/accuracyReport"}
+                                                "/fileShares/yourFileShareFolderName/accuracyReport"
     ------------------------------------     --------------------------------------------------------------------
     context                                  Optional dictionary. Context contains additional settings that affect task execution.
                                              Dictionary can contain value for following keys:
@@ -984,7 +984,7 @@ def compute_accuracy_for_object_detection(detected_features,
     return gis._tools.rasteranalysis.compute_accuracyfor_object_detection(detected_features=detected_features, 
                                                                           ground_truth_features=ground_truth_features, 
                                                                           detected_class_value_field=detected_class_value_field, 
-                                                                          ground_truth_class_valu_field=ground_truth_class_valu_field, 
+                                                                          ground_truth_class_value_field=ground_truth_class_value_field, 
                                                                           min_IoU=min_IoU, 
                                                                           mask_features=mask_features,
                                                                           out_accuracy_table_name=out_accuracy_table_name, 

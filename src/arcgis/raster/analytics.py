@@ -5250,6 +5250,13 @@ def optimal_path_as_line(input_destination_data,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return: Output Feature Layer Item
@@ -5397,6 +5404,13 @@ def optimal_region_connections(input_region_data,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return: Returns the following as a named tuple - output_optimum_network_features, output_neighbor_network_features
@@ -5620,6 +5634,13 @@ def analyze_changes_using_ccdc(input_multidimensional_raster=None,
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean. 
                                              On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
                                              To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
@@ -5770,6 +5791,13 @@ def detect_change_using_change_analysis_raster(input_change_analysis_raster=None
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean. 
                                              On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
                                              To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
@@ -5874,12 +5902,6 @@ def manage_multidimensional_raster(target_multidimensional_raster,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
-    ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
-
-                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -6017,6 +6039,13 @@ def sample(input_rasters,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return: Feature Layer or Table object
@@ -6100,6 +6129,22 @@ def merge_multidimensional_rasters(input_multidimensional_rasters,
                                              variable for this particular function.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return:

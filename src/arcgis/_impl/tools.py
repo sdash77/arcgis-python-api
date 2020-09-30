@@ -10764,7 +10764,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                                              out_accuracy_table_name=None, 
                                              out_accuracy_report_name=None, 
                                              detected_class_value_field=None, 
-                                             ground_truth_class_valu_field=None, 
+                                             ground_truth_class_value_field=None, 
                                              min_IoU=None, 
                                              mask_features=None, 
                                              context=None,
@@ -10781,7 +10781,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         detected_class_value_field: detectedClassValueField (str). Optional parameter.  
 
-        ground_truth_class_valu_field: groundTruthClassValuField (str). Optional parameter.  
+        ground_truth_class_value_field: groundTruthClassValuField (str). Optional parameter.  
 
         min_io_u: minIoU (str). Optional parameter.  
 
@@ -10833,12 +10833,18 @@ class _RasterAnalysisTools(BaseAnalytics):
         else:
             out_accuracy_table_name = json.dumps({"serviceProperties": {"name" : out_accuracy_table_name}})
 
+        if out_accuracy_report_name is not None:
+            if isinstance(out_accuracy_report_name, str):
+                if '/fileShares/' in out_accuracy_report_name or '/rasterStores/' in out_accuracy_report_name:
+                    out_accuracy_report_name = {"uri":out_accuracy_report_name}
+                else:
+                    out_accuracy_report_name = {"name":out_accuracy_report_name}
         gpjob = self._tbx.compute_accuracyfor_object_detection(detected_features=detected_features, 
                                                                ground_truth_features=ground_truth_features, 
                                                                out_accuracy_table_name=out_accuracy_table_name, 
-                                                               out_accuracy_report_name=None, 
+                                                               out_accuracy_report_name=out_accuracy_report_name, 
                                                                detected_class_value_field=detected_class_value_field, 
-                                                               ground_truth_class_valu_field=ground_truth_class_valu_field, 
+                                                               ground_truth_class_value_field=ground_truth_class_value_field, 
                                                                min_IoU=min_IoU, 
                                                                mask_features=mask_features,
                                                                context=context,
