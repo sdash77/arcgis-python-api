@@ -218,7 +218,7 @@ class MaskRCNN(ArcGISModel):
         return ['RCNN_Masks'] 
     
     @classmethod
-    def from_model(cls, emd_path, data=None):
+    def from_model(cls, emd_path, data=None, **kwargs):
         """
         Creates a ``MaskRCNN`` Instance segmentation object from an Esri Model Definition (EMD) file.
 
@@ -257,7 +257,7 @@ class MaskRCNN(ArcGISModel):
             color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}                
 
         if data is None:
-            data = _EmptyData(path=emd_path.parent.parent, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
+            data = _EmptyData(path=emd_path.parent.parent, loss_func=None, c=len(class_mapping) + 1, chip_size=kwargs.get('chip_size', emd['ImageHeight']))
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
             data.emd_path = emd_path
