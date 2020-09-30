@@ -4702,6 +4702,8 @@ def generate_trend(raster, dimension_name, regression_type=0, cycle_length = 1, 
                             - 0 (LINEAR) : Fits the pixel values for a variable along a linear trend line. This is the default.
                             - 1 (HARMONIC) : Fits the pixel values for a variable along a harmonic trend line.
                             - 2 (POLYNOMIAL) : Fits the pixel values for a variable along a second-order polynomial trend line.
+                            - 3 (MANN-KENDALL) : Variable pixel values will be evaluated using the Mann-Kendall trend test. 
+                            - 4 (SEASONAL-KENDALL) : Variable pixel values will be evaluated using the Seasonal-Kendall trend test. 
 
     :param cycle_length: Optional Integer. The length of periodic variation to model. This parameter is required when Trend Line Type is
                          set to Harmonic. For example, leaf greenness often has one strong cycle of variation in a single year, so the 
@@ -5513,9 +5515,10 @@ def compute_change(raster1,
                    method=0,
                    from_class_values=[],
                    to_class_values=[],
-                   changed_pixels_only=False,
-                   use_color_method=0,
-                   ):
+                   filter_method=1,
+                   define_transition_colors=0,
+                   extent_type="IntersectionOf", 
+                   cellsize_type="MaxOf"):
 
     """
     Produce raster outputs representing of various changes.
@@ -5525,34 +5528,41 @@ def compute_change(raster1,
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     raster1                                  Required ImageryLayer object. The first raster for compute change function.
+                                             To evaluate change from time 1 (earlier) to time 2 (later), enter the time 1 raster here.
     ------------------------------------     --------------------------------------------------------------------
     raster2                                  Required ImageryLayer object. The second raster for compute change function.
+                                             To evaluate change from time 1 (earlier) to time 2 (later), enter the time 2 raster.
     ------------------------------------     --------------------------------------------------------------------
-    method                                   Optional String. Specifies the method to be used.
-
-                                                - "DIFFERENCE" (0)
-
-                                                - "RELATIVE_DIFFERENCE" (1)
-
-                                                - "CATEGORICAL" (2)
+    method                                   Optional string. Specifies the method to be used.
+                                             - DIFFERENCE : The mathematical difference, or subtraction, between the pixel values in the input rasters will be calculated. This is the default.
+                                             - RELATIVE_DIFFERENCE : The difference in pixel values, accounting for the magnitudes of the values being compared, will be calculated.
+                                             - CATEGORICAL_DIFFERENCE : The difference between two categorical or thematic rasters will be calculated, where the output contains class transitions that occurred between the two rasters.
 
                                              Example:
                                                   "DIFFERENCE"
     ------------------------------------     --------------------------------------------------------------------
-    from_class_values                        Optional list. The class values that define the from classes. 
-                                             It can be one or multiple value.
+    from_class_values                        Optional list. List of integer values corresponding to the ClassValue 
+                                             field in raster1. 
+                                             Required if method is CATEGORICAL_DIFFERENCE.
     ------------------------------------     --------------------------------------------------------------------
-    to_class_values                          Optional list. The class values that define the to classes. 
-                                             It can be one or multiple value.
+    to_class_values                          Optional list. List of integer values corresponding to the ClassValue 
+                                             field in raster2. 
+                                             Required if method is CATEGORICAL_DIFFERENCE.
     ------------------------------------     --------------------------------------------------------------------
-    changed_pixels_only                      Optional bool, When this parameter is set to True, the output 
-                                             raster displays only the selected changed categories. Other 
-                                             categories are displayed as transparent color
+    filter_method                            Optional string. Default value is "CHANGED_PIXELS_ONLY" (1).
+                                             Possible options are:
+                                             - ALL
+                                             - CHANGED_PIXELS_ONLY
+                                             - UNCHANGED_PIXELS_ONLY
     ------------------------------------     --------------------------------------------------------------------
-    use_color_method                         Defines the method used to assign color for the output classes
-                                               - AVERAGE - use an average of the colors of the from class and to class for the output classes
-                                               - FROM_COLOR - use colors of the from classes for the output
-                                               - TO_COLOR - use the colors of the to classes for the output
+    define_transition_colors                 Optional string. Defines the method used to assign color for the output classes
+                                             - AVERAGE : The color of the pixel will be the average of the color of its original class and the color of its final class.
+                                             - FROM_COLOR : The color of the pixel will be the color of its original class.
+                                             - TO_COLOR :The color of the pixel will be the color of its final class.
+    ------------------------------------     --------------------------------------------------------------------
+    extent_type                              Optional string.  One of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
+    ------------------------------------     --------------------------------------------------------------------
+    cellsize_type                            Optional string. One of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
     ====================================     ====================================================================
 
     :return: Imagery layer
@@ -5571,10 +5581,13 @@ def compute_change(raster1,
     method_types = {
         'DIFFERENCE': 0,
         'RELATIVE_DIFFERENCE': 1,
-        'CATEGORICAL' : 2
+        'CATEGORICAL_DIFFERENCE' : 2
     }
 
     if isinstance(method, str):
+        method_allowed_values = ['DIFFERENCE', 'RELATIVE_DIFFERENCE', 'CATEGORICAL_DIFFERENCE']
+        if [element.upper() for element in method_allowed_values].count(method.upper()) <= 0 :
+            raise RuntimeError('method can only be one of the following: '+str(method_allowed_values))
         in_method = method_types[method.upper()]
     else:
         in_method = method
@@ -5594,21 +5607,69 @@ def compute_change(raster1,
     if to_class_values is not None:
         template_dict["rasterFunctionArguments"]['ToClassValues'] = to_class_values
 
-    if changed_pixels_only is not None:
-        template_dict["rasterFunctionArguments"]['ChangedPixelsOnly'] = changed_pixels_only
 
-    if use_color_method is not None:
-        use_color_method_types = {
+    filter_method_types = {
+            'ALL': 0,
+            'CHANGED_PIXELS_ONLY': 1,
+            'UNCHANGED_PIXELS_ONLY' : 2
+        }
+
+    if isinstance(filter_method, str):
+        filter_method_allowed_values = ['ALL', 'CHANGED_PIXELS_ONLY', 'UNCHANGED_PIXELS_ONLY']
+        if [element.upper() for element in filter_method_allowed_values].count(filter_method.upper()) <= 0 :
+            raise RuntimeError('method can only be one of the following: '+str(filter_method_allowed_values))
+        in_filter_method = filter_method_types[filter_method.upper()]
+    else:
+        in_filter_method = filter_method
+
+    template_dict["rasterFunctionArguments"]['KeepMethod'] = in_filter_method
+
+
+    if define_transition_colors is not None:
+        define_transition_colors_types = {
         'AVERAGE': 0,
         'FROM_COLOR': 1,
         'TO_COLOR' : 2
     }
 
-        if isinstance(use_color_method, str):
-            use_color_method = use_color_method_types[use_color_method.upper()]
+        if isinstance(define_transition_colors, str):
+            define_transition_colors_allowed_values = ['AVERAGE', 'FROM_COLOR', 'TO_COLOR']
+            if [element.upper() for element in define_transition_colors_allowed_values].count(define_transition_colors.upper()) <= 0 :
+                raise RuntimeError('method can only be one of the following: '+str(define_transition_colors_allowed_values))
+            define_transition_colors = define_transition_colors_types[define_transition_colors.upper()]
         else:
-            use_color_method = use_color_method
-        template_dict["rasterFunctionArguments"]['UseColorMethod'] = use_color_method
+            define_transition_colors = define_transition_colors
+        template_dict["rasterFunctionArguments"]['UseColorMethod'] = define_transition_colors
+
+    extent_types = {
+        "FIRSTOF": 0,
+        "INTERSECTIONOF": 1,
+        "UNIONOF": 2,
+        "LASTOF": 3
+    }
+
+    cellsize_types = {
+        "FIRSTOF": 0,
+        "MINOF": 1,
+        "MAXOF": 2,
+        "MEANOF": 3,
+        "LASTOF": 4
+    }
+
+    if extent_type.upper() not in extent_types.keys():
+        raise ValueError(
+            "Invalid extent_type value. Note that operation type should be one fo 'FirstOf', 'IntersectionOf', 'UnionOf', 'LastOf'")
+    in_extent_type = extent_types[extent_type.upper()]
+
+    if cellsize_type.upper() not in cellsize_types.keys():
+        raise ValueError(
+            "Invalid extent_type value. Note that operation type should be one fo 'FirstOf', 'MinOf', 'MaxOf', 'MeanOf', 'LastOf'")
+    in_cellsize_type = cellsize_types[cellsize_type.upper()]
+
+    if in_extent_type is not None:
+        template_dict["rasterFunctionArguments"]['ExtentType'] = in_extent_type
+    if in_cellsize_type is not None:
+        template_dict["rasterFunctionArguments"]['CellsizeType'] = in_cellsize_type
 
     return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
 
