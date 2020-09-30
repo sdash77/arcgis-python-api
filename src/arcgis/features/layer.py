@@ -2388,7 +2388,14 @@ class FeatureLayer(Layer):
         if 'deletes' not in params and 'updates' not in params and 'adds' not in params:
             print("Parameters not valid for edit_features")
             return None
-        return self._con.post(path=edit_url, postdata=params)#, token=self._token)
+        try:
+            return self._con.post(path=edit_url, postdata=params)#, token=self._token)
+        except Exception as e:
+            if str(e).lower().find("Invalid Token".lower()) > -1:
+                params.pop('token', None)
+                return self._con.post(path=edit_url, postdata=params, add_token=False)
+            else:
+                raise
 
     # ----------------------------------------------------------------------
     def calculate(self, where, calc_expression,
@@ -3270,30 +3277,38 @@ class FeatureLayerCollection(_GISResource):
         and tables in the service have the ChangeTracking capability, the
         `extract_changes` operation can be used to get changes.
 
-
         ================================     ====================================================================
         **Argument**                         **Description**
         --------------------------------     --------------------------------------------------------------------
-        layers                               Required List.  The list of layers and tables to include in the
-                                             replica.
+        layers                               Required List.  The list of layers (by index value) and tables to include in the
+                                             output.
         --------------------------------     --------------------------------------------------------------------
-        servergen                            Required List.   The servergens allows a client to specify the last
-                                             layer generation numbers for the changes received from the server.
+        servergen                            Required List.   The servergen numbers allow a client to specify the last
+                                             layer generation numbers (a Unix epoch time value in milliseconds) for the
+                                             changes received from the server. All changes made after this value will be
+                                             returned.
 
-                                                + minServerGen: It is the min generation of the server data changes.
-                                                  clients with layerServerGens that is less than minServerGen cannot
+                                                + ``minServerGen``: It is the min generation of the server data changes.
+                                                  Clients with layerServerGens that is less than minServerGen cannot
                                                   extract changes and would need to make a full server/layers query
                                                   instead of extracting changes.
-                                                + serverGen: It is the current server generation number of the
+                                                + ``serverGen``: It is the current server generation number of the
                                                   changes. Every changed feature has a version or a generation number
                                                   that is changed every time the feature is updated.
 
-                                             Syntax: servergen = [{"id": <layerId1>, "serverGen": <genNum1>},
-                                                                 {"id": <layerId2>, "serverGen": <genNum2>}]
+                                             Syntax:
+                                                 servergen= [{"id": <layerId1>, "serverGen": <genNum1>}, {"id": <layerId2>, "serverGen": <genNum2>}]
 
-                                             Example: servergen= [{"id": 0, "serverGen": 10500},
-                                                                 {"id": 1, "serverGen": 1100},
-                                                                 {"id": 2, "serverGen": 1200}]
+                                             The ``id`` value for the layer is the index of the layer from the :attr:`layers`
+                                             attribute on the :class:`~arcgis.features.FeatureLayerCollection`. The ``serverGen`` value is a Unix epoch timestamp value in milliseconds.
+
+                                             .. code-block:: python
+
+                                                # Usage Example:
+
+                                                servergen= [{"id": 0, "serverGen": 10500},
+                                                            {"id": 1, "serverGen": 1100},
+                                                            {"id": 2, "serverGen": 1200}]
         --------------------------------     --------------------------------------------------------------------
         queries                              Optional Dictionary. In addition to the layers and geometry
                                              parameters, the `queries` parameter can be used to further define
@@ -3305,51 +3320,50 @@ class FeatureLayerCollection(_GISResource):
 
                                              The properties include the following:
 
-                                                + where - Defines an attribute query for a layer or table. The
+                                                + ``where`` - Defines an attribute query for a layer or table. The
                                                   default is no where clause.
-                                                + useGeometry - Determines whether or not to apply the geometry
+                                                + ``useGeometry`` - Determines whether or not to apply the geometry
                                                   for the layer. The default is true. If set to false, features
                                                   from the layer that intersect the geometry are not added.
-                                                + includeRelated - Determines whether or not to add related
+                                                + ``includeRelated`` - Determines whether or not to add related
                                                   rows. The default is true. The value true is honored only
                                                   for queryOption=none. This is only applicable if your data
                                                   has relationship classes. Relationships are only processed
                                                   in a forward direction from origin to destination.
-                                                + queryOption - Defines whether or how filters will be applied
+                                                + ``queryOption`` - Defines whether or how filters will be applied
                                                   to a layer. The queryOption was added in 10.2. See the
-                                                  Compatibility notes topic for more information.
+                                                  `Compatibility notes <https://developers.arcgis.com/rest/services-reference/sync-compatibility-notes.htm>`_ topic for more information.
+                                                  Valid values are ``None``, ``useFilter``, or ``all``. See also the
+                                                  ``layerQueries`` column in the Request Parameters table in the `Extract Changes (Feature Service) help <https://developers.arcgis.com/rest/services-reference/extract-changes-feature-service-.htm>`_
+                                                  for details and code samples.
 
-                                             Values: None, useFilter, or all
+                                                * When the value is none, no feature are returned based on where and filter geometry.
+                                                * If ``includeRelated`` is false, no features are returned.
+                                                * If ``includeRelated`` is true, features in this layer (that are related to the features in other layers in the replica) are returned.
+                                                * When the value is ``useFilter``, features that satisfy filtering based on geometry and ``where`` are returned. The value of ``includeRelated`` is ignored.
 
-                                             When is value is none, no feature are returned based on where and
-                                             filter geometry. if includeRelated is false, no features are
-                                             returned. If includeRelated is true, features in this layer (that
-                                             are related to the features in other layers in the replica) are
-                                             returned.
+                                             .. code-block:: python
 
-                                             When the value is useFilter, features that satisfy filtering based
-                                             on geometry and where are returned. The value of includeRelated is
-                                             ignored.
+                                                # Usage Example:
 
-                                             Syntax: queries={Layer_or_tableID1:{"where":"attribute query",
-                                             "useGeometry": true | false, "includeRelated": true | false},
-                                             Layer_or_tableID2: {.}}
+                                                queries={Layer_or_tableID1:{"where":"attribute query",
+                                                                            "useGeometry": true | false,
+                                                                            "includeRelated": true | false},
+                                                         Layer_or_tableID2: {.}}
         --------------------------------     --------------------------------------------------------------------
-        geometry                             Option Geometry/Extent. The geometry to apply as the spatial filter
-                                             for the changes. All the changed features in layers intersecting
-                                             this geometry will be returned. The structure of the geometry is the
-                                             same as the structure of the JSON geometry objects returned by the
-                                             ArcGIS REST API. In addition to the JSON structures, for envelopes
-                                             and points, you can specify the geometry with a simpler
+        geometry                             Optional :class:`~arcgis.geometry.Geometry`/:class:`~arcgis.geometry.Extent`.
+                                             The geometry to apply as the spatial filter for the changes. All the changed
+                                             features in layers intersecting this geometry will be returned. The structure
+                                             of the geometry is the same as the structure of the `JSON geometry objects <https://developers.arcgis.com/documentation/common-data-types/geometry-objects.htm>`_
+                                             returned by the ArcGIS REST API. In addition to the JSON structures,
+                                             for envelopes and points you can specify the geometry with a simpler
                                              comma-separated syntax.
         --------------------------------     --------------------------------------------------------------------
         geometry_type                        Optional String. The type of geometry specified by the geometry
                                              parameter. The geometry type can be an envelope, point, line or
                                              polygon. The default geometry type is an envelope.
 
-                                             Values: esriGeometryPoint, esriGeometryMultipoint,
-                                                     esriGeometryPolyline, esriGeometryPolygon,
-                                                     esriGeometryEnvelope
+                                             Values: ``esriGeometryPoint``, ``esriGeometryMultipoint``, ``esriGeometryPolyline``, ``esriGeometryPolygon``, ``esriGeometryEnvelope``
         --------------------------------     --------------------------------------------------------------------
         in_sr                                Optional Integer. The spatial reference of the input geometry.
         --------------------------------     --------------------------------------------------------------------
@@ -3371,7 +3385,7 @@ class FeatureLayerCollection(_GISResource):
         return_ids_only                      Optional Boolean. If true, the response includes an array of object
                                              IDs only. The default is false.
         --------------------------------     --------------------------------------------------------------------
-        return_attachments                  Optional Boolean.  If true, attachments changes are returned in the
+        return_attachments                   Optional Boolean.  If true, attachments changes are returned in the
                                              response. Otherwise, attachments are not included. The default is
                                              false. This parameter is only applicable if the feature service has
                                              attachments.
@@ -3389,7 +3403,42 @@ class FeatureLayerCollection(_GISResource):
                                              Values: None, large, medium, or small
         ================================     ====================================================================
 
+        :returns: dictionary containing the layerServerGens and an array of edits
 
+        .. code-block:: python
+
+           #Usage Example for extracting all changes to a feaature layer in a particular version since the time the Feature Layer was created.
+
+           from arcgis.gis import GIS
+           from arcgis.features import FeatureLayerCollection
+
+           >>> gis = GIS(<url>, <username>, <password>)
+
+           # Search for the Feature Service item
+           >>> fl_item = gis.content.search('title:"my_feature_layer" type:"Feature Layer"')[0]
+           >>> created_time = fl_item.created
+
+           # Get the Feature Service url
+           >>> fs=gis.content.search('title:"my_feature_layer" type:"Feature"')[0].url
+
+           # Instantiate the a FeatureLayerCollection from the url
+           >>> flc=FeatureLayerCollection(fs, gis)
+
+           # Extract the changes for the version
+           >>> extracted_changes=flc.extract_changes(layers=[0],
+                                      servergen=[{"id": 0, "serverGen": created_time}],
+                                      version="<version_owner>.<version_name>",
+                                      return_ids_only=True,
+                                      return_inserts=True,
+                                      return_updates=True,
+                                      return_deletes=True,
+                                      data_format="json")
+
+           >>> extracted_changes
+
+           {'layerServerGens': [{'id': 0, 'serverGen': 1600713614620}],
+            'edits': [{'id': 0,
+              'objectIds': {'adds': [], 'updates': [194], 'deletes': []}}]}
         """
         url = "%s/extractChanges"  % self._url
         params = {
@@ -3426,7 +3475,7 @@ class FeatureLayerCollection(_GISResource):
                     return None
                 else:
                     time.sleep(1)
-        return None
+        return res
 
     def query(self,
               layer_defs_filter=None,

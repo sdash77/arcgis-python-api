@@ -8,7 +8,7 @@ from __future__ import print_function
 import json
 import six
 from .._common import BaseServer
-
+from urllib.parse import quote
 ########################################################################
 class ReportManager(BaseServer):
     """
@@ -67,7 +67,7 @@ class ReportManager(BaseServer):
         self._reports = []
         if isinstance(self.properties['metrics'], list):
             for r in self.properties['metrics']:
-                url = self._url + "/%s" % six.moves.urllib.parse.quote(r['reportname'])
+                url = f"{self._url}/{quote(str(r['reportname']))}"
                 self._reports.append(Report(url=url,
                                             gis=self._con))
                 del url
@@ -273,7 +273,7 @@ class ReportManager(BaseServer):
         #  Refresh the metrics object
         self._init()
         for report in self.list():
-            if report.reportname.lower() == reportname.lower():
+            if str(report.reportname).lower() == reportname.lower():
                 return report
         return res
     #----------------------------------------------------------------------

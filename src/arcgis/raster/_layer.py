@@ -5313,6 +5313,59 @@ class Raster():
         """
         return self._engine_obj.set_variable_attributes(variable_name, variable_attributes)
 
+    def summarize(self,
+                  geometry,
+                  pixel_size=None
+                  ):
+        """
+        The result of this operation contains statistics of a Raster for a given geometry.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        geometry              Required Polygon or Extent. A geometry that defines the geometry
+                              within which the histogram is computed. The geometry can be an
+                              envelope or a polygon
+        -----------------     --------------------------------------------------------------------
+        pixel_size            optional string or dict. The pixel level being used (or the
+                              resolution being looked at). If pixel size is not specified, then
+                              pixel_size will default to the base resolution of the dataset. The
+                              raster at the specified pixel size in the mosaic dataset will be
+                              used for histogram calculation.
+
+                              Syntax:
+                                - dictionary structure: pixel_size={point}
+                                - Point simple syntax: pixel_size='<x>,<y>'
+                              Examples:
+                                - pixel_size={"x": 0.18, "y": 0.18}
+                                - pixel_size='0.18,0.18'
+        =================     ====================================================================
+
+        :returns: dictionary. (Dictionary at each index represents the statistics of the corresponding band.)
+                  [{
+                      "min": 0,
+                      "max": 9,
+                      "mean": 3.271703916996627,
+                      "standardDeviation": 1.961013669880657,
+                      "median": 4,
+                      "mode": 4,
+                      "skipX": 1,
+                      "skipY": 1,
+                      "count": 2004546
+                    }]
+
+
+        .. code-block:: python
+
+            # Usage Example 1: Summarize a raster at an area.
+
+            stats = raster.summarize(geometry=geom_obj)
+            mean_of_first_band = stats[0]["mean"]
+
+        """
+        return self._engine_obj.summarize(geometry=geometry,
+                                          pixel_size=pixel_size
+                                          )
 
     @property
     def _lyr_json(self):
@@ -6410,6 +6463,15 @@ class _ImageServerRaster(ImageryLayer, Raster):
         else:
             return colormap
 
+    def summarize(self, geometry=None,
+                  pixel_size=None
+                  ):
+        stats_histograms =  super().compute_stats_and_histograms(geometry=geometry,
+                        rendering_rule=self._fn,
+                        pixel_size=pixel_size
+                        )
+        return stats_histograms["statistics"]
+
     def set_colormap(self, color_map, variable_name=None):
         raise RuntimeError('Operation is not supported on image services')
 
@@ -7214,6 +7276,11 @@ class _ArcpyRaster(Raster,ImageryLayer):
             variable_name=""
         return self._raster.setHistograms(histogram_obj, variable_name)
 
+    def summarize(self,
+                  geometry,
+                  pixel_size=None
+                  ):
+        raise RuntimeError('Operation is not supported on local rasters')
 
     def __sub__(self, other):
         from arcgis.raster.functions import minus

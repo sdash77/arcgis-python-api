@@ -43,6 +43,34 @@ MapImageLayer
     :undoc-members:
     :show-inheritance:
 
+MapServiceLayer
+-----------------
+.. autoclass:: arcgis.mapping.MapServiceLayer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+MapFeatureLayer
+-----------------
+.. autoclass:: arcgis.mapping.MapFeatureLayer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+MapRasterLayer
+-----------------
+.. autoclass:: arcgis.mapping.MapRasterLayer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+MapTable
+-----------------
+.. autoclass:: arcgis.mapping.MapTable
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 MapImageLayerManager
 -------------------
 .. autoclass:: arcgis.mapping.MapImageLayerManager

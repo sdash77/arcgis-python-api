@@ -1,5 +1,8 @@
-"Functions for calling the Raster Analysis Tools. The RasterAnalysisTools service is used by ArcGIS Server to provide distributed raster analysis."
+"""
+Functions for calling the Raster Analysis Tools. The RasterAnalysisTools service is used by ArcGIS Server to provide distributed raster analysis.
 
+The Hosted Imagery & Raster Analysis capabilities are available in ArcGIS Online at 8.2 as an invite only Beta through an Early Adopter Program (EAP) 
+"""
 from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, \
                                           _analysis_job_status, _layer_input
 import json as _json
@@ -823,6 +826,12 @@ def generate_raster(raster_function,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -946,6 +955,12 @@ def convert_feature_to_raster(input_feature,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -1035,6 +1050,12 @@ def copy_raster(input_raster,
 
                                          Example:
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    --------------------------------     --------------------------------------------------------------------
+    tiles_only                           Keyword only parameter. Optional boolean. 
+                                         On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                         To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                         Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ================================     ====================================================================
 
     :return:
@@ -1069,6 +1090,7 @@ def summarize_raster_within(input_zone_layer,
                             context=None,
                             process_as_multidimensional=False,
                             percentile_value=90,
+                            percentile_interpolation_type="AUTO_DETECT",
                             *,
                             gis=None,
                             future=False,
@@ -1213,14 +1235,31 @@ def summarize_raster_within(input_zone_layer,
                                              
                                              False - Statistics will be calculated for all dimensions 
                                              (such as time or depth) of a multidimensional image service.
+                                             Parameter added in 10.8.1.
     ------------------------------------     --------------------------------------------------------------------
-    percentile_value                         Optional int, The percentile to calculate. The default is 90, for the 90th percentile. 
+    percentile_value                         Optional Double, The percentile to calculate. The default is 90, for the 90th percentile. 
                                              The values can range from 0 to 100. The 0th percentile is essentially 
                                              equivalent to the Minimum statistic, and the 100th percentile is equivalent to Maximum. 
                                              A value of 50 will produce essentially the same result as the Median statistic.
                              
                                              This parameter is honoured only available if the statistics_type parameter is 
                                              set to Percentile.
+                                             Parameter added in 10.8.1.
+    ------------------------------------     --------------------------------------------------------------------
+    percentile_interpolation_type            Optional str. Determines the type of percentile interpolation type when the 
+                                             number of values from the input value raster to be calculated are even.
+                                                - AUTO_DETECT - If the input value raster has integer pixel type, the 
+                                                                NEAREST method is used. If the input value raster 
+                                                                has floating point pixel type, then the LINEAR 
+                                                                method is used. This is the default.
+                                                - NEAREST - Nearest value to the desired percentile. In this case, 
+                                                            the output pixel type is same as that of the input value 
+                                                            raster.
+                                                - LINEAR - Weighted average of two surrounding values from the 
+                                                           desired percentile. In this case, the output pixel 
+                                                           type is floating point.
+
+                                             Parameter added in 10.9.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
@@ -1234,6 +1273,12 @@ def summarize_raster_within(input_zone_layer,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -1250,6 +1295,7 @@ def summarize_raster_within(input_zone_layer,
                                                              context=context,
                                                              process_as_multidimensional=process_as_multidimensional,
                                                              percentile_value=percentile_value,
+                                                             percentile_interpolation_type=percentile_interpolation_type,
                                                              future=future,
                                                              **kwargs)
 
@@ -1516,6 +1562,12 @@ def calculate_density(input_point_or_line_features,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -1743,6 +1795,12 @@ def create_viewshed(input_elevation_surface,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -1944,6 +2002,12 @@ def interpolate_points(input_point_features,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -2077,6 +2141,12 @@ def classify(input_raster,
 
                                          Example:
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    --------------------------------     --------------------------------------------------------------------
+    tiles_only                           Keyword only parameter. Optional boolean. 
+                                         On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                         To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                         Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ================================     ====================================================================
 
     :return:
@@ -2216,6 +2286,12 @@ def segment(input_raster, spectral_detail=15.5, spatial_detail=15, minimum_segme
 
                                          Example:
                                              {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    --------------------------------     --------------------------------------------------------------------
+    tiles_only                           Keyword only parameter. Optional boolean. 
+                                         On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                         To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                         Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ================================     ====================================================================
 
     :return:
@@ -2312,7 +2388,7 @@ def train_classifier(input_raster,
     ================================     ====================================================================
 
     :return:
-       output_raster : Imagery Layer item
+       Returns .ecs file in dictionary format
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -3493,6 +3569,12 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     .. code-block:: python
@@ -3843,6 +3925,12 @@ def aggregate_multidimensional_raster(input_multidimensional_raster,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -4073,6 +4161,12 @@ def generate_trend_raster(input_multidimensional_raster,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -4249,6 +4343,12 @@ def predict_using_trend_raster(input_multidimensional_raster,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -4455,6 +4555,12 @@ def find_argument_statistics(input_raster,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -4604,6 +4710,12 @@ def linear_spectral_unmixing(input_raster,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -4822,6 +4934,12 @@ def subset_multidimensional_raster(input_multidimensional_raster,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -5501,6 +5619,12 @@ def analyze_changes_using_ccdc(input_multidimensional_raster=None,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return: Imagery layer item
@@ -5645,6 +5769,12 @@ def detect_change_using_change_analysis_raster(input_change_analysis_raster=None
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return: Imagery layer item
@@ -5744,6 +5874,12 @@ def manage_multidimensional_raster(target_multidimensional_raster,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:

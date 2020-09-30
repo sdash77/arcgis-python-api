@@ -1,13 +1,16 @@
 from pathlib import Path
 import json
+import warnings
 from ._model_extension import ModelExtension
 from ._arcgis_model import _EmptyData
 
 try:
-    from fastai.vision import flatten_model
+    from fastai.vision import flatten_model, ImageList 
+    from fastai.vision import imagenet_stats, normalize
     import torch
     from fastai.torch_core import split_model_idx
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from ._arcgis_model import _resnet_family
 
     HAS_FASTAI = True
@@ -29,7 +32,7 @@ class MyFasterRCNN():
     except:
         pass
     
-    def get_model(self, data, backbone=None):
+    def get_model(self, data, backbone=None, **kwargs):
         """
         In this fuction you have to define your model with following two arguments!
         
@@ -38,6 +41,8 @@ class MyFasterRCNN():
         These two arguments comes from dataset which you have prepared from prepare_data method above.
         
         """
+        self.fasterrcnn_kwargs, kwargs = self.fastai.core.split_kwargs_by_func(kwargs,
+                                                                         self.torchvision.models.detection.FasterRCNN.__init__)
         if backbone is None:
             backbone = self.torchvision.models.resnet50
 
@@ -49,15 +54,25 @@ class MyFasterRCNN():
         else:
             backbone = backbone
         if backbone.__name__ is 'resnet50':
-            model = self.torchvision.models.detection.fasterrcnn_resnet50_fpn(
-                pretrained=True, min_size = 1.5*data.chip_size, max_size = 2*data.chip_size)
+            model = self.torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True,
+                                                                              min_size = 1.5*data.chip_size,
+                                                                              max_size = 2*data.chip_size,
+                                                                              **self.fasterrcnn_kwargs)
         elif backbone.__name__ in ['resnet18','resnet34']:
             backbone_small = self.fastai.vision.learner.create_body(backbone)
             backbone_small.out_channels = 512
-            model = self.torchvision.models.detection.FasterRCNN(backbone_small, 91, min_size = 1.5*data.chip_size, max_size = 2*data.chip_size)
+            model = self.torchvision.models.detection.FasterRCNN(backbone_small,
+                                                                 91,
+                                                                 min_size = 1.5*data.chip_size,
+                                                                 max_size = 2*data.chip_size,
+                                                                 **self.fasterrcnn_kwargs)
         else:
             backbone_fpn = self.torchvision.models.detection.backbone_utils.resnet_fpn_backbone(backbone.__name__, True)
-            model = self.torchvision.models.detection.FasterRCNN(backbone_fpn, 91, min_size = 1.5*data.chip_size, max_size = 2*data.chip_size)
+            model = self.torchvision.models.detection.FasterRCNN(backbone_fpn,
+                                                                 91,
+                                                                 min_size = 1.5*data.chip_size,
+                                                                 max_size = 2*data.chip_size,
+                                                                 **self.fasterrcnn_kwargs)
 
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = self.torchvision.models.detection.faster_rcnn.FastRCNNPredictor(in_features, len(data.classes))
@@ -67,7 +82,9 @@ class MyFasterRCNN():
             scaled_std_values = data._scaled_std_values[data._extract_bands].tolist()
             model.transform.image_mean = scaled_mean_values
             model.transform.image_std = scaled_std_values
-        
+
+        self.model = model
+
         return model
     
     def on_batch_begin(self, learn, model_input_batch, model_target_batch):
@@ -130,12 +147,17 @@ class MyFasterRCNN():
         #return model_input and model_target
         return model_input, model_target
     
-    def transform_input(self, xb):# transform_input
+    def transform_input(self, xb, thresh=0.5, nms_overlap=0.1):# transform_input
         """
         function for feding the input to the model in validation/infrencing mode.
         
         xb - tensor with shape [N, C, H, W]
         """
+        self.nms_thres = self.model.roi_heads.nms_thresh
+        self.thresh = self.model.roi_heads.score_thresh
+        self.model.roi_heads.nms_thresh = nms_overlap
+        self.model.roi_heads.score_thresh = thresh
+
         #denormalize from imagenet_stats
         imagenet_stats = [[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]]
         mean = self.torch.tensor(imagenet_stats[0], dtype=self.torch.float32).to(xb.device)
@@ -145,7 +167,13 @@ class MyFasterRCNN():
         
         return list(xb) # model input require in the formate of list
     
-    def transform_input_multispectral(self, xb):
+    def transform_input_multispectral(self, xb, thresh=0.5, nms_overlap=0.1):
+
+        self.nms_thres = self.model.roi_heads.nms_thresh
+        self.thresh = self.model.roi_heads.score_thresh
+        self.model.roi_heads.nms_thresh = nms_overlap
+        self.model.roi_heads.score_thresh = thresh
+
         return list(xb)
 
     def loss(self, model_output, *model_target):
@@ -181,6 +209,10 @@ class MyFasterRCNN():
         [Number_of_bboxes_in_image, 4], label should be the tensor of shape[Number_of_bboxes_in_image,] and score should be
         the tensor of shape[Number_of_bboxes_in_image,].
         """
+
+        self.model.roi_heads.score_thresh = self.thresh
+        self.model.roi_heads.nms_thresh = self.nms_thres
+
         post_processed_pred = []
         for p in pred:
             
@@ -193,7 +225,7 @@ class MyFasterRCNN():
             #convert bboxes in format [y1,x1,y2,x2]
             bbox = self.torch.index_select(bbox, 1, self.torch.tensor([1,0,3,2]).to(bbox.device))
             #Append the tuple in list for each image
-            post_processed_pred.append((bbox.to(device), label.to(device), score.to(device)))
+            post_processed_pred.append((bbox.data.to(device), label.to(device), score.to(device)))
             
         return post_processed_pred
 
@@ -214,17 +246,20 @@ class FasterRCNN(ModelExtension):
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
+    ---------------------   -------------------------------------------
+    kwargs                  Optional arguments, torchvision FasterRCNN arguments can be
+                            given in form of keyword arguments.
     =====================   ===========================================
 
     :returns: ``FasterRCNN`` Object
     """
-    def __init__(self, data, backbone='resnet50', pretrained_path=None):
+    def __init__(self, data, backbone='resnet50', pretrained_path=None, **kwargs):
 
         backbone_name = backbone if type(backbone) is str else backbone.__name__
         if backbone_name not in self.supported_backbones:
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
-        super().__init__(data, MyFasterRCNN, backbone, pretrained_path)
+        super().__init__(data, MyFasterRCNN, backbone, pretrained_path, **kwargs)
 
         self._check_dataset_support(self._data)
 
@@ -284,7 +319,7 @@ class FasterRCNN(ModelExtension):
 
         :returns: `FasterRCNN` Object
         """
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
 
         with open(emd_path) as f:
             emd = json.load(f)
@@ -295,6 +330,12 @@ class FasterRCNN(ModelExtension):
             model_file = emd_path.parent / model_file
         
         backbone = emd['ModelParameters']['backbone']
+        dataset_type = emd.get('DatasetType', 'PASCAL_VOC_rectangles')
+        chip_size = emd["ImageWidth"]
+        resize_to = emd.get('resize_to', None)
+        kwargs = emd.get('Kwargs', {})
+        if isinstance(resize_to, list):
+            resize_to = (resize_to[0], resize_to[1])
 
         try:
             class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
@@ -303,18 +344,37 @@ class FasterRCNN(ModelExtension):
             class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']} 
             color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}                
 
+        data_passed = True
         if data is None:
-            data = _EmptyData(path=emd_path.parent.parent, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
+            
+            data_passed = False
+            train_tfms = []
+            val_tfms = []
+            ds_tfms = (train_tfms, val_tfms)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                sd = ImageList([], path=emd_path.parent.parent).split_by_idx([])
+                data = sd.label_const(0, label_cls=ObjectDetectionCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
+            # Add 1 for background class
+            data.c += 1
+            data.chip_size = chip_size
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
+            data.classes = ['background'] + list(class_mapping.values())
+            data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
-            data.classes = ['background']
-            for k, v in class_mapping.items():
-                data.classes.append(v)
             data = get_multispectral_data_params_from_emd(data, emd)
-            data.dataset_type = emd.get('DatasetType', 'PASCAL_VOC_rectangles')
-        return cls(data, backbone, pretrained_path=str(model_file))
+            data.dataset_type = dataset_type
+
+        data.resize_to = resize_to
+        frcnn = cls(data, backbone, pretrained_path=str(model_file), **kwargs)
+
+        if not data_passed:
+            frcnn.learn.data.single_ds.classes = frcnn._data.classes
+            frcnn.learn.data.single_ds.y.classes = frcnn._data.classes
+        
+        return frcnn
 
     def predict(
         self,

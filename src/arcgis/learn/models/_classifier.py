@@ -20,8 +20,10 @@ try:
     from ._codetemplate import feature_classifier_prf
     import torch
     from torchvision import models
-    from fastai.metrics import accuracy
+    from fastai.metrics import accuracy, MultiLabelFbeta
+    from .._utils.metrics import accuracy_multi
     from fastai.vision.image import open_image
+    from fastai.data_block import MultiCategoryList
     from fastai.vision.data import ImageDataBunch, ImageList
     from fastai.vision import imagenet_stats, normalize
     from fastai.basic_train import Learner, LearnerCallback
@@ -36,7 +38,7 @@ try:
     import PIL.Image
     import PIL.ExifTags
     from torch.nn import Module as NnModule
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     HAS_FASTAI = True
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -133,7 +135,13 @@ class FeatureClassifier(ArcGISModel):
             self._check_dataset_support(self._data)
 
             self._code = feature_classifier_prf
-            self.learn = cnn_learner(data, self._backbone, metrics=accuracy, cut=backbone_cut, split_on=backbone_split)
+
+            if getattr(data, '_dataset_type', "Labeled_Tiles") == 'MultiLabeled_Tiles':
+                metrics = [accuracy_multi, MultiLabelFbeta()]
+            else:
+                metrics = accuracy
+
+            self.learn = cnn_learner(data, self._backbone, metrics=metrics, cut=backbone_cut, split_on=backbone_split)
             if oversample:
                 self.learn.callbacks.append(OverSamplingCallback(self.learn))
             self._arcgis_init_callback() # make first conv weights learnable
@@ -169,7 +177,7 @@ class FeatureClassifier(ArcGISModel):
     
     @staticmethod
     def _supported_datasets():
-        return ['Labeled_Tiles']  
+        return ['Labeled_Tiles', 'MultiLabeled_Tiles']  
 
     def show_results(self, rows=5, **kwargs):
         """
@@ -184,11 +192,14 @@ class FeatureClassifier(ArcGISModel):
    
     def _show_results_multispectral(self, rows=5, **kwargs):
         from .._utils.image_classification import IC_show_results
-        IC_show_results(
+        return_fig = kwargs.get('return_fig', False)
+        fig=IC_show_results(
             self,
             nrows=rows,
             **kwargs
         )
+        if return_fig:
+            return fig
 
     def predict(self, img_path):
         """
@@ -232,14 +243,19 @@ class FeatureClassifier(ArcGISModel):
         _emd_template["Framework"] = "PyTorch"
         _emd_template["ModelConfiguration"] = "FeatureClassifier"
         _emd_template["ModelType"] = "ObjectClassification"
+        _emd_template["MetaDataMode"] = self._data._dataset_type
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template['CropSizeFixed'] = 1  # hardcoded
         _emd_template['BlackenAroundFeature'] = 0  # hardcoded
         _emd_template['ImageSpaceUsed'] = "MAP_SPACE"
         _emd_template['Classes'] = []
         class_data = {}
+
+        if self._data._dataset_type == 'MultiLabeled_Tiles':
+                self._data.class_mapping = {k: v for k, v in enumerate(self._data.classes)}
+        inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
+
         for i, class_name in enumerate(self._data.classes):
-            inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
             class_data["Value"] = inverse_class_mapping[class_name]
             class_data["Name"] = class_name
             color = [random.choice(range(256)) for i in range(3)]
@@ -275,7 +291,7 @@ class FeatureClassifier(ArcGISModel):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
             
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
 
@@ -307,16 +323,22 @@ class FeatureClassifier(ArcGISModel):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
 
-                data = ImageDataBunch.single_from_classes(
-                    emd_path.parent.parent, sorted(list(class_mapping.values())),
-                    ds_tfms=transforms, size=chip_size).normalize(imagenet_stats)
+                if ("MetaDataMode" in emd) and (emd["MetaDataMode"] == "MultiLabeled_Tiles"):
+                    img_list = ImageList([], path=emd_path.parent.parent).split_by_idx([])
+                    data = img_list.label_const(0, label_cls=MultiCategoryList, 
+                                                classes=list(class_mapping.values())).transform(transforms).databunch().normalize(imagenet_stats)
+                    data._dataset_type = 'MultiLabeled_Tiles'
+                else:
+                    data = ImageDataBunch.single_from_classes(
+                        emd_path.parent.parent, sorted(list(class_mapping.values())),
+                        ds_tfms=transforms, size=chip_size).normalize(imagenet_stats)
 
             data.chip_size = chip_size
             data.class_mapping = class_mapping
             data.classes = list(class_mapping.values())
             data._is_empty = True
             data.emd_path = emd_path
-            data.emd = emd            
+            data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
 
         resize_to = emd.get('resize_to')

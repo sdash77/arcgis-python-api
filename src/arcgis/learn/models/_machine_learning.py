@@ -27,12 +27,12 @@ except:
 _PROTOCOL_LEVEL = 2
 
 
-def _get_model_type(model_type, **kwargs):
+def _get_model_type(model_type):
     if not model_type:
         raise Exception("Invalid model type.")
 
     if not isinstance(model_type, str):
-        return model_type(**kwargs)
+        return model_type
 
     if not model_type.startswith('sklearn.'):
         raise Exception("Invalid model_type.")
@@ -52,7 +52,7 @@ def _get_model_type(model_type, **kwargs):
 
     model = getattr(getattr(sklearn, module), model)
 
-    return model(**kwargs)
+    return model
 
 
 def raise_data_exception():
@@ -62,7 +62,13 @@ def raise_data_exception():
 class MLModel(object):
     """
     Creates a machine learning model based on it's implementation from scikit-learn.
+    For supervised learning:
     Refer https://scikit-learn.org/stable/supervised_learning.html#supervised-learning
+    For unsupervised learning:
+    1. Clustering Models
+    2. Gaussian Mixture Models
+    3. Novelty and outlier detection
+    Refer https://scikit-learn.org/stable/unsupervised_learning.html
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -89,18 +95,30 @@ class MLModel(object):
             raise Exception("This module requires scikit-learn.")
 
         self._data = data
+        self._training_data, self._training_labels, self._validation_data, self._validation_labels = self._data._ml_data
         if kwargs.get('pretrained_model'):
             self._model = kwargs.get('pretrained_model')
         else:
-            self._model = _get_model_type(model_type, **kwargs)
+            model = _get_model_type(model_type)
 
-        self._training_data, self._training_labels, self._validation_data, self._validation_labels = self._data._ml_data
+            if model == sklearn.cluster._kmeans.KMeans:
+                if not kwargs.get('n_clusters'):
+                    kwargs['n_clusters'] = self._get_number_of_clusters(**kwargs)
+            elif model == sklearn.mixture._gaussian_mixture.GaussianMixture:
+                if not kwargs.get('n_components'):
+                    kwargs['n_components'] = self._get_number_of_components(**kwargs)
+
+            self._model = model(**kwargs)
 
     def fit(self):
-        if self._training_data is None or self._training_labels is None:
+        if (not self._data._is_unsupervised and (self._training_data is None or self._training_labels is None))\
+                or (self._data._is_unsupervised and self._training_data is None):
             raise_data_exception()
 
-        self._model.fit(self._training_data, self._training_labels)
+        if self._data._is_unsupervised:
+            self._model.fit(self._training_data)
+        else:
+            self._model.fit(self._training_data, self._training_labels)
 
     def show_results(self, rows=5):
         """
@@ -114,7 +132,8 @@ class MLModel(object):
         =====================   ===========================================
         :returns dataframe
         """
-        if self._validation_data is None or self._validation_labels is None:
+        if (not self._data._is_unsupervised and (self._validation_data is None or self._validation_labels is None)) \
+                or (self._data._is_unsupervised and self._validation_data is None):
             raise_data_exception()
 
         min_size = len(self._validation_data)
@@ -122,26 +141,106 @@ class MLModel(object):
         if rows < min_size:
             min_size = rows
 
+        # sample_batch = random.sample(self._data._validation_indexes, min_size)
         sample_batch = random.sample(range(len(self._validation_data)), min_size)
-
         validation_data_batch = self._validation_data.take(sample_batch, axis=0)
+        sample_indexes = [self._data._validation_indexes[i] for i in sample_batch]
 
         output_labels = self._predict(validation_data_batch)
+        df = self._data._dataframe.loc[sample_indexes]#.loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
 
-        df = self._data._dataframe.loc[self._data._validation_indexes].reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
+        if self._data._dependent_variable:
+            df[self._data._dependent_variable + '_results'] = output_labels
+        else:
+            df['prediction_results'] = output_labels
 
-        df[self._data._dependent_variable + '_results'] = output_labels
-
-        return df
+        return df.sort_index()
 
     def score(self):
         """
         :returns output from scikit-learn's model.score(), R2 score in case of regression and Accuracy in case of classification.
+        For KMeans returns Opposite of the value of X on the K-means objective.
         """
-        if self._validation_data is None or self._validation_labels is None:
+        if (not self._data._is_unsupervised and (self._validation_data is None or self._validation_labels is None)) \
+                or (self._data._is_unsupervised and self._validation_data is None):
             raise_data_exception()
 
+        if self._data._is_unsupervised:
+            if hasattr(self._model, 'score'):
+                return self._model.score(self._training_data)
+
+            raise Exception("Score function not applicable for unsupervised data")
+
         return self._model.score(self._validation_data, self._validation_labels)
+
+    def decision_function(self):
+        """
+        :returns output from scikit-learn's model.decision_function()
+        """
+        if self._training_data is None:
+            raise_data_exception()
+
+        if not hasattr(self._model, 'decision_function'):
+            raise Exception("Function not implemented for this model.")
+
+        return self._model.decision_function(self._training_data)
+
+    def mahalanobis(self):
+        """
+        :returns output from scikit-learn's model.mahalanobis()
+        """
+        if self._training_data is None:
+            raise_data_exception()
+
+        if not hasattr(self._model, 'mahalanobis'):
+            raise Exception("Function not implemented for this model.")
+
+        return self._model.mahalanobis(self._training_data)
+
+    def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
+        """
+        :returns output from scikit-learn's model.kneighbors()
+        """
+        if not hasattr(self._model, 'kneighbors'):
+            raise Exception("Function not implemented for this model.")
+
+        kwargs = {}
+        if X:
+            kwargs['X'] = X
+        elif self._training_data is None:
+            raise Exception("No data found")
+        else:
+            kwargs['X'] = self._training_data
+
+        if n_neighbors:
+            kwargs['n_neigbors'] = n_neighbors
+
+        kwargs['return_distance'] = return_distance
+
+        return self._model.kneighbors(**kwargs)
+
+    def predict_proba(self):
+        """
+        :returns output from scikit-learn's model.predict_proba()
+        """
+
+        if not hasattr(self._model, 'predict_proba'):
+            raise Exception("Function not implemented for this model.")
+
+        if self._training_data is None:
+            raise Exception("No data found.")
+
+        return self._model.predict_proba(self._training_data)
+
+    @property
+    def feature_importances_(self):
+        """
+        :returns output from scikit-learn's model.feature_importances_
+        """
+        if not hasattr(self._model, 'feature_importances_'):
+            raise Exception("Property not implemented for this model.")
+
+        return self._model.feature_importances_
 
     def save(self, name_or_path):
         """
@@ -156,7 +255,8 @@ class MLModel(object):
         :returns dataframe
         """
 
-        if self._training_data is None or self._training_labels is None:
+        if (not self._data._is_unsupervised and (self._training_data is None or self._training_labels is None)) \
+                or (self._data._is_unsupervised and self._training_data is None):
             raise_data_exception()
 
         if '\\' in name_or_path or '/' in name_or_path:
@@ -190,13 +290,17 @@ class MLModel(object):
         emd_file = os.path.join(path, base_file_name + '.emd')
         emd_params = {}
         emd_params['version'] = str(sklearn.__version__)
-        emd_params['score'] = self.score()
+        if not self._data._is_unsupervised:
+            emd_params['score'] = self.score()
         emd_params['_is_classification'] = "classification" if self._data._is_classification else "regression"
         emd_params['ModelName'] = type(self._model).__name__
         emd_params['ModelFile'] = base_file_name + '.pkl'
         emd_params['ModelParameters'] = self._model.get_params()
         emd_params['categorical_variables'] = self._data._categorical_variables
-        emd_params['dependent_variable'] = self._data._dependent_variable
+
+        if self._data._dependent_variable:
+            emd_params['dependent_variable'] = self._data._dependent_variable
+
         emd_params['continuous_variables'] = self._data._continuous_variables
 
         with open(emd_file, 'w') as f:
@@ -230,7 +334,7 @@ class MLModel(object):
             emd = json.loads(f.read())
 
         categorical_variables = emd['categorical_variables']
-        dependent_variable = emd['dependent_variable']
+        dependent_variable = emd.get('dependent_variable', None)
         continuous_variables = emd['continuous_variables']
         model_parameters = emd['ModelParameters']
 
@@ -285,6 +389,127 @@ class MLModel(object):
         with open(transforms_file, 'wb') as f:
             f.write(pickle.dumps(column_transformer, protocol=_PROTOCOL_LEVEL))
 
+    @property
+    def _is_kmeans(self):
+        return self._model.__class__ == sklearn.cluster._kmeans.KMeans
+
+    def _get_number_of_clusters(self, **kwargs):
+        print("Finding optimum number of clusters")
+
+        from sklearn.cluster import KMeans
+        from sklearn.metrics import silhouette_score
+
+        range_n_clusters = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+
+        threshold = 5
+        count = 0
+
+        max_score = -1
+        max_cluster = 2
+        scores = []
+        for n_clusters in range_n_clusters:
+            # Initialize the clusterer with n_clusters value and a random generator
+            # seed of 10 for reproducibility.
+            clusterer = KMeans(n_clusters=n_clusters, **kwargs)
+            cluster_labels = clusterer.fit_predict(self._training_data)
+
+            # The silhouette_score gives the average value for all the samples.
+            # This gives a perspective into the density and separation of the formed
+            # clusters
+            silhouette_avg = silhouette_score(self._training_data, cluster_labels)
+            scores.append(silhouette_avg)
+
+            if silhouette_avg > max_score:
+                max_score = silhouette_avg
+                max_cluster = n_clusters
+                count = 0
+            else:
+                count = count + 1
+
+            if count == threshold:
+                break
+
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(1, 1)
+
+        ax.plot(
+            range_n_clusters[0:len(scores)],
+            scores
+        )
+        ax.set_xlabel("Cluster")
+        ax.set_ylabel("Silhouette scores")
+        # ax.set_xscale('log')
+        # ax.xaxis.set_major_formatter(plt.FormatStrFormatter('%.0e'))
+        ax.plot(
+            max_cluster,
+            max_score,
+            markersize=10,
+            marker='o',
+            color='red'
+        )
+
+        plt.show()
+
+        print(f"Selecting n_clusters={max_cluster}")
+
+        return max_cluster
+
+    def _get_number_of_components(self, **kwargs):
+        print("Finding optimum number of components")
+
+        from sklearn.mixture import GaussianMixture
+
+        range_n_components = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+
+        max_score = -1
+        max_component = 2
+
+        threshold = 5
+        count = 0
+        scores = []
+        for component in range_n_components:
+            gm_model = GaussianMixture(n_components=component, **kwargs)
+
+            gm_model.fit(self._training_data)
+            score = gm_model.bic(self._training_data)
+
+            scores.append(score)
+
+            if score > max_score:
+                max_component = component
+                max_score = score
+                count = 0
+            else:
+                count = count + 1
+
+            if count == threshold:
+                break
+
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(1, 1)
+
+        ax.plot(
+            range_n_components[0:len(scores)],
+            scores
+        )
+        ax.set_xlabel("Cluster")
+        ax.set_ylabel("BIC score")
+        # ax.set_xscale('log')
+        # ax.xaxis.set_major_formatter(plt.FormatStrFormatter('%.0e'))
+        ax.plot(
+            max_component,
+            max_score,
+            markersize=10,
+            marker='o',
+            color='red'
+        )
+
+        plt.show()
+
+        print(f"Selecting n_components={max_component}")
+
+        return max_component
+
     def predict(
             self,
             input_features=None,
@@ -298,7 +523,7 @@ class MLModel(object):
             match_field_names=None):
         """
 
-        Predict on data from feature layer and or raster data.
+        Predict on data from feature layer, dataframe and or raster data.
 
         =================================   =========================================================================
         **Argument**                        **Description**
@@ -328,7 +553,7 @@ class MLModel(object):
                                             If not specified then active gis user is taken.
         ---------------------------------   -------------------------------------------------------------------------
         prediction_type                     Optional String.
-                                            Set 'features' to make output feature layer predictions.
+                                            Set 'features' or 'dataframe' to make output feature layer predictions.
                                             With this feature_layer argument is required.
 
                                             Set 'raster', to make prediction raster.
@@ -348,17 +573,17 @@ class MLModel(object):
                                                 }
         =================================   =========================================================================
 
-        :returns Feature Layer if prediction_type='features' else creates an output raster.
+        :returns Feature Layer if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.
 
         """
 
         rasters = explanatory_rasters if explanatory_rasters else []
-        if prediction_type == 'features':
+        if prediction_type in ['features', 'dataframe']:
 
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 
-            return self._predict_features(input_features, rasters, datefield, distance_features, output_layer_name, gis, match_field_names)
+            return self._predict_features(input_features, rasters, datefield, distance_features, output_layer_name, gis, match_field_names, prediction_type)
         else:
             if not rasters:
                 raise Exception("Rasters required for predict_features=False")
@@ -376,7 +601,8 @@ class MLModel(object):
             distance_feature_layers=None,
             output_name="Prediction Layer",
             gis=None,
-            match_field_names=None
+            match_field_names=None,
+            prediction_type="features"
     ):
         if isinstance(input_features, FeatureLayer):
             dataframe = input_features.query().sdf
@@ -444,9 +670,11 @@ class MLModel(object):
                 processed_dataframe = processed_dataframe.drop(column, axis=1)
 
         processed_numpy = self._data._process_data(processed_dataframe.reindex(sorted(processed_dataframe.columns), axis=1))
-
         predictions = self._predict(processed_numpy)
         dataframe["prediction_results"] = predictions
+
+        if prediction_type == "dataframe":
+            return dataframe
 
         return dataframe.spatial.to_featurelayer(output_name, gis)
 

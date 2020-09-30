@@ -25,16 +25,16 @@ def _class_array_to_rbg(ca : 'classified_array', cm : 'color_mapping', nodata=0)
     im[white_mask] = 255
     return im
 
-#def _show_batch_unet_multispectral(self, nrows=3, ncols=3, n_items=None, index=0, rgb_bands=None, nodata=0, alpha=0.7, imsize=5): # Proposed Parameters 
+#def _show_batch_unet_multispectral(self, nrows=3, ncols=3, n_items=None, index=0, rgb_bands=None, nodata=0, alpha=0.7, imsize=5): # Proposed Parameters
 def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # parameters adjusted in kwargs
     import matplotlib.pyplot as plt
     from .._data import _tensor_scaler
-   
+
     nrows = rows
     ncols = 3
     if kwargs.get('ncols', None) is not None:
         ncols = kwargs.get('ncols')
-    
+
     n_items = None
     if kwargs.get('n_items', None) is not None:
         n_items = kwargs.get('n_items')
@@ -163,7 +163,7 @@ class ArcGISImageSegment(Image):
             ## This condition will not be true.
             ax = show_image(self, ax=ax, hide_axis=hide_axis, cmap="tab20", figsize=figsize,
                         interpolation='nearest', alpha=alpha, vmin=0, **kwargs)
-        else:     
+        else:
             color_mapping = torch.tensor(list(self.color_mapping.values()))
             color_mapping = torch.cat((color_mapping.float()/255, torch.tensor([float(alpha)] * len(color_mapping)).view(-1, 1)), dim=1)
             color_mapping = torch.cat((torch.tensor([0., 0., 0., 0.]).view(1, -1), color_mapping), dim=0)
@@ -244,7 +244,7 @@ class ArcGISSegmentationLabelList(ImageList):
                 pred = model.model_conf.post_process(pred, thresh, thinning)
             return pred
 
-        if ignore_mapped_class == []: 
+        if ignore_mapped_class == []:
             return pred.argmax(dim=0)[None]
         else:
             for k in ignore_mapped_class:
@@ -270,7 +270,7 @@ class ArcGISSegmentationItemList(ImageList):
 
 class ArcGISSegmentationMSLabelList(ArcGISSegmentationLabelList):
     def open(self, fn):
-        import gdal
+        from osgeo import gdal
         path = str(os.path.abspath(fn))
         x = gdal.Open(path).ReadAsArray()
         x = torch.tensor(x.astype(np.float32))[None]
@@ -282,7 +282,7 @@ class LabelCallback(LearnerCallback):
     def __init__(self, learn):
         super().__init__(learn)
         self.label_mapping = {value:(idx+1) for idx, value in enumerate(learn.data.class_mapping.keys())}
-        
+
     def on_batch_begin(self, last_input, last_target, **kwargs):
         """
         This callback is not used anymore.
@@ -294,13 +294,13 @@ class LabelCallback(LearnerCallback):
         return {'last_input':last_input, 'last_target':last_target}
 
 
-#def show_results_multispectral(self, nrows=3, index=0, type_ds='valid', rgb_bands=None, nodata=0, alpha=0.7, imsize=5, top=0.97): # Proposed Parameters 
+#def show_results_multispectral(self, nrows=3, index=0, type_ds='valid', rgb_bands=None, nodata=0, alpha=0.7, imsize=5, top=0.97): # Proposed Parameters
 def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
     import matplotlib.pyplot as plt
 
     # Get Number of items
     ncols = 2
-
+    return_fig = kwargs.get('return_fig', False)
     type_data_loader = kwarg_fill_none(kwargs, 'data_loader', 'validation') # options : traininig, validation, testing
     data_loader = find_data_loader(type_data_loader, self._data)
 
@@ -314,13 +314,13 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
     title_font_size=16
     if top is None:
         top = get_top_padding(
-            title_font_size=title_font_size, 
-            nrows=nrows, 
+            title_font_size=title_font_size,
+            nrows=nrows,
             imsize=imsize
             )
-        
+
     statistics_type = kwarg_fill_none(kwargs, 'statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
-    
+
     # get batches
     x_batch, y_batch = get_nbatches(data_loader, math.ceil(nrows/self._data.batch_size))
     symbology_x_batch = x_batch = torch.cat(x_batch)
@@ -348,11 +348,11 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
 
     # Extract RGB Bands for plotting
     symbology_x_batch = x_batch[:, symbology_bands]
-   
+
     # Apply Image Strecthing
     if statistics_type == 'DRA':
         symbology_x_batch = dynamic_range_adjustment(symbology_x_batch)
-    
+
     symbology_x_batch = image_tensor_checks_plotting(symbology_x_batch)
 
     # Get color Array
@@ -378,3 +378,5 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
             axi[1].imshow(p_rgb, alpha=alpha)
         axi[0].axis('off')
         axi[1].axis('off')
+    if return_fig:
+        return fig,axi

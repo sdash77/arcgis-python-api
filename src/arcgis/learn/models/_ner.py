@@ -4,6 +4,7 @@ try:
     import pandas as pd
     from fastprogress.fastprogress import master_bar, progress_bar
     from ._codetemplate import entity_recognizer_placeholder
+    from .._utils.common import _get_emd_path
     import numpy as np
     HAS_SPACY = True
 except:
@@ -14,7 +15,7 @@ import os, json, logging
 from pathlib import Path
 import random, os
 from ._ner_utils import *
-from time import sleep
+import datetime 
 from copy import deepcopy
 from collections.abc import Iterable
 
@@ -99,7 +100,7 @@ class EntityRecognizer(ArcGISModel):
         self.recorder.losses, self.recorder.val_loss, self.recorder.lrs = [], [], [] #resetting the recorder
         lrs = even_mults(start_lr, end_lr, 14)
         epochs = int(np.ceil(num_it/(len(self.data.train_ds)/self.data.batch_size)))
-        self.fit(lr=list(lrs), epochs=epochs*len(lrs), from_lr_find=True)
+        self.fit(lr=list(lrs), epochs=epochs*len(lrs), from_lr_find=True , num_it= num_it)
         from IPython.display import clear_output
         clear_output()
         
@@ -176,16 +177,18 @@ class EntityRecognizer(ArcGISModel):
             n_iter = len(TRAIN_DATA)//batch_size
             if 'from_lr_find' in kwargs:              #'from_lr_find' kwarg specifies that the fit is call from lr_find.
                 epochs_per_lr = epochs/len(lr)
+                n_iter = min(kwargs.get('num_it'), n_iter)
                 lr_find = True
             else:
                 self.optimizer.alpha = lr
                 lr_find = False
             mb = master_bar(range(epochs))
-            mb.write(['epoch', 'losses', 'val_loss', 'precision_score', 'recall_score', 'f1_score'], table=True)
+            mb.write(['epoch', 'losses', 'val_loss', 'precision_score', 'recall_score', 'f1_score', 'time'], table=True)
             losses_list = []
             
             for itn in mb:
-                if lr_find and ((itn+1)%epochs_per_lr==0 or itn==0):              #updating lr after specified iterations
+                t_start = datetime.datetime.now()
+                if lr_find:              #updating lr after specified iterations
                     self.optimizer.alpha = lr.pop(0)
                     losses_list = []
                     update_recorder = True
@@ -208,7 +211,8 @@ class EntityRecognizer(ArcGISModel):
                 if not lr_find: self.recorder.losses.append(sum(epoch_loss)/n_iter)              #averaging loss per epoch              
                 
                 if VAL_DATA:
-
+                    if lr_find:
+                        VAL_DATA = VAL_DATA[:batch_size] #running on a subset of val data incase of lr_find
                     val_batches = minibatch(VAL_DATA, size=batch_size)
                     val_losses = {}
                     val_loss_list = []
@@ -231,15 +235,17 @@ class EntityRecognizer(ArcGISModel):
                     self.recorder.val_loss.append(np.min(val_loss_list))
                     update_recorder = False
                     if np.mean(losses_list) > 2*np.min(self.recorder.losses) or len(lr)==0 : #break the epoch if loss overshoots or all the lrs are tested
-                            return    
-                score = nlp.evaluate(self.train_ds)
+                            return
+                    score = nlp.evaluate(self.val_ds[:batch_size])
+                else:
+                    score = nlp.evaluate(self.val_ds)
                 precision_score, recall_score, f1_score, metrics_per_label = score.ents_p, score.ents_r, score.ents_f, score.ents_per_type
                 self.recorder.metrics['precision_score'].append(precision_score)
                 self.recorder.metrics['recall_score'].append(recall_score)
                 self.recorder.metrics['f1_score'].append(f1_score)
-                self.recorder.metrics['metrics_per_label'].append(metrics_per_label)
+                self.recorder.metrics['metrics_per_label'].append(metrics_per_label)  
                 line = [itn, round(train_loss, 2), round(val_loss, 2), round(precision_score/100, 2)
-                        , round(recall_score/100, 2), round(f1_score/100, 2)]
+                        , round(recall_score/100, 2), round(f1_score/100, 2),_timelapsed(t_start)]
                 line = [str(val) for val in line]
                 mb.write(line, table=True)
 
@@ -388,7 +394,7 @@ class EntityRecognizer(ArcGISModel):
 
         :returns: `EntityRecognizer` Object
         """  
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         ner = cls(data=data)
         ner.load(emd_path)
         ner._trained = True
@@ -641,7 +647,7 @@ class EntityRecognizer(ArcGISModel):
         ax.plot(np.convolve(self.recorder.losses, np.ones((N,))/N, mode='valid'), label='Train')
         ax.plot(np.convolve(self.recorder.val_loss, np.ones((N,))/N, mode='valid'), label='Validation')
         ax.set_ylabel('Loss')
-        ax.set_xlabel('Batches processed')
+        ax.set_xlabel('Epochs')
         ax.legend()
         
         if not show:

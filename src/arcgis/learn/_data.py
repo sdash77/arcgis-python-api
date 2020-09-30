@@ -30,7 +30,7 @@ try:
     from ._utils.pascal_voc_rectangles import ObjectDetectionItemList
     from .models._superres_utils import resize_one
     from ._utils.common import ArcGISMSImage, ArcGISImageList
-    from ._utils.env import HAS_GDAL
+    from ._utils.env import HAS_GDAL, raise_gdal_import_error
     from ._utils.classified_tiles import show_batch_classified_tiles
     from ._utils.labeled_tiles import show_batch_labeled_tiles
     from ._utils.rcnn_masks import show_batch_rcnn_masks
@@ -94,7 +94,7 @@ imagery_type_lib = {
 }
 
 def get_installation_command():
-    installation_steps = ("Install then using - 'conda install -c esri -c fastai -c pytorch arcgis=1.8.1 "
+    installation_steps = ("Install them using - 'conda install -c esri -c fastai -c pytorch arcgis=1.8.1 "
                           "scikit-image=0.15.0 pillow=6.2.2 libtiff=4.0.10 fastai=1.0.60 pytorch=1.4.0 "
                           "torchvision=0.5.0 scikit-learn=0.23.1 --no-pin'"
                           "\n'conda install gdal=2.3.3'"
@@ -206,7 +206,7 @@ def _get_bbox_classes(label_file, class_mapping , height_width=[], **kwargs):
 
             classes.append(data_class_mapping)
             bboxes.append([ymin, xmin, ymax, xmax])
-            height_width.append(((xmax - xmin)*1.25, (ymax - ymin)*1.25))   
+            height_width.append(((xmax - xmin)*1.25, (ymax - ymin)*1.25))
 
     if len(bboxes) == 0:
         return [[[0, 0, 0, 0]], [list(class_mapping.values())[0]]]
@@ -214,7 +214,7 @@ def _get_bbox_classes(label_file, class_mapping , height_width=[], **kwargs):
 
 
 def _get_bbox_lbls(imagefile, class_mapping, height_width, **kwargs):
-    dataset_type = kwargs.get('dataset_type', None)    
+    dataset_type = kwargs.get('dataset_type', None)
     if dataset_type == 'KITTI_rectangles':
         label_suffix = '.txt'
     else:
@@ -226,6 +226,18 @@ def _get_bbox_lbls(imagefile, class_mapping, height_width, **kwargs):
 def _get_lbls(imagefile, class_mapping):
     xmlfile = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), '.xml')
     return _get_bbox_classes(xmlfile, class_mapping)[1][0]
+
+
+def _get_multi_lbls(imagefile):
+    """
+    Function that returns class labels for an image for multilabel classification.
+    input: imagefile (Path)
+    returns: labels (List[str])
+    """
+    xmlfile = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), '.xml')
+    labels = ET.parse(xmlfile).getroot().find('object').find('name').text
+    labels = labels.split(',')
+    return labels
 
 
 def _check_esri_files(path):
@@ -479,7 +491,7 @@ def prepare_textdata(
 
 def prepare_tabulardata(
         input_features,
-        variable_predict,
+        variable_predict=None,
         explanatory_variables=None,
         explanatory_rasters=None,
         date_field=None,
@@ -499,8 +511,9 @@ def prepare_tabulardata(
     input_features          Required Feature Layer Object or spatially enabled dataframe.
                             This contains features denoting the value of the dependent variable.
     ---------------------   -------------------------------------------
-    variable_predict        Required String, denoting the field_name of
+    variable_predict        Optional String, denoting the field_name of
                             the variable to predict.
+                            Keep none for unsupervised training using MLModel.
     ---------------------   -------------------------------------------
     explanatory_variables   Optional list containing field names from input_features
                             By default the field type is continuous.
@@ -544,7 +557,11 @@ def prepare_tabulardata(
                             "NEAR_DIST_1", "NEAR_DIST_2" etc.
     ---------------------   -------------------------------------------
     preprocessors           For Fastai: Optional transforms list.
-                            For Scikit-learn: supply a column transformer object.
+                            For Scikit-learn:
+                            1. Supply a column transformer object.
+                            2. Supply a list of tuple,
+                            For example:
+                            [('Col_1', 'Col_2', Transform1()), ('Col_3', Transform2())]
                             Categorical data is by default encoded.
                             If nothing is specified, default transforms are applied
                             to fill missing values and normalize categorical data.
@@ -566,17 +583,37 @@ def prepare_tabulardata(
     :returns: `TabularData` object
 
     """
-
+    import warnings
     if not HAS_FASTAI:
         _raise_fastai_import_error(import_exception)
 
-    dependent_variable = variable_predict
-    if isinstance(variable_predict, tuple):
-        dependent_variable = variable_predict[0]
+    HAS_COLUMN_TRANSFORMS = False
+
+    if preprocessors and isinstance(preprocessors, list):
+        for transform in preprocessors:
+            if isinstance(transform, tuple):
+                HAS_COLUMN_TRANSFORMS = True
+                break
+
+        if HAS_COLUMN_TRANSFORMS:
+            column_transforms = []
+            for transform in preprocessors:
+                if not isinstance(transform, tuple):
+                    warnings.warn("Please pass (Field_Name, transform) in the list of preprocessors")
+                    return
+                column_transforms.append(
+                    (
+                        transform[-1],
+                        list(transform[0:-1])
+                    )
+                )
+
+            from sklearn.compose import make_column_transformer
+            preprocessors = make_column_transformer(*column_transforms)
 
     return TabularDataObject.prepare_data_for_layer_learner(
         input_features,
-        dependent_variable,
+        variable_predict,
         feature_variables=explanatory_variables,
         raster_variables=explanatory_rasters,
         date_field=date_field,
@@ -586,6 +623,7 @@ def prepare_tabulardata(
         seed=seed,
         batch_size=batch_size
     )
+
 
 def prepare_data(path,
                  class_mapping=None, 
@@ -836,6 +874,9 @@ def prepare_data(path,
     elif _imagery_type is not None:
         imagery_type = _imagery_type
 
+    if (not imagery_type in ('ASSUMED_RGB', 'RGB')) and not HAS_GDAL:
+        raise_gdal_import_error()
+
     bands = None
     if kwargs.get('bands', None) is not None:
         bands = kwargs.get('bands')
@@ -1032,9 +1073,11 @@ def prepare_data(path,
 
         kwargs_transforms['tfm_y'] = True
         databunch_kwargs['collate_fn'] = collate_fn
-    elif dataset_type in ['Labeled_Tiles', 'Imagenet']:
+    elif dataset_type in ['Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet']:
         if dataset_type == 'Labeled_Tiles':
             get_y_func = partial(_get_lbls, class_mapping=class_mapping)
+        elif dataset_type == 'MultiLabeled_Tiles':
+            get_y_func = _get_multi_lbls
         else:
             # Imagenet
             def get_y_func(x):
@@ -1312,7 +1355,10 @@ def prepare_data(path,
                     data.overflow_encountered = True
                     data.class_weight = None
                 else:
-                    data.class_weight = num_pixels_per_class.sum() /num_pixels_per_class
+                    _num_pixels_per_class = np.copy(num_pixels_per_class)
+                    _num_pixels_per_class[_num_pixels_per_class==0]=1
+                    data.class_weight = num_pixels_per_class.sum() / _num_pixels_per_class
+                    data.class_weight[num_pixels_per_class==0]=0
             else:
                 data.class_weight = None
 

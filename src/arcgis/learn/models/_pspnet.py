@@ -20,13 +20,14 @@ try:
     from fastai.layers import CrossEntropyFlat
     from .._utils.segmentation_loss_functions import  FocalLoss, MixUpCallback, DiceLoss
     from ._psp_utils import PSPNet, _pspnet_learner, _pspnet_learner_with_unet, accuracy
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from .._utils.classified_tiles import per_class_metrics
     import numpy as np
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.torch_core import split_model_idx
     from fastai.vision import flatten_model
     from ._deeplab_utils import compute_miou
+    from ._PointRend import PointRend_target_transform
     HAS_FASTAI = True
 except Exception as e:
     HAS_FASTAI = False
@@ -97,7 +98,7 @@ class PSPNetClassifier(ArcGISModel):
     :returns: `PSPNetClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, use_unet=True, pyramid_sizes=[1, 2, 3, 6], pretrained_path=None, unet_aux_loss=False, *args, **kwargs):
+    def __init__(self, data, backbone=None, use_unet=True, pyramid_sizes=[1, 2, 3, 6], pretrained_path=None, unet_aux_loss=False, pointrend=False, *args, **kwargs):
 
         # Set default backbone to be 'resnet50'
         if backbone is None: 
@@ -140,6 +141,7 @@ class PSPNetClassifier(ArcGISModel):
         self.pyramid_sizes = pyramid_sizes
         self._use_unet = use_unet
         self._unet_aux_loss = unet_aux_loss
+        self._pointrend = pointrend
 
         if use_unet:
             self.learn = _pspnet_learner_with_unet(data,
@@ -159,7 +161,8 @@ class PSPNetClassifier(ArcGISModel):
                                          backbone=self._backbone, 
                                          chip_size=self._data.chip_size, 
                                          pyramid_sizes=pyramid_sizes, 
-                                         pretrained=True, 
+                                         pretrained=True,
+                                         pointrend=self._pointrend,
                                          metrics=accuracy)
 
 
@@ -168,19 +171,27 @@ class PSPNetClassifier(ArcGISModel):
 
         self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback 
 
+        class_weight = None
         if self.class_balancing:
-            if self._data.class_weight is None:
-                logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
-            elif getattr(data, 'overflow_encountered', False):
-                logger.warning("Overflow Encountered. Ignoring `class_balancing` parameter.")
-                class_weight = [1] * len(data.classes)
+            if data.class_weight is not None:
+                # Handle condition when nodata is already at pixel value 0 in data
+                if (data.c - 1) == data.class_weight.shape[0]:
+                    class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(
+                        self._device)
+                else:
+                    class_weight = torch.tensor(data.class_weight).float().to(self._device)
+            else:
+                if getattr(data, 'overflow_encountered', False):
+                    logger.warning("Overflow Encountered. Ignoring `class_balancing` parameter.")
+                    class_weight = [1] * len(data.classes)
+                else:
+                    logger.warning(
+                        "Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
 
         if self._ignore_classes != []:
             if not self.class_balancing:
                 class_weight = torch.tensor([1] * data.c).float().to(self._device)
             class_weight[self._ignore_mapped_class] = 0.
-        else:
-            class_weight = None
 
         self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
         self._final_class_weight = class_weight
@@ -243,7 +254,7 @@ class PSPNetClassifier(ArcGISModel):
 
         :returns: `PSPNetClassifier` Object
         """
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
             
@@ -273,20 +284,26 @@ class PSPNetClassifier(ArcGISModel):
 
     def _psp_loss(self, outputs, targets, **kwargs):
         targets = targets.squeeze(1).detach()
-
+        
         criterion = nn.CrossEntropyLoss(weight=self._final_class_weight).to(self._device)
-
-        if self.learn.model.training: # returns a tuple of aux_logits and main_logits while training
+        if self.learn.model.training:
             out = outputs[0]
             aux = outputs[1]
+            if self._pointrend:
+                pointrend_out = outputs[2][0]
+                pointrend_coord = outputs[2][1]
+                pointrend_target = PointRend_target_transform(targets, pointrend_coord)
         else: # validation
             out = outputs
-
         main_loss = criterion(out, targets)
 
         if self.learn.model.training:
             aux_loss = criterion(aux, targets)
-            total_loss = main_loss + 0.4 * aux_loss  ## weight out the auxillary loss.
+            if self._pointrend:
+                pointrend_loss = criterion(pointrend_out, pointrend_target)
+                total_loss = main_loss + 0.4 * aux_loss + pointrend_loss
+            else:
+                total_loss = main_loss + 0.4 * aux_loss
             return total_loss
         else:
             return main_loss
@@ -327,6 +344,7 @@ class PSPNetClassifier(ArcGISModel):
         _emd_template["ModelType"] = "ImageClassification"
         _emd_template["ModelParameters"]["pyramid_sizes"] = self.pyramid_sizes
         _emd_template["ModelParameters"]["use_unet"] = self._use_unet
+        _emd_template["ModelParameters"]["pointrend"] = self._pointrend
         _emd_template["ModelParameters"]["unet_aux_loss"] = self._unet_aux_loss
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_psp"
@@ -357,12 +375,15 @@ class PSPNetClassifier(ArcGISModel):
         self.learn.show_results(rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs)
 
     def _show_results_multispectral(self, rows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
-        ax = show_results_multispectral(
+        return_fig = kwargs.get('return_fig', False)
+        fig,ax = show_results_multispectral(
             self, 
             nrows=rows, 
             alpha=alpha, 
             **kwargs
         )
+        if return_fig:
+            return fig
 
     @property
     def _model_metrics(self):
@@ -376,10 +397,9 @@ class PSPNetClassifier(ArcGISModel):
         try:
             model_accuracy = self.learn.recorder.metrics[-1][0]
             if checkpoint:
-                model_accuracy = np.max(self.learn.recorder.metrics)
+                val_losses = self.learn.recorder.val_losses
+                model_accuracy = self.learn.recorder.metrics[val_losses.index(min(val_losses))][0]
         except:
-            logger = logging.getLogger()
-            logger.debug("Cannot retrieve model accuracy.")
             model_accuracy = 0.0
 
         return float(model_accuracy)

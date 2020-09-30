@@ -41,7 +41,8 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                                 'esri/layers/support/RasterFunction',
                                 'esri/layers/support/MosaicRule',
                                 'esri/layers/PointCloudLayer',
-                                'esri/layers/IntegratedMeshLayer'],
+                                'esri/layers/IntegratedMeshLayer',
+                                'esri/layers/BuildingSceneLayer'],
         options).then(([ImageryLayer,
                         KMLLayer,
                         TileLayer,
@@ -58,7 +59,8 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                         RasterFunction,
                         MosaicRule,
                         PointCloudLayer,
-                        IntegratedMeshLayer]) => {
+                        IntegratedMeshLayer,
+                        BuildingSceneLayer]) => {
             if (noTypeLayer.type === "ImageryLayer"){
                 var typedLayer = new ImageryLayer(noTypeLayer.url);
                 typedLayer.id = noTypeLayer._hashFromPython;
@@ -148,6 +150,10 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                 resolve(typedLayer);}
             else if (noTypeLayer.type == "IntegratedMeshLayer"){
                 var typedLayer = new IntegratedMeshLayer({url: noTypeLayer.url});
+                typedLayer.id = noTypeLayer._hashFromPython;
+                resolve(typedLayer);}
+            else if (noTypeLayer.type == "BuildingSceneLayer"){
+                var typedLayer = new BuildingSceneLayer({url: noTypeLayer.url});
                 typedLayer.id = noTypeLayer._hashFromPython;
                 resolve(typedLayer);}
             else if ((noTypeLayer.type == "FeatureLayer") ||

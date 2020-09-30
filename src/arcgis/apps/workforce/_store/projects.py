@@ -449,7 +449,8 @@ def _v2_create_service(gis, service_name, folder_name, spatial_ref, item_propert
         "name": service_name,
         "capabilities": 'Query,Editing,Create,Update,Delete,Sync',
         "spatialReference": spatial_ref,
-        "syncRowsMovedOutsideFilter": True
+        "syncRowsMovedOutsideFilter": True,
+        "preserveLayerIds": True
     }
 
     return gis.content.create_service(

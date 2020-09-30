@@ -7,7 +7,7 @@ try:
     from fastai.vision import flatten_model
     import torch
     from fastai.torch_core import split_model_idx
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
 
     HAS_FASTAI = True
 
@@ -164,7 +164,7 @@ class BDCNEdgeDetector(ModelExtension):
 
         :returns: `Bi-Directional Cascade Network for Perceptual Edge Detection` Object
         """
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
 
         with open(emd_path) as f:
             emd = json.load(f)

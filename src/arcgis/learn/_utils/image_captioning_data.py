@@ -696,6 +696,7 @@ def show_batch(self, rows=2, **kwargs):
 def show_results(self, rows, **kwargs):
 
     figsize = kwargs.get('figsize', (20, rows*5))
+    return_fig = kwargs.get('return_fig', False)
     show_coords = kwargs.get('show_coords', False)
     beam_width = kwargs.get('beam_width', 3)
     max_len = kwargs.get('max_len', 15)
@@ -725,3 +726,5 @@ def show_results(self, rows, **kwargs):
         show_image_and_text(ax[k][1], denormalize(img, *self._data.norm_stats), caption_pred, show_coords)
         if k == rows-1:
             break
+    if return_fig:
+        return fig

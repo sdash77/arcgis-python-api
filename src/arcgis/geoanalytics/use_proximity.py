@@ -167,7 +167,7 @@ def create_buffers(input_layer,
         else:
             params['distance'] = None
             params['distance_unit'] = None
-    
+
     if output_name is None:
         output_service_name = 'Create Buffers Analysis_' + _id_generator()
         output_name = output_service_name.replace(' ', '_')
@@ -176,13 +176,17 @@ def create_buffers(input_layer,
     if context is not None:
         output_datastore = context.get('dataStore', None)
     else:
-        output_datastore = None   
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Create Buffers', 
+        output_datastore = None
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Create Buffers',
                                             output_datastore=output_datastore)
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
         params["context"] = context

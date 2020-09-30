@@ -21,7 +21,7 @@ try:
     from ._unet_utils import is_no_color, LabelCallback, _class_array_to_rbg, predict_batch, show_results_multispectral
     from fastai.callbacks import EarlyStoppingCallback
     from torch.nn import Module as NnModule
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from .._utils.classified_tiles import per_class_metrics
     from ._psp_utils import accuracy
     from ._deeplab_utils import compute_miou
@@ -147,31 +147,37 @@ class UnetClassifier(ArcGISModel):
             else:
                 self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
 
+            class_weight = None
             if self.class_balancing:
                 if data.class_weight is not None:
-                    class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(self._device)
+                    # Handle condition when nodata is already at pixel value 0 in data
+                    if (data.c-1) == data.class_weight.shape[0]:
+                        class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(self._device)
+                    else:
+                        class_weight = torch.tensor(data.class_weight).float().to(self._device)
                 else:
                     if getattr(data, 'overflow_encountered', False):
                         logger.warning("Overflow Encountered. Ignoring `class_balancing` parameter.")
                         class_weight = [1] * len(data.classes)
                     else:
-                        logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")                
+                        logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
+
 
             if self._ignore_classes != []:
                 if not self.class_balancing:
                     class_weight = torch.tensor([1] * data.c).float().to(self._device)
                 class_weight[self._ignore_mapped_class] = 0.
-            else:
-                class_weight = None
 
+            self._final_class_weight = class_weight
             self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
 
             if self.focal_loss:
                 self.learn.loss_func = FocalLoss(self.learn.loss_func)
             if self.mixup:
                 self.learn.callbacks.append(MixUpCallback(self.learn))
-        if self.dice_loss_fraction:
-            self.learn.loss_func = DiceLoss(self.learn.loss_func, self.dice_loss_fraction,  weighted_dice=self.weighted_dice)
+
+            if self.dice_loss_fraction:
+                self.learn.loss_func = DiceLoss(self.learn.loss_func, self.dice_loss_fraction,  weighted_dice=self.weighted_dice)
 
             self._arcgis_init_callback() # make first conv weights learnable
             self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback
@@ -246,7 +252,7 @@ class UnetClassifier(ArcGISModel):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
             
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
 
@@ -311,12 +317,15 @@ class UnetClassifier(ArcGISModel):
         return predict_batch(self, imagetensor_batch)
 
     def _show_results_multispectral(self, rows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
-        ax = show_results_multispectral(
+        return_fig = kwargs.get('return_fig', False)
+        fig,ax = show_results_multispectral(
             self, 
             nrows=rows, 
             alpha=alpha, 
             **kwargs
         )
+        if return_fig:
+            return fig
 
     def show_results(self, rows=5, **kwargs):
         """
@@ -339,10 +348,9 @@ class UnetClassifier(ArcGISModel):
         try:
             model_accuracy = self.learn.recorder.metrics[-1][0]
             if checkpoint:
-                model_accuracy = np.max(self.learn.recorder.metrics)
+                val_losses = self.learn.recorder.val_losses
+                model_accuracy = self.learn.recorder.metrics[val_losses.index(min(val_losses))][0]
         except:
-            logger = logging.getLogger()
-            logger.debug("Cannot retrieve model accuracy.")
             model_accuracy = 0.0
 
         return float(model_accuracy)

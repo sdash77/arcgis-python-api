@@ -23,7 +23,7 @@ try:
     from fastai.vision import imagenet_stats, normalize
     from fastai.vision.image import bb2hw, Image, pil2tensor
     from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList, show_results_multispectral
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from .._utils.utils import extract_zipfile
     from ._yolov3_utils import YOLOv3_Model, YOLOv3_Loss, AppendLabelsCallback, generate_anchors, compute_class_AP
     from ._yolov3_utils import download_yolo_weights, parse_yolo_weights, postprocess, coco_config, coco_class_mapping
@@ -193,8 +193,9 @@ class YOLOv3(ArcGISModel):
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self)
     
     def _show_results_multispectral(self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs):
+        return_fig = kwargs.get('return_fig', False)
         self.learn.predicting = True
-        ax = show_results_multispectral(
+        fig,ax = show_results_multispectral(
             self, 
             nrows=rows, 
             thresh=thresh, 
@@ -554,7 +555,7 @@ class YOLOv3(ArcGISModel):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
             
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         emd = json.load(open(emd_path))
         model_file = Path(emd['ModelFile'])
         chip_size = emd["ImageWidth"]

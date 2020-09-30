@@ -136,6 +136,14 @@ class ChildImageClassifier:
         required_parameters.extend(
             [
                 {
+                    'name': 'image_size',
+                    'dataType': 'numeric',
+                    'value': int(self.json_info['ImageHeight']),
+                    'required': False,
+                    'displayName': 'Image Size',
+                    'description': 'Image size used for inferencing'
+                },
+                {
                     'name': 'padding',
                     'dataType': 'numeric',
                     'value': int(self.json_info['ImageHeight'])//4,
@@ -164,13 +172,13 @@ class ChildImageClassifier:
         return required_parameters
 
     def getConfiguration(self, **scalars):
-        self.padding = int(scalars.get('padding', self.json_info['ImageHeight'] // 4)) ## Default padding Imageheight//4.
+        self.tytx = int(scalars.get('image_size', self.json_info['ImageHeight']))
+        self.padding = int(scalars.get('padding', self.tytx // 4)) ## Default padding Imageheight//4.
         self.batch_size = int(math.sqrt(int(scalars.get('batch_size', 4)))) ** 2  ## Default 4 batch_size 
         self.predict_background = scalars.get('predict_background', 'true').lower() in ['true', '1', 't', 'y', 'yes']  ## Default value True
 
         self.rectangle_height, self.rectangle_width = calculate_rectangle_size_from_batch_size(self.batch_size)
-        ty, tx = get_tile_size(self.json_info['ImageHeight'], self.json_info['ImageWidth'],
-                                         self.padding, self.rectangle_height, self.rectangle_width)
+        ty, tx = get_tile_size(self.tytx, self.tytx, self.padding, self.rectangle_height, self.rectangle_width)
 
         return {
             'extractBands': tuple(self.json_info['ExtractBands']),
@@ -184,8 +192,8 @@ class ChildImageClassifier:
         input_image = pixelBlocks['raster_pixels'].astype(np.float32)
         batch, batch_height, batch_width = \
             tile_to_batch(input_image,
-                                    self.json_info['ImageHeight'],
-                                    self.json_info['ImageWidth'],
+                                    self.tytx,
+                                    self.tytx,
                                     self.padding,
                                     fixed_tile_size=True,
                                     batch_height=self.rectangle_height,

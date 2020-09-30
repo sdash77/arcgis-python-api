@@ -21,6 +21,7 @@ from datetime import datetime
 import logging
 from typing import Tuple
 from urllib.error import  HTTPError
+from urllib.parse import urlparse
 import concurrent.futures
 
 import arcgis.env
@@ -30,7 +31,7 @@ from arcgis.gis._impl._con._helpers import _is_http_url
 from arcgis._impl.common._deprecate import deprecated
 from ._impl import _portalpy
 
-from ._impl._jb import StatusJob  
+from ._impl._jb import StatusJob
 _log = logging.getLogger(__name__)
 
 class Error(Exception): pass
@@ -273,7 +274,7 @@ class GIS(object):
                 url, username, password, key_file, cert_file, client_id = pm._retrieve(profile)
             else:
                 _log.info(f"Profile {profile} was not saved, using user provided credentials for the `GIS` object.")
-                
+
         if url is None:
             url = "https://www.arcgis.com"
         if (self._uri_validator(url) == False) and \
@@ -303,7 +304,7 @@ class GIS(object):
         self._client_id = client_id
         self._datastores_list = None
         self._utoken = kwargs.pop('token', None)
-        if self._username is None:                
+        if self._username is None:
             if "ESRI_API_KEY" in os.environ and self._utoken is None:
                 self._utoken = os.environ.get("ESRI_API_KEY", None)
             elif self._utoken is None and not "ESRI_API_KEY" in os.environ:
@@ -314,7 +315,7 @@ class GIS(object):
             #configuring for hosted notebooks need to happen before portalpy
             self._try_configure_for_hosted_nb()
             if self._expiration is None:
-                self._expiration = 10080 
+                self._expiration = 10080
         elif self._url.lower() == "home" and \
              os.getenv('NB_AUTH_FILE', None) is None:
             self._url = "pro"
@@ -331,7 +332,7 @@ class GIS(object):
                                            client_id=self._client_id,
                                            expiration=self._expiration,
                                            referer=self._referer,
-                                           custom_auth=custom_auth)
+                                           custom_auth=custom_auth, token=self._utoken)
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
                 self._portal.con._referer = ""
@@ -383,7 +384,8 @@ class GIS(object):
                                       proxy_host=self._proxy_host,
                                       expiration=self._expiration,
                                       referer=self._referer,
-                                      custom_auth=custom_auth)
+                                      custom_auth=custom_auth,
+                                      token=self._utoken)
                 self._portal = pp
         except: pass
 
@@ -479,13 +481,13 @@ class GIS(object):
     @_lazy_property
     def api_keys(self):
         """
-        Returns the `APIKeyManager` which allows User to generate, manage 
-        and modify API Keys for controlled application access. 
-        
+        Returns the `APIKeyManager` which allows User to generate, manage
+        and modify API Keys for controlled application access.
+
         **The API Key manager is only available for ArcGIS Online**
-        
+
         :returns: APIKeyManager
-        
+
         """
         if self._portal.is_arcgisonline and self.version >= [8,2]:
             from arcgis.gis._impl._apikeys import APIKeyManager
@@ -662,9 +664,9 @@ class GIS(object):
         """
         The resource managers for GIS datastores. This is only available with Enterprises version 10.7+.
         See :class:`~arcgis.gis._impl._datastores.PortalDataStore` for more information.
-        
+
         :return: :class:`~arcgis.gis._impl._datastores.PortalDataStore`
-        
+
         """
         if self.version >= [7,1] and not self._portal.is_arcgisonline:
             from arcgis.gis._impl._datastores import PortalDataStore
@@ -1132,8 +1134,11 @@ class Datastore(dict):
         url = self._admin_url + '/data/items' + self.datapath + "/manifest/regenerate"
         params = {'f' : 'json'}
         res = self._portal.con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if isinstance(res, dict):
+            if 'success' in res:
+                return res['success']
+            if 'status' in res:
+                return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
     def validate(self):
@@ -1156,7 +1161,12 @@ class Datastore(dict):
         path = self._admin_url + "/data/validateDataItem"
 
         res = self._portal.con.post(path, params, verify_cert=False)
-        return res['status'] == 'success'
+        if isinstance(res, dict):
+            if 'success' in res:
+                return res['success']
+            if 'status' in res:
+                return res['status'] == 'success'
+        return res
 
     @property
     def datasets(self):
@@ -1218,8 +1228,8 @@ class GroupMigrationManager(object):
             if run_async:
                 params['async'] = run_async
 
-            return self._con.post(url, 
-                                  params, 
+            return self._con.post(url,
+                                  params,
                                   try_json=try_json)
 
         else:
@@ -1251,16 +1261,16 @@ class GroupMigrationManager(object):
         """
         Exports a `Group` content to a **EPK Package Item**.
 
-        `EPK Items` are intended to migrate content from an enterprise deployment to a new 
-        enterprise. Once an `EPK Item` is created using this method, you can use the `load` 
-        to ingest the package's content into the target enterprise. If your package 
-        contains web maps, web-mapping applications, and/or associated web layers, during 
-        the import operation, the method will takes care of swizzling the service URLs and 
+        `EPK Items` are intended to migrate content from an enterprise deployment to a new
+        enterprise. Once an `EPK Item` is created using this method, you can use the `load`
+        to ingest the package's content into the target enterprise. If your package
+        contains web maps, web-mapping applications, and/or associated web layers, during
+        the import operation, the method will takes care of swizzling the service URLs and
         item IDs correctly.
 
-        There are some limits to this functionality. Packages should be under 10 GB in size 
-        and only hosted feature layers, web maps, web-mapping apps, and other text-based 
-        items are supported. You need to have **administrative** privileges to run this 
+        There are some limits to this functionality. Packages should be under 10 GB in size
+        and only hosted feature layers, web maps, web-mapping apps, and other text-based
+        items are supported. You need to have **administrative** privileges to run this
         operation.
 
 
@@ -1284,15 +1294,15 @@ class GroupMigrationManager(object):
             params = {
                       'itemIdList' : items
                       }
-            
+
             params['async'] = json.dumps(True)
             res = self._gis._con.post(url, params)
-            
+
             executor =  concurrent.futures.ThreadPoolExecutor(1)
             futureobj = executor.submit(self._status, **{"job_id" : res['jobId'], "key": res['key']})
             executor.shutdown(False)
-            job = StatusJob(future=futureobj, op='Export Group Content', jobid=res['jobId'], gis=self._gis, notify=arcgis.env.verbose)                  
-            if future:     
+            job = StatusJob(future=futureobj, op='Export Group Content', jobid=res['jobId'], gis=self._gis, notify=arcgis.env.verbose)
+            if future:
                 return job
             else:
                 return job.result()
@@ -1305,33 +1315,33 @@ class GroupMigrationManager(object):
              overwrite:bool=True,
              future:bool=True):
         """
-        Imports the EPK content into the current `Group`. 
-        
+        Imports the EPK content into the current `Group`.
+
         Administrative privileges are required to run this operation.
-        Once imported, items will be owned by the importer, and will have 
-        to be manually reassigned to the proper owner if needed.  
-        
-        
+        Once imported, items will be owned by the importer, and will have
+        to be manually reassigned to the proper owner if needed.
+
+
         ================  ===============================================================================
         **Keys**          **Description**
         ----------------  -------------------------------------------------------------------------------
-        epk_item          Required Item. A report on the content of the EPK Item.  This allows administrators 
+        epk_item          Required Item. A report on the content of the EPK Item.  This allows administrators
                           to view the contents inside a EPK.
         ----------------  -------------------------------------------------------------------------------
-        item_ids          Optional list. A list of item IDs to import to the organization. 
+        item_ids          Optional list. A list of item IDs to import to the organization.
         ----------------  -------------------------------------------------------------------------------
-        overwrite         Optional bool. If the Items import exist, or the Item ID that is in use 
-                          already, it will delete the old item and replace it with this one. 
+        overwrite         Optional bool. If the Items import exist, or the Item ID that is in use
+                          already, it will delete the old item and replace it with this one.
         ----------------  -------------------------------------------------------------------------------
-        future            Optional bool. When True, the `load` will return a `Job` object and will not 
-                          pause the current thread.  When `False` `load` will occur in a synchronous 
+        future            Optional bool. When True, the `load` will return a `Job` object and will not
+                          pause the current thread.  When `False` `load` will occur in a synchronous
                           fashion pausing the thread.  If you are loading large amounts of data, set
                           future to `True` to reduce time.
         ================  ===============================================================================
-        
+
         :returns: dict --or-- Job when future=True
-        
-        """      
+
+        """
         assert isinstance(epk_item, Item)
         if isinstance(epk_item, Item) and \
            epk_item.type == 'Export Package':
@@ -1343,10 +1353,10 @@ class GroupMigrationManager(object):
             executor =  concurrent.futures.ThreadPoolExecutor(1)
             futureobj = executor.submit(self._status, **{"job_id" : res['jobId'], "key": res['key']})
             executor.shutdown(False)
-            job = StatusJob(future=futureobj, 
-                            op='Export Group Content', 
-                            jobid=res['jobId'], 
-                            gis=self._gis, notify=arcgis.env.verbose)                              
+            job = StatusJob(future=futureobj,
+                            op='Export Group Content',
+                            jobid=res['jobId'],
+                            gis=self._gis, notify=arcgis.env.verbose)
             if future:
                 return job
             else:
@@ -1358,17 +1368,17 @@ class GroupMigrationManager(object):
     def inspect(self, epk_item) -> dict:
         """
         Returns the contents of the EPK Package
-        
+
         ================  ===============================================================================
         **Keys**          **Description**
         ----------------  -------------------------------------------------------------------------------
-        epk_item          Required Item. A report on the content of the EPK Item.  This allows administrators 
+        epk_item          Required Item. A report on the content of the EPK Item.  This allows administrators
                           to view the contents inside a EPK.
-                          
+
         ================  ===============================================================================
-        
+
         :returns: dict
-        
+
         """
         if isinstance(epk_item, Item) and epk_item.type == 'Export Package':
             try:
@@ -1388,8 +1398,8 @@ class GroupMigrationManager(object):
                 if res['nextStart'] == -1:
                     break
             res['results'] = results
-            return res            
-            
+            return res
+
         else:
             raise Exception("Invalid Item Type.")
         return None
@@ -2234,9 +2244,33 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         thumbnail         Optional string. The URL to user's image.
         ----------------  -------------------------------------------------------------------------------
-        role              Optional string. The role for the user account. The default value is org_user.
-                          Other possible values are org_user, org_publisher, org_admin, viewer,
-                          view_only, viewplusedit or a custom role object (from gis.users.roles).
+        role              Optional string. The :class:`role <arcgis.gis.Role>` for the user account. The
+                          default value is ``org_user``. Other possible values are ``org_publisher``,
+                          ``org_admin``, ``viewer``, ``viewplusedit`` or a custom :class:`role_id <arcgis.gis.Role>`
+                          value obtained from the :func:`~RoleManager.all` method of the :class:`RoleManager` class.
+
+                           .. code-block:: python
+                              :emphasize-lines: 10,18
+
+                              # Usage Example: Assign custom role to a new user
+
+                              >>> role_mgr = gis.users.roles
+
+                              >>> for role in role_mgr.all():
+                              >>>     print(f"{role.name}  {role.role_id}")
+
+                                  Viewer              iAAAAAAAAAAAAAAA
+                                  Data Editor         iBBBBBBBBBBBBBBB
+                                  CustomRole          bKrTCjFF9tKbaFk8
+
+                              >>> gis.users.create(username='new_user_1',
+                                                   password='<strong_password>',
+                                                   firstname='New',
+                                                   lastname='User',
+                                                   email='namee@organization.com',
+                                                   description='User with custom role assigned',
+                                                   role='bKrTCjFF9tKbaFk8',
+                                                   user_type='Creator')
         ----------------  -------------------------------------------------------------------------------
         provider          Optional string. The provider for the account. The default value is arcgis.
                           The other possible value is enterprise.
@@ -2260,7 +2294,7 @@ class UserManager(object):
         ================  ===============================================================================
 
         :return:
-            The user if successfully created, None if unsuccessful.
+            The :class:`user <arcgis.gis.User>` if successfully created, None if unsuccessful.
 
         """
         kwargs = locals()
@@ -2478,7 +2512,8 @@ class UserManager(object):
         if self._gis.version >= [7,2]:
             if self._gis._is_agol:
                 if user_type is None and role is None:
-                    if 'userLicenseType' in self.user_settings:
+                    if self.user_settings and \
+                       'userLicenseType' in self.user_settings:
                         user_type = self.user_settings['userLicenseType']
                         role = self.user_settings['role']
         else:
@@ -2541,9 +2576,12 @@ class UserManager(object):
             if credits == -1 and self._gis.version >= [7,2] and \
                 self._gis.properties['defaultUserCreditAssignment'] != -1:
                 credits = self._gis.properties['defaultUserCreditAssignment']
-            if not groups and self.user_settings['groups']:
-                groups = [self._gis.groups.get(g)
-                          for g in self.user_settings['groups']]
+            if not groups and \
+               self.user_settings and \
+               'groups' in self.user_settings and \
+               self.user_settings['groups']:
+                groups = [g for g in self.user_settings['groups']]
+
             params = {
                 'f': 'json',
                 'invitationList': {'invitations': [
@@ -2555,7 +2593,7 @@ class UserManager(object):
                     'email': email,
                     'role': role,
                     "userLicenseType": user_type,
-                    "groups":",".join(group.id for group in groups),
+                    "groups":",".join(groups),
                     "userCreditAssignment": credits,
 
                     }
@@ -2581,7 +2619,9 @@ class UserManager(object):
                     return None
                 else:
                     new_user = self.get(username)
-                    if not self.user_settings['userType'] == 'arcgisonly':
+                    if self.user_settings and \
+                    'userType' in self.user_settings and \
+                       not self.user_settings['userType'] == 'arcgisonly':
                         update_url = "community/users/" + username + "/update"
                         user_params = {"f":"json",
                                        "token":"token",
@@ -3118,7 +3158,7 @@ class UserManager(object):
         return res
 
 class RoleManager(object):
-    """Helper class to manage custom roles for users in a GIS."""
+    """Helper class to manage custom :class:`roles <arcgis.gis.Role>` for users in a GIS."""
 
     def __init__(self, gis):
         """Creates helper object to manage custom roles in the GIS"""
@@ -3143,7 +3183,7 @@ class RoleManager(object):
 
 
         :return:
-           The custom role if successfully created, None if unsuccessful.
+           The custom :class:`role <arcgis.gis.Role>` if successfully created, None if unsuccessful.
         """
         if self.exists(role_name=name) == False:
             role_id = self._portal.create_role(name, description)
@@ -3176,7 +3216,7 @@ class RoleManager(object):
         ==================     ====================================================================
 
         :return:
-           True if the role exists, and False if it does not.
+           True if the :class:`role <arcgis.gis.Role>` exists, and False if it does not.
         """
         for role in self.all():
             if role.name.lower() == role_name.lower():
@@ -3185,7 +3225,8 @@ class RoleManager(object):
 
     def all(self, max_roles=1000):
         """
-        Provides the list of all roles in the GIS.
+        Provides the list of all non-default roles in the GIS. (The ``org_admin``, ``org_user``,
+        and ``org_publisher`` roles are not returned)
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -3194,7 +3235,7 @@ class RoleManager(object):
         ==================     ====================================================================
 
         :return:
-           The list of all roles in the GIS.
+           The list of all non-default :class:`roles <arcgis.gis.Role>` in the GIS.
         """
         roles = self._portal.get_org_roles(max_roles)
         return [Role(self._gis, role['id'], role) for role in roles]
@@ -3211,7 +3252,7 @@ class RoleManager(object):
         ==================     ====================================================================
 
         :return:
-           The Role object associated with the specified role ID
+           The :class:`Role <arcgis.gis.Role>` object associated with the specified role ID
         """
         role = self._portal.con.post('portals/self/roles/' + role_id, self._portal._postdata())
         return Role(self._gis, role['id'], role)
@@ -3457,18 +3498,18 @@ class GroupManager(object):
                               This option can't be disabled once the group has
                               been created. Default is False.
         --------------------  ---------------------------------------------------------
-        display_settings      Optional String. Defines the default display for the 
-                              group page to show a certain type of items. The allowed 
-                              values are: `apps, all, files, maps, layers, scenes, tools`. 
-                              The default value is `all`. 
+        display_settings      Optional String. Defines the default display for the
+                              group page to show a certain type of items. The allowed
+                              values are: `apps, all, files, maps, layers, scenes, tools`.
+                              The default value is `all`.
         --------------------  ---------------------------------------------------------
-        is_open_data          Optional Boolean. Defines whether the group can be used 
-                              in the Open Data capabilities of ArcGIS Hub. The default 
+        is_open_data          Optional Boolean. Defines whether the group can be used
+                              in the Open Data capabilities of ArcGIS Hub. The default
                               is False.
         --------------------  ---------------------------------------------------------
-        leaving_disallowed    Optional boolean. Defines whether users are restricted 
-                              from choosing to leave the group. If True, only an 
-                              administrator can remove them from the group. The default 
+        leaving_disallowed    Optional boolean. Defines whether users are restricted
+                              from choosing to leave the group. If True, only an
+                              administrator can remove them from the group. The default
                               is False.
         ====================  =========================================================
 
@@ -3489,7 +3530,7 @@ class GroupManager(object):
             max_file_size = 1024000
         if users_update_items is None:
             users_update_items = False
-        
+
         if type(tags) is list:
             tags = ",".join(tags)
         params = {
@@ -3518,7 +3559,7 @@ class GroupManager(object):
         #if self._gis.version >= [8,2] and display_settings:
         #    params["itemTypes"] = display_settings
         group = self._portal.create_group_from_dict(params, thumbnail)
-        
+
         if group is not None:
             return Group(self._gis, group['id'], group)
         else:
@@ -4100,7 +4141,8 @@ class ContentManager(object):
         -----------------------    -------------------------------------------------------------
         text                       optional string. The text in the file to be analyzed.
         -----------------------    -------------------------------------------------------------
-        file_type                  optional string. The type of the input file: shapefile, csv or excel
+        file_type                  optional string. The type of the input file: shapefile, csv, excel,
+                                   or geoPackage (Added ArcGIS API for Python 1.8.3+).
         -----------------------    -------------------------------------------------------------
         source_locale              optional string. The locale used for the geocoding service source.
         -----------------------    -------------------------------------------------------------
@@ -4158,6 +4200,9 @@ class ContentManager(object):
                 elif str(d).lower().endswith('.xls') or \
                      str(d).lower().endswith('.xlsx'):
                     params['fileType'] = 'excel'
+                elif str(d).lower().endswith('gpkg'):
+                    params['fileType'] = 'geoPackage'
+
         elif str(file_type).lower() in ['excel', 'csv']:
             params['fileType'] = file_type
         if source_country:
@@ -4744,7 +4789,135 @@ class ContentManager(object):
             else:
                 owner_name = owner
             return self._portal.delete_folder(owner_name, folder)
+    #----------------------------------------------------------------------
+    def _generate(self, gurl, params, files, gis):
+        """
+        private async logic for `generate`.
+        """
+        res = gis._con.post(gurl, params, files=files)
+        if res['status']:
+            item = gis.content.get(res['outputItemId'])
+            status = item.status(res['jobId'], "generateFeatures")
+            while status['status'] != 'completed':
+                if status['status'] == 'failed':
+                    try:
+                        item.delete()
+                        return status
+                    except:
+                        return status
+                status = item.status(res['jobId'], "generateFeatures")
+            item.update(item_properties={'title' : f"Generate Features: {res['jobId']}"})
+            return item
+        return res
+    #----------------------------------------------------------------------
+    def generate(self,
+                 item=None,
+                 file_path=None,
+                 url=None,
+                 text=None,
+                 publish_parameters=None,
+                 future=True):
+        """
+        The Generate call helps a client generate features from a CSV file, shapefile,
+        GPX, or GeoJson file types.
 
+        ===================  ==========================================================================
+        **Argument**         **Description**
+        -------------------  --------------------------------------------------------------------------
+        item                 Optional Item. An `Item` on the current portal.
+        -------------------  --------------------------------------------------------------------------
+        file_path            Optional String. The file resource location on local disk.
+        -------------------  --------------------------------------------------------------------------
+        url                  Optional String. A web resource of a 'shapefile', 'csv', 'gpx' or 'geojson' file.
+        -------------------  --------------------------------------------------------------------------
+        text                 Optional String. The source text.
+        -------------------  --------------------------------------------------------------------------
+        publish_parameters   Optional Dict.A JSON object describing the layer and service to be created
+                             as part of the `publish` operation. The appropriate value for publish
+                             parameters depends on the file type being published. For a complete
+                             description, see the  `Item`'s Publish method.
+        -------------------  --------------------------------------------------------------------------
+        future               Optional Boolean.  This allows the operation to run asynchronously allowing
+                             the user to not pause the thread and continue to perform multiple operations.
+                             The default is `True`.  When `True` the result of the method will be a
+                             concurrent `Future` object.  The `result` of the method can be obtained
+                             using the `result()` on the `Future` object.  When `False`, and Item is
+                             returned
+        ===================  ==========================================================================
+
+        :return: `Future` object when `future==True`,
+                 `Item` when `future==False`,
+                 `dict` of error messages on Exceptions
+
+        """
+        if item is None and \
+           file_path is None and \
+           text is None and \
+           url is None:
+            raise Exception("You must provide an item, file_path, text or url.")
+        gurl = f"{self._gis._portal.resturl}content/features/generate"
+        params = {
+            "f" : "json",
+            "itemid": "",
+            "sourceUrl" : "",
+            "text" : "",
+            "filetype" : "",
+            "publishParameters" : publish_parameters or "",
+            'async' : True
+        }
+        files = None
+        file_types = {
+            '.gpx' : 'gpx',
+            '.csv' : 'csv',
+            '.zip' : 'shapefile',
+            '.json' : 'geojson'
+        }
+        if item and item.type.lower() in ['shapefile', 'csv', 'gpx', 'geojson']:
+            params['itemid'] = item.itemid
+            if item.type.lower() == 'shapefile':
+                params['filetype'] = 'shapefile'
+            elif item.type.lower() == 'gpx':
+                params['filetype'] = 'gpx'
+            elif item.type.lower() == 'csv':
+                params['filetype'] = 'csv'
+            elif item.type.lower() == 'geojson':
+                params['filetype'] = 'geojson'
+            else:
+                raise Exception(f"Invalid Item Type {item.type}")
+
+        elif url:
+            params['sourceUrl'] = url
+            part = os.path.splitext(url)[-1]
+            if part in file_types:
+                params['filetype'] = file_types[part]
+            else:
+                raise Exception(f"Invalid file extension: {part}")
+        elif file_path and os.path.isfile(file_path):
+            part = os.path.splitext(url)[-1]
+            if part in file_types:
+                params['filetype'] = file_types[part]
+            else:
+                raise Exception(f"Invalid file extension: {part}")
+            files.append(('file', file_path, os.path.basename(file_path)))
+        elif text:
+            params['text'] = text
+            params['fileType'] = 'csv'
+
+        if future == True:
+            executor =  concurrent.futures.ThreadPoolExecutor(1)
+            futureobj = executor.submit(self._generate,
+                                        **{"gurl" : gurl, "params":params,
+                                           "files" : files, "gis" : self._gis})
+            executor.shutdown(False)
+            return futureobj
+        else:
+            executor =  concurrent.futures.ThreadPoolExecutor(1)
+            futureobj = executor.submit(self._generate,
+                                        **{"gurl" : gurl, "params":params,
+                                           "files" : files, "gis" : self._gis})
+            executor.shutdown(False)
+            return futureobj.result()
+    #----------------------------------------------------------------------
     def import_data(self, df, address_fields=None, folder=None, item_id=None, **kwargs):
         """
         Imports a Pandas data frame (that has an address column), or an arcgis
@@ -5222,7 +5395,7 @@ class ContentManager(object):
         layer with the staging with minimal downtime. This operation has the option to keep a backup of the production
         tile layer.
 
-        *Note*: This functionality is only available for hosted vector tile layers, hosted tile layers and hosted scene 
+        *Note*: This functionality is only available for hosted vector tile layers, hosted tile layers and hosted scene
         layers based on packages.
 
         *Note*: If you are looking to clone services, use the `clone_items()` method instead.
@@ -5646,7 +5819,23 @@ class ResourceManager(object):
         else:
             self._user_id = user.username
 
-    def add(self, file=None, folder_name=None, file_name=None, text=None, archive=False):
+    def export(self, save_path=None, file_name=None):
+        """Export's the data's resources as a zip file"""
+        url = 'content/users/'+ self._user_id +\
+                    '/items/' + self._item.itemid + "/resources/export"
+        if save_path is None:
+            save_path = tempfile.gettempdir()
+        if file_name is None:
+            import uuid
+            file_name = f"{uuid.uuid4().hex[:6]}.zip"
+        params = {'f' : 'zip'}
+        #from arcgis.gis._impl._con import Connection
+        con = self._portal.con
+        #isinstance(con, Connection)
+        resources = con.get(url, params=params,out_folder=save_path, file_name=file_name, try_json=False)
+        return resources
+
+    def add(self, file=None, folder_name=None, file_name=None, text=None, archive=False, access=None):
         """The add resources operation adds new file resources to an existing item. For example, an image that is
         used as custom logo for Report Template. All the files are added to 'resources' folder of the item. File
         resources use storage space from your quota and are scanned for viruses. The item size is updated to
@@ -5676,6 +5865,12 @@ class ResourceManager(object):
         ----------------  ---------------------------------------------------------------
         archive           Optional boolean. Default is False.  If True, file resources
                           added are extracted and files are uploaded to respective folders.
+        ----------------  ---------------------------------------------------------------
+        access            Optional String. Set file resource to be private regardless of
+                          the item access level, or revert it by setting it to `inherit`
+                          which makes the item resource have the same access as the item.
+
+                          Supported values: `private` or `inherit`.
         ================  ===============================================================
 
         :return:
@@ -5715,7 +5910,8 @@ class ResourceManager(object):
         if text is not None:
             params['text'] = text
         params['archive'] = 'true' if archive else 'false'
-
+        if access and str(access) in ['inherit', 'private']:
+            params['access'] = access
         resp = self._portal.con.post(query_url, params,
                                      files=files, compress=False)
         return resp
@@ -5972,6 +6168,83 @@ class Group(dict):
             thumbnail_url_path = self._gis._public_rest_url + 'community/groups/' + self.groupid + '/info/' + thumbnail_file
             return thumbnail_url_path
 
+    def search(self,
+               query,
+               return_count=False,
+               max_items=100,
+               bbox=None,
+               categories=None,
+               category_filter=None,
+               start=1,
+               sort_field="title",
+               sort_order="ASC",
+               as_dict=False):
+        """
+        The `search` operation allows users to find content within the specific group.
+
+        ================    ===============================================================
+        **Argument**        **Description**
+        ----------------    ---------------------------------------------------------------
+        query               Required String.  The search query.
+        ----------------    ---------------------------------------------------------------
+        bbox                Optional String/List. This is the xmin,ymin,xmax,ymax bounding
+                            box to limit the search in.  Items like documents do not have
+                            bounding boxes and will not be included in the search.
+        ----------------    ---------------------------------------------------------------
+        categories          Optional String. A comma separated list of up to 8 org content
+                            categories to search items. Exact full path of each category is
+                            required, OR relationship between the categories specified.
+
+                            Each request allows a maximum of 8 categories parameters with
+                            AND relationship between the different categories parameters
+                            called.
+        ----------------    ---------------------------------------------------------------
+        category_filters    Optional String. A comma separated list of up to 3 category
+                            terms to search items that have matching categories. Up to 2
+                            `category_filters` parameter are allowed per request. It can
+                            not be used together with categories to search in a request.
+        ----------------    ---------------------------------------------------------------
+        start               Optional Int. The starting position to search from.  This is
+                            only required if paging is needed.
+        ----------------    ---------------------------------------------------------------
+        sort_field          Optional String. Responses from the `search` operation can be
+                            sorted on various fields. `avgrating` is the default.
+        ----------------    ---------------------------------------------------------------
+        sort_order          Optional String. The sequence into which a collection of
+                            records are arranged after they have been sorted. The allowed
+                            values are: asc for ascending and desc for descending.
+        ----------------    ---------------------------------------------------------------
+        as_dict             Required Boolean. If True, the response comes back as a dictionary.
+        ================    ===============================================================
+
+
+        :returns: List of Items
+        """
+        from ._impl._search import _search
+        if return_count:
+            return _search(gis=self._gis,
+                       query=query, stype="group_content",
+                       max_items=max_items,
+                       bbox=bbox,
+                       categories=categories,
+                       category_filter=category_filter,
+                       start=start,
+                       sort_field=sort_field,
+                       sort_order=sort_order,
+                       group_id=self.id,
+                       as_dict=True)['total']
+        return _search(gis=self._gis,
+                       query=query, stype="group_content",
+                       max_items=max_items,
+                       bbox=bbox,
+                       categories=categories,
+                       category_filter=category_filter,
+                       start=start,
+                       sort_field=sort_field,
+                       sort_order=sort_order,
+                       group_id=self.id,
+                       as_dict=as_dict)
+
     #----------------------------------------------------------------------
     @property
     def categories(self):
@@ -6098,7 +6371,7 @@ class Group(dict):
     def migration(self):
         """provides to to migrate content of a `Group` to a new Organaization or Portal"""
         isinstance(self._gis, GIS)
-        
+
         if self._gis.version >= [7,3] and \
            self._gis._portal.is_arcgisonline == False:
             self._migrate = GroupMigrationManager(group=self)
@@ -6141,7 +6414,7 @@ class Group(dict):
         else:
             return None
 
-    def add_users(self, usernames):
+    def add_users(self, usernames=None, admins=None):
         """ Adds users to this group.
 
         .. note::
@@ -6152,22 +6425,54 @@ class Group(dict):
         ============  ======================================
         **Argument**  **Description**
         ------------  --------------------------------------
-        usernames     Required list of strings or single string.
+        usernames     Optional list of strings or single string.
                       The list of usernames or single username to be added.
+        ------------  --------------------------------------
+        admins        Optional List of String, or Single String.  This is a list of users to be an administrator of the group.
         ============  ======================================
 
         :return:
            A dictionary which contains the users that were not added to the group.
         """
-        users = []
+        if usernames is None and admins is None:
+            return {
+                "notAdded": [ ]
+            }
+
+        users = None
+        ladmins = None
+
         if isinstance(usernames, (list, tuple)) == False:
             usernames = [usernames]
-        for u in usernames:
-            if isinstance(u, str):
-                users.append(u)
-            elif isinstance(u, User):
-                users.append(u.username)
-        return self._portal.add_group_users(users, self.groupid)
+
+        if admins and \
+           isinstance(admins, (list, tuple)) == False:
+            admins = [admins]
+
+        if admins:
+            ladmins = []
+            for u in admins:
+                if isinstance(u, str):
+                    ladmins.append(u)
+                elif isinstance(u, User):
+                    ladmins.append(u.username)
+        if usernames:
+            users = []
+            for u in usernames:
+                if isinstance(u, str):
+                    users.append(u)
+                elif isinstance(u, User):
+                    users.append(u.username)
+        return self._portal.add_group_users(users, self.groupid, ladmins)
+
+    def delete_group_thumbnail(self):
+        """
+        Deletes the group's thumbnail
+
+        :returns: Boolean
+
+        """
+        return self._portal.delete_group_thumbnail(self.groupid)
 
     def remove_users(self, usernames):
         """
@@ -6184,7 +6489,7 @@ class Group(dict):
         """
         users = []
         if isinstance(usernames, (list, tuple)) == False:
-            usernames = [usernames]           
+            usernames = [usernames]
         for u in usernames:
             if isinstance(u, str):
                 users.append(u)
@@ -6431,18 +6736,18 @@ class Group(dict):
         clear_empty_fields  Optional Boolean. If True, the user can set values to
                             empty string, else, None values will be ignored.
         ------------------  ---------------------------------------------------------
-        display_settings    Optional String. Defines the default display for the 
-                            group page to show a certain type of items. The allowed 
-                            values are: `apps, all, files, maps, layers, scenes, tools`. 
-                            The default value is `all`. 
+        display_settings    Optional String. Defines the default display for the
+                            group page to show a certain type of items. The allowed
+                            values are: `apps, all, files, maps, layers, scenes, tools`.
+                            The default value is `all`.
         ------------------  ---------------------------------------------------------
-        is_open_data        Optional Boolean. Defines whether the group can be used 
-                            in the Open Data capabilities of ArcGIS Hub. The default 
+        is_open_data        Optional Boolean. Defines whether the group can be used
+                            in the Open Data capabilities of ArcGIS Hub. The default
                             is False.
         ------------------  ---------------------------------------------------------
-        leaving_disallowed  Optional boolean. Defines whether users are restricted 
-                            from choosing to leave the group. If True, only an 
-                            administrator can remove them from the group. The default 
+        leaving_disallowed  Optional boolean. Defines whether users are restricted
+                            from choosing to leave the group. If True, only an
+                            administrator can remove them from the group. The default
                             is False.
         ==================  =========================================================
 
@@ -6472,7 +6777,7 @@ class Group(dict):
         elif display_settings is None:
             display_settings = display_settings_lu[display_settings]
         else:
-            raise ValueError("Display settings must be set to a valid value.")        
+            raise ValueError("Display settings must be set to a valid value.")
         resp = self._portal.update_group(self.groupid, title, tags,
                                          description, snippet, access,
                                          is_invitation_only, sort_field,
@@ -6480,7 +6785,7 @@ class Group(dict):
                                          max_file_size, users_update_items,
                                          clear_empty_fields=clear_empty_fields,
                                          display_settings=display_settings,
-                                         is_open_data=is_open_data, 
+                                         is_open_data=is_open_data,
                                          leaving_disallowed=leaving_disallowed)
         if resp:
             self._hydrate()
@@ -7548,13 +7853,13 @@ class User(dict):
         """
         if isinstance(reassign_to, User):
             reassign_to = reassign_to.username
-        
+
         for l in self._gis.admin.license.all():
             entitle = l.user_entitlement(username=self.username)
             if 'entitlements' in entitle:
-                l.revoke(username=self.username, 
-                         entitlements=entitle['entitlements'], 
-                         suppress_email=True)        
+                l.revoke(username=self.username,
+                         entitlements=entitle['entitlements'],
+                         suppress_email=True)
         return self._portal.delete_user(self._user_id, reassign_to)
 
     def reassign_to(self, target_username):
@@ -8607,8 +8912,6 @@ class Item(dict):
 
         ================  ========================================================
         **Argument**      **Description**
-        ----------------  --------------------------------------------------------
-        item_id           Required string. The unique identifier for the item.
         ----------------  --------------------------------------------------------
         target_owner      Required string. The new desired owner of the item.
         ----------------  --------------------------------------------------------
@@ -10339,7 +10642,7 @@ class Item(dict):
                                  'Web Mapping Application', 'Mobile Application',
                                  'Symbol Set', 'Color Set', 'Content Category Set',
                                  'Windows Viewer Configuration']
-        FILE_BASED_ITEM_TYPES = ['Notebook', 
+        FILE_BASED_ITEM_TYPES = ['Notebook',
                                  'CityEngine Web Scene','Pro Map', 'Map Area', 'KML Collection',
                                  'Code Attachment', 'Operations Dashboard Add In',
                                  'Native Application', 'Native Application Template', 'KML',
@@ -10426,16 +10729,16 @@ class Item(dict):
         elif item.type.lower() == 'notebook':
             with tempfile.TemporaryDirectory() as d:
                 import shutil
-                
+
                 fp = item.download(save_path=d)
                 if fp.find("..") > -1:
-                    shutil.copy(fp, fp.replace("..", ".")) 
+                    shutil.copy(fp, fp.replace("..", "."))
                     fp = fp.replace("..", ".")
                 sfp = os.path.split(fp)
                 fname, ext = os.path.splitext(sfp[1])
                 ext = ext.replace(".", "")
                 nfp = os.path.join(sfp[0],
-                                   "%s_%s.%s" % (fname, uuid4().hex[:5], ext))                
+                                   "%s_%s.%s" % (fname, uuid4().hex[:5], ext))
                 os.rename(fp, nfp)
                 ip = {
                     'type' : item.type,
@@ -10445,9 +10748,9 @@ class Item(dict):
                     'typeKeywords' : ",".join(item.typeKeywords),
                     'title' : title
                 }
-                
+
                 item = self._gis.content.add(item_properties=ip, data=nfp)
-                return item                
+                return item
         elif item.type in FILE_BASED_ITEM_TYPES:
             fp = self.get_data()
             sfp = os.path.split(fp)
@@ -10534,44 +10837,44 @@ class Item(dict):
                                 "urn:ietf:wg:oauth:2.0:oob"
                             ]
         ---------------     --------------------------------------------------------------------
-        http_referers       Optional List. A list of the http referrers for which usage of the 
+        http_referers       Optional List. A list of the http referrers for which usage of the
                             API Key will be restricted to.
 
                             **Example**
-                            
+
                             ```
                             [
                             "https://foo.com",
                             "https://bar.com"
                             ]
                             ```
-                            
-                            Note: Http Referrers can be configured for non apiKey type apps as 
-                            well. The list configured here will be used to validate the app 
-                            tokens sent in while accessing the sharing API. The referrer checks 
+
+                            Note: Http Referrers can be configured for non apiKey type apps as
+                            well. The list configured here will be used to validate the app
+                            tokens sent in while accessing the sharing API. The referrer checks
                             will not be applied to user tokens.
         ---------------     --------------------------------------------------------------------
-        privileges          Optional List. A list of the privileges that will be available for 
+        privileges          Optional List. A list of the privileges that will be available for
                             this API key.
-                            
+
                             **Example**
 
-                            ```   
-                            
+                            ```
+
                             [
                                  "portal:apikey:basemaps",
                                  "portal:app:access:item:itemId",
                                  "premium:user:geocode",
                                  "premium:user:networkanalysis"
                             ]
-                            
+
                             ```
-                            Note: Privileges can be configured for non  `API Key` type apps as 
+                            Note: Privileges can be configured for non  `API Key` type apps as
                             well. The list configured here will be used to grant access to items
-                            when item endpoint is accessed with app tokens. The checks will not 
-                            be applied to user tokens and they can continue accessing items 
-                            based on the current item sharing model. With app tokens, all items 
-                            of app owner can be accessed if the privileges list is not 
+                            when item endpoint is accessed with app tokens. The checks will not
+                            be applied to user tokens and they can continue accessing items
+                            based on the current item sharing model. With app tokens, all items
+                            of app owner can be accessed if the privileges list is not
                             configured.
         ===============     ====================================================================
 
@@ -11084,7 +11387,7 @@ class Layer(_GISResource):
         if self.filter is not None:
             lyr_dict['options'] = json.dumps({ "definition_expression": self.filter })
         if self._time_filter is not None:
-            lyr_dict['time'] = self._time_filter        
+            lyr_dict['time'] = self._time_filter
         return lyr_dict
 
     @property

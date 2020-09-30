@@ -3,12 +3,14 @@ import traceback
 import json
 import math
 import warnings
-
+from zipfile import ZipFile
+import tempfile
+from pathlib import Path
 HAS_FASTAI = False
-try:    
+try:
     from .env import raise_fastai_import_error
     from fastai.vision.data import ImageList
-    from fastai.vision import Image, imagenet_stats, pil2tensor
+    from fastai.vision import Image, imagenet_stats, pil2tensor, get_files
     import torch
     import numpy as np
     import PIL
@@ -19,7 +21,7 @@ except Exception:
     pass
 
 GDAL_INSTALL_MESSAGE = f"""
-\nPlease install gdal using the following command 
+\nPlease install gdal using the following command
 \nconda install gdal=2.3.3
 """.strip()
 
@@ -37,7 +39,7 @@ def read_image(path):
     gdal_error = None
     skimage_error = None
     try:
-        import gdal
+        from osgeo import gdal
         arr = gdal.Open(path).ReadAsArray()
         if len(arr.shape) > 2:
             arr = np.rollaxis(arr, 0, 3)
@@ -99,17 +101,17 @@ class ArcGISMSImage(Image):
 
     def _repr_png_(self):
         return self.show()
-    
-    def _repr_jpeg_(self): 
+
+    def _repr_jpeg_(self):
         return self.show()
 
     @classmethod
     def open_gdal(cls, path):
         try:
-            import gdal
+            from osgeo import gdal
         except ImportError as e:
             message = f"""
-            {e}\n\nPlease install gdal using the following command 
+            {e}\n\nPlease install gdal using the following command
             \nconda install gdal=2.3.3
             """
             raise Exception(message)
@@ -134,7 +136,7 @@ class ArcGISMSImage(Image):
         gdal_error = None
         pillow_error = None
         try:
-            import gdal
+            from osgeo import gdal
             x = gdal.Open(path).ReadAsArray()
             # Ignore Alpha Channel
             if x.shape[0] == 4 and imagery_type == 'RGB':
@@ -294,7 +296,7 @@ def denorm_x(imagetensor_batch, self=None):
     denormalizes a imagetensor_batch for plotting
     -------------------------
     imagetensor_batch: imagebatch with shape (batch, bands, rows, columns)
-    
+
     self: optional. can be an instance of ArcGISModel or arcgis.learn data object(databunch)
     -------------------------
     returns denormalized imagetensor_batch
@@ -306,12 +308,12 @@ def denorm_x(imagetensor_batch, self=None):
         data = self
     if data is not None and data._is_multispectral:
         return denorm_image(
-            imagetensor_batch, 
+            imagetensor_batch,
             mean=data._scaled_mean_values[data._extract_bands],
             std=data._scaled_std_values[data._extract_bands]
         )
     return denorm_image(imagetensor_batch)
-    
+
 def denorm_image(imagetensor_batch, mean=None, std=None):
     # prepare normalization stats
     if mean is None or std is None:
@@ -346,7 +348,7 @@ def load_model(emd_path, data=None):
     from .. import models
     # if not HAS_FASTAI:
     #     raise_fastai_import_error(import_exception=import_exception)
-        
+
     _emd_path = os.path.abspath(emd_path)
     if not os.path.exists(emd_path):
         raise Exception(f"Could not find an EMD file at the specified path does not exist '{emd_path}'")
@@ -362,3 +364,23 @@ def load_model(emd_path, data=None):
     model_obj = model_cls.from_model(_emd_path, data=data)
 
     return model_obj
+
+def _temp_dlpk(dlpk_path):
+    with ZipFile(dlpk_path, 'r') as zip_obj:
+        temp_dir = tempfile.TemporaryDirectory().name
+        zip_obj.extractall(temp_dir)
+    return temp_dir
+
+def _get_emd_path(emd_path):
+    emd_path = Path(emd_path)
+    if emd_path.suffix == '.dlpk':
+        temp_path = _temp_dlpk(emd_path)
+        emd_path = Path(temp_path)
+        #return cls.from_model(temp_path)
+
+    if emd_path.suffix != '.emd':
+        list_files = get_files(emd_path, extensions=['.emd'])
+        assert(len(list_files)==1)
+        #return cls.from_model(list_files[0])
+        emd_path = list_files[0]
+    return emd_path
