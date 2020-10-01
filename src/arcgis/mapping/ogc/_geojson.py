@@ -50,9 +50,11 @@ class GeoJSONLayer(BaseOGC):
             raise Exception("A `url` or `data` must be given to proceed")
         if isinstance(data, str) and _is_file(data):
             with open(data, 'r') as r:
-                self._text = r.read()
+                self._text = json.loads(r.read())
         elif isinstance(data, str) and _is_file(data) == False:
             self._text = data
+        elif isinstance(data, dict):
+            self._text = dict(data)
         elif url is None and \
              data and \
              not isinstance(data, str):
