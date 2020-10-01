@@ -93,7 +93,8 @@ class GeoJSONLayer(BaseOGC):
         """Represents the MapView widget's JSON format"""
         lyr = {
             "type" : self._type,
-            "url" : self._url or self._text,
+            "url" : self._url,
+            "data" : self._text,
             "copyright" : self._copyright,
             "title" : self._title,
             "id" : self._id,
