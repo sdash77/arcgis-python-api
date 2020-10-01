@@ -57,8 +57,8 @@ class GeoJSONLayer(BaseOGC):
             self._text = dict(data)
         elif url is None and \
              data and \
-             not isinstance(data, str):
-            raise ValueError("`data` must be of type string.")
+             not isinstance(data, (str, dict)):
+            raise ValueError("`data` must be of type string or dict.")
         if url and validate_url(url) == False:
             raise ValueError(f"Invalid `url` : {url}")
         self._url = url
