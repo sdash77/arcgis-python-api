@@ -9707,7 +9707,9 @@ class Item(dict):
                                      'Listed2Provisioned', 'Item2Report', 'Item2Attachment',
                                      'Map2AppConfig', 'Map2Service', 'WMA2Code',
                                      'Map2FeatureCollection', 'MobileApp2Code',
-                                     'Service2Data', 'Service2Service', 'WorkforceMap2FeatureService'])
+                                     'Service2Data', 'Service2Service', 'WorkforceMap2FeatureService',
+                                     'TrackView2Map', 'SurveyAddIn2Data', 'Theme2Story',
+                                     'WebStyle2DesktopStyle', 'Map2FeatureCollectionMobileApp2Code'])
 
     _RELATIONSHIP_DIRECTIONS = frozenset(['forward', 'reverse'])
 
@@ -11102,14 +11104,22 @@ class ItemDependency(object):
         :returns: boolean
 
         """
-        for i in dict(self.properties)['items']:
-            if 'url' in i:
-                self.remove(i['dependencyType'], i['id'])
-            elif 'id' in i:
-                self.remove(i['dependencyType'], i['id'])
-            elif 'table' in i:
-                self.remove(i['dependencyType'], i['id'])
-        self._properties = None
+        if self._gis.version <= [8,2]:
+            for i in dict(self.properties)['items']:
+                if 'url' in i:
+                    self.remove(i['dependencyType'], i['id'])
+                elif 'id' in i:
+                    self.remove(i['dependencyType'], i['id'])
+                elif 'table' in i:
+                    self.remove(i['dependencyType'], i['id'])
+            self._properties = None
+        else:
+            url = "%s/removeAllDependencies" % self._url
+            params = {'f' : 'json'}
+            res = self._con.post(url, params)
+            if 'error' in res:
+                return res
+            self._properties = None
         return True
     #----------------------------------------------------------------------
     @property
