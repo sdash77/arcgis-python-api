@@ -353,7 +353,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
     _postLoadSetup: function(watchUtils){
         //Whenever either the 2d or 3d view loads, set model var 'ready' to
         //true for python to consume
-        console.log("Calling postLoad");
+        console.log("Running post load setup for " + config.JSOutputContext);
         this._MapView.when(() => {
             console.log("2D map ready");
             this.model.set('ready', true)
@@ -384,18 +384,26 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             this.send({ event: 'mouseclick', message: event_.mapPoint });
         });
 
-        // Apply CSS to hide any image preview in the live notebook (but keep
-        // it in the underlying notebook file)
-        this._hidePreviewImageEl();
+        // Apply CSS to hide any image preview and HTML embed preview in the 
+        // live notebook (but keep it in the underlying notebook file)
+        //
+        // Don't do this when this JS code is called from the embedded
+        // widget itself (i.e. when MapView.embed() or MapView.export_to_html()
+        // is called)
+        if(config.JSOutputContext === "default"){
+            this._hidePreviewEls();}
 
         // Add screenshot keyboard shortcut
         this._set_screenshot_keyboard_shortcut();
     },
 
-    _hidePreviewImageEl: function(){
+    _hidePreviewEls: function(){
+        console.log("Hiding preview elements for " + this.uuid);
         var cssEl = document.createElement('style');
         cssEl.type = 'text/css';
         cssEl.innerHTML = 'div.map-static-img-preview-' +
+            this.uuid + ' { display: none }\n' + 
+            'div.map-html-embed-preview-' +
             this.uuid + ' { display: none }';
         document.head.appendChild(cssEl);
     },
