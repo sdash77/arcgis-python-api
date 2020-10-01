@@ -3,6 +3,7 @@ from fastai.vision.image import open_image, show_image, pil2tensor
 from fastai.vision.data import SegmentationProcessor, ImageList
 from fastai.layers import CrossEntropyFlat
 from fastai.basic_train import LearnerCallback
+from fastai.core import is_listy
 from .._utils.common import ArcGISMSImage, get_top_padding, kwarg_fill_none, \
     find_data_loader, get_nbatches, dynamic_range_adjustment, image_tensor_checks_plotting, \
     get_symbology_bands, predict_batch, denorm_x, get_nbatches, GDAL_INSTALL_MESSAGE
@@ -234,15 +235,18 @@ class ArcGISSegmentationLabelList(ImageList):
 
         return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
-    def analyze_pred(self, pred, thresh=0.5, ignore_mapped_class=[], model = None, thinning=None):
+    def analyze_pred(self, pred, thresh=0.5, ignore_mapped_class=[], model=None, thinning=None):
 
         if getattr(model, "_is_model_extension", False):
 
-            if thinning == None:
+            if thinning is None:
                 pred = model.model_conf.post_process(pred, thresh)
             else:
                 pred = model.model_conf.post_process(pred, thresh, thinning)
             return pred
+
+        if is_listy(pred):
+            pred = pred[0]
 
         if ignore_mapped_class == []:
             return pred.argmax(dim=0)[None]
