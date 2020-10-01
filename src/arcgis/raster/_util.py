@@ -512,7 +512,7 @@ def _upload_imagery(files, gis=None):
                 basename_len=len(os.path.dirname(file))
                 for root,d_names,f_names in os.walk(file):
                     for f in f_names:
-                        blobname = prefix + (root+"/"+f)[basename_len+1:]
+                        blobname = prefix + (root+"/"+f)[basename_len+1:].replace(os.sep, '/')
                         filepath = os.path.join(root, f)
                         blob=container.get_blob_client(blobname)
                         url = blob.url.split("?", 1)[0]
@@ -521,7 +521,7 @@ def _upload_imagery(files, gis=None):
                             blob.upload_blob(data, blob_type="BlockBlob")
 
             else:
-                blobname = prefix+os.path.basename(file)
+                blobname = prefix+os.path.basename(file).replace(os.sep, '/')
                 blob=container.get_blob_client(blobname)
                 with open(filepath, "rb") as data:
                     blob.upload_blob(data, blob_type="BlockBlob")
