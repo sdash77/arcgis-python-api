@@ -3,7 +3,8 @@ import arcgis
 import json
 
 
-def build_collector_url(webmap=None, center=None, feature_layer=None, fields=None, search=None, portal=None,  action=None, geometry=None, callback=None, callback_prompt=None):
+def build_collector_url(webmap=None, center=None, feature_layer=None, fields=None, search=None,
+                        portal=None, action=None, geometry=None, callback=None, callback_prompt=None, feature_id=None):
     """
     Creates a url that can be used to open ArcGIS Collector
 
@@ -31,7 +32,7 @@ def build_collector_url(webmap=None, center=None, feature_layer=None, fields=Non
     ------------------     --------------------------------------------------------------------
     action                 Optional :class:`String` What the app should do, if anything, once open
                            and the user is signed in.
-                           The following values are supported: addFeature, center, open, search.
+                           The following values are supported: addFeature, center, open, search, updateFeature.
     ------------------     --------------------------------------------------------------------
     geometry               Optional :class:`String`. Defines the location for the newly collectoed
                            or edited feature
@@ -50,20 +51,20 @@ def build_collector_url(webmap=None, center=None, feature_layer=None, fields=Non
                            Value must be URL encoded
     ==================     ====================================================================
 
-    Additional info can be found here: https://github.com/Esri/collector-integration
     :return: :class:`String`
     """
     params = []
-
+    url = "https://collector.arcgis.app"
     # Branch out based on the version of Collector.
     if portal or action:
-        url = "https://collector.arcgis.app"
         if portal:
-            if isinstance(portal,arcgis.gis.GIS):
+            if isinstance(portal, arcgis.gis.GIS):
                 portal = portal.url
             params.append("portalURL=" + portal)
 
         if action:
+            if action not in ['addFeature', 'center', 'open', 'search']:
+                raise ValueError("Invalid reference context. addFeature, center, open, and search are supported")
             params.append("referenceContext=" + action)
             if not webmap:
                 raise ValueError("Invalid parameters -- Must specify a webmap")
@@ -75,10 +76,13 @@ def build_collector_url(webmap=None, center=None, feature_layer=None, fields=Non
                     item_id = item_id.id
                 params.append("itemID=" + item_id)
 
-            actions = {'open': lambda: _build_collector_url_for_open_action(params),
-                       'center': lambda: _build_collector_url_for_center_action(params, center),
-                       'search': lambda: _build_collector_url_for_search_action(params, search),
-                       'addFeature': lambda: _build_collector_url_for_addFeature_action(params, feature_layer, geometry, fields, callback, callback_prompt)}
+            actions = {'open': lambda: _build_url_for_open_action(params),
+                       'center': lambda: _build_url_for_center_action(params, center=center),
+                       'search': lambda: _build_url_for_search_action(params, search=search),
+                       'addFeature': lambda: _build_url_for_add_feature_action(params, feature_layer=feature_layer,
+                                                                               geometry=geometry,
+                                                                               callback=callback,
+                                                                               callback_prompt=callback_prompt)}
 
             params = actions.get(action)()
 
@@ -115,29 +119,38 @@ def build_collector_url(webmap=None, center=None, feature_layer=None, fields=Non
     return url
 
 
-def _build_collector_url_for_open_action(params):
+def _build_url_for_open_action(params, bookmark=None):
+    if bookmark:
+        params.append("bookmark=" + bookmark.replace(" ", "+"))
+
     return params
 
 
-def _build_collector_url_for_center_action(params, center):
+def _build_url_for_center_action(params, center, scale=None, wkid=None):
     if center:
+        if scale:
+            params.append("scale=" + str(scale))
+        if wkid:
+            params.append("wkid=" + str(wkid))
         if isinstance(center, (list, tuple)):
             center = '{},{}'.format(center[0], center[1])
+        if isinstance(center, str):
+            center = center.replace(" ", "+")
         params.append("center=" + center)
         return params
     else:
         raise ValueError("Invalid parameters -- Must specify a center parameter if action = center")
 
 
-def _build_collector_url_for_search_action(params, search):
+def _build_url_for_search_action(params, search):
     if search:
-        params.append("search=" + _encode_string(search))
+        params.append("search=" + str(search).replace(" ","+"))
         return params
     else:
         raise ValueError("Invalid parameters -- Must specify a search parameter if action = search")
 
 
-def _build_collector_url_for_addFeature_action(params, feature_layer, geometry, fields, callback, callback_prompt):
+def _build_url_for_add_feature_action(params, feature_layer, geometry, use_antenna_height=None, use_loc_profile=None, fields=None, callback=None, callback_prompt=None):
     if feature_layer:
         feature_source_url = feature_layer
         if isinstance(feature_layer, arcgis.features.FeatureLayer):
@@ -145,20 +158,43 @@ def _build_collector_url_for_addFeature_action(params, feature_layer, geometry, 
         params.append("featureSourceURL=" + feature_source_url)
     else:
         raise ValueError("Invalid parameters -- Must specify a feature_layer parameter if action = addFeature")
-
     if geometry:
         if isinstance(geometry, dict):
             geometry = json.dumps(geometry)
-        params.append("geometry=" + geometry)
-
+        if isinstance(geometry, str):
+            geometry = geometry.replace(" ", "")
+        params.append("geometry=" + _encode_string(geometry))
+        if use_antenna_height:
+            params.append("useAntennaHeight=true")
+        if use_loc_profile:
+            params.append("useLocationProfile=true")
     if fields:
         params.append("featureAttributes=%7B" + urllib.parse.quote(json.dumps(fields), safe="${},:") + "%7D")
-
     if callback:
-        params.append("callback=" + callback)
+        params.append("callback=" + _encode_parameters(callback))
         if callback_prompt:
             params.append("callbackPrompt=" + _encode_string(callback_prompt))
 
+    return params
+
+
+def _build_url_for_update_feature_action(params, feature_layer, feature_id, fields, callback, callback_prompt):
+    if feature_layer:
+        feature_source_url = feature_layer
+        if isinstance(feature_layer, arcgis.features.FeatureLayer):
+            feature_source_url = feature_layer.url
+        params.append("featureSourceURL=" + feature_source_url)
+    else:
+        raise ValueError("Invalid parameters -- Must specify a feature_layer parameter if action = updateFeature")
+    if feature_id:
+        params.append("featureID=" + feature_id)
+    if fields:
+        params.append("featureAttributes=%7B" + urllib.parse.quote(json.dumps(fields), safe="${},:") + "%7D")
+    if callback:
+        params.append("callback=" + _encode_parameters(callback))
+        if callback_prompt:
+            params.append("callbackPrompt=" + _encode_string(callback_prompt))
+            
     return params
 
 
@@ -350,59 +386,40 @@ def build_field_maps_url(portal=None, action=None, webmap=None, scale=None, book
     _validate_field_maps_url(action, webmap, scale, bookmark, wkid, center, search, feature_layer, fields,
                              geometry, use_antenna_height, use_loc_profile, feature_id, callback,
                              callback_prompt, anonymous)
+
     params = []
     url = "https://fieldmaps.arcgis.app"
+
     if portal:
-        if isinstance(portal,arcgis.gis.GIS):
+        if isinstance(portal, arcgis.gis.GIS):
             portal = portal.url
         params.append("portalURL=" + portal)
+
     if action:
         params.append("referenceContext=" + action)
-    if webmap is not None:
-        if isinstance(webmap, arcgis.mapping.WebMap):
-            webmap = webmap.item.id
-        elif isinstance(webmap, arcgis.gis.Item):
-            webmap = webmap.id
-        params.append("itemID=" + webmap)
-    if scale:
-        params.append("scale=" + str(scale))
-    if bookmark:
-        params.append("bookmark=" + bookmark.replace(" ", "+"))
-    if wkid:
-        params.append("wkid=" + str(wkid))
-    if center:
-        if isinstance(center, (list, tuple)):
-            center = '{},{}'.format(center[0], center[1])
-        if isinstance(center, str):
-            center = center.replace(" ", "+")
-        params.append("center=" + center)
-    if search:
-        params.append("search=" + str(search).replace(" ","+"))
-    if feature_layer:
-        if isinstance(feature_layer, arcgis.features.FeatureLayer):
-            feature_layer = feature_layer.url
-        params.append("featureSourceURL=" + feature_layer)
-    if fields:
-        params.append("featureAttributes=%7B" + urllib.parse.quote(json.dumps(fields), safe="${},:") + "%7D")
-    if geometry:
-        if isinstance(geometry, dict):
-            geometry = json.dumps(geometry)
-        if isinstance(geometry, str):
-            geometry = geometry.replace(" ", "")
-        params.append("geometry=" + _encode_string(geometry))
-    if use_antenna_height:
-        params.append("useAntennaHeight=true")
-    if use_loc_profile:
-        params.append("useLocationProfile=true")
-    if feature_id:
-        params.append("featureID=" + feature_id)
-    if callback:
-        callback = _encode_parameters(callback)
-        params.append("callback=" + callback)
-        if callback_prompt:
-            params.append("callbackPrompt=" + _encode_string(callback_prompt))
+        item_id = webmap
+        if isinstance(item_id, arcgis.mapping.WebMap):
+            item_id = item_id.item.id
+        elif isinstance(item_id, arcgis.gis.Item):
+            item_id = item_id.id
+        params.append("itemID=" + item_id)
+    
+        actions = {'open': lambda: _build_url_for_open_action(params, bookmark),
+                   'center': lambda: _build_url_for_center_action(params, center, scale, wkid),
+                   'search': lambda: _build_url_for_search_action(params, search),
+                   'addFeature': lambda: _build_url_for_add_feature_action(params, feature_layer, geometry,
+                                                                          use_antenna_height,
+                                                                          use_loc_profile,
+                                                                          fields, callback,
+                                                                          callback_prompt),
+                   'updateFeature': lambda: _build_url_for_update_feature_action(params, feature_layer, feature_id,
+                                                                                fields, callback,
+                                                                                callback_prompt)}
+    
+        params = actions.get(action)()
+        
     if anonymous:
-        params.append("anonymous=true")
+        params.append("anonymousAccess=true")
     url += "?" + "&".join(params)
     return url
     
@@ -439,8 +456,6 @@ def _validate_field_maps_url(action=None, webmap=None, scale=None, bookmark=None
         raise ValueError("Invalid parameters -- URL contains conflicting parameters")
     if (feature_layer or fields) and (action not in ['addFeature', 'updateFeature'] or webmap is None):
         raise ValueError("Feature layer param must be used with addFeature or updateFeature and have a webmap param")
-    if action in ['addFeature', 'updateFeature'] and not feature_layer:
-        raise ValueError("Must provide feature layer if adding or updating feature")
     if fields and not feature_layer:
         raise ValueError("Fields cannot be provided without feature layer")
     if fields and not isinstance(fields, dict):

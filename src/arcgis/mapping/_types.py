@@ -813,7 +813,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         item_properties['extent'] = self._process_extent()
         item_properties['text'] = json.dumps(self._webmapdict, default=_date_handler)
         if 'typeKeywords' not in item_properties:
-            item_properties['typeKeywords'] = self._eval_map_viewer_keywords(item_properties)
+            item_properties['typeKeywords'] = self._eval_map_viewer_keywords()
 
         if 'title' not in item_properties or 'snippet' not in item_properties or 'tags' not in item_properties:
             raise RuntimeError("title, snippet and tags are required in item_properties dictionary")
@@ -918,7 +918,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             item_properties['text'] = json.dumps(self._webmapdict, default=_date_handler)
             item_properties['extent'] = self._process_extent()
             if 'typeKeywords' not in item_properties:
-                item_properties['typeKeywords'] = self._eval_map_viewer_keywords(item_properties)
+                item_properties['typeKeywords'] = self._eval_map_viewer_keywords()
             if 'type' in item_properties:
                 item_properties.pop('type')  # type should not be changed.
             return self.item.update(item_properties=item_properties,
@@ -928,19 +928,21 @@ class WebMap(HasTraits, collections.OrderedDict):
             raise RuntimeError('Item object missing, you should use `save()` method if you are creating a '
                                'new web map item')
 
-    def _eval_map_viewer_keywords(self, item_properties):
+    def _eval_map_viewer_keywords(self):
         # if user passes typeKeywords, adhere to what they have set without overriding anything
         type_keywords = set(self.item.typeKeywords) if self.item else set([])
-        if not 'OfflineDisabled' in type_keywords:
+        if 'OfflineDisabled' not in type_keywords:
             if self.layers and self._is_offline_capable_map():
                 type_keywords.add("Offline")
             else:
                 type_keywords.discard("Offline")
+        if 'CollectorDisabled' not in type_keywords:
             if self.layers and self._is_collector_ready_map():
                 type_keywords.add("Collector")
                 type_keywords.add("Data Editing")
             else:
                 type_keywords.discard("Collector")
+                type_keywords.discard("Data Editing")
         return list(type_keywords)
 
     def _is_collector_ready_map(self):
