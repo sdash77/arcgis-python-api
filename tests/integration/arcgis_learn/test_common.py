@@ -170,12 +170,10 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
     # Fit for 1 epochs with LR.
     model_object.fit(1, lr=0.001)
 
-
-
     # save model
     model_object.save(f'{model_test}')
 
-    ## Check model with all supported backbones
+    # Check model with all supported backbones
     if os.environ['run_backbones'] == "1":
         print("Testing for all backbones")
         supported_backbones = model_object.supported_backbones
@@ -185,8 +183,8 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
             model_object.save(model_test + '_' + str(backbone))
             torch.cuda.empty_cache()
 
-    if os.environ['run_nightly'] == "1" and ms_flag == False:
-        if ms_flag == False:
+    if os.environ['run_nightly'] == "1":
+        if not ms_flag:
             print("Testing for accuracy with default backbone")
             global accuracy_values
             model_object.fit(num_epochs)
@@ -206,6 +204,8 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
                 result = model_object.compute_precision_recall().loc["precision", :].max()
             elif regression_parameter == "psnr_metric":
                 result = model_object.compute_metrics()[-1]
+            elif regression_parameter == "f1_score":
+                result = model_object.f1_score()
             else:
                 result = 0.0
 

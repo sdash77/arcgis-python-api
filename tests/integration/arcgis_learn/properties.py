@@ -93,7 +93,7 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
-        "regression_test_score": 0.20,
+        "regression_test_score": 0.05,
         "regression_epochs": 20,
         "inferencing_parameter": {
             "model_type": "DetectObjectsUsingDeepLearning",
@@ -372,7 +372,7 @@ data = {
         "prepare_data_ms": False,
         "should_test": True,
         "test_feature_layer": False,
-        "regression_parameter": "precision_score",
+        "regression_parameter": "f1_score",
         "regression_test_score": 0.40,
         "regression_epochs": 15,
         "inferencing_parameter": {
@@ -526,8 +526,8 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "average_precision_score",
-        "regression_test_score": 0.15,
-        "regression_epochs": 25,
+        "regression_test_score": 0.05,
+        "regression_epochs": 15,
         "inferencing_parameter": {
             "model_type": "DetectObjectsUsingDeepLearning",
             "sample_input": os.path.join(data_folder_inference, "DetectObjectsUsingDeepLearning", "yolo",
