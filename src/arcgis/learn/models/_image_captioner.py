@@ -210,7 +210,10 @@ class ImageCaptioner(ArcGISModel):
         =====================   ===========================================
 
         """
-        show_results(self, rows=rows, **kwargs)
+        return_fig = kwargs.get('return_fig', False)
+        fig=show_results(self, rows=rows, **kwargs)
+        if return_fig:
+            return fig
 
     def _save(self,
              name_or_path,

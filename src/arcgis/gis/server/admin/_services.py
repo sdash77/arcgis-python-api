@@ -1075,7 +1075,7 @@ class Service(BaseServer):
     #----------------------------------------------------------------------
     @property
     def extensions(self):
-        """lists the extensions on a service"""
+        """lists the :class:`extensions <arcgis.gis.server.Extension>` on a service"""
         if self._extensions is None:
             self._init()
         return self._extensions

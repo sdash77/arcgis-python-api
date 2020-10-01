@@ -58,6 +58,9 @@ class MaskRCNN(ArcGISModel):
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
+    ---------------------   -------------------------------------------
+    kwargs                  Optional arguments, torchvision MaskRCNN arguments can be
+                            given in form of keyword arguments.
     =====================   ===========================================
 
     :returns: ``MaskRCNN`` Object
@@ -215,7 +218,7 @@ class MaskRCNN(ArcGISModel):
         return ['RCNN_Masks'] 
     
     @classmethod
-    def from_model(cls, emd_path, data=None):
+    def from_model(cls, emd_path, data=None, **kwargs):
         """
         Creates a ``MaskRCNN`` Instance segmentation object from an Esri Model Definition (EMD) file.
 
@@ -254,7 +257,7 @@ class MaskRCNN(ArcGISModel):
             color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}                
 
         if data is None:
-            data = _EmptyData(path=emd_path.parent.parent, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
+            data = _EmptyData(path=emd_path.parent.parent, loss_func=None, c=len(class_mapping) + 1, chip_size=kwargs.get('chip_size', emd['ImageHeight']))
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
             data.emd_path = emd_path
@@ -381,6 +384,8 @@ class MaskRCNN(ArcGISModel):
         statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
 
         cmap_fn = getattr(matplotlib.cm, cmap)
+        return_fig = kwargs.get('return_fig', False)
+
 
         x_batch, y_batch = get_nbatches(data_loader, nrows)
         x_batch = torch.cat(x_batch)
@@ -482,6 +487,9 @@ class MaskRCNN(ArcGISModel):
         plt.subplots_adjust(top=top)
         if self._device == torch.device('cuda'):
             torch.cuda.empty_cache()
+
+        if return_fig:
+            return fig
 
     def average_precision_score(self, detect_thresh=0.5, iou_thresh=0.5, mean=False, show_progress=True):
 

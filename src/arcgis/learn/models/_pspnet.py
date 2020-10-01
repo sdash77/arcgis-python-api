@@ -375,12 +375,15 @@ class PSPNetClassifier(ArcGISModel):
         self.learn.show_results(rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs)
 
     def _show_results_multispectral(self, rows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
-        ax = show_results_multispectral(
+        return_fig = kwargs.get('return_fig', False)
+        fig,ax = show_results_multispectral(
             self, 
             nrows=rows, 
             alpha=alpha, 
             **kwargs
         )
+        if return_fig:
+            return fig
 
     @property
     def _model_metrics(self):

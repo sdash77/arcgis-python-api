@@ -317,12 +317,15 @@ class UnetClassifier(ArcGISModel):
         return predict_batch(self, imagetensor_batch)
 
     def _show_results_multispectral(self, rows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
-        ax = show_results_multispectral(
+        return_fig = kwargs.get('return_fig', False)
+        fig,ax = show_results_multispectral(
             self, 
             nrows=rows, 
             alpha=alpha, 
             **kwargs
         )
+        if return_fig:
+            return fig
 
     def show_results(self, rows=5, **kwargs):
         """

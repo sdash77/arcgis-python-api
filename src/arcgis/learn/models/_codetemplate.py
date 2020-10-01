@@ -1063,7 +1063,8 @@ class ArcGISInstanceDetector:
             if mask == []:
                 continue
             centroid = get_centroid(mask[0])
-            grid_location = find_i_j(centroid, n_rows, n_cols, self.json_info['ImageHeight'], padding, True)
+            tytx = getattr(self.child_instance_detector, 'tytx', self.json_info['ImageHeight'])
+            grid_location = find_i_j(centroid, n_rows, n_cols, tytx, padding, True)
             if grid_location is not None:
                 i, j, in_center = grid_location
                 for poly_id, polygon in enumerate(mask):
@@ -1268,7 +1269,8 @@ class ArcGISImageClassifier:
         pixelBlocks['raster_pixels'] = raster_pixels
 
         xx = self.child_image_classifier.updatePixels(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)
-        chunks, num_rows, num_cols =  chunk_it(xx.transpose(1, 2, 0), self.json_info['ImageHeight'])  # ImageHeight = ImageWidth
+        tytx = getattr(self.child_image_classifier, 'tytx', self.json_info['ImageHeight'])
+        chunks, num_rows, num_cols =  chunk_it(xx.transpose(1, 2, 0), tytx)# self.json_info['ImageHeight'])  # ImageHeight = ImageWidth
         xx = patch_chips(crop_flatten(chunks, self.child_image_classifier.padding), num_rows, num_cols)
         xx = xx.transpose(2, 0, 1)
         pixelBlocks['output_pixels'] = xx

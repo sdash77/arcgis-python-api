@@ -21,6 +21,7 @@ from datetime import datetime
 import logging
 from typing import Tuple
 from urllib.error import  HTTPError
+from urllib.parse import urlparse
 import concurrent.futures
 
 import arcgis.env
@@ -331,7 +332,7 @@ class GIS(object):
                                            client_id=self._client_id,
                                            expiration=self._expiration,
                                            referer=self._referer,
-                                           custom_auth=custom_auth)
+                                           custom_auth=custom_auth, token=self._utoken)
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
                 self._portal.con._referer = ""
@@ -383,7 +384,8 @@ class GIS(object):
                                       proxy_host=self._proxy_host,
                                       expiration=self._expiration,
                                       referer=self._referer,
-                                      custom_auth=custom_auth)
+                                      custom_auth=custom_auth,
+                                      token=self._utoken)
                 self._portal = pp
         except: pass
 
@@ -1132,8 +1134,11 @@ class Datastore(dict):
         url = self._admin_url + '/data/items' + self.datapath + "/manifest/regenerate"
         params = {'f' : 'json'}
         res = self._portal.con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        if isinstance(res, dict):
+            if 'success' in res:
+                return res['success']
+            if 'status' in res:
+                return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
     def validate(self):
@@ -1156,7 +1161,12 @@ class Datastore(dict):
         path = self._admin_url + "/data/validateDataItem"
 
         res = self._portal.con.post(path, params, verify_cert=False)
-        return res['status'] == 'success'
+        if isinstance(res, dict):
+            if 'success' in res:
+                return res['success']
+            if 'status' in res:
+                return res['status'] == 'success'
+        return res
 
     @property
     def datasets(self):
@@ -2502,7 +2512,8 @@ class UserManager(object):
         if self._gis.version >= [7,2]:
             if self._gis._is_agol:
                 if user_type is None and role is None:
-                    if 'userLicenseType' in self.user_settings:
+                    if self.user_settings and \
+                       'userLicenseType' in self.user_settings:
                         user_type = self.user_settings['userLicenseType']
                         role = self.user_settings['role']
         else:
@@ -2565,9 +2576,12 @@ class UserManager(object):
             if credits == -1 and self._gis.version >= [7,2] and \
                 self._gis.properties['defaultUserCreditAssignment'] != -1:
                 credits = self._gis.properties['defaultUserCreditAssignment']
-            if not groups and self.user_settings['groups']:
-                groups = [self._gis.groups.get(g)
-                          for g in self.user_settings['groups']]
+            if not groups and \
+               self.user_settings and \
+               'groups' in self.user_settings and \
+               self.user_settings['groups']:
+                groups = [g for g in self.user_settings['groups']]
+
             params = {
                 'f': 'json',
                 'invitationList': {'invitations': [
@@ -2579,7 +2593,7 @@ class UserManager(object):
                     'email': email,
                     'role': role,
                     "userLicenseType": user_type,
-                    "groups":",".join(group.id for group in groups),
+                    "groups":",".join(groups),
                     "userCreditAssignment": credits,
 
                     }
@@ -2605,7 +2619,9 @@ class UserManager(object):
                     return None
                 else:
                     new_user = self.get(username)
-                    if not self.user_settings['userType'] == 'arcgisonly':
+                    if self.user_settings and \
+                    'userType' in self.user_settings and \
+                       not self.user_settings['userType'] == 'arcgisonly':
                         update_url = "community/users/" + username + "/update"
                         user_params = {"f":"json",
                                        "token":"token",
@@ -4125,7 +4141,8 @@ class ContentManager(object):
         -----------------------    -------------------------------------------------------------
         text                       optional string. The text in the file to be analyzed.
         -----------------------    -------------------------------------------------------------
-        file_type                  optional string. The type of the input file: shapefile, csv or excel
+        file_type                  optional string. The type of the input file: shapefile, csv, excel,
+                                   or geoPackage (Added ArcGIS API for Python 1.8.3+).
         -----------------------    -------------------------------------------------------------
         source_locale              optional string. The locale used for the geocoding service source.
         -----------------------    -------------------------------------------------------------
@@ -4183,6 +4200,9 @@ class ContentManager(object):
                 elif str(d).lower().endswith('.xls') or \
                      str(d).lower().endswith('.xlsx'):
                     params['fileType'] = 'excel'
+                elif str(d).lower().endswith('gpkg'):
+                    params['fileType'] = 'geoPackage'
+
         elif str(file_type).lower() in ['excel', 'csv']:
             params['fileType'] = file_type
         if source_country:
@@ -4769,7 +4789,135 @@ class ContentManager(object):
             else:
                 owner_name = owner
             return self._portal.delete_folder(owner_name, folder)
+    #----------------------------------------------------------------------
+    def _generate(self, gurl, params, files, gis):
+        """
+        private async logic for `generate`.
+        """
+        res = gis._con.post(gurl, params, files=files)
+        if res['status']:
+            item = gis.content.get(res['outputItemId'])
+            status = item.status(res['jobId'], "generateFeatures")
+            while status['status'] != 'completed':
+                if status['status'] == 'failed':
+                    try:
+                        item.delete()
+                        return status
+                    except:
+                        return status
+                status = item.status(res['jobId'], "generateFeatures")
+            item.update(item_properties={'title' : f"Generate Features: {res['jobId']}"})
+            return item
+        return res
+    #----------------------------------------------------------------------
+    def generate(self,
+                 item=None,
+                 file_path=None,
+                 url=None,
+                 text=None,
+                 publish_parameters=None,
+                 future=True):
+        """
+        The Generate call helps a client generate features from a CSV file, shapefile,
+        GPX, or GeoJson file types.
 
+        ===================  ==========================================================================
+        **Argument**         **Description**
+        -------------------  --------------------------------------------------------------------------
+        item                 Optional Item. An `Item` on the current portal.
+        -------------------  --------------------------------------------------------------------------
+        file_path            Optional String. The file resource location on local disk.
+        -------------------  --------------------------------------------------------------------------
+        url                  Optional String. A web resource of a 'shapefile', 'csv', 'gpx' or 'geojson' file.
+        -------------------  --------------------------------------------------------------------------
+        text                 Optional String. The source text.
+        -------------------  --------------------------------------------------------------------------
+        publish_parameters   Optional Dict.A JSON object describing the layer and service to be created
+                             as part of the `publish` operation. The appropriate value for publish
+                             parameters depends on the file type being published. For a complete
+                             description, see the  `Item`'s Publish method.
+        -------------------  --------------------------------------------------------------------------
+        future               Optional Boolean.  This allows the operation to run asynchronously allowing
+                             the user to not pause the thread and continue to perform multiple operations.
+                             The default is `True`.  When `True` the result of the method will be a
+                             concurrent `Future` object.  The `result` of the method can be obtained
+                             using the `result()` on the `Future` object.  When `False`, and Item is
+                             returned
+        ===================  ==========================================================================
+
+        :return: `Future` object when `future==True`,
+                 `Item` when `future==False`,
+                 `dict` of error messages on Exceptions
+
+        """
+        if item is None and \
+           file_path is None and \
+           text is None and \
+           url is None:
+            raise Exception("You must provide an item, file_path, text or url.")
+        gurl = f"{self._gis._portal.resturl}content/features/generate"
+        params = {
+            "f" : "json",
+            "itemid": "",
+            "sourceUrl" : "",
+            "text" : "",
+            "filetype" : "",
+            "publishParameters" : publish_parameters or "",
+            'async' : True
+        }
+        files = None
+        file_types = {
+            '.gpx' : 'gpx',
+            '.csv' : 'csv',
+            '.zip' : 'shapefile',
+            '.json' : 'geojson'
+        }
+        if item and item.type.lower() in ['shapefile', 'csv', 'gpx', 'geojson']:
+            params['itemid'] = item.itemid
+            if item.type.lower() == 'shapefile':
+                params['filetype'] = 'shapefile'
+            elif item.type.lower() == 'gpx':
+                params['filetype'] = 'gpx'
+            elif item.type.lower() == 'csv':
+                params['filetype'] = 'csv'
+            elif item.type.lower() == 'geojson':
+                params['filetype'] = 'geojson'
+            else:
+                raise Exception(f"Invalid Item Type {item.type}")
+
+        elif url:
+            params['sourceUrl'] = url
+            part = os.path.splitext(url)[-1]
+            if part in file_types:
+                params['filetype'] = file_types[part]
+            else:
+                raise Exception(f"Invalid file extension: {part}")
+        elif file_path and os.path.isfile(file_path):
+            part = os.path.splitext(url)[-1]
+            if part in file_types:
+                params['filetype'] = file_types[part]
+            else:
+                raise Exception(f"Invalid file extension: {part}")
+            files.append(('file', file_path, os.path.basename(file_path)))
+        elif text:
+            params['text'] = text
+            params['fileType'] = 'csv'
+
+        if future == True:
+            executor =  concurrent.futures.ThreadPoolExecutor(1)
+            futureobj = executor.submit(self._generate,
+                                        **{"gurl" : gurl, "params":params,
+                                           "files" : files, "gis" : self._gis})
+            executor.shutdown(False)
+            return futureobj
+        else:
+            executor =  concurrent.futures.ThreadPoolExecutor(1)
+            futureobj = executor.submit(self._generate,
+                                        **{"gurl" : gurl, "params":params,
+                                           "files" : files, "gis" : self._gis})
+            executor.shutdown(False)
+            return futureobj.result()
+    #----------------------------------------------------------------------
     def import_data(self, df, address_fields=None, folder=None, item_id=None, **kwargs):
         """
         Imports a Pandas data frame (that has an address column), or an arcgis
@@ -5687,7 +5835,7 @@ class ResourceManager(object):
         resources = con.get(url, params=params,out_folder=save_path, file_name=file_name, try_json=False)
         return resources
 
-    def add(self, file=None, folder_name=None, file_name=None, text=None, archive=False):
+    def add(self, file=None, folder_name=None, file_name=None, text=None, archive=False, access=None):
         """The add resources operation adds new file resources to an existing item. For example, an image that is
         used as custom logo for Report Template. All the files are added to 'resources' folder of the item. File
         resources use storage space from your quota and are scanned for viruses. The item size is updated to
@@ -5717,6 +5865,12 @@ class ResourceManager(object):
         ----------------  ---------------------------------------------------------------
         archive           Optional boolean. Default is False.  If True, file resources
                           added are extracted and files are uploaded to respective folders.
+        ----------------  ---------------------------------------------------------------
+        access            Optional String. Set file resource to be private regardless of
+                          the item access level, or revert it by setting it to `inherit`
+                          which makes the item resource have the same access as the item.
+
+                          Supported values: `private` or `inherit`.
         ================  ===============================================================
 
         :return:
@@ -5756,7 +5910,8 @@ class ResourceManager(object):
         if text is not None:
             params['text'] = text
         params['archive'] = 'true' if archive else 'false'
-
+        if access and str(access) in ['inherit', 'private']:
+            params['access'] = access
         resp = self._portal.con.post(query_url, params,
                                      files=files, compress=False)
         return resp

@@ -193,8 +193,9 @@ class YOLOv3(ArcGISModel):
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self)
     
     def _show_results_multispectral(self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs):
+        return_fig = kwargs.get('return_fig', False)
         self.learn.predicting = True
-        ax = show_results_multispectral(
+        fig,ax = show_results_multispectral(
             self, 
             nrows=rows, 
             thresh=thresh, 

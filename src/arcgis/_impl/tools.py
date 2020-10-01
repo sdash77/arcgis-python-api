@@ -4497,31 +4497,49 @@ class _OrthoMappingTools():
     def _tools(self):
         return self.properties.tasks
     #----------------------------------------------------------------------
-    def _create_output_image_service(self, output_name, task):
-        ok = self._gis.content.is_service_name_available(output_name, "Image Service")
+    def _create_output_image_service(self, output_name, task, folder=None, output_properties=None):
+        gis = self._gis
+        ok = gis.content.is_service_name_available(output_name, "Image Service")
         if not ok:
             raise RuntimeError("An Image Service by this name already exists: " + output_name)
 
-        createParameters = {
+        create_parameters = {
             "name": output_name,
             "description": "",
-            "capabilities": "Image",
-                "properties": {
-                    "path": "@",
-                    "description": "",
-                    "copyright": ""
-                }
+            "capabilities": "Image, Metadata",
+            "properties": {
+                "path": "@",
+                "description": "",
+                "copyright": ""
+            }
         }
 
-        output_service = self._gis.content.create_service(output_name, create_params=createParameters, service_type="imageService")
+        tiles_only = None
+
+        if output_properties is not None:
+            if "tiles_only" in output_properties:
+                tiles_only = output_properties["tiles_only"]
+
+        if tiles_only is None:
+            if gis._con._product == "AGOL":
+                create_parameters["capabilities"] = "Image, Metadata, TilesOnly"
+        else:
+            if gis._con._product == "AGOL":
+                if isinstance(tiles_only, bool):
+                    if tiles_only == True:
+                        create_parameters["capabilities"] = "Image, Metadata, TilesOnly"
+
+        output_service = gis.content.create_service(output_name, create_params=create_parameters,
+                                                          service_type="imageService", folder=folder)
         description = "Image Service generated from running the " + task + " tool."
         item_properties = {
-            "description" : description,
-            "tags" : "Analysis Result, " + task,
+            "description": description,
+            "tags": "Analysis Result, " + task,
             "snippet": "Analysis Image Service generated from " + task
         }
         output_service.update(item_properties)
         return output_service
+
     #----------------------------------------------------------------------
     def _set_image_collection_param(self, image_collection, param_name=None):
         if isinstance(image_collection, str):
@@ -4542,6 +4560,52 @@ class _OrthoMappingTools():
 
         return image_collection
     #----------------------------------------------------------------------
+    def _set_output_raster(self, output_name, task, output_properties=None):
+        gis = self._gis
+        output_service = None
+        output_raster = None
+
+        task_name = task
+
+        folder = None
+        folderId = None
+
+        if output_properties is not None:
+            if "folder" in output_properties:
+                folder = output_properties["folder"]
+        if folder is not None:
+            user = gis.properties.user.username
+            if isinstance(folder, dict):
+                if "id" in folder and "title" in folder:
+                    folderId = folder["id"]
+                    folder=folder["title"]
+            else:
+                folderId = gis._portal.get_folder_id(user, folder)
+            if folderId is None:
+                folder_dict = gis.content.create_folder(folder, user)
+                folder = folder_dict["title"]
+                folderId = folder_dict["id"]
+
+        if output_name is None:
+            output_name = str(task_name) + '_' + _id_generator()
+            output_service = self._create_output_image_service(output_name, task, folder=folder, output_properties=output_properties)
+            output_raster = {"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}
+        elif isinstance(output_name, str):
+            output_service = self._create_output_image_service(output_name, task, folder=folder, output_properties=output_properties)
+            output_raster = {"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}
+        elif isinstance(output_name, arcgis.gis.Item):
+            output_service = output_name
+            output_raster = {"itemProperties":{"itemId":output_service.itemid}}
+        else:
+            raise TypeError("output_raster should be a string (service name) or Item")
+
+        if folderId is not None:
+            output_raster["itemProperties"].update({"folderId":folderId})
+        output_raster = json.dumps(output_raster)
+        return output_raster, output_service
+
+    #----------------------------------------------------------------------
+
     def alter_processing_states(self,
                                 image_collection,
                                 new_states=None,
@@ -5056,8 +5120,6 @@ class _OrthoMappingTools():
                 if matching_method.lower() == element.lower():
                     matching_method=element
 
-        folder = None
-        folderId = None
 
         if isinstance(output_dem, Item):
             output_dem = json.dumps({"itemId": output_dem.itemid})
@@ -5076,26 +5138,8 @@ class _OrthoMappingTools():
                 if output_dem_result is not None:
                     output_dem= json.dumps({"itemId": output_dem_result.itemid})
                 else:
-                    doesnotexist = gis.content.is_service_name_available(output_dem, "Image Service")
-                    if doesnotexist:
-                        if kwargs is not None:
-                            if "folder" in kwargs:
-                                folder = kwargs["folder"]
-                        if folder is not None:
-                            if isinstance(folder, dict):
-                                if "id" in folder:
-                                    folderId = folder["id"]
-                                    folder=folder["title"]
-                            else:
-                                owner = gis.properties.user.username
-                                folderId = gis._portal.get_folder_id(owner, folder)
-                            if folderId is None:
-                                folder_dict = gis.content.create_folder(folder, owner)
-                                folder = folder_dict["title"]
-                                folderId = folder_dict["id"]
-                            output_dem = json.dumps({"serviceProperties": {"name" : output_dem}, "itemProperties": {"folderId" : folderId}})
-                        else:
-                            output_dem = json.dumps({"serviceProperties": {"name" : output_dem}})
+                    output_dem, output_service = self._set_output_raster(output_name=output_dem, task=task, output_properties=kwargs)
+
 
 
         job = tool(image_collection=image_collection,
@@ -5182,9 +5226,6 @@ class _OrthoMappingTools():
         if image_collection:
             image_collection = self._set_image_collection_param(image_collection=image_collection)
 
-        folder = None
-        folderId = None
-
         if isinstance(output_ortho_image, Item):
             output_ortho_image = json.dumps({"itemId": output_ortho_image.itemid})
         elif isinstance(output_ortho_image, str):
@@ -5202,28 +5243,7 @@ class _OrthoMappingTools():
                 if output_ortho_image_result is not None:
                     output_ortho_image= json.dumps({"itemId": output_ortho_image_result.itemid})
                 else:
-                    doesnotexist = gis.content.is_service_name_available(output_ortho_image, "Image Service")
-                    if doesnotexist:
-                        if kwargs is not None:
-                            if "folder" in kwargs:
-                                folder = kwargs["folder"]
-                        if folder is not None:
-                            if isinstance(folder, dict):
-                                if "id" in folder:
-                                    folderId = folder["id"]
-                                    folder=folder["title"]
-                            else:
-                                owner = gis.properties.user.username
-                                folderId = gis._portal.get_folder_id(owner, folder)
-                            if folderId is None:
-                                folder_dict = gis.content.create_folder(folder, owner)
-                                folder = folder_dict["title"]
-                                folderId = folder_dict["id"]
-                            output_ortho_image = json.dumps({"serviceProperties": {"name" : output_ortho_image}, "itemProperties": {"folderId" : folderId}})
-                        else:
-                            output_ortho_image = json.dumps({"serviceProperties": {"name" : output_ortho_image}})
-
-
+                    output_ortho_image, output_service = self._set_output_raster(output_name=output_ortho_image, task=task, output_properties=kwargs)
 
         job = tool(image_collection=image_collection,
                    output_ortho_image=output_ortho_image,
@@ -5681,10 +5701,10 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if output_name is None:
             output_name = str(task_name) + '_' + _id_generator()
-            output_service = self._create_output_image_service(output_name, task, folder=folder)
+            output_service = self._create_output_image_service(output_name, task, folder=folder, output_properties=output_properties)
             output_raster = {"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}
         elif isinstance(output_name, str):
-            output_service = self._create_output_image_service(output_name, task, folder=folder)
+            output_service = self._create_output_image_service(output_name, task, folder=folder, output_properties=output_properties)
             output_raster = {"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}
         elif isinstance(output_name, arcgis.gis.Item):
             output_service = output_name
@@ -5712,7 +5732,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             raise TypeError("image_collection should be a string (url or uri) or Item")
 
         return image_collection
-    def _create_output_image_service(self, output_name, task, folder=None):
+    def _create_output_image_service(self, output_name, task, folder=None, output_properties=None):
         gis = self._gis
         ok = gis.content.is_service_name_available(output_name, "Image Service")
         if not ok:
@@ -5728,6 +5748,21 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "copyright": ""
             }
         }
+
+        tiles_only = None
+
+        if output_properties is not None:
+            if "tiles_only" in output_properties:
+                tiles_only = output_properties["tiles_only"]
+
+        if tiles_only is None:
+            if gis._con._product == "AGOL":
+                create_parameters["capabilities"] = "Image, Metadata, TilesOnly"
+        else:
+            if gis._con._product == "AGOL":
+                if isinstance(tiles_only, bool):
+                    if tiles_only == True:
+                        create_parameters["capabilities"] = "Image, Metadata, TilesOnly"
 
         output_service = gis.content.create_service(output_name, create_params=create_parameters,
                                                           service_type="imageService", folder=folder)
@@ -6838,8 +6873,6 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         image_collection_properties = None
         use_input_rasters_by_ref = None
-        folder = None
-        folderId = None
 
         if context is not None:
             if "image_collection_properties" in context:
@@ -6867,30 +6900,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if image_collection_result is not None:
                     image_collection = json.dumps({"itemId": image_collection_result.itemid})
                 else:
-                    doesnotexist = gis.content.is_service_name_available(image_collection, "Image Service")
-                    if doesnotexist:
-                        if kwargs is not None:
-                            if "folder" in kwargs:
-                                folder = kwargs["folder"]
-                        if folder is not None:
-                            if isinstance(folder, dict):
-                                if "id" in folder:
-                                    folderId = folder["id"]
-                                    folder=folder["title"]
-                            else:
-                                owner = gis.properties.user.username
-                                folderId = gis._portal.get_folder_id(owner, folder)
-                            if folderId is None:
-                                folder_dict = gis.content.create_folder(folder, owner)
-                                folder = folder_dict["title"]
-                                folderId = folder_dict["id"]
-                            output_service = self._create_output_image_service(image_collection, task, folder=folder)
-                            image_collection = json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-                            #image_collection =  json.dumps({"serviceProperties": {"name" : image_collection}, "itemProperties": {"folderId" : folderId}})
-                        else:
-                            output_service = self._create_output_image_service(image_collection, task)
-                            image_collection = json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-                            #image_collection = json.dumps({"serviceProperties": {"name" : image_collection}})
+                    image_collection, output_service = self._set_output_raster(output_name=image_collection, task=task, output_properties=kwargs)
 
         if out_sr is not None:
             if isinstance(out_sr, int):
@@ -14004,9 +14014,9 @@ class _Tools(object):
                     svcurl = self._validate_url(svcurl)
             except:
                 if self._gis._con.token is None:
-                    print("You need to be signed in to use Ortho Mapping Tools.")
+                    raise RuntimeError("You need to be signed in to use Ortho Mapping Tools.")
                 else:
-                    print("This GIS does not support Ortho Mapping Tools.")
+                    raise RuntimeError("This GIS does not support Ortho Mapping Tools.")
                 return None
 
             self._orthomapping = _OrthoMappingTools(svcurl, self._gis)

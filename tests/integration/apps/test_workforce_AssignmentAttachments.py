@@ -7,6 +7,7 @@ from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import datetime
+import pkg_resources
 
 #region PreCondition check
 test_skip = False
@@ -66,9 +67,19 @@ class Test_Workforce_Assignment_Attachments(unittest.TestCase):
         cls.portal_url = _conf_reader['workforce_ago']['url']
         cls.portal_username = _conf_reader['workforce_ago']['publisher_user']
         cls.portal_password = _conf_reader['workforce_ago']['publisher_password']
-        cls.project_id = "8e40b6b432af40fca8026eb80336f009"
         cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
-        cls.project = Project(cls.gis.content.get(cls.project_id))
+        t = datetime.datetime.now()
+        cls.time_stamp = str.format("Time stamp: {0}_{1}_{2}_{3}_{4}_{5}", str(t.year),
+                                     str(t.month), str(t.day), str(t.hour), str(t.minute), str(t.second))
+        cls.project = create_project(cls.time_stamp)
+        cls.at = cls.project.assignment_types.add(name="test")
+        cls.assignment = cls.project.assignments.add(assignment_type=cls.at, location="100 Commercial St",
+                                                       geometry={'x': -7820308, 'y': 5412450}, status=0,
+                                                       description="hello", notes="hello", priority=0)
+        resource_package = __name__
+        resource_path = '/'.join(('resources', 'logo.png'))
+        thumbnail = pkg_resources.resource_filename(resource_package, resource_path)
+        cls.assignment.attachments.add(thumbnail)
 
 
         r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
@@ -78,7 +89,7 @@ class Test_Workforce_Assignment_Attachments(unittest.TestCase):
         print("Beginning tests in Test_Workforce_AssignmentManager class")
 
     def setUp(self):
-        # reset project for each test
+        # create project for each test
         print("Test: "+self._testMethodName)
         self.namePrefix = "dino_"
 
@@ -92,6 +103,10 @@ class Test_Workforce_Assignment_Attachments(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        try:
+            cls.project.delete()
+        except Exception as e:
+            print("Failed to delete project successfully!")
         print("\n==================================================================")
 
     def test_attachment_manager(self):
@@ -116,7 +131,7 @@ class Test_Workforce_Assignment_Attachments(unittest.TestCase):
             self.assertIsInstance(downloaded_paths, list, "Incorrect download type")
             self.assertEqual(len(downloaded_paths), 1, "Incorrect number of items downloaded")
             self.assertIsInstance(downloaded_paths[0], str, "Incorrect type")
-            self.assertTrue("logo1.png" in downloaded_paths[0], "Incorrect download filename")
+            self.assertTrue("logo.png" in downloaded_paths[0], "Incorrect download filename")
 
 
         except AssertionError as assertErrorException:
@@ -136,7 +151,7 @@ class Test_Workforce_Assignment_Attachments(unittest.TestCase):
             self.assertIsInstance(attachment, Attachment, "Incorrect download type")
             downloaded_path = attachment.download()
             self.assertIsInstance(downloaded_path, str, "Incorrect type")
-            self.assertTrue("logo1.png" in downloaded_path, "Incorrect download filename")
+            self.assertTrue("logo.png" in downloaded_path, "Incorrect download filename")
 
 
         except AssertionError as assertErrorException:

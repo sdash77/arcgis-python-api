@@ -11,8 +11,14 @@ try:
 except ImportError:
     HASARCPY = False
 
-import os
 import sys
+if sys.platform == 'win32':
+    try:
+        import certifi_win32
+    except ImportError:
+        pass
+
+import os
 import copy
 import json
 import uuid
@@ -237,7 +243,6 @@ class Connection(object):
         self._session.stream = True
         self._session.headers.update(self._header)
         self._session.proxies = proxies
-
         if self._referer is None and\
            (self._portal_connection and \
            str(self._portal_connection._auth).lower() == "home"):
@@ -518,8 +523,9 @@ class Connection(object):
                 #_log.error(error['details'])
             else:
                 for errordetail in error['details']:
-                    errormessage = errormessage + "\n" + errordetail
-                    #_log.error(errordetail)
+                    if isinstance(errordetail, str):
+                        errormessage = errormessage + "\n" + errordetail
+                        #_log.error(errordetail)
 
         errormessage = errormessage + "\n(Error Code: " + str(errorcode) +")"
         raise Exception(errormessage)
@@ -808,7 +814,7 @@ class Connection(object):
         if self._cert_file:
             cert = (self._cert_file, self._key_file)
         else:
-            cert = None   
+            cert = None
         if json_encode:
             for k,v in params.items():
                 if isinstance(v, (dict, list, tuple, bool)):
@@ -826,7 +832,7 @@ class Connection(object):
             resp = self._session.put(url=url,
                                      data=params,
                                      cert=cert,
-                                     files=files)        
+                                     files=files)
         #
         return self._handle_response(resp=resp,
                                          out_path=out_path,
