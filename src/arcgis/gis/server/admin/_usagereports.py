@@ -146,30 +146,65 @@ class ReportManager(BaseServer):
         """
         Creates a new usage report. A usage report is created by submitting
         a JSON representation of the usage report to this operation.
+        See `CreateUsageReport <https://developers.arcgis.com/rest/enterprise-administration/server/createusagereport.htm>`_
+        for details on the REST request bundled by this method.
 
         ====================     ====================================================================
         **Argument**             **Description**
         --------------------     --------------------------------------------------------------------
         reportname               Required string. The unique name of the report.
         --------------------     --------------------------------------------------------------------
-        queries                  Required string. A list of queries for which to generate the report.
-                                 Specify the list as an array of JSON objects representing the queries.
-                                 Each query specifies the list of metrics to be queried for a given
-                                 set of resourceURIs.
+        queries                  Required list of Python dictionaries for which to generate the
+                                 report. Each dictionary has two keys: ``resourceURIs`` and
+                                 ``metrics``
 
-                                 The queries parameter has the following sub-parameters:
+                                 .. code-block:: python
 
-                                 - resourceURIs -- Comma-separated list of resource URIs for which
-                                   to report metrics. This specifies the services or folders for
-                                   which to gather metrics. The resourceURI is formatted as below:
-                                    - services/ -- Entire Site
-                                    - services/Folder/ -- Folder within a Site. Reports metrics
-                                      aggregated across all services within that Folder and Sub-Folders.
-                                    - services/Folder/ServiceName.ServiceType -- Service in a
-                                      specified folder, for example:
-                                         - services/Map_bv_999.MapServer
-                                         - services/ServiceName.ServiceType
-                                    - Service in the root folder, for example: Map_bv_999.MapServer.
+                                     # Usage Example
+
+                                     [{"resourceURIs": ["/services/Folder_name/",
+                                                        "Forest_loss.FeatureServer"],
+                                       "metrics": ["RequestCount,RequestsFailed"]}]
+
+                                 Each key's corresponding value is a list of strings specifying
+                                 a resource for which to gather metrics, or the metrics to
+                                 gather, respectively.
+
+                                 - ``resourceURIs`` --
+                                     Comma-separated list that specifies the services or folders
+                                     for which to gather metrics, formatted as below:
+
+                                     - ``services/`` -
+                                       Entire Site
+                                     - ``services/Folder/`` -
+                                       Folder within a Site. Reports metrics aggregated across all
+                                       services within that folder and any sub-folders.
+                                     - ``services/Folder/ServiceName.ServiceType`` -
+                                       Service in a specified folder.
+                                        - services/Folder_name/Map_bv_999.MapServer
+                                     - ``service`` -
+                                       If in the root folder
+                                        - Map_bv_999.MapServer
+
+                                 - ``metrics`` --
+                                     Comma-separated string of specific measures to gather.
+
+                                     - ``RequestCount`` —
+                                       the number of requests received
+                                     - ``RequestsFailed`` —
+                                       the number of requests that failed
+                                     - ``RequestsTimedOut`` —
+                                       the number of requests that timed out
+                                     - ``RequestMaxResponseTime`` —
+                                       the maximum response time
+                                     - ``RequestAvgResponseTime`` —
+                                       the average response time
+                                     - ``ServiceActiveInstances`` —
+                                       the maximum number of active (running) service instances sampled at 1 minute
+                                       intervals for a specified service
+                                     - ``ServiceRunningInstancesMax`` — the maximum number of active (running) service
+                                       instances, sampled at one-minute intervals for a specified service. If you
+                                       include this metric, it must be the only metric included in the report.
         --------------------     --------------------------------------------------------------------
         metadata                 Optional string. Any JSON object representing presentation tier
                                  data for the usage report, such as report title, colors,
@@ -185,21 +220,40 @@ class ReportManager(BaseServer):
         since                    Optional string. The time duration of the report. The supported
                                  values are: LAST_DAY, LAST_WEEK, LAST_MONTH, LAST_YEAR, CUSTOM
 
-                                 - LAST_DAY represents a time range spanning the previous 24 hours.
+                                 - ``LAST_DAY`` represents a time range spanning the previous 24 hours.
                                    This is the default value.
-                                 - LAST_WEEK represents a time range spanning the previous 7 days.
-                                 - LAST_MONTH represents a time range spanning the previous 30 days.
-                                 - LAST_YEAR represents a time range spanning the previous 365 days.
-                                 - CUSTOM represents a time range that is specified using the from
+                                 - ``LAST_WEEK`` represents a time range spanning the previous 7 days.
+                                 - ``LAST_MONTH`` represents a time range spanning the previous 30 days.
+                                 - ``LAST_YEAR`` represents a time range spanning the previous 365 days.
+                                 - ``CUSTOM`` represents a time range that is specified using the from
                                    and to parameters.
         --------------------     --------------------------------------------------------------------
-        from_value               Optional string. Only valid when *since* is CUSTOM. The timestamp
-                                 (milliseconds since UNIX epoch, namely January 1, 1970, 00:00:00 GMT)
+        from_value               Optional integer. Only valid when ``since`` is CUSTOM. The timestamp
+                                 in milliseconds (since January 1, 1970, 00:00:00 GMT, the Unix epoch)
                                  for the beginning period of the report.
+
+                                 .. code-block:: python
+
+                                    # usage Example:
+
+                                    import datetime as dt
+
+                                    >>> sept1_2020 = int(dt.datetime(2020, 9, 1).timestamp()) * 1000
+                                        sept1_2020
+
+                                        1598943600000
         --------------------     --------------------------------------------------------------------
-        to_value                 Optional string. Only valid when *since* is CUSTOM. The timestamp
-                                 (milliseconds since UNIX epoch, namely January 1, 1970, 00:00:00 GMT)
+        to_value                 Optional integer. Only valid when ``since`` is CUSTOM. The timestamp
+                                 in milliseconds (since January 1, 1970, 00:00:00 GMT, the Unix epoch)
                                  for the ending period of the report.
+
+                                 .. code-block:: python
+
+                                    # usage Example:
+
+                                    import datetime as dt
+
+                                    now = int(dt.datetime.now().timestamp()) * 1000
         --------------------     --------------------------------------------------------------------
         aggregation_interval     Optional string. The aggregation interval in minutes. Server metrics
                                  are aggregated and returned for time slices aggregated using the
@@ -211,11 +265,11 @@ class ReportManager(BaseServer):
                                  When the aggregation_interval is not specified, the following defaults
                                  are used:
 
-                                   - LAST_DAY: 30 minutes
-                                   - LAST_WEEK: 4 hours
-                                   - LAST_MONTH: 24 hours
-                                   - LAST_YEAR: 1 week
-                                   - CUSTOM: 30 minutes up to 1 day, 4 hours up to 1 week, 1
+                                   - ``LAST_DAY``: 30 minutes
+                                   - ``LAST_WEEK``: 4 hours
+                                   - ``LAST_MONTH``: 24 hours
+                                   - ``LAST_YEAR``: 1 week
+                                   - ``CUSTOM``: 30 minutes up to 1 day, 4 hours up to 1 week, 1
                                    day up to 30 days, and 1 week for longer periods.
 
                                  If the interval specified in Usage Reports Settings is more than
@@ -224,23 +278,37 @@ class ReportManager(BaseServer):
 
 
         :return:
-            A JSON indicating success.
+            A :class:`~arcgis.gis.server.Report` object.
 
 
         .. code-block:: python
 
             USAGE EXAMPLE:
 
-            >>> queryObj = [{
-                "resourceURIs": ["services/Map_bv_999.MapServer"],
-                "metrics": ["RequestCount"]
-                }]
-            >>> obj.createReport(
-                reportname="SampleReport",
-                queries=queryObj,
-                metadata="This could be any String or JSON Object.",
-                since="LAST_DAY"
-                )
+            import datetime as dt
+            from arcgis.gis import GIS
+
+            >>> gis = GIS(profile="your_ent_profile", verify_cert=False)
+
+            >>> gis_servers = gis.admin.servers.list()
+
+            >>> gis_server = gis_servers[1]
+
+            >>> now = int(dt.datetime.now().timestamp()) * 1000
+            >>> sept1_2020 = int(dt.datetime(2020, 9, 1).timestamp()) * 1000
+
+            >>> query_obj = [{"resourceURIs": ["services/Map_bv_999.MapServer"],
+                              "metrics": ["RequestCount"]}]
+
+            >>> r = gis_server.usage.create(reportname="SampleReport",
+                                            queries=query_obj,
+                                            metadata="This could be any String or JSON Object.",
+                                            since="CUSTOM",
+                                            from_value=sept1_2020,
+                                            to_value=now)
+            >>> r
+
+                <Report at https://server_url:6443/arcgis/admin/usagereports/SampleReport>
         """
         url = self._url + "/add"
         temp = False
@@ -282,41 +350,37 @@ class ReportManager(BaseServer):
                      queries="services/",
                      metrics="RequestsFailed"):
         """
-        The operation quick_report generates an on the fly usage report for
-        a service, services, or folder.
+        Generates an on the fly usage report for a service, services, or folder.
 
         ====================     ====================================================================
         **Argument**             **Description**
         --------------------     --------------------------------------------------------------------
         since                    Optional string. The time duration of the report. The supported
-                                 values are: LAST_DAY, LAST_WEEK, LAST_MONTH, LAST_YEAR, CUSTOM
+                                 values are: LAST_DAY, LAST_WEEK, LAST_MONTH, or LAST_YEAR.
 
-                                 - LAST_DAY represents a time range spanning the previous 24 hours.
+                                 - ``LAST_DAY`` represents a time range spanning the previous 24 hours.
                                    This is the default value.
-                                 - LAST_WEEK represents a time range spanning the previous 7 days.
-                                 - LAST_MONTH represents a time range spanning the previous 30 days.
-                                 - LAST_YEAR represents a time range spanning the previous 365 days.
-                                 - CUSTOM represents a time range that is specified using the from
-                                   and to parameters.
+                                 - ``LAST_WEEK`` represents a time range spanning the previous 7 days.
+                                 - ``LAST_MONTH`` represents a time range spanning the previous 30 days.
+                                 - ``LAST_YEAR`` represents a time range spanning the previous 365 days.
         --------------------     --------------------------------------------------------------------
-        queries                  Required string. A list of queries for which to generate the report.
-                                 Specify the list as an array of JSON objects representing the queries.
-                                 Each query specifies the list of metrics to be queried for a given
-                                 set of resourceURIs.
+        queries                  Required string. A string of resourceURIs for which to generate the report.
+                                 Specified as a comma-separated sting of services or folders for which to
+                                 gather metrics.
 
-                                 The queries parameter has the following sub-parameters:
-
-                                 - resourceURIs -- Comma-separated list of resource URIs for which
-                                   to report metrics. This specifies the services or folders for
-                                   which to gather metrics. The resourceURI is formatted as below:
-                                    - services/ -- Entire Site
-                                    - services/Folder/ -- Folder within a Site. Reports metrics
+                                    - ``services/`` -- Entire Site
+                                    - ``services/Folder/`` -- Folder within a Site. Reports metrics
                                       aggregated across all services within that Folder and Sub-Folders.
-                                    - services/Folder/ServiceName.ServiceType -- Service in a
+                                    - ``services/Folder/ServiceName.ServiceType`` -- Service in a
                                       specified folder, for example:
-                                         - services/Map_bv_999.MapServer
-                                         - services/ServiceName.ServiceType
-                                    - Service in the root folder, for example: Map_bv_999.MapServer.
+                                         - services/Folder_Name/Map_bv_999.MapServer
+                                         - services/Fodler_Name/ServiceName.ServiceType
+                                    - ``root folder`` -- Service in the root folder
+                                         - Map_bv_999.MapServer.
+
+                                 .. code-block:: python
+
+                                     queries="services/Hydroligic_Data/Lake_algae.FeatureServer,services/Mountains"
         --------------------     --------------------------------------------------------------------
         metrics                  Optional string. Comma separated list of metrics to be reported.
 
@@ -330,12 +394,43 @@ class ReportManager(BaseServer):
                                     - ServiceActiveInstances -- the maximum number of active
                                       (running) service instances sampled at 1 minute intervals,
                                       for a specified service
-        ====================     ====================================================================
 
+                                 .. code-block:: python
+
+                                     metrics="RequestCount,RequestsFailed"
+        ====================     ====================================================================
 
         :return:
             A Python dictionary of data on a successful query.
 
+        .. code-block:: python
+
+           # Usage Example:
+
+           >>> gis = GIS(profile="my_own_portal", verify_cert=False)
+
+           >>> gis_servers = gis.admin.servers.list()
+
+           >>> srv = gis_servers[0]
+
+           >>> query_string = "services/Forests/Forests_degraded_2000.MapServer,services/Lakes/Lakes_drought_levels.MapServer"
+           >>> qk_report = srv.usage.quick_report(since = "LAST_MONTH",
+                                                  queries = query_string,
+                                                  metrics = "RequestCount,RequestsFailed")
+
+           >>> qk_report
+
+               {'report': {'reportname': '1fa828eb31664485ae5c25c76c86e28d',
+                           'metadata': '{"temp":true,"title":"1fa828eb31664485ae5c25c76c86e28d","managerReport":false}',
+                           'time-slices': [1598914800000, 1599001200000, 1599087600000, ... 1601420400000],
+                           'report-data': [[{'resourceURI': 'services/Forests/Forests_degraded_2000.MapServer',
+                                             'metric-type': 'RequestCount', 'data': [None, 17, 928, ... 20]},
+                                            {'resourceURI': 'services/Forests/Forests_degraded_2000.MapServer',
+                                             'metric-type': 'RequestsFailed', 'data': [None, 225, None, ... 0]},
+                                            {'resourceURI': 'services/Lakes/Lakes_drought_levels.MapServer',
+                                             'metric-type': 'RequestCount', 'data': [0, 0, 7, ... 71]},
+                                            {'resourceURI': 'services/Lakes/Lakes_drought_levels.MapServer',
+                                             'metric-type': 'RequestsFailed', 'data': [None, None, 1 ... , 0]}]]}}
         """
         from uuid import uuid4
         queries = {
