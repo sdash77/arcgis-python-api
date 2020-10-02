@@ -1183,7 +1183,8 @@ class Connection(object):
             client = BackendApplicationClient(client_id=self._client_id)
             oauth = OAuth2Session(client=client)
             res = oauth.fetch_token(
-                token_url=self._token_url,
+                #method="GET",
+                token_url=tu,
                 client_id=self._client_id,
                 client_secret=self._client_secret,
                 include_client_id=True,

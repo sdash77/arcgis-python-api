@@ -304,6 +304,7 @@ class GIS(object):
         self._client_id = client_id
         self._datastores_list = None
         self._utoken = kwargs.pop('token', None)
+        client_secret = kwargs.pop('client_secret', None)
         if self._username is None:
             if "ESRI_API_KEY" in os.environ and self._utoken is None:
                 self._utoken = os.environ.get("ESRI_API_KEY", None)
@@ -332,7 +333,8 @@ class GIS(object):
                                            client_id=self._client_id,
                                            expiration=self._expiration,
                                            referer=self._referer,
-                                           custom_auth=custom_auth, token=self._utoken)
+                                           custom_auth=custom_auth, token=self._utoken,
+                                           client_secret=client_secret)
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
                 self._portal.con._referer = ""
@@ -385,7 +387,8 @@ class GIS(object):
                                       expiration=self._expiration,
                                       referer=self._referer,
                                       custom_auth=custom_auth,
-                                      token=self._utoken)
+                                      token=self._utoken,
+                                      client_secret=client_secret)
                 self._portal = pp
         except: pass
 
