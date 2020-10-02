@@ -2,7 +2,14 @@ import json
 import uuid
 from arcgis.gis import GIS
 from arcgis._impl.common._isd import InsensitiveDict
+from arcgis.gis._impl._con._url_validator import validate_url
+from pathlib import Path
 from ._base import BaseOGC
+
+def _is_file(path):
+    """checks if the data is a file"""
+    return Path(path).is_file()
+
 ###########################################################################
 class GeoJSONLayer(BaseOGC):
     """
@@ -16,7 +23,9 @@ class GeoJSONLayer(BaseOGC):
     ===============     ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
-    url                 Required string. The web location of the GeoJSON file.
+    url                 Optional string. The web location of the GeoJSON file.
+    ---------------     --------------------------------------------------------------------
+    data                Optional String or Dict. A path to a GeoJSON file, the GeoJSON data as a string, or the GeoJSON data as a dictionary.
     ---------------     --------------------------------------------------------------------
     copyright           Optional String. Describes limitations and usage of the data.
     ---------------     --------------------------------------------------------------------
@@ -33,9 +42,25 @@ class GeoJSONLayer(BaseOGC):
     """
     _type = "geojson"
     #----------------------------------------------------------------------
-    def __init__(self, url, **kwargs):
+    def __init__(self, url=None, data=None,**kwargs):
         """init"""
         super(GeoJSONLayer, self)
+        if url is None and \
+           data is None:
+            raise Exception("A `url` or `data` must be given to proceed")
+        if isinstance(data, str) and _is_file(data):
+            with open(data, 'r') as r:
+                self._text = json.loads(r.read())
+        elif isinstance(data, str) and _is_file(data) == False:
+            self._text = json.loads(data)
+        elif isinstance(data, dict):
+            self._text = dict(data)
+        elif url is None and \
+             data and \
+             not isinstance(data, (str, dict)):
+            raise ValueError("`data` must be of type string or dict.")
+        if url and validate_url(url) == False:
+            raise ValueError(f"Invalid `url` : {url}")
         self._url = url
         self._type = "GeoJSON"
         self._copyright = kwargs.pop("copyright", "")
@@ -69,6 +94,7 @@ class GeoJSONLayer(BaseOGC):
         lyr = {
             "type" : self._type,
             "url" : self._url,
+            "data" : self._text,
             "copyright" : self._copyright,
             "title" : self._title,
             "id" : self._id,
@@ -84,3 +110,33 @@ class GeoJSONLayer(BaseOGC):
     def _operational_layer_json(self) -> dict:
         """Represents the WebMap's JSON format"""
         return self._lyr_json
+
+    @property
+    def url(self):
+        """
+        Get/Set the data associated with the GeoJSON Layer
+
+        :return: String
+
+        """
+        return self._url or self._text
+
+    @url.setter
+    def url(self, data):
+        """
+        Get/Set the data associated with the GeoJSON Layer
+
+        The data can be a string, file or URL.
+
+        :return: String
+        """
+
+        if validate_url(value=data):
+            self._url = data
+        elif _is_file(data):
+            with open(data, 'r') as r:
+                self._text = r.read()
+        elif isinstance(data, str):
+            self._text = data
+        else:
+            raise ValueError("The data must be a valid URL, file, or text blob.")
