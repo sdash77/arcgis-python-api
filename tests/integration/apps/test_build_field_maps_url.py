@@ -368,7 +368,7 @@ class Test_Field_Maps_Integrations(unittest.TestCase):
                                        action="open",
                                        anonymous=True)
             self.assertEqual(url, "https://fieldmaps.arcgis.app?referenceContext=open&itemID={}"
-                                  "&anonymous=true".format(
+                                  "&anonymousAccess=true".format(
                 self.webmap,
             ))
         except AssertionError as assertErrorException:

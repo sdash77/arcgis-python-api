@@ -331,7 +331,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         if options is None:
             options = {}
         if isinstance(layer, arcgis.features.FeatureLayer) and \
-           'renderer' not in options:
+           'renderer' not in options and not isinstance(layer, arcgis.features.Table):
             options['renderer'] = json.loads(layer.renderer.json)
         elif hasattr(layer, 'spatial'):
             layer = layer.spatial.to_feature_collection()
@@ -396,25 +396,31 @@ class WebMap(HasTraits, collections.OrderedDict):
             if layer.type.lower() == "map service":
                 layer_type = "ArcGISMapServiceLayer"
                 item_id = layer.id
-            elif hasattr(layer, 'layers'):
-                if layer.type == 'Feature Collection':
-                    options['serviceItemId'] = layer.itemid
-
-                for lyr in layer.layers:  # recurse - works for all.
-                    self.add_layer(lyr, options)
-                return True  # end add_layer execution after iterating through each layer.
             else:
-                raise TypeError('Item object without layers is not supported')
+              if not any(hasattr(layer, attr) for attr in ["layers", "tables"]):
+                  raise TypeError("Item object without layers or tables is not supported")
+              elif hasattr(layer, 'layers'):
+                  if layer.type == 'Feature Collection':
+                      options['serviceItemId'] = layer.itemid
+                  for lyr in layer.layers:  # recurse - works for all.
+                      self.add_layer(lyr, options)
+              if hasattr(layer, 'tables'):
+                  for tbl in layer.tables:  # recurse - works for all.
+                      self.add_table(tbl, options)
+              return True  # end add_layer execution after iterating through each layer.
         elif isinstance(layer, arcgis.features.FeatureLayerCollection):
             if not self._extent:
                 if hasattr(layer.properties, 'fullExtent'):
                     self._extent = layer.properties.fullExtent
+            if not any(hasattr(layer, attr) for attr in ["layers", "tables"]):
+                raise TypeError("FeatureLayerCollection object without layers or tables is not supported")
             if hasattr(layer, 'layers'):
-                for lyr in layer.layers:  # recurse
+                for lyr in layer.layers:  # recurse - works for all.
                     self.add_layer(lyr, options)
-                return True
-            else:
-                raise TypeError('FeatureLayerCollection object without layers is not supported')
+            if hasattr(layer, 'tables'):
+                for tbl in layer.tables:  # recurse - works for all.
+                    self.add_table(tbl, options)
+            return True
         elif isinstance(layer, BaseOGC):
             lyr = layer._lyr_json
             title = lyr["title"]
@@ -653,7 +659,9 @@ class WebMap(HasTraits, collections.OrderedDict):
                 self._layers.reverse()
         else:
             # note - no need to add if self._layers was empty as the hydration step above will account for the new layer
-            self._layers.append(PropertyMap(new_layer))
+            # need this check to avoid duplicating adding a new table to both layers and tables
+            if "layerType" in new_layer and new_layer["layerType"] != "Table":
+                self._layers.append(PropertyMap(new_layer))
 
         # update tables property
         if not self._tables:

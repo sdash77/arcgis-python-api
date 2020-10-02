@@ -189,22 +189,6 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
             print("Failed to delete project successfully!")
         print("\n==================================================================")
 
-    def test_search_assignment(self):
-        try:
-            assignments = self.project.assignments.search("assignmentType=0")
-            self.assertEqual(len(assignments), 0, "Incorrect number of assignments")
-            assignments = self.project.assignments.search("assignmentType=2")
-            self.assertEqual(len(assignments), 2, "Incorrect number of assignments")
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
-        except Exception as testException:
-            self.fail("Error during test: " + testException.__str__())
 
     def test_update_assignment(self):
         try:
