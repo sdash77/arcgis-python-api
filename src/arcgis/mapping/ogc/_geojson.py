@@ -52,7 +52,7 @@ class GeoJSONLayer(BaseOGC):
             with open(data, 'r') as r:
                 self._text = json.loads(r.read())
         elif isinstance(data, str) and _is_file(data) == False:
-            self._text = data
+            self._text = json.loads(data)
         elif isinstance(data, dict):
             self._text = dict(data)
         elif url is None and \
