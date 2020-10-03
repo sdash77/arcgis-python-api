@@ -677,31 +677,33 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         return True
 
-    def _process_extent(self):
+    def _process_extent(self, extent=None):
         """
         internal method to transform extent to a string of xmin, ymin, xmax, ymax
         If extent is not in wgs84, it projects
         :return:
         """
-        if isinstance(self._extent, PropertyMap):
-            self._extent = dict(self._extent)
-        if isinstance(self._extent, list):
+        if extent is None:
+            extent = self._extent
+        if isinstance(extent, PropertyMap):
+            extent = dict(extent)
+        if isinstance(extent, list):
             #passed from Item's extent flatten the extent. Item's extent is always in 4326, no need to project
-            extent_list = [element for sublist in self._extent for element in sublist]
+            extent_list = [element for sublist in extent for element in sublist]
 
             #convert to string
             return ','.join(str(e) for e in extent_list)
-        elif isinstance(self._extent, dict):
+        elif isinstance(extent, dict):
             #passed from MapView.extent
-            if 'spatialReference' in self._extent:
-                if 'latestWkid' in self._extent['spatialReference']:
-                    if self._extent['spatialReference']['latestWkid'] != 4326:
+            if 'spatialReference' in extent:
+                if 'latestWkid' in extent['spatialReference']:
+                    if extent['spatialReference']['latestWkid'] != 4326:
                         #use geometry service to project
-                        input_geom = [{'x':self._extent['xmin'], 'y':self._extent['ymin']},
-                                      {'x':self._extent['xmax'], 'y':self._extent['ymax']}]
+                        input_geom = [{'x':extent['xmin'], 'y':extent['ymin']},
+                                      {'x':extent['xmax'], 'y':extent['ymax']}]
 
                         result = arcgis.geometry.project(input_geom,
-                                                         in_sr=self._extent['spatialReference']['latestWkid'],
+                                                         in_sr=extent['spatialReference']['latestWkid'],
                                                          out_sr=4326)
 
                         #process and return the result
@@ -712,13 +714,13 @@ class WebMap(HasTraits, collections.OrderedDict):
                             return ','.join(str(i) for i in e)
 
             #case when there is no spatialReference. Then simply extract the extent
-            if 'xmin' in self._extent:
-                e = self._extent
+            if 'xmin' in extent:
+                e = extent
                 e= [e['xmin'], e['ymin'],e['xmax'],e['ymax']]
                 return ','.join(str(i) for i in e)
 
         #if I don't know how to process the extent.
-        return self._extent
+        return extent
 
     def _contains_nans(self, result):
         """a bool of if projection output `result` contains any NaNs"""
@@ -764,6 +766,8 @@ class WebMap(HasTraits, collections.OrderedDict):
         -----------------  ---------------------------------------------------------------------
         description        Optional string. Description of the item.
         -----------------  ---------------------------------------------------------------------
+        extent             Optional dict, string, or array. The extent of the item.
+        -----------------  ---------------------------------------------------------------------
         title              Optional string. Name label of the item.
         -----------------  ---------------------------------------------------------------------
         tags               Optional string. Tags listed as comma-separated values, or a list of strings.
@@ -807,7 +811,8 @@ class WebMap(HasTraits, collections.OrderedDict):
             # save the web map
             webmap_item_properties = {'title':'Ebola incidents and facilities',
                          'snippet':'Map created using Python API showing locations of Ebola treatment centers',
-                         'tags':['automation', 'ebola', 'world health', 'python']}
+                         'tags':['automation', 'ebola', 'world health', 'python'],
+                         'extent': {'xmin': -122.68, 'ymin': 45.53, 'xmax': -122.45, 'ymax': 45.6, 'spatialReference': {'wkid': 4326}}}
 
             new_wm_item = wm.save(webmap_item_properties, thumbnail='./webmap_thumbnail.png')
 
@@ -818,7 +823,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         """
 
         item_properties['type'] = 'Web Map'
-        item_properties['extent'] = self._process_extent()
+        item_properties['extent'] = self._process_extent(item_properties.get('extent', None))
         item_properties['text'] = json.dumps(self._webmapdict, default=_date_handler)
         if 'typeKeywords' not in item_properties:
             item_properties['typeKeywords'] = self._eval_map_viewer_keywords()
