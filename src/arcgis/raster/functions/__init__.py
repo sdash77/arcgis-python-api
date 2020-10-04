@@ -6540,7 +6540,10 @@ class RFT:
         task_url, job_info, job_id = _analysis_job(gptool, task, params)
         job_info = _analysis_job_status(gptool, task_url, job_info)
         job_values = _analysis_job_results(gptool, task_url, job_info)
-        result = gptool._con.post(job_values["outputRasterFunction"]["url"],{},token=gptool._token)
+        if gis._con._product == "AGOL":
+            result = gptool._con.get(job_values["outputRasterFunction"]["url"],{},token=gptool._token)
+        else:
+            result = gptool._con.post(job_values["outputRasterFunction"]["url"],{},token=gptool._token)
         return result
 
     def _apply_argument(self, input_dict,arg_dict):
