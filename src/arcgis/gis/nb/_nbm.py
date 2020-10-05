@@ -11,6 +11,7 @@ class NotebookManager(object):
     _gis = None
     _properties = None
     _nbs = None
+    _snapshot = None
     #----------------------------------------------------------------------
     def __init__(self, url, gis, nbs):
         """Constructor"""
@@ -44,15 +45,15 @@ class NotebookManager(object):
             self._init()
         return self._properties
     #----------------------------------------------------------------------
-    def list(self):    
+    def list(self):
         """
         Returns a list of notebook instances on the Notebook Server
-        
+
         :returns: List of Notebook Objects
-        
+
         """
-        return [Notebook(url=self._url, 
-                         item_id=nbs['id'], 
+        return [Notebook(url=self._url,
+                         item_id=nbs['id'],
                          properties=nbs) for nbs in self.properties.notebooks]
     #----------------------------------------------------------------------
     @property
@@ -71,6 +72,19 @@ class NotebookManager(object):
                     for r in res["runtimes"]]
         return []
     #----------------------------------------------------------------------
+    @property
+    def snapshots(self):
+        """
+        Provides access to managing Notebook's snapshots
+
+        :return: SnapShotManager
+        """
+        if self._snapshot is None:
+            from ._snapshot import SnapShotManager
+            url = self._url + "/snapshots"
+            self._snapshot = SnapShotManager(url=url, gis=self._gis)
+        return self._snapshot
+    #----------------------------------------------------------------------
     def restore_runtime(self):
         """
         This operation restores the two default notebook runtimes in ArcGIS
@@ -87,14 +101,14 @@ class NotebookManager(object):
     @staticmethod
     def _future_job(fn,
                     task_name,
-                    jobid=None, 
-                    task_url=None, 
-                    notify=False, 
+                    jobid=None,
+                    task_url=None,
+                    notify=False,
                     gis=None,
                     **kwargs):
         """
         runs the job asynchronously
-        
+
         :returns: Job object
         """
         from arcgis._impl._async.jobs import Job
@@ -110,29 +124,29 @@ class NotebookManager(object):
                          save_parameters=False,
                          future=False):
         """
-        
-        The Execute Notebook operation allows administrators to remotely 
-        run a notebook in their ArcGIS Notebook Server site. The notebook 
+
+        The Execute Notebook operation allows administrators to remotely
+        run a notebook in their ArcGIS Notebook Server site. The notebook
         specified in the operation will be run with all cells in order.
 
-        Using this operation, you can schedule the execution of a notebook, 
-        either once or with a regular occurrence. This allows you to 
-        automate repeating tasks such as data collection and cleaning, 
-        content updates, and portal administration. On Linux machines, use 
-        a cron job to schedule the executeNotebook operation; on Windows 
+        Using this operation, you can schedule the execution of a notebook,
+        either once or with a regular occurrence. This allows you to
+        automate repeating tasks such as data collection and cleaning,
+        content updates, and portal administration. On Linux machines, use
+        a cron job to schedule the executeNotebook operation; on Windows
         machines, you can use the Task Scheduler app.
 
-        :Note: To run this operation, you must be logged in with an ArcGIS 
-               Enterprise portal account. You cannot execute notebooks from 
-               the ArcGIS Notebook Server primary site administrator 
+        :Note: To run this operation, you must be logged in with an ArcGIS
+               Enterprise portal account. You cannot execute notebooks from
+               the ArcGIS Notebook Server primary site administrator
                account.
 
-        You can specify parameters to be used in the notebook at execution 
-        time. If you've specified one or more parameters, they'll be 
-        inserted into the notebook as a new cell. This cell will be placed 
-        at the beginning of the notebook, unless you have added the tag 
+        You can specify parameters to be used in the notebook at execution
+        time. If you've specified one or more parameters, they'll be
+        inserted into the notebook as a new cell. This cell will be placed
+        at the beginning of the notebook, unless you have added the tag
         parameters to a cell.
-        
+
         ====================     ====================================================================
         **Argument**           **Description**
         --------------------     --------------------------------------------------------------------
@@ -146,9 +160,9 @@ class NotebookManager(object):
         --------------------     --------------------------------------------------------------------
         future                   Optional Boolean.  The default is false.  When True, the operation returns a notebook job that will let you view the results as needed.
         ====================     ====================================================================
-        
+
         :returns: Boolean
-        
+
         """
         from arcgis.gis import Item
         url = self._url + "/executeNotebook"
@@ -172,7 +186,7 @@ class NotebookManager(object):
                 if 'status' in resp and \
                    resp['status'] == 'success':
                     job_id = resp['jobId']
-                    status = nbs.system.job_details(job_id)  
+                    status = nbs.system.job_details(job_id)
                     i = 0
                     while (status['status'].lower() != 'completed'):
                         time.sleep(.3)
@@ -181,12 +195,12 @@ class NotebookManager(object):
                         elif status['status'].lower().find('fail') > -1 or\
                              status['status'].lower().find('error') > -1:
                             raise Exception(f"Job Fail {jobstatus}")
-                        status = nbs.system.job_details(job_id)  
+                        status = nbs.system.job_details(job_id)
                     return status
                 return resp
-            return NotebookManager._future_job(fn=_fn, 
-                                               task_name='Execute Notebook', 
-                                               gis=self._gis, 
+            return NotebookManager._future_job(fn=_fn,
+                                               task_name='Execute Notebook',
+                                               gis=self._gis,
                                                **{'url' : url, 'params' : params, 'nbs' : self._nbs})
         res = self._gis._con.post(url, params)
         return res
@@ -448,7 +462,7 @@ class Runtime(object):
 ###########################################################################
 class Notebook(object):
     """
-    This represents an individual notebook resource in the notebook server. 
+    This represents an individual notebook resource in the notebook server.
     """
     _url = None
     _item_id = None
@@ -489,14 +503,14 @@ class Notebook(object):
     #----------------------------------------------------------------------
     def close(self):
         """
-        This operation stops a running notebook. You can use it to free up 
-        space in your notebook container. Idle notebooks are automatically 
-        cleaned up according to the duration defined by the 
+        This operation stops a running notebook. You can use it to free up
+        space in your notebook container. Idle notebooks are automatically
+        cleaned up according to the duration defined by the
         idleNotebookThreshold property. The default value for that property
         is 24 hours.
-        
+
         :returns: Boolean
-        
+
         """
         params = {'f' : 'json'}
         url = self._url + "/closeNotebook"
