@@ -79,7 +79,7 @@ class Portal(object):
                  cert_file=None, expiration=60, referer=None, proxy_host=None,
                  proxy_port=None, connection=None, workdir=tempfile.gettempdir(),
                  tokenurl=None, verify_cert=True, client_id=None, custom_auth=None,
-                 token=None):
+                 token=None, **kwargs):
         """ The Portal constructor. Requires URL and optionally username/password."""
         url = url.strip()            # be permissive in accepting home app urls
         homepos = url.find('/home')
@@ -163,6 +163,7 @@ class Portal(object):
                                       proxy_port=proxy_port,
                                       verify_cert=verify_cert,
                                       client_id=client_id,
+                                      client_secret=kwargs.pop('client_secret', None),
                                       custom_auth=custom_auth,
                                       token=token)
         #self.get_version(True)
