@@ -394,6 +394,7 @@ class ImageryLayer(Layer):
         self._uses_gbl_function = False
         self._other_outputs = {}
         self._raster_info = {}
+        self._tiles_only = None
 
     @property
     def rasters(self):
@@ -566,29 +567,42 @@ class ImageryLayer(Layer):
         return band_count
 
     @property
+    def tiles_only(self):
+        """returns True if the layer is a Tiled Imagery Layer"""
+        if self._tiles_only != None:
+            return self._tiles_only
+        else:
+            self._tiles_only = False
+            if "TilesOnly" in self.properties.capabilities:
+                self._tiles_only = True
+            return self._tiles_only
+
+    @property
     def histograms(self):
         """
         Returns the histograms of each band in the imagery layer as a list of dictionaries corresponding to each band.
         If not histograms is found, returns None. In this case, call the compute_histograms()
-        :return:
+
+        :Syntax:
+
             my_hist = imagery_layer.histograms()
 
-            Structure of the return value:
-            [
-             { #band 1
-              "size":256,
-              "min":560,
-              "max":24568,
-              counts: [10,99,56,42200,125,....] #length of this list corresponds 'size'
-             }
-             { #band 3
-              "size":256, #number of bins
-              "min":8000,
-              "max":15668,
-              counts: [45,9,690,86580,857,....] #length of this list corresponds 'size'
-             }
-             ....
-            ]
+        :return:
+            | #Structure of the return value for a two band imagery layer
+            | [ 
+            |  {#band 1
+            |  "size":256,
+            |  "min":560,
+            |  "max":24568,
+            |  "counts": [10,99,56,42200,125,....] #length of this list corresponds ‘size’
+            |  },
+            |  {#band 2
+            |  "size":256,
+            |  "min":8000,
+            |  "max":15668,
+            |  "counts": [45,9,690,86580,857,....] #length of this list corresponds ‘size’
+            |  }
+            | ]
 
         """
         if self.properties.hasHistograms:
@@ -726,6 +740,9 @@ class ImageryLayer(Layer):
 
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         url = "%s/project" % self._url
         params = {'f': 'json',
                   'inSR' : in_sr,
@@ -832,6 +849,9 @@ class ImageryLayer(Layer):
         :returns: dictionary
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         url = "%s/identify" % self._url
         params = {
             'f' : 'json',
@@ -1002,6 +1022,9 @@ class ImageryLayer(Layer):
 
         :returns: dictionary
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         if linear_unit is not None:
             linear_unit = "esri%s" % linear_unit
         if angular_unit is not None:
@@ -1077,6 +1100,9 @@ class ImageryLayer(Layer):
 
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         if self._datastore_raster:
             raise RuntimeError("This operation cannot be performed on a datastore raster")
         if clear_filters:
@@ -1142,6 +1168,9 @@ class ImageryLayer(Layer):
         :return: ImageryLayer with filtered images meeting the filter criteria
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         if self._datastore_raster:
             raise RuntimeError("This operation cannot be performed on a datastore raster")
         newlyr = self._clone_layer()
@@ -1368,6 +1397,8 @@ class ImageryLayer(Layer):
         :returns: dict or string
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
 
         import datetime
         no_data_interpretation = "esri%s" % no_data_interpretation
@@ -1518,7 +1549,6 @@ class ImageryLayer(Layer):
             if isinstance(self._uri, bytes):
                 del params['renderingRule']
                 params["Raster"]=self._uri
-
         if f == "json":
             return self._con.post(url, params, token=self._token)
         elif f == "image":
@@ -1682,6 +1712,10 @@ class ImageryLayer(Layer):
             attribute.update(feature['attributes'])
             attribute['SHAPE'] = Geometry(feature['geometry'])
             return attribute
+
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         if self._datastore_raster:
             raise RuntimeError("This operation cannot be performed on a datastore raster")
 
@@ -1844,6 +1878,9 @@ class ImageryLayer(Layer):
                               Example: out_format='TIFF'
         =================     ====================================================================
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         if self._datastore_raster:
             raise RuntimeError("This operation cannot be performed on a datastore raster")
 
@@ -1883,6 +1920,9 @@ class ImageryLayer(Layer):
 
         :returns: list of files downloaded
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         if self._datastore_raster:
             raise RuntimeError("This operation cannot be performed on a datastore raster")
 
@@ -1956,6 +1996,9 @@ class ImageryLayer(Layer):
 
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         url = "%s/computePixelLocation" % self._url
         params = {'f': 'json',
                   'rasterId':raster_id,
@@ -2461,6 +2504,9 @@ class ImageryLayer(Layer):
                                                                             time=[start,end])
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         import datetime
         url = "%s/computeStatisticsHistograms" % self._url
         from arcgis.geometry import Polygon
@@ -2517,6 +2563,8 @@ class ImageryLayer(Layer):
 
         :returns: dictionary
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
 
         if self._datastore_raster:
             raise RuntimeError("This operation cannot be performed on a datastore raster")
@@ -2560,6 +2608,9 @@ class ImageryLayer(Layer):
 
         :returns: legend as a dictionary by default, or as an HTML table if as_html is True
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         url = "%s/legend" % self._url
         params = {'f' : 'json'}
         if band_ids is not None:
@@ -2701,6 +2752,9 @@ class ImageryLayer(Layer):
 
         :returns: dictionary
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         url = self._url + "/computeClassStatistics"
 
         params = {
@@ -2808,6 +2862,9 @@ class ImageryLayer(Layer):
                                                             time=[start, end])
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         import datetime
         url = self._url + "/computeHistograms"
         params = {
@@ -2926,6 +2983,8 @@ class ImageryLayer(Layer):
         =======================  =======================================================================
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
 
         if not isinstance(geometry, Geometry):
             geometry = Geometry(geometry)
@@ -3070,6 +3129,9 @@ class ImageryLayer(Layer):
             http://resources.arcgis.com/en/help/arcgis-rest-api/#/Mosaic_rule_objects/02r3000000s4000000/
         Also see http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/understanding-the-mosaicking-rules-for-a-mosaic-dataset.htm#ESRI_SECTION1_ABDC9F3F6F724A4F8079051565DC59E
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         if self._datastore_raster:
             raise RuntimeError("This operation cannot be performed on a datastore raster")
         mosaic_rule = {
@@ -3128,6 +3190,8 @@ class ImageryLayer(Layer):
 
         :return: dictionary showing whether the specified rendering rule and/or mosaic rule is valid
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
 
         url = self._url + "/validate"
 
@@ -3186,6 +3250,8 @@ class ImageryLayer(Layer):
         :returns: dictionary showing volume values for each geometry in the input geometries array
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
 
         if self.properties.serviceDataType == "esriImageServiceDataTypeElevation":
             url = "%s/calculateVolume" % self._url
@@ -3257,6 +3323,8 @@ class ImageryLayer(Layer):
 
         :return: dictionary showing whether the specified rendering rule and/or mosaic rule is valid
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
 
         url = self._url + "/queryBoundary"
 
@@ -3327,6 +3395,8 @@ class ImageryLayer(Layer):
 
         :returns: A dict representing the md info
          """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
 
         url = self._url + "/computeMultidimensionalInfo"
 
@@ -4231,13 +4301,142 @@ class ImageryLayer(Layer):
         return temporal_profile(self, points=points, time_field=time_field, variables=variables,  bands=bands, time_extent=time_extent, dimension=dimension, dimension_values=dimension_values, 
                      show_values=show_values, trend_type=trend_type, trend_order=trend_order, plot_properties=plot_properties)
 
+    def render_tilesonly_layer(self, level=None, slice_id=None):
+        '''
+        Render tiles only Imagery Layer at a given level.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        level                                    Optional integer. Level to be used for rendering.
+                                                 Default value is 0.
+        ------------------------------------     --------------------------------------------------------------------
+        slice_id                                 Optional l integer. Renders the given slice of a multidimensional raster.
+                                                 To get the slice index use slices method on the ImageryLayer object.
+        ====================================     ====================================================================
+
+        :return:
+            None
+        '''
+        if self.tiles_only:
+            dataSourceExtent = self.extent
+            tinfo = self.properties.tileInfo
+            origin = tinfo["origin"]
+            tw = tinfo["cols"]
+            th = tinfo["rows"]
+            if "lods" in tinfo.keys():
+                if (len(tinfo["lods"]) >= 1):
+                    if level is None:
+                        level = 0
+                    resolution = {"x":tinfo["lods"][level]["resolution"], "y":tinfo["lods"][level]["resolution"]}
+                    #level = tinfo["lods"][resolution]["level"]
+            import math
+            colStart = math.floor((dataSourceExtent["xmin"] - origin["x"]) / resolution["x"] / tw)
+            colEnd = math.ceil((dataSourceExtent["xmax"] - origin["x"] - resolution["x"]) / resolution["x"] / tw)
+            rowStart = math.floor((origin["y"] - dataSourceExtent["ymax"]) / resolution["y"] / th)
+            rowEnd = math.ceil((origin["y"] - dataSourceExtent["ymin"] - resolution["y"]) / resolution["y"]/ th)
+            from matplotlib import pyplot as plt
+            img = []
+            numarray = None
+            numpylist = []
+            for i in range(rowStart, rowEnd):
+                for j in range(colStart, colEnd):
+                    num = self._read_tilesonly_layer(level,i,j,slice_id, as_numpy = True)
+                    if numarray is None:
+                        numarray = num
+                    else:
+                        numarray = np.concatenate((numarray, num), axis=1)
+                numpylist.append(numarray)
+                numarray = None
+                    #img.append(((lyr.tiles.image_tile(2,i,j, as_numpy = True))))
+
+            for index,ele in enumerate(numpylist):
+                if index == 0:
+                    numarray = ele                    
+                else:
+                    #imgnew = plt.imshow(ele)
+                    numarray = np.concatenate((numarray,ele), axis=0)
+            num_bands = self.band_count
+            if num_bands == 1:
+                imgnew = plt.imshow(numarray, cmap = 'Greys_r')
+            else:
+                imgnew = plt.imshow(numarray, cmap = 'Greys_r')
+            plt.axis('off')
+            imgnew.axes.get_xaxis().set_visible(False)
+            imgnew.axes.get_yaxis().set_visible(False)
+            plt.close(imgnew.figure)
+            return imgnew.figure
+    def _read_tilesonly_layer(self, level, row, column, slice_id = None, as_numpy=False):
+        import tempfile, uuid
+        fname = "%s.jpg" % uuid.uuid4().hex
+        out_folder = tempfile.gettempdir()
+        params = {}
+
+        if slice_id is not None:
+            params['sliceId'] = slice_id
+        url = "%s/tile/%s/%s/%s" % (self._url, level, row, column)
+        if self.tiles_only:
+            res =  self._con.get(path=url,
+                             params=params,
+                             try_json=False,
+                             force_bytes=True)
+
+            try:
+                import lerc
+            except:
+                _LOGGER.warning("lerc needs to be installed, to render Tiled Imagery Layer")
+            if not isinstance(res, bytes):
+                raise RuntimeError(res)
+            result, data, valid_mask = lerc.decode(res)
+            data, valid_mask = np.broadcast_arrays(data, valid_mask)
+            data.setflags(write=True)
+            valid_mask = (valid_mask == False)
+            if data.dtype == 'uint8':
+                data[valid_mask]=255
+            elif data.dtype == 'float32':
+                data[valid_mask]=np.nan
+            if result != 0:
+                raise RuntimeError('decoding bytes from imagery service failed.')
+            # transpose
+            if self.properties.hasMultidimensions:
+                if len(data) == 2:
+                    data = np.expand_dims(np.expand_dims(data, axis=2), axis=0)
+                elif  len(data) == 3:                    
+                    if len(self.slices) == 1:
+                        data = np.expand_dims(np.transpose(data, [1, 2, 0]), axis=0)
+                    else:
+                        data = np.expand_dims(np.transpose(data, [2, 0, 1]), axis=3)
+                elif len(data) == 4:
+                    data = np.transpose(data, [3, 1, 2, 0])
+                else:
+                    return data
+            else:
+                if data.shape[0]>3 and len(data.shape)==3:
+                    data = data[0:3] #Extract first 3 bands
+                if len(data) == 2:
+                    data = np.expand_dims(data, axis=2)
+                elif len(data) == 3:
+                    data = np.transpose(data, axes=[1, 2, 0])
+            return data
 
     def _repr_jpeg_(self):
-        bbox_sr = None
-        if 'spatialReference' in self.extent:
-            bbox_sr = self.extent['spatialReference']
-        if not self._uses_gbl_function:
-            return self.export_image(bbox=self._extent, bbox_sr=bbox_sr, size=[1200, 450], export_format='jpeg', f='image')
+        if self.tiles_only:
+            fig = self.render_tilesonly_layer()
+            try:
+                from IPython.core.pylabtools import print_figure
+                data = print_figure(fig, 'jpeg')
+                from matplotlib import pyplot as plt
+                plt.close(fig)
+                return data
+            except:
+                pass
+
+        else:    
+            bbox_sr = None
+            if 'spatialReference' in self.extent:
+                bbox_sr = self.extent['spatialReference']
+            if not self._uses_gbl_function:
+                return self.export_image(bbox=self._extent, bbox_sr=bbox_sr, size=[1200, 450], export_format='jpeg', f='image')
 
     def _repr_svg_(self):
         if self._uses_gbl_function:
@@ -5928,7 +6127,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     @property
     def name(self):
-        return super().properties.contents.name
+        return super().properties.name
 
 
     @property
@@ -6210,6 +6409,8 @@ class _ImageServerRaster(ImageryLayer, Raster):
         return super().attribute_table()
 
     def get_raster_bands(self, band_ids_or_names=None):
+        if super().tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
         from arcgis.raster.functions import extract_band
         return_list=[]
         if isinstance(band_ids_or_names, list):
@@ -6323,11 +6524,11 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
 
     def rename_variable(self, current_variable_name, new_variable_name):
-        raise RuntimeError('Not available on image service')
+        raise RuntimeError('Operation is not supported on image services')
 
 
     def set_property(self, property_name, property_value):
-        raise RuntimeError('Not available on image service')
+        raise RuntimeError('Operation is not supported on image services')
 
 
     def get_property(self, property_name):
@@ -6520,13 +6721,24 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
 
     def _repr_png_(self):
-        bbox_sr = None
-        if 'spatialReference' in self.extent:
-            bbox_sr = self.extent['spatialReference']
+        if super().tiles_only:
+            fig = super().render_tilesonly_layer()
+            try:
+                from IPython.core.pylabtools import print_figure
+                data = print_figure(fig, 'png')
+                from matplotlib import pyplot as plt
+                plt.close(fig)
+                return data
+            except:
+                pass
+        else: 
+            bbox_sr = None
+            if 'spatialReference' in self.extent:
+                bbox_sr = self.extent['spatialReference']
       
-        if not self._uses_gbl_function:
-            return super().export_image(bbox=self._extent, bbox_sr=bbox_sr, size=[1200, 450],
-                                        export_format='png32', f='image')
+            if not self._uses_gbl_function:
+                return super().export_image(bbox=self._extent, bbox_sr=bbox_sr, size=[1200, 450],
+                                            export_format='png32', f='image')
 
     def _repr_jpeg_(self):
         return None

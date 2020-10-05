@@ -618,7 +618,10 @@ class Connection(object):
         if kwargs.pop("ssl", False) or self._all_ssl:
             url = url.replace("http://", "https://")
         if add_token:
-            if token != _DEFAULT_TOKEN:
+            if 'token' in params and params['token'] is None:
+                params.pop('token', None)
+            if token and \
+               token != _DEFAULT_TOKEN:
                 if token is not None:
                     params['token'] = token
                 else:
