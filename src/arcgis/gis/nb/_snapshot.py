@@ -64,10 +64,7 @@ class SnapShotManager(object):
         """
         Creates a Snapshot of a Given Item.
 
-        {
-        "snapshotResourceKey": "snapshot-51364a5a64424aa6bfd991401ac6f94c.json",
-        "status": "success"
-        }
+
         """
         if isinstance(item, Item) and item.type.lower() == 'notebook':
             params = {
