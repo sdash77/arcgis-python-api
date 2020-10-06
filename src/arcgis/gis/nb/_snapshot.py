@@ -29,6 +29,15 @@ class SnapShotManager(object):
         """
         Converts a Snapshot to a new notebook.
 
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item                   Required Item. The 'Notebook' typed item to convert.
+        ------------------     --------------------------------------------------------------------
+        snapshot               Required String. The name of the snapshot.
+        ==================     ====================================================================
+
+
         :returns: Item
 
         """
@@ -40,13 +49,29 @@ class SnapShotManager(object):
                 "resourceKey" : snapshot,
                 "notebookTitle" : title
             }
-            return self._gis._con.post(url, params)
+            res = self._gis._con.post(url, params)
+            if 'itemId' in res:
+                return Item(gis=self._gis, itemid=res['itemId'])
+            else:
+                return res
         else:
             raise ValueError("`item` must be a Notebook")
     #----------------------------------------------------------------------
     def download(self, item, snapshot):
         """
-        retrieves a snap shot locally on disk.
+        Retrieves a snap shot locally on disk.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item                   Required Item. The 'Notebook' typed item to retrieve.
+        ------------------     --------------------------------------------------------------------
+        snapshot               Required String. The name of the snapshot.
+        ==================     ====================================================================
+
+        :return: string (path of saved file)
+
+
         """
 
         if isinstance(item, Item) and item.type.lower() == 'notebook':
@@ -64,6 +89,23 @@ class SnapShotManager(object):
         """
         Creates a Snapshot of a Given Item.
 
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item                   Required Item. The 'Notebook' typed item to create a snapshot for.
+        ------------------     --------------------------------------------------------------------
+        name                   Required String.  The name of the snapshot. This is the identifier
+                               used to identify the snapshot.
+        ------------------     --------------------------------------------------------------------
+        description            Optional String. An piece of text that describes the snapshot.
+        ------------------     --------------------------------------------------------------------
+        notebook_json          Optional Dict. If you want to store different JSON text other
+                               than what is in the current notebook provide it here.
+        ------------------     --------------------------------------------------------------------
+        access                 Optional Bool. When false, the snapshot will not be publicly available.
+        ==================     ====================================================================
+
+        :return: dict
 
         """
         if isinstance(item, Item) and item.type.lower() == 'notebook':
@@ -84,6 +126,12 @@ class SnapShotManager(object):
         """
         Returns a list of SnapShots for a notebook item.
 
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item                   Required Item. The 'Notebook' typed item to get all the snapshots for.
+        ==================     ====================================================================
+
         :return: namedtuple of snapshot properties
 
         """
@@ -103,7 +151,24 @@ class SnapShotManager(object):
             raise ValueError("`item` must be a Notebook")
     #----------------------------------------------------------------------
     def restore(self, item, snapshot, preserve=True, description=None):
-        """restors the notebook to a previous state"""
+        """
+        Rolls back the notebook to a previous snapshot state
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item                   Required Item. The 'Notebook' typed item to have rolled back.
+        ------------------     --------------------------------------------------------------------
+        snapshot               Required String. The name of the snapshot.
+        ------------------     --------------------------------------------------------------------
+        preserve               Optional Bool. If true, the result is preserved as a snapshot. The
+                               default is false.
+        ------------------     --------------------------------------------------------------------
+        description            Optional String. Text describing the restoration point.
+        ==================     ====================================================================
+
+        :return: dict
+        """
         if isinstance(item, Item) and item.type.lower() == 'notebook':
             params = {
             "itemId" : item.id,
@@ -118,7 +183,20 @@ class SnapShotManager(object):
             raise ValueError("`item` must be a Notebook")
     #----------------------------------------------------------------------
     def delete(self, item, snapshot):
-        """deletes a snapshot associated with the notebook item"""
+        """
+        Deletes a snapshot associated with the notebook item
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item                   Required Item. The 'Notebook' typed item to remove snapshots from.
+        ------------------     --------------------------------------------------------------------
+        snapshot               Required String. The name of the snapshot.
+        ==================     ====================================================================
+
+        :return: dict
+
+        """
         if isinstance(item, Item) and item.type.lower() == 'notebook':
             params = {
             "itemId" : item.id,
