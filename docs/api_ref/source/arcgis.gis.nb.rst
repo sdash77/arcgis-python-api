@@ -23,10 +23,17 @@ Notebook
     :members:
     :undoc-members:
     :show-inheritance:
-	
+
 Runtime
 ----------------
 .. autoclass:: arcgis.gis.nb.Runtime
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+SnapShotManager
+----------------
+.. autoclass:: arcgis.gis.nb.SnapShotManager
     :members:
     :undoc-members:
     :show-inheritance:
