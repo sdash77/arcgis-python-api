@@ -333,7 +333,7 @@ class GIS(object):
                                            client_id=self._client_id,
                                            expiration=self._expiration,
                                            referer=self._referer,
-                                           custom_auth=custom_auth, token=self._utoken,
+                                           custom_auth=custom_auth, #token=self._utoken,
                                            client_secret=client_secret)
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
@@ -387,7 +387,7 @@ class GIS(object):
                                       expiration=self._expiration,
                                       referer=self._referer,
                                       custom_auth=custom_auth,
-                                      token=self._utoken,
+                                      #token=self._utoken,
                                       client_secret=client_secret)
                 self._portal = pp
         except: pass
