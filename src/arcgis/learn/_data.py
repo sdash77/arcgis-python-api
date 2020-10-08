@@ -18,7 +18,7 @@ import_exception = None
 try:
     import arcgis
     import numpy as np
-    from fastai.vision.data import imagenet_stats, ImageList, bb_pad_collate, ImageImageList
+    from fastai.vision.data import imagenet_stats, ImageList, bb_pad_collate
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms, flip_lr, ResizeMethod
     from fastai.vision import ImageDataBunch, parallel
     import fastai.vision
@@ -36,6 +36,7 @@ try:
     from ._utils.rcnn_masks import show_batch_rcnn_masks
     from ._utils.pascal_voc_rectangles import ObjectMSItemList, show_batch_pascal_voc_rectangles
     from ._utils.pointcloud_data import pointcloud_prepare_data
+    from ._utils.superres import ImageImageListSR
     from fastai.tabular import TabularDataBunch
     from fastai.tabular.transform import FillMissing, Categorify, Normalize
     from fastai.tabular import cont_cat_split, add_datepart
@@ -1147,7 +1148,7 @@ def prepare_data(path,
             with open(path_lr_check, 'w') as f:
                 f.write(str(downsample_factor))
 
-        data = ImageImageList.from_folder(path_lr)\
+        data = ImageImageListSR.from_folder(path_lr)\
             .split_by_rand_pct(val_split_pct, seed=seed)\
             .label_from_func(lambda x: path_hr/x.with_suffix(hr_suffix).name)
         if resize_to is None:
