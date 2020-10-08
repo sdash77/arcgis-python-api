@@ -1,3 +1,4 @@
+import random
 import torch
 from torch import nn
 import math
@@ -270,7 +271,8 @@ class SamplePointsCallback(LearnerCallback):
 
         if self.learn.data.pc_type == 'PointCloud_TF':
             if self.learn.data.transform_fn is not None and self.learn.model.training:
-                last_input[:, :, :3] = self.learn.data.transform_fn(last_input)  
+                if random.random() > 0.5:
+                    last_input[:, :, :3] = self.learn.data.transform_fn(last_input)  
         
         return {'last_input':last_input.contiguous(), 'last_target':last_target.contiguous()}
 

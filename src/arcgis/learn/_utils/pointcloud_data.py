@@ -47,7 +47,7 @@ try:
     import arcgis
     from fastai.data_block import ItemList
     from fastprogress.fastprogress import master_bar, progress_bar
-    from transforms3d.euler import euler2mat
+    from scipy.spatial.transform import Rotation as R
 except ImportError:
     # To avoid breaking builds.
     class Dataset():
@@ -61,7 +61,7 @@ def try_imports(list_of_modules):
         for module in list_of_modules:
             importlib.import_module(module)
     except Exception as e:
-        raise Exception(f"""This function requires {' '.join(list_of_modules)}. Install plotly and laspy using 'conda install -c esri -c plotly laspy=1.6.0 plotly=4.5.0 plotly-orca=1.2.1 psutil' and install transforms3d and h5py using `pip install transforms3d==0.3.1 h5py==2.10.0`.
+        raise Exception(f"""This function requires {' '.join(list_of_modules)}. Install plotly and laspy using 'conda install -c esri -c plotly laspy=1.6.0 plotly=4.5.0 plotly-orca=1.2.1 psutil' and install h5py using `pip install h5py==2.10.0`.
 \n On Linux systems, Also install `xvfb` \n Additionally visit: https://developers.arcgis.com/python/guide/point-cloud-segmentation-using-pointcnn/ for step by step setup.""")
 
 def try_import(module):
@@ -667,8 +667,7 @@ def prepare_las_data(root,
                         if ((idx + 1) % batch_size == 0) or \
                                 (block_idx == idx_last_non_empty_block and block_split_idx == block_split_num - 1):
                             item_num = idx_in_batch + 1
-                            filename_h5 = os.path.join(output_path, Path(folder).stem, Path(dataset).stem + '_%s_%d.h5' % (offset_name, idx_h5))
-
+                            filename_h5 = os.path.join(output_path, Path(folder).stem, dataset + '_%s_%d.h5' % (offset_name, idx_h5))
                             file = h5py.File(filename_h5, 'w')
                             file.create_dataset('unnormalized_data', data=unnormalized_data[0:item_num, ...])
                             file.create_dataset('data', data=data[0:item_num, ...])
@@ -799,7 +798,7 @@ PointCloudItemList._label_cls = PointCloudLabelList
 ## Prepare data called in _data.py
 
 def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type='PointCloud', transform_fn=None, **kwargs):
-    try_imports(['h5py', 'plotly', 'laspy', 'transforms3d'])
+    try_imports(['h5py', 'plotly', 'laspy'])
     databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
     if (path / 'Statistics.json').exists():
         dataset_type = "PointCloud"
@@ -929,10 +928,10 @@ def save_xyz_label_to_las(filename_las, xyz, xyz_offset, encoding, labels):
     f.close()
 
 def prediction_remap_classes(labels, reclassify_classes, inverse_class_mapping):
+    labels = np.vectorize(inverse_class_mapping.get)(labels)
     if reclassify_classes == {}:
         return labels
     else:
-        labels = np.vectorize(inverse_class_mapping.get)(labels)
         labels = np.vectorize(reclassify_classes.get)(labels)
         return labels
 
@@ -1013,7 +1012,7 @@ def get_pred_prefixes(datafolder):
     for p in preds:
         to_check = "_half" #"_zero"
         if to_check in p: 
-            pred_pfx += [p.split(to_check)[0]]
+            pred_pfx += [p.rsplit(to_check, 1)[0]]
     return np.unique(pred_pfx)
 
 def get_predictions(pointcnn_model, data, batch_idx, points_batch, sample_num, batch_size, point_num):
@@ -1140,8 +1139,7 @@ def inference_las(path, pointcnn_model, out_path=None, print_metrics=False, rema
             if not os.path.exists(os.path.join(out_path)):
                 os.makedirs(os.path.join(out_path))
             pred_list = [pred for pred in os.listdir(out_path)
-                        if category in pred and pred.split(".")[0].split("_")[-1] == 'pred' and pred[-3:] == '.h5']
-
+                        if category in pred and pred.rsplit(".", 1)[0].split("_")[-1] == 'pred' and pred[-3:] == '.h5']
             merged_label = None
             merged_confidence = None
 
@@ -1329,6 +1327,8 @@ def show_results(self, rows, color_mapping=None, **kwargs):
     color_mapping = self._data.color_mapping if color_mapping is None else color_mapping
     color_mapping = recompute_color_mapping(color_mapping, self._data.classes)       
     color_mapping = np.array(list(color_mapping.values())) / 255
+    if save_html:
+        max_display_point = 20000
 
     idx = 0
     keys = list(self._data.meta['files'].keys()).copy()
@@ -1425,7 +1425,8 @@ def show_results(self, rows, color_mapping=None, **kwargs):
         if save_html:
             save_path = Path(save_path)
             plotly.io.write_html(fig, str(save_path / 'show_results.html'))
-            fig.write_image(str(save_path / 'show_results.png'))
+            # remove plotly orca dep
+            # fig.write_image(str(save_path / 'show_results.png'))
             return
         else:
             fig.show()
@@ -1512,14 +1513,14 @@ def rotation_angle(rotation_param, method):
             return uniform(rotation_param)
 
 
-def get_xforms(xform_num, rotation_range=(0, 0, 0, 'u'), scaling_range=(0.0, 0.0, 0.0, 'u'), order='rxyz'):
+def get_xforms(xform_num, rotation_range=(0, 0, 0, 'u'), scaling_range=(0.0, 0.0, 0.0, 'u'), order='XYZ'):
     xforms = np.empty(shape=(xform_num, 3, 3))
     rotations = np.empty(shape=(xform_num, 3, 3))
     for i in range(xform_num):
         rx = rotation_angle(rotation_range[0], rotation_range[3])
         ry = rotation_angle(rotation_range[1], rotation_range[3])
         rz = rotation_angle(rotation_range[2], rotation_range[3])
-        rotation = euler2mat(rx, ry, rz, order)
+        rotation = R.from_euler(order, [rx, ry, rz]).as_matrix()
 
         sx = scaling_factor(scaling_range[0], scaling_range[3])
         sy = scaling_factor(scaling_range[1], scaling_range[3])
@@ -1554,6 +1555,7 @@ class Transform3d(object):
                             cloud block according to the randomly selected angle.
                             The fourth value in the tuple is the sampling method
                             where 'u' means uniform and 'g' means gaussian.
+                            Intrinsic rotation will take place.
                             Deafult: [math.pi / 72, math.pi, math.pi / 72, 'u']
     ---------------------   -------------------------------------------
     scaling_range           Optional tuple of length 4. It contains a list
@@ -1577,7 +1579,7 @@ class Transform3d(object):
                  jitter=0.):
         self.rotation_range = rotation_range
         self.scaling_range = scaling_range
-        self.order = 'rxyz'
+        self.order = 'XYZ'
         self.jitter = jitter
 
     def __call__(self, x_in):
@@ -1724,7 +1726,8 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
     color_mapping = data.color_mapping if color_mapping is None else color_mapping
     color_mapping = recompute_color_mapping(color_mapping, self._data.classes)       
     color_mapping = np.array(list(color_mapping.values())) / 255    
-
+    if save_html:
+        max_display_point = 20000
     ## dataset tiles Get all files from the tiles
     tile_file_indices = self._data.train_ds.tiles[:, 0]
     ## iterate: on files
@@ -1803,7 +1806,8 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
         if save_html:
             save_path = Path(save_path)
             plotly.io.write_html(fig, str(save_path / 'show_results.html'))
-            fig.write_image(str(save_path / 'show_results.png'))
+            # remove plotly orca dep
+            # fig.write_image(str(save_path / 'show_results.png'))
             return
         else:
             fig.show()
