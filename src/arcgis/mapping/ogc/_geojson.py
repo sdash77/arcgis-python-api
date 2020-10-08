@@ -41,6 +41,8 @@ class GeoJSONLayer(BaseOGC):
 
     """
     _type = "geojson"
+    _url = ""
+    _data = {}
     #----------------------------------------------------------------------
     def __init__(self, url=None, data=None,**kwargs):
         """init"""
@@ -50,11 +52,11 @@ class GeoJSONLayer(BaseOGC):
             raise Exception("A `url` or `data` must be given to proceed")
         if isinstance(data, str) and _is_file(data):
             with open(data, 'r') as r:
-                self._text = json.loads(r.read())
+                self._data = json.loads(r.read())
         elif isinstance(data, str) and _is_file(data) == False:
-            self._text = json.loads(data)
+            self._data = json.loads(data)
         elif isinstance(data, dict):
-            self._text = dict(data)
+            self._data = dict(data)
         elif url is None and \
              data and \
              not isinstance(data, (str, dict)):
@@ -94,7 +96,7 @@ class GeoJSONLayer(BaseOGC):
         lyr = {
             "type" : self._type,
             "url" : self._url,
-            "data" : self._text,
+            "data" : self._data,
             "copyright" : self._copyright,
             "title" : self._title,
             "id" : self._id,
@@ -103,7 +105,7 @@ class GeoJSONLayer(BaseOGC):
             "opacity" : self._opacity
         }
         if self._renderer:
-            lyr['renderer'] = self._renderer._json
+            lyr['renderer'] = self._renderer._json()
         return lyr
 
     @property
@@ -119,7 +121,7 @@ class GeoJSONLayer(BaseOGC):
         :return: String
 
         """
-        return self._url or self._text
+        return self._url or self._data
 
     @url.setter
     def url(self, data):
@@ -135,8 +137,8 @@ class GeoJSONLayer(BaseOGC):
             self._url = data
         elif _is_file(data):
             with open(data, 'r') as r:
-                self._text = r.read()
+                self._data = r.read()
         elif isinstance(data, str):
-            self._text = data
+            self._data = data
         else:
             raise ValueError("The data must be a valid URL, file, or text blob.")
