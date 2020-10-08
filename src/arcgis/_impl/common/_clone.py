@@ -301,6 +301,8 @@ class _DeepCloner():
             is_view = False
             if "isView" in service_definition and service_definition["isView"] is not None:
                 is_view = service_definition["isView"]
+            elif "View Service" in item.typeKeywords:
+                is_view=True
 
             # Get the item data, for example any popup definition associated with the item
             try:
