@@ -3,6 +3,7 @@ from math import exp, log10
 import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
+from fastai.vision import ImageImageList, Tuple, subplots, plt
 
 def gaussian(window_size, sigma):
     gauss = torch.Tensor([exp(-(x - window_size//2)**2/float(2*sigma**2)) for x in range(window_size)])
@@ -76,4 +77,16 @@ def psnr(img1, img2):
     mse = F.l1_loss(img1, img2)
     psnr = 10 * log10(1 / mse)
     return psnr
+
+class ImageImageListSR(ImageImageList):
+    from fastai.basics import Optional
+    def show_xys(self, xs, ys, imgsize:int=4, figsize:Optional[Tuple[int,int]]=None, **kwargs):
+        "Show the `xs` (inputs) and `ys`(targets)  on a figure of `figsize`."
+        axs = subplots(len(xs), 2, imgsize=imgsize, figsize=figsize, weight='bold', size=14)
+        for i, (x,y) in enumerate(zip(xs,ys)):
+            x.show(ax=axs[i,0], **kwargs)
+            y.show(ax=axs[i,1], **kwargs)
+        axs[0,0].title.set_text('Low Resolution')
+        axs[0,1].title.set_text('High Resolution')
+        plt.tight_layout()
 

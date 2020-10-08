@@ -695,6 +695,7 @@ class ArcGISModel(object):
         confusion_matrix = os.path.join(model_characteristics_dir, 'confusion_matrix.png')
         metrics_file = os.path.join(model_characteristics_dir, 'metrics.html')
         results_file = os.path.join(model_characteristics_dir, 'results.html')
+        iframe_showresults = os.path.exists(os.path.join(model_characteristics_dir, 'show_results.html'))
 
         encoded_losses_img = None
         if os.path.exists(loss_graph):
@@ -787,6 +788,15 @@ class ArcGISModel(object):
                 <p><b>Sample Results</b></p>
                 <img src="{encoded_showresults}" alt="Sample Results">
             """
+        
+        # For PointCNN and 3d models.
+        if iframe_showresults:
+            HTML_TEMPLATE += f"""
+                <p><b>Sample Results</b><p>
+                <iframe src="ModelCharacteristics/show_results.html" style="width:100%;height:70%;" scrolling="no" frameborder="0">
+                    </iframe>
+            """
+
 
         if metrics_html:
             HTML_TEMPLATE += f"""

@@ -2974,11 +2974,14 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
     :param kernel_rows: int (e.g. 3)
     :param stat_type: int or string.
                       There are four types of focal statistical functions:
-                      1=Min, 2=Max, 3=Mean, 4=StandardDeviation
+                      1=Min, 2=Max, 3=Mean, 4=StandardDeviation, 5=Median, 6=Majority, 7=Minority
                       -Min-Calculates the minimum value of the pixels within the neighborhood
                       -Max-Calculates the maximum value of the pixels within the neighborhood
                       -Mean-Calculates the average value of the pixels within the neighborhood. This is the default.
                       -StandardDeviation-Calculates the standard deviation value of the pixels within the neighborhood
+                      -Median-Calculates the median value of pixels within the neighborhood.
+                      -Majority-Calculates the majority value, or the value that occurs most frequently, of the pixels within the neighborhood.
+                      -Minority-Calculates the minority value, or the value that occurs least frequently, of the pixels within the neighborhood.
     :param columns: int (e.g. 3). The number of pixel rows to use in your focal neighborhood dimension.
     :param rows: int (e.g. 3). The number of pixel columns to use in your focal neighborhood dimension.
     :param fill_no_data_only: bool
@@ -2988,7 +2991,7 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
     .. note::
         The focal_statistics() function is different from the focal_stats() function in the following aspects:
 
-        The focal_statistics() function supports  Minimum, Maximum, Mean, and Standard Deviation.
+        The focal_statistics() function supports  Minimum, Maximum, Mean, and Standard Deviation, Median, Majority, Minority.  
         The focal_stats() function supports Mean, Majority, Maximum, Median, Minimum, Minority, Range, Standard deviation, Sum, and Variety.
 
         The focal_statistics() function supports only Rectangle.
@@ -3004,7 +3007,7 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
 
     layer, raster, raster_ra = _raster_input(raster)
 
-    statistics_types = ["Min", "Max", "Mean", "StandardDeviation"]
+    statistics_types = ["Min", "Max", "Mean", "StandardDeviation", "Median", "Majority", "Minority"]
 
     template_dict = {
         "rasterFunction": "Statistics",

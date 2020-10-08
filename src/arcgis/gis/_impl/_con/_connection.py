@@ -618,10 +618,7 @@ class Connection(object):
         if kwargs.pop("ssl", False) or self._all_ssl:
             url = url.replace("http://", "https://")
         if add_token:
-            if 'token' in params and params['token'] is None:
-                params.pop('token', None)
-            if token and \
-               token != _DEFAULT_TOKEN:
+            if token != _DEFAULT_TOKEN:
                 if token is not None:
                     params['token'] = token
                 else:
@@ -633,6 +630,7 @@ class Connection(object):
                 self._session.headers.update({token_header: "Bearer %s" % token})
             elif token_as_header and token_header and self.token: # as X-Esri-Auth header with generated token
                 self._session.headers.update({token_header: "Bearer %s" % self.token})
+
         if try_json:
             params['f'] = 'json'
         if files:
