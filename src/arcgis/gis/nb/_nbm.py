@@ -77,12 +77,12 @@ class NotebookManager(object):
         """
         Provides access to managing Notebook's snapshots
 
-        :return: SnapShotManager
+        :return: SnapshotManager
         """
         if self._snapshot is None:
-            from ._snapshot import SnapShotManager
+            from ._snapshot import SnapshotManager
             url = self._url + "/snapshots"
-            self._snapshot = SnapShotManager(url=url, gis=self._gis)
+            self._snapshot = SnapshotManager(url=url, gis=self._gis)
         return self._snapshot
     #----------------------------------------------------------------------
     def restore_runtime(self):

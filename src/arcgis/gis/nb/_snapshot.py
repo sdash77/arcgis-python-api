@@ -5,7 +5,7 @@ from arcgis.gis import GIS, Item
 from arcgis._impl.common._mixins import PropertyMap
 
 ###########################################################################
-class SnapShotManager(object):
+class SnapshotManager(object):
     """
     Allows for management and creation of save points for Notebooks.
     """

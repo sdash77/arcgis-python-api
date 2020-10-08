@@ -31,9 +31,9 @@ Runtime
     :undoc-members:
     :show-inheritance:
 
-SnapShotManager
+SnapshotManager
 ----------------
-.. autoclass:: arcgis.gis.nb.SnapShotManager
+.. autoclass:: arcgis.gis.nb.SnapshotManager
     :members:
     :undoc-members:
     :show-inheritance:
