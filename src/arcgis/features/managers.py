@@ -1502,6 +1502,14 @@ class FeatureLayerCollectionManager(_GISResource):
                         _log.error('Unable to parse the view_tables parameter')
 
         fs_view.manager.add_to_definition(add_def)
+        if extent and fs_view.layers:
+            for vw_lyr in fs_view.layers:
+                vw_lyr.manager.update_definition({"viewLayerDefinition": {"filter":
+                                                                          {"operator": "esriSpatialRelIntersects",
+                                                                           "value": {
+                                                                                "geometryType": "esriGeometryEnvelope",
+                                                                                "geometry": extent}}}})
+
         if view_layers:
             data = item.get_data()
             if 'layers' in data:
