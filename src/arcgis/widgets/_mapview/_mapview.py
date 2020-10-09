@@ -224,6 +224,16 @@ class MapView(widgets.DOMWidget):
                            for more information.
     ==================     ====================================================================
 
+    .. note::
+        Note: If the Jupyter Notebook server is running over http, you need to
+        configure your portal/organization to allow your host and port; or else
+        you will run into CORs issues.
+        
+        This can be accomplished by signing into your portal/organization in a 
+        browser, then navigating to:
+
+        `Organization` > `Settings` > `Security` > `Allow origins` > `Add` > http://localhost:8888 (replace with the host/port you are running on)
+
     """
 
     # region Class, instance and interop variables

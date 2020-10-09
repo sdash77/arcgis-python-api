@@ -891,9 +891,9 @@ class GIS(object):
         using the GIS's configured geocoders and if a match is found, the geographic
         extent of the matched address is used as the map extent. If a zoomlevel is also
         provided, the map is centered at the matched address instead and the map is zoomed
-        to the specified zoomlevel. See :class:`~arcgis.widgets` for more information.
+        to the specified zoomlevel. See :class:`~arcgis.widgets.MapView` for more information.
 
-        Note: The map widget is only supported within Jupyter Notebook.
+        Note: The map widget is only supported within a Jupyter Notebook.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -910,6 +910,16 @@ class GIS(object):
 
         :return:
           The map widget (displayed in Jupyter Notebook when queried).
+
+        .. note::
+            Note: If the Jupyter Notebook server is running over http, you need to
+            configure your portal/organization to allow your host and port; or else
+            you will run into CORs issues when displaying this map widget.
+
+            This can be accomplished by signing into your portal/organization in a 
+            browser, then navigating to:
+
+            `Organization` > `Settings` > `Security` > `Allow origins` > `Add` > http://localhost:8888 (replace with the host/port you are running on)
         """
         try:
             from arcgis.widgets import MapView
