@@ -3812,3 +3812,88 @@ def optimal_path_as_raster(in_destination_data,
         function_chain_ra['rasterFunctionArguments']["in_back_direction_raster"] = raster_ra3
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
+
+
+def boundary_clean(input_raster, sort_type = "NO_SORT", number_of_runs="TWO_WAY"):
+    """
+    The boundary_clean function smooths the boundary between zones in a raster. 
+
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    input_raster                         Required. The input raster for which the boundary between zones will 
+                                         be smoothed. It must be of integer type.  
+    --------------------------------     --------------------------------------------------------------------
+    sort_type                            Optional string. Specifies the type of sorting to use in the smoothing process. The sorting determines the priority by which cells can expand into their neighbors. The sorting can be done based on zone value or zone area. 
+                                         The available choices are: ['NO_SORT', 'DESCEND', 'ASCEND'] 
+                                         The default is: 'NO_SORT'.
+
+                                         * ``NO_SORT`` - The zones are not sorted by size. Zones with larger values 
+                                           will have a higher priority to expand into zones with 
+                                           smaller values in the smoothed output. This is the default. 
+
+                                         * ``DESCEND`` - Sorts zones in descending order by size. Zones with 
+                                           larger total areas have a higher priority to expand into 
+                                           zones with smaller total areas. This option will tend to 
+                                           eliminate or reduce the prevalence of cells from smaller 
+                                           zones in the smoothed output. 
+
+                                         * ``ASCEND`` - Sorts zones in ascending order by size. Zones with smaller 
+                                           total areas have a higher priority to expand into zones 
+                                           with larger total areas. This option will tend to preserve 
+                                           or increase the prevalence of cells from smaller zones in 
+                                           the smoothed output. 
+    --------------------------------     --------------------------------------------------------------------
+    number_of_runs                       Optional String or Boolean. Specifies the number of times the smoothing 
+                                         process will take place, twice or once. 
+
+                                         * ``TWO_WAY`` (true) - Performs an expansion and shrinking operation two 
+                                           times.  For the first time the operation is performed according to the 
+                                           specified sorting type. Then an additional  expansion and shrinking 
+                                           operation is performed, but with the priority reversed. This is the default. 
+                                         * ``ONE_WAY`` (false) - Performs the expansion and shrinking operation 
+                                           once, according to the sorting type. 
+    ================================     ====================================================================
+ 
+    :returns: output raster with function applied
+
+    .. code-block:: python
+
+            # Usage Example: 
+            boundary_clean_output =  boundary_clean(input_raster = imagery_layer, sort_type = "NO_SORT", number_of_runs="TWO_WAY")
+
+            boundary_clean_item = boundary_clean_output.save()
+    """
+    layer1, input_raster, raster_ra1 = _raster_input(input_raster)
+
+    template_dict = {
+        "rasterFunction" : "GPAdapter",
+        "rasterFunctionArguments" : {
+            "toolName" : "BoundaryClean_sa",
+            "PrimaryInputParameterName" : "in_raster",
+            "OutputRasterParameterName" : "out_raster",
+            "in_raster" : input_raster
+        }
+    }
+
+    if sort_type is not None:
+        sort_type_list = ["NO_SORT", "DESCEND", "ASCEND"]
+        if sort_type.upper() not in sort_type_list:
+            raise RuntimeError('sort_type should be one of the following '+ str(sort_type_list))
+        template_dict["rasterFunctionArguments"]["sort_type"] = sort_type
+
+    if number_of_runs is not None:
+        if isinstance(number_of_runs, bool):
+            template_dict["rasterFunctionArguments"]["number_of_runs"] = number_of_runs
+        elif isinstance(number_of_runs, str):
+            if number_of_runs.upper() == "TWO_WAY":
+                number_of_runs = True
+            elif number_of_runs.upper() == "ONE_WAY":
+                number_of_runs = False
+            else:
+                 raise RuntimeError('number_of_runs should be one of the following - TWO_WAY, ONE_WAY or should be of type bool.')
+            template_dict["rasterFunctionArguments"]["number_of_runs"] = number_of_runs
+    function_chain_ra = copy.deepcopy(template_dict)
+    function_chain_ra["rasterFunctionArguments"]["in_raster"] = raster_ra1
+
+    return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
