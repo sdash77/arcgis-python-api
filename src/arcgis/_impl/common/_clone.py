@@ -301,6 +301,8 @@ class _DeepCloner():
             is_view = False
             if "isView" in service_definition and service_definition["isView"] is not None:
                 is_view = service_definition["isView"]
+            elif "View Service" in item.typeKeywords:
+                is_view=True
 
             # Get the item data, for example any popup definition associated with the item
             try:
@@ -325,14 +327,23 @@ class _DeepCloner():
                         _sources = []
 
                         layer_sources = source._portal.con.get(svc.url + '/' + str(layer.properties['id']) + '/sources')
-                            
-                        if 'layers' in layer_sources:
-                            for layer_source in layer_sources['layers']:
-                                _sources.append(layer_source)
-                        elif 'tables' in layer_sources:
-                            for layer_source in layer_sources['tables']:
-                                _sources.append(layer_source)
 
+                        if not source.properties.isPortal:
+                            if 'layers' in layer_sources:
+                                for layer_source in layer_sources['layers']:
+                                    _sources.append(layer_source)
+                            elif 'tables' in layer_sources:
+                                for layer_source in layer_sources['tables']:
+                                    _sources.append(layer_source)
+                        else:
+                            if 'layers' in layer_sources:
+                                for layer_source in layer_sources['layers']:
+                                    if not os.path.exists(layer_source['url']):
+                                        layer_flc = source.content.get(layer_source['serviceItemId'])
+                                        layer_id = int(layer_source['url'][-1])
+                                        layer_url_dict = {'url':layer_flc.layers[layer_id].url}
+                                        layer_source.update(layer_url_dict)
+                                        _sources.append(layer_source)
                         properties = self._get_properties(layer, data, len(_sources) > 1, is_view)
                         if "geometryType" in properties:
                             layers_definition['layers'].append(properties)
