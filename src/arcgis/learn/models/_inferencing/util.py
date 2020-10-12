@@ -261,3 +261,20 @@ def pixel_classify_superres_image(model, tiles, device):
     superres_predictions = superres_predictions.clamp(0, 1)
     return superres_predictions
     
+
+def variable_tile_size_check(json_info, parameters):
+    if json_info.get("SupportsVariableTileSize", False):
+        parameters.extend(
+            [
+                {
+                    'name': 'tile_size',
+                    'dataType': 'numeric',
+                    'value': int(json_info['ImageHeight']),
+                    'required': False,
+                    'displayName': 'Tile Size',
+                    'description': 'Tile size used for inferencing'
+                }
+            ]
+        )
+    return parameters
+

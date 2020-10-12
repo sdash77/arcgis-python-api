@@ -38,6 +38,7 @@ try:
     from .._utils.segmentation_loss_functions import dice
     from fastai.basics import partial
     import pandas as pd
+    from ... import __version__ as ArcGISLearnVersion
 except ImportError as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
@@ -594,6 +595,14 @@ class ArcGISModel(object):
 
             if not _emd_template.get("LearningRate"):
                 _emd_template["LearningRate"] = "0.0"
+            if _emd_template["ModelName"] in [
+                "MaskRCNN",
+                "UnetClassifier"
+            ]:
+                _emd_template["SupportsVariableTileSize"] = True
+            else:
+                _emd_template["SupportsVariableTileSize"] = False
+            _emd_template["ArcGISLearnVersion"] = ArcGISLearnVersion
 
             return _emd_template
 
@@ -608,6 +617,9 @@ class ArcGISModel(object):
                 backbone = self._orig_backbone.__name__
 
         _emd_template = self._get_emd_params()
+
+        _emd_template["SupportsVariableTileSize"] = _emd_template.get("SupportsVariableTileSize", False)
+        _emd_template["ArcGISLearnVersion"] = ArcGISLearnVersion
 
         if isinstance(self._learning_rate, slice):
             _emd_lr = slice('{0:1.4e}'.format(self._learning_rate.start), '{0:1.4e}'.format(self._learning_rate.stop))

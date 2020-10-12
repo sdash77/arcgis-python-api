@@ -384,3 +384,4 @@ def _get_emd_path(emd_path):
         #return cls.from_model(list_files[0])
         emd_path = list_files[0]
     return emd_path
+

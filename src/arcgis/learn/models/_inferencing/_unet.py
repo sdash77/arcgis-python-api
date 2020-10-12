@@ -5,6 +5,7 @@ try:
     import torch.nn as nn
     import math
     from . import util
+    from .util import variable_tile_size_check
     HAS_TORCH = True
 except Exception as e:
     HAS_TORCH = False
@@ -136,14 +137,6 @@ class ChildImageClassifier:
         required_parameters.extend(
             [
                 {
-                    'name': 'image_size',
-                    'dataType': 'numeric',
-                    'value': int(self.json_info['ImageHeight']),
-                    'required': False,
-                    'displayName': 'Image Size',
-                    'description': 'Image size used for inferencing'
-                },
-                {
                     'name': 'padding',
                     'dataType': 'numeric',
                     'value': int(self.json_info['ImageHeight'])//4,
@@ -169,10 +162,11 @@ class ChildImageClassifier:
                 }
             ]
         )
+        required_parameters = variable_tile_size_check(self.json_info, required_parameters)
         return required_parameters
 
     def getConfiguration(self, **scalars):
-        self.tytx = int(scalars.get('image_size', self.json_info['ImageHeight']))
+        self.tytx = int(scalars.get('tile_size', self.json_info['ImageHeight']))
         self.padding = int(scalars.get('padding', self.tytx // 4)) ## Default padding Imageheight//4.
         self.batch_size = int(math.sqrt(int(scalars.get('batch_size', 4)))) ** 2  ## Default 4 batch_size 
         self.predict_background = scalars.get('predict_background', 'true').lower() in ['true', '1', 't', 'y', 'yes']  ## Default value True

@@ -275,6 +275,7 @@ class MaskRCNN(ArcGISModel):
         _emd_template["InferenceFunction"] = "ArcGISInstanceDetector.py"
         _emd_template["MaskRCNNkwargs"] = self.maskrcnn_kwargs
         _emd_template["ExtractBands"] = [0, 1, 2]
+        _emd_template["SupportsVariableTileSize"] = True
         _emd_template['Classes'] = []
         class_data = {}
         for i, class_name in enumerate(self._data.classes[1:]):  # 0th index is background
