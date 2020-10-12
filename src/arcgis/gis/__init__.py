@@ -4104,6 +4104,8 @@ class ContentManager(object):
 
             # Update the thumbnail and return the item
             item = Item(gis=self._gis, itemid=itemid)
+            if item.type == "KML":
+                item.update({'url' : f"{self._gis._portal.resturl}content/items/{item.itemid}/data"})
             item.update(thumbnail=thumbnail)
             return item
         else:
@@ -4115,7 +4117,10 @@ class ContentManager(object):
                                            owner_name, folder)
 
         if itemid is not None:
-            return Item(self._gis, itemid)
+            item = Item(self._gis, itemid)
+            if item.type == "KML":
+                item.update({'url' : f"{self._gis._portal.resturl}content/items/{item.itemid}/data"})
+            return item
         else:
             return None
     #----------------------------------------------------------------------
