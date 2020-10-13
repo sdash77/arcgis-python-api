@@ -11,8 +11,10 @@ from arcgis.features import FeatureLayer
 
 class FormCollection:
     """
-        Represents a collection of "smart forms" in a webmap or item. These forms can then be
-        used in ArcGIS Field Maps and other applications. A form is stored as "formInfo" in the layer JSON.
+        Represents a collection of "smart forms" in a webmap or item. A form is the editable counterpart to a popup
+        -- it controls the appearance and behavior of your data collection experience in ArcGIS Field Maps
+        and Map Viewer Beta.  These forms can then be used in ArcGIS Field Maps and other applications.
+        A form is stored as "formInfo" in the layer JSON on the webmap.
         This class will create a FormInfo object for each layer or table in the webmap/item data and return it
         as a list. You can then modify the FormInfo object to add and edit your smart form.
 
