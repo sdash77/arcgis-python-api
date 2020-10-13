@@ -1673,12 +1673,13 @@ class FeatureLayer(Layer):
                 df.spatial.renderer = self.renderer
                 df.spatial._meta.source = self
             for fld in dt_fields:
-                try:
-                    df[fld] = pd.to_datetime(df[fld]/1000,
-                                             infer_datetime_format=True,
-                                             unit='s')
-                except:
-                    df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                if fld in df.columns:
+                    try:
+                        df[fld] = pd.to_datetime(df[fld]/1000,
+                                                 infer_datetime_format=True,
+                                                 unit='s')
+                    except:
+                        df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True, errors='coerce')
             return df
         return result
     # ----------------------------------------------------------------------
