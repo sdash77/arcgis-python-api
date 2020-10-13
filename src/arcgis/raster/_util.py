@@ -494,7 +494,7 @@ def _upload_imagery(files, gis=None):
     try:
         from azure.storage.blob import ContainerClient
     except:
-        print("Install Azure library packages for Python. \
+        print("Install Azure library packages for Python. (version - azure-storage-blob-12.5.0) \
         (https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install)")
     sas_url = _generate_direct_access_url(gis)
     container = ContainerClient.from_container_url(sas_url)
