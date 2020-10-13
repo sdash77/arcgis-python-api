@@ -126,6 +126,8 @@ class FormInfo:
         Represents a "smart form" in ArcGIS Field Maps and other applications. This matches with
         the formInfo property in a webmap's operational layer.
 
+        For more please see: https://developers.arcgis.com/web-map-specification/objects/formInfo/
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -608,6 +610,8 @@ class FormFieldElement(FormElement):
         you can modify properties such as label, description, and visibility_expression on these
         objects as well.
 
+        For more please see: https://developers.arcgis.com/web-map-specification/objects/formFieldElement/
+
         ======================     ====================================================================
         **Argument**               **Description**
         ----------------------     --------------------------------------------------------------------
@@ -759,6 +763,8 @@ class FormGroupElement(FormElement):
         Represents a single group element in a form. This is a subclass of FormElement, so
         you can modify properties such as label, description, and visibility_expression on these
         objects as well.
+
+        For more please see: https://developers.arcgis.com/web-map-specification/objects/formGroupElement/
 
         ======================     ====================================================================
         **Argument**               **Description**
@@ -948,6 +954,8 @@ class FormGroupElement(FormElement):
 class FormExpressionInfo:
     """
      This class corrresponds to a single expressionInfo in the expressionInfos list within a form.
+
+     For more please see: https://developers.arcgis.com/web-map-specification/objects/formExpressionInfo/
 
      ==================     ====================================================================
      **Argument**           **Description**
