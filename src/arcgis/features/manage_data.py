@@ -10,7 +10,7 @@ maps and creating a single map containing all the information found in the stack
 import arcgis as _arcgis
 from .._impl.common._utils import inspect_function_inputs
 #----------------------------------------------------------------------
-def generate_tessellation(extent_layer,
+def generate_tessellation(extent_layer=None,
                          bin_size=1,
                          bin_size_unit="SquareKilometers",
                          bin_type="SQUARE",
@@ -26,7 +26,7 @@ def generate_tessellation(extent_layer,
     ====================================     ====================================================================
     **Parameter**                            **Description**
     ------------------------------------     --------------------------------------------------------------------
-    extent_layer                             Required layer. A layer defining the processing extent.
+    extent_layer                             Optional layer. A layer defining the processing extent.
     ------------------------------------     --------------------------------------------------------------------
     bin_size                                 Optional Float. The size of each individual shape that makes up the tessellation.
     ------------------------------------     --------------------------------------------------------------------
@@ -58,13 +58,19 @@ def generate_tessellation(extent_layer,
     future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ====================================     ====================================================================
 
+    .. note::
+            The tool requires either an 'extent' given in the `context` or an `extent_layer`.
 
     :returns: FeatureLayer or Feature Layer Collection
 
     """
     kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
+    if not ('extent' in context or extent_layer):
+        raise ValueError("Tool requires an extent_layer or defined extent.")
     params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.generate_tessellations, **kwargs)    
+    if extent_layer is None:
+        params['extent_layer'] = None
     return gis._tools.featureanalysis.generate_tesselation(**params)
 #----------------------------------------------------------------------
 def dissolve_boundaries(
