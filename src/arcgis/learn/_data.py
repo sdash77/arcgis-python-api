@@ -94,13 +94,15 @@ imagery_type_lib = {
     }
 }
 
+
 def get_installation_command():
-    installation_steps = ("Install them using - 'conda install -c esri -c fastai -c pytorch arcgis=1.8.1 "
+    installation_steps = ("Install them using - 'conda install -c esri -c fastai -c pytorch arcgis=1.8.2 "
                           "scikit-image=0.15.0 pillow=6.2.2 libtiff=4.0.10 fastai=1.0.60 pytorch=1.4.0 "
                           "torchvision=0.5.0 scikit-learn=0.23.1 --no-pin'"
                           "\n'conda install gdal=2.3.3'"
-                          "\n'pip install transformers==2.11.0'")
+                          "\n'pip install transformers==3.0.2'")
     return installation_steps 
+
 
 def _raise_fastai_import_error(import_exception=import_exception):
     installation_steps = get_installation_command()
@@ -389,8 +391,8 @@ def _extract_bands_tfm(tensor_batch, band_indices):
 def prepare_textdata(
         path,
         task,
-        text_cols,
-        label_cols,
+        text_columns,
+        label_columns,
         train_file="train.csv",
         valid_file=None,
         val_split_pct=0.1,
@@ -412,10 +414,10 @@ def prepare_textdata(
     task                    Required string. The task for which the dataset is
                             prepared. Available choice at this point is "classification"
     ---------------------   -------------------------------------------------
-    text_cols               Required string. The column that will be used as
+    text_columns            Required string. The column that will be used as
                             feature.
     ---------------------   -------------------------------------------------
-    label_cols              Required list. The list of columns denoting the
+    label_columns           Required list. The list of columns denoting the
                             class label to predict. Provide a list of columns
                             in case of multi-label classification problem
     ---------------------   -------------------------------------------------
@@ -467,14 +469,14 @@ def prepare_textdata(
     # if task not in allowed_tasks:
     #     raise Exception(f"Wrong task choosen. Allowed tasks are {allowed_tasks}")
 
-    if isinstance(label_cols, (str, bytes)):
-        label_cols = [label_cols]
+    if isinstance(label_columns, (str, bytes)):
+        label_columns = [label_columns]
 
     if task == "classification":
         return TextDataObject.prepare_data_for_classification(
             path,
-            text_cols,
-            label_cols,
+            text_columns,
+            label_columns,
             train_file=train_file,
             valid_file=valid_file,
             val_split_pct=val_split_pct,
@@ -739,6 +741,19 @@ def prepare_data(path,
                             for example: if value is 2 and image size 256x256,
                             it will create label images of size 128x128.
                             Default is 4
+    ---------------------   -------------------------------------------
+    ner_architecture        Optional string.
+                            Applicable only when dataset_type=IOB, BILUO or ner_json:
+                            The named-entity-recognition task can be performed either
+                            by using 'spacy' or 'transformer' architecture. Data prep
+                            will be different for both of the above architecture.
+                            Valid values are - ['spacy', 'transformer'].
+                            Default is 'spacy'
+    ---------------------   -------------------------------------------
+    encoding                Optional string.
+                            Applicable only when dataset_type=IOB, BILUO or ner_json:
+                            The encoding to read the csv/json file.
+                            Default is 'UTF-8'
     =====================   ===========================================
 
     :returns: data object
@@ -1158,7 +1173,11 @@ def prepare_data(path,
     elif dataset_type in ['ner_json','BIO','IOB','LBIOU','BILUO']:
         if batch_size == 64:
             batch_size = 8
-        return ner_prepare_data(dataset_type=dataset_type, path=path, class_mapping=class_mapping, val_split_pct=val_split_pct,batch_size=batch_size)
+        encoding = kwargs.get("encoding", "UTF-8")
+        ner_architecture = kwargs.get("ner_architecture", "spacy")
+        return ner_prepare_data(dataset_type=dataset_type, path=path, class_mapping=class_mapping, seed=seed,
+                                val_split_pct=val_split_pct, batch_size=batch_size,
+                                ner_architecture=ner_architecture, encoding=encoding)
     elif dataset_type == "PointCloud":
         from ._utils.pointcloud_data import Transform3d
         if transforms is None:

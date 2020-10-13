@@ -1,6 +1,8 @@
 import os
 import abc
 import traceback
+from ._transformers_layer_group import split_into_layer_groups
+
 
 HAS_TRANSFORMER = True
 
@@ -11,20 +13,38 @@ except Exception as e:
     transformer_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_TRANSFORMER = False
 
+transformer_seq_length = 512
 
-from ._transformers_layer_group import split_into_layer_groups
+def infer_model_type(model_name, transformer_architectures):
+    model_type = 'Others'
+    model_name = model_name.split('/')[-1]
+    for architecture in sorted(transformer_architectures, key=len, reverse=True):
+        if model_name.startswith(architecture.lower()):
+            model_type = architecture.lower()
+            break
+    return model_type
+
+
+class ModelBackbone:
+    def __init__(self, name):
+        self._name = name
+
+    @property
+    def __name__(self):
+        return f"{ModelBackbone.__name__}: {self._name}"
 
 
 class ArcGISTransformer(nn.Module, metaclass=abc.ABCMeta):
 
     _outfile = "model_architecture.json"
 
-    def __init__(self, architecture, pretrained_model_name, config=None, pretrained_model_path=None):
+    def __init__(self, architecture, pretrained_model_name, config=None, pretrained_model_path=None, task=None):
         super(ArcGISTransformer, self).__init__()
         self._transformer_architecture = architecture
         self._transformer_pretrained_model_name = pretrained_model_name
         self._pretrained_model_path = pretrained_model_path
         self._config = config
+        self._task = task
         self._tokenizer = None
         self._transformer = None
         self._layer_groups = []
@@ -50,9 +70,9 @@ class ArcGISTransformer(nn.Module, metaclass=abc.ABCMeta):
         """
         Split the Transformer model into layer groups. Appropriate method
         will be called to split the model into different layers depending
-        on the model architecture
+        on the model architecture and the task selected
         """
-        self._layer_groups = split_into_layer_groups(self._transformer, self._transformer_architecture)
+        self._layer_groups = split_into_layer_groups(self._transformer, self._transformer_architecture, self._task)
 
     def get_layer_groups(self):
         """

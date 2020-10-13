@@ -638,7 +638,7 @@ class ArcGISModel(object):
             _emd_template["ImageSpaceUsed"] = self._data._image_space_used
 
         _emd_template["LearningRate"] = str(_emd_lr)
-        _emd_template["ModelName"] = type(self).__name__
+        _emd_template["ModelName"] = type(self).__name__.replace("_", "")
         _emd_template["backend"] = self._backend
 
         model_params = {
@@ -966,7 +966,7 @@ class ArcGISModel(object):
 
         if self.__str__() == '<PointCNN>':
             self.show_results(save_html=True, save_path=model_characteristics_dir)
-        elif self.__str__() == "<TextClassifier>":
+        elif self.__str__() in ["<TextClassifier>", "<TransformerEntityRecognizer>"]:
             pass
         elif hasattr(self, 'show_results'):
             self.show_results()

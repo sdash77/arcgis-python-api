@@ -3,7 +3,9 @@ import os
 import sys
 import copy
 import types
+import shutil
 import random
+import logging
 import warnings
 import traceback
 import pandas as pd
@@ -15,6 +17,7 @@ try:
     import arcgis
     from fastai.text import TextList, TextClasDataBunch, pad_collate
     from fastai.data_block import CategoryList, MultiCategoryList
+    from .text_transforms import TransformerNERDataset, TransformerNERDataBunch, process_text
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
@@ -35,6 +38,17 @@ except:
 
 
 max_len=100
+logger = logging.getLogger()
+
+
+def _raise_fastai_exception(exception):
+    error_message = (f"{exception}\n\nThis module requires fastai, PyTorch and transformers as its dependencies.\n"
+                     "Install them using - 'conda install -c esri -c fastai -c pytorch arcgis=1.8.2 "
+                          "scikit-image=0.15.0 pillow=6.2.2 libtiff=4.0.10 fastai=1.0.60 pytorch=1.4.0 "
+                          "torchvision=0.5.0 scikit-learn=0.23.1 --no-pin'"
+                          "\n'conda install gdal=2.3.3'"
+                          "\n'pip install transformers==3.0.2'")
+    raise Exception(error_message)
 
 
 # Overriding show_text_xys function of TextList to display the dataframe in desired fashion
@@ -43,7 +57,7 @@ def show_text_xys(self, xs, ys, max_len:int=max_len):
     if not HAS_NUMPY:
         raise Exception("This module requires numpy.")
 
-    from IPython.display import display, HTML
+    from IPython.display import display
     names = ['idx','text'] if self._is_lm else ['text','target']
     items = []
     for i, (x,y) in enumerate(zip(xs,ys)):
@@ -63,7 +77,7 @@ def show_text_xyzs(self, xs, ys, zs, max_len:int=max_len):
     if not HAS_NUMPY:
         raise Exception("This module requires numpy.")
 
-    from IPython.display import display, HTML
+    from IPython.display import display
     items,names = [],['text','target','prediction']
     for i, (x,y,z) in enumerate(zip(xs,ys,zs)):
         txt_x = ' '.join(x.text.split(' ')[:max_len]) if max_len is not None else x.text
@@ -74,6 +88,7 @@ def show_text_xyzs(self, xs, ys, zs, max_len:int=max_len):
         .set_table_styles([dict(selector='th', props=[('text-align', 'left')])]) \
         .set_properties(**{'text-align': "left"}).hide_index()
     display(dataframe_style)
+
 
 def read_file(path):
     filename, file_extension = os.path.splitext(path)
@@ -95,6 +110,39 @@ def save_data_in_model_metrics_html(text, path, model_characteristics_folder):
             fp.write(text)
 
 
+def copy_metrics(source, target, folder_name):
+    source_file_path = os.path.join(source, 'model_metrics.html')
+    target_file_path = os.path.join(target, 'model_metrics.html')
+    if os.path.exists(source_file_path):
+        if os.path.exists(target_file_path): os.remove(target_file_path)
+        _ = shutil.copyfile(source_file_path, target_file_path)
+
+    source_folder_path = os.path.join(source, folder_name)
+    target_folder_path = os.path.join(target, folder_name)
+    if os.path.exists(source_folder_path):
+        if os.path.exists(target_folder_path): shutil.rmtree(target_folder_path)
+        _ = shutil.copytree(source_folder_path, target_folder_path)
+
+
+def extract_entities(tokens, labels):
+    prev_label, token_list, entities = labels[0], [tokens[0]], []
+    for token_index, (token, label) in enumerate(list(zip(tokens[1:], labels[1:]))):
+        if label == 'O':
+            if prev_label != 'O': entities.append((token_list, prev_label))
+            token_list, prev_label = list(), label
+
+        if prev_label == label:
+            token_list.append(token)
+        else:
+            if prev_label != 'O':entities.append((token_list, prev_label))
+            token_list = list()
+            prev_label = label
+            token_list.append(token)
+    if token_list:
+        entities.append((token_list, prev_label))
+    return entities
+
+
 class TextDataObject:
 
     databunch_kwargs = {'num_workers': 0} if sys.platform == 'win32' else {}
@@ -106,7 +154,9 @@ class TextDataObject:
     else:
         databunch_kwargs["device"] = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-    def __init__(self):
+    def __init__(self, task):
+        self.emd = {}
+        self.emd_path = None
         self._bs = None
         self._is_empty = True
         self._train_df = None
@@ -115,6 +165,53 @@ class TextDataObject:
         self._label_cols = list()
         self._databunch = None
         self._training_indexes = list()
+        self._task = task
+
+    @classmethod
+    def prepare_data_for_entity_recognition(
+            cls,
+            tokens_collection,
+            tags_collection,
+            address_tag,
+            unique_tags,
+            seed=42,
+            batch_size=8,
+            val_split_pct = 0.1
+        ):
+
+        if not HAS_FASTAI:
+            _raise_fastai_exception(import_exception)
+
+        text_data = cls("ner")
+        random.seed(seed)
+        # temp = list(zip(tokens_collection, tags_collection))
+        # random.shuffle(temp)
+        # tokens_collection, tags_collection = zip(*temp)
+
+        random.Random(seed).shuffle(tokens_collection)
+        random.Random(seed).shuffle(tags_collection)
+
+        # used when creating databunch for ner
+        split_index = int((1 - val_split_pct) * len(tokens_collection))
+
+        text_data._bs = batch_size
+        text_data._unique_tags = unique_tags
+        text_data._address_tag = address_tag
+        text_data._label2id = {x: index for index, x in enumerate(unique_tags)}
+
+        text_data._train_tags = tags_collection[:split_index]
+        text_data._train_tokens = tokens_collection[:split_index]
+
+        text_data._valid_tags = tags_collection[split_index:]
+        text_data._valid_tokens = tokens_collection[split_index:]
+        if text_data._address_tag not in text_data._unique_tags:
+            logging.warning("No Address tag found in your data.\n\
+            1. If your data has an address field, pass your address field name as address tag in class mapping \n\
+            e.g. - data=prepare_data(dataset_type=ds_type,path=training_data_folder,\n\t\t\t\
+                class_mapping={address_tag:address_field_name})\n\
+            2. Else no action is required, if your data does not have any address information.")
+
+        return text_data
 
     @classmethod
     def prepare_data_for_classification(
@@ -132,9 +229,9 @@ class TextDataObject:
             remove_urls=False
         ):
         if not HAS_FASTAI:
-            return
+            _raise_fastai_exception(import_exception)
 
-        text_data = cls()
+        text_data = cls("classification")
         if not os.path.exists(data):
             raise Exception(f"Provided data directory - {data}, does not exists")
 
@@ -191,30 +288,48 @@ class TextDataObject:
         else:
             return self._databunch
 
-    def _prepare_databunch(self, tokenizer, vocab, pad_first, pad_idx):
+    def _prepare_databunch(self, tokenizer, vocab=None, pad_first=True, pad_idx=0, **kwargs):
         """
         Wrapper to create fastai TextDataBunch Object
         """
         if not HAS_FASTAI:
-            return
+            _raise_fastai_exception(import_exception)
 
-        self._databunch = TextClasDataBunch.\
-            from_df(".",
-                    train_df=self._train_df,
-                    valid_df=self._valid_df,
-                    tokenizer = tokenizer,
-                    vocab=vocab,
-                    include_bos=False,
-                    include_eos=False,
-                    text_cols=self._text_cols,
-                    label_cols=self._label_cols,
-                    bs=self._bs,
-                    collate_fn=partial(pad_collate, pad_first=pad_first, pad_idx=pad_idx),
-                    **self.databunch_kwargs
-                    )
+        logger.info(f"Preparing databunch for task type - {self._task}")
+        if self._task == "classification":
+            self._databunch = TextClasDataBunch.\
+                from_df(".",
+                        train_df=self._train_df,
+                        valid_df=self._valid_df,
+                        tokenizer = tokenizer,
+                        vocab=vocab,
+                        include_bos=False,
+                        include_eos=False,
+                        text_cols=self._text_cols,
+                        label_cols=self._label_cols,
+                        bs=self._bs,
+                        collate_fn=partial(pad_collate, pad_first=pad_first, pad_idx=pad_idx),
+                        **self.databunch_kwargs
+                        )
 
-        TextList.show_xys = types.MethodType(show_text_xys, TextList)
-        TextList.show_xyzs = types.MethodType(show_text_xyzs, TextList)
+            TextList.show_xys = types.MethodType(show_text_xys, TextList)
+            TextList.show_xyzs = types.MethodType(show_text_xyzs, TextList)
+        elif self._task == "ner":
+            model_type, seq_length = kwargs["model_type"], kwargs["seq_len"]
+            dl_kwargs = {"pin_memory": self.databunch_kwargs.get('pin_memory')}
+            device, num_workers = self.databunch_kwargs["device"], self.databunch_kwargs.get('num_workers')
+            if num_workers: dl_kwargs["num_workers"] = num_workers
+
+            train_ds = TransformerNERDataset(self._train_tokens, self._train_tags, tokenizer,
+                                             self._label2id, model_type=model_type, seq_length=seq_length)
+            valid_ds = TransformerNERDataset(self._valid_tokens, self._valid_tags, tokenizer,
+                                             self._label2id, model_type=model_type, seq_length=seq_length)
+
+            self._databunch = TransformerNERDataBunch.\
+                create(train_ds, valid_ds, tokenizer, bs=self._bs, device=device, seq_len=seq_length, **dl_kwargs)
+        else:
+            raise Exception(f"Wrong task - {self._task} selected. Allowed values are 'ner', 'classification'")
+
         self._is_empty = False
 
     @staticmethod
@@ -232,9 +347,10 @@ class TextDataObject:
         return dataframe
 
     @staticmethod
-    def process_text(text, remove_html_tags=False, remove_urls=False):
+    def process_text(text, remove_html_tags=False, remove_urls=False, remove_space_before_after_spl_char=False):
         """
         Perform some basic cleanup like removing HTML tags, removing urls,
+        removing spaces before and after special characters
         converting multiple white spaces to single white space
         """
         if remove_urls: text = re.sub(r'\b(?:(?:https?|ftp)://)?\w[\w-]*(?:\.[\w-]+)+\S*', ' ', text)
@@ -245,13 +361,42 @@ class TextDataObject:
                 raise Exception("This module requires BeautifulSoup.")
             text = BeautifulSoup(text, 'html.parser').get_text(separator=" ", strip=True)
 
-        if remove_html_tags or remove_urls: text = re.sub(' +', ' ', text)
+        if remove_space_before_after_spl_char:
+            text = re.sub(' ([@.#$/:-]) ?', r'\1', text)
+
+        if any([remove_html_tags, remove_urls, remove_space_before_after_spl_char]): text = re.sub(' +', ' ', text)
         return text.strip()
 
     def show_batch(self, rows=5, max_len=max_len):
         """
         Shows a batch of dataframe prepared without applying transforms.
         """
+        if self._task == "classification":
+            return self._classification_show_batch(rows=rows, max_len=max_len)
+        elif self._task == "ner":
+            return self._ner_show_batch(rows=rows)
+        else:
+            raise Exception(f"Wrong task - {self._task} selected. Allowed values are 'ner', 'classification'")
+
+    def _ner_show_batch(self, rows=5):
+        results = []
+        indexes = list(range(len(self._train_tokens)))
+        random.shuffle(indexes)
+        rows = min(len(indexes), rows)
+        batch_tokens = [self._train_tokens[i] for i in indexes[:rows]]
+        batch_labels = [self._train_tags[i] for i in indexes[:rows]]
+        for index, (tokens, labels) in enumerate(zip(batch_tokens, batch_labels)):
+            entity_dict = dict()
+            entities = extract_entities(tokens, labels)
+            text = process_text(" ".join(tokens))
+            entity_dict["Text"] = text
+            _ = [entity_dict.setdefault(x[1], []).append(process_text(" ".join(x[0]))) for x in entities if x[0]]
+            results.append(entity_dict)
+        df = pd.DataFrame(results, )
+        df.fillna("", inplace=True)
+        return df
+
+    def _classification_show_batch(self, rows=5, max_len=max_len):
         processed_data = []
         rows = min(len(self._training_indexes), rows)
         random_batch = random.sample(self._training_indexes, rows)
@@ -269,7 +414,15 @@ class TextDataObject:
             .set_table_styles([dict(selector='th', props=[('text-align', 'left')])])\
             .set_properties(**{'text-align': "left"}).hide_index()
 
-    def create_empty(self, text_cols, label_cols, classes, is_multilabel=False):
+    def create_empty_object_for_ner(self, entities, address_tag, label2id, batch_size=4):
+        self._bs = batch_size
+        self._unique_tags = entities
+        self._address_tag = address_tag
+        self._label2id = label2id
+        self._train_tags, self._train_tokens = [], []
+        self._valid_tags, self._valid_tokens = [], []
+
+    def create_empty_object_for_classification(self, text_cols, label_cols, classes, is_multilabel=False):
         self._text_cols = text_cols
         self._label_cols = label_cols
 

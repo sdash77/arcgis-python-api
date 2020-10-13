@@ -1,3 +1,12 @@
+import os
+import json
+import random
+import logging
+import tempfile
+import datetime
+import traceback
+from pathlib import Path
+from .._utils.text_data import TextDataObject
 try:
     import spacy
     from spacy.gold import offsets_from_biluo_tags as _offsets_from_biluo_tags
@@ -5,32 +14,35 @@ try:
     import pandas as pd
     import numpy as np
     HAS_SPACY = True
-except:
+except Exception as e:
+    spacy_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_SPACY = False
-from pathlib import Path
-import json, random, os, tempfile, logging, datetime
 
-__all__=["_from_iob_tags","_from_json","ner_prepare_data","_create_zip","even_mults","_timelapsed"]
+
+__all__=["_from_iob_tags", "_from_json", "ner_prepare_data", "even_mults", "_timelapsed"]
+
 
 def _raise_spacy_import_error():
-    raise Exception('This module requires pandas and spacy version 2.1.8. Install it using \"pip install pandas spacy==2.1.8\"')
+    error_message = (f"{spacy_exception}\n\n\n"
+                     "This module requires spacy version 2.1.8 or above and fastprogress." 
+                     "Install it using 'pip install spacy==2.1.8 fastprogress pandas'")
+    raise Exception(error_message)
 
-def _create_zip(zipname, path):
-    import shutil
-
-    if os.path.exists(os.path.join(path, zipname) + '.zip'):
-        os.remove(os.path.join(path, zipname) + '.zip')
-        
-    temp_dir = tempfile.TemporaryDirectory().name    
-    zip_file = shutil.make_archive(os.path.join(temp_dir, zipname), 'zip', path)
-    
-    shutil.move(zip_file, path)
 
 def even_mults(start:float, stop:float, n:int): #Taken from FastAI(https://github.com/fastai/fastai/blob/master/fastai/core.py#L150)
     "Build log-stepped array from `start` to `stop` in `n` steps."
     mult = stop/start
     step = mult**(1/(n-1))
     return np.array([start*(step**i) for i in range(n)])
+
+
+def _timelapsed(t_start):
+    '''returns timedelta in hh:mm:ss format'''
+    b = datetime.datetime.now() - t_start
+    h,r = divmod(b.seconds, 3600)
+    m,s = divmod(r, 60)
+    return ("%02d:%02d:%02d"%(h,m,s))
+
 
 def _from_iob_tags(tokens_collection, tags_collection):
     """
@@ -47,10 +59,8 @@ def _from_iob_tags(tokens_collection, tags_collection):
     =====================   ===========================================
     """
 
-
+    train_data = []
     nlp=spacy.blank('en')
-    
-    train_data = [] 
     for tags, tokens in zip(tags_collection, tokens_collection):
         
         try:
@@ -70,10 +80,9 @@ def _from_iob_tags(tokens_collection, tags_collection):
         
 
     return train_data
-        
 
 
-def _from_json(path, text_key='text', offset_key='labels'):
+def _from_json(path, text_key='text', offset_key='labels', encoding="UTF-8"):
     """
     Converts training data from JSON format to spacy offsets.
 
@@ -90,11 +99,11 @@ def _from_json(path, text_key='text', offset_key='labels'):
     {"id": 2, "text": "Peter Blackburn", "labels": [[0, 15, "PERSON"]]}
     {"id": 3, "text": "President Obama", "labels": [[10, 15, "PERSON"]]}
     ----------
-    returns: A json file that can be consumed by ner_databunch.
+    returns: A list that can be consumed by ner_databunch.
     """
     
     train_data = []
-    with open(path,'r', encoding='UTF-8') as f:
+    with open(path,'r', encoding=encoding) as f:
         data_list = f.readlines()
     for i, item in enumerate(data_list):
         try:
@@ -104,7 +113,27 @@ def _from_json(path, text_key='text', offset_key='labels'):
         
     return train_data
 
-def ner_prepare_data(dataset_type, path, batch_size, class_mapping=None, val_split_pct=0.1):
+
+def _get_tags_and_tokens_collection(path, ignore_tag_order=False, encoding="UTF-8"):
+    unique_tags = set()
+    tags_collection, tokens_collection = [], []
+    tags_df = pd.read_csv(path/'tags.csv', encoding=encoding, dtype='str')
+    tokens_df = pd.read_csv(path/'tokens.csv', encoding=encoding, dtype='str')
+
+    for i,tags in tags_df.iterrows():
+        if ignore_tag_order: tags = [x.split("-")[-1] for x in tags.dropna()]
+        else: tags = [x for x in tags.dropna()]
+        unique_tags.update(tags)
+        tags_collection.append(tags)
+
+    for i,tokens in tokens_df.iterrows():
+        tokens_collection.append(list(tokens.dropna()))
+
+    return tags_collection, tokens_collection, unique_tags
+
+
+def ner_prepare_data(dataset_type, path, batch_size, class_mapping=None, seed=42, val_split_pct=0.1,
+                     ner_architecture="spacy", encoding="UTF-8"):
 
     """
     Prepares a data object
@@ -116,58 +145,114 @@ def ner_prepare_data(dataset_type, path, batch_size, class_mapping=None, val_spl
     ---------------------   -------------------------------------------
     address_tag             Optional dict. Address field/tag name 
                             in the training data.
+    ---------------------   -------------------------------------------
     val_split_pct           Optional Float. Percentage of training data to keep
                             as validation. The default value is 0.1.
     =====================   ===========================================
     returns: A list [text,{entities},text,{entities}] that can be ingested by ``EntityRecognizer``.
     """
-    import spacy
-    v_list=spacy.__version__.split('.')
-    version=sum([int(j)*10**(2*i) for i,j in enumerate(v_list[::-1])])
-    if version<20108: #checking spacy version
-        return logging.error(f'Entity recognition model needs spacy version 2.1.8 or higher. Your current spacy version is {spacy.__version__}, please update using \'pip install')
-
-    if not HAS_SPACY:
-        _raise_spacy_import_error()
-    path=Path(path)
-    if class_mapping:
-        address_tag=class_mapping.get('address_tag')
-    
+    if ner_architecture == "spacy":
+        return ner_prepare_data_for_spacy(
+            dataset_type=dataset_type, path=path, class_mapping=class_mapping, seed=seed,
+            val_split_pct=val_split_pct, batch_size=batch_size, encoding=encoding)
+    elif ner_architecture == "transformer":
+        return ner_prepare_data_for_transformer(
+            dataset_type=dataset_type, path=path, class_mapping=class_mapping, seed=seed,
+            val_split_pct=val_split_pct, batch_size=batch_size, encoding=encoding)
     else:
-        address_tag='Address'
+        error_message = (f"Wrong argument - {ner_architecture} supplied for `ner_architecture` "
+                         "parameter. Valid values are - 'spacy' or 'transformer'")
+        raise Exception(error_message)
+
+
+def ner_prepare_data_for_transformer(dataset_type, path, batch_size, class_mapping=None, seed=42,
+                                     val_split_pct=0.1, encoding="UTF-8"):
+    unique_tags = set()
+    path = Path(path)
+    tags_collection, tokens_collection = [], []
+    if class_mapping:
+        address_tag = class_mapping.get('address_tag')
+    else:
+        address_tag = 'Address'
 
     if dataset_type == 'ner_json':
-        train_data = _from_json(path=path)
-        path=path.parent
-    elif dataset_type == 'BIO' or dataset_type == 'IOB':
-        tags_collection = []
-        tokens_collection = []
-        tags_df = pd.read_csv(path/'tags.csv', dtype='str')
-        tokens_df = pd.read_csv(path/'tokens.csv', dtype='str')
-        
-        for i,tags in tags_df.iterrows():
-            tags_collection.append(list(tags.dropna()))
-        
-        for i,tokens in tokens_df.iterrows():
-            tokens_collection.append(list(tokens.dropna()))
+        # converts json schema to a list of list of tokens and tags
+        # json - schema:
+        # ----------
+        # {"id": 1, "text": "Officers were dispatched ...", "labels": [[30, 38, "Crime"], [45, 92, "Address"], ...]}
+        # ----------
+        # converted form:
+        # [('Officers were dispatched to a', 'O'),
+        #  ('robbery', 'Crime'),
+        #  ('of the', 'O'),
+        #  ('Associated Bank in the 1500 block of W Broadway', 'Address')]
+        with open(path, 'r', encoding=encoding) as f:
+            data_list = f.readlines()
 
+        data_list = [json.loads(item) for item in data_list]
+
+        for row in data_list:
+            prev_start = 0
+            tmp_tags_list, tmp_tokens_list = [], []
+            text, labels = row["text"], row["labels"]
+            for item in sorted(labels, key=lambda x: x[0]):
+                c_text = text[prev_start: item[0]].strip()
+                tmp_tags_list.append("O")
+                unique_tags.add("O")
+                tmp_tokens_list.append(c_text)
+                c_text = text[item[0]:item[1]].strip()
+                tmp_tags_list.append(item[2])
+                tmp_tokens_list.append(c_text)
+                unique_tags.add(item[2])
+                prev_start = item[1]
+
+            tags_collection.append(tmp_tags_list)
+            tokens_collection.append(tmp_tokens_list)
+
+    elif dataset_type in ['BIO', 'IOB', 'LBIOU', 'BILUO']:
+        tags_collection, tokens_collection, unique_tags = _get_tags_and_tokens_collection(
+            path, ignore_tag_order=True, encoding=encoding)
+    else:
+        error_message = (f"Wrong argument - {dataset_type} supplied for `dataset_type` parameter. "
+                         "Valid values are - 'ner_json', 'BIO', 'IOB', 'LBIOU' and 'BILUO'")
+        raise Exception(error_message)
+    data = TextDataObject.prepare_data_for_entity_recognition(
+        tokens_collection=tokens_collection, tags_collection=tags_collection, address_tag=address_tag,
+        unique_tags=unique_tags, seed=seed, batch_size=batch_size, val_split_pct=val_split_pct)
+
+    return data
+
+def ner_prepare_data_for_spacy(dataset_type, path, batch_size, class_mapping=None, seed=42,
+                               val_split_pct=0.1, encoding="UTF-8"):
+    if not HAS_SPACY:
+        _raise_spacy_import_error()
+
+    random.seed(seed)
+    v_list = spacy.__version__.split('.')
+    version = sum([int(j)*10**(2*i) for i,j in enumerate(v_list[::-1])])
+    if version < 20108: #checking spacy version
+        error_message = ("Entity recognition model needs spacy version 2.1.8 or higher." 
+                         f"Your current spacy version is {spacy.__version__}, please update using \'pip install'")
+        return logging.error(error_message)
+
+    path = Path(path)
+    train_data = []
+
+    if class_mapping:
+        address_tag = class_mapping.get('address_tag')
+    else:
+        address_tag = 'Address'
+
+    if dataset_type == 'ner_json':
+        train_data = _from_json(path=path, encoding=encoding)
+        path = path.parent
+    elif dataset_type == 'BIO' or dataset_type == 'IOB':
+        tags_collection, tokens_collection, _ = _get_tags_and_tokens_collection(path, encoding=encoding)
         train_data = _from_iob_tags(tags_collection=tags_collection, tokens_collection=tokens_collection)
     elif dataset_type == 'LBIOU' or dataset_type == 'BILUO':
-
-        tags_collection = []
-        tokens_collection = []
-        tags_df = pd.read_csv(path/'tags.csv', dtype='str')
-        tokens_df = pd.read_csv(path/'tokens.csv', dtype='str')
-        train_data = []
-
-        for i,tags in tags_df.iterrows():
-            tags_collection.append(list(tags.dropna()))
-        
-        for i,tokens in tokens_df.iterrows():
-            tokens_collection.append(list(tokens.dropna()))
-    
         nlp=spacy.blank('en')
-        train_data = [] 
+        tags_collection, tokens_collection, _ = _get_tags_and_tokens_collection(path, encoding=encoding)
+
         for tags, tokens in zip(tags_collection, tokens_collection):
             try:
                 tags = _iob_to_biluo(tags)
@@ -176,24 +261,22 @@ def ner_prepare_data(dataset_type, path, batch_size, class_mapping=None, val_spl
                 nlp.vocab, words = tokens, spaces = [True]*(len(tokens)-1)+[False])
                 # run the standard pipeline against it
                 for name, proc in nlp.pipeline:
-                    doc = proc(doc) 
+                    doc = proc(doc)
                 text=' '.join(tokens)
                 tags = _offsets_from_biluo_tags(doc, tags)
                 train_data.append((text,{'entities':tags}))
             except:
-                pass        
-    data=DatabunchNER(train_data, val_split_pct=val_split_pct,batch_size=batch_size,address_tag=address_tag, test_ds=None)
+                pass
+    else:
+        error_message = (f"Wrong argument - {dataset_type} supplied for `dataset_type` parameter. "
+                         "Valid values are - 'ner_json', 'BIO', 'IOB', 'LBIOU' and 'BILUO'")
+        raise Exception(error_message)
+    data=spaCyNERDatabunch(train_data, val_split_pct=val_split_pct,batch_size=batch_size,address_tag=address_tag, test_ds=None)
     data.path=path
     return data
 
-def _timelapsed(t_start):
-    '''returns timedelta in hh:mm:ss format'''
-    b = datetime.datetime.now() - t_start
-    h,r = divmod(b.seconds, 3600)
-    m,s = divmod(r, 60)
-    return ("%02d:%02d:%02d"%(h,m,s))
 
-class _NERItemlist():
+class _spaCyNERItemlist():
     """
     Creates a dataset to store data within ``ner_databunch`` object.
 
@@ -202,12 +285,11 @@ class _NERItemlist():
     ---------------------   -------------------------------------------
     batch_size              Batch size. 
     ---------------------   -------------------------------------------
-    data                    Required:DatabunchNER. 
+    data                    Required: list of tuple containing text and its entities.
     =====================   ===========================================
 
     :returns: dataset.
     """
-
     
     def __init__(self, batch_size, data):
         self.batch_size = batch_size
@@ -234,36 +316,37 @@ class _NERItemlist():
         """
         text = item[0]
         df = pd.DataFrame(item[1].get('entities'))
+
         out_dict = {}
         if len(df):
             for x in df[2].unique(): out_dict[x] = df[df[2] == x][[0, 1]].values.tolist()
+
         out = {}
         out['text'] = text
-        for key in out_dict.keys():  
+        for key in out_dict.keys():
             for tpl in out_dict.get(key):
                 if out.get(key) == None:
                     out[key] = []
                 out[key].append(text[tpl[0]:tpl[1]])
         return pd.Series(out)
 
-
     def show_batch(self):
         """
-        This function shows a batch from the _NERItemlist.
+        This function shows a batch from the _spaCyNERItemlist.
         """
         data = self._random_batch(self.data)
         lst = []
         for item in data:
             lst.append(self._entities_to_dataframe(item))
         batch_df = pd.concat(lst,axis=1,sort=True).T
+
         text = batch_df['text']
         batch_df.drop('text', axis=1, inplace=True)
         batch_df.insert(loc=0, column='text', value=text)
-        return batch_df.fillna('')  
+        return batch_df.fillna('')
 
-    
 
-class DatabunchNER():
+class spaCyNERDatabunch():
 
 
     """
@@ -287,17 +370,22 @@ class DatabunchNER():
 
     def __init__(self, ds, val_split_pct, batch_size, test_ds=None,address_tag=None):
         random.shuffle(ds)
-        self.train_ds = _NERItemlist(batch_size,data = ds[:int(len(ds)*(1-val_split_pct))]) #creating an _NERItemlist with training dataset
-        self.val_ds = _NERItemlist(batch_size,data = ds[int(len(ds)*(1-val_split_pct)):]) #creating an _NERItemlist with validation dataset
+        # creating an _spaCyNERItemlist with training dataset
+        self.train_ds = _spaCyNERItemlist(batch_size,data = ds[:int(len(ds)*(1-val_split_pct))])
+        # creating an _spaCyNERItemlist with validation dataset
+        self.val_ds = _spaCyNERItemlist(batch_size,data = ds[int(len(ds)*(1-val_split_pct)):])
         self.entities=list(set(self.train_ds.entities).union(set(self.val_ds.entities)))
         self._address_tag=address_tag
         self._has_address=True
         self.batch_size=batch_size
         if self.batch_size>len(self.train_ds):
-            return logging.error(f"Number of training data items ({len(self.train_ds)}) is less than the batch size ({self.batch_size}). Please get more training data or lower the batch size")        
+            error_message = (f"Number of training data items ({len(self.train_ds)}) "
+                             f"is less than the batch size ({self.batch_size}). "
+                             "Please get more training data or lower the batch size")
+            logging.error(error_message)
         if self._address_tag not in self.entities:
             self._has_address=False
-            return logging.warning("No Address tag found in your data.\n\
+            logging.warning("No Address tag found in your data.\n\
                 1. If your data has an address field, pass your address field name as address tag in class mapping \n\
                 e.g. - data=prepare_data(dataset_type=ds_type,path=training_data_folder,\n\t\t\t\
                     class_mapping={address_tag:address_field_name})\n\
@@ -305,4 +393,3 @@ class DatabunchNER():
 
     def show_batch(self):
         return self.train_ds.show_batch()
-    

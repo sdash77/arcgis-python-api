@@ -1,11 +1,8 @@
-import os
-import tempfile
 from functools import partial
 from pathlib import Path
 import json
 import warnings
 import traceback
-from .._data import _raise_fastai_import_error
 from ..models._arcgis_model import ArcGISModel, model_characteristics_folder
 
 import logging
@@ -27,8 +24,10 @@ try:
     # from transformers import AdamW
     from transformers import AutoTokenizer, AutoConfig
     from sklearn.metrics import classification_report
-    from .._utils.text_data import TextDataObject, save_data_in_model_metrics_html
-    from ._transform_text import TransformersBaseTokenizer, TransformersVocab
+    from ._arcgis_transformer import ModelBackbone, infer_model_type
+    from .._utils.common import _get_emd_path
+    from .._utils.text_data import TextDataObject, save_data_in_model_metrics_html, copy_metrics
+    from .._utils.text_transforms import TransformersBaseTokenizer, TransformersVocab
     from ._transformer_text_classifier import TransformerForTextClassification, backbone_models_reverse_map, \
         transformer_architectures, transformer_seq_length
 except Exception as e:
@@ -46,15 +45,6 @@ try:
     import numpy as np
 except:
     HAS_NUMPY = False
-
-
-class ModelBackBone:
-    def __init__(self, name):
-        self._name = name
-
-    @property
-    def __name__(self):
-        return f"{ModelBackBone.__name__}: {self._name}"
 
 
 class TextClassifier(ArcGISModel):
@@ -87,12 +77,13 @@ class TextClassifier(ArcGISModel):
                             multi-label text classification problem. Default
                             value is set to 0.25
     ---------------------   -------------------------------------------
-    use_fp16                Optional Bool. Default set to False. If set
+    mixed_precision         Optional Bool. Default set to False. If set
                             True, then mixed precision training is used
                             to train the model
     ---------------------   -------------------------------------------
-    pretrained_path         Optional String. Path where pre-trained model is
-                            saved.
+    pretrained_path         Optional String. Path where pre-trained model
+                            is saved. Accepts a Deep Learning Package
+                            (DLPK) or Esri Model Definition(EMD) file.
     =====================   ===========================================
 
     :returns: `TextClassifier` Object
@@ -103,35 +94,26 @@ class TextClassifier(ArcGISModel):
 
     def __init__(self, data, backbone="bert-base-cased", **kwargs):
         if not HAS_FASTAI:
+            from .._data import _raise_fastai_import_error
             _raise_fastai_import_error(import_exception=import_exception)
 
-        model_backbone = ModelBackBone(backbone)
+        model_backbone = ModelBackbone(backbone)
         super().__init__(data, model_backbone)
         self.is_multilabel_problem = False
         self.thresh = kwargs.get('thresh', 0.25)
-        self._use_fp16 = kwargs.get('use_fp16', False)
+        self._mixed_precision = kwargs.get('mixed_precision', False)
         self._seq_len = kwargs.get('seq_len', transformer_seq_length)
         self._create_text_learner_object(
-            data, backbone, kwargs.get('pretrained_path', None), use_fp16=self._use_fp16, seq_len=self._seq_len)
+            data, backbone, kwargs.get('pretrained_path', None), mixed_precision=self._mixed_precision, seq_len=self._seq_len)
 
         self.learn.model = self.learn.model.to(self._device)
         layer_groups = self.learn.model.get_layer_groups()
         self.learn.split(layer_groups)
         self._freeze()
 
-    @staticmethod
-    def _infer_model_type(model_name):
-        model_type = 'Others'
-        model_name = model_name.split('/')[-1]
-        for architecture in sorted(transformer_architectures, key=len, reverse=True):
-            if model_name.startswith(architecture.lower()):
-                model_type = architecture.lower()
-                break
-        return model_type
-        
-    def _create_text_learner_object(self, data, backbone, pretrained_path=None, use_fp16=False,
+    def _create_text_learner_object(self, data, backbone, pretrained_path=None, mixed_precision=False,
                                     seq_len=transformer_seq_length):
-        model_type = self._infer_model_type(backbone)
+        model_type = infer_model_type(backbone, transformer_architectures)
         logger.info(f"Inferred Backbone: {model_type}")
         pretrained_model_name = backbone
 
@@ -154,6 +136,8 @@ class TextClassifier(ArcGISModel):
         config = AutoConfig.from_pretrained(pretrained_model_name)
         config.label2id = databunch.train_ds.c2i
         config.id2label = {y: x for x, y in config.label2id.items()}
+
+        if pretrained_path is not None: pretrained_path = str(_get_emd_path(pretrained_path))
 
         model = TransformerForTextClassification(
             architecture=model_type,
@@ -181,7 +165,18 @@ class TextClassifier(ArcGISModel):
         if pretrained_path is not None:
             self.load(pretrained_path)
 
-        if use_fp16: to_fp16(self.learn)
+        if mixed_precision:
+            if model_type in ["xlnet", "mobilebert"]:
+                error_message = (
+                    f"Mixed precision training is not supported for transformer model - {model_type.upper()}."
+                    "\nKindly turn off the `mixed_precision` flag to use this model in its default mode,"
+                    f" or choose a different transformer architectures from - {transformer_architectures}")
+                raise Exception(error_message)
+            logger.info("Converting model to 16 Bit Floating Point precision")
+            self.learn = to_fp16(self.learn)
+
+        from IPython.display import clear_output
+        clear_output()
 
     def __str__(self):
         return self.__repr__()
@@ -207,6 +202,7 @@ class TextClassifier(ArcGISModel):
         :returns: a tuple containing the available models for the given transformer backbone
         """
         if not HAS_FASTAI:
+            from .._data import _raise_fastai_import_error
             _raise_fastai_import_error(import_exception=import_exception)
         return TransformerForTextClassification._available_backbone_models(architecture)
 
@@ -219,30 +215,32 @@ class TextClassifier(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Loads the transformer model from an Esri Model Definition (EMD) file.
+        Creates an TextClassifier model object from a Deep Learning
+        Package(DLPK) or Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from `prepare_textdata` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `TextClassifier` Object
+        :returns: `TextClassifier` model Object
         """
         if not HAS_FASTAI:
+            from .._data import _raise_fastai_import_error
             _raise_fastai_import_error(import_exception=import_exception)
 
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
 
         pretrained_model = emd["PretrainedModel"]
-        use_fp16 = emd["UseFP16"]
+        mixed_precision = emd["MixedPrecisionTraining"]
         text_cols = emd["TextColumns"]
         label_cols = emd["LabelColumns"]
         class_labels = list(emd["Label2Id"].keys())
@@ -253,14 +251,34 @@ class TextClassifier(ArcGISModel):
         data_is_none = False
         if data is None:
             data_is_none = True
-            data = TextDataObject()
-            data.create_empty(text_cols, label_cols, class_labels, is_multilabel_problem)
+            data = TextDataObject(task="classification")
+            data.create_empty_object_for_classification(text_cols, label_cols, class_labels, is_multilabel_problem)
+            data.emd, data.emd_path = emd, emd_path.parent
         cls_object = cls(data, pretrained_model, pretrained_path=str(emd_path),
-                         use_fp16=use_fp16, thresh=thresh, seq_len=seq_len)
+                         mixed_precision=mixed_precision, thresh=thresh, seq_len=seq_len)
         if data_is_none:cls_object._data._is_empty = True
         return cls_object
 
-    def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, save_optimizer=False, **kwargs):
+    def load(self, name_or_path):
+        """
+        Loads a saved TextClassifier model from disk.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        name_or_path            Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
+        =====================   ===========================================
+        """
+        if '\\' in str(name_or_path) or '/' in str(name_or_path):
+            name_or_path = str(_get_emd_path(name_or_path))
+        else:
+            name_or_path = Path('models') / name_or_path
+            name_or_path = str(_get_emd_path(name_or_path))
+        return super().load(name_or_path)
+
+    def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, compute_metrics=True,
+             save_optimizer=False, **kwargs):
         """
         Saves the model weights, creates an Esri Model Definition and Deep
         Learning Package zip for deployment.
@@ -282,6 +300,9 @@ class TextClassifier(ArcGISModel):
         gis                     Optional GIS Object. Used for publishing the item.
                                 If not specified then active gis user is taken.
         ---------------------   -------------------------------------------
+        compute_metrics         Optional boolean. Used for computing model
+                                metrics.
+        ---------------------   -------------------------------------------
         save_optimizer          Optional boolean. Used for saving the model-optimizer
                                 state along with the model. Default is set to False.
         ---------------------   -------------------------------------------
@@ -292,10 +313,19 @@ class TextClassifier(ArcGISModel):
 
         :returns: the qualified path at which the model is saved
         """
-
-        path = super().save(name_or_path, framework, publish, gis, save_optimizer=save_optimizer, **kwargs)
+        from ..models._arcgis_model import _create_zip
+        zip_files = kwargs.pop('zip_files', True)
+        overwrite = kwargs.pop('overwrite', False)
+        path = super().save(name_or_path, framework, publish=False, gis=None, compute_metrics=compute_metrics,
+                            save_optimizer=save_optimizer, **kwargs)
 
         self._save_df_to_html(path)
+
+        if zip_files:
+            _create_zip(path.name, str(path))
+
+        if publish:
+            self._publish_dlpk((path/path.stem).with_suffix('.dlpk'), gis=gis, overwrite=overwrite)
 
         return Path(path)
 
@@ -303,19 +333,16 @@ class TextClassifier(ArcGISModel):
     def _model_metrics(self):
         from IPython.utils import io
         with io.capture_output() as captured:
-            metrics = self.get_accuracy_and_error_metrics()
-
+            metrics = {"Accuracy": self.accuracy()}
         return metrics
 
     def _get_emd_params(self):
         _emd_template = {}
-        metrics = self.get_accuracy_and_error_metrics()
-        _emd_template.update(metrics)
         is_multilabel_problem = True if len(self._data._label_cols) > 1 else False
         _emd_template["Architecture"]= self.learn.model._transformer_architecture
         _emd_template["PretrainedModel"]= self.learn.model._transformer_pretrained_model_name
         _emd_template["ModelType"] = "Transformer"
-        _emd_template["UseFP16"] = self._use_fp16
+        _emd_template["MixedPrecisionTraining"] = self._mixed_precision
         _emd_template["TextColumns"] = self._data._text_cols
         _emd_template["LabelColumns"] = self._data._label_cols
         _emd_template["Label2Id"] = self.learn.model._config.label2id
@@ -342,14 +369,12 @@ class TextClassifier(ArcGISModel):
             kwargs.update({"thresh": self.thresh})
         return self.learn.show_results(rows=rows, **kwargs)
 
-    def get_accuracy_and_error_metrics(self):
+    def accuracy(self):
         """
-        Calculates the following  metrics:
+        Calculates the following  metric:
             * accuracy:   the number of correctly predicted labels in the validation set
                           divided by the total number of items in the validation set
-            * error-rate: 1 - accuracy (which is calculated above)
-
-        :returns: a dictionary containing the metrics for classification model.
+        :returns: a floating point number depicting the accuracy of the classification model.
         """
 
         self._check_requisites()
@@ -360,14 +385,15 @@ class TextClassifier(ArcGISModel):
             metrics_values = self.learn.recorder.metrics
             if len(metrics_names) > 0 and len(metrics_values) > 0:
                 metrics = {x: round(metrics_values[-1][i].item(), 4) for i, x in enumerate(metrics_names)}
+                if self.is_multilabel_problem:  metric = metrics["accuracy_thresh"]
+                else:                           metric = metrics["accuracy"]
             else:
-                metrics = self._calculate_model_metrics()
+                metric = self._calculate_model_metric()
         else:
-            metrics = self._calculate_model_metrics()
-        return metrics
+            metric = self._calculate_model_metric()
+        return metric
 
-    def _calculate_model_metrics(self):
-        metrics = {}
+    def _calculate_model_metric(self):
         logger.info("Calculating Model Metrics")
         validation_dataframe = self._data._valid_df
 
@@ -376,19 +402,18 @@ class TextClassifier(ArcGISModel):
             labels = [[int(getattr(item, column)) for column in self._data._label_cols]
                       for idx, item in validation_dataframe.iterrows()]
 
-            metrics["accuracy_thresh"] = accuracy_thresh \
-                (torch.tensor(predictions), torch.tensor(labels), thresh=self.thresh, sigmoid=False)
+            metric = accuracy_thresh \
+                (torch.tensor(predictions), torch.tensor(labels), thresh=self.thresh, sigmoid=False).item()
         else:
             predictions = [x[1] for x in self.predict(validation_dataframe[self._data._text_cols].tolist())]
             labels = [x[0] for x in validation_dataframe[self._data._label_cols].values]
-            metrics["accuracy"] = round((np.sum(np.array(predictions) == labels) / len(labels)), 4)
-            metrics["error_rate"] = round(1 - metrics["accuracy"], 4)
+            metric = round((np.sum(np.array(predictions) == labels) / len(labels)), 4)
 
-        return metrics
+        return metric
 
     def _predict(self, text, thresh=None):
         if thresh is None: thresh = self.thresh
-        result = self.learn.model.predict_class(text, self.is_multilabel_problem, thresh)
+        result = self.learn.model.predict_class(text, self._device, self.is_multilabel_problem, thresh)
         return result
 
     def predict(self, text_or_list, show_progress=True, thresh=None):
@@ -440,7 +465,9 @@ class TextClassifier(ArcGISModel):
             return (text_or_list, *preds)
 
     def _save_df_to_html(self, path):
-        self._check_requisites()
+        if getattr(self._data, '_is_empty', False):
+            copy_metrics(self._data.emd_path, path, model_characteristics_folder)
+            return
         validation_dataframe = self._data._valid_df.sample(n=5)
         if self.is_multilabel_problem:
             predictions = [x[1] for x in self.predict(validation_dataframe[self._data._text_cols].tolist(),
@@ -467,7 +494,7 @@ class TextClassifier(ArcGISModel):
 
         save_data_in_model_metrics_html(text, path, model_characteristics_folder)
 
-    def get_precision_recall_score(self):
+    def metrics_per_label(self):
         """
         :returns: precision, recall and f1 score for each label in the classification model.
         """

@@ -365,11 +365,13 @@ def load_model(emd_path, data=None):
 
     return model_obj
 
+
 def _temp_dlpk(dlpk_path):
     with ZipFile(dlpk_path, 'r') as zip_obj:
         temp_dir = tempfile.TemporaryDirectory().name
         zip_obj.extractall(temp_dir)
     return temp_dir
+
 
 def _get_emd_path(emd_path):
     emd_path = Path(emd_path)
