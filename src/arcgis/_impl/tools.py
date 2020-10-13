@@ -9894,7 +9894,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                              path_type=None,
                              context=None,
                              future=False,
-                             create_network_paths="DESTINATION_TO_SOURCES",
+                             create_network_paths="DESTINATIONS_TO_SOURCES",
                              **kwargs):
         """
         Parameters
@@ -9988,10 +9988,10 @@ class _RasterAnalysisTools(BaseAnalytics):
             if isinstance(create_network_paths, str):
                 if create_network_paths.upper() == "NETWORK_PATHS":
                     create_network_paths = True
-                elif create_network_paths.upper() == "DESTINATION_TO_SOURCES":
+                elif create_network_paths.upper() == "DESTINATIONS_TO_SOURCES":
                     create_network_paths = False
             if not isinstance(create_network_paths, bool):
-                raise RuntimeError('create_network_paths should be one of the following - NETWORK_PATHS, DESTINATION_TO_SOURCES or should be of type bool.')
+                raise RuntimeError('create_network_paths should be one of the following - NETWORK_PATHS, DESTINATIONS_TO_SOURCES or should be of type bool.')
 
         if self._current_version is not None:
             current_version = self._current_version

@@ -5252,7 +5252,7 @@ def optimal_path_as_line(input_destination_data,
                                              overlapping, paths from the destinations to the sources are calculated 
                                              or if  nonoverlapping network paths are created.
 
-                                             `DESTINATION_TO_SOURCES` (False): Complete paths from the destinations 
+                                             `DESTINATIONS_TO_SOURCES` (False): Complete paths from the destinations 
                                               to the sources are calculated, which can be overlapping.  This is default.
 
                                              `NETWORK_PATHS` (True): Nonoverlapping network paths are calculated.
