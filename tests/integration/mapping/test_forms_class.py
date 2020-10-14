@@ -196,7 +196,7 @@ class Test_Forms(unittest.TestCase):
             group = FormGroupElement(form, label="Group 1")
             group = form.add_element(group)
             el = group.add_element(field_name="facname")
-            got_el = form.get_element(element=el)
+            got_el = form.get_element(el.label)
             self.assertIsInstance(got_el, FormFieldElement)
 
         except AssertionError as assertErrorException:
@@ -285,7 +285,7 @@ class Test_Forms(unittest.TestCase):
 
             el = group.add_element(field_name="facname")
             self.assertEqual(len(group.elements), 1)
-            got_el = group.get_element(el)
+            got_el = group.get_element(el.label)
             self.assertIsInstance(got_el, FormInfo)
             group.delete_element(el)
             self.assertEqual(len(group.elements), 0)
