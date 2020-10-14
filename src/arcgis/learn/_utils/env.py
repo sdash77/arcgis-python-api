@@ -84,6 +84,7 @@ def do_fastai_imports():
         import torch
         import torchvision
         import skimage
+        from .patches import precondition
         HAS_FASTAI = True
     except Exception as e:
         fastai_import_exception = traceback.format_exc()
