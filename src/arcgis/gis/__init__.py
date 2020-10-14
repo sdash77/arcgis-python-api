@@ -10004,8 +10004,36 @@ class Item(dict):
                     flc = FeatureLayerCollection.fromitem(r_item)
                     flc_mgr = flc.manager
 
-                    #get the publish parameters from FLC manager
-                    publish_parameters = flc_mgr._gen_overwrite_publishParameters(r_item)
+                    # get the publish parameters from FLC manager
+                    publish_parameters, update_params = flc_mgr._gen_overwrite_publishParameters(r_item)
+                    if update_params:  # when overwriting file on portals, need to update source item metadata
+                        self.update(item_properties=update_params)
+
+                    # if source file type is CSV or Excel, blend publish parameters with analysis results
+                    if fileType == 'CSV':
+                        publish_parameters_orig = publish_parameters
+                        path = "content/features/analyze"
+
+                        postdata = {
+                            "f": "pjson",
+                            "itemid": self.itemid,
+                            "filetype": "csv",
+
+                            "analyzeParameters": {
+                                "enableGlobalGeocoding": "true",
+                                "sourceLocale": "en-us",
+                                # "locationType":"address",
+                                "sourceCountry": "",
+                                "sourceCountryHint": ""
+                            }
+                        }
+
+                        if address_fields is not None:
+                            postdata['analyzeParameters']['locationType'] = 'address'
+
+                        res = self._portal.con.post(path, postdata)
+                        publish_parameters = res['publishParameters']
+                        publish_parameters.update(publish_parameters_orig)
 
                 elif len(related_items) == 0:
                     # the CSV item was never published. Hence overwrite should work like first time publishing - analyze csv
