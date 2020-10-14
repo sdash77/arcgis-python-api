@@ -495,11 +495,17 @@ class FormInfo:
 
     def _get_id_fields(self):
         """Returns the id fields in lower case"""
-        return [self._feature_layer.properties.get("objectIdField").lower(), self._feature_layer.properties.get("globalIdField").lower()]
+        try:
+            return [self._feature_layer.properties.get("objectIdField").lower(), self._feature_layer.properties.get("globalIdField").lower()]
+        except:
+            return []
 
     def _get_edit_fields(self):
         """Gets the edit fields for the feature layer in order to filter them out of the form"""
-        return [x.lower() for x in list(self._feature_layer.properties.get("editFieldsInfo", {}).values())]
+        try:
+            return [x.lower() for x in list(self._feature_layer.properties.get("editFieldsInfo", {}).values())]
+        except:
+            return []
 
     def _get_form_element_objects(self, form_elements):
         """Shared between FormInfo and FormGroupElement to construct an array of FormElement objects from dictionaries for external usage"""
@@ -895,6 +901,7 @@ class FormGroupElement(FormElement):
         if label:
             element = self.get_element(label=label)
         try:
+            self._form_obj._remove_linked_expression_infos(element)
             self._form_elements.remove(element._element)
             return self.form_elements.remove(element)
         except Exception:
