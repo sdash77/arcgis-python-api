@@ -66,9 +66,9 @@ class Test_FeatureLayerCollectionManager_portal(unittest.TestCase):
         _conf_reader = ConfigParser()
         _conf_reader.read(DinoConfigs.portal_list_file, 'UTF-8')
 
-        cls.portal_url = _conf_reader['teamportal']['url']
-        cls.portal_username = _conf_reader['teamportal']['admin_user']
-        cls.portal_password = _conf_reader['teamportal']['admin_password']
+        cls.portal_url = _conf_reader['datascienceqa']['url']
+        cls.portal_username = _conf_reader['datascienceqa']['admin_user']
+        cls.portal_password = _conf_reader['datascienceqa']['admin_password']
 
         _conf_reader2 = ConfigParser()
         _conf_reader2.read(DinoConfigs.root_init_file, 'UTF-8')
