@@ -4,7 +4,7 @@ try:
     import torch
     import torch.nn as nn
     import math
-    from .util import scale_batch
+    from .util import scale_batch, variable_tile_size_check
     HAS_TORCH = True
 except Exception as e:
     HAS_TORCH = False
@@ -155,9 +155,7 @@ class ChildInstanceDetector:
         if model_as_file and not os.path.isabs(model_path):
             model_path = os.path.abspath(os.path.join(os.path.dirname(model), model_path))
 
-        self.mask_rcnn = MaskRCNN.from_model(emd_path=model)
-        self.model = self.mask_rcnn.learn.model.to(self.device)
-        self.model.eval()
+        self.model_emd = model
 
         
     def getParameterInfo(self, required_parameters):
@@ -198,17 +196,24 @@ class ChildInstanceDetector:
                 }            
             ]
         )
+        required_parameters = variable_tile_size_check(self.json_info, required_parameters)
         return required_parameters
 
     def getConfiguration(self, **scalars):
-        self.padding = int(scalars.get('padding', self.json_info['ImageHeight'] // 4)) ## Default padding Imageheight//4.
+        self.tytx = int(scalars.get('tile_size', self.json_info['ImageHeight']))
+        self.mask_rcnn = MaskRCNN.from_model(emd_path=self.model_emd, chip_size=self.tytx)
+        self.model = self.mask_rcnn.learn.model.to(self.device)
+        self.model.eval()
+
+        #
+        self.padding = int(scalars.get('padding', self.tytx // 4)) ## Default padding Imageheight//4.
         self.batch_size = int(math.sqrt(int(scalars.get('batch_size', 4)))) ** 2  ## Default 4 batch_size        
         self.threshold = float(scalars.get('threshold', 0.9)) ## Default 0.9 threshold.
         self.return_bboxes = eval(scalars.get('return_bboxes', 'False'))
 
         self.rectangle_height, self.rectangle_width = calculate_rectangle_size_from_batch_size(self.batch_size)
-        ty, tx = get_tile_size(self.json_info['ImageHeight'], self.json_info['ImageWidth'],
-                                         self.padding, self.rectangle_height, self.rectangle_width)
+        ty, tx = get_tile_size(self.tytx, self.tytx, self.padding, self.rectangle_height, self.rectangle_width)
+
 
         return {
             'extractBands': tuple(self.json_info['ExtractBands']),
@@ -223,8 +228,8 @@ class ChildInstanceDetector:
         input_image = pixelBlocks['raster_pixels'].astype(np.float32)
         batch, batch_height, batch_width = \
             tile_to_batch(input_image,
-                                    self.json_info['ImageHeight'],
-                                    self.json_info['ImageWidth'],
+                                    self.tytx,
+                                    self.tytx,
                                     self.padding,
                                     fixed_tile_size=True,
                                     batch_height=self.rectangle_height,
@@ -239,7 +244,7 @@ class ChildInstanceDetector:
                                     self.model,
                                     img_normed,
                                     self.device,
-                                    self.json_info['ImageHeight'],
+                                    self.tytx,
                                     threshold=self.threshold,
                                     batch_size=self.batch_size,
                                     return_bboxes=self.return_bboxes) 
@@ -269,7 +274,7 @@ def pixel_mask_image(model, img_normed, device, chip_size, threshold=0.5, batch_
     
     for batch_idx in range(len(predictions)):
         i, j = batch_idx//side, batch_idx % side
-        masks = predictions[batch_idx]['masks'].squeeze()
+        masks = predictions[batch_idx]['masks'].squeeze().detach().cpu().numpy()
         if masks.shape[0] != 0: # handle for prediction with n masks
             if len(masks.shape) == 2:  # for mask dimension hxw (in case of only one predicted mask)
                 masks = masks[None]

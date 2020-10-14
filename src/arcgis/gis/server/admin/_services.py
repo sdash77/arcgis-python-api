@@ -933,6 +933,7 @@ class Service(BaseServer):
     **(This should not be created by a user)**
 
     """
+    _ii = None
     _con = None
     _frameworkProperties = None
     _recycleInterval = None
@@ -1074,7 +1075,7 @@ class Service(BaseServer):
     #----------------------------------------------------------------------
     @property
     def extensions(self):
-        """lists the extensions on a service"""
+        """lists the :class:`extensions <arcgis.gis.server.Extension>` on a service"""
         if self._extensions is None:
             self._init()
         return self._extensions
@@ -1704,7 +1705,7 @@ class ItemInformationManager(BaseServer):
         :returns: Dict
 
         """
-        url = "{base}/manifest/manifest.json"
+        url = "{base}/manifest/manifest.json".format(base=self._url)
         params = {'f' : 'json'}
 
         return self._con.get(url, params)

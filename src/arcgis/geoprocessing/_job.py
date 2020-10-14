@@ -105,6 +105,23 @@ class GPJob(object):
         return self._task_name
     #----------------------------------------------------------------------
     @property
+    def messages(self):
+        """
+        Returns the service's messages
+        
+        :returns: List
+        """
+        url = self._url + "/jobs/%s" % self._jobid
+        params = {'f' : 'json',
+                  'returnMessages': True}
+
+
+        res = self._gis._con.post(url, params)
+        if 'messages' in res:
+            return res['messages']
+        return []
+    #----------------------------------------------------------------------
+    @property
     def status(self):
         """
         returns the GP status
@@ -203,7 +220,7 @@ class GPJob(object):
                 if isinstance(value, dict) and 'featureSet' in value:
                     r[key] = arcgis.features.FeatureCollection(value)
                 elif isinstance(value, dict) and 'url' in value and value['url'].lower().find("imageserver"):
-                    return arcgis.raster.ImageryLayer(url=value['url'], gis=self._gis)
+                    return value["url"]
                 elif isinstance(value, dict) and 'url' in value and value['url'].lower().find("featureserver"):
                     return arcgis.features.FeatureLayerCollection(url=value['url'], gis=self._gis)
                 elif isinstance(value, dict) and 'itemId' in value and len(value['itemId']) > 0:
@@ -218,10 +235,20 @@ class GPJob(object):
             return r
         else:
             value = result
-            if isinstance(value, (DataFile, RasterData, LinearUnit)):
+            if self.task == 'AlterProcessingStates':
+                if isinstance(value, dict):
+                    return value
+                elif isinstance(value, str):
+                    processing_states = value.replace("'",'"')
+                    processing_states=json.loads( processing_states.replace('u"','"'))
+                    return processing_states
+
+            if isinstance(value, DataFile):
+                return self._gis._con.post(value.to_dict()["url"], {})
+            if isinstance(value, (RasterData, LinearUnit)):
                 return value
             elif isinstance(value, str) and value.lower().find('imageserver') >-1:
-                return arcgis.raster.ImageryLayer(url=value, gis=self._gis)
+                return value
             elif isinstance(value, (dict, tuple, list)) == False:
                 return value
             elif 'itemId' in value and \
@@ -237,7 +264,7 @@ class GPJob(object):
                 data = value['content']
                 return pd.DataFrame(data, columns=columns)
             elif isinstance(value, dict) and 'url' in value and value['url'].lower().find("imageserver"):
-                return arcgis.raster.ImageryLayer(url=value['url'], gis=self._gis)
+                return value["url"]
             elif isinstance(value, dict) and 'url' in value and value['url'].lower().find("featureserver"):
                 return arcgis.features.FeatureLayerCollection(url=value['url'], gis=self._gis)
             elif isinstance(value, dict) and 'featureSet' in value:

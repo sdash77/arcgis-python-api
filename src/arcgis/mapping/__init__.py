@@ -7,6 +7,12 @@ MapImageLayer, SceneLayer and VectorTileLayer.
 
 from ._types import WebMap, WebScene, MapImageLayer, MapImageLayerManager, VectorTileLayer, OfflineMapAreaManager, PackagingJob
 from ._types import SceneLayer
+from arcgis.mapping._scenelyrs import Object3DLayer, IntegratedMeshLayer, Point3DLayer
+from arcgis.mapping._scenelyrs import PointCloudLayer, BuildingLayer
+from arcgis.mapping._msl import (MapServiceLayer,
+                                 MapFeatureLayer,
+                                 MapTable,
+                                 MapRasterLayer)
 from ._utils import export_map, get_layout_templates
 from .symbol import create_symbol, display_colormaps, show_styles
 from .renderer import generate_renderer

@@ -249,10 +249,10 @@ class LogManager(BaseServer):
         url = "{url}/query".format(url=self._url)
         if start_time is not None and \
            isinstance(start_time, datetime):
-            params['startTime'] = start_time.strftime("%Y-%m-%dT%H:%M:%S")
+            params['startTime'] = start_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
         if end_time is not None and \
            isinstance(end_time, datetime):
-            params['endTime'] = end_time.strftime("%Y-%m-%dT%H:%M:%S")
+            params['endTime'] = end_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
         if level.upper() in allowed_levels:
             params['level'] = level
         if server != "*":

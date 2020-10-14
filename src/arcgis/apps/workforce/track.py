@@ -4,10 +4,12 @@
 from .feature_model import FeatureModel
 from ._store import *
 from ._schemas import TrackSchema
+from .exceptions import WorkforceError
 
 
 class Track(FeatureModel):
-    """ Represents a track feature, which describes the historical location of a worker.
+    """ Represents a track feature, which describes the historical location of a worker. V1 Projects
+        only.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -24,6 +26,8 @@ class Track(FeatureModel):
     """
 
     def __init__(self, project, feature=None, geometry=None, accuracy=None):
+        if project.tracks is None:
+            raise WorkforceError("This Workforce Project does not support tracks.")
         super().__init__(project, project.tracks_layer, feature)
         self._schema = TrackSchema(project.tracks_layer)
         if not feature:

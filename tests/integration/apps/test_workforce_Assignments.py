@@ -79,7 +79,6 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
         self.project.assignments.add(
             assignment_type=self.project.assignment_types.get(name="Inspection"),
             assigned_date=datetime.datetime(2018, 4, 15),
-            assignment_read=True,
             description="test description",
             dispatcher=self.dispatcher,
             due_date=datetime.datetime(2018, 4, 22),
@@ -99,7 +98,6 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
         self.project.assignments.add(
             assignment_type=self.project.assignment_types.get(name="Inspection"),
             assigned_date=datetime.datetime(2018, 4, 15),
-            assignment_read=True,
             description="test description",
             dispatcher=self.dispatcher,
             due_date=datetime.datetime(2018, 4, 22),
@@ -130,7 +128,6 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
     def reset_project(self):
         self.project.assignments.batch_delete(self.project.assignments.search())
         self.project.assignment_types.batch_delete(self.project.assignment_types.search())
-        self.project.tracks.batch_delete(self.project.tracks.search())
         self.project.workers.batch_delete(self.project.workers.search())
         self.project.dispatchers.batch_delete(self.project.dispatchers.search(where="{} <> '{}'".format(self.project._dispatcher_schema.user_id, 'ar_workforce_python_api')))
 
@@ -156,9 +153,11 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
         cls.portal_url = _conf_reader['workforce_ago']['url']
         cls.portal_username = _conf_reader['workforce_ago']['publisher_user']
         cls.portal_password = _conf_reader['workforce_ago']['publisher_password']
-        cls.project_id = "f3b6cff0d32e4362933e01a6b44648c0"
         cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
-        cls.project = Project(cls.gis.content.get(cls.project_id))
+        t = datetime.datetime.now()
+        cls.time_stamp = str.format("Time stamp: {0}_{1}_{2}_{3}_{4}_{5}", str(t.year),
+                                    str(t.month), str(t.day), str(t.hour), str(t.minute), str(t.second))
+        cls.project = create_project(cls.time_stamp)
 
 
         r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
@@ -184,24 +183,12 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        try:
+            cls.project.delete()
+        except Exception as e:
+            print("Failed to delete project successfully!")
         print("\n==================================================================")
 
-    def test_search_assignment(self):
-        try:
-            assignments = self.project.assignments.search("assignmentType=0")
-            self.assertEqual(len(assignments), 0, "Incorrect number of assignments")
-            assignments = self.project.assignments.search("assignmentType=2")
-            self.assertEqual(len(assignments), 2, "Incorrect number of assignments")
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
-        except Exception as testException:
-            self.fail("Error during test: " + testException.__str__())
 
     def test_update_assignment(self):
         try:
@@ -299,12 +286,10 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
             self.assertEqual(assignment.geometry, {"x": 123, "y": 456}, "Incorrect geometry")
             self.assertEqual(assignment.assignment_type.name, "Inspection", "Incorrect assignment type")
             self.assertEqual(assignment.assigned_date.date(), datetime.datetime(2018, 4, 15).date(), "Incorrect assigned date")
-            self.assertEqual(assignment.assignment_read, True, "Incorrect assignment read")
             self.assertEqual(assignment.completed_date.date(), datetime.datetime(2018, 4, 21).date(), "Incorrect completed date")
             self.assertEqual(assignment.declined_comment, None, "Incorrect declined comment")
             self.assertEqual(assignment.declined_date, None, "Incorrect declined date")
             self.assertEqual(assignment.description, "test description", "Incorrect description")
-            self.assertEqual(assignment.dispatcher.id, 1, "Incorrect dispatcher id")
             self.assertEqual(assignment.due_date.date(), datetime.datetime(2018, 4, 22).date(), "Incorrect due date")
             self.assertEqual(assignment.in_progress_date.date(), datetime.datetime(2018, 4, 18).date(), "Incorrect in progress date")
             self.assertEqual(assignment.location, "here", "Incorrect location")
@@ -335,11 +320,9 @@ class Test_Workforce_Assignments_With_Assignments(unittest.TestCase):
             self.assertEqual(assignment.assignment_type.name, "Inspection", "Incorrect assignment type")
             self.assertEqual(assignment.assigned_date.date(), datetime.datetime(2018, 4, 15).date(),
                              "Incorrect assigned date")
-            self.assertEqual(assignment.assignment_read, True, "Incorrect assignment read")
             self.assertEqual(assignment.declined_comment, "declined", "Incorrect declined comment")
             self.assertEqual(assignment.declined_date.date(), datetime.datetime(2018, 4, 18).date(), "Incorrect declined date")
             self.assertEqual(assignment.description, "test description", "Incorrect description")
-            self.assertEqual(assignment.dispatcher.id, 1, "Incorrect dispatcher id")
             self.assertEqual(assignment.due_date.date(), datetime.datetime(2018, 4, 22).date(),
                              "Incorrect due date")
             self.assertEqual(assignment.location, "here", "Incorrect location")
@@ -529,7 +512,18 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
                 dispatcher=self.dispatcher,
                 assignment_type=self.inspection,
             )
-            assignments = self.project.assignments.batch_add([assignment, assignment2])
+            # add assignment without assigned date
+            assignment3 = Assignment(
+                self.project,
+                geometry={"x": 123, "y": 456},
+                status="assigned",
+                location="A location",
+                description="Do some work",
+                dispatcher=self.dispatcher,
+                assignment_type=self.inspection,
+                worker=self.worker
+            )
+            assignments = self.project.assignments.batch_add([assignment, assignment2, assignment3])
             # test fetching the new assignment
             downloaded_assignment1 = self.project.assignments.search()[0]
             downloaded_assignment2 = self.project.assignments.search()[1]
@@ -649,17 +643,6 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
                     dispatcher=self.dispatcher,
                     assignment_type=self.inspection
                 )
-            # assigned without date
-            with self.assertRaises(ValidationError):
-                self.project.assignments.add(
-                    geometry={"x": 123, "y": 456},
-                    status="assigned",
-                    location="A location",
-                    description="Do some work",
-                    dispatcher=self.dispatcher,
-                    assignment_type=self.inspection,
-                    worker=self.worker
-                )
             # assigned without worker
             with self.assertRaises(ValidationError):
                 self.project.assignments.add(
@@ -671,44 +654,6 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
                     assignment_type=self.inspection,
                     assigned_date=datetime.datetime.now()
                 )
-            # in progress no progress date
-            with self.assertRaises(ValidationError):
-                self.project.assignments.add(
-                    geometry={"x": 123, "y": 456},
-                    status="inprogress",
-                    location="A location",
-                    description="Do some work",
-                    dispatcher=self.dispatcher,
-                    assignment_type=self.inspection,
-                    worker=self.worker,
-                    assigned_date=datetime.datetime.now()
-                )
-            # completed no completed date
-            with self.assertRaises(ValidationError):
-                self.project.assignments.add(
-                    geometry={"x": 123, "y": 456},
-                    status="completed",
-                    location="A location",
-                    description="Do some work",
-                    dispatcher=self.dispatcher,
-                    assignment_type=self.inspection,
-                    worker=self.worker,
-                    assigned_date=datetime.datetime.now(),
-                    in_progress_date=datetime.datetime.now()
-                )
-            # paused no paused date
-            with self.assertRaises(ValidationError):
-                self.project.assignments.add(
-                    geometry={"x": 123, "y": 456},
-                    status="paused",
-                    location="A location",
-                    description="Do some work",
-                    dispatcher=self.dispatcher,
-                    assignment_type=self.inspection,
-                    worker=self.worker,
-                    assigned_date=datetime.datetime.now(),
-                    in_progress_date=datetime.datetime.now()
-                )
             # declined no comment
             with self.assertRaises(ValidationError):
                 self.project.assignments.add(
@@ -719,19 +664,6 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
                     dispatcher=self.dispatcher,
                     assignment_type=self.inspection,
                     worker=self.worker,
-                    declined_date=datetime.datetime.now()
-                )
-            # declined no date
-            with self.assertRaises(ValidationError):
-                self.project.assignments.add(
-                    geometry={"x": 123, "y": 456},
-                    status="declined",
-                    location="A location",
-                    description="Do some work",
-                    dispatcher=self.dispatcher,
-                    assignment_type=self.inspection,
-                    worker=self.worker,
-                    assigned_date=datetime.datetime.now(),
                     declined_date=datetime.datetime.now()
                 )
 

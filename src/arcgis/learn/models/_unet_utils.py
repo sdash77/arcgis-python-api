@@ -3,7 +3,12 @@ from fastai.vision.image import open_image, show_image, pil2tensor
 from fastai.vision.data import SegmentationProcessor, ImageList
 from fastai.layers import CrossEntropyFlat
 from fastai.basic_train import LearnerCallback
-from .._utils.common import ArcGISMSImage
+from fastai.core import is_listy
+from .._utils.common import ArcGISMSImage, get_top_padding, kwarg_fill_none, \
+    find_data_loader, get_nbatches, dynamic_range_adjustment, image_tensor_checks_plotting, \
+    get_symbology_bands, predict_batch, denorm_x, get_nbatches, GDAL_INSTALL_MESSAGE
+from .._utils.env import HAS_GDAL
+from .._utils.pixel_classification import analyze_pred_pixel_classification
 import torch
 import warnings
 import PIL
@@ -21,16 +26,16 @@ def _class_array_to_rbg(ca : 'classified_array', cm : 'color_mapping', nodata=0)
     im[white_mask] = 255
     return im
 
-#def _show_batch_unet_multispectral(self, nrows=3, ncols=3, n_items=None, index=0, rgb_bands=None, nodata=0, alpha=0.7, imsize=5): # Proposed Parameters 
+#def _show_batch_unet_multispectral(self, nrows=3, ncols=3, n_items=None, index=0, rgb_bands=None, nodata=0, alpha=0.7, imsize=5): # Proposed Parameters
 def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # parameters adjusted in kwargs
     import matplotlib.pyplot as plt
     from .._data import _tensor_scaler
-   
+
     nrows = rows
     ncols = 3
     if kwargs.get('ncols', None) is not None:
         ncols = kwargs.get('ncols')
-    
+
     n_items = None
     if kwargs.get('n_items', None) is not None:
         n_items = kwargs.get('n_items')
@@ -43,7 +48,7 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
     elif type_data_loader == 'testing':
         data_loader = self.test_dl
     else:
-        e = Exception(f'could not find {type_data_loader} in data.')
+        e = Exception(f'could not find {type_data_loader} in data. Please ensure that the data loader type is traininig, validation or testing ')
         raise(e)
 
     rgb_bands = self._symbology_rgb_bands
@@ -86,18 +91,12 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
         nrows = math.ceil(n_items/ncols)
     n_items = min(n_items, len(self.x))
 
-    x_batch, y_batch = [], []
-    i = 0
-    dl_iterater = iter(data_loader)
-    while i < n_items:
-        x, y = next(dl_iterater)
-        x_batch.append(x)
-        y_batch.append(y)
-        i+=self.batch_size
+    x_batch, y_batch = get_nbatches(data_loader, n_items)
     x_batch = torch.cat(x_batch)
+    y_batch = torch.cat(y_batch)
     # Denormalize X
     x_batch = (self._scaled_std_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._scaled_mean_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)
-    y_batch = torch.cat(y_batch)
+
 
     # Extract RGB Bands
     symbology_x_batch = x_batch[:, symbology_bands]
@@ -122,19 +121,22 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
     color_array[1:, 3] = alpha
 
     # Size for plotting
-    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
     idx = 0
     for r in range(nrows):
         for c in range(ncols):
+            if nrows == 1 and ncols == 1:
+                axi = axs
+            else:
+                axi = axs[r][c]
             if idx < symbology_x_batch.shape[0]:
-                axi  = ax[r][c]
                 axi.imshow(symbology_x_batch[idx])
                 y_rgb = color_array[y_batch[idx][0]]#.cpu().numpy()
                 #y_rgb = _class_array_to_rbg(y_batch[idx][0], self._multispectral_color_mapping, nodata)
                 axi.imshow(y_rgb, alpha=alpha)
                 axi.axis('off')
             else:
-                ax[r][c].axis('off')
+                axi.axis('off')
             idx+=1
 
 class ArcGISImageSegment(Image):
@@ -162,11 +164,22 @@ class ArcGISImageSegment(Image):
             ## This condition will not be true.
             ax = show_image(self, ax=ax, hide_axis=hide_axis, cmap="tab20", figsize=figsize,
                         interpolation='nearest', alpha=alpha, vmin=0, **kwargs)
-        else:     
+        else:
             color_mapping = torch.tensor(list(self.color_mapping.values()))
             color_mapping = torch.cat((color_mapping.float()/255, torch.tensor([float(alpha)] * len(color_mapping)).view(-1, 1)), dim=1)
             color_mapping = torch.cat((torch.tensor([0., 0., 0., 0.]).view(1, -1), color_mapping), dim=0)
-            ax = show_image(color_mapping[self.data[0]].permute(2, 0, 1), ax=ax, hide_axis=hide_axis, cmap=cmap, figsize=figsize,
+            try:
+                color_im = color_mapping[self.data[0]].permute(2, 0, 1)
+            except IndexError as e:
+
+                if HAS_GDAL:
+                    message = f"Encountered invalid values in training label values, please check your training data."
+                else:
+                    message = f"Encountered invalid values while reading training labels. Please install gdal for better support.\n\n" + GDAL_INSTALL_MESSAGE
+
+                raise Exception(f"{e} \n\n{message}")
+
+            ax = show_image(color_im, ax=ax, hide_axis=hide_axis, cmap=cmap, figsize=figsize,
                             interpolation='nearest', alpha=alpha, vmin=0, **kwargs)
         if title: ax.set_title(title)
 
@@ -207,7 +220,7 @@ class ArcGISSegmentationLabelList(ImageList):
         if not self.is_contiguous:
             self.pixel_mapping = [0] + list(self.class_mapping.keys())
 
-    def open(self, fn):
+    def _open_rgb(self, fn):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning) # EXIF warning from TiffPlugin
             x = PIL.Image.open(fn)
@@ -219,21 +232,49 @@ class ArcGISSegmentationLabelList(ImageList):
 
         if not self.is_contiguous:
             x = map_to_contiguous(x, self.pixel_mapping)
+
         return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
-    def analyze_pred(self, pred, thresh:float=0.5): 
-        return pred.argmax(dim=0)[None]
+    def analyze_pred(self, pred, thresh=0.5, ignore_mapped_class=[], model=None, thinning=None):
 
-    def reconstruct(self, t): 
+        if getattr(model, "_is_model_extension", False):
+
+            if thinning is None:
+                pred = model.model_conf.post_process(pred, thresh)
+            else:
+                pred = model.model_conf.post_process(pred, thresh, thinning)
+            return pred
+
+        if is_listy(pred):
+            pred = pred[0]
+
+        if ignore_mapped_class == []:
+            return pred.argmax(dim=0)[None]
+        else:
+            for k in ignore_mapped_class:
+                pred[k] = -1
+            return pred.argmax(dim=0)[None]
+
+    def reconstruct(self, t):
         return ArcGISImageSegment(t, color_mapping=self.color_mapping)
+
+    def open(self, fn):
+        x = ArcGISMSImage.open(fn).data
+        if not self.is_contiguous:
+            x = map_to_contiguous(x, self.pixel_mapping)
+        return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
 class ArcGISSegmentationItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."
     _label_cls, _square_show_res = ArcGISSegmentationLabelList, False
+    _div = None
+    _imagery_type = None
+    def open(self, fn):
+        return ArcGISMSImage.open(fn, div=self._div, imagery_type=self._imagery_type)
 
 class ArcGISSegmentationMSLabelList(ArcGISSegmentationLabelList):
     def open(self, fn):
-        import gdal
+        from osgeo import gdal
         path = str(os.path.abspath(fn))
         x = gdal.Open(path).ReadAsArray()
         x = torch.tensor(x.astype(np.float32))[None]
@@ -241,17 +282,11 @@ class ArcGISSegmentationMSLabelList(ArcGISSegmentationLabelList):
             x = map_to_contiguous(x, self.pixel_mapping)
         return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
-class ArcGISSegmentationMSItemList(ImageList):
-    "`ItemList` suitable for segmentation tasks."
-    _label_cls, _square_show_res = ArcGISSegmentationMSLabelList, False
-    def open(self, fn):
-        return ArcGISMSImage.open_gdal(fn)
-
 class LabelCallback(LearnerCallback):
     def __init__(self, learn):
         super().__init__(learn)
         self.label_mapping = {value:(idx+1) for idx, value in enumerate(learn.data.class_mapping.keys())}
-        
+
     def on_batch_begin(self, last_input, last_target, **kwargs):
         """
         This callback is not used anymore.
@@ -262,124 +297,90 @@ class LabelCallback(LearnerCallback):
         #     modified_target[last_target==label] = idx
         return {'last_input':last_input, 'last_target':last_target}
 
-def predict_batch(self, imagetensor_batch):
-    predictions = self.learn.model.eval()(imagetensor_batch.to(self._device).float()).detach().cpu()
-    return predictions.max(dim=1)[1]
 
-#def show_results_multispectral(self, nrows=3, index=0, type_ds='valid', rgb_bands=None, nodata=0, alpha=0.7, imsize=5, top=0.97): # Proposed Parameters 
+#def show_results_multispectral(self, nrows=3, index=0, type_ds='valid', rgb_bands=None, nodata=0, alpha=0.7, imsize=5, top=0.97): # Proposed Parameters
 def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
     import matplotlib.pyplot as plt
 
     # Get Number of items
-    nrows = nrows
     ncols = 2
+    return_fig = kwargs.get('return_fig', False)
+    type_data_loader = kwarg_fill_none(kwargs, 'data_loader', 'validation') # options : traininig, validation, testing
+    data_loader = find_data_loader(type_data_loader, self._data)
 
-    type_data_loader = kwargs.get('data_loader', 'validation') # options : traininig, validation, testing
-    if type_data_loader == 'training':
-        data_loader = self._data.train_dl
-    elif type_data_loader == 'validation':
-        data_loader = self._data.valid_dl
-    elif type_data_loader == 'testing':
-        data_loader = self._data.test_dl
-    else:
-        e = Exception(f'could not find {type_data_loader} in data.')
-        raise(e)
+    nodata = kwarg_fill_none(kwargs, 'nodata', 0)
 
-    rgb_bands = self._data._symbology_rgb_bands
-    if kwargs.get('rgb_bands', None) is not None:
-        rgb_bands = kwargs.get('rgb_bands')
+    index = kwarg_fill_none(kwargs, 'index', 0)
 
-    nodata = 0
-    if kwargs.get('nodata', None) is not None:
-        nodata = kwargs.get('nodata')
+    imsize = kwarg_fill_none(kwargs, 'imsize', 5)
 
-    index = 0
-    if kwargs.get('index', None) is not None:
-        index = kwargs.get('index')
+    top = kwargs.get('top', None)
+    title_font_size=16
+    if top is None:
+        top = get_top_padding(
+            title_font_size=title_font_size,
+            nrows=nrows,
+            imsize=imsize
+            )
 
-    imsize = 5
-    if kwargs.get('imsize', None) is not None:
-        imsize = kwargs.get('imsize')
+    statistics_type = kwarg_fill_none(kwargs, 'statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
 
-    title_font_size = 16
-    if kwargs.get('top', None) is not None:
-        top = kwargs.get('top')
-    else:
-        top = 1 - (math.sqrt(title_font_size)/math.sqrt(100*nrows*imsize))
-
-    statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
-
-
-    e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
-    symbology_bands = []
-    if not ( len(rgb_bands) == 3 or len(rgb_bands) == 1 ):
-        raise(e)
-    for b in rgb_bands:
-        if type(b) == str:
-            b_index = self._bands.index(b)
-        elif type(b) == int:
-            self._bands[b] # To check if the band index specified by the user really exists.
-            b_index = b
-        else:
-            raise(e)
-        b_index = self._data._extract_bands.index(b_index)
-        symbology_bands.append(b_index)
-
-    # Get Batch
-    x_batch, y_batch = [], []
-    i = 0
-    dl_iterater = iter(data_loader)
-    while i < nrows:
-        x, y = next(dl_iterater)
-        x_batch.append(x)
-        y_batch.append(y)
-        i+=self._data.batch_size
-    x_batch = torch.cat(x_batch)
-    # Denormalize X
+    # get batches
+    x_batch, y_batch = get_nbatches(data_loader, math.ceil(nrows/self._data.batch_size))
+    symbology_x_batch = x_batch = torch.cat(x_batch)
     y_batch = torch.cat(y_batch)
 
+    symbology_bands = [0, 1, 2]
+    if self._is_multispectral:
+        # Get RGB Bands for plotting
+        rgb_bands = kwarg_fill_none(kwargs, 'rgb_bands', self._data._symbology_rgb_bands)
+
+        # Get Symbology bands
+        symbology_bands = get_symbology_bands(rgb_bands, self._data._extract_bands, self._data._bands)
+
     # Get Predictions
-    predictions = []
+    activation_store = []
     for i in range(0, x_batch.shape[0], self._data.batch_size):
-        predictions.append(predict_batch(self, x_batch[i:i+self._data.batch_size]))
-    predictions = torch.cat(predictions)
+        activations = predict_batch(self, x_batch[i:i+self._data.batch_size])
+        activation_store.append(activations)
+
+    # Analyze Pred
+    predictions = analyze_pred_pixel_classification(self, activation_store)
 
     # Denormalize X
-    x_batch = (self._data._scaled_std_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._data._scaled_mean_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch)
-    
-    # Extract RGB Bands
-    symbology_x_batch = x_batch[:, symbology_bands]
-    if statistics_type == 'DRA':
-        shp = symbology_x_batch.shape
-        min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
-        max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
-        symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
-    
-    # Channel first to channel last for plotting
-    symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
-    # Clamp float values to range 0 - 1
-    if symbology_x_batch.mean() < 1:
-        symbology_x_batch = symbology_x_batch.clamp(0, 1)
+    x_batch = denorm_x(x_batch, self)
 
-    # Squeeze channels if single channel (1, 224, 224) -> (224, 224)
-    if symbology_x_batch.shape[-1] == 1:
-        symbology_x_batch = symbology_x_batch.squeeze()
+    # Extract RGB Bands for plotting
+    symbology_x_batch = x_batch[:, symbology_bands]
+
+    # Apply Image Strecthing
+    if statistics_type == 'DRA':
+        symbology_x_batch = dynamic_range_adjustment(symbology_x_batch)
+
+    symbology_x_batch = image_tensor_checks_plotting(symbology_x_batch)
 
     # Get color Array
     color_array = self._data._multispectral_color_array
     color_array[1:, 3] = alpha
 
     # Size for plotting
-    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
+    nrows = min(nrows, symbology_x_batch.shape[0])
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
+    plt.subplots_adjust(top=top)
     fig.suptitle('Ground Truth / Predictions', fontsize=title_font_size)
     for r in range(nrows):
-        ax[r][0].imshow(symbology_x_batch[r])
-        y_rgb = color_array[y_batch[r][0]]
-        ax[r][0].imshow(y_rgb, alpha=alpha)
-        ax[r][0].axis('off')
-        ax[r][1].imshow(symbology_x_batch[r])
-        p_rgb = color_array[predictions[r]]
-        ax[r][1].imshow(p_rgb, alpha=alpha)
-        ax[r][1].axis('off')
-        plt.subplots_adjust(top=top)
-    return ax
+        if nrows==1:
+            axi = axs
+        else:
+            axi  = axs[r]
+        if r < symbology_x_batch.shape[0]:
+            axi[0].imshow(symbology_x_batch[r].cpu().numpy())
+            y_rgb = color_array[y_batch[r][0]]
+            axi[0].imshow(y_rgb, alpha=alpha)
+            axi[1].imshow(symbology_x_batch[r].cpu().numpy())
+            p_rgb = color_array[predictions[r]]
+            axi[1].imshow(p_rgb, alpha=alpha)
+        axi[0].axis('off')
+        axi[1].axis('off')
+    if return_fig:
+        return fig,axi

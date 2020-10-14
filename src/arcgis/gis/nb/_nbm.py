@@ -169,17 +169,21 @@ class NotebookManager(object):
             def _fn(url, params, nbs):
                 import time
                 resp = self._gis._con.post(url, params)
-                if resp['status'] == 'success':
+                if 'status' in resp and \
+                   resp['status'] == 'success':
                     job_id = resp['jobId']
                     status = nbs.system.job_details(job_id)  
                     i = 0
                     while (status['status'].lower() != 'completed'):
                         time.sleep(.3)
-                        if status['status'].lower().find('fail') > -1 or\
-                           status['status'].lower().find('error') > -1:
+                        if status['status'].lower() == 'failed':
+                            return status
+                        elif status['status'].lower().find('fail') > -1 or\
+                             status['status'].lower().find('error') > -1:
                             raise Exception(f"Job Fail {jobstatus}")
                         status = nbs.system.job_details(job_id)  
                     return status
+                return resp
             return NotebookManager._future_job(fn=_fn, 
                                                task_name='Execute Notebook', 
                                                gis=self._gis, 

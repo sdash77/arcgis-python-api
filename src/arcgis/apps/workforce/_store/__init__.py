@@ -2,6 +2,7 @@
 """
 from . import assignments
 from . import assignment_types
+from . import assignment_types_v2
 from . import attachments
 from . import dispatchers
 from . import workers
@@ -16,6 +17,16 @@ from .assignment_types import (
     delete_assignment_types,
     add_assignment_type,
     update_assignment_type
+)
+
+from .assignment_types_v2 import (
+    get_assignment_type_v2,
+    get_assignment_types_v2,
+    add_assignment_types_v2,
+    update_assignment_types_v2,
+    delete_assignment_types_v2,
+    add_assignment_type_v2,
+    update_assignment_type_v2
 )
 
 from .assignments import (
@@ -46,8 +57,19 @@ from .dispatchers import (
     update_dispatcher
 )
 
+from .integrations import (
+    get_integration,
+    query_integrations,
+    add_integration,
+    add_integrations,
+    update_integration,
+    update_integrations,
+    delete_integrations
+)
+
 from .projects import (
-    get_project
+    get_project,
+    create_project
 )
 
 from .tracks import (

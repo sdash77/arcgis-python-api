@@ -11,15 +11,21 @@ try:
 except ImportError:
     HASARCPY = False
 
-import os
 import sys
+if sys.platform == 'win32':
+    try:
+        import certifi_win32
+    except ImportError:
+        pass
+
+import os
 import copy
 import json
 import uuid
 import datetime
 import mimetypes
 import tempfile
-from urllib.request import urlparse, unquote
+from urllib.request import urlparse, unquote, urljoin
 import requests
 from requests import Session
 from requests_toolbelt.downloadutils import stream
@@ -29,7 +35,7 @@ from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 
-__version__ = "1.8.0"
+__version__ = "1.8.3"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 
@@ -100,15 +106,20 @@ class Connection(object):
         self._username = username
         self._password = password
 
-        self._expiration = kwargs.pop('expiration', 60)
+        self._expiration = kwargs.pop('expiration', 60) or 60
         self._portal_connection = kwargs.pop('portal_connection', None) # For Federated Objects (Portal Connection)
         if isinstance(self._portal_connection, GIS):
             self._portal_connection = self._portal_connection._con
-        
+
         if (self._referer or self._referer is None) and \
            self._portal_connection and \
            str(self._portal_connection._auth).lower() == "home":
             self._referer = None
+        elif baseurl.lower() == 'pro':
+            try:
+                self._referer = arcpy.GetSigninToken().pop('referer', 'http')
+            except:
+                self._referer = kwargs.pop('referer', 'http')
         else:
             self._referer = kwargs.pop('referer', 'http')
 
@@ -232,20 +243,21 @@ class Connection(object):
         self._session.stream = True
         self._session.headers.update(self._header)
         self._session.proxies = proxies
-        
         if self._referer is None and\
            (self._portal_connection and \
            str(self._portal_connection._auth).lower() == "home"):
             self._referer = "http"
             self._session.headers.pop("Referer", None)
+            self._session.headers['Referer'] = json.dumps("")
         elif (self._portal_connection and str(self._portal_connection._auth).lower() == "home"):
             self._referer = "http"
             self._session.headers.pop("Referer", None)
+            self._session.headers['Referer'] = json.dumps("")
         elif self._referer is None:
             self._referer = 'http'
-            self._session.headers.update({'Referer': self._referer})   
+            self._session.headers.update({'Referer': self._referer})
         else:
-            self._session.headers.update({'Referer': self._referer})   
+            self._session.headers.update({'Referer': self._referer})
         if self._custom_auth:
             self._session.auth = self._custom_auth
             self._auth = "CUSTOM"
@@ -256,7 +268,7 @@ class Connection(object):
             self._session.auth = GuessAuth(None, None)
         else:
             try:
-                from .include.requests_negotiate_sspi import HttpNegotiateAuth
+                from requests_negotiate_sspi import HttpNegotiateAuth
                 HAS_KERBEROS = True
             except:
                 HAS_KERBEROS = False
@@ -313,8 +325,11 @@ class Connection(object):
         ---------------------------   -----------------------------------------------------
         add_token                     optional boolean. Default True, if true, the call will
                                       add a token to any token based security.
+        ---------------------------   -----------------------------------------------------
+        json_encode                   optional Boolean.  When False, the JSON values will not be encoded.
         ===========================   =====================================================
         """
+        json_encode = kwargs.pop('json_encode', True)
         if self._baseurl.endswith('/') == False:
             self._baseurl += "/"
         url = path
@@ -330,14 +345,14 @@ class Connection(object):
             url = url.replace("http://", "https://")
         if params is None:
             params = {}
-        if self._auth == "IWA":
-            self._session = None
+        #if self._auth == "IWA":
+        #    self._session = None
         if self._session is None:
             self._create_session()
 
         try_json = kwargs.pop("try_json", True)
         add_token = kwargs.pop('add_token', True)
-            
+
         if add_token:
             if token != _DEFAULT_TOKEN:
                 if token is not None:
@@ -348,22 +363,22 @@ class Connection(object):
             elif token_as_header == False and self.token is not None: #as ?token=
                 params['token'] = self.token
             elif token_as_header and self.token is not None:#(token and token != _DEFAULT_TOKEN): # as X-Esri-Auth header with given token
-                self._session.headers.update({token_header: "Bearer %s" % token})            
+                self._session.headers.update({token_header: "Bearer %s" % token})
             elif token_as_header and token_header and self.token: # as X-Esri-Auth header with generated token
                 self._session.headers.update({token_header: "Bearer %s" % self.token})
         if try_json:
             params['f'] = 'json'
         if params == {}:
             params = None
-        
+
         if 'out_folder' in kwargs:
             out_path = kwargs.pop('out_folder',
-                                  tempfile.gettempdir())            
+                                  tempfile.gettempdir())
         else:
             out_path = kwargs.pop('out_path',
                                   tempfile.gettempdir())
         file_name = kwargs.pop('file_name', None)
-        if params:
+        if params and json_encode:
             for k, v in copy.copy(params).items():
                 if isinstance(v, (tuple, dict, list, bool)):
                     params[k] = json.dumps(v)
@@ -376,9 +391,6 @@ class Connection(object):
                 cert = (self._cert_file, self._key_file)
             else:
                 cert = None
-            if self._auth.lower() == 'pki':
-                self._session.cookies.clear()
-                params.pop('token', None)
             resp = self._session.get(url=url,
                                      params=params,
                                      cert=cert,
@@ -448,8 +460,11 @@ class Connection(object):
         if out_path and \
            os.path.isdir(out_path) == False:
             os.makedirs(out_path)
+        if out_path is None:
+            out_path = tempfile.gettempdir()
         if file_name is None and \
-           resp.headers['Content-Type'].lower().find('json') == -1:
+           (resp.headers['Content-Type'].lower().find('json') == -1 and \
+           resp.headers['Content-Type'].lower().find('text') == -1):
             file_name = _filename_from_url(url) or _filename_from_headers(
                 resp.headers) or None
         if force_bytes:
@@ -467,8 +482,10 @@ class Connection(object):
             return fp
 
         if try_json:
-            if 'Transfer-Encoding' in resp.headers and \
-               resp.headers['Transfer-Encoding'].lower() == 'chunked':  
+            if 'Content-Length' in resp.headers and int(resp.headers.get('Content-Length')) == 0:
+                data = {}
+            elif 'Transfer-Encoding' in resp.headers and \
+               resp.headers['Transfer-Encoding'].lower() == 'chunked':
                 data = None
                 for it in resp.iter_lines(chunk_size=None, decode_unicode=True, delimiter=None):
                     if data is None:
@@ -477,7 +494,7 @@ class Connection(object):
                         data += it
                 data = json.loads(data)
                 if 'error' in data:
-                    raise Exception(resp['error'])                
+                    raise Exception(data['error'])
             else:
                 data = resp.json()
             #if 'error' in data:
@@ -486,6 +503,8 @@ class Connection(object):
         #else:
             #return resp.text
             if 'error' in data:
+                if 'messages' in data:
+                    return data
                 errorcode = data['error']['code'] if 'code' in data['error'] else 0
                 self._handle_json_error(data['error'], errorcode)
             return data
@@ -493,7 +512,10 @@ class Connection(object):
             return resp.text
     #----------------------------------------------------------------------
     def _handle_json_error(self, error, errorcode):
-        errormessage = error.get('message', 'Unknown Error')
+        errormessage = error.get('message')
+        # handles case where message exists in the dictionary but is None
+        if errormessage is None:
+            errormessage = "Unknown Error"
         #_log.error(errormessage)
         if 'details' in error and error['details'] is not None:
             if isinstance(error['details'], str):
@@ -501,9 +523,10 @@ class Connection(object):
                 #_log.error(error['details'])
             else:
                 for errordetail in error['details']:
-                    errormessage = errormessage + "\n" + errordetail
-                    #_log.error(errordetail)
-    
+                    if isinstance(errordetail, str):
+                        errormessage = errormessage + "\n" + errordetail
+                        #_log.error(errordetail)
+
         errormessage = errormessage + "\n(Error Code: " + str(errorcode) +")"
         raise Exception(errormessage)
     #----------------------------------------------------------------------
@@ -565,11 +588,14 @@ class Connection(object):
         add_headers                   optional dict.  If provided, additional headers will be given for a single call.
         ---------------------------   -----------------------------------------------------
         post_json                     optional bool. If True, the data is pushed in the request's json parameter.  This is an edge case for Workflow Manager. The default is `False`.
+        ---------------------------   -----------------------------------------------------
+        json_encode                   optional Bool. If False, the key/value parameters will not be JSON encoded.
         ===========================   =====================================================
 
         :returns: data returned from the URL call.
 
         """
+        json_encode = kwargs.pop("json_encode", True)
         if self._baseurl.endswith("/") == False:
             self._baseurl += "/"
         url = path
@@ -577,14 +603,12 @@ class Connection(object):
         post_json = kwargs.pop("post_json", False)
         token_as_header = kwargs.pop('token_as_header', False)
         token_header = kwargs.pop('token_header', "X-Esri-Authorization")
-        if self._auth == "IWA":
-            self._session = None
+        #if self._auth == "IWA":
+        #    self._session = None
         if 'postdata' in kwargs: # handles legacy issues
             params = kwargs.pop('postdata')
         if params is None:
             params = {}
-        if self._auth.lower() == "PKI":
-            self._session = None
         if self._session is None:
             self._create_session()
         try_json = kwargs.pop("try_json", True)
@@ -603,9 +627,10 @@ class Connection(object):
             elif token_as_header == False and self.token is not None: #as ?token=
                 params['token'] = self.token
             elif token_as_header and self.token is not None:#(token and token != _DEFAULT_TOKEN): # as X-Esri-Auth header with given token
-                self._session.headers.update({token_header: "Bearer %s" % token})            
+                self._session.headers.update({token_header: "Bearer %s" % token})
             elif token_as_header and token_header and self.token: # as X-Esri-Auth header with generated token
                 self._session.headers.update({token_header: "Bearer %s" % self.token})
+
         if try_json:
             params['f'] = 'json'
         if files:
@@ -637,20 +662,19 @@ class Connection(object):
                 cert = (self._cert_file, self._key_file)
             else:
                 cert = None
-            if self._auth.lower() == 'pki':
-                self._session.cookies.clear()
-            for k,v in params.items():
-                if isinstance(v, (dict, list, tuple, bool)):
-                    params[k] = json.dumps(v)
-                elif isinstance(v, PropertyMap):
-                    params[k] = json.dumps(dict(v))
-                elif isinstance(v, InsensitiveDict):
-                    params[k] = v.json
+            if json_encode:
+                for k,v in params.items():
+                    if isinstance(v, (dict, list, tuple, bool)):
+                        params[k] = json.dumps(v)
+                    elif isinstance(v, PropertyMap):
+                        params[k] = json.dumps(dict(v))
+                    elif isinstance(v, InsensitiveDict):
+                        params[k] = v.json
             if post_json:  # edge case workflow
                 resp = self._session.post(url=url,
                                           json=params,
                                           cert=cert,
-                                          files=files)                
+                                          files=files)
             else:
                 resp = self._session.post(url=url,
                                           data=params,
@@ -724,12 +748,18 @@ class Connection(object):
         ---------------------------   -----------------------------------------------------
         ssl                           optional boolean. If true all calls are forced to be
                                       https.
+        ---------------------------   -----------------------------------------------------
+        post_json                     optional bool. If True, the data is pushed in the request's json parameter.  This is an edge case for Workflow Manager. The default is `False`.
+        ---------------------------   -----------------------------------------------------
+        json_encode                   optional Bool. If False, the key/value parameters will not be JSON encoded.
         ===========================   =====================================================
 
         :returns: dict or string depending on the response
 
         """
         token = kwargs.pop('token', _DEFAULT_TOKEN)
+        post_json = kwargs.pop("post_json", False)
+        json_encode = kwargs.pop("json_encode", True)
         out_path = kwargs.pop('out_path', None)
         file_name = kwargs.pop('file_name', None)
         token_as_header = kwargs.pop('token_as_header', True)
@@ -754,7 +784,7 @@ class Connection(object):
             elif token_as_header == False and self.token is not None: #as ?token=
                 params['token'] = self.token
             elif token_as_header and self.token is not None:#(token and token != _DEFAULT_TOKEN): # as X-Esri-Auth header with given token
-                self._session.headers.update({token_header: "Bearer %s" % token})            
+                self._session.headers.update({token_header: "Bearer %s" % token})
             elif token_as_header and token_header and self.token: # as X-Esri-Auth header with generated token
                 self._session.headers.update({token_header: "Bearer %s" % self.token})
 
@@ -782,7 +812,29 @@ class Connection(object):
 
             params.update(fields)
             del files, fields
-        resp = self._session.put(url=url, data=params)
+        if self._cert_file:
+            cert = (self._cert_file, self._key_file)
+        else:
+            cert = None
+        if json_encode:
+            for k,v in params.items():
+                if isinstance(v, (dict, list, tuple, bool)):
+                    params[k] = json.dumps(v)
+                elif isinstance(v, PropertyMap):
+                    params[k] = json.dumps(dict(v))
+                elif isinstance(v, InsensitiveDict):
+                    params[k] = v.json
+        if post_json:  # edge case workflow
+            resp = self._session.put(url=url,
+                                      json=params,
+                                      cert=cert,
+                                      files=files)
+        else:
+            resp = self._session.put(url=url,
+                                     data=params,
+                                     cert=cert,
+                                     files=files)
+        #
         return self._handle_response(resp=resp,
                                          out_path=out_path,
                                          file_name=file_name,
@@ -843,7 +895,7 @@ class Connection(object):
             elif token_as_header == False and 'token' in kwargs: #as ?token= and user provides the token
                 params['token'] = kwargs['token']
             elif token_as_header and 'token' in kwargs: # as X-Esri-Auth header with given token
-                self._session.headers.update({token_header: "Bearer %s" % kwargs['token']})            
+                self._session.headers.update({token_header: "Bearer %s" % kwargs['token']})
             elif token_as_header and token_header and self.token: # as X-Esri-Auth header with generated token
                 self._session.headers.update({token_header: "Bearer %s" % self.token})
 
@@ -857,19 +909,19 @@ class Connection(object):
                                      try_json=try_json,
                                      force_bytes=kwargs.pop('force_bytes', False))
     #----------------------------------------------------------------------
-    def streaming_method(self, url, callback, 
-                         data=None, json_data=None, verb="GET", 
+    def streaming_method(self, url, callback,
+                         data=None, json_data=None, verb="GET",
                          **kwargs):
         """
-        Performs streaming web requests. 
-        
+        Performs streaming web requests.
+
         =======================     ===========================================================
         **Parameters**              **Description**
         -----------------------     -----------------------------------------------------------
         url                         Required String. The web resource location.
         -----------------------     -----------------------------------------------------------
         callback                    Required Method.  The callback function to handle the response from the streaming request.
-        
+
                                     **Example**
                                     ```
                                     def hook(r, *args, **kwargs):
@@ -877,8 +929,8 @@ class Connection(object):
                                         return r
                                     ```
                                     See: https://requests.kennethreitz.org/en/master/user/advanced/#event-hooks
-                                    
-                                    
+
+
         -----------------------     -----------------------------------------------------------
         data                        Optional Dict. The parameters to pass to the method.
         -----------------------     -----------------------------------------------------------
@@ -888,25 +940,25 @@ class Connection(object):
         -----------------------     -----------------------------------------------------------
         kwargs                      Optional Dict.  See https://requests.readthedocs.io/en/master/user/advanced/#request-and-response-objects
         =======================     ===========================================================
-        
+
         """
         verbs = ['post', 'put', 'get']
         if verb.lower() in verbs:
             hooks = {'response' : callback}
             fn = getattr(self._session, verb.lower())
             if verb.lower() == "post":
-                return fn(url=url, 
-                          data=data, 
-                          json_data=json, 
+                return fn(url=url,
+                          data=data,
+                          json_data=json,
                           hooks=hooks,
                           stream=True,
-                          **kwargs) 
+                          **kwargs)
             else:
-                return fn(url=url, 
-                          data=data, 
+                return fn(url=url,
+                          data=data,
                           hooks=hooks,
                           stream=True,
-                          **kwargs)                 
+                          **kwargs)
         else:
             allowed_verb = ",".join(verbs)
             raise ValueError(f"Invalid web method only {allowed_verb} as allowed")
@@ -1012,6 +1064,11 @@ class Connection(object):
             if resp:
                 if 'referer' in resp:
                     self._referer = resp['referer']
+                if self._session:
+                    self._session.headers['Referer'] = self._referer
+                else:
+                    self._referer = resp['referer']
+                    self._session = self._create_session()
                 if 'token' in resp:
                     return resp['token']
             else:
@@ -1127,7 +1184,8 @@ class Connection(object):
             client = BackendApplicationClient(client_id=self._client_id)
             oauth = OAuth2Session(client=client)
             res = oauth.fetch_token(
-                token_url=self._token_url,
+                #method="GET",
+                token_url=tu,
                 client_id=self._client_id,
                 client_secret=self._client_secret,
                 include_client_id=True,
@@ -1224,19 +1282,16 @@ class Connection(object):
     #----------------------------------------------------------------------
     def generate_portal_server_token(self, serverUrl, expiration=1440):
         """generates a server token using Portal token"""
-        if self._auth.lower() == "pki":
-            from urllib.parse import unquote
-            cookies = self._session.cookies.get_dict()            
-            for key, cookie in cookies.items():
-                if key.lower() == "esri_auth":
-                    auth = json.loads(unquote(cookie))
-                    if 'token' in auth:
-                        token = auth['token']
-                        break
-                del cookie
+        if self._auth.lower() in ["pki", 'iwa']:
+            postdata = {'request': 'getToken',
+                        'serverURL':serverUrl,
+                        'referer': self._referer,
+                        'f': 'json'}
+            if expiration:
+                postdata['expiration'] = expiration
         else:
             token = self.token
-        postdata = {'serverURL':serverUrl,
+            postdata = {'serverURL':serverUrl,
                     'token': token,
                     'expiration':str(expiration),
                     'f': 'json',
@@ -1365,7 +1420,21 @@ class Connection(object):
                'authInfo' in res and \
                'tokenServicesUrl' in res['authInfo'] and \
                res['authInfo']['isTokenBasedSecurity']:
-                self._token_url = res['authInfo']['tokenServicesUrl']
+                parsed_from_system = urlparse(res['authInfo']['tokenServicesUrl'])
+                parsed = urlparse(baseurl)
+                if parsed.netloc.lower() != parsed_from_system.netloc.lower() and \
+                   parsed.netloc.find(":7443") > -1: # WA not being used for token url
+                    self._token_url = os.path.join(
+                        parsed_from_system.scheme + "://",
+                        parsed.netloc  + "/arcgis/" + "/".join(parsed_from_system.path[1:].split("/")[1:])
+                    )
+                    url_test = self._session.post(self._token_url, {'f': 'json'}, allow_redirects=False)
+                    if url_test.status_code == 301:
+                        self._token_url = url_test.headers['location']
+                        if self._baseurl != os.path.dirname(url_test.headers['location']):
+                            self._baseurl = os.path.dirname(url_test.headers['location'])
+                else:
+                    self._token_url = res['authInfo']['tokenServicesUrl']
             elif self._token_url is None and \
                  res is not None and \
                  isinstance(res, dict) and \
@@ -1377,8 +1446,10 @@ class Connection(object):
             return "PORTAL"
         else:
             #Brute Force Method
-            root = baseurl.lower().split("/sharing")[0]
-            root = baseurl.lower().split('/rest')[0]
+            parsed = urlparse(baseurl)
+            root = fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
+            #root = baseurl.lower().split("/sharing")[0]
+            #root = baseurl.lower().split('/rest')[0]
             parts = ['/info', '/rest/info', '/sharing/rest/info']
             params = {"f" : "json"}
             for pt in parts:
@@ -1421,7 +1492,14 @@ class Connection(object):
                         b_parsed = b_parsed.split("/")[0]
                     if t_parsed.lower() != b_parsed.lower():
                         self._token_url = None
-                        return "FEDERATED_SERVER"
+                        if self._portal_connection:
+                            return "FEDERATED_SERVER"
+                        else:
+                            from arcgis.gis import GIS
+                            self._portal_connection = GIS(url=res['authInfo']['tokenServicesUrl'].split("/sharing/")[0],
+                                                          username=self._username, password=self._password,
+                                                          verify_cert=self._verify_cert)._con
+                            return "FEDERATED_SERVER"
                     return "SERVER"
                 elif isinstance(res, dict) and \
                      "currentVersion" in res and \

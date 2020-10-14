@@ -64,20 +64,27 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
     loadingProgressDisplay.start();
     esriLoader.loadModules(['esri/Map',
                             'esri/views/MapView',
+                            'esri/WebMap',
+                            'esri/WebScene',
                             'esri/views/SceneView',
                             'esri/core/watchUtils',
                             'esri/widgets/Compass',
-                            'esri/widgets/Legend'], options).then((
+                            'esri/widgets/Legend',
+                            'esri/widgets/TimeSlider'], options).then((
                             [Map,
                              MapView,
+                             WebMap,
+                             WebScene,
                              SceneView,
                              watchUtils,
                              Compass,
-                             Legend]) => {
+                             Legend,
+                             TimeSlider]) => {
         loadingProgressDisplay.stop();
         this._setup_custom_buttons();
-        this._instantiate_esri_components(Map, MapView, SceneView,
-                                          Compass, Legend);
+        this._instantiate_esri_components(Map, WebMap, WebScene, 
+                                          MapView, SceneView,
+                                          Compass, Legend, TimeSlider);
         this._miscellanous_setup();
         //All model specific change functions. These functions are called
         //whenever that attribute on the model is updated, whether that update
@@ -86,10 +93,16 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         this.model.on('change:mode', this.mode_changed, this);
         this.model.on('change:_basemap', this.basemap_changed, this);
         this.model.on('change:_zoom', this.zoom_changed, this);
-        this.model.on('change:rotation', this.rotation_changed, this);
-        this.model.on('change:heading', this.heading_changed, this);
-        this.model.on('change:tilt', this.tilt_changed, this);
+        this.model.on('change:_scale', this.scale_changed, this);
+        this.model.on('change:_snap_to_zoom', this.snap_to_zoom_changed, this);
+        this.model.on('change:_rotation', this.rotation_changed, this);
+        this.model.on('change:_link_writeonly_rotation', this.link_rotation_changed, this);
+        this.model.on('change:_heading', this.heading_changed, this);
+        this.model.on('change:_link_writeonly_heading', this.link_heading_changed, this);
+        this.model.on('change:_tilt', this.tilt_changed, this);
+        this.model.on('change:_link_writeonly_tilt', this.link_tilt_changed, this);
         this.model.on('change:_extent', this.extent_changed, this);
+        this.model.on('change:_link_writeonly_extent', this.link_extent_changed, this);
         this.model.on('change:_center', this.center_changed, this);
         this.model.on('change:_center_long_lat', this.center_long_lat_changed, this);
         //start layer specific model types
@@ -106,13 +119,20 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
         //start screenshot section
         this.model.on('change:_trigger_screenshot_with_args', this._trigger_screenshot_with_args_changed, this);
-
         //end screenshot section
 
         //start image overlay section
         this.model.on('change:_overlay_this_image', this.overlay_image_changed, this);
         this.model.on('change:_image_overlays_to_remove', this.image_overlays_to_remove_changed, this);
         //end image overlay section
+
+        //start time section
+        this.model.on('change:time_slider', this.time_slider_prop_changed, this);
+        this.model.on('change:time_mode', this.time_mode_changed, this);
+        this.model.on('change:_time_info', this.time_info_changed, this);
+        this.model.on('change:_writeonly_start_time', this.start_time_changed, this);
+        this.model.on('change:_writeonly_end_time', this.end_time_changed, this);
+        //end time section
 
         //start miscellanous model section
         this.model.on('change:_portal_token', this.portal_token_changed, this);
@@ -141,6 +161,8 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             this.mode_changed();
             this.basemap_changed();
             this.zoom_changed();
+            this.scale_changed();
+            this.snap_to_zoom_changed();
             this.rotation_changed();
             this.heading_changed();
             this.tilt_changed();
@@ -164,6 +186,12 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                 this.webscene_changed();
                 //end webmap/webscene section
                 this.legend_prop_changed();
+                //start time section
+                this.time_slider_prop_changed();
+                this.time_mode_changed();
+                this.time_info_changed();
+                //end time section
+
                 resolve();
             }).catch((err) => {
                 this._displayErrorBox("Error while authenticating to portal on first load.");
@@ -172,6 +200,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             });
         })
     },
+
 
     _displayErrorBox: function(msg, browser_console_message = true){
         ///A simple message box display mechanism
@@ -238,23 +267,23 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         //The moment the mouse enters the arcgis js api 2d view (not parent element),
         //Set up responses to the 'stationary' callback (i.e., what logic to run
         //when the user clicks the map, zooms, changes extent, etc.). Only set this up once
-        this._2dMap._pointerMoveHandler = this._2dMap.on(
+        this._MapView._pointerMoveHandler = this._MapView.on(
             ['pointer-move', 'key-down'], (event) => {
                 console.log("Started interacting with the 2D map, " + 
                     "setting up stationary callback...");
-                watchUtils.when(this._2dMap, "stationary", this._2dStationaryCallback)
-                this._2dMap._pointerMoveHandler.remove();
+                watchUtils.when(this._MapView, "stationary", this._2dStationaryCallback)
+                this._MapView._pointerMoveHandler.remove();
         });
     },
 
     _setup_3d_stationary_callback: function(watchUtils){
         //Same as above, but for the 3D SceneView
-        this._3dMap._pointerMoveHandler = this._3dMap.on(
+        this._SceneView._pointerMoveHandler = this._SceneView.on(
             ['pointer-move', 'key-down'], (event) => {
                 console.log("Started interacting with the 3D map, " + 
                     "setting up stationary callback...");
-                watchUtils.when(this._3dMap, "stationary", this._3dStationaryCallback)
-                this._3dMap._pointerMoveHandler.remove();
+                watchUtils.when(this._SceneView, "stationary", this._3dStationaryCallback)
+                this._SceneView._pointerMoveHandler.remove();
         });
     },
 
@@ -264,7 +293,10 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
         var rotation = this.rotation;
         if(rotation >= 0){
-            widget_inst.model.set("rotation", rotation);
+            widget_inst.model.set("_readonly_rotation", rotation);
+            var heading = 360 - rotation;
+            widget_inst.model.set("_readonly_heading", heading);
+            widget_inst.apply_heading_to_view(heading);
         }
 
         widget_inst._commonStationaryCallback(widget_inst);
@@ -276,8 +308,11 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
         var camera = this.camera;
         if(camera){
-            widget_inst.model.set("heading", camera.heading);
-            widget_inst.model.set("tilt", camera.tilt);
+            widget_inst.model.set("_readonly_heading", camera.heading);
+            var rotation = 360 - camera.heading;
+            widget_inst.model.set("_readonly_rotation", rotation);
+            widget_inst.apply_rotation_to_view(rotation);
+            widget_inst.model.set("_readonly_tilt", camera.tilt);
         }
 
         widget_inst._commonStationaryCallback(widget_inst);
@@ -291,27 +326,26 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         var zoom = widget_inst.activeView.zoom;
         if(zoom >= 0){
             //this callback is sometimes errenously called, displaying nonexistant values
-            widget_inst.model.set("_readonly_zoom", zoom);
-        }
+            widget_inst.model.set("_readonly_zoom", zoom);}
+
+        var scale = widget_inst.activeView.scale;
+        if(scale >= 1){
+            widget_inst.model.set("_readonly_scale", scale);}
 
         var center = widget_inst.activeView.center;
         if(center){
-            widget_inst.model.set("_readonly_center", JSON.parse(JSON.stringify(center)))
-        }
+            widget_inst.model.set("_readonly_center", JSON.parse(JSON.stringify(center)));}
 
         var extent = widget_inst.activeView.extent;
         if(extent){
-            widget_inst.model.set("_readonly_extent", JSON.parse(JSON.stringify(extent)));
-        }
+            widget_inst.model.set("_readonly_extent", JSON.parse(JSON.stringify(extent)));}
+
         widget_inst.model.save_changes();
     },
 
     _miscellanous_setup: function(){
        ///Every time the 2d map changes a basemap/ground/layer, call this function
-        this._2dMap.map.allLayers.on('change', (event) => {
-            this.update_readonly_webmap();
-        });
-        this._3dMap.map.allLayers.on('change', (event) => {
+        this.map.allLayers.on('change', (event) => {
             this.update_readonly_webmap();
         });
     },
@@ -319,22 +353,22 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
     _postLoadSetup: function(watchUtils){
         //Whenever either the 2d or 3d view loads, set model var 'ready' to
         //true for python to consume
-        console.log("Calling postLoad");
-        this._2dMap.when(() => {
+        console.log("Running post load setup for " + config.JSOutputContext);
+        this._MapView.when(() => {
             console.log("2D map ready");
             this.model.set('ready', true)
-            this.model.set('_readonly_extent', this._2dMap.extent);
-            this.model.set('_readonly_center', this._2dMap.center);
+            this.model.set('_readonly_extent', this._MapView.extent);
+            this.model.set('_readonly_center', this._MapView.center);
             this.model.save_changes();
             this.zoom_changed(); //Fixes quick redraw bug of zoom not honored
             this._setup_2d_stationary_callback(watchUtils);
         });
 
-        this._3dMap.when(() => {
+        this._SceneView.when(() => {
             console.log("3D map ready");
             this.model.set('ready', true)
-            this.model.set('_readonly_extent', this._3dMap.extent);
-            this.model.set('_readonly_center', this._3dMap.center);
+            this.model.set('_readonly_extent', this._SceneView.extent);
+            this.model.set('_readonly_center', this._SceneView.center);
             this.model.save_changes();
             this.zoom_changed(); //Fixes quick redraw bug of zoom not honored
             this.tilt_changed(); //'' '' '' '' '' '' ''' ''  tilt not honored
@@ -342,26 +376,34 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         });
 
         //Whenever you click on the map, send an event for python to listen to
-        this._2dMap.on(['click'], (event_) => {
+        this._MapView.on(['click'], (event_) => {
             this.send({ event: 'mouseclick', message: event_.mapPoint });
         });
 
-        this._3dMap.on(['click'], (event_) => {
+        this._SceneView.on(['click'], (event_) => {
             this.send({ event: 'mouseclick', message: event_.mapPoint });
         });
 
-        // Apply CSS to hide any image preview in the live notebook (but keep
-        // it in the underlying notebook file)
-        this._hidePreviewImageEl();
+        // Apply CSS to hide any image preview and HTML embed preview in the 
+        // live notebook (but keep it in the underlying notebook file)
+        //
+        // Don't do this when this JS code is called from the embedded
+        // widget itself (i.e. when MapView.embed() or MapView.export_to_html()
+        // is called)
+        if(config.JSOutputContext === "default"){
+            this._hidePreviewEls();}
 
         // Add screenshot keyboard shortcut
         this._set_screenshot_keyboard_shortcut();
     },
 
-    _hidePreviewImageEl: function(){
+    _hidePreviewEls: function(){
+        console.log("Hiding preview elements for " + this.uuid);
         var cssEl = document.createElement('style');
         cssEl.type = 'text/css';
         cssEl.innerHTML = 'div.map-static-img-preview-' +
+            this.uuid + ' { display: none }\n' + 
+            'div.map-html-embed-preview-' +
             this.uuid + ' { display: none }';
         document.head.appendChild(cssEl);
     },
@@ -372,32 +414,39 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         this.js_cdn_changed();
     },
 
-    _instantiate_esri_components: function(Map, MapView, SceneView,
-                                           Compass, Legend){
-        this.map = new Map({ground: "world-elevation"});
+    _instantiate_esri_components: function(Map, WebMap, WebScene, MapView, SceneView,
+                                           Compass, Legend, TimeSlider){
         this.container = this.elements.mapElement;
         var mode = this.model.get("mode").toLowerCase();
         if(mode === "2d"){
-            this._2dMap = new MapView({
+            this.map = new WebMap({ground: "world-elevation"});
+            this._MapView = new MapView({
                 map: this.map,
                 container: this.container});
-            this.activeView = this._2dMap;
-            this._3dMap = new SceneView({map: this.map});
+            this.activeView = this._MapView;
+            this._SceneView = new SceneView({map: this.map});
         } else if(mode === "3d"){
-            this._3dMap = new SceneView({
+            this.map = new WebScene({ground: "world-elevation"});
+            this._SceneView = new SceneView({
                 map: this.map,
                 container: this.container});
-            this.activeView = this._3dMap;
-            this._2dMap = new MapView({map: this.map});}
-        this._2dMap._parentIPyWidget = this;
-        this._3dMap._parentIPyWidget = this;
+            this.activeView = this._SceneView;
+            this._MapView = new MapView({map: this.map});}
+        this._MapView._parentIPyWidget = this
+        this._SceneView._parentIPyWidget = this;
 
         //Set the default zoom to a model-less number that looks a bit nicer
-        this._2dMap.zoom = 2;
-        this._3dMap.zoom = 2;
+        this._MapView.zoom = 2;
+        this._SceneView.zoom = 2;
 
         // Set up widgets like compass and legend
-        this._2dMap.ui.add(new Compass({view: this._2dMap}), "top-left");
+        this._MapView.ui.add(new Compass({view: this._MapView}), "top-left");
+        this._time_slider = new TimeSlider({
+            view: this.activeView,
+            container: document.createElement("div"),
+            mode: "time-window"});
+        this._time_slider.watch('values', (values) => {
+            this.time_slider_values_changed(values);});
         this._legend = new Legend({
             view: this.activeView,
             layerInfos: []});
@@ -471,106 +520,170 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
     },
 
     mode_changed: function(){
-    try{
+    esriLoader.loadModules(['esri/WebMap', 'esri/WebScene'],
+    options).then(([WebMap, WebScene]) => { 
         console.log("updating mode...");
         var mode = this.model.get("mode").toLowerCase();
         if(mode === "3d"){
             this.elements.switchButton.src = images.sceneToMapEncoded;
             if(this.activeView.viewpoint){
-                this._3dMap.viewpoint = this.activeView.viewpoint.clone();
-                this.activeView.container = null;
-            }
-            this._3dMap.container = this.container;
-            this.activeView = this._3dMap;
-            this._3dMap.map = this.map
-            this._2dMap.map = null;
+                this._SceneView.viewpoint = this.activeView.viewpoint.clone();
+                this.activeView.container = null;}
+            this._SceneView.container = this.container;
+            this.activeView = this._SceneView;
+            this.map = new WebScene({ground: this.map.ground,
+                                     basemap: this.map.basemap,
+                                     layers: this.map.layers});
+            this._SceneView.map = this.map
+            this._MapView.map = null;
         } else {
             this.elements.switchButton.src = images.mapToSceneEncoded;
             if(this.activeView.viewpoint){
-                this._2dMap.viewpoint = this.activeView.viewpoint.clone();
-                this.activeView.container = null;
-             }
-             this._2dMap.container = this.container;
-             this.activeView = this._2dMap;
-             this._2dMap.map = this.map;
-             this._3dMap.map = null;
+                this._MapView.viewpoint = this.activeView.viewpoint.clone();
+                this.activeView.container = null;}
+             this._MapView.container = this.container;
+             this.activeView = this._MapView;
+             this.map = new WebMap({ground: this.map.ground,
+                                    basemap: this.map.basemap,
+                                    layers: this.map.layers});
+             this._MapView.map = this.map;
+             this._SceneView.map = null;
              //Set the 'tilt' to 0 whenever switching to 2D mode
              this.model.set("tilt", 0);
-             this.model.save_changes();
-        }
+             this.model.save_changes();}
         this.legend_prop_changed(); //Needed to reset the legend's view
-    } catch(err){
+        this.time_slider_prop_changed();
+        this.map.allLayers.on('change', (event) => {
+            this.update_readonly_webmap();}); 
+    }).catch((err) => {
         this._displayErrorBox();
         console.warn("Error on mode_changed"); console.warn(err); 
-    }
-    },
+    });},
 
     zoom_changed: function(){
         try{
             var zoom = this.model.get("_zoom");
             this.model.set("_readonly_zoom", zoom);
-            this.model.save_changes();
-            console.log(zoom);
             if(zoom >= 0){
-                this.activeView.zoom = zoom;
-            }
+                this.activeView.zoom = zoom;}
+            this.model.save_changes();
         } catch(err){
             this._displayErrorBox("Error while modifying zoom.");
             console.warn("Error on zoom"); console.warn(err);
         }
     },
 
+    scale_changed: function(){
+        try{
+            var scale = this.model.get("_scale");
+            this.model.set("_readonly_scale", scale);
+            this.model.save_changes();
+            if(scale >= 1){
+                this.activeView.scale = scale;
+            }
+        } catch(err) {
+            this._displayErrorBox("Error while modifying scale");
+            console.warn("Error on scale"); console.warn(err);
+        }
+    },
+
+    snap_to_zoom_changed: function(){
+        try{
+            var mode = this.model.get("mode")
+            var snapToZoom = this.model.get("_snap_to_zoom");
+            if(mode === "2D"){
+                this.activeView.constraints.snapToZoom = snapToZoom;}
+        } catch(err) {
+            this._displayErrorBox("Error while modifying snap to zoom");
+            console.warn("Error on snap to zoom"); console.warn(err);
+        }
+    },
+
     rotation_changed: function(){
         try{
-            var rotation = this.model.get("rotation");
-            this._2dMap.rotation = rotation
+            var rotation = this.model.get("_rotation");
+            this.model.set("_readonly_rotation", rotation);
+            this.model.save_changes();
+            this.apply_rotation_to_view(rotation);
         } catch(err){
             this._displayErrorBox("Error while modifying rotation");
             console.warn("Error on rotation"); console.warn(err);
         }
     },
 
+    link_rotation_changed: function(){
+        var rotation = this.model.get("_link_writeonly_rotation");
+        this.apply_rotation_to_view(rotation);
+    },
+
+    apply_rotation_to_view: function(rotation){
+        this._MapView.rotation = rotation;
+    },
+
     heading_changed: function(){
-        ///TODO: Find more elegant way to implement this func and tilt_changed()
-        var _applyHeading = function(this_) {
+        var heading = this.model.get("_heading");
+        this.model.set("_readonly_heading", heading);
+        this.model.save_changes();
+        this.apply_heading_to_view(heading);
+    },
+
+    link_heading_changed: function(){
+        var heading = this.model.get("_link_writeonly_heading");
+        this.apply_heading_to_view(heading);
+    },
+
+    apply_heading_to_view: function(heading){
+        var _applyHeading = () => {
             //The actual function that is eventually called to apply the heading
-            var heading = this_.model.get("heading");
-            var camera = this_._3dMap.camera.clone();
-            camera.heading = heading;
-            this_._3dMap.camera = camera
+            this._SceneView.goTo({center: this._SceneView.center,
+                              heading: heading},
+                             {animate: false});
         };
         esriLoader.loadModules(["esri/core/watchUtils"],
         options).then(([watchUtils]) => {
-            if(this._3dMap.camera){
+            if(this._SceneView.camera){
                 //If the map is already initialized
-                _applyHeading(this);
+                _applyHeading();
             } else{
                 //set up the callback when the camera is ready for consumption
-                watchUtils.once(this._3dMap, "camera", () => {
-                    _applyHeading(this);
+                watchUtils.once(this._SceneView, "camera", () => {
+                    _applyHeading();
                })
             }
         }).catch((err) =>{
             this._displayErrorBox("Error while modifying heading");
             console.warn("Error on heading"); console.warn(err);
         });
+
     },
 
     tilt_changed: function(){
-        var _applyTilt = function(this_){
-            //The actual function that is eventually called to apply the tilt
-            this_._3dMap.goTo({center: this_._3dMap.center,
-                              tilt: this_.model.get("tilt")});
-        };
+        var tilt = this.model.get("_tilt");
+        this.model.set("_readonly_tilt", tilt);
+        this.model.save_changes();
+        this.apply_tilt_to_view(tilt);
+    },
+
+    link_tilt_changed: function(){
+        var tilt = this.model.get("_link_writeonly_tilt");
+        this.apply_tilt_to_view(tilt);
+    },
+
+    apply_tilt_to_view: function(tilt){
+        var _applyTilt = () => {
+            this._SceneView.goTo({center: this._SceneView.center,
+                              tilt: tilt},
+                             {animate: false});
+         };
         esriLoader.loadModules(["esri/core/watchUtils"],
         options).then(([watchUtils]) => {
-            if(this._3dMap.camera){
+            if(this._SceneView.camera){
                 //If the map is already initialized
-                _applyTilt(this);
+                _applyTilt();
            } else {
                 //Set up the callback when the camera is ready for consuption
-                watchUtils.once(this._3dMap, "camera", () => {
-                    _applyTilt(this);
+                watchUtils.once(this._SceneView, "camera", () => {
+                    _applyTilt();
                 });
             }
         }).catch((err) =>{
@@ -582,13 +695,22 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
     },
 
     extent_changed: function(){
+        var extent = this.model.get("_extent");
+        this.apply_extent_to_view(extent);
+    },
+
+    link_extent_changed: function(){
+        var extent = this.model.get("_link_writeonly_extent");
+        this.apply_extent_to_view(extent);
+    },
+
+    apply_extent_to_view: function(extent){
         esriLoader.loadModules(['esri/geometry/Extent',
                                 "esri/geometry/SpatialReference",
                                 "esri/geometry/projection"],
         options).then(([Extent,
                         SpatialReference,
                         projection]) => {
-            var extent = this.model.get("_extent");
             if(extent.xmin){
                 //Prevents an error about a bad extent
                 this.activeView.extent = new Extent(extent);
@@ -649,22 +771,8 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         console.log("Updating webmap...");
         var webmap_from_python = this.model.get("_webmap");
         if(Object.keys(webmap_from_python).length !== 0){
-            this.authenticate_to_portal().then((portal) => {
-                webmap_from_python.portalItem.portal = portal;
-                var webmap = new WebMap(webmap_from_python);
-                webmap.load().then((webmap) => {
-                    this._2dMap.map = webmap;
-                    this.map = webmap;
-                    this.update_readonly_webmap();
-                }).catch((err) => {
-                    this._displayErrorBox("Error on loading webmap item");
-                    console.warn("Error on loading webmap"); console.warn(err);
-                });
-            }).catch((err) => {
-                this._displayErrorBox("Error on loading portal for webmap");
-                console.warn("Error on loading webmap"); console.warn(err);
-            });
-        }
+            this.map = WebMap.fromJSON(webmap_from_python);
+            this._MapView.map = this.map;}
     }).catch((err) => {
         this._displayErrorBox("Error on loading webmap from portal");
         console.warn("Error on loading webmap"); console.warn(err);
@@ -677,10 +785,10 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         ///for readonly consumption on the python side of things
         try{
             var map;
-            if(this._2dMap.map){
-                map = this._2dMap.map}
+            if(this._MapView.map){
+                map = this._MapView.map}
             else {
-                map = this._3dMap.map
+                map = this._SceneView.map
             }
             var layers_json = []
             for(var i in map.layers.toArray()){
@@ -728,7 +836,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                 webscene_from_python.portalItem.portal = portal;
                 var webscene = new WebScene(webscene_from_python);
                 webscene.load().then((webscene) => {
-                    this._3dMap.map = webscene;
+                    this._SceneView.map = webscene;
                     this.map = webscene;
                 }).catch((err) => {
                     this._displayErrorBox("Error on loading webscene item");
@@ -755,21 +863,21 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
           Basemap]) => {
             this.authenticate_to_portal().then((portal) => {
                 var scene;
-                if(this._3dMap.map.declaredClass == "WebScene"){
-                    scene = new WebScene(this._3dMap.map.toJSON())}
+                if(this._SceneView.map.declaredClass == "WebScene"){
+                    scene = new WebScene(this._SceneView.map.toJSON())}
                 else{
-                    scene = new WebScene({layers : this._3dMap.map.layers,
-                        ground : Ground.fromJSON(this._3dMap.map.ground.toJSON()),
-                        basemap : Basemap.fromJSON(this._3dMap.map.basemap.toJSON())});}
+                    scene = new WebScene({layers : this._SceneView.map.layers,
+                        ground : Ground.fromJSON(this._SceneView.map.ground.toJSON()),
+                        basemap : Basemap.fromJSON(this._SceneView.map.basemap.toJSON())});}
                 var portal_item_id = this.model.get("_trigger_webscene_save_to_this_portal_id");
                 console.log("Starting to save webscene to portal item " + portal_item_id); 
                 scene.portalItem = {
                         id: portal_item_id,
                         portal: portal};
                 scene.load().then(() => {
-                    scene.ground = Ground.fromJSON(this._3dMap.map.ground.toJSON());
-                    scene.basemap = Basemap.fromJSON(this._3dMap.map.basemap.toJSON());
-                    scene.updateFrom(this._3dMap);
+                    scene.ground = Ground.fromJSON(this._SceneView.map.ground.toJSON());
+                    scene.basemap = Basemap.fromJSON(this._SceneView.map.basemap.toJSON());
+                    scene.updateFrom(this._SceneView);
                     scene.save({ignoreUnsupported: true}).then((item) => {
                         console.log("The following item was saved:");
                         console.log(item.toJSON());
@@ -779,7 +887,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                     });
                     //TODO: clean up, figure out why layers are deleted on save
                     this.reload_all_layers();
-                    this._3dMap.map = scene;
+                    this._SceneView.map = scene;
                     this.map = scene;
 
                 }).catch((err) => {
@@ -836,8 +944,6 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         for(var i = 0; i<layersToInfer.length; i++){
            var layerToInfer = layersToInfer[i];
            inferNoTypeLayer(layerToInfer, this).then((typedLayer) => {
-                var layerExistsOnMap = Boolean(this.map.findLayerById(
-                    typedLayer.id));
                 console.log("Adding Layer " + noTypeLayer._hashFromPython + " " +
                     "to map.");
                 this.map.add(typedLayer);
@@ -1182,6 +1288,114 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         }
     },
 
+    time_slider_prop_changed: function(){
+        try{
+            console.log("time slider changed");
+            var widgetCorner = "bottom-left";
+            var timeSliderProp = this.model.get("time_slider");
+            if(timeSliderProp){
+                this.activeView.ui.empty(widgetCorner);
+                this._time_slider.view = this.activeView;
+                this.activeView.ui.add(this._time_slider, widgetCorner);
+            } else {
+                this.activeView.ui.empty(widgetCorner);}
+        } catch(err) {
+            this._displayErrorBox("Error while updating time slider");
+            console.warn("Error while trying to show time slider");
+            console.warn(err);}
+    },
+
+    time_mode_changed: function(){
+        try{
+            var timeSlider = this.model.get("time_slider");
+            if(timeSlider){
+                console.log("time mode changed");
+                var timeMode = this.model.get("time_mode");
+                var values = this._time_slider.values;
+                this._time_slider.mode = timeMode;
+                if(values.length > 0){
+                    if(timeMode === "instant"){
+                        this._time_slider.values = [values[0],];}
+                    if(timeMode === "time-window"){
+                        if(values.length == 1){
+                            this._time_slider.values = [
+                                values[0],
+                                values[0]];}}
+                    if(timeMode === "cumulative-from-start"){
+                        this._time_slider.values = [values[0],];}
+                    if(timeMode === "cumulative-from-end"){
+                        this._time_slider.value = [values[0],];}}}}
+        catch(err){
+            this._displayErrorBox("Error while updating time mode");
+            console.warn("Error while trying updating time mode"); console.warn(err);}
+    },
+
+    time_slider_values_changed: function(values){
+        if(values.length == 2){
+            this.model.set("_readonly_start_time", values[0].toISOString());
+            this.model.set("_readonly_end_time", values[1].toISOString());}
+        if(values.length == 1){
+            this.model.set("_readonly_start_time", values[0].toISOString());}
+        this.model.save_changes();
+    },
+
+    time_info_changed: function(){
+    esriLoader.loadModules(['esri/TimeExtent',
+                            'esri/TimeInterval'],
+    options).then(([TimeExtent, TimeInterval]) => {
+        var timeInfo = this.model.get("_time_info");
+        console.log("Time Info changed");
+        console.log(timeInfo);
+        if('time_extent' in timeInfo){
+            var start = new Date(timeInfo.time_extent[0]);
+            var end = new Date(timeInfo.time_extent[1]);
+            this._time_slider.fullTimeExtent = new TimeExtent({
+                                               start: start,
+                                               end: end});}
+        var intervalValue = 1;
+        var intervalUnit = 'milliseconds';
+        if('interval' in timeInfo){
+            intervalValue = timeInfo.interval;}
+        if('unit' in timeInfo){
+            intervalUnit = timeInfo.unit;}
+        this._time_slider.stops = {"interval" : new TimeInterval({
+            value: intervalValue,
+            unit: intervalUnit})};
+    }).catch((err) => {
+        this._displayErrorBox("Error while changing the time info");
+        console.warn("Error while trying to change the time info");
+        console.warn(err);});
+    },
+
+    start_time_changed: function(){
+        try{
+            console.log("start time changed");
+            var startTimeStr = this.model.get("_writeonly_start_time");
+            var startTime = new Date(startTimeStr);
+            if(this._time_slider.values.length == 1){
+                this._time_slider.values = [startTime,];}
+            if(this._time_slider.values.length == 2){
+                var endTime = this._time_slider.values[1];
+                this._time_slider.values = [startTime, endTime];}}
+        catch(err){
+            this._displayErrorBox("Error while changing `start_time`");
+            console.warn("Error while changing start_time");
+            console.warn(err);}
+    },
+
+    end_time_changed: function(){
+        try{
+            console.log("end time changed");
+            var endTimeStr = this.model.get("_writeonly_end_time");
+            var endTime = new Date(endTimeStr);
+            var startTime = this._time_slider.values[0];
+            this._time_slider.values = [startTime, endTime];}
+        catch(err){
+            this._displayErrorBox("Error while changing `end_time`");
+            console.warn("Error while changing `end_time`");
+            console.warn(err);}
+    },
+
     // Start screenshot section
     _trigger_screenshot_with_args_changed: function() {
         var args = this.model.get('_trigger_screenshot_with_args');
@@ -1228,7 +1442,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
     _get_2d_screenshot: function(widget_inst) {
         return new Promise((resolve, reject) => {
-            widget_inst._2dMap.takeScreenshot({format:"png"}).then((screenshot) => {
+            widget_inst._MapView.takeScreenshot({format:"png"}).then((screenshot) => {
                 resolve(screenshot.dataUrl);
             }).catch((err) => {
                 reject(err);
@@ -1238,7 +1452,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
     _get_3d_screenshot: function(widget_inst) {
         return new Promise((resolve, reject) => {
-            widget_inst._3dMap.takeScreenshot({format:"png"}).then((screenshot) => {
+            widget_inst._SceneView.takeScreenshot({format:"png"}).then((screenshot) => {
                 resolve(screenshot.dataUrl);
             }).catch((err) => {
                 reject(err);

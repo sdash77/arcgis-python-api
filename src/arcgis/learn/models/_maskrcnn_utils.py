@@ -9,10 +9,12 @@ import PIL
 import numpy as np
 from skimage import io
 import matplotlib.pyplot as plt
-from fastprogress.fastprogress import progress_bar
 from torch import LongTensor
 import os
 from .._utils.common import ArcGISMSImage
+
+from fastprogress.fastprogress import progress_bar
+
 
 class ArcGISImageSegment(Image):
     "Support applying transforms to segmentation masks data in `px`."
@@ -89,7 +91,7 @@ class ArcGISSegmentationLabelList(ImageList):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning) # EXIF warning from TiffPlugin
             if len(fn) != 0:
-                img_shape = io.imread(fn[0]).shape
+                img_shape = ArcGISMSImage.read_image(fn[0]).shape
             else:
                 labeled_mask = torch.zeros((len(self.class_mapping), self.chip_size, self.chip_size))
                 return ArcGISImageSegment(labeled_mask, cmap=self.cmap, norm=self.mplnorm)
@@ -104,7 +106,7 @@ class ArcGISSegmentationLabelList(ImageList):
                 else:
                     lbl_name = len(self.class_mapping) + 2
                 if lbl_name == j+1:                    
-                    img = io.imread(fn[k])
+                    img = ArcGISMSImage.read_image(fn[k])
                     k = k + 1
                     if len(img.shape)==3:
                         img = img.transpose(2,0,1)
@@ -129,6 +131,10 @@ class ArcGISSegmentationLabelList(ImageList):
 class ArcGISInstanceSegmentationItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."
     _label_cls, _square_show_res = ArcGISSegmentationLabelList, False
+    _div = None
+    _imagery_type = None
+    def open(self, fn):
+        return ArcGISMSImage.open(fn, div=self._div, imagery_type=self._imagery_type)
 
 class ArcGISInstanceSegmentationMSItemList(ArcGISInstanceSegmentationItemList):
     "`ItemList` suitable for segmentation tasks."
@@ -140,13 +146,15 @@ def mask_rcnn_loss(loss_value, *args):
 
     final_loss = 0.
     for i in loss_value.values():
-        if not (torch.isnan(i) or torch.isinf(i)):
-            final_loss += i
-            
+        i[torch.isnan(i)] = 0.
+        i[torch.isinf(i)] = 0.
+        final_loss += i
+        
     return final_loss
 
 def mask_to_dict(last_target, device):
     target_list = []
+    
     for i in range(len(last_target)):
 
         boxes =  []
@@ -154,7 +162,7 @@ def mask_to_dict(last_target, device):
         labels = []
         for j in range(last_target[i].shape[0]):
 
-            mask = np.array(last_target[i].data[j])
+            mask = np.array(last_target[i].data[j].cpu())
             obj_ids = np.unique(mask)
 
             if len(obj_ids)==1:
@@ -163,12 +171,17 @@ def mask_to_dict(last_target, device):
             obj_ids = obj_ids[1:]
             mask_j = mask == obj_ids[:, None, None]
             num_objs = len(obj_ids)
+
             for k in range(num_objs):
                 pos = np.where(mask_j[k])
                 xmin = np.min(pos[1])
                 xmax = np.max(pos[1])
                 ymin = np.min(pos[0])
                 ymax = np.max(pos[0])
+                if xmax-xmin==0:
+                    xmax += 1
+                if ymax-ymin==0:
+                    ymax += 1
                 boxes.append([xmin, ymin, xmax, ymax])
 
             masks = np.append(masks, mask_j, axis = 0)
@@ -199,10 +212,10 @@ class train_callback(LearnerCallback):
         super().__init__(learn)
    
     def on_batch_begin(self, last_input, last_target, **kwargs):
-        "Handle new batch `xb`,`yb` in `train` or validation."        
+        "Handle new batch `xb`,`yb` in `train` or validation."      
         target_list = mask_to_dict(last_target, self.c_device)
         self.learn.model.train()
-        last_input = [list(last_input.to(self.c_device)), target_list]
+        last_input = [list(last_input), target_list]
         last_target = [torch.tensor([1]) for i in last_target]
         return {'last_input':last_input, 'last_target':last_target}
 

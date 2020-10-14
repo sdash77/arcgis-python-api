@@ -32,6 +32,7 @@ RUN conda install -y unzip \
                      pysal \
                      pyshp \
                      keyring \
+					 ujson \
 		     requests \
     && conda clean -tipsy \
     && find $CONDA_DIR/pkgs -maxdepth 1 -mindepth 1 -type d -print -exec rm -r {} +
@@ -42,6 +43,7 @@ RUN conda install -c esri -c defaults -c conda-forge requests-kerberos \
                                                      requests-oauthlib \
 													 requests_toolbelt \
 													 requests_ntlm \
+													 requests-negotiate-sspi \
 	&& conda clean -tipsy \
     && find $CONDA_DIR/pkgs -maxdepth 1 -mindepth 1 -type d -print -exec rm -r {} +
 

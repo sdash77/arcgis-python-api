@@ -1,13 +1,12 @@
 
-try:
+import logging
+from .env import HAS_TENSORFLOW
+if HAS_TENSORFLOW:
     import tensorflow as tf
-    from tensorflow.keras.layers import Conv2D, Dropout, ReLU, BatchNormalization, UpSampling2D, Reshape, Layer
+    from tensorflow.keras.layers import Input, Conv2D, Dropout, ReLU, BatchNormalization, UpSampling2D, Reshape, Layer
     from tensorflow.keras import Model
     from .._utils.fastai_tf_fit import _tf_to_pytorch, _pytorch_to_tf_batch, _pytorch_to_tf
-    from .common_tf import NormalizationLayerRGB
-    HAS_TENSORFLOW = True
-except:
-    HAS_TENSORFLOW = False
+    from .common_tf import NormalizationLayerRGB, UpSample2DToSize
 
 try:
     import torch
@@ -21,23 +20,11 @@ except:
 
 ## Common start ##
 
+
+
 ## Common end ##
 
 ## Tensorflow specific utils start ##
-
-class UpSample2DToSize(Layer):
-    def __init__(self, output_size, name=None, **kwargs):
-        super(UpSample2DToSize, self).__init__()
-        self.size = output_size
-    def call(self, input):
-        if tf.keras.backend.image_data_format() == 'channels_first':
-            x = tf.transpose(input, perm=[0, 2, 3, 1])
-            x = self.resize(x)
-            return tf.transpose(x, perm=[0, 3, 1, 2])
-        else:
-            return self.resize(input)
-    def resize(self, input):
-        return tf.image.resize(input, (self.size, self.size))
 
 def flatten_conv(output, n_anchors_per_cell, data_format):
     if data_format == 'channels_last':

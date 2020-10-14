@@ -11,7 +11,7 @@ def read_suite(suite_file_path,
                arcgis_python_api_dir="/path/not/specified/"):
     """Reads in the specified "/path/to/suite.yaml" str path. Replaces the 
     {placeholder} tags with the correct full paths, unglobs any glob syntax 
-    paths, removes paths from the blacklist, returns the newly parsed suite 
+    paths, removes paths from the blocklist, returns the newly parsed suite 
     dict object
     """
     suite = {}
@@ -20,7 +20,7 @@ def read_suite(suite_file_path,
 
     replace_placeholders(suite, GEOSAURUS_ROOT_DIR, arcgis_python_api_dir)
     unglob_paths(suite)
-    remove_blacklist_paths(suite)
+    remove_blocklist_paths(suite)
     return suite
 
 def replace_placeholders(dict_, geosaurus_dir, arcgis_python_api_dir):
@@ -60,13 +60,13 @@ def unglob_paths(dict_):
                         new_list.append(postglob_path)
                 dict_[key] = new_list
 
-def remove_blacklist_paths(suite):
-    """Removes all matching blacklist items from the `paths` entry"""
+def remove_blocklist_paths(suite):
+    """Removes all matching blocklist items from the `paths` entry"""
     for tests_to_run_key in suite:
-        if 'blacklist' not in suite[tests_to_run_key]['config']:
+        if 'blocklist' not in suite[tests_to_run_key]['config']:
             continue
-        blacklist = suite[tests_to_run_key]['config']['blacklist']
-        for blacklist_path in blacklist:
+        blocklist = suite[tests_to_run_key]['config']['blocklist']
+        for blocklist_path in blocklist:
             suite[tests_to_run_key]['paths'] = list(\
                 path for path in suite[tests_to_run_key]['paths'] \
-                if not path == blacklist_path)
+                if not path == blocklist_path)

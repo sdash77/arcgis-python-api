@@ -1,4 +1,4 @@
-__version__ = '1.8.0'
+__version__ = '1.8.3'
 
 from . import (features, geoanalytics, geocoding, geometry)
 from . import (geoprocessing, network, raster, realtime, schematics)
@@ -11,7 +11,7 @@ from .geocoding import geocode
 try:
     import pandas as pd
     from .features.geo import GeoAccessor, GeoSeriesAccessor
-except:
+except ImportError as e:
     pass
 
 __all__ = ['GIS', 'geocode', 'features',

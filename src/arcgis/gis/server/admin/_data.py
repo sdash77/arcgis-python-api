@@ -339,13 +339,12 @@ class DataStoreManager(BaseServer):
 
         **Usage**:
 
-        >>> con = dm.create_connection_string(r"c:\myfolder\postgres_db.sde")
+        >>> con = dm.create_connection_string("c:\\myfolder\\postgres_db.sde")
         >>> print(con)
         'ENCRYPTED_PASSWORD=************************;SERVER=localhost;
         INSTANCE=sde:postgresql:localhost,5432;DBCLIENT=postgresql;
         DB_CONNECTION_PROPERTIES=localhost,5432;DATABASE=esri_spatial;
         USER=sde;VERSION=sde.DEFAULT;AUTHENTICATION_MODE=DBMS'
-
         """
         if str(sde).lower().endswith('.sde'):
             
@@ -355,9 +354,9 @@ class DataStoreManager(BaseServer):
             up = Uploads(url=self._con.baseurl.replace("rest/services", "admin/uploads"),
                          gis=self._con)
 
-            if self._con.portal_connection:
+            if self._con._portal_connection:
                 d = ServicesDirectory(url=self._con.baseurl,
-                                      portal_connection=self._con.portal_connection)
+                                      portal_connection=self._con._portal_connection)
             elif isinstance(self._con, Connection):
                 d = ServicesDirectory(url=self._con.baseurl)
                 d._con = self._con
@@ -588,7 +587,8 @@ class DataStoreManager(BaseServer):
                parent_path=None,
                ancestor_path=None,
                types=None,
-               id=None):
+               id=None,
+               **kwargs):
         """
         Use this operation to search through the various data items that are registered in the server's data store.
 
@@ -621,6 +621,8 @@ class DataStoreManager(BaseServer):
             params['types'] = types
         if id is not None:
             params['id'] = id
+        if "decrypt" in kwargs.keys():
+            params["decrypt"] = kwargs["decrypt"]
         url = self._url + "/findItems"
         return self._con.post(path=url,
                               postdata=params)

@@ -194,7 +194,7 @@ def _analysis_job_status(gptool, task_url, job_info):
             params = {"f": "json"}
             try:
                 job_response = gptool._con.post(job_url, params, token=gptool._token)
-            except RuntimeError:
+            except Exception as e:
                 job_response = gptool._con.post(job_url, params)
 
             # Query and report the Analysis job status.
@@ -206,8 +206,10 @@ def _analysis_job_status(gptool, task_url, job_info):
 
                     try:
                         job_response = gptool._con.post(job_url, params, token=gptool._token)
-                    except RuntimeError:
+                    except Exception as e:
                         job_response = gptool._con.post(job_url, params)
+
+
                     # print(job_response)
                     messages = job_response['messages'] if 'messages' in job_response else []
                     num = len(messages)
@@ -488,6 +490,8 @@ def _get_output_value(gptool, output_val, param_db, retParamName):
                 ret_val = arcgis.features.Table(jsondict['url'], gptool._gis)
             elif ret_type == FeatureSet and 'url' in jsondict:
                 ret_val = arcgis.features.FeatureLayer(jsondict['url'], gptool._gis)
+            elif len(jsondict) == 0 or jsondict == {}:
+                ret_val = None
             else:
                 result = ret_type.from_dict(jsondict)
                 result._con = gptool._con

@@ -20,13 +20,14 @@ def stage_notebooks_for_dev_web_repo(notebooks_root_dir,
     _make_dirs([output_dir])
     _convert_notebooks_to_html(notebooks_root_dir, output_dir, log_func)
     _copy_imgs(notebooks_root_dir, output_dir)
-    _copy_remaining_files(notebooks_root_dir, output_dir)
+    _copy_videos(notebooks_root_dir, output_dir)
 
 def _convert_notebooks_to_html(notebooks_root_dir, output_dir, log_func):
     """Converts all .ipynb files to html, outputs to STAGING"""
     log.info(f"Converting notebooks to HTML, putting in {output_dir}")
     guide_notebook_dir = os.path.join(notebooks_root_dir, "guide")
     samples_notebook_dir = os.path.join(notebooks_root_dir, "samples")
+    items_metadata_yaml_path = os.path.join(notebooks_root_dir, "items_metadata.yaml")
 
     guide_html_dir = os.path.join(output_dir,
                                   "src", "python", "guide")
@@ -37,11 +38,14 @@ def _convert_notebooks_to_html(notebooks_root_dir, output_dir, log_func):
     export_notebooks(guide_notebook_dir, guide_html_dir,
                      embed_try_it_live = False,
                      replace_img_path = True,
+                     replace_video_path = True,
                      log_func = log_func)
     export_notebooks(samples_notebook_dir, samples_html_dir,
                      embed_try_it_live = True,
                      replace_img_path = True,
-                     log_func = log_func)
+                     replace_video_path = True,
+                     log_func = log_func,
+                     items_metadata_yaml_path = items_metadata_yaml_path)
 
 def _make_dirs(list_of_dirs):
     for dir_ in list_of_dirs:
@@ -61,23 +65,14 @@ def _copy_imgs(notebooks_root_dir, output_dir):
     else:
         shutil.copytree(img_src_dir, img_html_dir)
 
-def _copy_remaining_files(notebooks_root_dir, output_dir):
-    """Copy any remaining files needed that aren't notebooks/img, which are
-    html files from dev-site-overrides want to override converted notebooks
-    """
-    dev_site_subdir = os.path.join(notebooks_root_dir,
-                                   "static", "dev-site-overrides")
-    _recursive_mkdir(src_dir_root = dev_site_subdir,
-                     dst_dir_root = output_dir)
-    log.info(f"recursive copy of {dev_site_subdir} to {output_dir}")
-    recursive_file_copy(src_dir_root = dev_site_subdir,
-                        dst_dir_root = output_dir,
-                        files_to_ignore=["log.log", ".gitignore"])
-
-def _recursive_mkdir(src_dir_root, dst_dir_root):
-    """Make sure all dirs and subdir from 'src' exist in 'dst'"""
-    for root, dirs, files in os.walk(src_dir_root):
-        for dir_ in dirs:
-            rel_dir_path = os.path.join(root, dir_).split(src_dir_root)[-1]
-            target_dir_path = dst_dir_root + rel_dir_path
-            _make_dirs([target_dir_path])
+def _copy_videos(notebooks_root_dir, output_dir):
+    """Moves all video from notebooks folder to correct folder in STAGING"""
+    log.info(f"Copying video files from notebooks dir to {output_dir}")
+    video_src_dir = os.path.join(notebooks_root_dir, "static", "video")
+    video_html_dir = os.path.join(output_dir,
+                                  "static", "python", "assets", "video")
+    if os.path.isdir(video_html_dir):
+        recursive_file_copy(src_dir_root = video_src_dir,
+                            dst_dir_root = video_html_dir)
+    else:
+        shutil.copytree(video_src_dir, video_html_dir)

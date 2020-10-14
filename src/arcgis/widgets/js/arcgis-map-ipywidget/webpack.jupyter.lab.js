@@ -1,6 +1,7 @@
 const path = require('path');
 const version = require('./package.json').version;
 const merge = require('webpack-merge');
+const nodeExternals = require('webpack-node-externals');
 const common = require("./webpack.common.js");
 
 //Use the config/notebook.js file for all "require('config')" statements
@@ -17,7 +18,9 @@ module.exports = merge(common, {
      // custom widget.
      // It must be an amd module
      //
-        entry: './src/labplugin.js',
+        entry: './src/labplugin.ts',
+        target: 'node',
+        externals: [nodeExternals()],
         output: {
             filename: 'arcgis-map-ipywidget-jupyterlab.js',
             path: path.resolve(__dirname, 'dist'),

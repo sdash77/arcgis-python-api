@@ -10,13 +10,13 @@ import datetime as _datetime
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.geoprocessing._support import _execute_gp_tool
-from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob
+from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob, _prevent_bds_item
 
 _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-def run_python_script(code, layers=None, gis=None, context=None, future=False):
+def run_python_script(code, layers=None, gis=None, context=None, future=False, parameters=None, param_as_input=False):
     """
 
     The ``run_python_script`` method executes a Python script on your ArcGIS
@@ -79,30 +79,41 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False):
     ================  ===============================================================
     code              Required string. The Python script that will run on your GeoAnalytics Server. This must be the full script as a string.
 
-                      The layers provided in inputLayers can be accessed in the script using the layers object. To learn more, 
+                      The layers provided in inputLayers can be accessed in the script using the layers object. To learn more,
                       see `Reading and writing layers in pyspark <https://developers.arcgis.com/rest/services-reference/using-webgis-layers-in-pyspark.htm>`_.
-  
-                      GeoAnalytics Tools can be accessed with the geoanalytics object, which is instantiated in the script environment automatically. 
+
+                      GeoAnalytics Tools can be accessed with the geoanalytics object, which is instantiated in the script environment automatically.
                       To learn more, see `Using GeoAnalytics Tools in Run Python Script <https://developers.arcgis.com/rest/services-reference/using-geoanalytics-tools-in-pyspark.htm>`_.
-  
+
                       For a collection of example scripts, see `Examples: Scripting custom analysis with the Run Python Script task <https://developers.arcgis.com/rest/services-reference/run-python-script-examples.htm>`_.
     ----------------  ---------------------------------------------------------------
-    layers            Optional list. A list of Feature layers to operate on. See :ref:`Feature Input<FeatureInput>`.
+    layers            Optional list. A list of Feature layers to operate on. See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------  ---------------------------------------------------------------
     gis               optional GIS. The GIS object where the analysis will take place.
     ----------------  ---------------------------------------------------------------
     context           Optional dict. This parameter is not used by the ``run_python_script`` tool.
 
                       To control the output data store, use the "dataStore" option when writing DataFrames.
-  
+
                       To set the processing or output spatial reference, use the project tool in the geoanalytics package.
-  
+
                       To filter a layer when converting it to a DataFrame, use the "where" or "fields" option when loading the layer's URL.
-  
+
                       To limit the extent of a layer when converting it to a DataFrame, use the "extent" option when loading the layer's URL.
     ----------------  ---------------------------------------------------------------
     future            Optional boolean. If 'True', a GPJob is returned instead of
                       results. The GPJob can be queried on the status of the execution.
+    ----------------  ---------------------------------------------------------------
+    parameters        Optional dict. A global level variable that will be loaded into the given code.
+                      The variable name is called **user_variables**.
+
+                      ```
+                      parameters= {"param1": "example", "param2": 1, "val1": 2.0, "more_params": [False, True, None], "status": 4.0}
+                      ```
+
+                      Only built-in types are supported.
+    ----------------  ---------------------------------------------------------------
+    param_as_input    Optional Boolean. If True, the user_variable will be added if a method past. If False, the variable will not be given into the method.
     ================  ===============================================================
 
     :returns: list of dictionary of messages from the code provided.
@@ -111,20 +122,16 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False):
 
             # Usage Example: Execute calculate_density tool using run_python_script.
 
-            code = '''
-            import time 
-            r = geoanalytics.calculate_density(input_layer=layers[0],
-                            fields='Damage',
-                            weight='Uniform',
-                            bin_type='Square',
-                            bin_size=1,
-                            bin_size_unit='Meters',
-                            radius=2,
-                            radius_unit='Yards')        
-                            
-            r.write.format('webgis').save('RunPythonScriptTest_{0}'.format(time.time()))              
-            '''
-            run_python_script(code=code, layers=[lyr])
+            def density():
+                def code(ss=None):
+                    import time
+                    if ss is None:
+                        ss = user_variables['ss']
+                    res = geoanalytics.describe_dataset(input_layer=layers[0],
+                               extent_output=True,
+                               sample_size=ss)
+                res.write.format('webgis').save('RunPythonScriptTest_{0}'.format(time.time()))
+            run_python_script(code=code, layers=[lyr0], parameters={'ss' : 10000})
     """
     if layers is None:
         layers = []
@@ -132,7 +139,10 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False):
     params = {'f': 'json'}
 
     if inspect.isfunction(code):
-        params['code'] = inspect.getsource(code) + '\n' + code.__name__ + '()'
+        if param_as_input == True:
+            params['code'] = inspect.getsource(code) + '\n' + code.__name__ + '(**user_variables)'
+        else:
+            params['code'] = inspect.getsource(code) + '\n' + code.__name__ + '()'
     elif isinstance(code, str):
         params['code'] = code
     else:
@@ -146,17 +156,27 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False):
     tool_name = "RunPythonScript"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
-
+    if parameters and gis.version >= [8, 2]:
+        params['parameters'] = parameters
     if context is not None:
         params["context"] = context
     else:
         _set_context(params)
-
-    param_db = {
-        "layers": (_FeatureSet, "inputLayers"),
-        "code" : (str, "pythonScript"),
-        "context": (str, "context"),
-    }
+    if gis.version < [8, 2]:
+        if 'parameters' in params:
+            params.pop('parameters', None)
+        param_db = {
+            "layers": (_FeatureSet, "inputLayers"),
+            "code" : (str, "pythonScript"),
+            "context": (str, "context"),
+        }
+    else:
+        param_db = {
+            "layers": (_FeatureSet, "inputLayers"),
+            "code" : (str, "pythonScript"),
+            "parameters" : (dict, "userVariables"),
+            "context": (str, "context"),
+        }
 
     try:
         if future:
@@ -167,7 +187,6 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False):
         return msg
     except:
         raise
-    return 
 
 def dissolve_boundaries(input_layer,
                         dissolve_fields=None,
@@ -178,16 +197,16 @@ def dissolve_boundaries(input_layer,
                         context=None,
                         future=False):
     """
-    .. image:: _static/images/dissolve_boundaries/dissolve_boundaries.png 
+    .. image:: _static/images/dissolve_boundaries/dissolve_boundaries.png
 
-    The ``dissolve_boundaries`` task finds polygons that intersect or have the same field values 
+    The ``dissolve_boundaries`` task finds polygons that intersect or have the same field values
     and merges them together to form a single polygon.
 
     Example:
 
-        A city council wants to control liquor sales by refusing new licenses to stores within 
-        1,000 feet of schools, libraries, and parks. After creating a 1,000-foot buffer around 
-        the schools, libraries, and parks, the buffered layers can be joined together and the 
+        A city council wants to control liquor sales by refusing new licenses to stores within
+        1,000 feet of schools, libraries, and parks. After creating a 1,000-foot buffer around
+        the schools, libraries, and parks, the buffered layers can be joined together and the
         boundaries can be dissolved to create a single layer of restricted areas.
 
     .. note::
@@ -196,7 +215,7 @@ def dissolve_boundaries(input_layer,
     ================  ===============================================================
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
-    input_layer       Required layer. The layer containing polygon features that will be dissolved. See :ref:`Feature Input<FeatureInput>`.
+    input_layer       Required layer. The layer containing polygon features that will be dissolved. See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------  ---------------------------------------------------------------
     dissolve_fields   Optional string. A comma seperated list of strings for each
                       field that you want to dissolve on.One or more fields in the ``input_layer`` that determine how polygons are merged based on field value.
@@ -205,7 +224,7 @@ def dissolve_boundaries(input_layer,
 
                       If you do specify fields, polygons that share the same value for each of the specified fields will be dissolved into one polygon.
     ----------------  ---------------------------------------------------------------
-    summary_fields    Optional list of dicts. A list of field names and statistical summary types you want to calculate. 
+    summary_fields    Optional list of dicts. A list of field names and statistical summary types you want to calculate.
                       Note that the count is always returned. By default, all statistics are returned.
 
                       Syntax: [{"statisticType" : "<stat>", "onStatisticField" : "<field name>"}]
@@ -226,7 +245,7 @@ def dissolve_boundaries(input_layer,
 
                         * ``Count`` - Totals the number of strings for all the points in each polygon.
                         * ``Any`` - Returns a sample string of a point in each polygon.
-                  
+
                       Example: summary_fields = [{"statisticType" : "Sum", "onStatisticField" : "quadrat_area_km2"}, {"statisticType" : "Mean", "onStatisticField" : "soil_depth_cm"}, {"statisticType" : "Any", "onStatisticField" : "quadrat_desc"}]
     ----------------  ---------------------------------------------------------------
     multipart         Optional boolean. If 'True', the output service can contain
@@ -256,10 +275,10 @@ def dissolve_boundaries(input_layer,
 
     .. code-block:: python
 
-            # Usage Example: This example dissolves boundaries of soil areas in Nebraska if they have 
-            # the same solubility. For dissolved features, it calculates the sum of the quadrat area, 
+            # Usage Example: This example dissolves boundaries of soil areas in Nebraska if they have
+            # the same solubility. For dissolved features, it calculates the sum of the quadrat area,
             # the mean soil depth, and an example of the quadrat description.
-            
+
             arcgis.env.out_spatial_reference = 3310
             arcgis.env.output_datastore= "relational"
             arcgis.env.defaultAggregations= True
@@ -275,6 +294,7 @@ def dissolve_boundaries(input_layer,
                                                   output_name="Soil_Suitability_dissolved")
     """
     kwargs = locals()
+    input_layer = _prevent_bds_item(input_layer)
     tool_name = "DissolveBoundaries"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
@@ -290,12 +310,20 @@ def dissolve_boundaries(input_layer,
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Merge Layers',
+                                            output_datastore=output_datastore)
 
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Merge Layers')
-
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
         params["context"] = context
@@ -327,17 +355,17 @@ def dissolve_boundaries(input_layer,
         raise
     return
 
-def merge_layers(input_layer, 
+def merge_layers(input_layer,
                  merge_layer,
-                 merge_attributes=None, 
+                 merge_attributes=None,
                  output_name=None,
-                 gis=None, 
+                 gis=None,
                  context=None,
                  future=False):
     """
 
-    .. image:: _static/images/merge_layers/merge_layers.png 
-    
+    .. image:: _static/images/merge_layers/merge_layers.png
+
     The ``merge_layers`` task combines two feature layers to create a single output layer. The tool
     requires that both layers have the same geometry type (tabular, point, line, or polygon). If
     time is enabled on one layer, the other must also be time enabled and have the same time type
@@ -357,9 +385,9 @@ def merge_layers(input_layer,
     ================  ===============================================================
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
-    input_layer       Required layer. The table, point, line, or polygon features to 
-                      merge with the ``merge_layer`` parameter. All fields in ``input_layer`` 
-                      will be included in the result layer.  See :ref:`Feature Input<FeatureInput>`.
+    input_layer       Required layer. The table, point, line, or polygon features to
+                      merge with the ``merge_layer`` parameter. All fields in ``input_layer``
+                      will be included in the result layer.  See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------  ---------------------------------------------------------------
     merge_layer       Required layer. The point, line, or polygon features to
                       merge with the ``input_layer``. The ``merge_layer`` must contain the
@@ -367,7 +395,7 @@ def merge_layers(input_layer,
                       same time type (none, instant, or interval) as the ``input_layer``.
                       All fields in the ``merge_layer`` will be included in the result
                       layer by default or you can define ``merge_attributes`` to
-                      customize the resulting schema.  See :ref:`Feature Input<FeatureInput>`.
+                      customize the resulting schema.  See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------  ---------------------------------------------------------------
     merge_attributes  Optional list of dicts. Defines how the fields in ``merge_layer`` will be
                       modified. By default, all fields from both inputs will be
@@ -386,16 +414,16 @@ def merge_layers(input_layer,
                       specified ``merge_layer`` field:
 
                             * ``Remove`` - The field in the ``merge_layer`` will be removed from the output layer.
-                            * ``Rename`` - The field in the ``merge_layer`` will be renamed in the output layer. 
-                              You cannot rename a field in the ``merge_layer`` to a field in the ``input_layer``. 
+                            * ``Rename`` - The field in the ``merge_layer`` will be renamed in the output layer.
+                              You cannot rename a field in the ``merge_layer`` to a field in the ``input_layer``.
                               If you want to make field names equivalent, use Match.
-                            * ``Match`` - A field in the merge_layer is made equivalent to a field in the ``input_layer`` 
-                              specified by ``merge_layer``. For example, the input_layer has a field named CODE 
-                              and the merge_layer has a field named STATUS. You can match STATUS to CODE, and 
-                              the output will contain the CODE field with values of the STATUS field used for 
-                              features copied from the merge_layer. Type casting is supported (for example, 
+                            * ``Match`` - A field in the merge_layer is made equivalent to a field in the ``input_layer``
+                              specified by ``merge_layer``. For example, the input_layer has a field named CODE
+                              and the merge_layer has a field named STATUS. You can match STATUS to CODE, and
+                              the output will contain the CODE field with values of the STATUS field used for
+                              features copied from the merge_layer. Type casting is supported (for example,
                               double to integer, integer to string) except for string to numeric.
-                    
+
                       Example: [{"mergeLayerField": "Mean_Sales","mergeType": "Match","mergeValue": "Average_Sales"},{"mergeLayerField": "Bonus","mergeType": "Remove",},{"mergeLayerField": "Field4","mergeType": "Rename","mergeValue": "Errors"}]
     ----------------  ---------------------------------------------------------------
     output_name       Optional string. The task will create a feature service of the results. You define the name of the service.
@@ -409,7 +437,7 @@ def merge_layers(input_layer,
                       #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                       #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
                       #. Default aggregation styles (``defaultAggregationStyles``) - If set to 'True', results will have square, hexagon, and triangle aggregation styles enabled on results map services.
-    ----------------  ---------------------------------------------------------------    
+    ----------------  ---------------------------------------------------------------
     future            Optional boolean. If 'True', a GPJob is returned instead of
                       results. The GPJob can be queried on the status of the execution.
 
@@ -428,6 +456,7 @@ def merge_layers(input_layer,
                                        output_name="IL_WI_Census_Blocks")
     """
     kwargs = locals()
+    input_layer = _prevent_bds_item(input_layer)
     tool_name = "MergeLayers"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
@@ -445,12 +474,20 @@ def merge_layers(input_layer,
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Merge Layers',
+                                            output_datastore=output_datastore)
 
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Merge Layers')
-
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
         params["context"] = context
@@ -478,12 +515,9 @@ def merge_layers(input_layer,
         output_service.delete()
         raise
 
-    return
-
-
 def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None, future=False):
     """
-    .. image:: _static/images/clip_layer/clip_layer.png 
+    .. image:: _static/images/clip_layer/clip_layer.png
 
     ``clip_layer`` features from one layer to the extent of a boundary layer. Use this tool to cut out a piece
     of one feature class using one or more of the features in another feature class as a cookie
@@ -496,28 +530,28 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None
     ================  ===============================================================
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
-    input_layer       Required feature layer. The point, line, or polygon features 
-                      that will be clipped to the areas of ``clip_layer`` features. 
-                      See :ref:`Feature Input<FeatureInput>`.
+    input_layer       Required feature layer. The point, line, or polygon features
+                      that will be clipped to the areas of ``clip_layer`` features.
+                      See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------  ---------------------------------------------------------------
-    clip_layer        Required feature layer. The polygon features that define the 
-                      areas to which ``input_layer`` features will be clipped. 
-                      See :ref:`Feature Input<FeatureInput>`.
+    clip_layer        Required feature layer. The polygon features that define the
+                      areas to which ``input_layer`` features will be clipped.
+                      See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------  ---------------------------------------------------------------
-    output_name       Optional string. The task will create a feature service of 
+    output_name       Optional string. The task will create a feature service of
                       the results. You define the name of the service.
     ----------------  ---------------------------------------------------------------
-    context           Optional strin. The context parameter contains additional 
+    context           Optional strin. The context parameter contains additional
                       settings that affect task execution. For this task, there are four settings:
 
-                      #. Extent (``extent``) - A bounding box that defines the analysis area. 
+                      #. Extent (``extent``) - A bounding box that defines the analysis area.
                          Only those features that intersect the bounding box will be analyzed.
-                      #. Processing spatial reference (``processSR``) - The features will be 
+                      #. Processing spatial reference (``processSR``) - The features will be
                          projected into this coordinate system for analysis.
-                      #. Output spatial reference (``outSR``) - The features will be projected 
-                         into this coordinate system after the analysis to be saved. 
+                      #. Output spatial reference (``outSR``) - The features will be projected
+                         into this coordinate system after the analysis to be saved.
                          The output spatial reference for the spatiotemporal big data store is always WGS84.
-                      #. Data store (``dataStore``) - Results will be saved to the specified data store. 
+                      #. Data store (``dataStore``) - Results will be saved to the specified data store.
                          The default is the spatiotemporal big data store.
     ----------------  ---------------------------------------------------------------
     gis               optional GIS. The GIS object where the analysis will take place.
@@ -532,13 +566,14 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None
 
             # Usage Example: To clip the buffered area in the shape of Capitol Hill boundary.
 
-            clipped = clip_layer(input_layer=buffer, 
+            clipped = clip_layer(input_layer=buffer,
                                  clip_layer=boundary,
                                  output_name="clipped_buffer",
                                  context={"extent":{'xmin': -77.50941999999998,'ymin': 38.389560000000074,'xmax': -76.50941999999998,'ymax': 39.389560000000074,"spatialReference":{"wkid":102100,"latestWkid":3857}}})
 
     """
     kwargs = locals()
+    input_layer = _prevent_bds_item(input_layer)
     tool_name = "ClipLayer"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
@@ -556,9 +591,13 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None
 
     output_service = _create_output_service(gis, output_name, output_service_name, 'Overlay Layers')
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
         params["context"] = context
@@ -586,14 +625,12 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None
         output_service.delete()
         raise
 
-    return
 
-
-def overlay_data(input_layer, 
-                 overlay_layer, 
-                 overlay_type="intersect", 
-                 output_name=None, 
-                 gis=None, 
+def overlay_data(input_layer,
+                 overlay_layer,
+                 overlay_type="intersect",
+                 output_name=None,
+                 gis=None,
                  include_overlaps=True,
                  context=None,
                  future=False):
@@ -606,10 +643,10 @@ def overlay_data(input_layer,
     .. |identity| image:: _static/images/overlay_layers/identity.png
     .. |symm| image:: _static/images/overlay_layers/Symmetric_Difference.png
 
-    The ``overlay_data`` task combines two or more layers into one single layer. 
-    You can think of overlay as peering through a stack of maps and creating a single 
-    map containing all the information found in the stack. Overlay is used to answer 
-    one of the most basic questions of geography: What is on top of what? 
+    The ``overlay_data`` task combines two or more layers into one single layer.
+    You can think of overlay as peering through a stack of maps and creating a single
+    map containing all the information found in the stack. Overlay is used to answer
+    one of the most basic questions of geography: What is on top of what?
     The following are examples:
 
         * What parcels are within the 100-year floodplain? ("Within" is another way of saying "on top of.")
@@ -622,7 +659,7 @@ def overlay_data(input_layer,
     ======================  ===============================================================================
     **Argument**            **Description**
     ----------------------  -------------------------------------------------------------------------------
-    input_layer             Required layer. The point, line, or polygon features that will be overlaid with the ``overlay_layer`` features. See :ref:`Feature Input<FeatureInput>`.
+    input_layer             Required layer. The point, line, or polygon features that will be overlaid with the ``overlay_layer`` features. See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------------  -------------------------------------------------------------------------------
     overlay_layer           Required layer. The features that will be overlaid with the ``input_layer`` features.
     ----------------------  -------------------------------------------------------------------------------
@@ -642,7 +679,7 @@ def overlay_data(input_layer,
                             | |Erase| ``erase``                  | Only those features or portions of features in the ``overlay_layer``              |
                             |                                    | that are not within the features in the ``input_layer`` layer are                 |
                             |                                    | written to the output.                                                            |
-                            |                                    |                                                                                   | 
+                            |                                    |                                                                                   |
                             |                                    | * Point — Point                                                                   |
                             |                                    | * Line — Line                                                                     |
                             |                                    | * Polygon — Polygon                                                               |
@@ -661,17 +698,17 @@ def overlay_data(input_layer,
                             |                                    |  * Polygon— Polygon                                                               |
                             +------------------------------------+-----------------------------------------------------------------------------------+
                             | |symm| ``symmetricaldifference``   | Features or portions of features in the ``input_layer``                           |
-                            |                                    | and ``overlay_layer`` that do not overlap will be written to the output layer.    | 
+                            |                                    | and ``overlay_layer`` that do not overlap will be written to the output layer.    |
                             |                                    |                                                                                   |
                             |                                    | * Point — Point                                                                   |
                             |                                    | * Line — Line                                                                     |
                             |                                    | * Polygon— Polygon                                                                |
                             +------------------------------------+-----------------------------------------------------------------------------------+
     ----------------------  -------------------------------------------------------------------------------
-    include_overlaps        Optional boolean. Determines whether input features in the same dataset contain any overlapping features. 
-                            This option should only be modified if you're not interested in self-intersection between 
-                            features for the input layer and self-intersection between features for the overlay layer. 
-                            Setting this value to false will improve performance. This parameter is only used when 
+    include_overlaps        Optional boolean. Determines whether input features in the same dataset contain any overlapping features.
+                            This option should only be modified if you're not interested in self-intersection between
+                            features for the input layer and self-intersection between features for the overlay layer.
+                            Setting this value to false will improve performance. This parameter is only used when
                             ``include_overlaps`` is Intersect with 10.6 and 10.6.1.
 
                             The default value is 'True'.
@@ -699,12 +736,13 @@ def overlay_data(input_layer,
 
             # Usage Example: To find the intersecting areas between watersheds and grazing land in Missouri.
 
-            overlay_result = manage_data.overlay_data(input_layer=grazing_land, 
-                                          overlay_layer=watersheds_layer, 
-                                          overlay_type="Intersect", 
-                                          output_name="Watershed_intersections")   
+            overlay_result = manage_data.overlay_data(input_layer=grazing_land,
+                                          overlay_layer=watersheds_layer,
+                                          overlay_type="Intersect",
+                                          output_name="Watershed_intersections")
     """
     kwargs = locals()
+    input_layer = _prevent_bds_item(input_layer)
     tool_name = "OverlayLayers"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
@@ -723,13 +761,20 @@ def overlay_data(input_layer,
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Overlay Layers',
+                                            output_datastore=output_datastore)
 
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Overlay Layers')
-
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
-
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
     if context is not None:
         params["context"] = context
     else:
@@ -808,6 +853,7 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
 
     """
     kwargs = locals()
+    input_layer = _prevent_bds_item(input_layer)
     tool_name = "AppendData"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
@@ -856,7 +902,7 @@ def calculate_fields(input_layer,
                      ):
     """
 
-    .. image:: _static/images/calculate_field/calculate_field.png 
+    .. image:: _static/images/calculate_field/calculate_field.png
 
     The ``calculate_fields`` task works with a layer to create and populate a
     new field. The output is a new feature layer, that is the same as the
@@ -866,14 +912,14 @@ def calculate_fields(input_layer,
     **Argument**                                        **Description**
     -------------------------------------------------   ---------------------------------------------------------------
     input_layer                                         Required layer. The input features that will have a field added and calculated.
-                                                        See :ref:`Feature Input<FeatureInput>`.
+                                                        See :ref:`Feature Input<gaxFeatureInput>`.
     -------------------------------------------------   ---------------------------------------------------------------
     field_name                                          Required string. A string representing the name of the new
                                                         field. If the name already exists in the dataset, then a
                                                         numeric value will be appended to the field name.
     -------------------------------------------------   ---------------------------------------------------------------
     data_type                                           Required string. The type for the new field.
-    
+
                                                         Choice list: ['Date', 'Double', 'Integer', 'String'`].
     -------------------------------------------------   ---------------------------------------------------------------
     expression                                          Required string. An Arcade expression used to calculate the new
@@ -889,12 +935,12 @@ def calculate_fields(input_layer,
                                                         There can be multiple track_fields. track_fields are only
                                                         required when ``track_aware`` is True.
     -------------------------------------------------   ---------------------------------------------------------------
-    time_boundary_split                                 Optional integer. A time boundary allows your to analyze values within a defined time span. 
-                                                        For example, if you use a time boundary of 1 day, starting on January 1st, 1980 tracks will 
+    time_boundary_split                                 Optional integer. A time boundary allows your to analyze values within a defined time span.
+                                                        For example, if you use a time boundary of 1 day, starting on January 1st, 1980 tracks will
                                                         be analyzed 1 day at a time. The time boundary parameter was introduced in ArcGIS Enterprise 10.7.
 
                                                         The time boundary parameters are only applicable if the analysis is ``track_aware``.
-                                                        The ``time_boundary_split`` parameter defines the scale of the time boundary. 
+                                                        The ``time_boundary_split`` parameter defines the scale of the time boundary.
                                                         In the case above, this would be 1. See the portal documentation for this tool to learn more.
     -------------------------------------------------   ---------------------------------------------------------------
     time_split_unit                                     Optional string.  The unit to detect an incident is `time_boundary_split` is used.
@@ -917,7 +963,7 @@ def calculate_fields(input_layer,
                                                         #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                                         #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
     =================================================   ===============================================================
-    
+
 
     :returns: feature layer collection
 
@@ -931,6 +977,7 @@ def calculate_fields(input_layer,
                                       expression='max($feature["InputValue"],$feature["Value2"])')
     """
     kwargs = locals()
+    input_layer = _prevent_bds_item(input_layer)
     tool_name = "CalculateField"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
@@ -946,12 +993,20 @@ def calculate_fields(input_layer,
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Calculate Fields',
+                                            output_datastore=output_datastore)
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Calculate Fields')
-
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
 
     if context is not None:
         params["context"] = context
@@ -985,8 +1040,6 @@ def calculate_fields(input_layer,
         output_service.delete()
         raise
 
-    return
-
 def copy_to_data_store(
     input_layer,
     output_name=None,
@@ -994,33 +1047,33 @@ def copy_to_data_store(
     context=None,
     future=False):
     """
-    .. image:: _static/images/copy_to_data_store/copy_to_data_store.png 
+    .. image:: _static/images/copy_to_data_store/copy_to_data_store.png
 
-    The ``copy_to_data_store`` task takes an input layer and copies it to a data store. 
-    Data is copied to ArcGIS Data Store, configured as either a relational or 
+    The ``copy_to_data_store`` task takes an input layer and copies it to a data store.
+    Data is copied to ArcGIS Data Store, configured as either a relational or
     spatiotemporal big data store.
-    
+
     For example
 
         * Copy a collection of .csv files in a big data file share to the spatiotemporal data store for visualization.
         * Copy the features in the current map extent that are stored in the spatiotemporal data store to the relational data store.
 
-    This tool will take an input layer and copy it to a data store. Data will be copied to the ArcGIS Data Store 
+    This tool will take an input layer and copy it to a data store. Data will be copied to the ArcGIS Data Store
     and will be stored in your relational or spatiotemporal data store.
 
-    For example, you could copy features that are stored in a big data file share to a relational data store 
-    and specify that only features within the current map extent will be copied. This would create a hosted 
+    For example, you could copy features that are stored in a big data file share to a relational data store
+    and specify that only features within the current map extent will be copied. This would create a hosted
     feature service with only those features that were within the specified map extent.
 
     ==========================   ===============================================================
     **Argument**                 **Description**
     --------------------------   ---------------------------------------------------------------
-    input_layer                  Required layer. The table, point, line, or polygon features that will be copied. See :ref:`Feature Input<FeatureInput>`.
+    input_layer                  Required layer. The table, point, line, or polygon features that will be copied. See :ref:`Feature Input<gaxFeatureInput>`.
     --------------------------   ---------------------------------------------------------------
     output_name                  Optional string. The task will create a feature service of the results. You define the name of the service.
-    --------------------------   --------------------------------------------------------------- 
+    --------------------------   ---------------------------------------------------------------
     gis                          Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
-    --------------------------   --------------------------------------------------------------- 
+    --------------------------   ---------------------------------------------------------------
     context                      Optional string. The context parameter contains additional settings that affect task execution. For this task, there are five settings:
 
                                  #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
@@ -1028,7 +1081,7 @@ def copy_to_data_store(
                                  #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                  #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
                                  #. Default aggregation styles (``defaultAggregationStyles``) - If set to 'True', results will have square, hexagon, and triangle aggregation styles enabled on results map services.
-    --------------------------   --------------------------------------------------------------- 
+    --------------------------   ---------------------------------------------------------------
      future                      Optional boolean. If 'True', the result comes back as a GPJob.
 
                                  The default value is 'False'.
@@ -1038,12 +1091,12 @@ def copy_to_data_store(
 
     .. code-block:: python
 
-            # Usage Example: To copy input layer to a data store. 
+            # Usage Example: To copy input layer to a data store.
             copy_result = copy_to_data_store(input_layer=earthquakes,
                                              output_name="copy earthquakes data")
     """
     kwargs = locals()
-
+    input_layer = _prevent_bds_item(input_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
 
@@ -1057,23 +1110,28 @@ def copy_to_data_store(
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
-    _set_context(params)
-    if 'context' in params and \
-       params['context'].lower().find('bigdatafileshares') > -1:
-        params['output_name'] = output_name
-        output_service = True
+    if context is not None:
+        params["context"] = context
     else:
-        output_service = _create_output_service(gis, output_name, output_service_name, 'Copy To Data Store')
+        _set_context(params)
+    if 'context' in params and \
+       'dataStore' in params['context'] and \
+       params['context']['dataStore'].lower().find('/bigDataFileShares/'.lower()) > -1:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
+    else:
+        if context is not None:
+            output_datastore = context.get('dataStore', None)
+        else:
+            output_datastore = None
+        output_service = _create_output_service(gis, output_name, output_service_name, 'Copy To Data Store', output_datastore=output_datastore)
         params['output_name'] = _json.dumps({
             "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
             "itemProperties": {"itemId" : output_service.itemid}})
 
     #_set_context(params)
 
-    if context is not None:
-        params["context"] = context
-    else:
-        _set_context(params)
+
 
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
@@ -1085,11 +1143,13 @@ def copy_to_data_store(
         {"name": "output", "display_name": "Output Layer", "type": _FeatureSet},
     ]
     try:
+
+        gpjob = _execute_gp_tool(gis, "CopyToDataStore", params, param_db, return_values, _use_async, url, True, future=True)
+        gajob =  GAJob(gpjob=gpjob, return_service=output_service)
         if future:
-            gpjob = _execute_gp_tool(gis, "CopyToDataStore", params, param_db, return_values, _use_async, url, True, future=future)
-            return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, "CopyToDataStore", params, param_db, return_values, _use_async, url, True, future=future)
-        return output_service
+            return gajob
+        else:
+            return gajob.result()
     except:
         if isinstance(output_service, bool):
             return False

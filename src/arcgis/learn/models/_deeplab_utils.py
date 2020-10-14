@@ -30,18 +30,22 @@ import torch.nn as nn
 import torch
 from torchvision import models
 import math
-from fastai.callbacks.hooks import hook_output
+from fastai.callbacks.hooks import hook_outputs
 from fastai.vision.learner import create_body
 from fastai.callbacks.hooks import model_sizes
 from torchvision.models.segmentation.segmentation import _segm_resnet
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead, DeepLabV3
 from torchvision.models.segmentation.fcn import FCNHead
 from ._arcgis_model import _get_backbone_meta
-from fastprogress import progress_bar
+from fastprogress.fastprogress import progress_bar
+from ._PointRend import PointRendSemSegHead
+from fastai.vision import flatten_model
 
 class Deeplab(nn.Module):
-    def __init__(self, num_classes, backbone_fn, chip_size=224):
-        super().__init__()        
+    def __init__(self, num_classes, backbone_fn, chip_size=224, pointrend=True):
+        super().__init__()
+        self.pointrend = pointrend
+        self.vgg = False
         if getattr(backbone_fn, '_is_multispectral', False):
             self.backbone = create_body(backbone_fn, pretrained=True, cut=_get_backbone_meta(backbone_fn.__name__)['cut'])
         else:
@@ -57,17 +61,24 @@ class Deeplab(nn.Module):
         
         if "vgg" in backbone_name:
             modify_dilation_index = -5
+            self.vgg = True
         else:
-            modify_dilation_index = -2
+            if self.pointrend:
+                modify_dilation_index = -1
+            else:
+                modify_dilation_index = -2
             
         if backbone_name == 'resnet18' or backbone_name == 'resnet34':
             module_to_check = 'conv' 
         else:
             module_to_check = 'conv2'
         
-        ## Hook at the index where we need to get the auxillary logits out
-        self.hook = hook_output(hookable_modules[modify_dilation_index])
-        
+        if "vgg" in backbone_name:
+            hooks = [hookable_modules[i-1] for i, module in enumerate(hookable_modules) if isinstance(module, nn.MaxPool2d)]
+
+        else:
+            hooks = [hookable_modules[-2], hookable_modules[-3], hookable_modules[-4]]
+
         custom_idx = 0
         for i, module in enumerate(hookable_modules[modify_dilation_index:]): 
             dilation = 2 * (i + 1)
@@ -84,39 +95,87 @@ class Deeplab(nn.Module):
                     padding = 2 * (custom_idx + 1)
                     module.dilation, module.padding, module.stride = (dilation, dilation), (padding, padding), (1, 1)
                     custom_idx += 1
+
+        ## Hook at the index where we need to get the auxillary logits out along with Fine-grained features 
+        self.hook = hook_outputs(hooks)
         
         ## returns the size of various activations
         feature_sizes = model_sizes(self.backbone, size=(chip_size, chip_size))
-        ## Geting the number of channel persent in stored activation inside of the hook
-        num_channels_aux_classifier = self.hook.stored.shape[1]
-        ## Get number of channels in the last layer
-        num_channels_classifier = feature_sizes[-1][1]
+        
+        if not self.vgg:
+            ## Geting the number of channel persent in stored activation inside of the hook
+            num_channels_aux_classifier = self.hook[0].stored.shape[1]
+            ## Get number of channels in the last layer
+            num_channels_classifier = feature_sizes[-1][1]
+        else:
+            num_channels_aux_classifier = self.hook[-2].stored.shape[1]
+            num_channels_classifier = self.hook[-1].stored.shape[1]
 
         self.classifier = DeepLabHead(num_channels_classifier, num_classes)
         self.aux_classifier = FCNHead(num_channels_aux_classifier, num_classes)
 
+        if self.pointrend:
+
+            if self.vgg:
+                num_channels = self.hook[-3].stored.shape[1] + self.hook[-4].stored.shape[1]
+                stride = chip_size / self.hook[-1].stored.shape[2]  
+            else:
+                num_channels = self.hook[1].stored.shape[1] + self.hook[2].stored.shape[1]
+                stride = chip_size / feature_sizes[-1][2]
+
+            subdivision_steps = math.log(stride, 2)
+            self.pointrend_head = PointRendSemSegHead(num_classes,
+                                                    num_channels,
+                                                    train_num_points=(chip_size/stride)**2,
+                                                    subdivision_num_points=(chip_size/(stride/2))**2,
+                                                    subdivision_steps=subdivision_steps)
+
     def forward(self, x):
+
         x_size = x.size()
         x = self.backbone(x)
-        if self.training:
-            aux_l = self.aux_classifier(self.hook.stored)
+        features = self.hook.stored
         
-        ## Remove hook to free up memory.
-        self.hook.remove()
-        x = self.classifier(x)
-        result = F.interpolate(x, x_size[2:], mode='bilinear', align_corners=False)
-        if self.training:
-            x = F.interpolate(aux_l, x_size[2:], mode='bilinear', align_corners=False)
-            return result, x
+        if self.vgg:
+            x = self.classifier(features[-1])
         else:
-            return F.interpolate(x, x_size[2:], mode='bilinear', align_corners=False)
+            x = self.classifier(x)
+
+        if self.pointrend:
+            
+            if self.vgg:
+                pointrend_out = self.pointrend_head(x, [features[-4], features[-3]])
+            else:
+                pointrend_out = self.pointrend_head(x, [features[2], features[1]])
+
+        result = F.interpolate(x, x_size[2:], mode='bilinear', align_corners=False)
+
+        if self.training:
+
+            if self.vgg:
+                x = self.aux_classifier(features[-2])
+            else:
+                x = self.aux_classifier(features[0])
+
+            x = F.interpolate(x, x_size[2:], mode='bilinear', align_corners=False)
+
+            if self.pointrend:
+                return result, x, pointrend_out
+            else:
+                return result, x
+        else:
+
+            if self.pointrend:
+                return pointrend_out
+            else:
+                return result
 
 def mask_iou(mask1, mask2):
      
-    mask1 = mask1.permute(0,2,3,1)
-    mask2 = mask2.permute(0,2,3,1)
-    mask1 = torch.reshape(mask1>0, (-1, mask1.shape[-1])).type(torch.float64)
-    mask2 = torch.reshape(mask2>0, (-1, mask2.shape[-1])).type(torch.float64)
+    mask1 = mask1.permute(0, 2, 3, 1)
+    mask2 = mask2.permute(0, 2, 3, 1)
+    mask1 = torch.reshape(mask1 > 0, (-1, mask1.shape[-1])).type(torch.float64)
+    mask2 = torch.reshape(mask2 > 0, (-1, mask2.shape[-1])).type(torch.float64)
     area1 = torch.sum(mask1, dim=0)
     area2 = torch.sum(mask2, dim=0)
     intersection = torch.sum(mask1*mask2, dim=0)
@@ -124,22 +183,28 @@ def mask_iou(mask1, mask2):
     iou = intersection / (union + 1e-6)
     return iou
 
-def compute_miou(model, dl, mean, num_classes, show_progress):
+def compute_miou(model, dl, mean, num_classes, show_progress, ignore_mapped_class=[]):
 
     ious=[]
     model.learn.model.eval()
     with torch.no_grad():
         for input, target in progress_bar(dl, display=show_progress):
             pred = model.learn.model(input)
-            pred = pred.argmax(dim=1)
             target = target.squeeze(1)
+            if ignore_mapped_class != []:
+                _, total_classes, _, _ = pred.shape
+                for k in ignore_mapped_class:
+                    pred[:, k] = -1
+                pred = pred.argmax(dim=1)
+            else:
+                pred = pred.argmax(dim=1)
             mask1 = []
             mask2 = []
             for i in range(pred.shape[0]):
                 mask1.append(pred[i].to(model._device) == num_classes[:, None, None].to(model._device))
                 mask2.append(target[i].to(model._device) == num_classes[:, None, None].to(model._device))
             mask1 = torch.stack(mask1)
-            mask2 =torch.stack(mask2)
+            mask2 = torch.stack(mask2)
             iou = mask_iou(mask1, mask2)
             ious.append(iou.tolist())
 

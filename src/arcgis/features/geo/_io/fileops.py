@@ -7,7 +7,7 @@ import uuid
 from pathlib import Path
 import shutil
 import datetime
-
+import ujson as _ujson
 import numpy as np
 import pandas as pd
 
@@ -131,7 +131,12 @@ def _from_xy(df, x_column, y_column, sr=None):
     """
     Takes an X/Y Column and Creates a Point Geometry from it.
     """
-    from arcgis.geometry import SpatialReference, Geometry
+    from arcgis.geometry import SpatialReference, Point
+    from arcgis.features.geo._array import GeoArray
+    def _xy_to_geometry(x,y,sr):
+        """converts x/y coordinates to Point object"""
+        return Point({'spatialReference' : sr, 'x' : x, 'y': y})
+
     if sr is None:
         sr = SpatialReference({'wkid' : 4326})
     if not isinstance(sr, SpatialReference):
@@ -142,19 +147,56 @@ def _from_xy(df, x_column, y_column, sr=None):
         elif isinstance(sr, str):
             sr = SpatialReference({'wkt' : sr})
     geoms = []
-    for idx, row in df.iterrows():
-        geoms.append(
-            Geometry({'x' : row[x_column], 'y' : row[y_column],
-             'spatialReference' : sr})
-        )
-    df['SHAPE'] = geoms
-    df.spatial.set_geometry('SHAPE')
+    v_func = np.vectorize(_xy_to_geometry, otypes='O')
+    ags_geom = np.empty(len(df), dtype="O")
+    ags_geom[:] = v_func(df[x_column].values, df[y_column].values, sr)
+    df['SHAPE'] = GeoArray(ags_geom)
+    df.spatial.name
     return df
 
 def _ensure_path_string(input_path):
     """Provide hander to facilitate file path inputs to be Path object instances."""
     return str(input_path) if isinstance(input_path, Path) else input_path
+#--------------------------------------------------------------------------
+def read_feather(path, spatial_column="SHAPE", columns=None, use_threads: bool = True) -> pd.DataFrame:
+    """
+    Load a feather-format object from the file path.
 
+    Parameters
+    ----------
+    path : str, path object or file-like object
+        Any valid string path is acceptable. The string could be a URL. Valid
+        URL schemes include http, ftp, s3, and file. For file URLs, a host is
+        expected. A local file could be:
+        ``file://localhost/path/to/table.feather``.
+
+        If you want to pass in a path object, pandas accepts any
+        ``os.PathLike``.
+
+        By file-like object, we refer to objects with a ``read()`` method,
+        such as a file handler (e.g. via builtin ``open`` function)
+        or ``StringIO``.
+    spatial_column : str, Name of the geospatial column. The default is `SHAPE`.
+       .. versionadded:: v1.8.2 of ArcGIS API for Python
+    columns : sequence, default None
+        If not provided, all columns are read.
+
+        .. versionadded:: v1.8.2 of ArcGIS API for Python
+    use_threads : bool, default True
+        Whether to parallelize reading using multiple threads.
+
+       .. versionadded:: v1.8.2 of ArcGIS API for Python
+
+    Returns
+    -------
+    type of object stored in file
+    """
+    sdf = pd.read_feather(path=path, columns=columns, use_threads=use_threads)
+    if spatial_column and \
+       spatial_column in sdf.columns:
+        sdf.spatial.set_geometry(spatial_column)
+        sdf.spatial.name
+    return sdf
 #--------------------------------------------------------------------------
 def from_table(filename, **kwargs):
     """
@@ -238,7 +280,7 @@ def to_table(geo, location, overwrite=True):
     fc_name = os.path.basename(location)
     df = geo._data
     if location.lower().find('.csv') > -1:
-        geo._df.to_csv(location)
+        geo._data.to_csv(location)
         return location
     elif HASARCPY:
         columns = df.columns.tolist()
@@ -359,7 +401,7 @@ def from_featureclass(filename, **kwargs):
             }
             area_field = getattr(desc, 'areaFieldName', None)
             length_field = getattr(desc, 'lengthFieldName', None)
-            
+
         if spatial_filter:
             _sf_lu = {
                 "esriSpatialRelIntersects" : "INTERSECT",
@@ -378,8 +420,8 @@ def from_featureclass(filename, **kwargs):
             geom = geom.as_arcpy
             flname = "a" + uuid.uuid4().hex[:6]
             filename = arcpy.management.MakeFeatureLayer(filename, out_layer=flname, where_clause=where_clause)[0]
-            arcpy.management.SelectLayerByLocation(filename, overlap_type=relto, select_features=geom)[0] 
-        
+            arcpy.management.SelectLayerByLocation(filename, overlap_type=relto, select_features=geom)[0]
+
         shape_name = desc['shapeType']
         if fields is None:
             fields = [fld.name for fld in desc['fields'] \
@@ -416,6 +458,7 @@ def from_featureclass(filename, **kwargs):
             df = pd.DataFrame([],
                               columns=df_fields)
         q = df.SHAPE.notnull()
+        none_q = ~df.SHAPE.notnull()
         gt = desc['shapeType'].lower()
         geoms = {
             "point" : _types.Point,
@@ -425,12 +468,15 @@ def from_featureclass(filename, **kwargs):
             "envelope" : _types.Envelope,
             "geometry" : _types.Geometry
         }
+        import json
         df.SHAPE = (
            df.SHAPE[q]
-           .apply(pd.io.json.loads)
+           .apply(_ujson.loads)
            .apply(geoms[gt])
         )
+        df.loc[none_q, "SHAPE"] = None
         df.spatial.set_geometry("SHAPE")
+        df.spatial._meta.source = filename
         return df
     elif HASARCPY == False and \
          HASPYSHP == True and\
@@ -453,6 +499,7 @@ def from_featureclass(filename, **kwargs):
         sdf.spatial.set_geometry('SHAPE')
         sdf['OBJECTID'] = range(sdf.shape[0])
         sdf.reset_index(inplace=True)
+        sdf.spatial._meta.source = filename
         return sdf
     elif HASARCPY == False and \
          HASFIONA == True and \
@@ -492,6 +539,7 @@ def from_featureclass(filename, **kwargs):
                     df = pd.DataFrame(data=atts, columns=cols)
                     df.spatial.set_geometry(geoms)
                     df.spatial.sr = sr
+                    df.spatial._meta.source = filename
                     return df
         else:
             with fiona.drivers():
@@ -507,6 +555,7 @@ def from_featureclass(filename, **kwargs):
                         del idx, row
                     df = pd.DataFrame(data=atts, columns=cols)
                     df.spatial.set_geometry(geoms)
+                    df.spatial._meta.source = filename
                     return df
     else:
         if os.path.dirname(filename).lower().find('.gdb') > -1:
@@ -523,7 +572,10 @@ def from_featureclass(filename, **kwargs):
 def to_featureclass(geo,
                     location,
                     overwrite=True,
-                    validate=False):
+                    validate=False,
+                    sanitize_columns=True,
+                    has_m=True,
+                    has_z=False):
     """
     Exports the DataFrame to a Feature class.
 
@@ -538,16 +590,24 @@ def to_featureclass(geo,
                         data will be deleted and replaced with the spatial
                         dataframe.
     ---------------     ----------------------------------------------------
-    validate            Optional Boolean. If true, the export will check if
+    validate            Optional Boolean. If True, the export will check if
                         all the geometry objects are correct upon export.
+    ---------------     ----------------------------------------------------
+    sanitize_columns    Optional Boolean. If True, column names will be
+                        converted to string, invalid characters removed and
+                        other checks will be performed. The default is True.
+    ---------------     ----------------------------------------------------
+    ham_m               Optional Boolean to indicate if data has linear
+                        referencing (m) values. Default is False.
+    ---------------     ----------------------------------------------------
+    has_z               Optional Boolean to indicate if data has elevation
+                        (z) values. Default is False.
     ===============     ====================================================
 
 
     :returns: string
 
     """
-
-
     out_location= os.path.dirname(location)
     fc_name = os.path.basename(location)
     df = geo._data
@@ -559,6 +619,18 @@ def to_featureclass(geo,
        geo.validate(strict=True) == False:
         raise ValueError(("Mixed geometry types detected, "
                          "cannot export to feature class."))
+
+    # sanitize
+    if sanitize_columns:
+        # logic
+        _sanitize_column_names(geo, inplace=True)
+
+    columns = df.columns.tolist()
+    for col in columns[:]:
+        if not isinstance(col, str):
+            df.rename(columns={col: str(col)}, inplace=True)
+            col = str(col)
+
     if HASARCPY:
         # 1. Create the Save Feature Class
         #
@@ -584,11 +656,23 @@ def to_featureclass(geo,
         }
         sr = geo._data[geo._name][idx].spatial_reference.as_arcpy
         null_geom = null_geom[gt.lower()]
+
+        if has_m == True:
+            has_m = "ENABLED"
+        else:
+            has_m = None
+
+        if has_z == True:
+            has_z = "ENABLED"
+        else:
+            has_z = None
+
         fc = arcpy.CreateFeatureclass_management(out_location,
                                                  spatial_reference=sr,
                                                  geometry_type=gt,
                                                  out_name=fc_name,
-                                                 )[0]
+                                                 has_m=has_m,
+                                                 has_z=has_z)[0]
 
         # 2. Add the Fields and Data Types
         oidfld = da.Describe(fc)['OIDFieldName']
@@ -891,3 +975,74 @@ def _pyshp2(df, out_path, out_name):
         del shpfile
         return out_fc
     return None
+
+
+def _sanitize_column_names(geo, remove_special_char=True, rename_duplicates=True, inplace=False,
+                           use_snake_case=True):
+    """
+    Implementation for pd.DataFrame.spatial.sanitize_column_names()
+    """
+    original_col_names = list(geo._data.columns)
+
+    # convert to string
+    new_col_names = [str(x) for x in original_col_names]
+
+    # use snake case
+    if use_snake_case:
+        import re
+        for ind, val in enumerate(new_col_names):
+            # skip reserved cols
+            if val == geo.name:
+                continue
+            # replace Pascal and camel case using RE
+            s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', val)
+            name = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+            # remove leading spaces
+            name = name.lstrip(" ")
+            # replace spaces with _
+            name = name.replace(" ", "_")
+            # clean up too many _
+            name = re.sub('_+', '_', name)
+            new_col_names[ind] = name
+
+    # remove special characters
+    if remove_special_char:
+        for ind, val in enumerate(new_col_names):
+            name = "".join(i for i in val if i.isalnum() or "_" in i)
+
+            # remove numeral prefixes
+            for ind2, element in enumerate(name):
+                if element.isdigit():
+                    continue
+                else:
+                    name = name[ind2:]
+                    break
+            new_col_names[ind] = name
+
+    # fill empty column names
+    for ind, val in enumerate(new_col_names):
+        if val == "":
+            new_col_names[ind] = "column"
+
+    # rename duplicates
+    if rename_duplicates:
+        for ind, val in enumerate(new_col_names):
+            if val == geo.name:
+                pass
+            if new_col_names.count(val) > 1:
+                counter = 1
+                new_name = val + str(counter)  # adds a integer suffix to column name
+                while new_col_names.count(new_name) > 0:
+                    counter += 1
+                    new_name = val + str(counter)  # if a column with the suffix exists, increment suffix
+                new_col_names[ind] = new_name
+
+    # if inplace
+    if inplace:
+        geo._data.columns = new_col_names
+    else:
+        # return a new dataframe
+        df = geo._data.copy()
+        df.columns = new_col_names
+        return df
+    return True

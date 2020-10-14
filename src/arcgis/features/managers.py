@@ -8,7 +8,7 @@ import json
 import time
 import tempfile
 import collections
-
+from typing import Tuple
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import _GISResource
 
@@ -456,7 +456,8 @@ class SyncManager(object):
                wait=False,
                out_path=None,
                sync_direction=None,
-               target_type="client"):
+               target_type="client",
+               transformations=None):
         """
             The create operation is performed on a feature layer collection resource. This operation
             creates the replica between the feature dataset and a client based on a client-supplied
@@ -571,6 +572,10 @@ class SyncManager(object):
         ------------------     --------------------------------------------------------------------
         targetType             Can be set to either server or client. If not set, the default is
                                client. This option was added at 10.5.1.
+        ------------------     --------------------------------------------------------------------
+        transformations        Optional List. Introduced at 10.8. This parameter applies a datum
+                               transformation on each layer when the spatial reference used in
+                               geometry is different than the layer's spatial reference.
         ==================     ====================================================================
 
 
@@ -616,16 +621,17 @@ class SyncManager(object):
                                         return_attachments=return_attachments,
                                         return_attachments_data_by_url=return_attachments_databy_url,
                                         asynchronous=asynchronous,
-                                        sync_direction=sync_direction, 
-                                        target_type=target_type, 
+                                        sync_direction=sync_direction,
+                                        target_type=target_type,
                                         attachments_sync_direction=attachments_sync_direction,
                                         sync_model=sync_model,
                                         data_format=data_format,
                                         replica_options=replica_options,
                                         wait=wait,
-                                        out_path=out_path)
+                                        out_path=out_path,
+                                        transformations=transformations)
     # ----------------------------------------------------------------------
-    def cleanup_change_tracking(self, 
+    def cleanup_change_tracking(self,
                                 layers,
                                 retention_period,
                                 period_unit='days',
@@ -633,55 +639,55 @@ class SyncManager(object):
                                 replica_id=None,
                                 future=False):
         """
-        
-        Change tracking information stored in each feature service layer 
-        (enabled for Change Tracking) might grow very large. The change 
-        tracking info used by the feature service to determine the change 
-        generation number and the features that have changed for a 
-        particular generation. Clients can purge the change tracking 
+
+        Change tracking information stored in each feature service layer
+        (enabled for Change Tracking) might grow very large. The change
+        tracking info used by the feature service to determine the change
+        generation number and the features that have changed for a
+        particular generation. Clients can purge the change tracking
         content if the changes are already synced-up to all clients and the
         changes are no longer needed.
 
-        Only the owner or the organization administrator can cleanup change 
+        Only the owner or the organization administrator can cleanup change
         tracking information.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         layers                 Required list. A list of layers and tables to include in the replica.
         ------------------     --------------------------------------------------------------------
-        retention_period       Optional Integer. The retention period to use when cleaning up the 
-                               change tracking information. Change tracking information will be 
+        retention_period       Optional Integer. The retention period to use when cleaning up the
+                               change tracking information. Change tracking information will be
                                cleaned up if they are older than the retention period.
         ------------------     --------------------------------------------------------------------
-        period_unit            Optional String.  The units of the retention period.  
-        
+        period_unit            Optional String.  The units of the retention period.
+
                                Values: `days`, `seconds`, `minutes`, or `hours`
-                               
+
         ------------------     --------------------------------------------------------------------
-        min_server_gen         Optional String.  In addition to the retention period, the change 
-                               tracking can be cleaned by its generation numbers. Older tracking 
-                               information that has older generation number than the 
+        min_server_gen         Optional String.  In addition to the retention period, the change
+                               tracking can be cleaned by its generation numbers. Older tracking
+                               information that has older generation number than the
                                `min_server_gen` will be cleaned.
         ------------------     --------------------------------------------------------------------
-        replica_id             Optional String.  The change tracking can also be cleaned by the 
-                               `replica_id` in addition to the `retention_period` and the 
+        replica_id             Optional String.  The change tracking can also be cleaned by the
+                               `replica_id` in addition to the `retention_period` and the
                                `min_server_gen`.
         ------------------     --------------------------------------------------------------------
-        future                 Optional Boolean.  Support options for asynchronous processing. The 
+        future                 Optional Boolean.  Support options for asynchronous processing. The
                                default format is false.
         ==================     ====================================================================
-        
-        
+
+
         :returns: Boolean when future is False and Future object when future is True
-        
+
         """
         return self._fs._cleanup_change_tracking(layers=layers,
                                                  retention_period=retention_period,
                                                  period_unit=period_unit,
                                                  min_server_gen=min_server_gen,
                                                  replica_id=replica_id,
-                                                 future=future)    
+                                                 future=future)
     # ----------------------------------------------------------------------
     def synchronize(self,
                     replica_id,
@@ -835,6 +841,7 @@ class SyncManager(object):
                     syncLayers_parent = parent_replica['layerServerGens']
                     for i in range(len(syncLayers_parent)):
                         syncLayers_child[i]['serverSibGen'] = syncLayers_parent[i]['serverGen']
+                        syncLayers_child[i]['syncDirection'] = "upload"
                     child_fs._synchronize_replica(
                         replica_id=child_replica_id,
                         sync_layers=syncLayers_child,
@@ -843,7 +850,8 @@ class SyncManager(object):
                         return_ids_for_adds=False,
                         data_format="sqlite",
                         asynchronous=False,
-                        edits_upload_format="sqlite")
+                        edits_upload_format="sqlite",
+                        rollback_on_failure=False)
                     return True
                 else:
                     return False
@@ -852,7 +860,326 @@ class SyncManager(object):
         else:
             return False
         return False
+###########################################################################
+class WebHook(object):
+    """
+    The Webhook represents a single hook instance.
+    """
+    _properties = None
+    _url = None
+    _gis = None
+    #----------------------------------------------------------------------
+    def __init__(self, url, gis):
+        self._url = url
+        self._gis = gis
+    #----------------------------------------------------------------------
+    def __str__(self):
+        """returns the class as a string"""
+        return f"<WebHook @ {self._url}>"
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return self.__str__()    
+    #----------------------------------------------------------------------
+    @property
+    def properties(self) -> PropertyMap:
+        """
+        Returns the WebHook's properties
+        
+        :returns: PropertyMap
+        """
+        if self._properties is None:
+            self._properties = PropertyMap(self._gis._con.post(self._url, {'f' : 'json'}))
+        return self._properties
+    #----------------------------------------------------------------------
+    def edit(self,
+             name:str=None,
+             change_types:str=None,
+             hook_url:str=None,
+             signature_key:str=None,
+             active:bool=None,
+             schedule_info:dict=None,
+             payload_format:str=None) -> dict:
+        """
+        Updates the existing WebHook's Properties.
+        
+        =====================================    ===========================================================================
+        **Argument**                             **Description**
+        -------------------------------------    ---------------------------------------------------------------------------
+        name                                     Optional String. Use valid name for a webhook. This name needs to be unique per service.
+        -------------------------------------    ---------------------------------------------------------------------------
+        hook_url                                 Optional String.  The URL to which the payloads will be delivered.
+        -------------------------------------    ---------------------------------------------------------------------------
+        change_types                             Optional String.  The default is "*", which means all events.  This is a 
+                                                 comma separated list of values that will fire off the web hook.  The list 
+                                                 each supported type is below. 
+        -------------------------------------    ---------------------------------------------------------------------------
+        signature_key                            Optional String. If specified, the key will be used in generating the HMAC 
+                                                 hex digest of value using sha256 hash function and is return in the 
+                                                 x-esriHook-Signature header.
+        -------------------------------------    ---------------------------------------------------------------------------
+        active                                   Optional bool. Enable or disable call backs when the webhook is triggered. 
+        -------------------------------------    ---------------------------------------------------------------------------
+        schedule_info                            Optional Dict. Allows the trigger to be used as a given schedule.
+                                                 Example:
+                                                 
+                                                 ```
+                                                 {
+                                                    "name" : "Every-5seconds", 
+                                                    "startAt" : 1478280677536, 
+                                                    "state" : "enabled", 
+                                                    
+                                                    "recurrenceInfo" : {
+                                                      "frequency" : "second", 
+                                                      "interval" : 5
+                                                    }
+                                                 }
+                                                 ```
+        -------------------------------------    ---------------------------------------------------------------------------
+        payload_format                           Optional String. The payload can be sent in pretty format or standard.  
+                                                 The default is `json`.
+        =====================================    ===========================================================================
 
+        
+        A list of allowed web hook triggers is shown below.
+        
+        =====================================    ===========================================================================
+        **Name**                                 **Trigged When**
+        -------------------------------------    ---------------------------------------------------------------------------
+        `*`                                      Wildcard event. Any time any event is triggered.
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesCreated`                        A new feature is created
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesUpdated`                        Any time a feature is updated
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesDeleted`                        Any time a feature is deleted
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesEdited`                         Any time a feature is edited (insert or update or delete)
+        -------------------------------------    ---------------------------------------------------------------------------
+        `AttachmentsCreated`                     Any time adding a new attachment to a feature
+        -------------------------------------    ---------------------------------------------------------------------------
+        `AttachmentsUpdated`                     Any time updating a feature attachment
+        -------------------------------------    ---------------------------------------------------------------------------
+        `AttachmentsDeleted`                     Any time an attachment is deleted from a feature
+        -------------------------------------    ---------------------------------------------------------------------------
+        `LayerSchemaChanged`                     Any time a schema is changed in a layer
+        -------------------------------------    ---------------------------------------------------------------------------
+        `LayerDefinitionChanged`                 Any time a layer definition is changed
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeatureServiceDefinitionChanged`        Any time a feature service is changed
+        =====================================    ===========================================================================
+
+        
+        :returns: dict
+        
+        """
+        props = dict(self.properties)
+        url = f"{self._url}/edit"
+        if isinstance(change_types, list):
+            change_types = ",".join(change_types)
+        params = {
+            'f' : 'json',
+            "name" : name,
+            "changeTypes" : change_types,
+            "signatureKey" : signature_key,
+            "hookUrl" : hook_url,
+            "active" : active,
+            "scheduleInfo" : schedule_info,
+            "payloadFormat" : payload_format
+        }
+        for k in list(params.keys()):
+            if params[k] is None:
+                params.pop(k)
+            del k
+        props.update(params)
+        resp = self._gis._con.post(url, props)
+        self._properties = PropertyMap(resp)
+        return resp
+    #----------------------------------------------------------------------
+    def delete(self) -> bool:
+        """
+        Deletes the current webhook from the system
+        
+        :returns: bool
+        """
+        url = f"{self._url}/delete"
+        params = {'f' : 'json'}
+        resp = self._gis._con.post(url, params)
+        return resp['status'] == 'success'
+###########################################################################
+class WebHookServiceManager(object):
+    """
+    The `WebHookServiceManager` allows owners and administrators wire feature 
+    service specific events to feature layer collections.  
+    """
+    _fc = None
+    _url = None
+    _gis = None
+    #----------------------------------------------------------------------
+    def __init__(self, url, fc, gis) -> None:
+        self._url = url
+        self._fc = fc
+        self._gis = gis
+    #----------------------------------------------------------------------
+    def __str__(self):
+        """returns the class as a string"""
+        return f"<WebHookServiceManager @ {self._url}>"
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return self.__str__()
+    #----------------------------------------------------------------------
+    @property
+    def properties(self) -> PropertyMap:
+        """returns the properties for the WebHook Service Manager"""
+        return PropertyMap(self._gis._con.post(self._url, {'f' : 'json'}))
+    #----------------------------------------------------------------------
+    @property
+    def list(self) -> tuple:
+        """Returns a list of web hooks on the Feature Layer Collection
+        
+        :returns: tuple[WebHook]
+        """
+        resp = self._gis._con.post(self._url, {'f' : 'json'})
+        ret = [WebHook(url=self._url + f"/{d['globalId']}", gis=self._gis) for d in resp]
+        return ret
+    #----------------------------------------------------------------------
+    def create(self, 
+               name:str,
+               hook_url:str,
+               change_types:str="*",
+               signature_key:str=None,
+               active:bool=False,
+               schedule_info:dict=None,
+               payload_format:str="json") -> WebHook:
+        """
+        
+        Creates a New Feature Collection Web Hook
+        
+        
+        =====================================    ===========================================================================
+        **Argument**                             **Description**
+        -------------------------------------    ---------------------------------------------------------------------------
+        name                                     Required String. Use valid name for a webhook. This name needs to be unique per service.
+        -------------------------------------    ---------------------------------------------------------------------------
+        hook_url                                 Required String.  The URL to which the payloads will be delivered.
+        -------------------------------------    ---------------------------------------------------------------------------
+        change_types                             Optional String.  The default is "*", which means all events.  This is a 
+                                                 comma separated list of values that will fire off the web hook.  The list 
+                                                 each supported type is below. 
+        -------------------------------------    ---------------------------------------------------------------------------
+        signature_key                            Optional String. If specified, the key will be used in generating the HMAC 
+                                                 hex digest of value using sha256 hash function and is return in the 
+                                                 x-esriHook-Signature header.
+        -------------------------------------    ---------------------------------------------------------------------------
+        active                                   Optional bool. Enable or disable call backs when the webhook is triggered. 
+        -------------------------------------    ---------------------------------------------------------------------------
+        schedule_info                            Optional Dict. Allows the trigger to be used as a given schedule.
+                                                 Example:
+                                                
+                                                 {
+                                                    "name" : "Every-5seconds", 
+                                                    "startAt" : 1478280677536, 
+                                                    "state" : "enabled", 
+                                                    
+                                                    "recurrenceInfo" : {
+                                                      "frequency" : "second", 
+                                                      "interval" : 5
+                                                    }
+                                                 }
+                                                 
+        -------------------------------------    ---------------------------------------------------------------------------
+        payload_format                           Optional String. The payload can be sent in pretty format or standard.  
+                                                 The default is `json`.
+        =====================================    ===========================================================================
+
+        
+        A list of allowed web hook triggers is shown below.
+        
+        =====================================    ===========================================================================
+        **Name**                                 **Trigged When**
+        -------------------------------------    ---------------------------------------------------------------------------
+        `*`                                      Wildcard event. Any time any event is triggered.
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesCreated`                        A new feature is created
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesUpdated`                        Any time a feature is updated
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesDeleted`                        Any time a feature is deleted
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesEdited`                         Any time a feature is edited (insert or update or delete)
+        -------------------------------------    ---------------------------------------------------------------------------
+        `AttachmentsCreated`                     Any time adding a new attachment to a feature
+        -------------------------------------    ---------------------------------------------------------------------------
+        `AttachmentsUpdated`                     Any time updating a feature attachment
+        -------------------------------------    ---------------------------------------------------------------------------
+        `AttachmentsDeleted`                     Any time an attachment is deleted from a feature
+        -------------------------------------    ---------------------------------------------------------------------------
+        `LayerSchemaChanged`                     Any time a schema is changed in a layer
+        -------------------------------------    ---------------------------------------------------------------------------
+        `LayerDefinitionChanged`                 Any time a layer definition is changed
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeatureServiceDefinitionChanged`        Any time a feature service is changed
+        =====================================    ===========================================================================
+
+        :returns: `WebHook`
+
+        """
+        url = f"{self._url}/create"
+        if isinstance(change_types, list):
+            change_types = ",".join(change_types)
+        params = {
+            'f' : 'json',
+            "name" : name,
+            "changeTypes" : change_types,
+            "signatureKey" : signature_key,
+            "hookUrl" : hook_url,
+            "active" : active,
+            "scheduleInfo" : schedule_info,
+            "payloadFormat" : payload_format
+        }
+        resp = self._gis._con.post(url, params)
+        if not 'url' in resp:
+            hook_url = self._url + f"/{resp['globalId']}"
+            return WebHook(url=hook_url,
+                           gis=self._gis)
+        else:
+            
+            return WebHook(url=resp['url'], gis=self._gis)
+    #----------------------------------------------------------------------
+    def enable_hooks(self) -> bool:
+        """
+        The `enable_hooks` operation restarts a deactivated webhook. When 
+        activated, payloads will be delivered to the payload URL when the 
+        webhook is invoked.
+        
+        :returns: bool
+        
+        """
+        url = f"{self._url}/activateAll"
+        params = {'f' : 'json'}
+        return self._gis._con.post(url, params).get('status', 'failed') == 'success'
+    #----------------------------------------------------------------------
+    def disable_hooks(self) -> bool:
+        """
+        The `disable_hooks` will turn off all web hooks for the current service.
+        
+        :returns: bool
+        
+        """
+        url = f"{self._url}/deactivateAll"
+        params = {'f' : 'json'}
+        return self._gis._con.post(url, params).get('status', 'failed') == 'success'
+    #----------------------------------------------------------------------
+    def delete_all_hooks(self) -> bool:
+        """
+        The `delete_all_hooks` operation will permanently remove the specified webhook.
+        
+        :returns: bool
+        
+        """
+        url = f"{self._url}/deleteAll"
+        params = {'f' : 'json'}
+        return self._gis._con.post(url, params).get('status', 'failed') == 'success'
+###########################################################################    
 class FeatureLayerCollectionManager(_GISResource):
     """
     Allows updating the definition (if access permits) of a feature layer collection.
@@ -866,6 +1193,7 @@ class FeatureLayerCollectionManager(_GISResource):
         super(FeatureLayerCollectionManager, self).__init__(url, gis)
         self._fs = fs
         self._populate_layers()
+        self._wh = None
 
     def _populate_layers(self):
         """
@@ -888,6 +1216,16 @@ class FeatureLayerCollectionManager(_GISResource):
 
         self.layers = layers
         self.tables = tables
+    @property
+    def webhook_manager(self) -> WebHookServiceManager:
+        """
+        """
+        if self._gis.version >= [8,2] and self._gis._portal.is_arcgisonline:
+            if self._wh is None:
+                self._wh = WebHookServiceManager(url=self._url + "/WebHooks", fc=self._fs, gis=self._gis)
+            return self._wh
+        return None
+        
     # ----------------------------------------------------------------------
     def refresh(self):
         """ refreshes a feature layer collection """
@@ -902,6 +1240,16 @@ class FeatureLayerCollectionManager(_GISResource):
         self._fs._populate_layers()
 
         return res
+    #----------------------------------------------------------------------
+    @property
+    def generate_service_definition(self):
+        """
+        Returns a dictionary can be used for service generation.
+        
+        :returns: dict or None (if not supported on the service)
+        
+        """
+        return self._generate_mapservice_definition()
     #----------------------------------------------------------------------
     def _generate_mapservice_definition(self):
         """
@@ -969,7 +1317,7 @@ class FeatureLayerCollectionManager(_GISResource):
                                  that you want in the view.
         --------------------     --------------------------------------------------------------------
         view_tables              Optional list. Specify list of tables present in the FeatureLayerCollection
-                                 that you want in the view.                                 
+                                 that you want in the view.
         ====================     ====================================================================
 
         .. code-block:: python  (optional)
@@ -1113,7 +1461,7 @@ class FeatureLayerCollectionManager(_GISResource):
                             })
                     else:
                         _log.error('Unable to parse the view_layers parameter')
-                        
+
 
             # when view_tables is specified
             if view_tables:
@@ -1133,7 +1481,7 @@ class FeatureLayerCollectionManager(_GISResource):
                 else:
                     import logging
                     _log = logging.getLogger(__name__)
-                    
+
                     from arcgis.features.layer import Table
                     if isinstance(view_tables, dict):
                         if 'tables' in view_tables:
@@ -1154,15 +1502,30 @@ class FeatureLayerCollectionManager(_GISResource):
                         _log.error('Unable to parse the view_tables parameter')
 
         fs_view.manager.add_to_definition(add_def)
+        if extent and fs_view.layers:
+            for vw_lyr in fs_view.layers:
+                vw_lyr.manager.update_definition({"viewLayerDefinition": {"filter":
+                                                                          {"operator": "esriSpatialRelIntersects",
+                                                                           "value": {
+                                                                                "geometryType": "esriGeometryEnvelope",
+                                                                                "geometry": extent}}}})
+
         if view_layers:
-            item_upd_dict = {
-                'layers': [ilyr
-                           for ilyr in item.get_data()['layers']
-                           for lyr in view_layers
-                           if int(lyr.url[-1]) == ilyr['id']]}
-            view.update(data=item_upd_dict)
+            data = item.get_data()
+            if 'layers' in data:
+                item_upd_dict = {
+                    'layers': [ilyr
+                               for ilyr in item.get_data()['layers']
+                               for lyr in view_layers
+                               if int(lyr.url[-1]) == ilyr['id']]}
+                view.update(data=item_upd_dict)
         else:
             view.update(data=item.get_data())
+        view.update({
+            "tags" : ",".join(item.tags),
+            "description" : item.description or "",
+            "snippet" : item.snippet or ""
+        })
         return content.get(res['itemId'])
     # ----------------------------------------------------------------------
     def add_to_definition(self, json_dict):

@@ -46,7 +46,6 @@ from torch import nn, LongTensor
 import torch.nn.functional as F
 from fastai.vision.image import ImageBBox
 from fastai.vision.data import ObjectCategoryList, ObjectItemList
-from fastprogress import progress_bar
 import numpy as np
 from fastai.callbacks.hooks import model_sizes, hook_outputs
 from fastai.layers import conv2d, conv_layer
@@ -54,10 +53,11 @@ from fastai.core import ifnone, is_tuple, range_of
 import math
 import matplotlib.pyplot as plt
 import warnings
+import logging
 
+from fastprogress.fastprogress import progress_bar
 
 class LateralUpsampleMerge(nn.Module):
-    
     def __init__(self, ch, ch_lat, hook):
         super().__init__()
         self.hook = hook
@@ -82,6 +82,7 @@ class RetinaNetModel(nn.Module):
         super().__init__()
         self.n_classes,self.flatten = n_classes,flatten
         self.chip_size = chip_size
+        
         
         # Fetch the sizes of various activation layers of the backbone
         sfs_szs = model_sizes(encoder, size=self.chip_size)
@@ -262,7 +263,8 @@ class RetinaNetFocalLoss(nn.Module):
         self.anchors = create_anchors(sizes, self.ratios, self.scales).to(device)
     
     def _unpad(self, bbox_tgt, clas_tgt):
-        i = torch.min(torch.nonzero(clas_tgt-self.pad_idx))
+        non_zero = torch.nonzero(clas_tgt - self.pad_idx)
+        i = bbox_tgt.shape[0] if non_zero.nelement() == 0 else torch.min(non_zero)
         return tlbr2cthw(bbox_tgt[i:]), clas_tgt[i:]-1+self.pad_idx
     
     def _focal_loss(self, clas_pred, clas_tgt):
@@ -320,7 +322,7 @@ def nms(boxes, scores, thresh=0.2):
         boxes, scores, indexes = boxes[mask_keep], scores[mask_keep], indexes[mask_keep]
     return LongTensor(to_keep)
 
-def process_output(output, i, detect_thresh=0.25, crit=None):
+def process_output(output, detect_thresh=0.25, crit=None):
     clas_pred, bbox_pred, sizes = output[0], output[1], crit.sizes
     anchors = create_anchors(sizes, crit.ratios, crit.scales).to(clas_pred.device)
     bbox_pred = activ_to_bbox(bbox_pred, anchors)
@@ -338,14 +340,22 @@ def process_output(output, i, detect_thresh=0.25, crit=None):
     
     return bbox_pred, scores, preds
 
-def get_predictions(output, idx, detect_thresh=0.2, crit=None, nms_overlap=0.1):
-    bbox_pred, scores, preds = process_output(output, idx, detect_thresh, crit=crit)
+def get_predictions(output, detect_thresh=0.2, crit=None, nms_overlap=0.1):
+    bbox_pred, scores, preds = process_output(output, detect_thresh, crit=crit)
+
+    # Filter out the predicted boxes with size zero
+    mask_keep = (bbox_pred[:,2] * bbox_pred[:,3]) != 0
+    bbox_pred, preds, scores = bbox_pred[mask_keep], preds[mask_keep], scores[mask_keep]
+    
+    # Apply nms
     to_keep = nms(bbox_pred, scores, thresh=nms_overlap)
-    bbox_pred, preds, scores = bbox_pred[to_keep].cpu(), preds[to_keep].cpu(), scores[to_keep].cpu()  
+    bbox_pred, preds, scores = bbox_pred[to_keep].cpu(), preds[to_keep].cpu(), scores[to_keep].cpu()
+    
     # Convert the bbox predictions to TL-BR to be passed to ImageBBox Class in fastai through reconstruct
     bbox_pred = cthw2tlbr(bbox_pred)
     # Add 1 to class predictions to account for prepending of background as a class
     preds += 1
+    
     return bbox_pred, preds, scores
 
 #########################
@@ -389,7 +399,7 @@ def compute_class_AP(model, dl, n_classes, show_progress, iou_thresh=0.1, detect
 
             for i in range(target[0].size(0)): # range batch-size
                 #output[0] - classpreds, output[1] - bbox preds
-                op = model._data.y.analyze_pred((output[0][i], output[1][i]), thresh=detect_thresh, nms_overlap=iou_thresh, ssd=model, ret_scores=True, device=model._device)
+                op = model._data.y.analyze_pred((output[0][i], output[1][i]), model=model, thresh=detect_thresh, nms_overlap=iou_thresh, ret_scores=True, device=model._device)
                 #op - bbox preds, class preds, scores
                 
                 # Unpad the targets

@@ -68,11 +68,10 @@ While redistributing the Work or Derivative Works thereof, You may choose to off
 
 """
 
-try:
+
+from .env import HAS_TENSORFLOW, ARCGIS_ENABLE_TF_BACKEND
+if HAS_TENSORFLOW:
     import tensorflow as tf
-    HAS_TENSORFLOW = True
-except:
-    HAS_TENSORFLOW = False
 
 try:
     from fastai.basics import *
@@ -81,13 +80,14 @@ except:
     HAS_FASTAI = False
 
 
-__all__ = ['__version__', '_tf_to_pytorch', '_pytorch_to_tf', 'TfLearner', 'tf_fit', 'tf_loss_batch', 'tf_train_epoch', 'tf_validate', 'tf_get_preds', 'TfOptimWrapper', 'TfRegularizer', 'tf', 'tf_lr_find', 'TfLRFinder']
+__all__ = ['__version__', '_tf_to_pytorch', '_pytorch_to_tf', 'TfLearner', 'tf_fit', 'tf_loss_batch', 'tf_train_epoch', 'tf_validate', 'tf_get_preds', 'TfOptimWrapper', 'TfRegularizer', 'tf', 'tf_lr_find', 'TfLRFinder', 'defaults']
 
 __version__ = '0.0.1'
 
 if HAS_FASTAI and HAS_TENSORFLOW:
-        
-    defaults.device = torch.device('cpu')
+
+    if ARCGIS_ENABLE_TF_BACKEND:   
+        defaults.device = torch.device('cpu')
 
     try:
         #tf.enable_eager_execution()
@@ -104,6 +104,7 @@ if HAS_FASTAI and HAS_TENSORFLOW:
     tf.Tensor.cpu = lambda x: x.numpy()
     tf.Tensor.item = lambda x: x.numpy()
     tf.Tensor.size = lambda x, axis: tf.shape(x)[axis].numpy()
+    tf.Tensor.float = lambda x: tf.dtypes.cast(x, tf.float32)
 
 # Activation function for losses
 def noop(x): return x
@@ -139,7 +140,8 @@ def tf_loss_batch(model, xb, yb, loss_func=None, opt=None, cb_handler=None):
         yb = [yb]
 
     def forward():
-        out = model(*xb, training=True)
+        training = opt is not None
+        out = model(*xb, training=training)
         out = cb_handler.on_loss_begin(out)
         return out
 
@@ -187,7 +189,8 @@ def tf_validate(model, dl, loss_func=None, cb_handler=None, pbar=None, average=T
     val_losses,nums = [],[]
     for xb,yb in progress_bar(dl, parent=pbar, leave=(pbar is not None)):
         xb, yb = _pytorch_to_tf_batch(xb), _pytorch_to_tf(yb)
-        if cb_handler: xb, yb = cb_handler.on_batch_begin(xb, yb, train=False)
+        if cb_handler: 
+            xb, yb = cb_handler.on_batch_begin(xb, yb, train=False)
         val_losses.append(tf_loss_batch(model, xb, yb, loss_func, cb_handler=cb_handler))
         if not is_listy(yb): 
             yb = [yb]
@@ -215,8 +218,8 @@ def tf_train_epoch(model, dl, opt, loss_func):
             out = model(*xb)
             loss = loss_func(*yb, out) #reversed params compared to pytorch
 
-        grads = tape.gradient(loss, model.trainable_weights)
-        opt.apply_gradients(zip(grads, model.trainable_weights))
+        grads = tape.gradient(loss, model.trainable_variables)
+        opt.apply_gradients(zip(grads, model.trainable_variables))
 
 def tf_fit(epochs, model, loss_func, opt, data, callbacks, metrics):
     cb_handler = CallbackHandler(callbacks, metrics)
@@ -244,14 +247,15 @@ def tf_fit(epochs, model, loss_func, opt, data, callbacks, metrics):
     except Exception as e:
         exception = e
         raise e
-    finally: cb_handler.on_train_end(exception)
+    finally:
+        cb_handler.on_train_end(exception)
 
     
 @dataclass
 class TfLearner():
     "Train `model` using `data` to minimize `loss_func` with optimizer `opt_func`."
     data:DataBunch
-    model:tf.keras.Model
+    model:'keras_model'
     opt_func:Callable
     loss_func:Callable
     metrics:Collection[Callable]=None
@@ -263,7 +267,7 @@ class TfLearner():
     model_dir:str='models'
     callback_fns:Collection[Callable]=None
     callbacks:Collection[Callback]=field(default_factory=list)
-    layer_groups:Collection[tf.keras.layers.Layer]=None
+    layer_groups:Collection['keras_layers']=None
     def __post_init__(self)->None:
         "Setup path,metrics, callbacks and ensure model directory exists."
         self.path = Path(ifnone(self.path, self.data.path))
@@ -275,9 +279,15 @@ class TfLearner():
         self.callback_fns = [Recorder] + [TfRegularizer] + listify(self.callback_fns)
         
         #build the model by running 1 batch
-        xb, yb = next(iter(self.data.train_dl))
-        xb, yb = _pytorch_to_tf_batch(xb), _pytorch_to_tf(yb)
-        tf_loss_batch(self.model, xb, yb)
+        if hasattr(self.data, 'train_dl'):
+            xb, yb = next(iter(self.data.train_dl))
+            xb, yb = _pytorch_to_tf_batch(xb), _pytorch_to_tf(yb)
+            tf_loss_batch(self.model, xb, yb)
+        else:
+            in_shp = self.model.input.shape.as_list()
+            in_shp[0] = 1
+            self.model(tf.zeros(in_shp)).detach()
+
 
     def init(self, init): 
         raise NotImplementedError
@@ -381,7 +391,7 @@ class TfLearner():
         else:
             converter = tf.lite.TFLiteConverter.from_keras_model(model_to_save)
         #
-        #converter.optimizations = [tf.lite.Optimize.DEFAULT]
+        converter.optimizations = [tf.lite.Optimize.DEFAULT]
         tflite_model = converter.convert()
         model_save_path = self.path/self.model_dir/f'{name}.tflite'
         with open(model_save_path, "wb") as m:
@@ -520,7 +530,10 @@ class TfOptimWrapper():
     def apply_gradients(self, grads_and_vars):
         for l, opt in zip(self.layer_groups, self.opt):
             for i in range(len(l.trainable_weights)):
-                opt.apply_gradients([next(grads_and_vars)])
+                next_var = next(grads_and_vars)
+                if next_var[0] is None:
+                    continue
+                opt.apply_gradients([next_var])
         
     @property
     def lr(self)->float:

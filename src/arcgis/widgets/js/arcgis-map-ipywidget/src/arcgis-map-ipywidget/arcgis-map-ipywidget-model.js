@@ -23,11 +23,21 @@ var ArcGISMapIPyWidgetModel = widgets.DOMWidgetModel.extend({
         mode: "2D",
         _zoom: -1,
         _readonly_zoom: -1,
-        rotation: 0,
-        heading: 0,
-        tilt: 0,
+        _scale: -1,
+        _snap_to_zoom: true,
+        _readonly_scale: -1,
+        _rotation: 0,
+        _readonly_rotation: 0,
+        _link_writeonly_rotation: 0,
+        _heading: 0,
+        _readonly_heading: 0,
+        _link_writeonly_heading: 0,
+        _tilt: 0,
+        _readonly_tilt: 0,
+        _link_writeonly_tilt: 0,
         _extent: {},
         _readonly_extent: {},
+        _link_writeonly_extent: {},
         _center: {},
         _readonly_center: {},
         _center_long_lat: [],
@@ -60,6 +70,16 @@ var ArcGISMapIPyWidgetModel = widgets.DOMWidgetModel.extend({
         _overlay_these_images_on_widget_load: {},
         _image_overlays_to_remove: [],
         //end image overlay section
+
+        //start time information
+        time_slider: false,
+        time_mode: "time-window",
+        _time_info: {},
+        _writeonly_start_time: "",
+        _readonly_start_time: "",
+        _writeonly_end_time: "",
+        _readonly_end_time: "",
+        //end time info
 
         //start miscellanous model state
         _portal_token: "",

@@ -4,9 +4,16 @@ import string
 import random
 
 import arcgis
-from arcgis.gis import Layer
+from arcgis.gis import Layer, Item
 from arcgis.features import FeatureCollection
 from arcgis.geoprocessing._job import GPJob
+
+
+def _prevent_bds_item(item):
+    """checks if the input is a valid input for the GeoAnalytics Tool"""
+    if isinstance(item, Item):
+        raise ValueError(f"The {item.title} is an Item. Please pass the layer instead.")
+    return item
 
 def _id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
@@ -80,44 +87,47 @@ def _set_context(params):
 
 
 
-def _create_output_service(gis, output_name, output_service_name='Analysis feature service', task='GeoAnalytics'):
+def _create_output_service(gis, output_name, output_service_name='Analysis feature service', task='GeoAnalytics', output_datastore=None):
     ok = gis.content.is_service_name_available(output_name, 'Feature Service')
     if not ok:
         raise RuntimeError("A Feature Service by this name already exists: " + output_name)
-    if arcgis.env.output_datastore is not None:
-        output_datastore = arcgis.env.output_datastore
-    else:
-        output_datastore = "spatiotemporal"
+    if output_datastore is None:
+        if arcgis.env.output_datastore is not None:
+            output_datastore = arcgis.env.output_datastore
+        else:
+            output_datastore = "spatiotemporal"
+    if str(output_datastore).lower().find("/bigdatafileshares/") > -1:
+        return None
     createParameters = {
-            "currentVersion": 10.2,
-            "serviceDescription": "",
-            "hasVersionedData": False,
-            "supportsDisconnectedEditing": False,
-            "hasStaticData": True,
-            "maxRecordCount": 2000,
-            "supportedQueryFormats": "JSON",
-            "capabilities": "Query",
-            "description": "",
-            "copyrightText": "",
-            "allowGeometryUpdates": False,
-            "syncEnabled": False,
-            "editorTrackingInfo": {
-                "enableEditorTracking": False,
-                "enableOwnershipAccessControl": False,
-                "allowOthersToUpdate": True,
-                "allowOthersToDelete": True
+        "currentVersion": 10.2,
+        "serviceDescription": "",
+        "hasVersionedData": False,
+        "supportsDisconnectedEditing": False,
+        "hasStaticData": True,
+        "maxRecordCount": 2000,
+        "supportedQueryFormats": "JSON",
+        "capabilities": "Query",
+        "description": "",
+        "copyrightText": "",
+        "allowGeometryUpdates": False,
+        "syncEnabled": False,
+        "editorTrackingInfo": {
+            "enableEditorTracking": False,
+            "enableOwnershipAccessControl": False,
+            "allowOthersToUpdate": True,
+            "allowOthersToDelete": True
             },
-            "xssPreventionInfo": {
-                "xssPreventionEnabled": True,
-                "xssPreventionRule": "InputOnly",
-                "xssInputRule": "rejectInvalid"
+        "xssPreventionInfo": {
+            "xssPreventionEnabled": True,
+            "xssPreventionRule": "InputOnly",
+            "xssInputRule": "rejectInvalid"
             },
-            "tables": [],
-            "name": output_service_name.replace(' ', '_'),
-            "options": {
-                "dataSourceType": output_datastore
-            }
+        "tables": [],
+        "name": output_service_name.replace(' ', '_'),
+        "options": {
+            "dataSourceType": output_datastore
         }
+    }
 
     output_service = gis.content.create_service(output_name, create_params=createParameters, service_type="featureService")
     description = "Feature Service generated from running the " + task + " tool."
@@ -145,19 +155,23 @@ class GAJob(object):
     gpjob             Required GPJob. The geoprocessing job.
     ----------------  ---------------------------------------------------------------
     return_service    Optional Item. The service to return to the user.
+    ----------------  ---------------------------------------------------------------
+    add_messages      Optional Boolean. At v1.8.2 a user can request the processing information to be appended to the item.
     ================  ===============================================================
 
     """
     _gpjob = None
     _return_service = None
+    _add_messages = None
     #----------------------------------------------------------------------
-    def __init__(self, gpjob, return_service=None):
+    def __init__(self, gpjob, return_service=None, add_messages=False):
         """
         initializer
         """
         assert isinstance(gpjob, GPJob)
         self._gpjob = gpjob
         self._return_service = return_service
+        self._add_messages = add_messages
     #----------------------------------------------------------------------
     def __str__(self):
         return "<%s GA Job: %s>" % (self.task, self._gpjob._jobid)
@@ -171,6 +185,15 @@ class GAJob(object):
         :returns: string
         """
         return self._gpjob.task
+    #----------------------------------------------------------------------
+    @property
+    def messages(self):
+        """
+        returns the GP messages
+
+        :returns: List
+        """
+        return self._gpjob.messages
     #----------------------------------------------------------------------
     @property
     def status(self):
@@ -220,6 +243,28 @@ class GAJob(object):
         """
         return self._gpjob.done()
     #----------------------------------------------------------------------
+    def process_info(self):
+        """
+        Returns the Processing Information for a GeoAnalytics job.
+
+        :returns: List or None if process_info does not exist.
+
+        """
+        processing_info = None
+        if self.result():
+            res = self.result()
+            if hasattr(res, "_asdict") and \
+               'process_info' in res._asdict().keys():
+                return getattr(res, "process_info")
+            else:
+                url = f"{self._gpjob._url}/jobs/{self._gpjob._jobid}"
+                params = {'f' : 'json'}
+                res = self._gpjob._gis._con.get(url, params)
+                if "results" in res and 'processInfo' in res['results']:
+                    url = f"{self._gpjob._url}/jobs/{self._gpjob._jobid}/{res['results']['processInfo']['paramUrl']}"
+                    return self._gpjob._gis._con.get(url, params)['value']
+        return None
+    #----------------------------------------------------------------------
     def result(self):
         """
         Return the value returned by the call. If the call hasn't yet completed
@@ -227,8 +272,14 @@ class GAJob(object):
 
         :returns: object
         """
-        res = self._gpjob.result()
-        if self._return_service:
-            return self._return_service
-        else:
-            return res
+        try:
+
+            res = self._gpjob.result()
+            if self._return_service:
+                return self._return_service
+            else:
+                return res
+        except Exception as e:
+            if self._return_service:
+                self._return_service.delete()
+            raise e

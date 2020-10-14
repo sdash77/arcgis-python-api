@@ -10,9 +10,16 @@ import logging as _logging
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.features import Table as _Table
+from arcgis.geoprocessing import import_toolbox
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing import DataFile
-from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob
+from arcgis import env as _env
+from ._util import (_id_generator,
+                    _feature_input,
+                    _set_context,
+                    _create_output_service,
+                    GAJob,
+                    _prevent_bds_item)
 
 _log=_logging.getLogger(__name__)
 
@@ -37,7 +44,7 @@ def forest(input_layer,
            future=False,
            return_tuple=False):
     """
-    .. image:: _static/images/forest/forest.png 
+    .. image:: _static/images/forest/forest.png
 
     The 'forest' method is a forest-based classification and regression
     task that creates models and generates predictions using an adaptation of
@@ -71,9 +78,9 @@ def forest(input_layer,
     =========================================================================   ===========================================================================
     **Argument**                                                                **Description**
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    input_layer                                                                 Required layer. The features that will be used to train the dataset. 
-                                                                                This layer must include fields representing the variable to predict 
-                                                                                and the explanatory variables. See :ref:`Feature Input<FeatureInput>`.
+    input_layer                                                                 Required layer. The features that will be used to train the dataset.
+                                                                                This layer must include fields representing the variable to predict
+                                                                                and the explanatory variables. See :ref:`Feature Input<gaxFeatureInput>`.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     var_prediction                                                              Required dict. The variable from the ``input_layer`` parameter
                                                                                 containing the values to be used to train the model, and a
@@ -103,7 +110,7 @@ def forest(input_layer,
                                                                                 down a tree. Using a large maximum depth, more splits will be
                                                                                 created, which may increase the chances of overfitting the
                                                                                 model. The default is data driven and depends on the number of
-                                                                                trees created and the number of variables included. 
+                                                                                trees created and the number of variables included.
                                                                                 The ``max_tree_depth`` must be positive and less than or equal to 30.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     random_vars                                                                 Optional integer. Specifies the number of explanatory variables
@@ -137,7 +144,7 @@ def forest(input_layer,
     prediction_type                                                             Optional string. Specifies the operation mode of the tool. The tool can be run to
                                                                                 train a model to only assess performance, or train a model and
                                                                                 predict features. Prediction types are as follows:
-                
+
                                                                                     + ``Train`` - A model will be trained, but
                                                                                       no predictions will be generated. Use this option to
                                                                                       assess the accuracy of your model before generating
@@ -149,20 +156,20 @@ def forest(input_layer,
                                                                                       to be predicted. The output of this option will be a
                                                                                       feature service, model diagnostics, and an optional
                                                                                       table of variable importance.
-                
+
                                                                                 The default value is 'Train'.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    features_to_predict (Required if using ``TrainAndPredict``)                 Optional layer. A feature layer representing locations where predictions will be made. 
-                                                                                This layer must include explanatory variable fields that correspond to fields used in ``input_layer``. 
-                                                                                This parameter is only used when the ``prediction_type`` is ``TrainAndPredict`` and is required in that case. 
-                                                                                See :ref:`Feature Input<FeatureInput>`.
+    features_to_predict (Required if using ``TrainAndPredict``)                 Optional layer. A feature layer representing locations where predictions will be made.
+                                                                                This layer must include explanatory variable fields that correspond to fields used in ``input_layer``.
+                                                                                This parameter is only used when the ``prediction_type`` is ``TrainAndPredict`` and is required in that case.
+                                                                                See :ref:`Feature Input<gaxFeatureInput>`.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     validation                                                                  Optional integer. Specifies the percentage (between 10 percent
                                                                                 and 50 percent) of inFeatures to reserve as the test dataset
                                                                                 for validation. The model will be trained without this random
                                                                                 subset of data, and the observed values for those features will
-                                                                                be compared to the predicted value. 
-                                                                                
+                                                                                be compared to the predicted value.
+
                                                                                 The default value is 10 percent.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     importance_tbl                                                              Optional boolean. Specifies whether an output table will be
@@ -178,9 +185,9 @@ def forest(input_layer,
                                                                                 'True' for any that represent classes or categories such as
                                                                                 landcover or presence or absence and 'False' if the variable is
                                                                                 continuous.
-                
+
                                                                                 Syntax: [{"fieldName":"<explanatory field name>", "categorical":bool},
-                
+
                                                                                     + fieldname is the name of the field in the ``input_layer`` used
                                                                                       to predict the ``var_prediction``.
                                                                                     + categorical is one of: 'True' or 'False'. A string field should
@@ -193,11 +200,11 @@ def forest(input_layer,
                                                                                 specified, the active GIS is used.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     context                                                                     Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
- 
+
                                                                                 #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                                                                 #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                                                                                 #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                                                #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.  
+                                                                                #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     future                                                                      Optional boolean. If 'True', a GPJob is returned instead of
                                                                                 results. The GPJob can be queried on the status of the execution.
@@ -205,17 +212,17 @@ def forest(input_layer,
                                                                                 The default value is 'False'.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     return_tuple                                                                Optional boolean. If 'True', a named tuple with multiple output keys is returned.
-                                 
-                                                                                The default value is 'False'. 
+
+                                                                                The default value is 'False'.
     =========================================================================   ===========================================================================
 
     :returns: a named tuple with the following keys if ``return_tuple`` is set to 'True':
 
         "output_trained" : featureLayer
 
-        "output_predicted" : featureLayer	
+        "output_predicted" : featureLayer
 
-        "variable_of_importance" : Table 
+        "variable_of_importance" : Table
 
         "process_info" : list
 
@@ -247,6 +254,8 @@ def forest(input_layer,
         'trainandpredict' : 'TrainAndPredict'
 
     }
+
+    input_layer = _prevent_bds_item(input_layer)
     if str(prediction_type).lower() not in allowed_prediction_types:
         raise ValueError("Invalid Prediction type.")
     else:
@@ -264,25 +273,30 @@ def forest(input_layer,
     for key, value in kwargs.items():
         if value is not None:
             params[key]=value
-
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
     if output_name is None:
         output_service_name='Forest Based Regression_' + _id_generator()
         output_name=output_service_name.replace(' ', '_')
     else:
         output_service_name=output_name.replace(' ', '_')
 
-    output_service=_create_output_service(gis, output_name, output_service_name, 'Forest Based Classification And Regression')
-
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
-
     if context is not None:
-        params["context"] = context
+        output_datastore = context.get('dataStore', None)
     else:
-        _set_context(params)
+        output_datastore = None
 
-
+    output_service=_create_output_service(gis, output_name, output_service_name, 'Forest Based Classification And Regression',
+                                          output_datastore=output_datastore)
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_service_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
 
     param_db={
         "input_layer": (_FeatureSet, "inFeatures"),
@@ -299,7 +313,7 @@ def forest(input_layer,
         "validation" : (float, "percentageForValidation"),
         "output_name" : (str, "outputTrainedName"),
         "context": (str, "context"),
-        "return_tuple": (bool, "returnTuple"),         
+        "return_tuple": (bool, "returnTuple"),
         "importance_tbl" : (bool, "createVariableImportanceTable"),
         "output_trained": (_FeatureSet, "outputTrained"),
         "output_predicted": (_FeatureSet, "outputPredicted"),
@@ -324,12 +338,189 @@ def forest(input_layer,
         if return_tuple:
             return res
         else:
-            return output_service   
+            return output_service
     except:
         output_service.delete()
         raise
 
     return
+#--------------------------------------------------------------------------
+def gwr(input_layer,
+        explanatory_variables,
+        dependent_variable,
+        model_type='Continuous',
+        neighborhood_selection_method='UserDefined',
+        neighborhood_type='NumberOfNeighbors',
+        distance_band=None,
+        distance_band_unit=None,
+        number_of_neighbors=None,
+        local_weighting_scheme='BiSquare',
+        output_name=None, context=None, gis=None, future=False):
+    """
+    This tool performs GeographicallyWeightedRegression (GWR), which is a
+    local form of linear regression used to model spatially varying
+    relationships.
+
+    The following are examples of the types of questions you can answer
+    using this tool:
+
+    1. Is the relationship between educational attainment and income
+       consistent across the study area?
+    2. What are the key variables that explain high forest fire frequency?
+    3. Where are the districts in which children are achieving high test
+       scores? What characteristics seem to be associated? Where is each
+       characteristic most important?
+
+    =========================================================================   ===========================================================================
+    **Argument**                                                                **Description**
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    input_layer                                                                 Required layer. The features that will be used to train the dataset.
+                                                                                This layer must include fields representing the variable to predict
+                                                                                and the explanatory variables. See :ref:`Feature Input<gaxFeatureInput>`.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    dependent_variable                                                          Required list. The numeric field containing the observed values you want to model.
+
+                                                                                Syntax: ['arrests']
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    explanatory_variables                                                       Required list. One or more fields representing independent explanatory variables in your regression model.
+
+                                                                                Syntax: ['population', 'avg_income', 'avg_ed_lvl']
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    model_type                                                                  Optional String.  The default is 'Continuous'.  Specifies the type of data that will be modeled.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    neighborhood_selection_method                                               Optional String. The default value is 'NumberOfNeighbors'. Specifies how the
+                                                                                neighborhood size will be determined.
+
+                                                                                - UserDefined - The neighborhood size will be specified by either the
+                                                                                                `number_of_neighbors` or `distance_band` parameter.
+
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    neighborhood_type                                                           Specifies whether the neighborhood used is constructed as a fixed distance or allowed to vary in spatial extent depending on the density of the features.
+
+                                                                                + DistanceBand - The neighborhood size is a constant or fixed distance for each feature.
+                                                                                + NumberOfNeighbors - The neighborhood size is a function of a specified number of neighbors included in calculations for each feature. Where features are dense, the spatial extent of the neighborhood is smaller; where features are sparse, the spatial extent of the neighborhood is larger.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    distance_band                                                               Optional Float. The distance for the spatial extent of the neighborhood.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    distance_band_unit                                                          Optional String. The unit of the distance for the spatial extent of the neighborhood.
+
+                                                                                Values: `Meters, Kilometers, Feet, Miles, NauticalMiles, or Yards`
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    number_of_neighbors                                                         Optional Integer. The closest number of neighbors to consider for each feature. The number should be an integer greater than or equal to `2`.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    local_weighting_scheme                                                      Optional String. Specifies the kernel type that will be used to provide the spatial weighting in the model. The kernel defines how each feature is related to other features within its neighborhood.
+
+                                                                                + BiSquare - A weight of 0 will be assigned to any feature outside the neighborhood specified. This is the default.
+                                                                                + Gaussian - All features will receive weights, but weights become exponentially smaller the farther away from the target feature.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    output_name                                                                 Optional string. The task will create a feature service of the
+                                                                                results. You define the name of the service.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    gis                                                                         Optional GIS. The GIS on which this tool runs. If not
+                                                                                specified, the active GIS is used.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    context                                                                     Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+
+                                                                                #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                                #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                                                                                #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                                                #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    future                                                                      Optional boolean. If 'True', a GPJob is returned instead of
+                                                                                results. The GPJob can be queried on the status of the execution.
+
+                                                                                The default value is 'False'.
+    =========================================================================   ===========================================================================
+
+
+    """
+    input_layer = _prevent_bds_item(input_layer)
+
+    if gis is None and \
+       _env.active_gis is None:
+        raise ValueError("A `GIS is required`")
+    elif gis is None and \
+         _env.active_gis:
+        gis = _env.active_gis
+    if gis.version < [8,1]:
+        return None
+
+
+    url = gis.properties.helperServices.geoanalytics.url
+
+    if output_name is None:
+        output_trained_name = f'GWR_{_id_generator()}'.replace(' ', '_')
+    else:
+        output_trained_name = output_name.replace(' ', '_')
+    del output_name
+    kwargs=locals()
+
+    tbx = import_toolbox(url, gis=gis)
+
+    allowed_keys = list(tbx.geographically_weighted_regression.__annotations__.keys())
+    params = {}
+    for k,v in kwargs.items():
+        if k in allowed_keys:
+            if k == 'explanatory_variables' and \
+               isinstance(explanatory_variables, (list, tuple)):
+                params[k] = ",".join(explanatory_variables)
+            elif k == 'dependent_variable' and \
+                 isinstance(dependent_variable, (list, tuple)):
+                params[k] = ",".join(dependent_variable)
+            else:
+                params[k] = v
+    ## Validate Input Parameters
+    ##
+    valid_values = dict(tbx.choice_list['geographically_weighted_regression'])
+    for k,v in params.items():
+        if k in valid_values.keys():
+            lookup = dict(zip([v.lower() for v in valid_values[k]], valid_values[k]))
+
+            if v and v.lower() not in lookup:
+                raise ValueError(f"Value: {v} not supported at this version of `GWR`")
+            if v:
+                params[k] = lookup[v.lower()]
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None
+    output_service = _create_output_service(gis,
+                                            params['output_trained_name'],
+                                            params['output_trained_name'],
+                                            'Generalized Weighted Regression',
+                                            output_datastore=output_datastore)
+    if output_service:
+            params['output_trained_name'] = _json.dumps(
+                {
+                    "serviceProperties": {"name" : output_trained_name,
+                                          "serviceUrl" : output_service.url},
+                    "itemProperties": {"itemId" : output_service.itemid}
+                }
+            )
+    else:
+        params['output_trained_name'] = output_trained_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_trained_name}'"
+
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
+
+    if hasattr(input_layer, "_lyr_dict"):
+        params['input_layer'] = input_layer._lyr_dict
+
+    try:
+        params['future'] = True
+        gpjob = tbx.geographically_weighted_regression(**params)
+        gpjob = GAJob(gpjob=gpjob, return_service=output_service)
+        if future:
+            return gpjob
+        return gpjob.result()
+    except Exception as e:
+        _log.info(e)
+        output_service.delete()
+        raise
+    return None
 #--------------------------------------------------------------------------
 def glr(input_layer,
         var_dependent,
@@ -345,7 +536,7 @@ def glr(input_layer,
         future=False,
         return_tuple=False):
     """
-    .. image:: _static/images/glr/glr.png 
+    .. image:: _static/images/glr/glr.png
 
     This tool performs Generalized Linear Regression (``glr``) to generate
     predictions or to model a dependent variable's relationship to a set of
@@ -363,7 +554,7 @@ def glr(input_layer,
     **Argument**                 **Description**
     --------------------------   ---------------------------------------------------------------
     input_layer                  Required layer. The layer containing the dependent and
-                                 independent variables. See :ref:`Feature Input<FeatureInput>`.
+                                 independent variables. See :ref:`Feature Input<gaxFeatureInput>`.
     --------------------------   ---------------------------------------------------------------
     var_dependent                Required string. The numeric field containing the observed
                                  values you want to model.
@@ -388,14 +579,14 @@ def glr(input_layer,
                                       or traffic accidents. The model used is Poisson
                                       regression.
 
-                                 The default value is 'Continuous'.             
+                                 The default value is 'Continuous'.
     --------------------------   ---------------------------------------------------------------
     features_to_predict          Optional layer. A layer containing features representing
                                  locations where estimates should be computed. Each feature in
                                  this dataset should contain values for all the explanatory
                                  variables specified. The dependent variable for these features
                                  will be estimated using the model calibrated for the input
-                                 layer data. See :ref:`Feature Input<FeatureInput>`.
+                                 layer data. See :ref:`Feature Input<gaxFeatureInput>`.
     --------------------------   ---------------------------------------------------------------
     gen_coeff_table              Optional boolean. Determines if a table with coefficient values
                                  will be returned. By default, the coefficient table is not
@@ -444,28 +635,28 @@ def glr(input_layer,
     future                       Optional boolean. If 'True', a GPJob is returned instead of
                                  results. The GPJob can be queried on the status of the execution.
 
-                                 The default value is 'False'. 
-    --------------------------   ---------------------------------------------------------------      
+                                 The default value is 'False'.
+    --------------------------   ---------------------------------------------------------------
     return_tuple                 Optional boolean. If 'True', a named tuple with multiple output keys is returned.
-                                 
-                                 The default value is 'False'. 
+
+                                 The default value is 'False'.
     ==========================   ===============================================================
 
     :returns: a named tuple with the following keys if ``return_tuple`` is set to 'True':
 
       "output" : featureLayer
 
-      "output_predicted" : featureLayer	
+      "output_predicted" : featureLayer
 
-      "coefficient_table" : Table 
+      "coefficient_table" : Table
 
       "process_info" : list
 
     else returns a feature layer of the results.
+
     .. code-block:: python
 
             # Usage Example: To train a model for predicting 911 calls.
-            
             result_predicted = glr(input_layer=911_calls_lyr,
                                    var_dependent='Calls',
                                    var_explanatory='Unemployed, AlcoholX, UnEmpRate, MedAge00',
@@ -482,7 +673,7 @@ def glr(input_layer,
         "count" : "Count"
     }
     kwargs=locals()
-
+    input_layer = _prevent_bds_item(input_layer)
     if regression_family.lower() in _allowed_regression_family:
         regression_family = _allowed_regression_family[regression_family.lower()]
         if 'regression_family' in kwargs:
@@ -504,19 +695,27 @@ def glr(input_layer,
     if isinstance(var_explanatory, list):
         var_explanatory = ', '.join(var_explanatory)
         params["var_explanatory"] = var_explanatory
-        
+
 
     if output_name is None:
         output_service_name='GLR_' + _id_generator()
         output_name=output_service_name.replace(' ', '_')
     else:
         output_service_name=output_name.replace(' ', '_')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None
+    output_service=_create_output_service(gis, output_name, output_service_name, 'Generalized Linear Regression',output_datastore=output_datastore)
 
-    output_service=_create_output_service(gis, output_name, output_service_name, 'Generalized Linear Regression')
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_service_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
 
     if context is not None:
         params["context"] = context
@@ -556,7 +755,7 @@ def glr(input_layer,
         if return_tuple:
             return res
         else:
-            return output_service   
+            return output_service
     except:
         output_service.delete()
         raise
@@ -607,36 +806,36 @@ def find_point_clusters(
     gis                          optional GIS, the GIS on which this tool runs. If not
                                  specified, the active GIS is used.
     --------------------------   ---------------------------------------------------------------
-    context                      Optional dict. The context parameter contains additional settings 
+    context                      Optional dict. The context parameter contains additional settings
                                  that affect task execution. For this task, there are four settings:
 
-                                 #. Extent (``extent``) - A bounding box that defines the analysis area. 
+                                 #. Extent (``extent``) - A bounding box that defines the analysis area.
                                     Only those features that intersect the bounding box will be analyzed.
-                                 #. Processing spatial reference (``processSR``) - The features will be 
+                                 #. Processing spatial reference (``processSR``) - The features will be
                                     projected into this coordinate system for analysis.
-                                 #. Output spatial reference (``outSR``) - The features will be projected 
-                                    into this coordinate system after the analysis to be saved. 
+                                 #. Output spatial reference (``outSR``) - The features will be projected
+                                    into this coordinate system after the analysis to be saved.
                                     The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                 #. Data store (``dataStore``) - Results will be saved to the 
+                                 #. Data store (``dataStore``) - Results will be saved to the
                                     specified data store. The default is the spatiotemporal big data store.
-    --------------------------   ---------------------------------------------------------------    
+    --------------------------   ---------------------------------------------------------------
     future                       Optional boolean. If True, a GPJob is returned instead of
                                  results. The GPJob can be queried on the status of the execution.
-    --------------------------   ---------------------------------------------------------------    
-    time_method                  Optional String. When this parameter is set to Linear and `method` 
-                                 is `DBSCAN`, both space and time will be used to find point clusters. 
-                                 If `method` is `HDBSCAN`, this parameter will be ignored and clusters 
-                                 will be found in space only. This parameter can only be used if 
-                                 `input_layer` has time enabled and is of type instant. Temporal 
+    --------------------------   ---------------------------------------------------------------
+    time_method                  Optional String. When this parameter is set to Linear and `method`
+                                 is `DBSCAN`, both space and time will be used to find point clusters.
+                                 If `method` is `HDBSCAN`, this parameter will be ignored and clusters
+                                 will be found in space only. This parameter can only be used if
+                                 `input_layer` has time enabled and is of type instant. Temporal
                                  clustering is available at ArcGIS Enterprise 10.8.
-    --------------------------   ---------------------------------------------------------------    
-    search_duration              Optional String. When using DBSCAN with timeMethod set as Linear, 
-                                 this parameter is the time duration within which 
+    --------------------------   ---------------------------------------------------------------
+    search_duration              Optional String. When using DBSCAN with timeMethod set as Linear,
+                                 this parameter is the time duration within which
                                  `min_feature_clusters` must be found. This parameter is not used
-                                 when HDBSCAN is chosen as the clustering method or when 
+                                 when HDBSCAN is chosen as the clustering method or when
                                  `time_method` is not used.
-    --------------------------   ---------------------------------------------------------------    
-    duration_unit                Optional String. The units used for the `search_duration` 
+    --------------------------   ---------------------------------------------------------------
+    duration_unit                Optional String. The units used for the `search_duration`
                                  parameter. This parameter is required when using DBSCAN but will
                                  not be used with HDBSCAN or space-only DBSCAN.
     ==========================   ===============================================================
@@ -654,18 +853,28 @@ def find_point_clusters(
     for key, value in kwargs.items():
         if value is not None:
             params[key]=value
-
+    input_layer = _prevent_bds_item(input_layer)
     if output_name is None:
         output_service_name='Find Point Clusters_' + _id_generator()
         output_name=output_service_name.replace(' ', '_')
     else:
         output_service_name=output_name.replace(' ', '_')
 
-    output_service=_create_output_service(gis, output_name, output_service_name, 'Find Point Clusters')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    output_service=_create_output_service(gis, output_name, output_service_name, 'Find Point Clusters', output_datastore=output_datastore)
+
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_service_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
+
 
     if context is not None:
         params["context"] = context
@@ -752,7 +961,7 @@ def calculate_density(
                                                           system is not specified when running analysis, the World Cylindrical Equal
                                                           Area (WKID 54034) projection will be used. At 10.7 or later, if a projected coordinate system
                                                           is not specified when running analysis, a projection will be picked based on the extent of the data.
-                                                          See :ref:`Feature Input<FeatureInput>`.
+                                                          See :ref:`Feature Input<gaxFeatureInput>`.
     -------------------------------------------------     ------------------------------------------------------------------------
     fields                                                Optional string. Provides one or more field specifying the number of incidents at each location.
                                                           You can calculate the density on multiple fields, and the count of points will always have the density calculated.
@@ -856,34 +1065,42 @@ def calculate_density(
                                                radius_unit="Yards")
 
     """
-    kwargs=locals()
+    kwargs = locals()
+    input_layer = _prevent_bds_item(input_layer)
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
 
-    gis=_arcgis.env.active_gis if gis is None else gis
-    url=gis.properties.helperServices.geoanalytics.url
-
-    params={}
+    params = {}
     for key, value in kwargs.items():
         if value is not None:
-            params[key]=value
+            params[key] = value
 
     if output_name is None:
-        output_service_name='Calculate Density Analysis_' + _id_generator()
-        output_name=output_service_name.replace(' ', '_')
+        output_service_name = 'Calculate Density Analysis_' + _id_generator()
+        output_name = output_service_name.replace(' ', '_')
     else:
-        output_service_name=output_name.replace(' ', '_')
+        output_service_name = output_name.replace(' ', '_')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None
+    output_service = _create_output_service(gis, output_name, output_service_name,
+                                            'Calculate Density', output_datastore=output_datastore)
 
-    output_service=_create_output_service(gis, output_name, output_service_name, 'Calculate Density')
-
-    params['output_name']=_json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_service_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
 
     if context is not None:
         params["context"] = context
     else:
         _set_context(params)
 
-    param_db={
+    param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
         "fields": (str, "fields"),
         "weight": (str, "weight"),
@@ -902,7 +1119,7 @@ def calculate_density(
         "context": (str, "context"),
         "output": (_FeatureSet, "Output Features"),
     }
-    return_values=[
+    return_values = [
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
 
@@ -917,37 +1134,20 @@ def calculate_density(
         raise
 
 
-calculate_density.__annotations__={
-    'fields': str,
-    'weight': str,
-    'bin_type': str,
-    'bin_size': float,
-    'bin_size_unit': str,
-    'time_step_interval': int,
-    'time_step_interval_unit': str,
-    'time_step_repeat_interval': int,
-    'time_step_repeat_interval_unit': str,
-    'time_step_reference': _datetime,
-    'radius': float,
-    'radius_unit': str,
-    'area_units': str,
-    'output_name': str}
-
 #--------------------------------------------------------------------------
-def find_hot_spots(
-    point_layer,
-    bin_size=5,
-    bin_size_unit="Miles",
-    neighborhood_distance=5,
-    neighborhood_distance_unit="Miles",
-    time_step_interval=None,
-    time_step_interval_unit=None,
-    time_step_alignment=None,
-    time_step_reference=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False):
+def find_hot_spots(point_layer,
+                   bin_size=5,
+                   bin_size_unit="Miles",
+                   neighborhood_distance=5,
+                   neighborhood_distance_unit="Miles",
+                   time_step_interval=None,
+                   time_step_interval_unit=None,
+                   time_step_alignment=None,
+                   time_step_reference=None,
+                   output_name=None,
+                   gis=None,
+                   context=None,
+                   future=False):
     """
     .. image:: _static/images/geo_find_hot_spots/geo_find_hot_spots.png
 
@@ -966,7 +1166,7 @@ def find_hot_spots(
     **Argument**                                                                                    **Description**
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
     point_layer                                                                                     Required feature layer. The point feature layer for which hot spots will be calculated.
-                                                                                                    See :ref:`Feature Input<FeatureInput>`.
+                                                                                                    See :ref:`Feature Input<gaxFeatureInput>`.
 
                                                                                                     .. Note::
                                                                                                         Analysis using bins requires a projected coordinate system. When aggregating layers into bins,
@@ -1049,7 +1249,7 @@ def find_hot_spots(
 
     """
     kwargs=locals()
-
+    point_layer = _prevent_bds_item(point_layer)
     gis=_arcgis.env.active_gis if gis is None else gis
     url=gis.properties.helperServices.geoanalytics.url
 
@@ -1063,12 +1263,19 @@ def find_hot_spots(
         output_name=output_service_name.replace(' ', '_')
     else:
         output_service_name=output_name.replace(' ', '_')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None
+    output_service=_create_output_service(gis, output_name, output_service_name, 'Find Hotspots', output_datastore=output_datastore)
 
-    output_service=_create_output_service(gis, output_name, output_service_name, 'Find Hotspots')
-
-    params['output_name']=_json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_service_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
 
     if context is not None:
         params["context"] = context
@@ -1131,32 +1338,33 @@ def create_space_time_cube(point_layer: _FeatureSet,
                            gis=None,
                            future: bool=False) -> DataFile:
     """
-    .. image:: _static/images/create_space_time_cube/create_space_time_cube.png 
-    ``create_space_time_cube`` works with a layer of point features that are time enabled. 
-    It aggregates the data into a three-dimensional cube of space-time bins. 
-    When determining the point in a space-time bin relationship, statistics about all 
-    points in the space-time bins are calculated and assigned to the bins. 
-    The most basic statistic is the number of points within the bins, but you can 
+    .. image:: _static/images/create_space_time_cube/create_space_time_cube.png
+    ``create_space_time_cube`` works with a layer of point features that are time enabled.
+    It aggregates the data into a three-dimensional cube of space-time bins.
+    When determining the point in a space-time bin relationship, statistics about all
+    points in the space-time bins are calculated and assigned to the bins.
+    The most basic statistic is the number of points within the bins, but you can
     calculate other statistics as well.
-    For example, suppose you have point features of crimes in a city, and you want 
-    to summarize the number of crimes in both space and time. You can calculate the 
-    space-time cube for the dataset, and use the cube to further analyze trends 
+    For example, suppose you have point features of crimes in a city, and you want
+    to summarize the number of crimes in both space and time. You can calculate the
+    space-time cube for the dataset, and use the cube to further analyze trends
     such as emerging hot and cold spots.
+
     ============================================================================     ===================================================================================================
     **Argument**                                                                     **Description**
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
-    point_layer                                                                      Required point feature layer. The point features that will be 
-                                                                                     aggregated into the bins specified in geographical size by the ``bin_size`` 
-                                                                                     and ``bin_size_unit`` parameters and temporal size by 
-                                                                                     the ``time_step_interval`` and ``time_step_interval_unit`` parameters. 
-                                                                                     See :ref:`Feature Input<FeatureInput>`.
-                                                                                     Analysis using bins requires a projected coordinate system. 
-                                                                                     When aggregating layers into bins, the input layer or processing 
-                                                                                     extent (``processSR``) must have a projected coordinate system. 
-                                                                                     At 10.5.1, 10.6, and 10.6.1, if a projected coordinate system is 
-                                                                                     not specified when running analysis, the World Cylindrical Equal 
-                                                                                     Area (WKID 54034) projection will be used. At 10.7 or later, if a 
-                                                                                     projected coordinate system is not specified when running analysis, 
+    point_layer                                                                      Required point feature layer. The point features that will be
+                                                                                     aggregated into the bins specified in geographical size by the ``bin_size``
+                                                                                     and ``bin_size_unit`` parameters and temporal size by
+                                                                                     the ``time_step_interval`` and ``time_step_interval_unit`` parameters.
+                                                                                     See :ref:`Feature Input<gaxFeatureInput>`.
+                                                                                     Analysis using bins requires a projected coordinate system.
+                                                                                     When aggregating layers into bins, the input layer or processing
+                                                                                     extent (``processSR``) must have a projected coordinate system.
+                                                                                     At 10.5.1, 10.6, and 10.6.1, if a projected coordinate system is
+                                                                                     not specified when running analysis, the World Cylindrical Equal
+                                                                                     Area (WKID 54034) projection will be used. At 10.7 or later, if a
+                                                                                     projected coordinate system is not specified when running analysis,
                                                                                      a projection will be picked based on the extent of the data.
                                                                                      .. Note: The ``input_layer`` must have a minimum of 60 features.
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
@@ -1167,7 +1375,7 @@ def create_space_time_cube(point_layer: _FeatureSet,
                                                                                      Choice list: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
     time_step_interval                                                               Required integer. A numeric value that specifies the duration of the time bin.
-                                                                                     .. Note: 
+                                                                                     .. Note:
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
     time_step_interval_unit                                                          Required string. A numeric value that specifies the duration unit of the time bin.
                                                                                      Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
@@ -1178,15 +1386,15 @@ def create_space_time_cube(point_layer: _FeatureSet,
                                                                                         * ``EndTime`` - Time is aligned to the last feature in time
                                                                                         * ``ReferenceTime`` - Time is aligned a specified time
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
-    time_step_reference (Required if ``time_step_alignment`` is ReferenceTime)       Optional datetime. A date that specifies the reference time to align the 
-                                                                                     time bins to if ReferenceTime is specified in ``time_step_alignment``. 
+    time_step_reference (Required if ``time_step_alignment`` is ReferenceTime)       Optional datetime. A date that specifies the reference time to align the
+                                                                                     time bins to if ReferenceTime is specified in ``time_step_alignment``.
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
-    summary_fields                                                                   Optional string. A list of field names, statistical summary types, and the 
-                                                                                     fill option for empty values that you want to calculate for all points 
-                                                                                     within each space-time bin. Note that the count of points within each 
+    summary_fields                                                                   Optional string. A list of field names, statistical summary types, and the
+                                                                                     fill option for empty values that you want to calculate for all points
+                                                                                     within each space-time bin. Note that the count of points within each
                                                                                      bin is always returned. By default, all statistics are returned.
                                                                                      Example: [{"statisticType": "statistic type", "onStatisticField": "field name", "fillType": "fill type", "onStatisticField": "fieldName2"}]
-                                        
+
                                                                                      fieldName is the name of the fields in the input point layer.
                                                                                      statisticType is one of the following for numeric fields:
                                                                                      * ``Sum`` - Adds the total value of all the points in each polygon.
@@ -1196,17 +1404,17 @@ def create_space_time_cube(point_layer: _FeatureSet,
                                                                                      * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
                                                                                      statisticType is the following for string fields:
                                                                                      * ``Count`` - Totals the number of strings for all the points in each polygon.
- 
+
                                                                                      fillType is one of the following:
                                                                                      * ``zeros`` - Fills missing values with zeros. This is most appropriate for fields representing counts.
                                                                                      * ``spatialNeighbors`` - Fills missing values by averaging the spatial neighbors. Neighbors are determined by a second degree queens contiguity.
                                                                                      * ``spaceTimeNeighbors`` - Fills missing values by averaging the space-time neighbors. Neighbors are determined by a second degree queens contiguity in both space and time.
-                                                                                     * ``temporalTrend`` - Interpolates values using a univariate spline.   
+                                                                                     * ``temporalTrend`` - Interpolates values using a univariate spline.
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
     output_name                                                                      Required string. The task will create a space time cube (netCDF) of the results. You define the name of the space time cube.
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
     context                                                                          Optional string. Context contains additional settings that affect task execution. For this task, there are three settings:
-                                                                                     
+
                                                                                      #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                                                                      #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
@@ -1214,9 +1422,11 @@ def create_space_time_cube(point_layer: _FeatureSet,
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
     future                                                                           Optional boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
     ============================================================================     ===================================================================================================
+
     :returns: dict with url containing the path to Output Space Time Cube (netCDF) dataFile. When you browse to the output url, your netCDF will automatically download to your local machine.
-    
+
     .. code-block:: python
+
             # Usage Example: To aggregate Chicago homicides date layer into 3-dimensional cubes of 5 miles bin.
             create_space_time_cube(point_layer=lyr,
                                    bin_size=5,
@@ -1230,7 +1440,7 @@ def create_space_time_cube(point_layer: _FeatureSet,
     """
 
     kwargs=locals()
-
+    point_layer = _prevent_bds_item(point_layer)
     gis=_arcgis.env.active_gis if gis is None else gis
     url=gis.properties.helperServices.geoanalytics.url
 

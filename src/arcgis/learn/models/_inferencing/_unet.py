@@ -5,6 +5,7 @@ try:
     import torch.nn as nn
     import math
     from . import util
+    from .util import variable_tile_size_check
     HAS_TORCH = True
 except Exception as e:
     HAS_TORCH = False
@@ -161,16 +162,17 @@ class ChildImageClassifier:
                 }
             ]
         )
+        required_parameters = variable_tile_size_check(self.json_info, required_parameters)
         return required_parameters
 
     def getConfiguration(self, **scalars):
-        self.padding = int(scalars.get('padding', self.json_info['ImageHeight'] // 4)) ## Default padding Imageheight//4.
+        self.tytx = int(scalars.get('tile_size', self.json_info['ImageHeight']))
+        self.padding = int(scalars.get('padding', self.tytx // 4)) ## Default padding Imageheight//4.
         self.batch_size = int(math.sqrt(int(scalars.get('batch_size', 4)))) ** 2  ## Default 4 batch_size 
         self.predict_background = scalars.get('predict_background', 'true').lower() in ['true', '1', 't', 'y', 'yes']  ## Default value True
 
         self.rectangle_height, self.rectangle_width = calculate_rectangle_size_from_batch_size(self.batch_size)
-        ty, tx = get_tile_size(self.json_info['ImageHeight'], self.json_info['ImageWidth'],
-                                         self.padding, self.rectangle_height, self.rectangle_width)
+        ty, tx = get_tile_size(self.tytx, self.tytx, self.padding, self.rectangle_height, self.rectangle_width)
 
         return {
             'extractBands': tuple(self.json_info['ExtractBands']),
@@ -184,14 +186,19 @@ class ChildImageClassifier:
         input_image = pixelBlocks['raster_pixels'].astype(np.float32)
         batch, batch_height, batch_width = \
             tile_to_batch(input_image,
-                                    self.json_info['ImageHeight'],
-                                    self.json_info['ImageWidth'],
+                                    self.tytx,
+                                    self.tytx,
                                     self.padding,
                                     fixed_tile_size=True,
                                     batch_height=self.rectangle_height,
                                     batch_width=self.rectangle_width)
         
-        semantic_predictions = util.pixel_classify_image(self.model, batch, self.device, classes=[clas['Name'] for clas in self.json_info['Classes']], predict_bg=self.predict_background, model_info=self.json_info)
+        semantic_predictions = util.pixel_classify_image(self.model, 
+                                                        batch, 
+                                                        self.device, 
+                                                        classes=[clas['Name'] for clas in self.json_info['Classes']], 
+                                                        predict_bg=self.predict_background, 
+                                                        model_info=self.json_info)
         semantic_predictions = batch_to_tile(semantic_predictions.unsqueeze(dim=1).cpu().numpy(), batch_height, batch_width)
         return semantic_predictions
 

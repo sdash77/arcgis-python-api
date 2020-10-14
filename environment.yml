@@ -3,9 +3,11 @@ channels:
 - defaults
 - fastai
 - pytorch
+- esri
 dependencies:
 - ipywidgets >=7
-- pandas >=0.25
+- pandas >=1
+- ujson >=3
 - numpy>=1.16.2
 - pip
 - python=3.6
@@ -32,7 +34,6 @@ dependencies:
 - torchvision=0.3.0
 - pytorch=1.1.0
 - cudatoolkit
-- requests
 - rtree>=0.8.3
 - pip:
   - unittest-xml-reporting
@@ -40,5 +41,8 @@ dependencies:
   - sphinx-rtd-theme
   - pytest-blockage
   - junit2html
+  - coverage
+  - pytest-cov
   - requests_toolbelt>=0.9.1
   - requests_ntlm
+  - python-certifi-win32

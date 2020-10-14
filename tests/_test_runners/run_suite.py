@@ -9,33 +9,36 @@ from utils._common import *
 
 file_uri_output_dir = pathlib.Path(TESTS_DIR).as_uri()
 
-def run_suite(suite, output_dir, run_setup_env, run_sanity_tests_before=True,
+def run_suite(suite, output_dir, run_setup_env, run_smoke_tests_before=True,
               jenkins_job_url=file_uri_output_dir,):
     log.debug(f"running suite {json.dumps(suite)}")
     output_xml_results = []
+    output_coverage_results = []
 
     if run_setup_env:
         setup_env()
 
-    if run_sanity_tests_before:
-        xml_output = run_sanity_tests(output_dir)
+    if run_smoke_tests_before:
+        xml_output = run_smoke_tests(output_dir)
         output_xml_results.append(xml_output)
 
     if "unit_tests_to_run" in suite and \
        suite["unit_tests_to_run"]["paths"]:
-        xml_output = \
+        xml_output, coverage_output = \
             run_unit_tests(suite["unit_tests_to_run"]["config"],
                            suite["unit_tests_to_run"]["paths"],
                            output_dir)
         output_xml_results.append(xml_output)
+        output_coverage_results.append(coverage_output)
 
     if "integration_tests_to_run" in suite and \
        suite["integration_tests_to_run"]["paths"]:
-        xml_output = \
+        xml_output, coverage_output = \
             run_integration_tests(suite["integration_tests_to_run"]["config"],
                                   suite["integration_tests_to_run"]["paths"],
                                   output_dir)
         output_xml_results.append(xml_output)
+        output_coverage_results.append(coverage_output)
 
     if "nbconvert_notebook_tests_to_run" in suite and \
        suite["nbconvert_notebook_tests_to_run"]["paths"]:
@@ -65,4 +68,4 @@ def run_suite(suite, output_dir, run_setup_env, run_sanity_tests_before=True,
                                   output_dir)
         output_xml_results.append(xml_output)
 
-    return output_xml_results
+    return output_xml_results, output_coverage_results

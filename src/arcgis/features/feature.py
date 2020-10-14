@@ -4,6 +4,7 @@ to represent features and collection of features.
 """
 import copy
 import json
+import ujson as _ujson
 import os
 import re
 import tempfile
@@ -207,7 +208,7 @@ class Feature(object):
     @classmethod
     def from_json(cls, json_str):
         """:return: a feature from a JSON string"""
-        feature = json.loads(json_str)
+        feature = _ujson.loads(json_str)
         geom = feature['geometry'] if 'geometry' in feature else None
         attribs = feature['attributes'] if 'attributes' in feature else None
         return cls(geom, attribs)
@@ -487,7 +488,7 @@ class FeatureSet(object):
                     }
                     if "SHAPE@JSON" in fields:
                         template['geometry'] = \
-                            json.loads(row[fields.index("SHAPE@JSON")])
+                            _ujson.loads(row[fields.index("SHAPE@JSON")])
 
                     features.append(
                         Feature.from_dict(template)
@@ -691,7 +692,7 @@ class FeatureSet(object):
     @staticmethod
     def from_json(json_str):
         """returns a featureset from a JSON string"""
-        return FeatureSet.from_dict(json.loads(json_str))
+        return FeatureSet.from_dict(_ujson.loads(json_str))
 
     @staticmethod
     def from_dataframe(df):
@@ -758,7 +759,7 @@ class FeatureSet(object):
             if len(geoms) > 0:
                 features.append(
                     {
-                        "geometry": json.loads(json.dumps(geoms[index])),
+                        "geometry": _ujson.loads(json.dumps(geoms[index])),
                         "attributes": row
                     })
             else:
@@ -872,12 +873,15 @@ class FeatureSet(object):
                 geometry["x"] = geom["coordinates"][0]
                 geometry["y"] = geom["coordinates"][1]
             elif geo_type == "Polygon":
-                geometry["rings"] = geom["coordinates"]
+                geometry["rings"] = [[pt for pt in reversed(g)] for g in geom['coordinates']]
             elif geo_type == "MultiPolygon":
                 rings = []
                 if HASARCPY:
-                    geom = arcpy.AsShape(geom)
-                    geometry = Geometry(json.loads(geom))
+                    if isinstance(geom, dict):
+                        geometry = Geometry(geom)
+                    else:
+                        geom = arcpy.AsShape(geom)
+                        geometry = Geometry(_ujson.loads(geom))
                 else:
                     coordkey = ([d for d in geom if d.lower() == 'coordinates']
                                     or ['coordinates']).pop()
@@ -892,11 +896,11 @@ class FeatureSet(object):
                         for idx, ring in enumerate(part):
                             if idx:
                                 part_item.append(None)
-                            for coord in ring:
+                            for coord in reversed(ring):
                                 part_item.append(coord)
                         if part_item:
-                            part_list.append([part_item])
-                    geometry["rings"] = part_list[0]
+                            part_list.append(part_item)
+                    geometry["rings"] = part_list#[0]
             elif geo_type == "MultiPoint":
                 geometry["points"] = [c[:] for c in geom["coordinates"]]
             elif geo_type == "LineString":
@@ -905,7 +909,7 @@ class FeatureSet(object):
                 if HASARCPY == 'rem':
                     geom = arcpy.AsShape(geom)
                     geom['spatialReference'] = {'wkid': 4326}
-                    geometry = Geometry(json.loads(geom))
+                    geometry = Geometry(_ujson.loads(geom))
                 else:
                     coordkey = ([d for d in geom if d.lower() == 'coordinates']
                                 or ['coordinates']).pop()

@@ -17,7 +17,6 @@ HAS_ARCPY = True
 try:
     import torch
     import numpy as np
-    from fastprogress import progress_bar
     from fastai.vision.learner import cnn_learner
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body, cnn_config
@@ -28,8 +27,9 @@ try:
     from torchvision.models import resnet34
     from torchvision.models import mobilenet_v2
     from torchvision import models
-    from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms
-    from ._ssd_utils import SSDObjectCategoryList, compute_class_AP, SSDHeadv2, kmeans, avg_iou, show_results_multispectral
+    from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList, show_results_multispectral
+    from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, postprocess
+    from ._ssd_utils import compute_class_AP, SSDHeadv2, kmeans, avg_iou
     from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
     from ._arcgis_model import SaveModelCallback, _set_multigpu_callback, _resnet_family, _vgg_family, _densenet_family
@@ -38,7 +38,8 @@ try:
     import PIL
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
     from .._video_utils import VideoUtils
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
+    from fastprogress.fastprogress import progress_bar
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     class NnModule():
@@ -63,7 +64,7 @@ class SingleShotDetector(ArcGISModel):
 
     """
     Creates a Single Shot Detector with the specified grid sizes, zoom scales
-    and aspect  ratios. Based on Fast.ai MOOC Version2 Lesson 9.
+    and aspect ratios. Based on Fast.ai MOOC Version2 Lesson 9.
     
     =====================   ===========================================
     **Argument**            **Description**
@@ -101,6 +102,11 @@ class SingleShotDetector(ArcGISModel):
                             bounding box.
     ---------------------   -------------------------------------------
     ssd_version             Optional int within [1,2]. Use version=1 for arcgis v1.6.2 or earlier
+    ---------------------   -------------------------------------------
+    backend                 Optional string. Controls the backend framework to be used
+                            for this model, which is 'pytorch' by default.
+
+                            valid options are 'pytorch', 'tensorflow'
     =====================   ===========================================
     
     :returns: `SingleShotDetector` Object
@@ -109,7 +115,7 @@ class SingleShotDetector(ArcGISModel):
     def __init__(self, data, grids=None, zooms=[1.], ratios=[[1., 1.]],
                  backbone=None, drop=0.3, bias=-4., focal_loss=False, 
                  pretrained_path=None, location_loss_factor=None, 
-                 ssd_version=2, backend='pytorch'):
+                 ssd_version=2, backend='pytorch', *args, **kwargs):
 
         super().__init__(data, backbone)
 
@@ -151,6 +157,8 @@ class SingleShotDetector(ArcGISModel):
 
             if not self._check_backbone_support(self._backbone):
                 raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+
+            self._check_dataset_support(self._data)
 
             if self._backbone == models.mobilenet_v2:
                 backbone_cut = -1
@@ -238,14 +246,21 @@ class SingleShotDetector(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        """
-        Supported torchvision backbones for this model.
-        """
+        """ Supported torchvision backbones for this model. """
         return SingleShotDetector._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
         return [*_resnet_family, *_densenet_family, *_vgg_family, models.mobilenet_v2.__name__]
+
+    @property
+    def  supported_datasets(self):
+        """ Supported dataset types for this model. """
+        return SingleShotDetector._supported_datasets()
+    
+    @staticmethod
+    def _supported_datasets():
+        return ['PASCAL_VOC_rectangles', 'KITTI_rectangles']
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -292,7 +307,7 @@ class SingleShotDetector(ArcGISModel):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
             
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         emd = json.load(open(emd_path))
         model_file = Path(emd['ModelFile'])
         backbone = emd.get('backbone', 'resnet34')
@@ -308,6 +323,11 @@ class SingleShotDetector(ArcGISModel):
         if isinstance(resize_to, list):
             resize_to = (resize_to[0], resize_to[1])
 
+        # Tensorflow support        
+        backend = emd.get("ModelParameters", {}).get('backend', 'pytorch')
+        if backend == 'tensorflow':
+            backbone = emd["ModelParameters"].get("backbone", "ResNet50")
+
         data_passed = True
         # Create an image databunch for when loading the model using emd (without training data)
         if data is None:
@@ -320,7 +340,7 @@ class SingleShotDetector(ArcGISModel):
                 warnings.simplefilter("ignore", UserWarning)
                 
                 sd = ImageList([], path=emd_path.parent.parent).split_by_idx([])
-                data = sd.label_const(0, label_cls=SSDObjectCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
+                data = sd.label_const(0, label_cls=ObjectDetectionCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
 
             data.chip_size = chip_size
             data.class_mapping = class_mapping
@@ -333,7 +353,8 @@ class SingleShotDetector(ArcGISModel):
             data = get_multispectral_data_params_from_emd(data, emd)
 
         data.resize_to = resize_to
-        ssd = cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backbone=backbone, ssd_version=ssd_version)
+
+        ssd = cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backend=backend, backbone=backbone, ssd_version=ssd_version)
 
         if not data_passed:
             ssd.learn.data.single_ds.classes = ssd._data.classes
@@ -345,7 +366,7 @@ class SingleShotDetector(ArcGISModel):
 
         self.grids = anc_grids
         self.zooms = anc_zooms
-        self.ratios =  anc_ratios
+        self.ratios = anc_ratios
 
         anchor_scales = [(anz*i, anz*j) for anz in anc_zooms for (i,j) in anc_ratios]
 
@@ -407,10 +428,10 @@ class SingleShotDetector(ArcGISModel):
         gt_clas = clas[gt_idx]
         pos = gt_overlap > 0.4
         pos_idx = torch.nonzero(pos)[:,0]
-        gt_clas[1-pos] = 0
+        gt_clas[~pos] = 0
         gt_bbox = bbox[gt_idx]
         loc_loss = ((a_ic[pos_idx] - gt_bbox[pos_idx]).abs()).mean()
-        clas_loss  = self._loss_f(b_c, gt_clas)
+        clas_loss = self._loss_f(b_c, gt_clas)
         return loc_loss, clas_loss
 
     def _ssd_loss(self, pred, targ1, targ2, print_it=False):
@@ -444,7 +465,10 @@ class SingleShotDetector(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        return {'average_precision_score': self.average_precision_score(show_progress=False)}
+        return {'average_precision_score': self.average_precision_score(show_progress=True)}
+
+    def _analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ret_scores=True, device=None):
+        return postprocess(pred, model=self, thresh=thresh, nms_overlap=nms_overlap, ret_scores=ret_scores, device=device)
 
     def _get_emd_params(self):
         import random
@@ -485,10 +509,11 @@ class SingleShotDetector(ArcGISModel):
         self._check_requisites()
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
-        self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
+        self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self)
 
     def _show_results_multispectral(self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs):
-        ax = show_results_multispectral(
+        return_fig = kwargs.get('return_fig', False)
+        fig,ax = show_results_multispectral(
             self, 
             nrows=rows, 
             thresh=thresh, 
@@ -496,6 +521,8 @@ class SingleShotDetector(ArcGISModel):
             alpha=alpha, 
             **kwargs
         )
+        if return_fig:
+            return fig
 
     def predict_video(
         self,
@@ -687,7 +714,7 @@ class SingleShotDetector(ArcGISModel):
 
         for chip in chips:
             frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
-            bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, ssd=self)[0]
+            bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, model=self)[0]
             if bbox:
                 scores = bbox.scores
                 bboxes, lbls = bbox._compute_boxes()
@@ -866,7 +893,7 @@ class SingleShotDetector(ArcGISModel):
 
             # find grid size
             grids = list(map(int, map(round, data.chip_size/np.sort(np.max(centroid, axis=1)))))
-            print(grids)
+
             grids = list(set(grids))
             grids.sort(reverse = True)
             if grids[-1] == 0:
@@ -900,6 +927,8 @@ class SingleShotDetector(ArcGISModel):
         self.show_results = self._show_results_multispectral
 
         self._code = code
+        if pretrained_path is not None:
+            self.load(pretrained_path)
 
 
     def _loss_func_tf(self, y_bboxes, y_classes, predictions):
@@ -914,7 +943,7 @@ class SingleShotDetector(ArcGISModel):
             _localization_loss, _classification_loss = tf_loss_function_single_image(self, image_y_bboxes, image_y_calsses, image_p_bboxes, image_p_classes )
             classification_loss += _classification_loss
             localization_loss += _localization_loss
-        print(localization_loss, classification_loss)
+
         if self.location_loss_factor is None:
             return localization_loss + classification_loss
         else:

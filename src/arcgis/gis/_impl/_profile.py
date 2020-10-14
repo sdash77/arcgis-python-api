@@ -199,6 +199,8 @@ class ProfileManager(object):
                 except:
                     values[key] = None
             return values
+        else:
+            _log.warn("Profile does not exist. Use the `ProfileManage.list()` to see a list of available login credentials.")
         return None
 
     #--------------------------------------------------------------------------
@@ -319,6 +321,7 @@ class ProfileManager(object):
             self._cfg_exists = True
             return True
         except:
+            _log.warn(self._get_keyring_failure_message())
             return False
     #----------------------------------------------------------------------
     def save_as(self, profile, gis):
@@ -357,6 +360,7 @@ class ProfileManager(object):
         else:
             return self.create(profile=profile, url=url, username=u,
                         key_file=kf, cert_file=cf, client_id=ci)
+        
         return False
     #----------------------------------------------------------------------
     def _retrieve(self, profile):

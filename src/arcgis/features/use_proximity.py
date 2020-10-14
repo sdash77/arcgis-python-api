@@ -10,8 +10,8 @@ plan_routes determines the best way to route a fleet of vehicles to visit many s
 import arcgis as _arcgis
 from arcgis._impl.common._utils import _date_handler
 import arcgis.network as network
-
-
+from .._impl.common._utils import inspect_function_inputs
+#--------------------------------------------------------------------------
 def connect_origins_to_destinations(origins_layer,
                                     destinations_layer,
                                     measurement_type="DrivingTime",
@@ -27,10 +27,11 @@ def connect_origins_to_destinations(origins_layer,
                                     line_barrier_layer=None,
                                     polygon_barrier_layer=None,
                                     future=False,
-                                    route_shape='FollowStreets'):
+                                    route_shape='FollowStreets',
+                                    include_route_layers=False):
     """
     .. image:: _static/images/connect_origins_to_destinations/connect_origins_to_destinations.png
-    
+
     The Connect Origins to Destinations task measures the travel time or distance between pairs of points. Using this tool, you can
 
     * Calculate the total distance or time commuters travel on their home-to-work trips.
@@ -187,7 +188,7 @@ def connect_origins_to_destinations(origins_layer,
 
                                               + FollowStreets - The shape is based on the underlying street network. This option is best when you want to generate the routes between origins and destinations. This is the default value when using a travel mode.
                                               + StraightLine - The shape is a straight line connecting the origin-destination pair. This option is best when you want to generate spider diagrams or desire lines (for example, to show which stores customers are visiting). This is the default value when not using a travel mode.
-                                           
+
                                            The best route between an origin and it's matched destination is always calculated based on the travel mode, regardless of which route shape is chosen.
     ===================================    =========================================================
 
@@ -212,8 +213,11 @@ def connect_origins_to_destinations(origins_layer,
                                          time_of_day=datetime(1990, 1, 4, 1, 3),
                                          output_name="routes_from_offices_to_hq")
     """
+    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.connect_origins_to_destinations, 
+                                     **kwargs)    
+
     if isinstance(measurement_type, str):
         route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
         travelmodes = route_service.retrieve_travel_modes()
@@ -222,24 +226,12 @@ def connect_origins_to_destinations(origins_layer,
             if tm['name'] == measurement_type:
                 tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
                 measurement_type = tm
+                params['measurement_type'] = measurement_type
 
-    return gis._tools.featureanalysis.connect_origins_to_destinations(
-        origins_layer,
-        destinations_layer,
-        measurement_type,
-        origins_layer_route_id_field,
-        destinations_layer_route_id_field,
-        _date_handler(time_of_day),
-        time_zone_for_time_of_day,
-        output_name,
-        context,
-        estimate=estimate, 
-        route_shape=route_shape,
-        future=future)
-
-
+    return gis._tools.featureanalysis.connect_origins_to_destinations(**params)
+#--------------------------------------------------------------------------
 def create_buffers(
-        input_layer,
+    input_layer,
         distances=[],
         field=None,
         units="Meters",
@@ -389,21 +381,12 @@ def create_buffers(
                                  output_name='create_buffers',
                                  context={"extent":{"xmin":-12555831.656684224,"ymin":5698027.566358956,"xmax":-11835489.102124758,"ymax":6104672.556836072,"spatialReference":{"wkid":102100,"latestWkid":3857}}})
     """
+    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.featureanalysis.create_buffers(input_layer,
-                                                     distances,
-                                                     field,
-                                                     units,
-                                                     dissolve_type,
-                                                     ring_type,
-                                                     side_type,
-                                                     end_type,
-                                                     output_name,
-                                                     context,
-                                                     estimate=estimate,
-                                                     future=future)
-
-
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.create_buffers, 
+                                     **kwargs)    
+    return gis._tools.featureanalysis.create_buffers(**params)
+#--------------------------------------------------------------------------
 def create_drive_time_areas(input_layer,
                             break_values=[5, 10, 15],
                             break_units="Minutes",
@@ -420,7 +403,8 @@ def create_drive_time_areas(input_layer,
                             polygon_barrier_layer=None,
                             future=False,
                             travel_direction="AwayFromFacility",
-                            show_holes=False):
+                            show_holes=False,
+                            include_reachable_streets=False):
     """
     .. image:: _static/images/create_drive_time_areas/create_drive_time_areas.png
 
@@ -434,6 +418,10 @@ def create_drive_time_areas(input_layer,
     * How far can I drive from here in five minutes?
     * What areas are covered within a three-mile drive distance of my stores?
     * What areas are within four minutes of our fire stations?
+
+    See `Create Drive-Time Areas <https://developers.arcgis.com/rest/analysis/api-reference/create-drivetime.htm>`_
+    for details on the `Spatial Analysis Service <https://developers.arcgis.com/rest/analysis/api-reference/getting-started.htm>`_
+    that runs this task.
 
     =========================    =========================================================
     **Parameter**                **Description**
@@ -578,6 +566,16 @@ def create_drive_time_areas(input_layer,
                                  The travel direction can influence how the areas are generated. CreateDriveTimeAreas will obey one-way streets, avoid illegal turns, and follow other rules based on the direction of travel. You should select the direction of travel based on the type of input locations and the context of your analysis. For example, the drive-time area for a pizza delivery store should be created away from the facility, whereas the drive-time area for a hospital should be created toward the facility.
     -------------------------    ---------------------------------------------------------
     show_holes                   Optional boolean. When set to true, the output areas will include holes if some streets couldn't be reached without exceeding the cutoff or due to travel restrictions imposed by the travel mode.
+    -------------------------    ---------------------------------------------------------
+    include_reachable_streets    Optional string. Only applicable if :attr:`output_name` is specified.
+                                 When `True` (and :attr:`output_name` is specified), a second layer named
+                                 `Reachable Streets` is created in the output :class:`Feature Layer<arcgis.features.FeatureLayerCollection>`.
+
+                                 This layer contains the streets that were used to define the drive time
+                                 area polygons. Set this to true if you want a potentially more accurate
+                                 result of which streets are actually covered within a specific travel
+                                 distance than what the drive-time areas would contain.
+    -------------------------    ---------------------------------------------------------
     =========================    =========================================================
 
     :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -596,7 +594,11 @@ def create_drive_time_areas(input_layer,
                                        output_name='create_drive_time_areas',
                                        context={"extent":{"xmin":-11134400.655784884,"ymin":3368261.7800108367,"xmax":-10682810.692676282,"ymax":3630899.409198575,"spatialReference":{"wkid":102100,"latestWkid":3857}}}) """
 
+    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.create_drive_time_areas, 
+                                     **kwargs)    
+
     if isinstance(travel_mode, str):
         route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
         travelmodes = route_service.retrieve_travel_modes()
@@ -604,28 +606,17 @@ def create_drive_time_areas(input_layer,
             if tm['name'] == travel_mode:
                 tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
                 travel_mode = tm
+                params['travel_mode'] = travel_mode
+    if time_of_day:
+        params['time_of_day'] = _date_handler(time_of_day)
+    if include_reachable_streets:
+        if not output_name or not bool(output_name.strip()):
+            raise Exception("output_name must be specified when include_reachable_streets is True.")
 
-    return gis._tools.featureanalysis.create_drive_time_areas(
-        input_layer,
-        break_values,
-        break_units,
-        travel_mode,
-        overlap_policy,
-        _date_handler(time_of_day),
-        time_zone_for_time_of_day,
-        output_name,
-        context,
-        estimate=estimate,
-        point_barrier_layer=point_barrier_layer,
-        line_barrier_layer=line_barrier_layer,
-        polygon_barrier_layer=polygon_barrier_layer, future=future,
-        travel_direction=travel_direction, 
-        show_holes=show_holes)
-        
-
-
+    return gis._tools.featureanalysis.create_drive_time_areas(**params)
+#--------------------------------------------------------------------------
 def find_nearest(
-        analysis_layer,
+    analysis_layer,
         near_layer,
         measurement_type="StraightLine",
         max_count=100,
@@ -797,37 +788,25 @@ def find_nearest(
                                include_route_layers=True,
                                point_barrier_layer=road_closures_lyr))
     """
+    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_nearest, 
+                                     **kwargs)    
     if isinstance(measurement_type, str):
-          route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-          travelmodes = route_service.retrieve_travel_modes()
+        route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
+        travelmodes = route_service.retrieve_travel_modes()
 
-          for tm in travelmodes['supportedTravelModes']:
+        for tm in travelmodes['supportedTravelModes']:
             if tm['name'] == measurement_type:
-              tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
-              measurement_type = tm
-         
-    return gis._tools.featureanalysis.find_nearest(
-        analysis_layer,
-        near_layer,
-        measurement_type,
-        max_count,
-        search_cutoff,
-        search_cutoff_units,
-        _date_handler(time_of_day),
-        time_zone_for_time_of_day,
-        output_name,
-        context,
-        estimate=estimate,
-        include_route_layers=include_route_layers,
-        point_barrier_layer=point_barrier_layer,
-        line_barrier_layer=line_barrier_layer,
-        polygon_barrier_layer=polygon_barrier_layer,
-        future=future)
+                tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
+                measurement_type = tm
+                params['measurement_type'] = measurement_type
+    params['time_of_day'] = _date_handler(time_of_day)
+    return gis._tools.featureanalysis.find_nearest(**params)
 
 
 def plan_routes(
-        stops_layer,
+    stops_layer,
         route_count,
         max_stops_per_route,
         route_start_time,
@@ -1106,31 +1085,17 @@ def plan_routes(
                             output_name='plan route for employees')
 
     """
+    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.plan_routes, 
+                                     **kwargs)    
     if isinstance(travel_mode, str):
         route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
         travelmodes = route_service.retrieve_travel_modes()
         for tm in travelmodes['supportedTravelModes']:
             if tm['name'] == travel_mode:
-              tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
-              travel_mode = tm
-    return gis._tools.featureanalysis.plan_routes(
-        stops_layer,
-        route_count,
-        max_stops_per_route,
-        _date_handler(route_start_time),
-        start_layer,
-        start_layer_route_id_field,
-        return_to_start,
-        end_layer,
-        end_layer_route_id_field,
-        travel_mode,
-        stop_service_time,
-        max_route_time,
-        include_route_layers,
-        output_name,
-        context,
-        estimate=estimate,
-        point_barrier_layer=point_barrier_layer,
-        line_barrier_layer=line_barrier_layer,
-        polygon_barrier_layer=polygon_barrier_layer, future=future)
+                tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
+                travel_mode = tm
+                params['travel_mode'] = travel_mode
+    params['route_start_time'] = _date_handler(route_start_time)
+    return gis._tools.featureanalysis.plan_routes(**params)

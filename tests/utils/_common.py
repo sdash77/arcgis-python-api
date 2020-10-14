@@ -1,3 +1,4 @@
+
 import os
 import sys
 import subprocess
@@ -29,9 +30,9 @@ TESTS_UTILS_DIR = os.path.abspath(os.path.join(
 UNIT_TESTS_DIR = os.path.abspath(os.path.join(
     TESTS_DIR,
     "unit"))
-SANITY_TESTS_DIR = os.path.abspath(os.path.join(
+SMOKE_TESTS_DIR = os.path.abspath(os.path.join(
     TESTS_DIR,
-    "sanity"))
+    "smoke"))
 INTEGRATION_TESTS_DIR = os.path.abspath(os.path.join(
     TESTS_DIR,
     "integration"))
@@ -111,29 +112,43 @@ def setup_env():
     run_shell_command(" ".join(widget_install_cmd))
     run_shell_command(" ".join(widget_enable_cmd))
 
-def run_pytest_on(paths, output_xml_path, 
+def run_pytest_on(paths, output_xml_path,
+                  output_coverage_dir=False,
                   block_network_access=False,
                   max_fail = 9999999999999999,
                   throw_exc_on_fail = False):
+    def _assemble_pytest_args(paths,
+                              output_xml_path,
+                              output_coverage_dir, 
+                              block_network_access,
+                              surround_paths_with_quotes=False):
+        pytest_args = []
+        if surround_paths_with_quotes:
+            pytest_args += [ f'"{sys.executable}"', "-m", "pytest", "-x" ] + \
+                list(f'"{x}"' for x in paths)
+        else:
+            pytest_args += [ sys.executable, "-m", "pytest", "-x" ] + paths
+        pytest_args += [ f'--junit-xml={output_xml_path}',
+                         f'--maxfail={max_fail}' ]
+        if block_network_access:
+            pytest_args += [ "--blockage", ]
+        if output_coverage_dir:
+            pytest_args += [ f"--cov={GEOSAURUS_SRC_ARCGIS_DIR}",
+                             f"--cov-report=html:{output_coverage_dir}" ]
+        return pytest_args
+    # ------------------------------------------------------------------------
     if not throw_exc_on_fail:
-        pytest_args = ["-x",] + paths + [ 
-            f'--junit-xml={output_xml_path}',
-            f"--maxfail={max_fail}",
-            ]
-        if block_network_access:
-            pytest_args.append("--blockage")
-        _run_pytest_subprocess(pytest_args)
+        pytest_args = _assemble_pytest_args(paths, output_xml_path, 
+                output_coverage_dir, block_network_access,
+                surround_paths_with_quotes = False)
+        with Popen(pytest_args, cwd=TESTS_DIR, stderr=PIPE) as p:
+            for line in p.stderr:
+                print(str(line.decode('utf-8')), end='')
     else:
-        paths = list(f'"{x}"' for x in paths)
-        pytest_args = ["-x",] + paths + [
-            f'--junit-xml="{output_xml_path}"',
-            f"--maxfail={max_fail}",
-            ]
-        if block_network_access:
-            pytest_args.append("--blockage")
-        args = [ f'"{sys.executable}"', "-m", "pytest" ] + pytest_args
-        run_shell_command(" ".join(args),
-            throw_exc_on_fail = throw_exc_on_fail)
+        pytest_args = _assemble_pytest_args(paths, output_xml_path, 
+                output_coverage_dir, block_network_access,
+                surround_paths_with_quotes = True)
+        run_shell_command(" ".join(pytest_args))
 
 def _run_pytest_subprocess(pytest_args):
     args = [sys.executable, '-m', 'pytest'] + pytest_args

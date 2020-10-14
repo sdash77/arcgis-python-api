@@ -1,12 +1,12 @@
 {
   "name": "arcgis-ipywidgets",
-  "version": "1.8.0",
+  "version": "1.8.3",
   "description": "Parent package of all widgets bundled in the arcgis package. This includes the MapView 'map widget', and some future planned widgets (charts, etc.)",
   "author": "esri",
   "license": "SEE LICENSE IN license.txt",
   "scripts": {
     "build": "yarn run build:map",
-    "build:map": "cd ./arcgis-map-ipywidget && yarn run build:prod && cd .. && cpx \"./arcgis-map-ipywidget/dist/*\" \"./dist/\""
+    "build:map": "cd ./arcgis-map-ipywidget && yarn run build:prod && cd .. && cpx \"./arcgis-map-ipywidget/dist/*js*\" \"./dist/\""
   },
   "dependencies": {
     "cpx": "^1.5.0",

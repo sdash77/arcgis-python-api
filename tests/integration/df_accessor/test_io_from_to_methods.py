@@ -242,6 +242,116 @@ def test_from_gpd_df_large_data_points():
     print('GPD->SeDF Points GCS success')
 
 
+def test_sanitize_column_names():
+    """
+    Test to ensure we handle well when column names are not strings
+    :return:
+    """
+    df = pd.read_csv('usa_cities_few.csv')
+    sedf = pd.DataFrame.spatial.from_xy(df, 'Longitude', 'Latitude')
+
+    # add column name that is numeric
+    sedf[0] = list(range(0, sedf.shape[0]))  # column name is 0
+    assert isinstance(sedf.columns[-1], int)
+
+    original_col_list = list(sedf.columns)
+
+    # sanitize column names
+    df2 = sedf.spatial.sanitize_column_names(inplace=False, use_snake_case=False)
+    new_col_list = list(df2.columns)
+    # print(new_col_list)
+
+    assert original_col_list != new_col_list
+    assert len(original_col_list) == len(new_col_list)
+    assert 'OWNER_dup1' in new_col_list
+    assert 'colnonnum' in new_col_list
+    assert '0' in new_col_list
+    assert sedf.shape == df2.shape
+
+    # assert some spatial properties
+    assert sedf.spatial.sr == df2.spatial.sr
+    assert sedf.spatial.geometry_type == df2.spatial.geometry_type
+    assert sedf.spatial.bbox == df2.spatial.bbox
+
+def test_sanitize_column_names_inplace():
+    """
+    Test to ensure we handle well when column names are not strings
+    :return:
+    """
+    df = pd.read_csv('usa_cities_few.csv')
+    sedf = pd.DataFrame.spatial.from_xy(df, 'Longitude', 'Latitude')
+
+    # add column name that is numeric
+    sedf[0] = list(range(0, sedf.shape[0]))  # column name is 0
+    assert isinstance(sedf.columns[-1], int)
+
+    original_col_list = list(sedf.columns)
+    original_sr = sedf.spatial.sr
+    original_bbox = sedf.spatial.bbox
+    original_geom_type = sedf.spatial.geometry_type
+
+    # sanitize column names
+    sedf.spatial.sanitize_column_names(inplace=True, use_snake_case=False)
+    new_col_list = list(sedf.columns)
+    print(new_col_list)
+
+    assert original_col_list != new_col_list
+    assert len(original_col_list) == len(new_col_list)
+    assert sedf.spatial.bbox == original_bbox
+    assert sedf.spatial.geometry_type == original_geom_type
+    assert sedf.spatial.sr == original_sr
+    assert 'OWNER_dup1' in new_col_list
+    assert 'colnonnum' in new_col_list
+    assert '0' in new_col_list
+
+def test_export_df_with_invalid_column_names():
+    """
+    Test to ensure we handle well when column names are not strings
+    :return:
+    """
+    df = pd.read_csv('usa_cities_few_bad_cols.csv')
+    print(df.columns)
+    sedf = pd.DataFrame.spatial.from_xy(df, 'Longitude', 'Latitude')
+
+    # add column name that is numeric
+    sedf[0] = list(range(0, sedf.shape[0]))  # column name is 0
+    assert isinstance(sedf.columns[-1], int)
+
+    # export without errors
+    sedf.spatial.to_featureclass('./cities.shp')
+
+    # read exported shapefile back and check
+    sedf2 = pd.DataFrame.spatial.from_featureclass('./cities.shp')
+    print(sedf2.columns)
+
+def test_sanitize_column_casing_leadnum():
+    """
+    Cases where column names have varying casing styles, leading numbers
+    :return:
+    """
+    df = pd.read_csv('usa_cities_few_bad_cols.csv')
+    sedf = pd.DataFrame.spatial.from_xy(df, 'Longitude', 'Latitude')
+    original_col_list = list(sedf.columns)
+
+    # sanitize column names
+    df2 = sedf.spatial.sanitize_column_names(inplace=False)
+    new_col_list = list(df2.columns)
+
+    for element in zip(original_col_list, new_col_list):
+        print(element)
+
+    assert new_col_list == ['name', 'camel_case', 'pascal_case', 'longitude', 'latitude', 'col_with_space',
+                            'col__nonnum', 'col89', 'col_with_caps_space', 'leading_white_space',
+                            'lead_numerals', '_spaced_lead_numerals', 'SHAPE']
+    # assert original_col_list != new_col_list
+    # assert len(original_col_list) == len(new_col_list)
+    assert sedf.shape == df2.shape
+
+    # assert some spatial properties
+    assert sedf.spatial.sr == df2.spatial.sr
+    assert sedf.spatial.geometry_type == df2.spatial.geometry_type
+    assert sedf.spatial.bbox == df2.spatial.bbox
+
 # def test_from_gpd_df_massive_3m_points():
 #     """
 #     Sanity test case, verifies can read GeoDataFrame to a SeDF
@@ -296,3 +406,7 @@ if __name__ == "__main__":
     test_from_gpd_df_large_data_points()
     # test_from_gpd_df_massive_3m_points()
     #test_to_layer()  # SKIPPED
+    test_export_df_with_invalid_column_names()
+    test_sanitize_column_names()
+    test_sanitize_column_names_inplace()
+    test_sanitize_column_casing_leadnum()

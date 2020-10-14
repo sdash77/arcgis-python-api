@@ -6,8 +6,14 @@ import json as _json
 import arcgis as _arcgis
 from arcgis.raster._layer import ImageryLayer as _ImageryLayer
 from arcgis.raster._util import _set_context, _id_generator
-from .models import SingleShotDetector, UnetClassifier, FeatureClassifier, RetinaNet, PSPNetClassifier, EntityRecognizer, MaskRCNN, DeepLab, PointCNN
-from ._data import prepare_data
+
+from .models import SingleShotDetector, UnetClassifier, FeatureClassifier, RetinaNet, \
+      PSPNetClassifier, EntityRecognizer, MaskRCNN, DeepLab, PointCNN, ModelExtension, \
+      FasterRCNN, SuperResolution, FullyConnectedNetwork, MLModel, YOLOv3, HEDEdgeDetector, \
+      BDCNEdgeDetector, ImageCaptioner
+
+from ._utils.pointcloud_data import Transform3d
+from ._data import prepare_data, prepare_tabulardata, prepare_textdata
 from ._process_df import process_df, add_datepart
 
 def _set_param(gis, params, param_name, input_param):
@@ -484,7 +490,7 @@ def export_training_data(input_raster,
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_raster                             Required. Raster layer that needs to be exported for training
+    input_raster                             Required. Raster layer that needs to be exported for training bla
     ------------------------------------     --------------------------------------------------------------------
     input_class_data                         Labeled data, either a feature layer or image layer.
                                              Vector inputs should follow a training sample format as
@@ -493,126 +499,123 @@ def export_training_data(input_raster,
     ------------------------------------     --------------------------------------------------------------------
     chip_format                              Optional string. The raster format for the image chip outputs.
 
-                                                - TIFF: TIFF format
+                                                - ``TIFF``: TIFF format
 
-                                                - PNG: PNG format
+                                                - ``PNG``: PNG format
 
-                                                - JPEG: JPEG format
+                                                - ``JPEG``: JPEG format
 
-                                                - MRF: MRF (Meta Raster Format)
+                                                - ``MRF``: MRF (Meta Raster Format)
     ------------------------------------     --------------------------------------------------------------------
     tile_size                                Optional dictionary. The size of the image chips.
 
-                                                Example: {"x": 256, "y": 256}
+                                             Example: {"x": 256, "y": 256}
     ------------------------------------     --------------------------------------------------------------------
     stride_size                              Optional dictionary. The distance to move in the X and Y when creating 
                                              the next image chip.
                                              When stride is equal to the tile size, there will be no overlap.
                                              When stride is equal to half of the tile size, there will be 50% overlap.
 
-                                               Example: {"x": 128, "y": 128}
+                                             Example: {"x": 128, "y": 128}
     ------------------------------------     --------------------------------------------------------------------
     metadata_format                          Optional string. The format of the output metadata labels. There are 4 options for output metadata labels for the training data,
-                                               KITTI Rectangles, PASCAL VOCrectangles, Classified Tiles (a class map) and RCNN_Masks. If your input training sample data
-                                               is a feature class layer such as building layer or standard classification training sample file,
-                                               use the KITTI or PASCAL VOC rectangle option.
+                                             KITTI Rectangles, PASCAL VOCrectangles, Classified Tiles (a class map) and RCNN_Masks. If your input training sample data
+                                             is a feature class layer such as building layer or standard classification training sample file,
+                                             use the KITTI or PASCAL VOC rectangle option.
+                                             The output metadata is a .txt file or .xml file containing the training sample data contained
+                                             in the minimum bounding rectangle. The name of the metadata file matches the input source image
+                                             name. If your input training sample data is a class map, use the Classified Tiles as your output metadata format option.
 
-                                               The output metadata is a .txt file or .xml file containing the training sample data contained
-                                               in the minimum bounding rectangle. The name of the metadata file matches the input source image
-                                               name. If your input training sample data is a class map, use the Classified Tiles as your output metadata format option.
+                                                - ``KITTI_rectangles``: The metadata follows the same format as the Karlsruhe Institute of Technology and Toyota
+                                                  Technological Institute (KITTI) Object Detection Evaluation dataset. The KITTI dataset is a vision benchmark suite.
+                                                  This is the default.The label files are plain text files. All values, both numerical or strings, are separated by
+                                                  spaces, and each row corresponds to one object.
 
-                                               - KITTI_rectangles: The metadata follows the same format as the Karlsruhe Institute of Technology and Toyota
-                                                 Technological Institute (KITTI) Object Detection Evaluation dataset. The KITTI dataset is a vision benchmark suite.
-                                                 This is the default.The label files are plain text files. All values, both numerical or strings, are separated by
-                                                 spaces, and each row corresponds to one object.
+                                                - ``PASCAL_VOC_rectangles``: The metadata follows the same format as the Pattern Analysis, Statistical Modeling and
+                                                  Computational Learning, Visual Object Classes (PASCAL_VOC) dataset. The PASCAL VOC dataset is a standardized
+                                                  image data set for object class recognition.The label files are XML files and contain information about image name,
+                                                  class value, and bounding box(es).
 
-                                               - PASCAL_VOC_rectangles: The metadata follows the same format as the Pattern Analysis, Statistical Modeling and
-                                                 Computational Learning, Visual Object Classes (PASCAL_VOC) dataset. The PASCAL VOC dataset is a standardized
-                                                 image data set for object class recognition.The label files are XML files and contain information about image name,
-                                                 class value, and bounding box(es).
+                                                - ``Classified_Tiles``: This option will output one classified image chip per input image chip.
+                                                  No other meta data for each image chip. Only the statistics output has more information on the
+                                                  classes such as class names, class values, and output statistics.
 
-                                               - Classified_Tiles: This option will output one classified image chip per input image chip.
-                                                 No other meta data for each image chip. Only the statistics output has more information on the
-                                                 classes such as class names, class values, and output statistics.
+                                                - ``RCNN_Masks``: This option will output image chips that have a mask on the areas where the sample exists.
+                                                  The model generates bounding boxes and segmentation masks for each instance of an object in the image.
+                                                  It's based on Feature Pyramid Network (FPN) and a ResNet101 backbone.
 
-                                               - RCNN_Masks: This option will output image chips that have a mask on the areas where the sample exists.
-                                                 The model generates bounding boxes and segmentation masks for each instance of an object in the image.
-                                                 It's based on Feature Pyramid Network (FPN) and a ResNet101 backbone.
-
-                                               - Labeled_Tiles : This option will label each output tile with a specific class.
+                                                - ``Labeled_Tiles``: This option will label each output tile with a specific class.
     ------------------------------------     --------------------------------------------------------------------
-    classvalue_field                          Optional string. Specifies the field which contains the class values. If no field is specified,
-                                              the system will look for a 'value' or 'classvalue' field. If this feature does
-                                              not contain a class field, the system will presume all records belong the 1 class.
+    classvalue_field                         Optional string. Specifies the field which contains the class values. If no field is specified,
+                                             the system will look for a 'value' or 'classvalue' field. If this feature does
+                                             not contain a class field, the system will presume all records belong the 1 class.
     ------------------------------------     --------------------------------------------------------------------
     buffer_radius                            Optional integer. Specifies a radius for point feature classes to specify training sample area.
     ------------------------------------     --------------------------------------------------------------------
     output_location                          This is the output location for training sample data.
-                                               It can be the server data store path or a shared file system path.
+                                             It can be the server data store path or a shared file system path.
 
-                                               Example:
+                                             Example:
 
-                                               Server datastore path -
+                                                Server datastore path -
                                                 ``/fileShares/deeplearning/rooftoptrainingsamples``
                                                 ``/rasterStores/rasterstorename/rooftoptrainingsamples``
                                                 ``/cloudStores/cloudstorename/rooftoptrainingsamples``
 
-                                               File share path - 
+                                                File share path - 
                                                 ``\\\\servername\\deeplearning\\rooftoptrainingsamples``
     ------------------------------------     --------------------------------------------------------------------
     context                                  Optional dictionary. Context contains additional settings that affect task execution.
-                                                Dictionary can contain value for following keys:
+                                             Dictionary can contain value for following keys:
 
                                                 - exportAllTiles - Choose if the image chips with overlapped labeled data will be exported.
-                                                    True - Export all the image chips, including those that do not overlap labeled data. 
-                                                    False - Export only the image chips that overlap the labelled data. This is the default.
+                                                
+                                                    * True - Export all the image chips, including those that do not overlap labeled data. 
+                                                    * False - Export only the image chips that overlap the labelled data. This is the default.
 
                                                 - startIndex - Allows you to set the start index for the sequence of image chips.
-                                                    This lets you append more image chips to an existing sequence. The default value is 0.
+                                                  This lets you append more image chips to an existing sequence. The default value is 0.
 
                                                 - cellSize - cell size can be set using this key in context parameter
 
                                                 - extent - Sets the processing extent used by the function
 
-                                                Setting context parameter will override the values set using arcgis.env 
-                                                variable for this particular function.(cellSize, extent)
+                                             Setting context parameter will override the values set using arcgis.env 
+                                             variable for this particular function.(cellSize, extent)
 
-                                                eg: {"exportAllTiles" : False, "startIndex": 0 }
+                                             eg: {"exportAllTiles" : False, "startIndex": 0 }
     ------------------------------------     --------------------------------------------------------------------
-    input_mask_polygons                       Optional feature layer. The feature layer that delineates the area where 
-                                               image chips will be created.
-                                               Only image chips that fall completely within the polygons will be created.
+    input_mask_polygons                      Optional feature layer. The feature layer that delineates the area where 
+                                             image chips will be created.
+                                             Only image chips that fall completely within the polygons will be created.
     ------------------------------------     --------------------------------------------------------------------
     rotation_angle                           Optional float. The rotation angle that will be used to generate additional 
-                                               image chips.
+                                             image chips.
 
-                                               An image chip will be generated with a rotation angle of 0, which 
-                                               means no rotation. It will then be rotated at the specified angle to 
-                                               create an additional image chip. The same training samples will be 
-                                               captured at multiple angles in multiple image chips for data augmentation.
-                                               The default rotation angle is 0.
+                                             An image chip will be generated with a rotation angle of 0, which 
+                                             means no rotation. It will then be rotated at the specified angle to 
+                                             create an additional image chip. The same training samples will be 
+                                             captured at multiple angles in multiple image chips for data augmentation.
+                                             The default rotation angle is 0.
     ------------------------------------     --------------------------------------------------------------------
     reference_system                         Optional string. Specifies the type of reference system to be used to interpret 
                                              the input image. The reference system specified should match the reference system 
                                              used to train the deep learning model. 
 
-                                             - MAP_SPACE : The input image is in a map-based coordinate system. This is the default.
+                                                - MAP_SPACE : The input image is in a map-based coordinate system. This is the default.
 
-                                             - IMAGE_SPACE : The input image is in image space, viewed from the direction of the sensor 
-                                               that captured the image, and rotated such that the tops of buildings and trees point upward in the image.
+                                                - IMAGE_SPACE : The input image is in image space, viewed from the direction of the sensor 
+                                                  that captured the image, and rotated such that the tops of buildings and trees point upward in the image.
 
-                                             - PIXEL_SPACE : The input image is in image space, with no rotation and no distortion. 
+                                                - PIXEL_SPACE : The input image is in image space, with no rotation and no distortion. 
     ------------------------------------     --------------------------------------------------------------------
     process_all_raster_items                 Optional bool. Specifies how all raster items in an image service will be processed.
+                                                
+                                                - False : all raster items in the image service will be mosaicked together and processed. This is the default.
 
-                                              - False : all raster items in the image service will be mosaicked together and processed. This is the default.
-
-                                              - True : all raster items in the image service will be processed as separate images.
+                                                - True : all raster items in the image service will be processed as separate images.
     ------------------------------------     --------------------------------------------------------------------
-    blacken_around_feature                   Optional bool. 
-                                             
-                                             Specifies whether to blacken the pixels around each object or feature in each image tile.
-
+    blacken_around_feature                   Optional bool. Specifies whether to blacken the pixels around each object or feature in each image tile.
                                              This parameter only applies when the metadata format is set to Labeled_Tiles and an input feature class or classified raster has been specified.
 
                                              - False : Pixels surrounding objects or features will not be blackened. This is the default.
@@ -621,12 +624,11 @@ def export_training_data(input_raster,
 
     ------------------------------------     --------------------------------------------------------------------
     fix_chip_size                            Optional bool. Specifies whether to crop the exported tiles such that they are all the same size.
-
                                              This parameter only applies when the metadata format is set to Labeled_Tiles and an input feature class or classified raster has been specified.
 
-                                             - True : Exported tiles will be the same size and will center on the feature. This is the default.
+                                                - True : Exported tiles will be the same size and will center on the feature. This is the default.
 
-                                             - False : Exported tiles will be cropped such that the bounding geometry surrounds only the feature in the tile.
+                                                - False : Exported tiles will be cropped such that the bounding geometry surrounds only the feature in the tile.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -634,6 +636,7 @@ def export_training_data(input_raster,
     ====================================     ====================================================================
 
     :return:
+
         Output string containing the location of the exported training data
 
     """
@@ -1145,39 +1148,54 @@ class Model:
         return job_values["uninstallSucceed"]
         """
 
-def export_point_dataset(data_path, output_path, block_size=50.0, max_points=8192, extra_features=[('intensity', 5000, 0), ('num_returns', 5, 0)], **kwargs):
+def export_point_dataset(data_path,
+                         output_path,
+                         block_size=50.0,
+                         max_points=8192,
+                         extra_features=[],
+                         **kwargs):
 
     """
     Exports the las files into h5 blocks.
 
-    ==================     ====================================================================
+    ==================     ======================================================
     **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    data_path              Required string. Folder containing two folders with las files.
+    ------------------     ------------------------------------------------------
+    data_path              Required string. Folder containing two folders with 
+                           las files.
                              Folder structure:
                                train/
                                  *.las
                                val/
                                  *.las
-    ------------------     --------------------------------------------------------------------
-    output_path            Required string. Path where exported files will be dumped. This directory
-                           either should be empty or be a totally new directory.                                
-    ------------------     --------------------------------------------------------------------
-    block_size             Optinal float. Size of the block to contain in one exported file.
-                           Default 50.0
-    ------------------     --------------------------------------------------------------------
-    max_points             Required integer. Maximum number of points to contain in each block.
-                           Default 8192
-    ------------------     --------------------------------------------------------------------
-    extra_features         Optional list of tuple. Extra features to read from las files.
-                           The first value of tuple is the key name of the features. The second
-                           value of the tuple is max value of the feature. The third value is
-                           the minimum value of that feature.
-                           Deafult: [('intensity', 5000, 0), ('num_returns', 5, 0)]                 
-    ==================     ====================================================================
+    ------------------     ------------------------------------------------------
+    output_path            Required string. Path where exported files will be
+                           dumped. This directory either should be empty or 
+                           be a totally new directory.      
+    ------------------     ------------------------------------------------------
+    block_size             Optional float. Size of the h5 block file.
+                           The unit of this parameter is same as, that of the
+                           dataset's coordinate system. Default: 50.0 Units          
+    ------------------     ------------------------------------------------------
+    max_points             Optional integer. Maximum number of points to be 
+                           included in each h5 block file.
+                           Default: 8192 points.
+    ------------------     ------------------------------------------------------
+    extra_features         Optional list of tuple. Extra features to read 
+                           from las files. The length of tuple is 3, which 
+                           contain feature name, max, and min values
+                           respectively. For example:
+                           If you want extra features like `intensity` or 
+                           `number of returns` to be considered while  
+                           training, set this parameter like: 
+                           `extra_features=[('intensity', 5000, 0), 
+                           ('num_returns', 5, 0)]`. 
+                           The default behavior has changed from v1.8.0. 
+                           Default: [].               
+    ==================     ======================================================
     """
 
     from ._utils.pointcloud_data import  prepare_las_data
-    prepare_las_data(data_path, block_size, max_points, output_path, **kwargs)
+    prepare_las_data(data_path, block_size, max_points, output_path, extra_features, **kwargs)
 
     

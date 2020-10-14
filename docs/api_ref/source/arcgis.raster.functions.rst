@@ -15,9 +15,17 @@ acosh
 _____
 .. autofunction:: arcgis.raster.functions.acosh
 
+aggregate
+_________
+.. autofunction:: arcgis.raster.functions.aggregate
+
 aggregate_cells
 _______________
 .. autofunction:: arcgis.raster.functions.aggregate_cells
+
+apparent_reflectance
+____________________
+.. autofunction:: arcgis.raster.functions.apparent_reflectance
 
 apply
 _____
@@ -54,6 +62,10 @@ _____
 aspect
 ______
 .. autofunction:: arcgis.raster.functions.aspect
+
+aspect_slope
+____________
+.. autofunction:: arcgis.raster.functions.aspect_slope
 
 atan
 ____
@@ -111,6 +123,10 @@ boolean_xor
 ___________
 .. autofunction:: arcgis.raster.functions.boolean_xor
 
+buffered
+________
+.. autofunction:: arcgis.raster.functions.buffered
+
 cire
 ____
 .. autofunction:: arcgis.raster.functions.cire
@@ -151,6 +167,10 @@ composite_band
 ______________
 .. autofunction:: arcgis.raster.functions.composite_band
 
+compute_change
+______________
+.. autofunction:: arcgis.raster.functions.compute_change
+
 con
 ___
 .. autofunction:: arcgis.raster.functions.con
@@ -158,6 +178,10 @@ ___
 constant_raster
 _______________
 .. autofunction:: arcgis.raster.functions.constant_raster
+
+contour
+_______
+.. autofunction:: arcgis.raster.functions.contour
 
 contrast_brightness
 ___________________
@@ -178,6 +202,10 @@ ____
 curvature
 _________
 .. autofunction:: arcgis.raster.functions.curvature
+
+detect_change_using_change_analysis_raster
+__________________________________________
+.. autofunction:: arcgis.raster.functions.detect_change_using_change_analysis_raster
 
 divide
 ______
@@ -243,6 +271,10 @@ gemi
 ____
 .. autofunction:: arcgis.raster.functions.gemi
 
+generate_trend
+______________
+.. autofunction:: arcgis.raster.functions.generate_trend
+
 geometric
 _________
 .. autofunction:: arcgis.raster.functions.geometric
@@ -267,6 +299,10 @@ gvitm
 _____
 .. autofunction:: arcgis.raster.functions.gvitm
 
+heat_index
+__________
+.. autofunction:: arcgis.raster.functions.heat_index
+
 hillshade
 _________
 .. autofunction:: arcgis.raster.functions.hillshade
@@ -278,6 +314,10 @@ ________
 INT
 ___
 .. autofunction:: arcgis.raster.functions.INT
+
+interpolate_irregular_data
+__________________________
+.. autofunction:: arcgis.raster.functions.interpolate_irregular_data
 
 iron_oxide
 __________
@@ -294,6 +334,10 @@ _________
 less_than_equal
 _______________
 .. autofunction:: arcgis.raster.functions.less_than_equal
+
+linear_spectral_unmixing
+________________________
+.. autofunction:: arcgis.raster.functions.linear_spectral_unmixing
 
 ln
 __
@@ -367,6 +411,10 @@ mtvi2
 _____
 .. autofunction:: arcgis.raster.functions.mtvi2
 
+multidimensional_filter
+_______________________
+.. autofunction:: arcgis.raster.functions.multidimensional_filter
+
 ndvi
 ____
 .. autofunction:: arcgis.raster.functions.ndvi
@@ -403,6 +451,10 @@ power
 _____
 .. autofunction:: arcgis.raster.functions.power
 
+predict_using_trend
+___________________
+.. autofunction:: arcgis.raster.functions.predict_using_trend
+
 pvi
 ___
 .. autofunction:: arcgis.raster.functions.pvi
@@ -423,9 +475,17 @@ raster_collection_function
 _________________
 .. autofunction:: arcgis.raster.functions.raster_collection_function
 
+rasterize_features
+_________________
+.. autofunction:: arcgis.raster.functions.rasterize_features
+
 remap
 _____
 .. autofunction:: arcgis.raster.functions.remap
+
+reproject
+_________
+.. autofunction:: arcgis.raster.functions.reproject
 
 resample
 ________
@@ -442,6 +502,14 @@ ________
 rtvi_core
 _________
 .. autofunction:: arcgis.raster.functions.rtvi_core
+
+s1_radiometric_calibration
+__________________________
+.. autofunction:: arcgis.raster.functions.s1_radiometric_calibration
+
+s1_thermal_noise_removal
+________________________
+.. autofunction:: arcgis.raster.functions.s1_thermal_noise_removal
 
 savi
 ____
@@ -544,6 +612,10 @@ transpose_bits
 ______________
 .. autofunction:: arcgis.raster.functions.transpose_bits
 
+trend_to_rgb
+____________
+.. autofunction:: arcgis.raster.functions.trend_to_rgb
+
 tsavi
 _____
 .. autofunction:: arcgis.raster.functions.tsavi
@@ -575,4 +647,8 @@ _____________________
 weighted_sum
 _____________________
 .. autofunction:: arcgis.raster.functions.weighted_sum
+
+wind_chill
+__________
+.. autofunction:: arcgis.raster.functions.wind_chill
 

@@ -78,8 +78,8 @@ class Portal(object):
     def __init__(self, url, username=None, password=None, key_file=None,
                  cert_file=None, expiration=60, referer=None, proxy_host=None,
                  proxy_port=None, connection=None, workdir=tempfile.gettempdir(),
-                 tokenurl=None, verify_cert=True, client_id=None, custom_auth=None, 
-                 token=None):
+                 tokenurl=None, verify_cert=True, client_id=None, custom_auth=None,
+                 token=None, **kwargs):
         """ The Portal constructor. Requires URL and optionally username/password."""
         url = url.strip()            # be permissive in accepting home app urls
         homepos = url.find('/home')
@@ -147,7 +147,7 @@ class Portal(object):
                                       proxy_host=proxy_host,
                                       proxy_port=proxy_port,
                                       verify_cert=verify_cert,
-                                      custom_auth=custom_auth, 
+                                      custom_auth=custom_auth,
                                       token=token)
             else:
                 self.con = Connection(baseurl=self.resturl,
@@ -163,6 +163,7 @@ class Portal(object):
                                       proxy_port=proxy_port,
                                       verify_cert=verify_cert,
                                       client_id=client_id,
+                                      client_secret=kwargs.pop('client_secret', None),
                                       custom_auth=custom_auth,
                                       token=token)
         #self.get_version(True)
@@ -170,7 +171,7 @@ class Portal(object):
 
 
 
-    def add_group_users(self, user_names, group_id):
+    def add_group_users(self, user_names, group_id, admin_names):
         """ Adds users to the group specified.
 
         .. note::
@@ -184,6 +185,8 @@ class Portal(object):
         user_names    list of usernames
         ------------  --------------------------------------
         group_id      required string, specifying group id
+        ------------  --------------------------------------
+        admin_names   list of usernames to be a group admin
         ============  ======================================
 
         :return:
@@ -200,10 +203,33 @@ class Portal(object):
         #user_names = _unpack(user_names, 'username')
 
         postdata = self._postdata()
-        postdata['users'] = ','.join(user_names)
+        if user_names:
+            postdata['users'] = ','.join(user_names)
+        if admin_names:
+            postdata['admins'] = ",".join(admin_names)
         resp = self.con.post('community/groups/' + group_id + '/addUsers',
                              postdata)
         return resp
+
+    def delete_group_thumbnail(self, group_id):
+        """
+        Removes the group's thumbnail
+
+        ============  ======================================
+        **Argument**  **Description**
+        ------------  --------------------------------------
+        group_id      required string, The group id to remove the thumbnail for.
+        ============  ======================================
+
+        :returns: Boolean
+
+        """
+        url = f"community/groups/{group_id}/deleteThumbnail"
+        params = {'f' : 'json'}
+        res = self.con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
 
     def add_item(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
         """ Adds content to a Portal.
@@ -328,7 +354,7 @@ class Portal(object):
             return resp['id']
 
     def publish_item(self, itemid, data=None, text=None, fileType="serviceDefinition", publishParameters=None,
-                     outputType=None, overwrite=False, owner=None, folder=None, buildInitialCache=False):
+                     outputType=None, overwrite=False, owner=None, folder=None, buildInitialCache=False, item_id=None):
         """
         Publishes a hosted service based on an existing source item.
         Publishers can create feature services as well as tiled map services.
@@ -354,7 +380,8 @@ class Portal(object):
 
         if outputType is not None:
             postdata['outputType'] = outputType
-
+        if item_id and isinstance(item_id, str) and len(item_id) >=32:
+            postdata['itemIdToCreate'] = str(item_id)
         postdata['overwrite'] = json.dumps(overwrite)
 
         postdata['buildInitialCache'] = buildInitialCache
@@ -391,7 +418,13 @@ class Portal(object):
                        wkid=102100,
                        service_type="imageService",
                        create_params=None,
-                       owner=None, folder=None, common_params=None, is_view = False):
+                       owner=None,
+                       folder=None,
+                       common_params=None,
+                       is_view=False,
+                       item_id=None,
+                       tags=None,
+                       snippet=None):
         """ Creates service.
          #"Create,Delete,Query,Update,Editing",
         :return:
@@ -452,7 +485,14 @@ class Portal(object):
 
         postdata['outputType'] = service_type
         postdata['isView'] = is_view
-
+        if item_id and isinstance(item_id, str) and len(item_id) == 32:
+            postdata['itemIdToCreate'] = item_id
+        if tags and isinstance(tags, (list, tuple)):
+            tags = ",".join([str(t) for t in tags])
+        if tags and isinstance(tags, str):
+            postdata['tags'] = tags
+        if snippet:
+            postdata['snippet'] = snippet
         # If common_params dictionary provided, add each key/value pair to postdata.
         if common_params is not None:
             for key in common_params:
@@ -1998,7 +2038,8 @@ class Portal(object):
                      snippet=None, access=None, is_invitation_only=None,
                      sort_field=None, sort_order=None, is_view_only=None,
                      thumbnail=None, max_file_size=None, users_update_items=None,
-                     clear_empty_fields=False):
+                     clear_empty_fields=False, display_settings=None,
+                     is_open_data=False, leaving_disallowed=False):
         """ Updates a group.
 
         .. note::
@@ -2069,13 +2110,18 @@ class Portal(object):
             properties['MAX_FILE_SIZE'] = 1024000
         if users_update_items is None:
             users_update_items = False
-
+        if leaving_disallowed in [True, False]:
+            properties["leavingDisallowed"] = leaving_disallowed
+        if is_open_data in [True, False]:
+            properties['isOpenData'] = is_open_data
         if users_update_items == False:
             properties['capabilities'] = ""
         else:
             properties['capabilities'] = "updateitemcontrol"
         properties['isinvitationOnly'] = is_invitation_only
         properties['clearEmptyFields'] = clear_empty_fields
+        if display_settings:
+            properties['displaySettings'] = display_settings
         postdata.update(properties)
         if True:
             postdata['clearEmptyFields'] = True

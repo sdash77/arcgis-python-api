@@ -7,8 +7,6 @@ import logging as _logging
 import arcgis
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.features import FeatureSet
-from arcgis.features.geo._accessor import _is_geoenabled
-from pandas import DataFrame
 
 _log = _logging.getLogger(__name__)
 
@@ -20,6 +18,14 @@ def _evaluate_spatial_input(input_points):
     :param input_points: FeatureSet or Spatially Enabled DataFrame
     :return: FeatureSet
     """
+    try:
+        from arcgis.features.geo._accessor import _is_geoenabled
+        from pandas import DataFrame
+    except ImportError as ie:
+        _log.warning("One or more of the libraries needed for this feature is not available. "
+                     "Please resolve the following error: " + str(ie))
+        raise ie
+
     if isinstance(input_points, FeatureSet):
         return input_points
 

@@ -8,7 +8,8 @@ travel time or distance from a location.
 
 import arcgis as _arcgis
 import arcgis.network as network
-
+from .._impl.common._utils import inspect_function_inputs
+#--------------------------------------------------------------------------
 def enrich_layer(input_layer,
                  data_collections=[],
                  analysis_variables=[],
@@ -102,23 +103,19 @@ def enrich_layer(input_layer,
 
     """
 
+    
+    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.enrich_layer, 
+                                     **kwargs)    
+    
     if isinstance(buffer_type, str):
         if buffer_type != 'StraightLine':
             route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
             buffer_type = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == buffer_type][0]
+            if 'buffer_type' in params:
+                params['buffer_type'] = buffer_type
         else:
             pass
 
-    return gis._tools.featureanalysis.enrich_layer(
-                 input_layer,
-                 data_collections,
-                 analysis_variables,
-                 country,
-                 buffer_type,
-                 distance,
-                 units,
-                 output_name,
-                 context,
-                 estimate=estimate,
-                 return_boundaries=return_boundaries,future=future)
+    return gis._tools.featureanalysis.enrich_layer(**params)

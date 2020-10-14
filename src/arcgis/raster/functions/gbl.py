@@ -12,7 +12,7 @@ Functions can be applied to various rasters (or images), including the following
 * Rasters within imagery layers
 
 """
-from arcgis.raster._layer import ImageryLayer,  Raster, _ArcpyRaster
+from arcgis.raster._layer import ImageryLayer,  Raster, _ArcpyRaster, RasterCollection
 from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 import copy
@@ -22,6 +22,7 @@ from arcgis.geoprocessing._support import _layer_input,_feature_input
 import string as _string
 import random as _random
 import arcgis as _arcgis
+from ..._impl.common._deprecate import deprecated
 
 def _create_output_image_service(gis, output_name, task):
     ok = gis.content.is_service_name_available(output_name, "Image Service")
@@ -56,7 +57,7 @@ def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
 
 
 def _gbl_clone_layer(layer, function_chain, function_chain_ra,**kwargs):
-    if isinstance(layer, Raster):
+    if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
         return _gbl_clone_layer_raster(layer, function_chain, function_chain_ra, **kwargs)
     if isinstance(layer, Item):
         layer = layer.layers[0]
@@ -137,6 +138,7 @@ def _gbl_clone_layer_raster(layer, function_chain, function_chain_ra, **kwargs):
 
     return newlyr
 
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_accumulation() instead. ")
 def euclidean_distance(in_source_data,
                        cell_size=None,
                        max_distance=None,
@@ -221,7 +223,7 @@ def euclidean_distance(in_source_data,
     return _gbl_clone_layer(layer, template_dict, function_chain_ra)
 
 
-
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_allocation() instead. ")
 def euclidean_allocation(in_source_data,
                          in_value_raster=None,
                          max_distance=None,
@@ -329,7 +331,7 @@ def euclidean_allocation(in_source_data,
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
 
-
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_accumulation() instead. ")
 def cost_distance(in_source_data,
                   in_cost_raster,
                   max_distance=None,
@@ -442,7 +444,7 @@ def cost_distance(in_source_data,
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
-
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_allocation() instead. ")
 def cost_allocation(in_source_data,
                     in_cost_raster,
                     in_value_raster=None,
@@ -585,7 +587,9 @@ def zonal_statistics(in_zone_data,
                      in_value_raster,
                      ignore_nodata=True,
                      statistics_type='MEAN',
-                     process_as_multidimensional=None):
+                     process_as_multidimensional=None,
+                     percentile_value=90,
+                     percentile_interpolation_type='AUTO_DETECT'):
 
     """"
     Calculates statistics on values of a raster within the zones of another dataset.
@@ -644,7 +648,33 @@ def zonal_statistics(in_zone_data,
                             VARIETY-Calculates the number of unique values for all pixels in the
                             Value Raster that belong to the same zone as the output pixel.
 
+                            PERCENTILE -  Calculates a percentile of all cells in the value raster that 
+                            belong to the same zone as the output cell. The 90th percentile 
+                            is calculated by default. You can specify other values (from 0 to 100) 
+                            using the percentile_value parameter.
+
     :param process_as_multidimensional: Optional bool, Process as multidimensional if set to True. (If the input is multidimensional raster.)
+    :param percentile_value: Optional Double, The percentile to calculate. The default is 90, for the 90th percentile. The 
+                             values can range from 0 to 100. The 0th percentile is essentially equivalent to the 
+                             Minimum statistic, and the 100th percentile is equivalent to Maximum. 
+                             A value of 50 will produce essentially the same result as the Median statistic.
+                             
+                             This parameter is honoured only available if the statistics_type parameter is 
+                             set to PERCENTILE.
+    :param percentile_interpolation_type: Optional str. Determines the type of percentile interpolation type when the 
+                                          number of values from the input value raster to be calculated are even.
+                                            - AUTO_DETECT - If the input value raster has integer pixel type, the 
+                                                            NEAREST method is used. If the input value raster 
+                                                            has floating point pixel type, then the LINEAR 
+                                                            method is used. This is the default.
+                                            - NEAREST - Nearest value to the desired percentile. In this case, 
+                                                        the output pixel type is same as that of the input value 
+                                                        raster.
+                                            - LINEAR - Weighted average of two surrounding values from the 
+                                                        desired percentile. In this case, the output pixel 
+                                                        type is floating point.
+
+                                            Parameter added in 10.9.
     :return: output raster with function applied
 
     """
@@ -674,7 +704,7 @@ def zonal_statistics(in_zone_data,
         template_dict["rasterFunctionArguments"]["ignore_nodata"] = ignore_nodata
 
 
-    statistics_type_list = ["MEAN","MAJORITY","MAXIMUM","MEDIAN","MINIMUM","MINORITY","RANGE","STD","SUM","VARIETY"]
+    statistics_type_list = ["MEAN","MAJORITY","MAXIMUM","MEDIAN","MINIMUM","MINORITY","RANGE","STD","SUM","VARIETY", "PERCENTILE"]
     if statistics_type is not None:
         if statistics_type.upper() not in statistics_type_list:
             raise RuntimeError('statistics_type should be one of the following '+ str(statistics_type_list))
@@ -686,6 +716,15 @@ def zonal_statistics(in_zone_data,
                 template_dict["rasterFunctionArguments"]["process_as_multidimensional"]="ALL_SLICES"
             else:
                 template_dict["rasterFunctionArguments"]["process_as_multidimensional"]="CURRENT_SLICE"
+
+    if percentile_value is not None:
+        template_dict["rasterFunctionArguments"]["percentile_value"] = percentile_value
+
+    percentile_interpolation_type_list = ["AUTO_DETECT","NEAREST","LINEAR"]
+    if percentile_interpolation_type is not None:
+        if percentile_interpolation_type.upper() not in percentile_interpolation_type_list:
+            raise RuntimeError('percentile_interpolation_type should be one of the following '+ str(percentile_interpolation_type_list))
+        template_dict["rasterFunctionArguments"]["percentile_interpolation_type"] = percentile_interpolation_type
 
 
     function_chain_ra = copy.deepcopy(template_dict)
@@ -1325,6 +1364,8 @@ def watershed(input_flow_direction_raster,
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
 
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_accumulation()"
+ " (or arcgis.raster.functions.gbl.distance_allocation() for allocation output), instead. ")
 def calculate_travel_cost(in_source_data,
                           in_cost_raster=None,
                           in_surface_raster=None,
@@ -1628,7 +1669,7 @@ def kernel_density(in_features,
     newlyr._uses_gbl_function = True
     return newlyr
 
-
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.optimal_path_as_raster() instead.")
 def cost_path(in_destination_data,
               in_cost_distance_raster,
               in_cost_backlink_raster,
@@ -1709,6 +1750,8 @@ def cost_path(in_destination_data,
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_accumulation()"
+"with value specified for output_source_direction_raster_name, instead.")
 def euclidean_direction(in_source_data,
                         cell_size=None,
                         max_distance=None,
@@ -1791,6 +1834,8 @@ def euclidean_direction(in_source_data,
 
     return _gbl_clone_layer(layer, template_dict, function_chain_ra)
 
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_accumulation()"
+                                            "with value specified for output_back_direction_raster_name, instead.")
 def cost_backlink(in_source_data,
                   in_cost_raster,
                   max_distance=None,
@@ -1907,32 +1952,68 @@ def region_group(in_raster,
                  add_link = "ADD_LINK",
                  excluded_value = 0):
     """
-    For each cell in the output, the identity of the connected region to which that cell
-    belongs is recorded. A unique number is assigned to each region.
+    Records, for each cell in the output, the identity of the connected region to which that cell
+    belongs. A unique number is assigned to each region.
 
     Parameters
     ----------
-    :param in_raster:  Required, the input raster whose unique connected regions will be identified.
-                       It must be of integer type.
+    :param in_raster:  Required. The input raster for which unique connected regions of 
+                       cells will be identified. It must be of integer type.
 
-    :param number_of_neighbor_cells: Optional. The number of neighboring cells to use in evaluating connectivity between cells.
-                                     Possible values - FOUR, EIGHT. Default is FOUR
+    :param number_of_neighbor_cells: Optional. The number of neighboring cells to use when evaluating 
+                                     connectivity between cells that define a region.
+                                     The default is FOUR.
+
+                                      FOUR - Connectivity is evaluated for the four nearest (orthogonal) 
+                                      neighbors of each input cell.
+
+                                      EIGHT - Connectivity is evaluated for the eight nearest neighbors 
+                                      (both orthogonal and diagonal) of each input cell.
+
 
     :param zone_connectivity:  Optional. Defines which cell values should be considered when testing for connectivity.
-                               Possible values - WITHIN, CROSS. Default is WITHIN
+                               The default is WITHIN.
 
-    :param add_link: Optional, Specifies whether a link field is added to the table of the output.
-                     Possible values - ADD_LINK, NO_LINK. Default is ADD_LINK
+                                WITHIN - Connectivity for a region is evaluated for input cells that are part of 
+                                the same zone (cell value). The only cells that can be grouped are cells 
+                                from the same zone that meet the spatial requirements of connectivity 
+                                specified by the number_of_neighbor_cells parameter (four or eight).
 
-    :param excluded_value: Optional. Identifies a value such that if a cell location contains the value, no spatial
-                           connectivity will be evaluated regardless how the number of neighbors is specified (FOUR or EIGHT).
+                                CROSS - Connectivity for a region is evaluated between cells of any value, 
+                                except for the zone cells identified to be excluded by the 
+                                excluded_value parameter, and subject to the spatial requirements 
+                                specified by the number_of_neighbor_cells parameter.
 
-                           Cells with the excluded value will be treated as NoData and are eliminated from calculations.
-                           Cell locations that contain the excluded value will receive 0 on the output raster.
+    :param add_link: Optional. Specifies whether a link field will be added to the table of the output 
+                     when the zone_connectivity parameter is set to WITHIN. It is ignored if that 
+                     parameter is set to CROSS.
 
-                           The excluded value is similar to the concept of a background value,
-                           or setting a mask in the environment for a single run of the tool.
-                           A value must be specified for this parameter if the CROSS keyword is specified
+                      ADD_LINK - A LINK field will be added to the table of the output raster. 
+                      This field stores the value of the zone to which the cells of each region 
+                      in the output belong, according to the connectivity rule defined in 
+                      the number_of_neighbor_cells parameter. This is the default.
+
+                      NO_LINK - A LINK field will not be added. The attribute table for the output 
+                      raster will only contain the Value and Count fields.
+
+    :param excluded_value: Optional. A value that excludes all cells of that zone value from the 
+                           connectivity evaluation. If a cell location contains the value, no 
+                           spatial connectivity will be evaluated, regardless of how the number 
+                           of neighbors is specified.
+
+                           Cells with the excluded value will be treated in a similar way 
+                           to NoData cells, and are eliminated from consideration in the 
+                           operation. Input cells that contain the excluded value 
+                           will receive 0 on the output raster. The excluded value is 
+                           similar to the concept of a background value.
+
+                           If a zone in the input raster has a value of 0, to have 
+                           that zone be included in the operation, specify a value for 
+                           this parameter that is not present in the input. For example, 
+                           if an input raster has values of 0, 1, 2, and 3, specify an 
+                           excluded_value of 99. Otherwise, all cells of value 0 in 
+                           the input will be 0 in the output, and will also not have 
+                           their individual regions determined.
 
     :return: output raster with function applied
     """
@@ -2015,7 +2096,7 @@ def corridor(in_distance_raster1,
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
-
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_accumulation() instead. ")
 def path_distance(in_source_data,
                   in_cost_raster=None,
                   in_surface_raster=None,
@@ -2181,7 +2262,7 @@ def path_distance(in_source_data,
 
     return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra)
 
-
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_allocation() instead.")
 def path_distance_allocation(in_source_data,
                   in_cost_raster=None,
                   in_surface_raster=None,
@@ -2364,7 +2445,8 @@ def path_distance_allocation(in_source_data,
 
     return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra)
 
-
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_accumulation()"
+                                            "with value specified for output_back_direction_raster_name, instead.")
 def path_distance_back_link(in_source_data,
                   in_cost_raster=None,
                   in_surface_raster=None,
@@ -2538,6 +2620,8 @@ def path_distance_back_link(in_source_data,
 
     return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra)
 
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_accumulation()"
+ " (or arcgis.raster.functions.gbl.distance_allocation() for allocation output) instead. ")
 def calculate_distance(in_source_data,
                        maximum_distance=None,
                        output_cell_size=None,
@@ -2700,7 +2784,8 @@ def calculate_distance(in_source_data,
     else:
         return _feature_gbl_clone_layer(in_source_data, template_dict, function_chain_ra, out_allocation_raster = generate_out_allocation_raster, out_direction_raster = generate_out_direction_raster, out_back_direction_raster=generate_out_back_direction_raster, use_ra=True)
 
-
+@deprecated(deprecated_in="1.8.1", details="Please use arcgis.raster.functions.gbl.distance_accumulation()"
+                                           "with value specified for output_back_direction_raster_name, instead.")
 def euclidean_back_direction(in_source_data,
                              cell_size=None,
                              max_distance=None,
@@ -3127,12 +3212,15 @@ def distance_accumulation(in_source_data,
                           vertical_factor="BINARY 1 -30 30",
                           in_horizontal_raster=None,
                           horizontal_factor="BINARY 1 45",
-                          generate_back_direction_band=False,
                           source_initial_accumulation=None,
                           source_maximum_accumulation=None,
                           source_cost_multiplier=None,
-                          source_direction=None,
-                          distance_method="PLANAR"):
+                          source_direction="FROM_SOURCE",
+                          distance_method="PLANAR",
+                          output_back_direction_raster_name=None, 
+                          output_source_direction_raster_name=None, 
+                          output_source_location_raster_name=None, 
+                          ):
     """
     Calculates the least accumulative cost distance for each cell from or to the 
     least-cost source over a cost surface, preserving euclidean distance metric
@@ -3201,9 +3289,6 @@ def distance_accumulation(in_source_data,
                             distance between two cities for an airplane's flight path. This is also
                             known as a great circle line if based on a sphere rather than an ellipsoid.
 
-    :param generate_back_direction_band: Optional bool, Default is False. If set to True, function generates back direction as additional band
-                                         in the output raster
-
     :param source_initial_accumulation: Optional. The starting cost from which to begin the cost calculations. 
     
                                         Allows for the specification of the fixed 
@@ -3226,17 +3311,42 @@ def distance_accumulation(in_source_data,
 
     :param source_direction:  Optional. Defines the direction of the traveler when applying horizontal and vertical factors,
                               the source resistance rate, and the source starting cost.
-                              Possible values: FROM_SOURCE, TO_SOURCE
+                              Possible values: FROM_SOURCE, TO_SOURCE. Default value is FROM_SOURCE.
+
+    :param output_back_direction_raster_name: Optional string, determines whether back_direction_raster should be generated or not.
+                                              Set this parameter, in order to generate the back_direction_raster.
+                                              If set, the output of the function will be a named tuple.
+
+    :param output_source_direction_raster_name: Optional string. Name of the source_direction_raster. This parameter determines 
+                                                whether source_direction_raster should be generated or not.
+                                                Set this parameter, in order to generate the source_direction_raster.
+                                                If set, the output of the function will be a named tuple.
+
+    :param output_source_location_raster_name: Optional string. Name of the source_location_raster.This paramter determines whether 
+                                               source_location_raster should be generated or not.
+                                               Set this parameter, in order to generate the source_location_raster.
+                                               If set, the output of the function will be a named tuple.
 
     :return: output raster with function applied
     """
 
-    layer1, input_source_data, raster_ra1 = _raster_input(in_source_data)
+    if isinstance (in_source_data, ImageryLayer):
+        layer1, input_source_data, raster_ra1 = _raster_input(in_source_data)
+    else:
+        raster_ra1 = _layer_input(in_source_data)
+        input_source_data = raster_ra1
+        layer1=raster_ra1
 
     if in_cost_raster is not None:
         layer2, in_cost_raster, raster_ra2 = _raster_input(in_cost_raster)
 
     if in_barrier_data is not None:
+        if isinstance (in_barrier_data, ImageryLayer):
+            layer3, in_barrier_data, raster_ra3 = _raster_input(in_barrier_data)
+        else:
+            raster_ra3 = _layer_input(in_barrier_data)
+            in_barrier_data = raster_ra1
+            layer3=raster_ra1
         layer3, in_barrier_data, raster_ra3 = _raster_input(in_barrier_data)
 
     if in_surface_raster is not None:
@@ -3252,7 +3362,16 @@ def distance_accumulation(in_source_data,
             "toolName" : "DistanceAccumulation_sa",
             "PrimaryInputParameterName" : "in_source_data",
             "OutputRasterParameterName":"out_distance_accumulation_raster",
-            "in_source_data" : input_source_data
+            "in_source_data" : input_source_data,
+            "RasterInfo":{"blockWidth" : 2048,
+                "blockHeight":256,
+                "bandCount":1,
+                "pixelType":9,
+                "firstPyramidLevel":1,
+                "maximumPyramidLevel":30,
+                "pixelSizeX":1,
+                "pixelSizeY" :1,
+                "type":"RasterInfo"}
         }
     }
 
@@ -3277,12 +3396,6 @@ def distance_accumulation(in_source_data,
     if vertical_factor is not None:
         template_dict["rasterFunctionArguments"]["vertical_factor"] = vertical_factor
 
-    if generate_back_direction_band is not None:
-        if isinstance(generate_back_direction_band, bool):
-            template_dict["rasterFunctionArguments"]["in_back_direction_band"] = generate_back_direction_band
-        else:
-            raise RuntimeError("generate_back_direction_band should be of type bool")
-
     if distance_method is not None:
         template_dict["rasterFunctionArguments"]["distance_method"] = distance_method
 
@@ -3300,6 +3413,8 @@ def distance_accumulation(in_source_data,
         if source_direction.upper() not in source_direction_list:
             raise RuntimeError('source_direction should be one of the following '+ str(source_direction_list) )
         template_dict["rasterFunctionArguments"]["source_direction"] = source_direction
+    else:
+        template_dict["rasterFunctionArguments"]["source_direction"] = "FROM_SOURCE"
 
 
     function_chain_ra = copy.deepcopy(template_dict)
@@ -3319,7 +3434,30 @@ def distance_accumulation(in_source_data,
     if in_vertical_raster is not None:
         function_chain_ra['rasterFunctionArguments']["in_vertical_raster"] = raster_ra6
 
-    return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra)
+
+    if output_back_direction_raster_name is not None or output_source_direction_raster_name is not None or output_source_location_raster_name is not None:
+        if isinstance(in_source_data, ImageryLayer):
+            return _gbl_clone_layer(in_source_data, 
+                                    template_dict, 
+                                    function_chain_ra, 
+                                    output_back_direction_raster_name = output_back_direction_raster_name, 
+                                    output_source_direction_raster_name = output_source_direction_raster_name,
+                                    output_source_location_raster_name = output_source_location_raster_name,
+                                    use_ra=True)
+        else:
+            return _feature_gbl_clone_layer(in_source_data, 
+                                            template_dict, 
+                                            function_chain_ra, 
+                                            output_back_direction_raster_name = output_back_direction_raster_name, 
+                                            output_source_direction_raster_name = output_source_direction_raster_name,
+                                            output_source_location_raster_name = output_source_location_raster_name,
+                                            use_ra=True)
+
+    if isinstance(in_source_data, ImageryLayer):
+        return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra)
+    else:
+        return _feature_gbl_clone_layer(in_source_data, template_dict, function_chain_ra)
+
 
 
 def distance_allocation(in_source_data,
@@ -3330,13 +3468,17 @@ def distance_allocation(in_source_data,
                         vertical_factor="BINARY 1 -30 30",
                         in_horizontal_raster=None,
                         horizontal_factor="BINARY 1 45",
-                        generate_source_row_column_bands=False,
                         source_field=None,
                         source_initial_accumulation=None,
                         source_maximum_accumulation=None,
                         source_cost_multiplier=None,
-                        source_direction=None,
-                        distance_method="PLANAR"):
+                        source_direction="FROM_SOURCE",
+                        distance_method="PLANAR",
+                        output_distance_accumulation_raster_name=None,
+                        output_back_direction_raster_name=None, 
+                        output_source_direction_raster_name=None, 
+                        output_source_location_raster_name=None, 
+                        ):
     """
     Calculates, for each cell, its least-cost source based on the least accumulative cost over a cost surface, 
     avoiding network distance distortion.",
@@ -3385,9 +3527,6 @@ def distance_allocation(in_source_data,
                          integer type. If the Value Raster has been set, the values in that input
                          will take precedence over any setting for the source field.
 
-    :param generate_source_row_column_bands: Optional bool, Default is False. If set to True, function generates source row and column as additional bands
-                                         in the output raster
-
     :param source_initial_accumulation: Optional. The starting cost from which to begin the cost calculations. 
     
                                         Allows for the specification of the fixed 
@@ -3408,7 +3547,7 @@ def distance_allocation(in_source_data,
 
     :param source_direction:  Optional. Defines the direction of the traveler when applying horizontal and vertical factors,
                               the source resistance rate, and the source starting cost.
-                              Possible values: FROM_SOURCE, TO_SOURCE
+                              Possible values: FROM_SOURCE, TO_SOURCE. Default value is FROM_SOURCE.
 
     :param distance_method: Optional String; Determines whether to calculate the distance using a planar (flat earth) 
                             or a geodesic (ellipsoid) method.
@@ -3428,15 +3567,41 @@ def distance_allocation(in_source_data,
                             distance between two cities for an airplane's flight path. This is also
                             known as a great circle line if based on a sphere rather than an ellipsoid.
 
+    :param output_back_direction_raster_name: Optional string, determines whether back_direction_raster should be generated or not.
+                                              Set this parameter, in order to generate the back_direction_raster.
+                                              If set, the output of the function will be a named tuple.
+
+    :param output_source_direction_raster_name: Optional string. Name of the source_direction_raster. This parameter determines 
+                                                whether source_direction_raster should be generated or not.
+                                                Set this parameter, in order to generate the source_direction_raster.
+                                                If set, the output of the function will be a named tuple.
+
+    :param output_source_location_raster_name: Optional string. Name of the source_location_raster.This paramter determines whether 
+                                               source_location_raster should be generated or not.
+                                               Set this parameter, in order to generate the source_location_raster.
+                                               If set, the output of the function will be a named tuple.
+
     :return: output raster with function applied
     """
 
-    layer1, input_source_data, raster_ra1 = _raster_input(in_source_data)
+    if isinstance (in_source_data, ImageryLayer):
+        layer1, input_source_data, raster_ra1 = _raster_input(in_source_data)
+    else:
+        raster_ra1 = _layer_input(in_source_data)
+        input_source_data = raster_ra1
+        layer1=raster_ra1
+
 
     if in_cost_raster is not None:
         layer2, in_cost_raster, raster_ra2 = _raster_input(in_cost_raster)
 
     if in_barrier_data is not None:
+        if isinstance (in_barrier_data, ImageryLayer):
+            layer3, in_barrier_data, raster_ra3 = _raster_input(in_barrier_data)
+        else:
+            raster_ra3 = _layer_input(in_barrier_data)
+            in_barrier_data = raster_ra1
+            layer3=raster_ra1
         layer3, in_barrier_data, raster_ra3 = _raster_input(in_barrier_data)
 
     if in_surface_raster is not None:
@@ -3452,7 +3617,16 @@ def distance_allocation(in_source_data,
             "toolName" : "DistanceAllocation_sa",
             "PrimaryInputParameterName" : "in_source_data",
             "OutputRasterParameterName":"out_distance_allocation_raster",
-            "in_source_data" : input_source_data
+            "in_source_data" : input_source_data,
+            "RasterInfo":{"blockWidth" : 2048,
+                "blockHeight":256,
+                "bandCount":1,
+                "pixelType":8,
+                "firstPyramidLevel":1,
+                "maximumPyramidLevel":30,
+                "pixelSizeX":1,
+                "pixelSizeY" :1,
+                "type":"RasterInfo"}
         }
     }
 
@@ -3480,11 +3654,6 @@ def distance_allocation(in_source_data,
     if source_field is not None:
         template_dict["rasterFunctionArguments"]["source_field"] = source_field
 
-    if generate_source_row_column_bands is not None:
-        if isinstance(generate_source_row_column_bands, bool):
-            template_dict["rasterFunctionArguments"]["in_source_location_bands"] = generate_source_row_column_bands
-        else:
-            raise RuntimeError("generate_source_row_column_bands should be of type bool")
     if distance_method is not None:
         template_dict["rasterFunctionArguments"]["distance_method"] = distance_method
 
@@ -3502,6 +3671,8 @@ def distance_allocation(in_source_data,
         if source_direction.upper() not in source_direction_list:
             raise RuntimeError('source_direction should be one of the following '+ str(source_direction_list) )
         template_dict["rasterFunctionArguments"]["source_direction"] = source_direction
+    else:
+        template_dict["rasterFunctionArguments"]["source_direction"] = "FROM_SOURCE"
 
 
     function_chain_ra = copy.deepcopy(template_dict)
@@ -3521,5 +3692,208 @@ def distance_allocation(in_source_data,
     if in_vertical_raster is not None:
         function_chain_ra['rasterFunctionArguments']["in_vertical_raster"] = raster_ra6
 
-    return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra)
+    if output_back_direction_raster_name is not None or \
+       output_source_direction_raster_name is not None or \
+       output_source_location_raster_name is not None or \
+       output_distance_accumulation_raster_name is not None:
+        if isinstance(in_source_data, ImageryLayer):
+            return _gbl_clone_layer(in_source_data, 
+                                    template_dict, 
+                                    function_chain_ra, 
+                                    output_distance_accumulation_raster_name=output_distance_accumulation_raster_name,
+                                    output_back_direction_raster_name = output_back_direction_raster_name, 
+                                    output_source_direction_raster_name = output_source_direction_raster_name,
+                                    output_source_location_raster_name = output_source_location_raster_name,
+                                    use_ra=True)
+        else:
+            return _feature_gbl_clone_layer(in_source_data, 
+                                            template_dict, 
+                                            function_chain_ra, 
+                                            output_back_direction_raster_name = output_back_direction_raster_name, 
+                                            output_source_direction_raster_name = output_source_direction_raster_name,
+                                            output_source_location_raster_name = output_source_location_raster_name,
+                                            use_ra=True)
 
+    if isinstance(in_source_data, ImageryLayer):
+        return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra)
+    else:
+        return _feature_gbl_clone_layer(in_source_data, template_dict, function_chain_ra)
+
+def optimal_path_as_raster(in_destination_data,
+                           in_distance_accumulation_raster,
+                           in_back_direction_raster,
+                           destination_field=None,
+                           path_type="EACH_ZONE"
+                           ):
+    """
+    Calculates, for each cell, its least-cost source based on the least accumulative cost over a cost surface, 
+    avoiding network distance distortion.",
+
+    Parameters
+    ----------
+    :param in_destination_data: Required raster layer. A raster that identifies locations from which the optimal 
+                                path is determined to the least costly source. The input raster layer must
+                                consists of cells that have valid values (zero is a valid value), and the remaining
+                                cells must be assigned NoData.
+
+    :param in_distance_accumulation_raster: Required raster layer. The distance accumulation raster is used 
+                                            to determine the optimal path from the sources to the destinations. 
+
+                                            The distance accumulation raster is usually created with the 
+                                            distance_accumulation or distance_allocation functions.  Each cell 
+                                            in the distance accumulation raster represents the minimum 
+                                            accumulative cost distance over a surface from each cell to a set of source cells.
+
+    :param in_back_direction_raster: Required raster layer. The back direction raster contains calculated directions in 
+                                     degrees. The direction identifies the next cell along the optimal path back to 
+                                     the least accumulative cost source while avoiding barriers.
+
+    :param destination_field:   Optional string. The field to be used to obtain values for the destination locations. 
+
+    :param path_type: Optional string. A keyword defining the manner in which the values and zones on the input destination
+                      data will be interpreted in the cost path calculations.
+
+                      EACH_ZONE - For each zone on the input destination data, a least-cost path is determined
+                      and saved on the output raster. With this option, the least-cost path for each zone 
+                      begins at the cell with the lowest cost distance weighting in the zone.
+
+                      This is the default.
+
+                      BEST_SINGLE - For all cells on the input destination data, the least-cost path is derived 
+                      from the cell with the minimum of the least-cost paths to source cells.
+
+                      EACH_CELL - For each cell with valid values on the input destination data, a least-cost
+                      path is determined and saved on the output raster. With this option, each cell of the 
+                      input destination data is treated separately, and a least-cost path is determined for 
+                      each from cell.
+
+    :return: output raster with function applied
+    """
+
+    layer1, in_destination_data, raster_ra1 = _raster_input(in_destination_data)
+
+    layer2, in_distance_accumulation_raster, raster_ra2 = _raster_input(in_distance_accumulation_raster)
+
+    layer3, in_back_direction_raster, raster_ra3 = _raster_input(in_back_direction_raster)
+
+    template_dict = {
+        "rasterFunction" : "GPAdapter",
+        "rasterFunctionArguments" : {
+            "toolName" : "OptimalPathAsRaster_sa",
+            "PrimaryInputParameterName" : "in_destination_data",
+            "OutputRasterParameterName":"out_path_accumulation_raster",
+            "in_destination_data" : in_destination_data
+        }
+    }
+
+    if in_distance_accumulation_raster is not None:
+        template_dict["rasterFunctionArguments"]["in_distance_accumulation_raster"] = in_distance_accumulation_raster
+
+    if in_back_direction_raster is not None:
+        template_dict["rasterFunctionArguments"]["in_back_direction_raster"] = in_back_direction_raster
+
+    if destination_field is not None:
+        template_dict["rasterFunctionArguments"]["destination_field"] = destination_field
+
+    if path_type is not None:
+        path_type_list = ["EACH_CELL", "EACH_ZONE", "BEST_SINGLE"]
+        if path_type.upper() not in path_type_list:
+            raise RuntimeError('path_type should be one of the following '+ str(path_type_list))
+        template_dict["rasterFunctionArguments"]["path_type"] = path_type
+
+
+    function_chain_ra = copy.deepcopy(template_dict)
+    function_chain_ra['rasterFunctionArguments']["in_destination_data"] = raster_ra1
+
+    if in_distance_accumulation_raster is not None:
+        function_chain_ra['rasterFunctionArguments']["in_distance_accumulation_raster"] = raster_ra2
+
+    if in_back_direction_raster is not None:
+        function_chain_ra['rasterFunctionArguments']["in_back_direction_raster"] = raster_ra3
+
+    return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
+
+
+def boundary_clean(input_raster, sort_type = "NO_SORT", number_of_runs="TWO_WAY"):
+    """
+    The boundary_clean function smooths the boundary between zones in a raster. 
+
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    input_raster                         Required. The input raster for which the boundary between zones will 
+                                         be smoothed. It must be of integer type.  
+    --------------------------------     --------------------------------------------------------------------
+    sort_type                            Optional string. Specifies the type of sorting to use in the smoothing process. The sorting determines the priority by which cells can expand into their neighbors. The sorting can be done based on zone value or zone area. 
+                                         The available choices are: ['NO_SORT', 'DESCEND', 'ASCEND'] 
+                                         The default is: 'NO_SORT'.
+
+                                         * ``NO_SORT`` - The zones are not sorted by size. Zones with larger values 
+                                           will have a higher priority to expand into zones with 
+                                           smaller values in the smoothed output. This is the default. 
+
+                                         * ``DESCEND`` - Sorts zones in descending order by size. Zones with 
+                                           larger total areas have a higher priority to expand into 
+                                           zones with smaller total areas. This option will tend to 
+                                           eliminate or reduce the prevalence of cells from smaller 
+                                           zones in the smoothed output. 
+
+                                         * ``ASCEND`` - Sorts zones in ascending order by size. Zones with smaller 
+                                           total areas have a higher priority to expand into zones 
+                                           with larger total areas. This option will tend to preserve 
+                                           or increase the prevalence of cells from smaller zones in 
+                                           the smoothed output. 
+    --------------------------------     --------------------------------------------------------------------
+    number_of_runs                       Optional String or Boolean. Specifies the number of times the smoothing 
+                                         process will take place, twice or once. 
+
+                                         * ``TWO_WAY`` (true) - Performs an expansion and shrinking operation two 
+                                           times.  For the first time the operation is performed according to the 
+                                           specified sorting type. Then an additional  expansion and shrinking 
+                                           operation is performed, but with the priority reversed. This is the default. 
+                                         * ``ONE_WAY`` (false) - Performs the expansion and shrinking operation 
+                                           once, according to the sorting type. 
+    ================================     ====================================================================
+ 
+    :returns: output raster with function applied
+
+    .. code-block:: python
+
+            # Usage Example: 
+            boundary_clean_output =  boundary_clean(input_raster = imagery_layer, sort_type = "NO_SORT", number_of_runs="TWO_WAY")
+
+            boundary_clean_item = boundary_clean_output.save()
+    """
+    layer1, input_raster, raster_ra1 = _raster_input(input_raster)
+
+    template_dict = {
+        "rasterFunction" : "GPAdapter",
+        "rasterFunctionArguments" : {
+            "toolName" : "BoundaryClean_sa",
+            "PrimaryInputParameterName" : "in_raster",
+            "OutputRasterParameterName" : "out_raster",
+            "in_raster" : input_raster
+        }
+    }
+
+    if sort_type is not None:
+        sort_type_list = ["NO_SORT", "DESCEND", "ASCEND"]
+        if sort_type.upper() not in sort_type_list:
+            raise RuntimeError('sort_type should be one of the following '+ str(sort_type_list))
+        template_dict["rasterFunctionArguments"]["sort_type"] = sort_type
+
+    if number_of_runs is not None:
+        if isinstance(number_of_runs, bool):
+            template_dict["rasterFunctionArguments"]["number_of_runs"] = number_of_runs
+        elif isinstance(number_of_runs, str):
+            if number_of_runs.upper() == "TWO_WAY":
+                number_of_runs = True
+            elif number_of_runs.upper() == "ONE_WAY":
+                number_of_runs = False
+            else:
+                 raise RuntimeError('number_of_runs should be one of the following - TWO_WAY, ONE_WAY or should be of type bool.')
+            template_dict["rasterFunctionArguments"]["number_of_runs"] = number_of_runs
+    function_chain_ra = copy.deepcopy(template_dict)
+    function_chain_ra["rasterFunctionArguments"]["in_raster"] = raster_ra1
+
+    return _gbl_clone_layer(layer1, template_dict, function_chain_ra)

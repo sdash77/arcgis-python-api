@@ -6,7 +6,7 @@ import random
 import statistics
 import warnings
 from .._data import _raise_fastai_import_error  
-import traceback    
+import traceback
 
 HAS_OPENCV = True
 HAS_FASTAI = True
@@ -20,20 +20,20 @@ try:
     import pandas as pd
     import PIL
     from fastai.vision.learner import create_body
-    from fastprogress import progress_bar
     from fastai.vision import ImageList
     from fastai.vision import imagenet_stats, normalize
     from fastai.vision.image import open_image, bb2hw, image2np, Image, pil2tensor
     from fastai.core import ifnone
     from torchvision import models
-    from ._ssd_utils import SSDObjectCategoryList, show_results_multispectral
-    from ._retinanet_utils import RetinaNetModel, RetinaNetFocalLoss, compute_class_AP
+    from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList, show_results_multispectral
+    from ._retinanet_utils import RetinaNetModel, RetinaNetFocalLoss, compute_class_AP, get_predictions
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.basic_train import Learner
     from ._arcgis_model import SaveModelCallback, _resnet_family
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
     from .._video_utils import VideoUtils
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
+    from fastprogress.fastprogress import progress_bar
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
@@ -77,7 +77,7 @@ class RetinaNet(ArcGISModel):
     :returns: `RetinaNet` Object
     """
 
-    def __init__(self, data, scales=None, ratios=None, backbone=None, pretrained_path=None):
+    def __init__(self, data, scales=None, ratios=None, backbone=None, pretrained_path=None, *args, **kwargs):
 
         # Set default backbone to be 'resnet50'
         if backbone is None: 
@@ -94,6 +94,8 @@ class RetinaNet(ArcGISModel):
         # Check if a backbone provided is compatible, use resnet50 as default
         if not self._check_backbone_support(_backbone):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+
+        self._check_dataset_support(self._data)
 
         self.name = "RetinaNet"
         self._code = code
@@ -127,14 +129,21 @@ class RetinaNet(ArcGISModel):
     # Return a list of supported backbones names
     @property
     def supported_backbones(self):
-        """
-        Supported torchvision backbones for this model.
-        """        
+        """ Supported torchvision backbones for this model. """        
         return RetinaNet._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
         return [*_resnet_family]
+
+    @property
+    def  supported_datasets(self):
+        """ Supported dataset types for this model. """
+        return RetinaNet._supported_datasets()
+    
+    @staticmethod
+    def _supported_datasets():
+        return ['PASCAL_VOC_rectangles', 'KITTI_rectangles']     
 
     def _get_emd_params(self):
         _emd_template = {}
@@ -161,7 +170,10 @@ class RetinaNet(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        return {'accuracy': self.average_precision_score(show_progress=False)}
+        return {'accuracy': self.average_precision_score(show_progress=True)}
+
+    def _analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ret_scores=True, device=None):
+        return get_predictions(pred, crit=self._loss_f, detect_thresh=thresh, nms_overlap=nms_overlap)
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -183,8 +195,7 @@ class RetinaNet(ArcGISModel):
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
-            
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)    
         emd = json.load(open(emd_path))
         model_file = Path(emd['ModelFile'])
         chip_size = emd["ImageWidth"]
@@ -210,7 +221,7 @@ class RetinaNet(ArcGISModel):
                 warnings.simplefilter("ignore", UserWarning)
                 
                 sd = ImageList([], path=emd_path.parent.parent).split_by_idx([])
-                data = sd.label_const(0, label_cls=SSDObjectCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
+                data = sd.label_const(0, label_cls=ObjectDetectionCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
 
             data.chip_size = chip_size
             data.class_mapping = class_mapping
@@ -256,10 +267,11 @@ class RetinaNet(ArcGISModel):
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
 
-        self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
+        self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self)
 
     def _show_results_multispectral(self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs):
-        ax = show_results_multispectral(
+        return_fig = kwargs.get('return_fig', False)
+        fig,ax = show_results_multispectral(
             self, 
             nrows=rows, 
             thresh=thresh, 
@@ -267,6 +279,9 @@ class RetinaNet(ArcGISModel):
             alpha=alpha, 
             **kwargs
         )
+        if return_fig:
+            return fig
+
 
     def predict_video(
         self,
@@ -450,7 +465,7 @@ class RetinaNet(ArcGISModel):
 
         for chip in chips:
             frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
-            bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, ssd=self)[0]
+            bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, model=self)[0]
             if bbox:
                 scores = bbox.scores
                 bboxes, lbls = bbox._compute_boxes()

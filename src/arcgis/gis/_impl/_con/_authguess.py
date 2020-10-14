@@ -5,10 +5,11 @@ Modified from requests_toolbelt's GuesAuth to handle NTLM and Kerbos
 from requests import auth
 from requests import cookies
 try:
-    from .include import HttpNegotiateAuth
+    from requests_negotiate_sspi import HttpNegotiateAuth
     HAS_SSPI = True
 except ImportError:
     HAS_SSPI = False
+    
 try:
 
     from requests_kerberos import HTTPKerberosAuth

@@ -1,2 +1,3 @@
-from .env import enable_backend
+from .env import enable_backend, do_fastai_imports
 enable_backend()
+do_fastai_imports()

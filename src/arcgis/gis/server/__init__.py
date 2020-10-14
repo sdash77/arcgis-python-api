@@ -3,6 +3,7 @@ A collection of classes for administering an ArcGIS Enterprise server.
 """
 from .catalog import ServicesDirectory
 from ._service import Service
+from .admin.parameters import Extension
 from .sm import ServerManager
 from .catalog import ServicesDirectory
 from .admin import Server
@@ -15,7 +16,7 @@ from .admin._logs import LogManager
 from .admin._machines import Machine, MachineManager
 from .admin._mode import Mode
 from .admin._security import Role, RoleManager, User, UserManager
-from .admin._services import Service, ServiceManager
+from .admin._services import Service, ServiceManager, ItemInformationManager
 from .admin._system import ConfigurationStore, DirectoryManager, Jobs
 from .admin._system import ServerDirectory, ServerProperties, SystemManager
 from .admin._uploads import Uploads

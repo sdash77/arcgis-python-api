@@ -20,12 +20,13 @@ try:
     from ._codetemplate import feature_classifier_prf
     import torch
     from torchvision import models
-    from fastai.metrics import accuracy
+    from fastai.metrics import accuracy, MultiLabelFbeta
+    from .._utils.metrics import accuracy_multi
     from fastai.vision.image import open_image
+    from fastai.data_block import MultiCategoryList
     from fastai.vision.data import ImageDataBunch, ImageList
     from fastai.vision import imagenet_stats, normalize
-    from fastai.callbacks import LearnerCallback
-    from fastai.basic_train import Learner
+    from fastai.basic_train import Learner, LearnerCallback
     from torch.utils.data.sampler import WeightedRandomSampler, BatchSampler
     from fastai.vision.learner import cnn_learner, ClassificationInterpretation, cnn_config
     from ._arcgis_model import _set_multigpu_callback, _resnet_family
@@ -37,7 +38,7 @@ try:
     import PIL.Image
     import PIL.ExifTags
     from torch.nn import Module as NnModule
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     HAS_FASTAI = True
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -95,12 +96,17 @@ class FeatureClassifier(ArcGISModel):
     ---------------------   -------------------------------------------
     oversample              Optional boolean. If set to True, it oversamples unbalanced
                             classes of the dataset during training.
+    ---------------------   -------------------------------------------
+    backend                 Optional string. Controls the backend framework to be used
+                            for this model, which is 'pytorch' by default.
+
+                            valid options are 'pytorch', 'tensorflow'
     =====================   ===========================================
 
     :returns: `FeatureClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, pretrained_path=None, mixup=False, oversample=False, backend='pytorch', **kwargs):
+    def __init__(self, data, backbone=None, pretrained_path=None, mixup=False, oversample=False, backend='pytorch', *args, **kwargs):
         
         self._backend = backend
         if self._backend == 'tensorflow':
@@ -126,12 +132,19 @@ class FeatureClassifier(ArcGISModel):
             if not self._check_backbone_support(_backbone):
                 raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
+            self._check_dataset_support(self._data)
+
             self._code = feature_classifier_prf
-            self.learn = cnn_learner(data, self._backbone, metrics=accuracy, cut=backbone_cut, split_on=backbone_split)
+
+            if getattr(data, '_dataset_type', "Labeled_Tiles") == 'MultiLabeled_Tiles':
+                metrics = [accuracy_multi, MultiLabelFbeta()]
+            else:
+                metrics = accuracy
+
+            self.learn = cnn_learner(data, self._backbone, metrics=metrics, cut=backbone_cut, split_on=backbone_split)
             if oversample:
                 self.learn.callbacks.append(OverSamplingCallback(self.learn))
             self._arcgis_init_callback() # make first conv weights learnable
-
             # Add Mixup data augmentation
             if mixup:
                 self.learn = self.learn.mixup()
@@ -150,14 +163,21 @@ class FeatureClassifier(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        """
-        Supported torchvision backbones for this model.
-        """
+        """ Supported torchvision backbones for this model. """
         return FeatureClassifier._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
         return [*_resnet_family, models.mobilenet_v2.__name__]
+
+    @property
+    def  supported_datasets(self):
+        """ Supported dataset types for this model. """
+        return FeatureClassifier._supported_datasets()
+    
+    @staticmethod
+    def _supported_datasets():
+        return ['Labeled_Tiles', 'MultiLabeled_Tiles']  
 
     def show_results(self, rows=5, **kwargs):
         """
@@ -172,15 +192,19 @@ class FeatureClassifier(ArcGISModel):
    
     def _show_results_multispectral(self, rows=5, **kwargs):
         from .._utils.image_classification import IC_show_results
-        IC_show_results(
+        return_fig = kwargs.get('return_fig', False)
+        fig=IC_show_results(
             self,
             nrows=rows,
             **kwargs
         )
+        if return_fig:
+            return fig
 
     def predict(self, img_path):
         """
         Runs prediction on an Image.
+        
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -203,18 +227,13 @@ class FeatureClassifier(ArcGISModel):
 
     def _save_confusion_matrix(self, path):
         from matplotlib import pyplot as plt
-        import fastai
-        try:
-            from fastprogress import fastprogress
-        except ImportError:
-            import fastprogress
-        fastprogress.fastprogress.NO_BAR = True
-        fastai.basic_train.master_bar, fastai.basic_train.progress_bar = fastprogress.force_console_behavior()
-        self.plot_confusion_matrix()
-        fastai.basic_train.master_bar, fastai.basic_train.progress_bar = fastprogress.master_bar, fastprogress.progress_bar
-        plt.savefig(os.path.join(path, 'confusion_matrix.png'))
-        plt.close()
 
+        from IPython.utils import io
+        with io.capture_output() as captured:
+            self.plot_confusion_matrix()
+            plt.savefig(os.path.join(path, 'confusion_matrix.png'))
+            plt.close()
+        
     @property
     def _model_metrics(self):
         return {}
@@ -224,14 +243,19 @@ class FeatureClassifier(ArcGISModel):
         _emd_template["Framework"] = "PyTorch"
         _emd_template["ModelConfiguration"] = "FeatureClassifier"
         _emd_template["ModelType"] = "ObjectClassification"
+        _emd_template["MetaDataMode"] = self._data._dataset_type
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template['CropSizeFixed'] = 1  # hardcoded
         _emd_template['BlackenAroundFeature'] = 0  # hardcoded
         _emd_template['ImageSpaceUsed'] = "MAP_SPACE"
         _emd_template['Classes'] = []
         class_data = {}
+
+        if self._data._dataset_type == 'MultiLabeled_Tiles':
+                self._data.class_mapping = {k: v for k, v in enumerate(self._data.classes)}
+        inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
+
         for i, class_name in enumerate(self._data.classes):
-            inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
             class_data["Value"] = inverse_class_mapping[class_name]
             class_data["Name"] = class_name
             color = [random.choice(range(256)) for i in range(3)]
@@ -267,7 +291,7 @@ class FeatureClassifier(ArcGISModel):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
             
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
 
@@ -299,16 +323,22 @@ class FeatureClassifier(ArcGISModel):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
 
-                data = ImageDataBunch.single_from_classes(
-                    emd_path.parent.parent, sorted(list(class_mapping.values())),
-                    ds_tfms=transforms, size=chip_size).normalize(imagenet_stats)
+                if ("MetaDataMode" in emd) and (emd["MetaDataMode"] == "MultiLabeled_Tiles"):
+                    img_list = ImageList([], path=emd_path.parent.parent).split_by_idx([])
+                    data = img_list.label_const(0, label_cls=MultiCategoryList, 
+                                                classes=list(class_mapping.values())).transform(transforms).databunch().normalize(imagenet_stats)
+                    data._dataset_type = 'MultiLabeled_Tiles'
+                else:
+                    data = ImageDataBunch.single_from_classes(
+                        emd_path.parent.parent, sorted(list(class_mapping.values())),
+                        ds_tfms=transforms, size=chip_size).normalize(imagenet_stats)
 
             data.chip_size = chip_size
             data.class_mapping = class_mapping
             data.classes = list(class_mapping.values())
             data._is_empty = True
             data.emd_path = emd_path
-            data.emd = emd            
+            data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
 
         resize_to = emd.get('resize_to')
@@ -1336,7 +1366,10 @@ class FeatureClassifier(ArcGISModel):
 
     def _loss_function_tf(self, target, predictions, reduction=True):
         import tensorflow as tf
-        target_masks = tf.gather(tf.eye(self._data.c), target)
+        if target.ndim == 2:
+            target_masks = target
+        else:
+            target_masks = tf.gather(tf.eye(self._data.c), target)
         if reduction:
             return self._loss_function_tf_(target_masks, predictions)
         else:
@@ -1349,15 +1382,15 @@ if HAS_FASTAI:
         The OverSamplingCallback support handles unbalanced dataset (dataset with rare classes). It is used to oversample data during training.
         """
         def __init__(self,learn:Learner,weights:torch.Tensor=None):
-            super(OverSamplingCallback, self).__init__(learn)
+            super().__init__(learn)
             self.weights = weights
 
         def on_train_begin(self, **kwargs):
-            self.labels = self.learn.data.train_dl.dataset.y.items
-            _, counts = np.unique(self.labels,return_counts=True)
-            self.weights = (self.weights if self.weights is not None else
-                            torch.DoubleTensor((1/(counts + 1e-8))[self.labels]))
-            self.label_counts = np.bincount([self.learn.data.train_dl.dataset.y[i].data for i in range(len(self.learn.data.train_dl.dataset))])
-            self.total_len_oversample = int(self.learn.data.c*np.max(self.label_counts))
-            self.learn.data.train_dl.dl.batch_sampler = BatchSampler(WeightedRandomSampler(self.weights,self.total_len_oversample), self.learn.data.train_dl.batch_size,False)
-
+            ds,dl = self.data.train_ds,self.data.train_dl
+            self.labels = ds.y.items
+            assert np.issubdtype(self.labels.dtype, np.integer), "Can only oversample integer values"
+            _,self.label_counts = np.unique(self.labels,return_counts=True)
+            if self.weights is None: self.weights = torch.DoubleTensor((1/self.label_counts)[self.labels])
+            self.total_len_oversample = int(self.data.c*np.max(self.label_counts))
+            sampler = WeightedRandomSampler(self.weights, self.total_len_oversample)
+            self.data.train_dl = dl.new(shuffle=False, sampler=sampler)

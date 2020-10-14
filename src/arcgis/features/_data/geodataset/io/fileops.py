@@ -373,7 +373,7 @@ def _arcpy_to_featureclass(df, out_name, out_location=None,
                         (float, np.float, np.float64)):
             dtypes.append((flds[idx], np.float64))
         elif isinstance(a,
-                        (datetime.datetime, pd.datetime)):
+                        DATETIME_TYPES):
             dtypes.append((flds[idx], '<M8[us]'))
         else:
             dtypes.append((flds[idx], type(a)))

@@ -428,10 +428,19 @@ _log = _logging.getLogger(__name__)
     """
     try:
         execution_type = tbx.properties.executionType
-    except:
-        from arcgis.gis import GIS
-        return import_toolbox(url_or_item=url_or_item,
-                              gis=GIS(), verbose=verbose)
+    except Exception as e:
+        try:
+            if str(e).lower().find("token required") > -1:
+                raise
+            elif str(e).lower().find("User does not have permissions to access".lower()) > -1:
+                raise
+            else:
+                from arcgis.gis import GIS
+                tbx = import_toolbox(url_or_item=url_or_item,
+                                     gis=GIS(), verbose=verbose)
+            return tbx
+        except Exception as e:
+            raise
     use_async = True
     if execution_type == 'esriExecutionTypeSynchronous':
         use_async = False
@@ -491,7 +500,7 @@ class _AsyncResource(_GISResource):
 
         params["f"] = "json"
 
-        resp = self._con.post(submit_url, params, token=self._token)
+        resp = self._con.post(submit_url, params, token=self._con.token)
         # print(resp)
         return task_url, resp, resp['jobId']
 
@@ -504,7 +513,7 @@ class _AsyncResource(_GISResource):
             job_id = job_info.get("jobId")
             job_url = "{}/jobs/{}".format(task_url, job_id)
             params = {"f": "json"}
-            job_response = self._con.post(job_url, params, token=self._token)
+            job_response = self._con.post(job_url, params, token=self._con.token)
 
             # Query and report the Analysis job status.
             #
@@ -514,7 +523,7 @@ class _AsyncResource(_GISResource):
                 while not job_response.get("jobStatus") == "esriJobSucceeded":
                     time.sleep(5)
 
-                    job_response = self._con.post(job_url, params, token=self._token)
+                    job_response = self._con.post(job_url, params, token=self._con.token)
                     # print(job_response)
                     messages = job_response['messages'] if 'messages' in job_response else []
                     num = len(messages)
@@ -569,7 +578,7 @@ class _AsyncResource(_GISResource):
                                                         param_url)
 
                     params = {"f": "json"}
-                    param_result = self._con.post(result_url, params, token=self._token)
+                    param_result = self._con.post(result_url, params, token=self._con.token)
 
                     job_value = param_result.get("value")
                     result_values[key] = job_value
@@ -769,7 +778,7 @@ class _AsyncResource(_GISResource):
 
 class Toolbox(_AsyncResource):
     "A collection of geoprocessing tools."
-
+    _token = None
     def __init__(self, url, gis=None):
         """
         Constructs a Geoprocessing toolbox
@@ -792,8 +801,14 @@ class Toolbox(_AsyncResource):
             taskurl = self.url + "/" + task
 
             self._taskurls[fnname] = taskurl + "/execute"
-
-            taskprops = self._con.post(taskurl, {"f":"json"}, token=self._token)
+            try:
+                taskprops = self._con.post(taskurl, {"f":"json"}, token=self._con.token)
+            except Exception as ex:
+                if str(ex).find("Token Required") > -1:
+                    taskprops = self._con.post(taskurl, {"f":"json"})
+                else:
+                    raise ex
+                
             execution_type = taskprops['executionType']
             task_params = taskprops['parameters']
 
@@ -989,7 +1004,7 @@ class Toolbox(_AsyncResource):
         resp = None
 
         if self.properties.executionType == 'esriExecutionTypeSynchronous':
-            resp = self._con.post(url, gp_params, token=self._token)
+            resp = self._con.post(url, gp_params, token=self._con.token)
 
             output_dict = {}
 
@@ -1030,7 +1045,7 @@ class Toolbox(_AsyncResource):
         else:
             task_url = "{}/{}".format(self.url, task_name)
             submit_url = "{}/submitJob".format(task_url)
-            job_info = self._con.post(submit_url, gp_params, token=self._token)
+            job_info = self._con.post(submit_url, gp_params, token=self._con.token)
             job_id = job_info['jobId']
             try:
                 isCan = False

@@ -3,6 +3,7 @@ import numpy as np
 from torch import tensor
 import torch
 import math
+from .._unet_utils import is_contiguous as is_cont
 
 def A(*a): return np.array(a[0]) if len(a)==1 else [np.array(o) for o in a]
 
@@ -209,22 +210,71 @@ def detect_objects_image_space(model, tiles, anchors, grid_sizes, device, classe
 
     return bounding_boxes, scores, classes
 
-def segment_image(model, images, device, predict_bg):
+def segment_image(model, images, device, predict_bg, model_info):
     model = model.to(device)
     normed_batch_tensor = tensor(images).to(device).float()
     output = model(normed_batch_tensor)
+    ignore_mapped_class = model_info.get('ignore_mapped_class', [])
+    for k in ignore_mapped_class:
+        output[:, k] = -1
     if predict_bg:
         return output.max(dim=1)[1]
     else:
-        return output[:, 1:].max(dim=1)[1]
-    
+        output[:, 0] = -1
+        return output.max(dim=1)[1]
+
+def superres_image(model, images, device):
+    model = model.to(device)
+    normed_batch_tensor = tensor(images).to(device).float()
+    output = model(normed_batch_tensor)
+    return output
+
+def remap(tensor, idx2pixel):
+    modified_tensor = torch.zeros_like(tensor)
+    for id, pixel in idx2pixel.items():
+        modified_tensor[tensor == id] = pixel
+    return modified_tensor    
 
 def pixel_classify_image(model, tiles, device, classes, predict_bg, model_info):
+    class_values = [clas['Value'] for clas in model_info['Classes']]
+    is_contiguous = is_cont([0] + class_values)
+
+    if not is_contiguous:
+        pixel_mapping = [0] + class_values
+        idx2pixel = {i: d for i, d in enumerate(pixel_mapping)}
+
     tile_height, tile_width = tiles.shape[2], tiles.shape[3]
     if "NormalizationStats" in model_info:
         img_normed = normalize_batch(tiles, model_info)
     else:
         img_normed = norm(tiles.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
-    semantic_predictions = segment_image(model, img_normed, device, predict_bg)
+    semantic_predictions = segment_image(model, img_normed, device, predict_bg, model_info)
+    if not is_contiguous:
+        semantic_predictions = remap(semantic_predictions, idx2pixel)       
     return semantic_predictions
+
+def pixel_classify_superres_image(model, tiles, device):
+    tile_height, tile_width = tiles.shape[2], tiles.shape[3]
+    img_normed = norm(tiles.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
+    superres_predictions = superres_image(model, img_normed, device)
+    superres_predictions = (superres_predictions * torch.tensor(imagenet_stats[1]).view(1, -1, 1, 1).to(superres_predictions)) + torch.tensor(imagenet_stats[0]).view(1, -1, 1, 1).to(superres_predictions)
+    superres_predictions = superres_predictions.clamp(0, 1)
+    return superres_predictions
     
+
+def variable_tile_size_check(json_info, parameters):
+    if json_info.get("SupportsVariableTileSize", False):
+        parameters.extend(
+            [
+                {
+                    'name': 'tile_size',
+                    'dataType': 'numeric',
+                    'value': int(json_info['ImageHeight']),
+                    'required': False,
+                    'displayName': 'Tile Size',
+                    'description': 'Tile size used for inferencing'
+                }
+            ]
+        )
+    return parameters
+

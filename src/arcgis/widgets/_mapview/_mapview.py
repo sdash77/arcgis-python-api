@@ -14,10 +14,15 @@ from collections import OrderedDict
 from urllib.parse import urlparse
 import os
 import shutil
+import datetime as dt
+import dateutil.parser
+import tempfile
 
+import ipywidgets
 from ipywidgets import widgets
 from ipywidgets.embed import embed_minimal_html
 from traitlets import Unicode, Int, List, Bool, Dict, Tuple, Float, observe
+Datetime = ipywidgets.trait_types.Datetime
 from IPython.display import display, HTML
 
 from arcgis.widgets._mapview._webscene_utils import DEFAULT_WEBSCENE_TEXT_PROPERTY
@@ -28,11 +33,20 @@ from arcgis import __version__ as py_api_version
 import arcgis.mapping
 import arcgis
 
+try:
+    import pandas as pd
+    from arcgis.features.geo import _is_geoenabled
+except ImportError:
+    def _is_geoenabled(**kwargs):
+        return False
+    pd = None
+
+
 log = logging.getLogger(__name__)
 
 DEFAULT_ELEMENT_HEIGHT = "400px"
 
-_DEFAULT_JS_CDN = "https://js.arcgis.com/4.11/"
+_DEFAULT_JS_CDN = "https://js.arcgis.com/4.15/"
 _js_cdn_override_global = ""
 
 def _is_iterable(obj):
@@ -64,7 +78,7 @@ def _flatten_list(*unpacked_list):
 
 def _get_extent(item):
     from arcgis.features import FeatureSet, Feature, FeatureCollection, FeatureLayer
-    from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster
+    from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster, _ArcpyRaster
     from arcgis.gis import Layer
     from arcgis.gis import Item
     from arcgis._impl.common._mixins import PropertyMap
@@ -73,7 +87,9 @@ def _get_extent(item):
 
     if isinstance(item, Raster):
         if isinstance(item._engine_obj, _ImageServerRaster):
-            item=item._engine_obj
+            item = item._engine_obj
+        elif isinstance(item._engine_obj, _ArcpyRaster):
+            return dict(item.extent)
     if isinstance(item, Item):
         return list(map(_get_extent, item.layers))
     elif isinstance(item, list):
@@ -166,11 +182,11 @@ def _reproject_extent(extents, target_sr={'wkid': 102100, 'latestWkid': 3857}):
             extents_to_reproject[in_sr_str]['extents'].extend(
                 [
                     {
-                        'x': extent['xmin'], 
+                        'x': extent['xmin'],
                         'y': extent['ymin']
                     },
                     {
-                        'x': extent['xmax'], 
+                        'x': extent['xmax'],
                         'y': extent['ymax']
                     }
                 ]
@@ -208,6 +224,16 @@ class MapView(widgets.DOMWidget):
                            for more information.
     ==================     ====================================================================
 
+    .. note::
+        Note: If the Jupyter Notebook server is running over http, you need to
+        configure your portal/organization to allow your host and port; or else
+        you will run into CORs issues.
+        
+        This can be accomplished by signing into your portal/organization in a 
+        browser, then navigating to:
+
+        `Organization` > `Settings` > `Security` > `Allow origins` > `Add` > http://localhost:8888 (replace with the host/port you are running on)
+
     """
 
     # region Class, instance and interop variables
@@ -235,30 +261,104 @@ class MapView(widgets.DOMWidget):
     def zoom(self, value):
         self._zoom = value
 
-    rotation = Float(0).tag(sync=True)
-    """For 2D mode, the clockwise rotation of due north in relation to the top
-    of the view in degrees. Note that you can NOT set rotation in 3D mode.
-    3D mode uses the ‘heading’ property.
-    """
-    heading = Float(0).tag(sync=True)
-    """For 3D mode, the compass heading of the camera in degrees. Heading is
-    zero when north is the top of the screen. It increases as the view rotates
-    clockwise. The angles are always normalized between 0 and 360 degrees.
-    Note that you can NOT set heading in 2D mode. 2D mode uses the ‘rotation’
-    property.
-    """
-    tilt = Float(0).tag(sync=True)
-    """For 3D mode, the tilt of the camera in degrees with respect to the
-    surface as projected down from the camera position. Tilt is zero when
-    looking straight down at the surface and 90 degrees when the camera is
-    looking parallel to the surface. Note that you can NOT set tilt in
-    2D mode.
-    """
+    _scale = Float(-1).tag(sync=True)
+    _readonly_scale = Float(-1).tag(sync=True)
+
+    @property
+    def scale(self):
+        """The map scale at the center of the view. If set to X, the scale
+        of the map would be 1:X.
+
+        For continuous values to apply and not get "snapped" to the closest
+        level of detail, set `mapview.snap_to_zoom = False`.
+
+        # Usage example: Sets the scale to 1:24000
+            map = gis.map()
+            map.scale = 24000
+        """
+        return self._readonly_scale
+
+    @scale.setter
+    def scale(self, value):
+        self._scale = value
+
+    _snap_to_zoom = Bool(True).tag(sync=True)
+
+    @property
+    def snap_to_zoom(self):
+        """When `True`, snap to the next level of detail when zooming in or out.
+        When `False`, the zoom is continous. Only applies in 2D mode
+        """
+        return self._snap_to_zoom
+
+    @snap_to_zoom.setter
+    def snap_to_zoom(self, value):
+        self._snap_to_zoom = value
+
+    _rotation = Float(0).tag(sync=True)
+    _readonly_rotation = Float(0).tag(sync=True)
+    _link_writeonly_rotation = Float(0).tag(sync=True)
+    @property
+    def rotation(self):
+        """For 2D mode, the clockwise rotation of due north in relation to the top
+        of the view in degrees. Note that you can NOT set rotation in 3D mode.
+        3D mode uses the ‘heading’ property.
+        """
+        return self._readonly_rotation
+
+    @rotation.setter
+    def rotation(self, value):
+        self._rotation = value
+
+    _heading = Float(0).tag(sync=True)
+    _readonly_heading = Float(0).tag(sync=True)
+    _link_writeonly_heading = Float(0).tag(sync=True)
+    @property
+    def heading(self):
+        """For 3D mode, the compass heading of the camera in degrees. Heading is
+        zero when north is the top of the screen. It increases as the view rotates
+        clockwise. The angles are always normalized between 0 and 360 degrees.
+        Note that you can NOT set heading in 2D mode. 2D mode uses the ‘rotation’
+        property.
+        """
+        return self._readonly_heading
+
+    @heading.setter
+    def heading(self, value):
+        self._heading = value
+
+    _tilt = Float(0).tag(sync=True)
+    _readonly_tilt = Float(0).tag(sync=True)
+    _link_writeonly_tilt = Float(0).tag(sync=True)
+    @property
+    def tilt(self):
+        """For 3D mode, the tilt of the camera in degrees with respect to the
+        surface as projected down from the camera position. Tilt is zero when
+        looking straight down at the surface and 90 degrees when the camera is
+        looking parallel to the surface. Note that you can NOT set tilt in
+        2D mode.
+        """
+        return self._readonly_tilt
+
+    @tilt.setter
+    def tilt(self, value):
+        self._tilt = value
 
     @property
     def basemap(self):
         """What basemap you would like to apply to the widget (‘topo’,
         ‘national-geographic’, etc.). See `basemaps` for a full list
+
+        # Usage example: Set the widget basemap equal to an item
+            from arcgis.mapping import WebMap
+            widget = gis.map()
+            # Use basemap from another item as your own
+            widget.basemap = webmap
+            widget.basemap = tiled_map_service_item
+            widget.basemap = image_layer_item
+            widget.basemap = webmap2.basemap
+            widget.basemap - 'national-geographic'
+
         """
         return self._basemap
 
@@ -269,7 +369,17 @@ class MapView(widgets.DOMWidget):
         elif value in self.gallery_basemaps:
             self._basemap = value
         else:
-            raise RuntimeError("Basemap '{}' isn't valid".format(value))
+            try:
+                self.webmap.basemap = value
+                # takes dict object
+                self._gallery_basemaps['base'] = self.webmap._basemap
+                self._basemap = 'base'
+                # You need to re-write this dict to trigger the JS side change
+                copy_gallery = dict(self._gallery_basemaps)
+                self._gallery_basemaps = {}
+                self._gallery_basemaps = copy_gallery
+            except Exception:
+                raise RuntimeError("Basemap '{}' isn't valid".format(value))
 
     _basemap = Unicode('topo').tag(sync=True)
     """What basemap you would like to apply to the widget (‘topo’,
@@ -305,6 +415,7 @@ class MapView(widgets.DOMWidget):
 
     _readonly_extent = Dict({}).tag(sync=True)
     _extent = Dict({}).tag(sync=True)
+    _link_writeonly_extent = Dict({}).tag(sync=True)
 
     @property
     def extent(self):
@@ -354,10 +465,15 @@ class MapView(widgets.DOMWidget):
                     "ymin": value[0][1],
                     "xmax": value[1][0],
                     "ymax": value[1][1]}
+            elif len(value) == 0:
+                pass
             else:
                 raise Exception
         except Exception:
-            log.warn("extent must be set to either a 2d list, spatially " \
+            if _is_iterable(value) and len(value) == 0:
+                pass
+            else:
+                log.warn("extent must be set to either a 2d list, spatially " \
                      "enabled data frame full_extent, or dict. Values specified " \
                 "must include xmin, ymin, xmax, ymax. Please see the API doc for " \
                 "more information")
@@ -409,6 +525,7 @@ class MapView(widgets.DOMWidget):
     _webscene = Dict({}).tag(sync=True)
     _trigger_webscene_save_to_this_portal_id = Unicode('').tag(sync=True)
     _readonly_webmap_from_js = Dict({}).tag(sync=True)
+
     # end webmap/webscene state
     # start miscellanous model state
     _custom_msg = Unicode('').tag(sync=True)
@@ -598,6 +715,10 @@ class MapView(widgets.DOMWidget):
         # Set up LocalRasterOverlay instance
         self._raster = LocalRasterOverlayManager(mapview=self)
 
+        self._synced_mapviews = []
+        self._mapview_uuid_to_dlinks = {}
+        self._dlinks = []
+
     # Start screenshot specific section
 
     def _ipython_display_(self):
@@ -611,6 +732,9 @@ class MapView(widgets.DOMWidget):
         self._preview_image_display_handler = display(
             HTML(self._assemble_img_preview_html_str("")),
             display_id = "preview-" + str(self._uuid))
+        self._preview_html_embed_display_handler = display(
+            HTML(self._assemble_html_embed_html_str("")),
+            display_id = "preview-html-" + str(self._uuid))
 
     def _assemble_img_preview_html_str(self, img_src):
         """Helper function that creates an HTML string of the <img> tag
@@ -635,7 +759,7 @@ class MapView(widgets.DOMWidget):
 
     @observe('_cell_output_screenshot_callback_resp')
     def _cell_output_screenshot_update_callback(self, change):
-        """Called every time the front end takes a screenshot for a 
+        """Called every time the front end takes a screenshot for a
         cell output"""
         if self._cell_output_display_handler:
             img_data_uri_str = self._parse_js_resp(change['new'])
@@ -669,13 +793,27 @@ class MapView(widgets.DOMWidget):
                 encoded_body = base64.b64encode(resp.read())
                 return 'data:image/png;base64,{}'.format(encoded_body.decode())
 
+    def _assemble_html_embed_html_str(self, iframe_srcdoc_html,
+                                     class_id_root = "map-html-embed-preview-"):
+        """Helper function that creates an HTML string of the <iframe> tag
+        to add to the notebook with the correct <div> class to be hidden
+        """
+        iframe_html = f"<iframe height='{self.layout.height}' width='100%' "\
+                      f"srcdoc='{iframe_srcdoc_html}'>"\
+                      f"Your browser doesn't support map widget previews"\
+                      f"</iframe>"
+        iframe_html = iframe_html if iframe_srcdoc_html else ""
+        other_html = "<br><h4></h4>"
+        class_id = class_id_root + self._uuid
+        return f'<div class="{class_id}">{iframe_html}</div>'
+
     print_service_url = Unicode("").tag(sync=True)
     """
     .. note::
         Note: this property is obselete as of >v1.6 of the Python API, since
         the underlying JavaScript code ran during a `take_screenshot()` Python
         call has been has been changed to `MapView.takeScreenshot()` instead
-        of calling a Print Service URL. Any value you set to this property 
+        of calling a Print Service URL. Any value you set to this property
         will be ignored (2D screenshots will still be taken successfully).
     """
 
@@ -683,7 +821,7 @@ class MapView(widgets.DOMWidget):
 
     def take_screenshot(self, output_in_cell=True, set_as_preview=True,
                         file_path = ""):
-        """Takes a screenshot of the current widget view. Only works in a 
+        """Takes a screenshot of the current widget view. Only works in a
         Jupyter Notebook environment.
 
         ==================     ====================================================================
@@ -694,7 +832,7 @@ class MapView(widgets.DOMWidget):
         ------------------     --------------------------------------------------------------------
         set_as_preview         Optional bool, default `True`. Will set the screenshot as the static
                                image preview in the cell where the map widget is being displayed.
-                               Use this flag if you want the generated HTML previews of your 
+                               Use this flag if you want the generated HTML previews of your
                                notebook to have a map image visible.
         ------------------     --------------------------------------------------------------------
         file_path              Optional String, default `""`. To output the screenshot to a `.png`
@@ -705,17 +843,24 @@ class MapView(widgets.DOMWidget):
         In all notebook outputs, each image will be encoded to a base64
         data URI and wrapped in an HTML <img> tag, like
         `<img src="base64Str">`. This means that the data for the image lives
-        inside the notebook file itself, allowing for easy sharing of 
+        inside the notebook file itself, allowing for easy sharing of
         notebooks and generated HTML previews of notebooks.
 
         .. note::
             This function acts asyncronously, meaning that the Python function
-            will return right away, with the notebook outputs/files being 
-            written after an indeterminate amount of time. Avoid calling this 
-            function  multiple times in a row if the asyncronous portion of 
+            will return right away, with the notebook outputs/files being
+            written after an indeterminate amount of time. Avoid calling this
+            function  multiple times in a row if the asyncronous portion of
             the function hasn't finished yet.
 
+        .. note::
+            When this function is called with `set_as_preview = True`, the 
+            static image preview will overwrite the embedded HTML element
+            preview from any previous `MapView.embed_html(set_as_preview=True)` 
+            call
+
         """
+        self._clear_embed_html_preview()
         if not self.ready:
             log.warn("Cannot take screenshot if widget is not visible in "\
                      "notebook: Please try again when widget is visible.");
@@ -740,11 +885,69 @@ class MapView(widgets.DOMWidget):
               'output_in_cell' : output_in_cell,
               'file_path' : bool(file_path) }
 
+    def _clear_embed_html_preview(self):
+        self._preview_html_embed_display_handler.update(HTML(
+            self._assemble_html_embed_html_str("")))
+
+    def _clear_static_image_preview(self):
+        self._preview_image_display_handler.update(
+           HTML(self._assemble_img_preview_html_str("")))
+
+    def embed(self, output_in_cell=True, set_as_preview=True):
+        """Embeds the current state of the map into the underlying notebook 
+        as an interactive HTML/JS/CSS element. This element will always display
+        this 'snapshot' state of the map, regardless of any future Python code ran.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        output_in_cell         Optional bool, default `True`. Will display the embedded HTML 
+                               interactive map in the output area of the cell where this function 
+                               is called.
+        ------------------     --------------------------------------------------------------------
+        set_as_preview         Optional bool, default `True`. Will display the embedded HTML 
+                               interactive map in the cell where the map widget is being displayed. 
+                               Use this flag if you want the generated HTML previews of your 
+                               notebook to have an interactive map displayed.
+        ==================     ====================================================================
+
+        In all notebook outputs, each embedded HTML element will contain
+        the entire map state and all relevant HTML wrapped in an <iframe> 
+        element. This means that the data for the embedded HTML element lives
+        inside the notebook file itself, allowing for easy sharing of
+        notebooks and generated HTML previews of notebooks.
+
+        .. note::
+            When this function is called with `set_as_preview = True`, the 
+            embedded HTML preview element will overwrite the static image 
+            preview from any previous `MapView.take_screenshot(set_as_preview=True)` 
+            call
+ 
+        .. note::
+            Any embedded maps must only reference publicly available data. The
+            embedded map must also have access to the https://unpkg.com
+            to load the necessry JavaScript components on the page
+
+        """
+        self._clear_static_image_preview()
+        html_repr_path = os.path.join(tempfile.gettempdir(), 
+                                      f".{self._uuid}.html")
+        self.export_to_html(html_repr_path)
+        with open(html_repr_path, "r") as f:
+            iframe_srcdoc_html = f.read()
+            if output_in_cell:
+                display(HTML(
+                    self._assemble_html_embed_html_str(iframe_srcdoc_html,
+                        class_id_root="map-html-embed-in-cell-")))
+            if set_as_preview:
+                self._preview_html_embed_display_handler.update(HTML(
+                    self._assemble_html_embed_html_str(iframe_srcdoc_html)))
+
     # End screenshot specific section
 
     def _setup_gis_properties(self, gis):
-        # This function is called during __init__, as well as during any 
-        # subsequent draw in a notebook. Priority of how the GIS properties 
+        # This function is called during __init__, as well as during any
+        # subsequent draw in a notebook. Priority of how the GIS properties
         # of the widget are set:
         # - Always use the gis object passed in as an arg in __init__
         # - Fallback to the active_gis if no arg passed in
@@ -771,6 +974,8 @@ class MapView(widgets.DOMWidget):
         if _js_cdn_override_global != "":
             # If the user had previously set this global property, use it
             self._js_cdn_override = _js_cdn_override_global
+        elif os.environ.get("JSAPI_CDN", ""):
+            self._js_cdn_override = os.environ.get("JSAPI_CDN", "")
         else:
             # Else, test default CDNs and portal CDNs
             default_cdn_unreachable = not self._is_reachable(_DEFAULT_JS_CDN)
@@ -779,17 +984,29 @@ class MapView(widgets.DOMWidget):
                     getattr(self.gis, "_url", ""))
                     # use gis._url to get private url (disconn IWA edge case)
                 self._js_cdn_override = _portal_cdn
-                log.debug("Disconnected environment detected: " + 
-                    "using JS API CDN from {}. ".format(_portal_cdn) + 
+                log.debug("Disconnected environment detected: " +
+                    "using JS API CDN from {}. ".format(_portal_cdn) +
                     "Make sure you have a JSAPI4 compatible basemap " +
                     "set as the default basemap in your portal.")
 
-    def _setup_default_basemap(self):
+    def _setup_default_basemap(self, basemap=None):
         """This method gets called once on startup, it populates the 'default'
         basemap field and the corresponding JSON without loading the rest
         of the `gallery_basemaps` property (which has a long load time)
         """
-        if 'defaultBasemap' in self.gis.properties:
+        if self.gis._portal.con.token is None:
+            # With the introduction of API keys, have all maps made with anon
+            # GIS connections use an OSM map (doesn't need an API key)
+            self.basemap = "osm"
+        elif basemap:
+            # used instead of basemap setter to avoid the reset of the associated webmap's basemap on instantiation
+            self._gallery_basemaps['base'] = basemap
+            self._basemap = 'base'
+            # You need to re-write this dict to trigger the JS side change
+            copy_gallery = dict(self._gallery_basemaps)
+            self._gallery_basemaps = {}
+            self._gallery_basemaps = copy_gallery
+        elif 'defaultBasemap' in self.gis.properties:
             self._gallery_basemaps['default'] = \
                 self.gis.properties['defaultBasemap']
             self._basemap = 'default'
@@ -821,13 +1038,9 @@ class MapView(widgets.DOMWidget):
         if isinstance(item, Item) and (item.type.lower() == 'web map'):
             item = WebMap(item)
         if isinstance(item, WebMap):
-            if item.item.type.lower() == 'web map':
-                self.webmap = item
-                if hasattr(item.item, 'id'):
-                    self._webmap = {"portalItem" : {
-                        "id" : item.item.id } }
-                    if hasattr(item.item, 'extent'):
-                        self.extent = item.item.extent
+            self.webmap = item
+            if hasattr(item, 'item') and hasattr(item.item, 'extent'):
+                self.extent = item.item.extent
 
     def _check_if_webscene(self, item):
         from arcgis.gis import Item
@@ -845,11 +1058,11 @@ class MapView(widgets.DOMWidget):
         the  ArcGIS API for JavaScript CDN URL instead of the default
         http://js.arcgis.com/4.X/. This functionality is necessary in
         disconnected  environments if the portal you are connecting to doesn't
-        ship with the minimum necessary JavaScript API version. 
-        
+        ship with the minimum necessary JavaScript API version.
+
         You may not need to call this function to view the widget in
         disconnected environments: if your computer cannot reach js.arcgis.com,
-        and you have a GIS() connection to a portal, the widget will 
+        and you have a GIS() connection to a portal, the widget will
         automatically attempt to use that portal's JS API that it ships with.
         """
         global _js_cdn_override_global
@@ -869,13 +1082,13 @@ class MapView(widgets.DOMWidget):
         -------------------     ------------------------------------------------
         ``"jpg"`` (Default)     Write raster to a ``.JPG`` file. This results
                                 in a lossy image, but should draw quicker than
-                                a ``.PNG`` file. Requires the ``PIL`` image 
-                                processing package (distributed under the name 
+                                a ``.PNG`` file. Requires the ``PIL`` image
+                                processing package (distributed under the name
                                 of it's active fork, "Pillow")
         -------------------     ------------------------------------------------
         ``"png"``               Write raster to a ``.PNG`` file. This results
                                 in a lossless image, but it might take a longer
-                                time to draw than a ``.JPG`` file. 
+                                time to draw than a ``.JPG`` file.
         ===================     ================================================
         """
         return self._raster.file_format
@@ -894,6 +1107,9 @@ class MapView(widgets.DOMWidget):
         item                   Required object. You can specify Item objects, Layer objects such as
                                FeatureLayer, ImageryLayer, MapImageLayer, FeatureSet,
                                FeatureCollection, ``arcgis.raster.Raster`` objects, etc.
+
+                               Item objects will have all of their layers individually 
+                               added to the map widget.
         ------------------     --------------------------------------------------------------------
         options                Optional dict. Specify visualization options such as renderer info,
                                opacity, definition expressions. See example below
@@ -902,19 +1118,19 @@ class MapView(widgets.DOMWidget):
         .. warning::
             Calling ``MapView.add_layer()`` on an ``arcgis.raster.Raster`` instance
             has the following limitations:
-            
+
             - Local raster overlays do not persist beyond the notebook session on
               published web maps/web scenes -- you would need to seperately publish
               these local rasters.
-            
-            - The entire raster image data is placed on the MapView's canvas with 
-              no performance optimizations. This means no pyramids, no dynamic 
-              downsampling, etc. Please be mindful of the size of the local raster 
+
+            - The entire raster image data is placed on the MapView's canvas with
+              no performance optimizations. This means no pyramids, no dynamic
+              downsampling, etc. Please be mindful of the size of the local raster
               and your computer's hardware limitations.
-            
-            - Pixel values and projections are not guaranteed to be accurate, 
-              especially when the local raster's Spatial Reference doesn't 
-              reproject accurately to Web Mercator (what the ``MapView`` 
+
+            - Pixel values and projections are not guaranteed to be accurate,
+              especially when the local raster's Spatial Reference doesn't
+              reproject accurately to Web Mercator (what the ``MapView``
               widget uses).
 
         .. code-block:: python
@@ -929,6 +1145,13 @@ class MapView(widgets.DOMWidget):
         """
         if options is None:
             options = {}
+        if isinstance(item, arcgis.features.FeatureLayer) and \
+           'renderer' not in options:
+            options['renderer'] = json.loads(item.renderer.json)
+        elif isinstance(item, pd.DataFrame) and \
+             'renderer' not in options and \
+             _is_geoenabled(item):
+            item = item.spatial.to_feature_collection()
         self._add_layer_to_widget(item, options)
 
     def _add_layer_to_webmap(self, item, options):
@@ -943,7 +1166,10 @@ class MapView(widgets.DOMWidget):
         from arcgis.gis import Item
         from arcgis._impl.common._mixins import PropertyMap
         from arcgis.mapping import MapImageLayer, VectorTileLayer
+        from arcgis.mapping.ogc._base import BaseOGC
         from pandas import DataFrame
+
+        self._update_time_extent_if_applicable(item)
 
         if isinstance(item, Raster):
             if isinstance(item._engine_obj, _ImageServerRaster):
@@ -960,7 +1186,8 @@ class MapView(widgets.DOMWidget):
                         log.warning("Item.layers is a 'NoneType' object: nothing to be added to map")
                     else:
                         for layer in item.layers:
-                            self._add_layer_to_widget(layer, options)
+                            self.add_layer(layer, options)
+                            #self._add_layer_to_widget(layer, options)
             except KeyError:
                 log.warning("No 'layers' in Item: will not be added to map")
         elif isinstance(item, Layer):
@@ -1021,6 +1248,11 @@ class MapView(widgets.DOMWidget):
                 if not added_successful:
                     item["_hashFromPython"] = self._get_hash(item)
                     self._add_notype_layer(item, item)
+        elif isinstance(item, BaseOGC):
+            self._add_layer_to_webmap(item, options)
+            _lyr = _make_jsonable_dict(item._lyr_json)
+            _lyr["_hashFromPython"] = self._get_hash(item)
+            self._add_notype_layer(item, _lyr)
         elif _is_iterable(item):
             # If it's any iterable not previously checked, attempt to infer
             if 'layers' in item:
@@ -1103,6 +1335,7 @@ class MapView(widgets.DOMWidget):
         from arcgis.gis import Layer
         from arcgis.gis import Item
         from arcgis._impl.common._mixins import PropertyMap
+        from arcgis.mapping.ogc._base import BaseOGC
 
         output_layers = []
         if isinstance(arg, Raster):
@@ -1113,6 +1346,8 @@ class MapView(widgets.DOMWidget):
                 return output_layers
 
         if isinstance(arg, Layer):
+            output_layers.append(arg)
+        if isinstance(arg, BaseOGC):
             output_layers.append(arg)
         elif isinstance(arg, Item):
             for layer in arg.layers:
@@ -1400,7 +1635,7 @@ class MapView(widgets.DOMWidget):
                thumbnail=None, metadata=None):
         """
         Updates the WebMap/Web Scene item that was used to create the MapWidget
-        object. In addition, you can update other item properties, thumbnail 
+        object. In addition, you can update other item properties, thumbnail
         and metadata.
 
         .. note::
@@ -1818,7 +2053,7 @@ class MapView(widgets.DOMWidget):
         if content.get('event', '') == 'draw-end':
             self._draw_end_handlers(self, content.get('message', None))
 
-    def zoom_to_layer(self, item, options={}): 
+    def zoom_to_layer(self, item, options={}):
         """Snaps the map to the extent of provided item or items.
 
         ==================     ====================================================================
@@ -1826,10 +2061,10 @@ class MapView(widgets.DOMWidget):
         ------------------     --------------------------------------------------------------------
         item                   The item at which you want to zoom your map to.
                                This can be a single or a list of Items, layers, DataFrame, FeatureSet,
-                               FeatureCollection.                               
+                               FeatureCollection.
         ------------------     --------------------------------------------------------------------
         options                Optional set of arguments.
-                               
+
         ==================     ====================================================================
         """
         target_extent = _get_extent(item)
@@ -1844,33 +2079,135 @@ class MapView(widgets.DOMWidget):
         self.extent = self.extent # Sometimes setting extent will not work for the same target extent if we do it multiple times, doing this fixes that issue.
         self.extent = target_extent
 
-    # Start section of no longer supported areas
-    def _raise_time_extent_exception(self):
-        raise Exception("Time extent functionality not supported in v1.5")
+    # Start time section
 
-    @property
-    def end_time(self):
-        """This feature is not supported in >v1.5."""
-        self._raise_time_extent_exception()
+    time_slider = Bool(False).tag(sync=True)
+    """If set to `True`, will display a time slider in the widget that will
+    allow you to visualize temporal data for an applicable layer added to
+    the map. Default: `False`.
+    """
 
-    @end_time.setter
-    def end_time(self, value):
-        self._raise_time_extent_exception()
+    time_mode = Unicode("time-window").tag(sync=True)
+    """String used for defining if the temporal data will be displayed
+    cumulatively up to a point in time, a single instant in time, or
+    within a time range.
 
-    def set_time_extent(self, start_time, end_time):
-        """This feature is not supported in >v1.5."""
-        self._raise_time_extent_exception()
+    Possible values: "instant", "time-window", "cumulative-from-start",
+    "cumulative-from-end". Default: "time-window"
+
+    See https://bit.ly/3dFSPa2 for more info.
+    """
+
+    _time_info = Dict({}).tag(sync=True)
+
+    _writeonly_start_time = Datetime().tag(sync=True)
+    _readonly_start_time = Unicode("").tag(sync=True)
+    """JS can't send `Date` objects -- ISO string of time"""
 
     @property
     def start_time(self):
-        """This feature is not supported in >v1.5."""
-        self._raise_time_extent_exception()
+        """`datetime.datetime` property. If `time_mode` == `"time-window"`,
+        represents the lower bound 'thumb' of the time slider. For all other
+        `time_mode` values, represents the single thumb on the time slider."""
+        date_as_iso = dateutil.parser.parse(self._readonly_start_time)
+        date_local = date_as_iso.astimezone()
+        return date_local
 
     @start_time.setter
     def start_time(self, value):
-        self._raise_time_extent_exception()
+        if not isinstance(value, dt.datetime):
+            raise Exception("Value must be of type `datetime.datetime`")
+        self._writeonly_start_time = dt.datetime(1,1,1)
+        self._writeonly_start_time = value
 
-    # end section of no longer supported areas
+    _writeonly_end_time = Datetime().tag(sync=True)
+    _readonly_end_time = Unicode("").tag(sync=True)
+    """JS can't send `Date` objects -- ISO string of time"""
+
+    @property
+    def end_time(self):
+        """`datetime.datetime` property. If `time_mode` == `"time-window"`,
+        represents the upper bound 'thumb' of the time slider. For all other
+        `time_mode` values, not used."""
+
+        date_as_iso = dateutil.parser.parse(self._readonly_end_time)
+        date_local = date_as_iso.astimezone()
+        return date_local
+
+    @end_time.setter
+    def end_time(self, value):
+        if not isinstance(value, dt.datetime):
+            raise Exception("Value must be of type `datetime.datetime`")
+        self._writeonly_end_time = dt.datetime(1,1,1)
+        self._writeonly_end_time = value
+
+    def _update_time_extent_if_applicable(self, item):
+        try:
+            if hasattr(item, 'properties') and \
+                hasattr(item.properties, "timeInfo"):
+                time_info = item.properties.timeInfo
+                if hasattr(time_info, "timeExtent"):
+                    start_time = dt.datetime.fromtimestamp(time_info.timeExtent[0] / 1000)
+                    end_time = dt.datetime.fromtimestamp(time_info.timeExtent[1] / 1000)
+                    kwargs = {}
+                    if time_info.defaultTimeInterval:
+                        kwargs["interval"] = time_info.defaultTimeInterval
+                    if time_info.defaultTimeIntervalUnits:
+                        item_units = time_info.defaultTimeIntervalUnits.lower()
+                        if "mill" in item_units:
+                            kwargs["unit"] = "milliseconds"
+                        elif "sec" in item_units:
+                            kwargs["unit"] = "seconds"
+                        elif "minute" in item_units:
+                            kwargs["unit"] = "minutes"
+                        elif "hour" in item_units:
+                            kwargs["unit"] = "hours"
+                        elif "day" in item_units:
+                            kwargs["unit"] = "days"
+                        elif "week" in item_units:
+                            kwargs["unit"] = "weeks"
+                        elif "month" in item_units:
+                            kwargs["unit"] = "months"
+                        elif "year" in item_units:
+                            kwargs["unit"] = "years"
+                        elif "decad" in item_units:
+                            kwargs["unit"] = "decades"
+                        elif "centur" in item_units:
+                            kwargs["unit"] = "centuries"
+                    self.set_time_extent(start_time, end_time, **kwargs)
+        except Exception:
+            pass
+
+
+    def set_time_extent(self, start_time, end_time, interval = 1, unit = "milliseconds"):
+        """When `time_slider = True`, the time extent to display on the time slider.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        start_time             Required `datetime.datetime`. The lower bound of the time extent to
+                               display on the time slider.
+        ------------------     --------------------------------------------------------------------
+        end_time               Required `datetime.datetime`. The upper bound of the time extent to
+                               display on the time slider.
+        ------------------     --------------------------------------------------------------------
+        interval               Optional number, default `1`. The numerical value of the time
+                               extent.
+        ------------------     --------------------------------------------------------------------
+        unit                   Optional string, default `"milliseconds"`. Temporal units. Possible
+                               values: `"milliseconds"`, `"seconds"`, `"minutes"`, `"hours"`,
+                               `"days"`, `"weeks"`, `"months"`, `"years"`, `"decades"`,
+                               `"centuries"`
+        ==================     ====================================================================
+
+        """
+        if not (isinstance(start_time, dt.datetime) and isinstance(end_time, dt.datetime)):
+            raise Exception("`start_time` and `end_time` arguments must be of type `datetime.datetime`")
+        self._time_info = {
+            'time_extent' : [start_time, end_time],
+            'interval' : interval,
+            'unit' : unit }
+    # end time section
 
     # start local raster overlay section
 
@@ -1890,6 +2227,152 @@ class MapView(widgets.DOMWidget):
         if self.ready:
             self._image_overlays_to_remove = tuple()
 
+    def _isinstance(self, *args, **kwargs):
+        return isinstance(*args, **kwargs)
+
     _image_overlays_to_remove = Tuple(tuple()).tag(sync=True)
     _overlay_this_image = Dict({}).tag(sync=True)
     _overlay_these_images_on_widget_load = Tuple(tuple()).tag(sync=True)
+
+    _synced_mapviews = []
+    _mapview_uuid_to_dlinks = {}
+    _dlinks = []
+
+    def sync_navigation(self, mapview):
+        """Synchronizes the navigation from this `MapView` to another `MapView`
+        instance so panning/zooming/navigating in one will update the other.
+
+        ==================     ===================================================================
+        **Argument**           **Description**
+        ------------------     -------------------------------------------------------------------
+        mapview                Either a single `MapView` instance, or a list of `MapView`
+                               instances to synchronize to.
+        ==================     ===================================================================
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: link the navigation of two maps together
+            from ipywidgets import HBox
+            map1 = gis.map("Chicago, IL")
+            map1.basemap = "gray"
+            map2 = gis.map("Chicago, IL")
+            map2.basemap = "dark-gray"
+            map1.sync_navigation(map2)
+            HBox([map1, map2])
+
+        """
+        if _is_iterable(mapview):
+            for m in mapview:
+                self.sync_navigation(m)
+        elif not self._isinstance(mapview, MapView):
+            raise Exception("Can only link navigation to a `MapView` instance")
+        else:
+            self._sync_navigation(mapview, ignore_errors = False)
+            for m in mapview._synced_mapviews:
+                m._sync_navigation(self, ignore_errors = True)
+            for m in self._synced_mapviews:
+                m._sync_navigation(mapview, ignore_errors = True)
+
+    def _sync_navigation(self, mapview, ignore_errors = False):
+        try:
+            # Check to make sure this call is valid
+            if mapview in self._synced_mapviews or \
+               self in mapview._synced_mapviews:
+                raise Exception(f"Not syncing MapView {mapview} since it is "
+                                 "already synced")
+            if self == mapview:
+                return
+
+            # Edge case for when you link widgets before they are drawn
+            if not self.ready:
+                self._readonly_extent = self._extent
+            if not mapview.ready:
+                mapview._readonly_extent = mapview._extent
+
+            # Set references to each other
+            self._synced_mapviews.append(mapview)
+            mapview._synced_mapviews.append(self)
+
+            # Set up, reference, and apply dlinks for each other,
+            self_dlinks = []
+            their_dlinks = []
+            self_dlinks.append(ipywidgets.dlink((self, "_readonly_extent"),
+                                           (mapview, "_link_writeonly_extent")))
+            their_dlinks.append(ipywidgets.dlink((mapview, "_readonly_extent"),
+                                           (self, "_link_writeonly_extent")))
+
+            self_dlinks.append(ipywidgets.dlink((self, "_readonly_rotation"),
+                                           (mapview, "_link_writeonly_rotation")))
+            their_dlinks.append(ipywidgets.dlink((mapview, "_readonly_rotation"),
+                                           (self, "_link_writeonly_rotation")))
+
+            self_dlinks.append(ipywidgets.dlink((self, "_readonly_heading"),
+                                           (mapview, "_link_writeonly_heading")))
+            their_dlinks.append(ipywidgets.dlink((mapview, "_readonly_heading"),
+                                           (self, "_link_writeonly_heading")))
+
+            self_dlinks.append(ipywidgets.dlink((self, "_readonly_tilt"),
+                                           (mapview, "_link_writeonly_tilt")))
+            their_dlinks.append(ipywidgets.dlink((mapview, "_readonly_tilt"),
+                                           (self, "_link_writeonly_tilt")))
+            self._mapview_uuid_to_dlinks[mapview._uuid] = self_dlinks
+            mapview._mapview_uuid_to_dlinks[self._uuid] = their_dlinks
+            return True
+        except Exception as e:
+            if ignore_errors:
+                return True
+            else:
+                raise e
+
+
+    def unsync_navigation(self, mapview=None):
+        """Unsynchronizes connections  made to other MapView instances made
+        via `my_mapview.sync_navigation(other_mapview)`.
+
+        ==================     ===================================================================
+        **Argument**           **Description**
+        ------------------     -------------------------------------------------------------------
+        mapview                (Optional) Either a single `MapView` instance, or a list of
+                               `MapView` instances to unsynchronize. If not specified, will
+                               unsynchronize all synced `MapView` instances
+        ==================     ===================================================================
+
+        """
+        if mapview is None:
+            mapview = self._synced_mapviews
+        if _is_iterable(mapview):
+            for m in mapview:
+                self.unsync_navigation(m)
+        elif not self._isinstance(mapview, MapView):
+            raise Exception("Can only unsync navigation to a `MapView` instance")
+        else:
+            self._unsync_navigation(mapview, ignore_errors = False)
+            for m in mapview._synced_mapviews:
+                m._unsync_navigation(self, ignore_errors = True)
+            for m in self._synced_mapviews:
+                m._unsync_navigation(mapview, ignore_errors = True)
+
+    def _unsync_navigation(self, mapview, ignore_errors = False):
+        try:
+            if mapview not in self._synced_mapviews and \
+               self not in mapview._synced_mapviews:
+                raise Exception(f"Not unsyncing MapView {mapview} since it "
+                                 "hasn't been synced")
+            if self == mapview:
+                return
+
+            for self_dlink in self._mapview_uuid_to_dlinks[mapview._uuid]:
+                self_dlink.unlink()
+            self._synced_mapviews.remove(mapview)
+            del self._mapview_uuid_to_dlinks[mapview._uuid]
+
+            for their_dlink in mapview._mapview_uuid_to_dlinks[self._uuid]:
+                their_dlink.unlink()
+            mapview._synced_mapviews.remove(self)
+            del mapview._mapview_uuid_to_dlinks[self._uuid]
+            return True
+        except Exception as e:
+            if ignore_errors:
+                return True
+            else:
+                raise e

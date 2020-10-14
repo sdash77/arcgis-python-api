@@ -1,5 +1,6 @@
 import arcgis
 from arcgis import gis
+from arcgis._impl.common._isd import InsensitiveDict
 from .admin.administration import Server
 import logging
 _log = logging.getLogger(__name__)
@@ -9,7 +10,7 @@ class ServerManager(object):
     Helper class for managing your ArcGIS Servers. This class is not created
     by users directly. An instance of this class, called 'servers',
     is available as a property of the gis.admin object. Administrators call methods
-    on this 'gis.admin.servers' object to manage and interrogate ArcGIS Servers.
+    on this :class:`ServerManager` object to manage and interrogate ArcGIS Servers.
     """
     _gis = None
     _catalog_list = None
@@ -18,7 +19,7 @@ class ServerManager(object):
     _gis = None
     _pa = None
     _federation = None
-
+    _properties = None
     #----------------------------------------------------------------------
     def __init__(self, gis):
         self._gis = gis
@@ -34,6 +35,16 @@ class ServerManager(object):
     def __repr__(self):
         return '<%s at %s>' % (type(self).__name__, self._pa._url)
     #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """
+        The `ServerManager` properties
+
+        :return: Dict
+        """
+        res = self._portal.con.post("portals/self/servers", {"f": "json"})
+        return InsensitiveDict(res)
+    #----------------------------------------------------------------------
     def list(self):
         """
         Retrieves all servers in a GIS.
@@ -41,7 +52,7 @@ class ServerManager(object):
         :returns:
            A list of all servers found in the GIS.
         """
-        
+
         from . import ServicesDirectory
         if self._server_list is not None:
             return self._server_list
@@ -53,14 +64,14 @@ class ServerManager(object):
         public_url = None
         for server in servers:
             admin_url = server['adminUrl']
-            public_url = server['url']            
+            public_url = server['url']
             try:
-                
+
                 if server['serverFunction'] == 'NotebookServer':
                     try:
                         from arcgis.gis.nb import NotebookServer
                         nbs = NotebookServer(url=admin_url, gis=self._gis)
-                        nbs.info                    
+                        nbs.info
                         self._server_list.append(nbs)
                     except:
                         from arcgis.gis.nb import NotebookServer
@@ -76,21 +87,21 @@ class ServerManager(object):
                     except:
                         ms = MissionServer(url=public_url, gis=self._gis)
                         ms.info
-                        self._server_list.append(ms)                        
+                        self._server_list.append(ms)
                 else:
                     try:
-                        
-                        c = ServicesDirectory(url=admin_url, 
+
+                        c = ServicesDirectory(url=admin_url,
                                               portal_connection=self._gis._portal.con)
                         c.admin.logs
                         self._server_list.append(c.admin)
                         self._catalog_list.append(c)
                     except:
-                        c = ServicesDirectory(url=public_url, 
+                        c = ServicesDirectory(url=public_url,
                                               portal_connection=self._gis._portal.con)
                         self._server_list.append(c.admin)
-                        self._catalog_list.append(c)                        
-                    
+                        self._catalog_list.append(c)
+
             except:
                 _log.warning("Could not access the server at " + admin_url)
 

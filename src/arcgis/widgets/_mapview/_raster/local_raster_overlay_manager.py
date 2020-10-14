@@ -55,7 +55,6 @@ class LocalRasterOverlayManager:
     def __init__(self, mapview):
         self._mapview = mapview
         self._attempt_infer_file_format()
-        self._clear_old_image_overlays()
 
     _overlays = []
 
@@ -69,10 +68,12 @@ class LocalRasterOverlayManager:
         self._file_format = value
 
     def overlay(self, raster):
+        self._clear_old_image_overlays()
         raster_data = self.try_get_raster_data(raster)
         img_path = self._save_img_to_jupyter_accessible_dir(
             raster_data.img_data, raster.cmap,
-            str(raster_data.id) + "." + self.file_format)
+            vmin = raster.vmin, vmax = raster.vmax,
+            filename = str(raster_data.id) + "." + self.file_format)
 
         extent = self._make_extent_valid(raster.extent)
 
@@ -86,17 +87,6 @@ class LocalRasterOverlayManager:
                                "img_path": img_path,
                                "img_url": img_url,
                                "extent": extent})
-        """
-        if zoom_to_raster:
-            try:
-                self._mapview.center = \
-                    { "spatialReference" : extent["spatialReference"],
-                      "x" : (extent["xmin"] + extent["xmax"]) / 2,
-                      "y" : (extent["ymin"] + extent["ymax"]) / 2 }
-                self._mapview.extent = extent
-            except Exception as e:
-                self._mapview.extent = extent
-        """
 
     _SUPPORTED_IMAGE_FORMATS = [".png", ".jpg", ".tif"]
     def _is_supported_image_file(self, image):
@@ -176,10 +166,15 @@ class LocalRasterOverlayManager:
 
     _DEFAULT_CMAP = "Greys_r" # Mirrors the style of default ArcGIS Pro
 
-    def _save_img_to_jupyter_accessible_dir(self, img_data, cmap, filename):
+    def _save_img_to_jupyter_accessible_dir(self, img_data, cmap, vmin, vmax, filename):
         import matplotlib.pyplot as plt
         img_path = os.path.join(self._get_image_overlays_dir(), filename)
         num_bands = self._get_num_bands(img_data)
+        kwargs = {}
+        if vmin:
+            kwargs["vmin"] = vmin
+        if vmax:
+            kwargs["vmax"] = vmax
         if not cmap:
             if num_bands != 1 and num_bands != 3 and num_bands != 4:
                 raise Exception(f"This raster has {num_bands} bands -- Number "\
@@ -187,14 +182,16 @@ class LocalRasterOverlayManager:
                     f"Consider choosing a subset of bands, or make sure the "\
                     f"shape of the data is valid. (Shape: {img_data.shape}).")
             if num_bands == 1:
-                plt.imsave(img_path, img_data, cmap = self._DEFAULT_CMAP)
-            else:
-                plt.imsave(img_path, img_data)
+                kwargs["cmap"] = self._DEFAULT_CMAP
         else:
             if num_bands != 1:
                 raise Exception(f"To use a cmap, the input raster "\
                                 f"must have only 1 band, not {num_bands}")
-            plt.imsave(img_path, img_data, cmap=cmap)
+            else:
+                kwargs["cmap"] = cmap
+
+        plt.imsave(img_path, img_data, **kwargs)
+
         return img_path
 
     def _get_num_bands(self, img_data):
