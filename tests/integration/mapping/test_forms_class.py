@@ -263,6 +263,8 @@ class Test_Forms(unittest.TestCase):
             self.assertEqual(form.elements[0].description, "test")
             self.assertEqual(form.elements[0].hint, "the name")
             self.assertEqual(form.elements[0].editable, True)
+            with self.assertRaises(ValueError):
+                form_element.field_name = "blah"
 
         except AssertionError as assertErrorException:
             raise assertErrorException
@@ -282,13 +284,19 @@ class Test_Forms(unittest.TestCase):
             self.assertEqual(group.label, "Group 1")
             self.assertEqual(group.description, "test")
             self.assertEqual(group.initial_state, "collapsed")
+            with self.assertRaises(ValueError):
+                group.initial_state = "blah"
 
             el = group.add_element(field_name="facname")
             self.assertEqual(len(group.elements), 1)
             got_el = group.get_element(el.label)
             self.assertIsInstance(got_el, FormFieldElement)
+            not_found_el = group.get_element(label="blah")
+            self.assertEqual(not_found_el, None)
             group.delete_element(el)
             self.assertEqual(len(group.elements), 0)
+            not_deleted_el = group.delete_element(label="blah")
+            self.assertEqual(not_deleted_el, False)
 
         except AssertionError as assertErrorException:
             raise assertErrorException
@@ -304,12 +312,53 @@ class Test_Forms(unittest.TestCase):
         try:
             form = self.forms.get_form(title="Shelters")
             expression = FormExpressionInfo(title="New Expression", name="expr0", expression="test")
-            expression_2 = FormExpressionInfo(title="New Expression 2", name="expr0", expression="test")
+            self.assertEqual(expression.title, "New Expression")
+            expression.title = "New Expression 2"
+            with self.assertRaises(ValueError):
+                expression.name = None
+            self.assertEqual(expression.return_type, "boolean")
+            expression_2 = FormExpressionInfo(title="New Expression 3", name="expr0", expression="test")
             el = FormFieldElement(form, label="test", field_name="facname", visibility_expression=expression, required_expression=expression_2)
             form.add_element(el)
             self.assertEqual(len(form.expressions), 2)
             form.delete_element(el)
             self.assertEqual(len(form.expressions), 0)
+
+        except AssertionError as assertErrorException:
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_forms_validation(self):
+        try:
+            with self.assertRaises(ValueError):
+                feature_layer = arcgis.features.FeatureLayer(url="blah")
+                FormCollection(parent=feature_layer)
+            with self.assertRaises(ValueError):
+                self.forms.get_form()
+            with self.assertRaises(ValueError):
+                FormInfo(layer_data="blah", parent="blah")
+            form = self.forms.get_form(title="Shelters")
+            self.assertEqual(form.get_element(label="blah"), None)
+            self.assertEqual(form.delete_element(label="blah"), False)
+            with self.assertRaises(ValueError):
+                form._validate_input(element="blah", field="blah")
+            with self.assertRaises(ValueError):
+                form._validate_input(element="blah")
+            with self.assertRaises(ValueError):
+                form._validate_input(field=8)
+            el = FormFieldElement(form, field_name="facname")
+            with self.assertRaises(ValueError):
+                form._validate_element(el)
+            with self.assertRaises(ValueError):
+                el.element_type = "blah"
+            with self.assertRaises(ValueError):
+                el.visibility_expression = "blah"
 
         except AssertionError as assertErrorException:
             raise assertErrorException
