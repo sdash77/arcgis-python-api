@@ -210,7 +210,7 @@ class Test_FeatureLayerCollectionManager_portal(unittest.TestCase):
 
             # verify number of features and attributes
             fset = flayer.query()
-            overwritten_flayer_df = fset.df
+            overwritten_flayer_df = fset.sdf
 
             # add two extra columns to account for x,y geometries that get added
             self.assertEqual((20, 8), overwritten_flayer_df.shape,
@@ -274,7 +274,7 @@ class Test_FeatureLayerCollectionManager_portal(unittest.TestCase):
 
             #verify number of features and attributes
             fset = flayer.query()
-            overwritten_flayer_df = fset.df
+            overwritten_flayer_df = fset.sdf
 
             # add two extra columns to account for x,y geometries that get added
             self.assertEqual((20, 8), overwritten_flayer_df.shape,
@@ -336,7 +336,7 @@ class Test_FeatureLayerCollectionManager_portal(unittest.TestCase):
 
             # verify number of features and attributes
             fset = flayer.query()
-            overwritten_flayer_df = fset.df
+            overwritten_flayer_df = fset.sdf
 
             # add two extra columns to account for x,y geometries that get added
             self.assertEqual((20, 8), overwritten_flayer_df.shape,
@@ -398,7 +398,7 @@ class Test_FeatureLayerCollectionManager_portal(unittest.TestCase):
 
             # verify number of features and attributes
             fset = flayer.query()
-            overwritten_flayer_df = fset.df
+            overwritten_flayer_df = fset.sdf
 
             # add two extra columns to account for x,y geometries that get added
             self.assertEqual((20, 8), overwritten_flayer_df.shape,
@@ -454,29 +454,31 @@ class Test_FeatureLayerCollectionManager_online(unittest.TestCase):
         # endregion
 
         # region Publish the feature layer if it does not exist
-        cls.namePrefix = "dino_FeatureLayerCollectionManager_"
-        layer_name = cls.namePrefix + "basic"
-
-        search_result = PortalUtils.search_portal_item(cls.gis, layer_name, "Feature Layer")
-        if search_result is not None:
-            print("Found necessary feature layer")
-            cls.feature_layer1_item = search_result
-        else:
-            print("Cannot find necessary feature layer, publishing a new layer")
-            csv_path = cls.qalab_cls_path + 'simple_points.csv'
-            csv_item = cls.gis.content.add({'title': layer_name}, data=csv_path)
-
-            # publish the csv item
-            if csv_item is not None:
-                cls.feature_layer1_item = csv_item.publish({'title': layer_name})
-                if cls.feature_layer1_item is not None:
-                    print("Published edit_feature_definition_points feature layer")
-                else:
-                    print("Failed to publish csv to feature layer")
-                    class_skip = True
-            else:
-                print("Failed to add necessary csv file to portal")
-                class_skip = True
+        # cls.namePrefix = "dino_FeatureLayerCollectionManager_"
+        # layer_name = cls.namePrefix + "basic"
+        #
+        # search_result = PortalUtils.search_portal_item(cls.gis, layer_name, "Feature Layer")
+        # if search_result is not None:
+        #     print("Found necessary feature layer")
+        #     cls.feature_layer1_item = search_result
+        # else:
+        #     print("Cannot find necessary feature layer, publishing a new layer")
+        #     csv_path = cls.qalab_cls_path + 'simple_points.csv'
+        #     csv_item = PortalUtils.search_portal_item(cls.gis, 'simple_points.csv', 'CSV')
+        #     if not csv_item:
+        #         csv_item = cls.gis.content.add({'title': layer_name}, data=csv_path)
+        #
+        #     # publish the csv item
+        #     if csv_item is not None:
+        #         cls.feature_layer1_item = csv_item.publish({'title': layer_name})
+        #         if cls.feature_layer1_item is not None:
+        #             print("Published edit_feature_definition_points feature layer")
+        #         else:
+        #             print("Failed to publish csv to feature layer")
+        #             class_skip = True
+        #     else:
+        #         print("Failed to add necessary csv file to portal")
+        #         class_skip = True
         # endregion
 
         print("==================================================================")
@@ -499,7 +501,7 @@ class Test_FeatureLayerCollectionManager_online(unittest.TestCase):
     def tearDownClass(cls):
         print("\n==================================================================")
 
-    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(True, "Test condition not met. Check if old outputs are present")
     def test_create_FeatureLayerCollectionManager_object(self):
         """
         Purpose of this test is to create instances of FeatureLayerCollectionManager class in multiple ways
@@ -576,7 +578,7 @@ class Test_FeatureLayerCollectionManager_online(unittest.TestCase):
 
             # verify number of features and attributes
             fset = flayer.query()
-            overwritten_flayer_df = fset.df
+            overwritten_flayer_df = fset.sdf
 
             # add two extra columns to account for x,y geometries that get added
             self.assertEqual((20, 8), overwritten_flayer_df.shape,
@@ -640,7 +642,7 @@ class Test_FeatureLayerCollectionManager_online(unittest.TestCase):
 
             #verify number of features and attributes
             fset = flayer.query()
-            overwritten_flayer_df = fset.df
+            overwritten_flayer_df = fset.sdf
 
             # add two extra columns to account for x,y geometries that get added
             self.assertEqual((20, 8), overwritten_flayer_df.shape,
@@ -702,7 +704,7 @@ class Test_FeatureLayerCollectionManager_online(unittest.TestCase):
 
             #verify number of features and attributes
             fset = flayer.query()
-            overwritten_flayer_df = fset.df
+            overwritten_flayer_df = fset.sdf
 
             # add two extra columns to account for x,y geometries that get added
             self.assertEqual((20, 8), overwritten_flayer_df.shape,
@@ -764,7 +766,7 @@ class Test_FeatureLayerCollectionManager_online(unittest.TestCase):
 
             # verify number of features and attributes
             fset = flayer.query()
-            overwritten_flayer_df = fset.df
+            overwritten_flayer_df = fset.sdf
 
             # add two extra columns to account for x,y geometries that get added
             self.assertEqual((20, 8), overwritten_flayer_df.shape,
