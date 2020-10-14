@@ -4827,11 +4827,20 @@ class Raster():
         on a MapView, vmin and vmax define the data range that the colormap covers.
         This property is the lower end of that range.
         """
+        if self._vmin is None:
+            self._vmin = self._attempt_infer_vmin()
         return self._vmin
 
     @vmin.setter
     def vmin(self, value):
         self._vmin = value
+
+    def _attempt_infer_vmin(self):
+        # only tested against _ArcpyRaster engines..
+        try:
+            return self._engine_obj._raster.minimum
+        except Exception:
+            return None
 
     _vmax = None
     @property
@@ -4840,11 +4849,20 @@ class Raster():
         on a MapView, vmin and vmax define the data range that the colormap covers.
         This property is the upper end of that range.
         """ 
+        if self._vmax is None:
+            self._vmax = self._attempt_infer_vmax()
         return self._vmax
 
     @vmax.setter
     def vmax(self, value):
         self._vmax = value
+
+    def _attempt_infer_vmax(self):
+        # only tested against _ArcpyRaster engines..
+        try:
+            return self._engine_obj._raster.maximum
+        except Exception:
+            return None
 
     _opacity = 1
     @property
