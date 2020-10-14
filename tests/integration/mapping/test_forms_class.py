@@ -1,7 +1,7 @@
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Name:        Forms class tests
 # Purpose:     Sanity tests for ArcGIS Python API
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
@@ -45,7 +45,7 @@ def setUpModule():
     :return:
     """
     # Get environment status
-    print("ArcPy on system: " , PreconditionChecks.check_ArcPy_import())
+    print("ArcPy on system: ", PreconditionChecks.check_ArcPy_import())
     print("Is Pro installed: ", PreconditionChecks.check_Pro_installed())
     print("Host OS: " + PreconditionChecks.get_OS())
 
@@ -286,7 +286,7 @@ class Test_Forms(unittest.TestCase):
             el = group.add_element(field_name="facname")
             self.assertEqual(len(group.elements), 1)
             got_el = group.get_element(el.label)
-            self.assertIsInstance(got_el, FormInfo)
+            self.assertIsInstance(got_el, FormFieldElement)
             group.delete_element(el)
             self.assertEqual(len(group.elements), 0)
 
@@ -310,7 +310,6 @@ class Test_Forms(unittest.TestCase):
             self.assertEqual(len(form.expressions), 2)
             form.delete_element(el)
             self.assertEqual(len(form.expressions), 0)
-
 
         except AssertionError as assertErrorException:
             raise assertErrorException

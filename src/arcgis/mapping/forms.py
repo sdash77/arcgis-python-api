@@ -106,13 +106,13 @@ class FormCollection:
         for layer in layers:
             forms.append(FormInfo(layer, parent))
 
-    def _get_forms_from_item(cls, item):
+    def _get_forms_from_item(self, item):
         """Populates self.forms given an item"""
         # we only support from_item for the instance where the form is saved into the feature layer item
         forms = []
         item_data = item.get_data()
         if "layers" in item_data:
-            cls._construct_forms_array(forms, item_data["layers"], parent=item)
+            self._construct_forms_array(forms, item_data["layers"], parent=item)
         return forms
 
     def _get_forms_from_webmap(self, webmap):
@@ -497,14 +497,14 @@ class FormInfo:
         """Returns the id fields in lower case"""
         try:
             return [self._feature_layer.properties.get("objectIdField").lower(), self._feature_layer.properties.get("globalIdField").lower()]
-        except:
+        except Exception:
             return []
 
     def _get_edit_fields(self):
         """Gets the edit fields for the feature layer in order to filter them out of the form"""
         try:
             return [x.lower() for x in list(self._feature_layer.properties.get("editFieldsInfo", {}).values())]
-        except:
+        except Exception:
             return []
 
     def _get_form_element_objects(self, form_elements):
