@@ -93,7 +93,7 @@ class FormCollection:
             for form in self.forms:
                 # item id is optional in the webmap spec, so we need to try/except
                 try:
-                    if (title == form._layer["title"]) or (layer_id == form._layer["id"]) or (item_id == form._layer["itemId"]):
+                    if (title == form._layer_data["title"]) or (layer_id == form._layer_data["id"]) or (item_id == form._layer_data["itemId"]):
                         return form
                 except Exception:
                     pass
@@ -178,7 +178,7 @@ class FormInfo:
     def __init__(self, layer_data, parent):
         if not isinstance(layer_data, (dict, PropertyMap)):
             raise ValueError("Incorrect layer type passed to FormInfo class. Please pass in a property map")
-        self.form = layer_data.get("formInfo", {"formElements": [], "title": ""})
+        self.form = layer_data.get("formInfo", {"formElements": [], "title": layer_data.get("title")})
         self._form_elements = self.form.get("formElements", [])
         # this constructs the public form elements array
         self.form_elements = self._get_form_element_objects(self._form_elements)
