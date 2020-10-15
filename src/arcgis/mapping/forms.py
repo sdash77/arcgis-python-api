@@ -11,12 +11,12 @@ from arcgis.features import FeatureLayer
 
 class FormCollection:
     """
-        Represents a collection of "smart forms" in a webmap or item. A form is the editable counterpart to a popup
+        Represents a collection of forms in a webmap or item. A form is the editable counterpart to a popup
         -- it controls the appearance and behavior of your data collection experience in ArcGIS Field Maps
-        and Map Viewer Beta.  These forms can then be used in ArcGIS Field Maps and other applications.
+        and Map Viewer Beta.  These forms can then be used in the ArcGIS Field Maps mobile app and other applications.
         A form is stored as "formInfo" in the layer JSON on the webmap.
         This class will create a :class:`arcgis.mapping.forms.FormInfo` object for each layer or table in the webmap/item data and return it
-        as a list. You can then modify the :class:`~arcgis.mapping.forms.FormInfo` object to add and edit your smart form.
+        as a list. You can then modify the :class:`~arcgis.mapping.forms.FormInfo` object to add and edit your form.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -64,7 +64,7 @@ class FormCollection:
             raise ValueError("Parent item must be webmap or feature layer collection")
 
     def get_forms(self):
-        """Returns a list of :class:`~arcgis.mapping.forms.FormInfo` objects, each corresponding to a layer or table in the parent"""
+        """Returns a list of :class:`~arcgis.mapping.forms.FormInfo` objects, each corresponding to a layer or table in the parent."""
         return self.forms
 
     def get_form(self, item_id=None, title=None, layer_id=None):
@@ -101,13 +101,13 @@ class FormCollection:
 
     @staticmethod
     def _construct_forms_array(forms, layers, parent):
-        """This is a shared method which creates an array of forms if given an array of layers"""
+        """This is a shared method which creates an array of forms if given an array of layers."""
         # we save parent here into the form in order to distinguish between whether from_item or from_webmap was used and to get a usable GIS
         for layer in layers:
             forms.append(FormInfo(layer, parent))
 
     def _get_forms_from_item(self, item):
-        """Populates self.forms given an item"""
+        """Populates self.forms given an item."""
         # we only support from_item for the instance where the form is saved into the feature layer item
         forms = []
         item_data = item.get_data()
@@ -116,7 +116,7 @@ class FormCollection:
         return forms
 
     def _get_forms_from_webmap(self, webmap):
-        """Populates self.forms given a webmap"""
+        """Populates self.forms given a webmap."""
         forms = []
         self._construct_forms_array(forms, webmap.layers, parent=webmap)
         self._construct_forms_array(forms, webmap.tables, parent=webmap)
@@ -125,7 +125,7 @@ class FormCollection:
 
 class FormInfo:
     """
-        Represents a "smart form" in ArcGIS Field Maps and other applications. This matches with
+        Represents a form in ArcGIS Field Maps and other applications. This matches with
         the formInfo property in a webmap's operational layer.
 
         For more please see: https://developers.arcgis.com/web-map-specification/objects/formInfo/
@@ -202,7 +202,7 @@ class FormInfo:
         return json.dumps(self.form, indent=2)
 
     def exists(self):
-        """Returns whether or not the form exists for that particular layer"""
+        """Returns whether or not the form exists for that particular layer."""
         return len(self._form_elements) > 0
 
     def clear_all(self):
@@ -266,9 +266,9 @@ class FormInfo:
         return self.expression_infos
 
     def update(self):
-        """Saves the form to the backend. If form was derived from an Item, calling this function is required
+        """Saves the form to the backend. If the form was derived from an Item, calling this function is required
         to save the form into the item. If the form was derived from a WebMap, you can either call this
-        function or WebMap.update()"""
+        function or WebMap.update()."""
         # this function is required to successfully save a form back into an item
         if not self.exists():
             # if form doesn't exist, clear it out so it works in mobile
@@ -286,7 +286,7 @@ class FormInfo:
             pass
 
     def add_all_attributes(self):
-        """Adds all fields which can be valid form elements (string, date, int, double, small) to the form"""
+        """Adds all fields which can be valid form elements (string, date, int, double, small) to the form."""
         fields = self._fields
         for field in fields:
             try:
@@ -427,7 +427,7 @@ class FormInfo:
                 self.delete_element(element)
 
     def _get_field_form_element(self, label=None, editable=None, field_name=None):
-        """From inputs, get the input type from the corresponding field and return the FormFieldElement for adding to the form"""
+        """From inputs, get the input type from the corresponding field and return the FormFieldElement for adding to the form."""
         matching_field = self._get_matching_field(field_name)
         if self._is_valid_field_type(matching_field["type"]):
             input_type = self._get_default_input_type(matching_field)
@@ -437,7 +437,7 @@ class FormInfo:
             raise ValueError("Not a valid field type to add to a form")
 
     def _get_matching_field(self, field_name):
-        """Get the feature layer field given a popup field"""
+        """Get the feature layer field given a popup field."""
         for field in self._fields:
             if field_name.lower() == field["name"].lower():
                 return field
@@ -456,7 +456,7 @@ class FormInfo:
 
     @staticmethod
     def _get_default_input_type(field):
-        """Gets the default input type based on the field type"""
+        """Gets the default input type based on the field type."""
         if "domain" not in field:
             if "date" in field["type"].lower():
                 return "datetime-picker"
@@ -467,7 +467,7 @@ class FormInfo:
 
     @staticmethod
     def _validate_input(element=None, field=None):
-        """Validate the inputs provided to add_element are valid"""
+        """Validate the inputs provided to add_element are valid."""
         if element and field:
             raise ValueError("Please use either element or field, not both")
         if element and not isinstance(element, FormElement):
@@ -476,7 +476,7 @@ class FormInfo:
             raise ValueError("Please pass a string into the element parameter")
 
     def _validate_element(self, element):
-        """Validate the element passed to or created by add element is correct"""
+        """Validate the element passed to or created by add element is correct."""
         if not element.label:
             raise ValueError("Element must have label")
         if element.element_type == "field":
@@ -493,25 +493,25 @@ class FormInfo:
                         raise ValueError("Field already exists in the form, cannot add to the form")
 
     def _validate_unrestricted_field_name(self, field_name):
-        """Validates the field is not a GPS metdata, edit, or id field"""
+        """Validates the field is not a GPS metdata, edit, or id field."""
         return "esrignss" not in field_name and "esrisnsr" not in field_name and field_name not in self._edit_fields and field_name not in self._id_fields
 
     def _get_id_fields(self):
-        """Returns the id fields in lower case"""
+        """Returns the id fields in lower case."""
         try:
             return [self._feature_layer.properties.get("objectIdField").lower(), self._feature_layer.properties.get("globalIdField").lower()]
         except Exception:
             return []
 
     def _get_edit_fields(self):
-        """Gets the edit fields for the feature layer in order to filter them out of the form"""
+        """Gets the edit fields for the feature layer in order to filter them out of the form."""
         try:
             return [x.lower() for x in list(self._feature_layer.properties.get("editFieldsInfo", {}).values())]
         except Exception:
             return []
 
     def _get_form_element_objects(self, form_elements):
-        """Shared between FormInfo and FormGroupElement to construct an array of FormElement objects from dictionaries for external usage"""
+        """Shared between FormInfo and FormGroupElement to construct an array of FormElement objects from dictionaries for external usage."""
         elements = []
         for element in form_elements:
             if element["type"] == "field":
@@ -529,21 +529,21 @@ class FormInfo:
         return elements
 
     def _get_expression_info_objects(self):
-        """Populates the public expression info objects with the JSON"""
+        """Populates the public expression info objects with the JSON."""
         expression_infos = []
         for expression in self._expression_infos:
             expression_infos.append(FormExpressionInfo(expression=expression.get("expression"), title=expression.get("title"), name=expression.get("name")))
         return expression_infos
 
     def _get_expression_info(self, name):
-        """Returns expression info based on name"""
+        """Returns expression info based on name."""
         for expression in self.expression_infos:
             if expression.name == name:
                 return expression
         return None
 
     def _delete_expression_info(self, name):
-        """Deletes a single expression info by looking up its name in the list of FormExpressionInfo"""
+        """Deletes a single expression info by looking up its name in the list of FormExpressionInfo."""
         expression = self._get_expression_info(name)
         if expression:
             self._expression_infos.remove(expression._expression_info)
@@ -553,7 +553,7 @@ class FormInfo:
             return False
 
     def _remove_linked_expression_infos(self, element):
-        """Deletes corresponding visibility and required expressions from the list of FormExpressionInfo"""
+        """Deletes corresponding visibility and required expressions from the list of FormExpressionInfo."""
         if element.visibility_expression:
             self._delete_expression_info(element.visibility_expression)
         if element.element_type == "field" and element.required_expression:
@@ -562,7 +562,7 @@ class FormInfo:
 
 class FormElement:
     """The superclass class for FormFieldElement and FormGroupElement. Contains properties common to
-    the two types of field elements. Instantiate a FormFieldElement or FormGroupElement instead.
+    the two types of field elements. Instantiate a FormFieldElement or FormGroupElement instead of this class.
     """
 
     def __init__(self, form_obj, element_type=None, description=None, label=None, visibility_expression=None):
@@ -578,7 +578,7 @@ class FormElement:
 
     @property
     def description(self):
-        """Gets/sets the description of the form element"""
+        """Gets/sets the description of the form element."""
         return self._element.get("description")
 
     @description.setter
@@ -587,7 +587,7 @@ class FormElement:
 
     @property
     def label(self):
-        """Gets/sets the label of the form element"""
+        """Gets/sets the label of the form element."""
         return self._element.get("label")
 
     @label.setter
@@ -596,7 +596,7 @@ class FormElement:
 
     @property
     def element_type(self):
-        """Gets the element type of the form element"""
+        """Gets the element type of the form element."""
         return self._element.get("type")
 
     @element_type.setter
@@ -608,7 +608,7 @@ class FormElement:
 
     @property
     def visibility_expression(self):
-        """Gets/sets the visibility expression of the form element"""
+        """Gets/sets the visibility expression of the form element."""
         return self._element.get("visibilityExpression")
 
     @visibility_expression.setter
@@ -710,7 +710,7 @@ class FormFieldElement(FormElement):
 
     @property
     def domain(self):
-        """Gets/sets the domain of the form element"""
+        """Gets/sets the domain of the form element."""
         return self._element.get("domain")
 
     @domain.setter
@@ -721,7 +721,7 @@ class FormFieldElement(FormElement):
 
     @property
     def editable(self):
-        """Gets/sets the editability of the form element"""
+        """Gets/sets the editability of the form element."""
         return self._element.get("editable")
 
     @editable.setter
@@ -730,7 +730,7 @@ class FormFieldElement(FormElement):
 
     @property
     def field_name(self):
-        """Gets the field name for the form element"""
+        """Gets the field name for the form element."""
         if self._element.get("fieldName"):
             return self._element.get("fieldName").lower()
         else:
@@ -745,7 +745,7 @@ class FormFieldElement(FormElement):
 
     @property
     def hint(self):
-        """Gets/sets the hint of the form element"""
+        """Gets/sets the hint of the form element."""
         return self._element.get("hint")
 
     @hint.setter
@@ -754,7 +754,7 @@ class FormFieldElement(FormElement):
 
     @property
     def input_type(self):
-        """Gets/sets the input type of the form element"""
+        """Gets/sets the input type of the form element."""
         return self._element.get("inputType")
 
     @input_type.setter
@@ -765,7 +765,7 @@ class FormFieldElement(FormElement):
 
     @property
     def required_expression(self):
-        """Gets/sets the required expression of the form element. Takes an object of FormExpressionInfo"""
+        """Gets/sets the required expression of the form element. Takes an object of FormExpressionInfo."""
         return self._element.get("requiredExpression")
 
     @required_expression.setter
@@ -846,12 +846,12 @@ class FormGroupElement(FormElement):
 
     @property
     def elements(self):
-        """Returns elements in the group to the user - a list of :class:`arcgis.mapping.forms.FormElement`"""
+        """Returns elements in the group to the user - a list of :class:`arcgis.mapping.forms.FormElement`."""
         return self.form_elements
 
     @property
     def initial_state(self):
-        """Gets/sets the initial state of the form element"""
+        """Gets/sets the initial state of the form element."""
         return self._element.get("initialState")
 
     @initial_state.setter
@@ -1004,7 +1004,7 @@ class FormExpressionInfo:
 
     @property
     def expression(self):
-        """Gets/sets the expression for the expression info"""
+        """Gets/sets the expression for the expression info."""
         return self._expression_info.get("expression")
 
     @expression.setter
@@ -1016,7 +1016,7 @@ class FormExpressionInfo:
 
     @property
     def name(self):
-        """Gets/sets the name for the expression info"""
+        """Gets/sets the name for the expression info."""
         return self._expression_info.get("name")
 
     @name.setter
@@ -1028,7 +1028,7 @@ class FormExpressionInfo:
 
     @property
     def return_type(self):
-        """Gets/sets the return type for the expression info"""
+        """Gets/sets the return type for the expression info."""
         return self._expression_info.get("returnType")
 
     @return_type.setter
@@ -1037,7 +1037,7 @@ class FormExpressionInfo:
 
     @property
     def title(self):
-        """Gets/sets the title for the expression info"""
+        """Gets/sets the title for the expression info."""
         return self._expression_info.get("title")
 
     @title.setter
