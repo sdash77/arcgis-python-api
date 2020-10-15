@@ -240,7 +240,7 @@ class TextClassifier(ArcGISModel):
             emd = json.load(f)
 
         pretrained_model = emd["PretrainedModel"]
-        mixed_precision = emd["MixedPrecisionTraining"]
+        mixed_precision = emd["UseFP16"]
         text_cols = emd["TextColumns"]
         label_cols = emd["LabelColumns"]
         class_labels = list(emd["Label2Id"].keys())
@@ -342,7 +342,7 @@ class TextClassifier(ArcGISModel):
         _emd_template["Architecture"]= self.learn.model._transformer_architecture
         _emd_template["PretrainedModel"]= self.learn.model._transformer_pretrained_model_name
         _emd_template["ModelType"] = "Transformer"
-        _emd_template["MixedPrecisionTraining"] = self._mixed_precision
+        _emd_template["UseFP16"] = self._mixed_precision
         _emd_template["TextColumns"] = self._data._text_cols
         _emd_template["LabelColumns"] = self._data._label_cols
         _emd_template["Label2Id"] = self.learn.model._config.label2id

@@ -162,22 +162,24 @@ class EntityRecognizer:
                                 to be used for training the model. If ``lr=None``,
                                 an optimal learning rate is automatically deduced
                                 for training the model.
+                                **Note - Passing slice of floats as `lr` value
+                                is not supported for models with `spaCy` backbone.
         ---------------------   -------------------------------------------
         one_cycle               Optional boolean. Parameter to select 1cycle
                                 learning rate schedule. If set to `False` no
                                 learning rate schedule is used.
-                                **Note - Not implemented for spacy backbone
+                                **Note - Not applicable for models with spaCy backbone
         ---------------------   -------------------------------------------
         early_stopping          Optional boolean. Parameter to add early stopping.
                                 If set to 'True' training will stop if validation
                                 loss stops improving for 5 epochs.
-                                **Note - Not implemented for spacy backbone
+                                **Note - Not applicable for models with spaCy backbone
         ---------------------   -------------------------------------------
         checkpoint              Optional boolean. Parameter to save the best model
                                 during training. If set to `True` the best model
                                 based on validation loss will be saved during
                                 training.
-                                **Note - Not implemented for spacy backbone
+                                **Note - Not applicable for models with spaCy backbone
         ---------------------   -------------------------------------------
         tensorboard             Optional boolean. Parameter to write the training log.
                                 If set to 'True' the log will be saved at
@@ -185,7 +187,7 @@ class EntityRecognizer:
                                 tensorboard. Required tensorboardx version=1.7 (Experimental support).
 
                                 The default value is 'False'.
-                                **Note - Not implemented for spacy backbone
+                                **Note - Not applicable for models with spaCy backbone
         =====================   ===========================================
         """
         self._model.fit(epochs=epochs, lr=lr, one_cycle=one_cycle, early_stopping=early_stopping,
@@ -206,23 +208,18 @@ class EntityRecognizer:
                                 with model name as directory name and creates
                                 all the intermediate directories.
         ---------------------   -------------------------------------------
-        framework               Optional string. Defines the framework of the
-                                model. (Only supported by ``SingleShotDetector``, currently.)
-                                If framework used is ``TF-ONNX``, ``batch_size`` can be
-                                passed as an optional keyword argument.
-
-                                Framework choice: 'PyTorch' and 'TF-ONNX'
-        ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
+                                Default is set to False.
         ---------------------   -------------------------------------------
         gis                     Optional GIS Object. Used for publishing the item.
                                 If not specified then active gis user is taken.
         ---------------------   -------------------------------------------
         compute_metrics         Optional boolean. Used for computing model
-                                metrics.
+                                metrics. Default is set to True.
         ---------------------   -------------------------------------------
         save_optimizer          Optional boolean. Used for saving the model-optimizer
                                 state along with the model. Default is set to False
+                                Not applicable for models with `spaCy` backbone.
         ---------------------   -------------------------------------------
         kwargs                  Optional Parameters:
                                 Boolean `overwrite` if True, it will overwrite
