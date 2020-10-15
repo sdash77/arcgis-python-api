@@ -7185,32 +7185,38 @@ class _ArcpyRaster(Raster,ImageryLayer):
         """
         if self._raster_info !={}:
             return self._raster_info
-        if self.extent is not None:
-            self._raster_info.update({"extent":dict(self.extent)})
+        try:
+            ras_info =  self._raster.getRasterInfo()
+            ras_info_dict = json.loads(ras_info.toJSONString())
+            self._raster_info = ras_info_dict
+        except:
+            #if getRasterInfo fails, get the info from the properties
+            if self.extent is not None:
+                self._raster_info.update({"extent":dict(self.extent)})
 
-        if self.band_count is not None:
-            self._raster_info.update({"bandCount":self.band_count})
+            if self.band_count is not None:
+                self._raster_info.update({"bandCount":self.band_count})
 
-        if self.pixel_type is not None:
-            self._raster_info.update({"pixelType":self.pixel_type})
+            if self.pixel_type is not None:
+                self._raster_info.update({"pixelType":self.pixel_type})
 
-        if self.mean_cell_width is not None:
-            self._raster_info.update({"pixelSizeX":self.mean_cell_width})
+            if self.mean_cell_width is not None:
+                self._raster_info.update({"pixelSizeX":self.mean_cell_width})
 
-        if self.mean_cell_height is not None:
-            self._raster_info.update({"pixelSizeY":self.mean_cell_height})
+            if self.mean_cell_height is not None:
+                self._raster_info.update({"pixelSizeY":self.mean_cell_height})
 
-        if self.compression_type is not None:
-            self._raster_info.update({"compressionType":self.compression_type})
+            if self.compression_type is not None:
+                self._raster_info.update({"compressionType":self.compression_type})
 
-        if self.block_size is not None:
-            self._raster_info.update({"blockHeight":self.block_size[1]})
+            if self.block_size is not None:
+                self._raster_info.update({"blockHeight":self.block_size[1]})
 
-        if self.block_size is not None:
-            self._raster_info.update({"blockWidth":self.block_size[0]})
+            if self.block_size is not None:
+                self._raster_info.update({"blockWidth":self.block_size[0]})
 
-        if self.no_data_values is not None:
-            self._raster_info.update({"noDataValues":self.no_data_values})
+            if self.no_data_values is not None:
+                self._raster_info.update({"noDataValues":self.no_data_values})
 
         return self._raster_info
 

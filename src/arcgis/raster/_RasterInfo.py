@@ -11,7 +11,7 @@ class RasterInfo(object):
     To construct RasterInfo object from a dictionary,
     use from_dict method on this class
     """
-    def __init__(self):
+    def __init__(self, raster_info_dict=None):
         self._band_count = None
         self._extent = None
         self._pixel_size_x = None
@@ -21,7 +21,7 @@ class RasterInfo(object):
         self._block_width = None
         self._spatial_reference = None
         self._no_data_values = None
-        self._dict=None
+        self._dict=raster_info_dict
 
 
     def __repr__(self):
@@ -138,7 +138,7 @@ class RasterInfo(object):
         """
         #rinfo_dict = self.__dict__
         new_rinfo_dict = {}
-        if self._dict is not None:
+        if self._dict is None:
             if self.band_count is not None:
                 new_rinfo_dict.update({"bandCount":self.band_count})
             if self.extent is not None:
