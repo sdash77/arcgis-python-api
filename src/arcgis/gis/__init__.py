@@ -4853,11 +4853,13 @@ class ContentManager(object):
         -------------------  --------------------------------------------------------------------------
         text                 Optional String. The source text.
         -------------------  --------------------------------------------------------------------------
-        publish_parameters   Optional Dict.A JSON object describing the layer and service to be created
-                             as part of the `publish` operation. The appropriate value for publish
-                             parameters depends on the file type being published. For a complete
-                             description, see the  `Item`'s Publish method. A CSV and GeoJSON data 
-                             should have publish parameters provided.
+        publish_parameters   Optional Dict. A Python dictionary describing the layer and service to be created
+                             as part of the `publish` operation. The appropriate key-value pairs
+                             depend on the file type being published. For a complete
+                             description, see the `Publish Item <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_
+                             documentation in the REST API. Also see the :class:`~arcgis.gis.Item`
+                             :meth:`~arcgis.gis.Item.publish` method. ``CSV``, ``Shapefiles`` and
+                             ``GeoJSON`` file types must have publish parameters provided.
         -------------------  --------------------------------------------------------------------------
         future               Optional Boolean.  This allows the operation to run asynchronously allowing
                              the user to not pause the thread and continue to perform multiple operations.
