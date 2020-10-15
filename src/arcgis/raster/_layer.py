@@ -6982,21 +6982,26 @@ class _ArcpyRaster(Raster,ImageryLayer):
         if isinstance(path, RasterInfo):
             ri = arcpy.RasterInfo()
             ri.fromJSONString(json.dumps(path.to_dict()))
-            self._raster = arcpy.ia.Raster(ri, is_multidimensional)
-        if isinstance(path, str):
-            if ("https://"  in path or "http://"  in path): #To provide access to secured service
-                if self._token is not None:
-                    self._raster = arcpy.ia.Raster(path+"?token="+self._token, is_multidimensional)
+            self._raster = arcpy.ia.Raster(ri, is_multidimensional)            
+            self._uri=str(self._raster)
+            self._path=str(self._raster)
+        else:
+            if isinstance(path, str):
+                if ("https://"  in path or "http://"  in path): #To provide access to secured service
+                    if self._token is not None:
+                        self._raster = arcpy.ia.Raster(path+"?token="+self._token, is_multidimensional)
+                    else:
+                        self._raster = arcpy.ia.Raster(path, is_multidimensional)
                 else:
                     self._raster = arcpy.ia.Raster(path, is_multidimensional)
             else:
-                self._raster = arcpy.ia.Raster(path, is_multidimensional)
-        else:
-            self._raster = path
+                self._raster = path
+
+            self._uri=str(path)
+            self._path=str(path)
         self._datastore_raster=True
         self._do_not_hydrate=False
-        self._uri=str(path)
-        self._path = str(path)
+
 
     @property
     def _lyr_dict(self):
@@ -7346,7 +7351,7 @@ class _ArcpyRaster(Raster,ImageryLayer):
                 build_transpose = "NO_TRANSPOSE"
         else:
             build_transpose = "NO_TRANSPOSE"
-        result = arcpy.GenerateRasterFromRasterFunction_management(json.dumps(self._fnra), output_name) 
+        result = arcpy.GenerateRasterFromRasterFunction_management(json.dumps(self._fnra), output_name, process_as_multidimensional=process_as_multidimensional) 
         uri = result.getOutput(0)
         if uri and process_as_multidimensional == "ALL_SLICES" and build_transpose == "TRANSPOSE":
             arcpy.management.BuildMultidimensionalTranspose(uri)
@@ -7805,7 +7810,10 @@ class RasterCollection():
             elif isinstance(rasters,list):
                 for ele in rasters:
                     if isinstance(ele, Raster):
-                        continue
+                        if isinstance(ele._engine_obj, _ArcpyRaster):
+                            local_class=False
+                        else:
+                            continue
                     elif isinstance(ele, str):
                         if '/fileShares/' in ele or '/rasterStores/' in ele or '/cloudStores/' in ele or '/vsi' in ele:
                             continue
@@ -8450,6 +8458,14 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
                     self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
             else:
                 self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
+        if isinstance(rasters,list):
+            arcpy_rasters_list=[]
+            for ele in rasters:
+                if ((isinstance(ele,  Raster)) and isinstance(ele._engine_obj, _ArcpyRaster)):
+                    arcpy_rasters_list.append(ele._engine_obj._raster)
+
+            if arcpy_rasters_list !=[]:
+                rasters = arcpy_rasters_list                
         self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
         self._df=self._as_df()
 
