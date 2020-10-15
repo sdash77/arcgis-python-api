@@ -4898,6 +4898,9 @@ class ContentManager(object):
             params['itemid'] = item.itemid
             if item.type.lower() == 'shapefile':
                 params['filetype'] = 'shapefile'
+                if publish_parameters in (None, "") and \
+                   self._gis._portal.is_arcgisonline == False:
+                    raise ValueError("A publish parameter is needed for this data type.")                
             elif item.type.lower() == 'gpx':
                 params['filetype'] = 'gpx'
             elif item.type.lower() == 'csv':
@@ -4925,11 +4928,14 @@ class ContentManager(object):
                 params['filetype'] = file_types[part]
             else:
                 raise Exception(f"Invalid file extension: {part}")
+            if params['filetype'] in ['shapefile', 'csv', 'geojson'] and \
+               self._gis._portal.is_arcgisonline == False:
+                raise ValueError("A publish parameter is needed for this data type.")                
             files.append(('file', file_path, os.path.basename(file_path)))
         elif text:
             params['text'] = text
             params['fileType'] = 'csv'
-
+            
         if future == True:
             executor =  concurrent.futures.ThreadPoolExecutor(1)
             futureobj = executor.submit(self._generate,
