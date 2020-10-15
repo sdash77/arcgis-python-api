@@ -883,7 +883,7 @@ def compute_accuracy_for_object_detection(detected_features,
                                          ground_truth_features, 
                                          detected_class_value_field=None, 
                                          ground_truth_class_value_field=None, 
-                                         min_IoU=None, 
+                                         min_iou=None, 
                                          mask_features=None,
                                          out_accuracy_table_name=None, 
                                          out_accuracy_report_name=None, 
@@ -929,7 +929,7 @@ def compute_accuracy_for_object_detection(detected_features,
 
                                              Example: "class"
     ------------------------------------     --------------------------------------------------------------------
-    min_IoU                                  The Intersection over Union (IoU) ratio to use as a threshold to 
+    min_iou                                  The Intersection over Union (IoU) ratio to use as a threshold to 
                                              evaluate the accuracy of the object-detection model. The numerator 
                                              is the area of overlap between the predicted bounding box and 
                                              the ground truth bounding box. The denominator is the area of 
@@ -989,7 +989,7 @@ def compute_accuracy_for_object_detection(detected_features,
                                                                           ground_truth_features=ground_truth_features, 
                                                                           detected_class_value_field=detected_class_value_field, 
                                                                           ground_truth_class_value_field=ground_truth_class_value_field, 
-                                                                          min_IoU=min_IoU, 
+                                                                          min_iou=min_iou, 
                                                                           mask_features=mask_features,
                                                                           out_accuracy_table_name=out_accuracy_table_name, 
                                                                           out_accuracy_report_name=out_accuracy_report_name, 
