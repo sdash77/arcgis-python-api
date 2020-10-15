@@ -179,11 +179,11 @@ class FormInfo:
         if not isinstance(layer_data, (dict, PropertyMap)):
             raise ValueError("Incorrect layer type passed to FormInfo class. Please pass in a property map")
         self.form = layer_data.get("formInfo", {"formElements": [], "title": layer_data.get("title")})
+        self._expression_infos = self.form.get("expressionInfos", [])
+        self.expression_infos = self._get_expression_info_objects()
         self._form_elements = self.form.get("formElements", [])
         # this constructs the public form elements array
         self.form_elements = self._get_form_element_objects(self._form_elements)
-        self._expression_infos = self.form.get("expressionInfos", [])
-        self.expression_infos = self._get_expression_info_objects()
         self._layer_data = PropertyMap(layer_data)
         self._parent = parent
         try:
@@ -532,14 +532,22 @@ class FormInfo:
             expression_infos.append(FormExpressionInfo(expression=expression.get("expression"), title=expression.get("title"), name=expression.get("name")))
         return expression_infos
 
-    def _delete_expression_info(self, name):
-        """Deletes a single expression info by looking up its name in the list of FormExpressionInfo"""
+    def _get_expression_info(self, name):
+        """Returns expression info based on name"""
         for expression in self.expression_infos:
             if expression.name == name:
-                self._expression_infos.remove(expression._expression_info)
-                self.expression_infos.remove(expression)
-                return True
-        return False
+                return expression
+        return None
+
+    def _delete_expression_info(self, name):
+        """Deletes a single expression info by looking up its name in the list of FormExpressionInfo"""
+        expression = self._get_expression_info(name)
+        if expression:
+            self._expression_infos.remove(expression._expression_info)
+            self.expression_infos.remove(expression)
+            return True
+        else:
+            return False
 
     def _remove_linked_expression_infos(self, element):
         """Deletes corresponding visibility and required expressions from the list of FormExpressionInfo"""
@@ -602,11 +610,12 @@ class FormElement:
 
     @visibility_expression.setter
     def visibility_expression(self, value):
-        if value and not isinstance(value, FormExpressionInfo):
-            raise ValueError("Please add a form expression info object here")
-        # delete old expression
-        self._form_obj._delete_expression_info(self.visibility_expression)
+        if isinstance(value, str):
+            value = self._form_obj._get_expression_info(value)
         if value:
+            if value and not isinstance(value, FormExpressionInfo):
+                raise ValueError("Please add a form expression info object here")
+            # delete old expression
             self._form_obj._expression_infos.append(value._expression_info)
             self._form_obj.expression_infos.append(value)
             self._element["visibilityExpression"] = value.name
@@ -693,6 +702,7 @@ class FormFieldElement(FormElement):
         if input_type:
             self.input_type = input_type
         if required_expression:
+
             self.required_expression = required_expression
 
     @property
@@ -757,11 +767,12 @@ class FormFieldElement(FormElement):
 
     @required_expression.setter
     def required_expression(self, value):
-        if not isinstance(value, FormExpressionInfo):
-            raise ValueError("Please add a form expression info object here")
-        # delete old expression
-        self._form_obj._delete_expression_info(self.required_expression)
+        if isinstance(value, str):
+            value = self._form_obj._get_expression_info(value)
         if value:
+            if value and not isinstance(value, FormExpressionInfo):
+                raise ValueError("Please add a form expression info object here")
+            # delete old expression
             self._form_obj._expression_infos.append(value._expression_info)
             self._form_obj.expression_infos.append(value)
             self._element["requiredExpression"] = value.name
