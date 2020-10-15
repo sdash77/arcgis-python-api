@@ -2856,7 +2856,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
            tessellation_layer - FeatureLayer or Feature Layer Collection
 
         """
-        extent_layer = self._feature_input(extent_layer)
+        if extent_layer:
+            extent_layer = self._feature_input(extent_layer)
         if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
         elif output_name and isinstance(output_name, FeatureLayer):
