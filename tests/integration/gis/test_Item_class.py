@@ -893,7 +893,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + str(testException))
 
-    @unittest.skipIf(True, "Duplicate test, turn off for speed")
+    @unittest.skipIf(test_skip, "Duplicate test, turn off for speed")
     def test_overwrite_HFS_using_csv(self):
         """
         Publish a feature layer with csv.
@@ -914,7 +914,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
         try:
             #upload csv item - for update
             csv_item = self.one_to_one_csv_item
-            new_csv_path = os.path.join(self.qalab_cls_path, "overwrite_wfl", "set1_overwrite_HFS_csv.csv")
+            new_csv_path = os.path.join(self.qalab_cls_path, "overwrite_wfl", "set1_overwrite_HFS_csv2.csv")
             item_update_result= csv_item.update({}, data=new_csv_path)
             self.assertTrue(item_update_result, "Calling update on csv item does not return True")
 
@@ -923,7 +923,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
             self.assertIsNotNone(overwrite_result, "Calling publish with overwrite True returns None")
 
             #assert item id of feature layer is same
-            self.assertEqual(overwrite_result.id, csv_item.id, "Item ID is not same after overwriting")
+            self.assertEqual(overwrite_result.id, wfl_item.id, "Item ID is not same after overwriting")
 
             #verify content is updated
             num_features_after_overwrite = flayer.query(return_count_only=True)
@@ -932,7 +932,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
             #verify num of features and attributes is as expected
             flayer = overwrite_result.layers[0]
             fset = flayer.query()
-            overwritten_flayer_df = fset.df
+            overwritten_flayer_df = fset.sdf
 
             #add two extra columns to account for x,y geometries that get added
             self.assertEqual((20,8), overwritten_flayer_df.shape,
@@ -1948,24 +1948,24 @@ class Test_Item_arcgis_online(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + str(testException))
 
-    @unittest.skipIf(True, "Duplicate test, turn off for speed")
-    def test_overwrite_HFS_using_fgdb(self):
+    @unittest.skipIf(test_skip, "")
+    def test_overwrite_HFS_using_csv(self):
         """
-        Publish a feature layer with file geodatabase.
-        Update the fgdb and overwrite the feature service.
+        Publish a feature layer with csv.
+        Update the csv and overwrite the feature service.
         Ensure the contents are updated, itemid remains same.
         :return:
         """
         # region delete old service on portal
-        old_sr = PortalUtils.search_portal_item(self.gis, "title:set1_overwrite_HFS_fgdb.gdb", "File Geodatabase")
+        old_sr = PortalUtils.search_portal_item(self.gis, "title:set1_overwrite_HFS_csv2.csv", "CSV")
         if old_sr is not None:
             delete_result = PortalUtils.delete_portal_item(self.gis, old_sr)
             if not delete_result:
-                raise unittest.SkipTest('Cannot delete old fgdb output. Skipping test.')
+                raise unittest.SkipTest('Cannot delete old CSV output. Skipping test.')
             else:
-                print("Deleted old fgdb output")
+                print("Deleted old csv output")
 
-        old_wfl_sr = PortalUtils.search_portal_item(self.gis, "set1_overwrite_HFS_fgdb", "Feature Service")
+        old_wfl_sr = PortalUtils.search_portal_item(self.gis, "set1_overwrite_HFS_csv2", "Feature Service")
         if old_wfl_sr is not None:
             delete_result2 = PortalUtils.delete_portal_item(self.gis, old_wfl_sr)
             if not delete_result2:
@@ -1976,7 +1976,82 @@ class Test_Item_arcgis_online(unittest.TestCase):
 
         try:
             # upload fgdb item
-            fgdb_path = os.path.join(self.qalab_cls_path, "set1_overwrite_HFS_fgdb.gdb.zip")
+            csv_path = os.path.join(self.qalab_cls_path, "set1_overwrite_HFS_csv2.csv")
+            csv_item = self.gis.content.add({}, data=csv_path)
+            self.assertIsNotNone(csv_item, "Cannot add csv item")
+
+            # publish the fgdb item
+            wfl_item = csv_item.publish()
+            self.assertIsNotNone(wfl_item, "Cannot publish csv into a feature service")
+            old_wfl_item_id = wfl_item.id
+            old_flayer = wfl_item.layers[0]
+            old_fset = old_flayer.query()
+            old_flayer_df = old_fset.sdf
+
+            # update fdgb item
+            new_csv_path = os.path.join(self.qalab_cls_path, "overwrite_wfl", "set1_overwrite_HFS_csv2.csv")
+            item_update_result = csv_item.update({}, data=new_csv_path)
+            self.assertTrue(item_update_result, "Calling update on csv item does not return True")
+
+            # overwrite the feature layer
+            overwrite_result = csv_item.publish(overwrite=True)
+            print(overwrite_result)
+            self.assertIsNotNone(overwrite_result, "Calling publish with overwrite True returns None")
+            new_wfl_item_id = overwrite_result.id
+
+            self.assertEqual(old_wfl_item_id, new_wfl_item_id, "Item ID is not same after overwriting")
+
+            # verify content is updated
+            flayer = overwrite_result.layers[0]
+            fset = flayer.query()
+            overwritten_flayer_df = fset.sdf
+
+            # add two extra columns to account for x,y geometries that get added
+            print('Old flayer shape: ' + str(old_flayer_df.shape))
+            print('flayer shape after overwrite: ' + str(overwritten_flayer_df.shape))
+            self.assertGreater(overwritten_flayer_df.shape[0], old_flayer_df.shape[0],
+                               "Number of rows did not increase after overwriting per expectation")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
+
+
+    @unittest.skipIf(test_skip, "")
+    def test_overwrite_HFS_using_fgdb(self):
+        """
+        Publish a feature layer with file geodatabase.
+        Update the fgdb and overwrite the feature service.
+        Ensure the contents are updated, itemid remains same.
+        :return:
+        """
+        # region delete old service on portal
+        old_sr = PortalUtils.search_portal_item(self.gis, "title:set1_Item_overwrite_HFS_fgdb.gdb", "File Geodatabase")
+        if old_sr is not None:
+            delete_result = PortalUtils.delete_portal_item(self.gis, old_sr)
+            if not delete_result:
+                raise unittest.SkipTest('Cannot delete old fgdb output. Skipping test.')
+            else:
+                print("Deleted old fgdb output")
+
+        old_wfl_sr = PortalUtils.search_portal_item(self.gis, "set1_Item_overwrite_HFS_fgdb", "Feature Service")
+        if old_wfl_sr is not None:
+            delete_result2 = PortalUtils.delete_portal_item(self.gis, old_wfl_sr)
+            if not delete_result2:
+                raise unittest.SkipTest('Cannot delete old service output. Skipping test.')
+            else:
+                print("Deleted old Feature Service output")
+        # endregion
+
+        try:
+            # upload fgdb item
+            fgdb_path = os.path.join(self.qalab_cls_path, "set1_Item_overwrite_HFS_fgdb.gdb.zip")
             fgdb_item = self.gis.content.add({}, data=fgdb_path)
             self.assertIsNotNone(fgdb_item, "Cannot add fgdb item")
 
@@ -1986,15 +2061,16 @@ class Test_Item_arcgis_online(unittest.TestCase):
             old_wfl_item_id = wfl_item.id
             old_flayer = wfl_item.layers[0]
             old_fset = old_flayer.query()
-            old_flayer_df = old_fset.df
+            old_flayer_df = old_fset.sdf
 
             # update fdgb item
-            new_fgdb_path = os.path.join(self.qalab_cls_path, "overwrite_wfl", "set1_overwrite_HFS_fgdb.gdb.zip")
+            new_fgdb_path = os.path.join(self.qalab_cls_path, "overwrite_wfl", "set1_Item_overwrite_HFS_fgdb.gdb.zip")
             item_update_result = fgdb_item.update({}, data=new_fgdb_path)
             self.assertTrue(item_update_result, "Calling update on fgdb item does not return True")
 
             # overwrite the feature layer
             overwrite_result = fgdb_item.publish(overwrite=True)
+            print(overwrite_result)
             self.assertIsNotNone(overwrite_result, "Calling publish with overwrite True returns None")
             new_wfl_item_id = overwrite_result.id
 
@@ -2003,11 +2079,13 @@ class Test_Item_arcgis_online(unittest.TestCase):
             # verify content is updated
             flayer = overwrite_result.layers[0]
             fset = flayer.query()
-            overwritten_flayer_df = fset.df
+            overwritten_flayer_df = fset.sdf
 
             # add two extra columns to account for x,y geometries that get added
-            self.assertEqual((old_flayer_df.shape[0]+20, old_flayer_df.shape[1]), overwritten_flayer_df.shape,
-                             "The number of rows cols of overwritten feature layer is not more than original")
+            print('Old flayer shape: ' + str(old_flayer_df.shape))
+            print('flayer shape after overwrite: ' + str(overwritten_flayer_df.shape))
+            self.assertGreater(overwritten_flayer_df.shape[0], old_flayer_df.shape[0],
+                               "Number of rows did not increase after overwriting per expectation")
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -2057,7 +2135,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
             old_wfl_item_id = wfl_item.id
             old_flayer = wfl_item.layers[0]
             old_fset = old_flayer.query()
-            old_flayer_df = old_fset.df
+            old_flayer_df = old_fset.sdf
 
             # update shp item
             new_shp_path = os.path.join(self.qalab_cls_path, "overwrite_wfl", "set1_overwrite_HFS_shp.zip")
@@ -2074,9 +2152,11 @@ class Test_Item_arcgis_online(unittest.TestCase):
             # verify content is updated
             flayer = overwrite_result.layers[0]
             fset = flayer.query()
-            overwritten_flayer_df = fset.df
+            overwritten_flayer_df = fset.sdf
 
             # add two extra columns to account for x,y geometries that get added
+            self.assertGreater(overwritten_flayer_df.shape[0], old_flayer_df.shape[0],
+                               "Number of rows needs to be more after overwriting")
             self.assertEqual((old_flayer_df.shape[0] + 10, old_flayer_df.shape[1]), overwritten_flayer_df.shape,
                              "The number of rows cols of overwritten feature layer is not more than original")
 
@@ -2090,7 +2170,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + str(testException))
 
-    @unittest.skipIf(True, "Duplicate test, turn off for speed")
+    @unittest.skipIf(test_skip, "Duplicate test, turn off for speed")
     def test_overwrite_HFS_using_sd(self):
         """
         Publish a feature layer with SD file
@@ -2128,7 +2208,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
             old_wfl_item_id = wfl_item.id
             old_flayer = wfl_item.layers[0]
             old_fset = old_flayer.query()
-            old_flayer_df = old_fset.df
+            old_flayer_df = old_fset.sdf
 
             # update shp item
             new_sd_path = os.path.join(self.qalab_cls_path, "overwrite_wfl", "set1_overwrite_HFS_sd.sd")
@@ -2145,11 +2225,11 @@ class Test_Item_arcgis_online(unittest.TestCase):
             # verify content is updated
             flayer = overwrite_result.layers[0]
             fset = flayer.query()
-            overwritten_flayer_df = fset.df
+            overwritten_flayer_df = fset.sdf
 
             # add two extra columns to account for x,y geometries that get added
-            self.assertEqual((old_flayer_df.shape[0] + 10, old_flayer_df.shape[1]), overwritten_flayer_df.shape,
-                             "The number of rows cols of overwritten feature layer is not more than original")
+            self.assertGreater(overwritten_flayer_df.shape[0], old_flayer_df.shape[0],
+                               "Number of rows needs to be more after overwriting")
 
         except AssertionError as assertErrorException:
             test_skip = True
