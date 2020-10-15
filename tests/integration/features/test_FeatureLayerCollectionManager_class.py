@@ -501,14 +501,16 @@ class Test_FeatureLayerCollectionManager_online(unittest.TestCase):
     def tearDownClass(cls):
         print("\n==================================================================")
 
-    @unittest.skipIf(True, "Test condition not met. Check if old outputs are present")
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_create_FeatureLayerCollectionManager_object(self):
         """
         Purpose of this test is to create instances of FeatureLayerCollectionManager class in multiple ways
         :return:
         """
         try:
-            test_item = self.feature_layer1_item
+            # test_item = self.feature_layer1_item
+            test_item = self.gis.content.get('7566e0221e5646f99ea249a197116605')
+            # https://www.arcgis.com/home/item.html?id=7566e0221e5646f99ea249a197116605
             self.assertIsInstance(test_item, arcgis.gis.Item, "Input item is not of type Item, "
                                                               "cannot run rest of the test case")
 
