@@ -6083,26 +6083,26 @@ def merge_multidimensional_rasters(input_multidimensional_rasters,
                                    **kwargs):
 
     """
-    Function merges several multidimensional rasters into one.  
+    Function merges several multidimensional rasters spatially, or across variables and dimensions into one.  
 
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_multidimensional_rasters           Required list of ImageryLayer object. List of portal items can be passed.
+    input_multidimensional_rasters           Required list of ImageryLayer object. List of input multidimensional rasters to be combined.
     ------------------------------------     --------------------------------------------------------------------
-    resolve_overlap_method                   Optional string. Specifies the method used to handle overlapping pixels when merging rasters spatially or dimensionally. 
+    resolve_overlap_method                   Optional string. Specifies the method used to handle overlapping pixels when merging rasters in the combined datasets. 
 
-                                               - FIRST - The pixel value will be determined by the raster that appears first in the list of rasters. This is the default.  
+                                               - FIRST - The pixel value in the overlapping areas will be the value from the first raster in the list of input rasters. This is the default.
 
-                                               - LAST - The pixel value will be determined by the raster that appears last in the list of rasters.  
+                                               - LAST - The pixel value in the overlapping areas will be the value from the last raster in the list of input rasters.
 
-                                               - MIN - The pixel value will be determined by the lowest pixel value in the overlapping rasters.  
+                                               - MIN - The pixel value in the overlapping areas will be the minimum value of the overlapping pixels.
 
-                                               - MAX - The pixel value will be determined by the highest pixel value in the overlapping rasters.  
+                                               - MAX - The pixel value in the overlapping areas will be the maximum value of the overlapping pixels.
 
-                                               - MEAN - The pixel value will be determined by the average of the overlapping pixel values.  
+                                               - MEAN - The pixel value in the overlapping areas will be the average of the overlapping pixels.
 
-                                               - SUM - The pixel value will be determined by the sum of the overlapping pixel values. .  
+                                               - SUM - The pixel value in the overlapping areas will be the total sum of the overlapping pixels.
     ------------------------------------     --------------------------------------------------------------------
     output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
@@ -6112,21 +6112,58 @@ def merge_multidimensional_rasters(input_multidimensional_rasters,
 
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  Optional dictionary. Context contains additional settings that affect task execution.
-                                             Dictionary can contain value for following keys:
+    context                                  context contains additional settings that affect task execution. 
 
-                                             - cellSize - Set the output raster cell size, or resolution
+                                             context parameter overwrites values set through arcgis.env parameter
+                                         
+                                             This function has the following settings:
 
-                                             - extent - Sets the processing extent used by the function
+                                              - Extent (extent): A bounding box that defines the analysis area.
+                                            
+                                                Example: 
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6, 
+                                                    "spatialReference": {"wkid": 4326}}}
 
-                                             - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
+                                              - Output Spatial Reference (outSR): The output raster will be 
+                                                projected into the output spatial reference.
+                                                
+                                                Example: 
+                                                    {"outSR": {spatial reference}}
 
-                                             - processorType - Sets the processor type. "CPU" or "GPU"
+                                              - Snap Raster (snapRaster): The output raster will have its 
+                                                cells aligned with the specified snap raster.
+                                                        
+                                                Example: 
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
 
-                                             Eg: {"processorType" : "CPU"}
+                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                                specified by cell size.
 
-                                             Setting context parameter will override the values set using arcgis.env 
-                                             variable for this particular function.
+                                                Example:
+                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total 
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+
+                                              - Resampling Method (resamplingMethod): The output raster will be 
+                                                resampled to method specified.
+                                                The supported values are: Bilinear, Nearest, Cubic.
+
+                                                Example:
+                                                    {'resamplingMethod': "Nearest"} 
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -6149,6 +6186,15 @@ def merge_multidimensional_rasters(input_multidimensional_rasters,
 
     :return:
         The output imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1: Merge two multidimensional rasters with different variables..
+
+        merge_mdim_rasters_op = merge_multidimensional_rasters(input_multidimensional_rasters=[input_multidimensional_raster_var1, input_multidimensional_raster_var2],
+                                                               resolve_overlap_method="FIRST",
+                                                               gis=gis)
+
 
     """
 

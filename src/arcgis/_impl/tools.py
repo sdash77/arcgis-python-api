@@ -10845,7 +10845,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                                out_accuracy_report_name=out_accuracy_report_name, 
                                                                detected_class_value_field=detected_class_value_field, 
                                                                ground_truth_class_value_field=ground_truth_class_value_field, 
-                                                               min_IoU=min_IoU, 
+                                                               min_io_u=min_IoU, 
                                                                mask_features=mask_features,
                                                                context=context,
                                                                gis=self._gis,
@@ -10886,8 +10886,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context = context_param['context']
 
         input_multidimensional_rasters = self._set_multiple_raster_inputs(input_multidimensional_rasters)
-
-        resolve_overlap_method_allowed_values = self._tbx.choice_list.sample["resolve_overlap_method"]
+        resolve_overlap_method_allowed_values = self._tbx.choice_list.merge_multidimensional_rasters["resolve_overlap_method"]
         if [element.lower() for element in resolve_overlap_method_allowed_values].count(resolve_overlap_method.lower()) <= 0 :
             raise RuntimeError('resolve_overlap_method can only be one of the following: '+str(resolve_overlap_method_allowed_values))
         for element in resolve_overlap_method_allowed_values:

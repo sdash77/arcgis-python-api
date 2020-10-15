@@ -912,16 +912,20 @@ def compute_accuracy_for_object_detection(detected_features,
                                              be used. If these fields do not exist, all records will be 
                                              identified as belonging to one class. 
 
+                                             The class values or class names must match those in the ground truth feature class exactly.
+
                                              Syntax: A string describing the detected class value field. 
 
                                              Example: "class"
     ------------------------------------     --------------------------------------------------------------------
-    ground_truth_class_valu_field            The field in the ground truth feature class that contains the class 
+    ground_truth_class_value_field           The field in the ground truth feature class that contains the class 
                                              names or class values. 
 
                                              If a field name is not specified, a Classvalue or Value field will 
                                              be used. If these fields do not exist, all records will be 
                                              identified as belonging to one class. 
+
+                                             The class values or class names must match those in the detected objects feature class exactly.
 
                                              Example: "class"
     ------------------------------------     --------------------------------------------------------------------
