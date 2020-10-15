@@ -14,6 +14,7 @@ import logging
 import arcgis as _arcgis
 import base64
 from collections import defaultdict
+from ._RasterInfo import RasterInfo
 try:
     import numpy as np
 except:
@@ -624,6 +625,8 @@ class ImageryLayer(Layer):
         Returns information about the ImageryLayer such as 
         bandCount, extent , pixelSizeX, pixelSizeY, pixelType
         """
+        if self._raster_info !={}:
+            return self._raster_info
         if "extent" in self.properties:
             self._raster_info.update({"extent":dict(self.properties.extent)})
 
@@ -4769,6 +4772,8 @@ class Raster():
              engine = _get_engine(engine)
              self._engine=engine
         else:
+            if isinstance(path, RasterInfo):
+                engine=_ArcpyRaster
             if isinstance(path, str):
                 if "https://" not in path and "http://" not in path and  '/fileShares/' not in path and '/rasterStores/' not in path and '/cloudStores/' not in path and not isinstance(path,dict) and '/vsi' not in path: #local raster case
                     if engine is None:
@@ -5068,6 +5073,14 @@ class Raster():
         Return the attribute table as a dictionary if the table exists
         """
         return self._engine_obj.RAT
+
+    @property
+    def raster_info(self):
+        """
+        Returns information about the ImageryLayer such as 
+        bandCount, extent , pixelSizeX, pixelSizeY, pixelType
+        """
+        return self._engine_obj.raster_info
 
     def get_raster_bands(self, band_ids_or_names=None):
         """
@@ -6439,6 +6452,14 @@ class _ImageServerRaster(ImageryLayer, Raster):
     def RAT(self):
         return super().attribute_table()
 
+    @property
+    def raster_info(self):
+        """
+        Returns information about the ImageryLayer such as 
+        bandCount, extent , pixelSizeX, pixelSizeY, pixelType
+        """
+        return super().raster_info
+
     def get_raster_bands(self, band_ids_or_names=None):
         if super().tiles_only:
             raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
@@ -6958,6 +6979,10 @@ class _ArcpyRaster(Raster,ImageryLayer):
         self._is_multidimensional = is_multidimensional
         self._engine=_ArcpyRaster
         import arcpy
+        if isinstance(path, RasterInfo):
+            ri = arcpy.RasterInfo()
+            ri.fromJSONString(json.dumps(path.to_dict()))
+            self._raster = arcpy.ia.Raster(ri, is_multidimensional)
         if isinstance(path, str):
             if ("https://"  in path or "http://"  in path): #To provide access to secured service
                 if self._token is not None:
@@ -6970,8 +6995,8 @@ class _ArcpyRaster(Raster,ImageryLayer):
             self._raster = path
         self._datastore_raster=True
         self._do_not_hydrate=False
-        self._uri=path
-        self._path = path
+        self._uri=str(path)
+        self._path = str(path)
 
     @property
     def _lyr_dict(self):
@@ -7151,6 +7176,43 @@ class _ArcpyRaster(Raster,ImageryLayer):
     @property
     def RAT(self):
         return self._raster.RAT
+
+    @property
+    def raster_info(self):
+        """
+        Returns information about the ImageryLayer such as 
+        bandCount, extent , pixelSizeX, pixelSizeY, pixelType
+        """
+        if self._raster_info !={}:
+            return self._raster_info
+        if self.extent is not None:
+            self._raster_info.update({"extent":dict(self.extent)})
+
+        if self.band_count is not None:
+            self._raster_info.update({"bandCount":self.band_count})
+
+        if self.pixel_type is not None:
+            self._raster_info.update({"pixelType":self.pixel_type})
+
+        if self.mean_cell_width is not None:
+            self._raster_info.update({"pixelSizeX":self.mean_cell_width})
+
+        if self.mean_cell_height is not None:
+            self._raster_info.update({"pixelSizeY":self.mean_cell_height})
+
+        if self.compression_type is not None:
+            self._raster_info.update({"compressionType":self.compression_type})
+
+        if self.block_size is not None:
+            self._raster_info.update({"blockHeight":self.block_size[1]})
+
+        if self.block_size is not None:
+            self._raster_info.update({"blockWidth":self.block_size[0]})
+
+        if self.no_data_values is not None:
+            self._raster_info.update({"noDataValues":self.no_data_values})
+
+        return self._raster_info
 
     def get_raster_bands(self, band_ids_or_names=None):
         raster_bands = self._raster.getRasterBands(band_ids_or_names)
