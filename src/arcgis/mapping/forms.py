@@ -278,7 +278,10 @@ class FormInfo:
             item_data["layers"][self._layer_data["id"]] = self.form
             self._parent.update(data=item_data)
         elif isinstance(self._parent, arcgis.mapping.WebMap):
-            self._parent.update()
+            try:
+                self._parent.update()
+            except Exception:
+                raise ValueError("As this webmap does not yet exist as an item, please use WebMap.save() to save your form")
         else:
             pass
 
