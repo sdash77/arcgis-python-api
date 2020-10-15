@@ -4931,7 +4931,8 @@ class ContentManager(object):
             else:
                 raise Exception(f"Invalid file extension: {part}")
             if params['filetype'] in ['shapefile', 'csv', 'geojson'] and \
-               self._gis._portal.is_arcgisonline == False:
+               self._gis._portal.is_arcgisonline == False and \
+               params['publishParameters'] in (None, ""):
                 raise ValueError("A publish parameter is needed for this data type.")                
             files.append(('file', file_path, os.path.basename(file_path)))
         elif text:
