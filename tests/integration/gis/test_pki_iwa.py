@@ -56,6 +56,15 @@ class TestIWAConnections(unittest.TestCase):
         gis = GIS(url=url, verify_cert=False)
         assert gis.users.me
     #########################################################################################
+    def test_iwa_geocoding(self):
+        """tests using geocoding with PKI"""
+        from arcgis.geocoding import get_geocoders
+        gis = GIS(url=IWA_ESRI, verify_cert=False)
+        geocoders = get_geocoders(gis)
+        if len(geocoders) > 0:
+            assert geocoders[0]._geocode(address="12 york street, camden, NJ")
+        del gis
+    #########################################################################################
     def test_iwa_publish_server(self):
         """tests accessing a service via IWA"""
         gis = GIS(url=IWA_ESRI, verify_cert=False)
@@ -182,6 +191,15 @@ class TestPKIConnections(unittest.TestCase):
         assert pitem.layers[0].properties
         pitem.delete()
         item.delete()
+        del gis
+    #########################################################################################
+    def test_pki_geocoding(self):
+        """tests using geocoding with PKI"""
+        from arcgis.geocoding import get_geocoders
+        gis = GIS(url=PKI_JAVA, cert_file=PKI_ESRI_CERT, password=PKI_ESRI_PW, verify_cert=False)
+        geocoders = get_geocoders(gis)
+        if len(geocoders) > 0:
+            assert geocoders[0]._geocode(address="12 york street, camden, NJ")
         del gis
 
 if __name__ == "__main__":
