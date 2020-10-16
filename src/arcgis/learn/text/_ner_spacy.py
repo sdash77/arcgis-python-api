@@ -150,12 +150,14 @@ class _SpacyEntityRecognizer(ArcGISModel):
             lr = self.lr_find(allow_plot=False)
 
         if kwargs.get("from_lr_find", False) is False and isinstance(lr, slice):
-            error_message = ("Passing slice of floats as `lr` value is not"
-                             " supported for models with `spacy` backbone.")
-            raise Exception(error_message)
+            lr = lr.stop
+            error_message = ("Passing slice of floats as `lr` value is not supported for models with `spacy` backbone."
+                             f" Picking up the highest value - `{lr}` of the slice as the learning rate.")
+            logging.warning(error_message)
 
-        if self.train_ds == None:
+        if self.train_ds is None:
             return logging.warning('Cannot fit the model on empty data.')
+
         TRAIN_DATA = self.train_ds.data
         VAL_DATA = self.val_ds.data
         nlp = self.model

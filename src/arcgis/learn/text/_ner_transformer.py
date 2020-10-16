@@ -607,7 +607,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         output.pop("accuracy", None)
         output.pop("macro avg", None)
         output.pop("weighted avg", None)
-        df =  pd.DataFrame(output)
+        df = pd.DataFrame(output)
         df.drop("support", inplace=True)
         dataframe = df.T.round(2)
         dataframe.rename(columns=column_mappings, inplace=True)
