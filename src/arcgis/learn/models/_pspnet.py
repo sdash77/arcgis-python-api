@@ -376,13 +376,14 @@ class PSPNetClassifier(ArcGISModel):
 
     def _show_results_multispectral(self, rows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
         return_fig = kwargs.get('return_fig', False)
-        fig,ax = show_results_multispectral(
+        ret_val = show_results_multispectral(
             self, 
             nrows=rows, 
             alpha=alpha, 
             **kwargs
         )
         if return_fig:
+            fig, ax = ret_val
             return fig
 
     @property
