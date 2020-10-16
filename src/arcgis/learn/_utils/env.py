@@ -89,6 +89,12 @@ def do_fastai_imports():
         fastai_import_exception = traceback.format_exc()
         pass
 
+    try:
+        from .patches import precondition
+    except:
+        pass
+
+
 def fastai_installation_command():
     installation_steps = "Install them using 'conda install -c esri arcgis=1.8.1 pillow scikit-image'\n'conda install -c fastai -c pytorch fastai pytorch=1.4.0 torchvision=0.5.0 tensorflow-gpu=2.1.0'\n'conda install gdal=2.3.3'"
 
