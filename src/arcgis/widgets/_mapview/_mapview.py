@@ -135,8 +135,10 @@ def _get_extent_of_dataframe(sdf):
         }
     else:
         raise Exception('Could not add get extent of DataFrame it is not a spatially enabled DataFrame.')
-
-def _get_master_extent(list_of_extents, target_sr={'wkid': 102100, 'latestWkid': 3857}):
+default_sr = {'wkid': 102100, 'latestWkid': 3857}
+def _get_master_extent(list_of_extents, target_sr=None):
+    if target_sr is None:
+        target_sr = default_sr
     # Check if any extent is different from one another
     varying_spatial_reference = False
     for extent in list_of_extents:
@@ -2068,16 +2070,20 @@ class MapView(widgets.DOMWidget):
         ==================     ====================================================================
         """
         target_extent = _get_extent(item)
+        target_sr = getattr(self, 'extent', {}).get('spatialReference', default_sr)
         if isinstance(target_extent, list):
             target_extent = _flatten_list(target_extent)
             if len(target_extent) > 1:
-                target_extent = _get_master_extent(target_extent, self.extent['spatialReference'])
+                target_extent = _get_master_extent(target_extent, target_sr)
             else:
                 target_extent = target_extent[0]
-        if not (target_extent['spatialReference'] == self.extent['spatialReference']):
-            target_extent = _reproject_extent(target_extent, self.extent['spatialReference'])
-        self.extent = self.extent # Sometimes setting extent will not work for the same target extent if we do it multiple times, doing this fixes that issue.
-        self.extent = target_extent
+        if not (target_extent['spatialReference'] == target_sr):
+            target_extent = _reproject_extent(target_extent, target_sr)
+        if self.ready:
+            self.extent = self.extent # Sometimes setting extent will not work for the same target extent if we do it multiple times, doing this fixes that issue.
+            self.extent = target_extent
+        else:
+            self._extent = target_extent
 
     # Start time section
 

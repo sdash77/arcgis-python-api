@@ -158,7 +158,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         """
 
         #Dashboard items.
-        self.id = str(uuid4())
+        self._id = str(uuid4())
         self.type = "mapWidget"
 
         self._pop_ups = False
@@ -243,6 +243,9 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     @property
     def events(self):
+        """
+        :return: list of events attached to the widget.
+        """
         return self._events
 
     def _ipython_display_(self, *args, **kwargs):
@@ -1552,7 +1555,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             "showPopup": self.pop_ups,
             "scalebarStyle": self.scale_bar,
             "layers": [{"type": "featureLayerDataSource", "layerId": layer['id']} for layer in self.layers],
-            "id": self.id,
+            "id": self._id,
             "name": self.item.title,
             "caption": self.item.name,
             "showLastUpdate": True,

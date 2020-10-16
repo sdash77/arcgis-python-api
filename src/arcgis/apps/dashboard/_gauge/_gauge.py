@@ -3,38 +3,36 @@ import arcgis
 from .._utils._basewidget import _BaseWidget
 from .._utils._basewidget import NoDataProperties
 
+
 class Gauge(_BaseWidget):
+    """
+    Creates a dashboard Gauge widget.
 
-    def __init__(self, item, name, layer=0, title='', description=''):
-        """
-        Creates a dashboard Gauge widget.
-
-        =========================   ===========================================
-        **Argument**                **Description**
-        -------------------------   -------------------------------------------
-        item                        Required Item object. Item from which the
-                                    Indicator is constructed. Item object can 
-                                    be a Feature Layer or a MapWidget.
-        -------------------------   -------------------------------------------
-        name                        Optional string. Name of the gauge widget.
-        -------------------------   -------------------------------------------
-        layer                       Optional integer. Layer number when item is
-                                    a mapwidget.
-        -------------------------   -------------------------------------------
-        title                       Optional string. Title or Caption for the
-                                    widget.
-        -------------------------   -------------------------------------------
-        description                 Optional string. Description for the widget.
-        =========================   ===========================================
-        """
-        super().__init__(title, description)
+    =========================   ===========================================
+    **Argument**                **Description**
+    -------------------------   -------------------------------------------
+    item                        Required Item object. Item from which the
+                                Indicator is constructed. Item object can
+                                be a Feature Layer or a MapWidget.
+    -------------------------   -------------------------------------------
+    name                        Optional string. Name of the gauge widget.
+    -------------------------   -------------------------------------------
+    layer                       Optional integer. Layer number when item is
+                                a mapwidget.
+    -------------------------   -------------------------------------------
+    title                       Optional string. Title or Caption for the
+                                widget.
+    -------------------------   -------------------------------------------
+    description                 Optional string. Description for the widget.
+    =========================   ===========================================
+    """
+    def __init__(self, item, name='Gauge', layer=0, title='', description=''):
+        super().__init__(name, title, description)
         # General Block
-        if not name:
-            raise Exception("Please specify a name")
+
         if item.type not in ['Feature Service', 'mapWidget']:
             raise Exception("Please specify an item")
 
-        self.name = name
         self.item = item
         self.type = "gaugeWidget"
         self.layer = layer
@@ -45,9 +43,9 @@ class Gauge(_BaseWidget):
         self._nodata = NoDataProperties._nodata_init()
         self._novalue = NoDataProperties._nodata_init()
 
-        self._data = GaugeData._create_data()
-        self._mindata = GaugeData._create_data(value_type="fixedvalue")
-        self._maxdata = GaugeData._create_data(value_type="fixedvalue")
+        self._data = GaugeData._create_data(data_item = item)
+        self._mindata = GaugeData._create_data(data_item=item, value_type="fixedvalue")
+        self._maxdata = GaugeData._create_data(data_item=item, value_type="fixedvalue")
         self ._gauge = GaugeProperties._gauge_init()
     
     @classmethod
@@ -231,8 +229,8 @@ class Gauge(_BaseWidget):
                     "bands":self._bands
                 })
         if self._data.value_type == 'statistic':
-            self._statistic_defintion.append({
-                            "onStatisticField":self._data.value_field,
+            self._data_statistic_defintion.append({
+                            "onStatisticField":self._data.statistics_field,
                             "outStatisticFieldName":"value",
                             "statisticType":self._data.statistic
                         })
@@ -270,7 +268,7 @@ class Gauge(_BaseWidget):
         elif self.mindata.value_type in ["statistic", "feature"]:
             if self.mindata.value_type == "statistic":
                 self._mindata_statistic_defintion.append({
-                            "onStatisticField":self._mindata.value_field,
+                            "onStatisticField":self._mindata.statistics_field,
                             "outStatisticFieldName":"value",
                             "statisticType":self._mindata.statistic
                         })
@@ -301,7 +299,7 @@ class Gauge(_BaseWidget):
         elif self.maxdata.value_type in ["statistic", "feature"]:
             if self.maxdata.value_type == "statistic":
                 self._maxdata_statistic_defintion.append({
-                            "onStatisticField":self._maxdata.value_field,
+                            "onStatisticField":self._maxdata.statistics_field,
                             "outStatisticFieldName":"value",
                             "statisticType":self._maxdata.statistic
                         })
@@ -369,7 +367,7 @@ class Gauge(_BaseWidget):
             "backgroundColor":self._background_color,
             "textColor":self._text_color,
             "datasets":self._datasets,
-            "id":self.id,
+            "id":self._id,
             "name":self.name,
             "caption":self.title,
             "description":self.description,
@@ -384,16 +382,20 @@ class Gauge(_BaseWidget):
 class GaugeData(object):
 
     @classmethod
-    def _create_data(cls, value_type="statistic"):
+    def _create_data(cls, data_item=None, value_type="statistic"):
         data = GaugeData()
+
+        data._item = data_item
 
         data._value_type = "statistic"
         data._min_value = 1
         data._max_value = 100
         data._statistic = "count"
-        data._value_field = "FID"
+        data._value_field = data.objectid_field
+        data._statistics_field = data.objectid_field
         data._factor = 1
         data._offset = 0
+        data._filters = []
 
         data.value_type = value_type
 
@@ -495,6 +497,20 @@ class GaugeData(object):
         Set value conversion offset.
         """
         self._offset = value
+    
+    @property
+    def objectid_field(self):
+        """
+        :return: object ID field name.
+        """
+        return self._item.tables[0].properties["objectIdField"]
+    
+    @property
+    def statistics_field(self):
+        """
+        :return: Statistics field name.
+        """
+        return self._statistics_field
         
     @property
     def value_field(self):
@@ -509,9 +525,52 @@ class GaugeData(object):
         Set value field for data.
         """
         if self._value_type == "feature":
-            self._value_field = value
+            f_type = self._field_type(value)
+            if f_type in ["float64", "float32", "int64", "int32"]:
+                self._value_field = value
+            else:
+                raise Exception("Please select a numeric field")
         else:
             raise Exception("Can add value field only for value type 'feature'")
+    
+    @property
+    def filters(self):
+        """
+        :return: filters associated with widget
+        """
+        return self._filters
+    
+    def add_filter(self, field, join, condition, **kwargs):
+        """
+        Add filters associated with widget.
+        """
+        self._filter_field = field
+        if join in ["AND", "OR"]:
+            self._filter_join = join
+        else:
+            raise Exception("Please select from 'AND', 'OR'")
+        if condition in ["between", "not between", "equal", "not equal", "greater than", "greater than or equal", "less than", "less than or equal", "is null", "is not null"]:
+            self._filter_condition = condition
+        else:
+            raise Exception("Please select the right condition")
+
+        if condition in ["between", "not between"]:
+            self._val1 = kwargs.get('start')
+            self,_val2 = kwargs.get('end')
+            self._filters.append({"filtertype":self._filter_join, "field":self._filter_field, "operator":self._filter_condition, "start":self._val1, "end":self._val2})
+        else:
+            raise Exception("Please provide 'start' and 'end' values as parameters")
+
+        if condition in ["equal", "not equal", "greater than", "greater than or equal", "less than", "less than or equal"]:
+            self._val = kwargs.get('value')
+            self._filters.append({"filtertype":self._filter_join, "field":self._filter_field, "operator":self._filter_condition, "value":self._val})
+        else:
+            raise Exception("Please provide a 'value' parameter for comparison")
+         
+    def _field_type(self, field_name):
+        f_type = self._item.tables[0].query().sdf[field_name].dtype
+        return f_type
+    
 
 class GaugeProperties(object):
 
