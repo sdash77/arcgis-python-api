@@ -522,7 +522,7 @@ class TextClassifier(ArcGISModel):
         out_dict.pop("macro avg", None)
         out_dict.pop("weighted avg", None)
         df = pd.DataFrame(out_dict)
-        df.drop("support", inplace=True)
+        # df.drop("support", inplace=True)
         dataframe = df.T.round(4)
         column_mappings = {'precision': 'Precision_score', 'recall': 'Recall_score',
                            'f1-score': 'F1_score', 'support': 'Support'}
