@@ -293,11 +293,80 @@ def _get_backbone_meta(arch_name):
 # Multispectral Models Specific resources end #
 
 
+def _device_check():
+
+    if hasattr(arcgis, 'env') and getattr(arcgis.env, '_processorType', "") == "CPU":
+        return True
+
+    move_to_cpu = False
+    if not hasattr(torch._C, '_cuda_isDriverSufficient'):
+        raise Exception("Torch not compiled with CUDA enabled")
+
+    incorrect_binary_warn = """
+    Found GPU%d %s which requires CUDA_VERSION >= %d for
+    optimal performance and fast startup time, but your PyTorch was compiled
+    with CUDA_VERSION %d. Please install the correct PyTorch binary
+    using instructions from https://pytorch.org
+    It may continue to work on CPU.
+    """
+
+    old_gpu_warn = """
+    Found GPU%d %s which is of cuda capability %d.%d.
+    PyTorch no longer supports this GPU because it is too old.
+    The minimum cuda capability that we support is 3.7.
+    Go to https://pytorch.org for more info on how to install
+    or build a PyTorch version that has been compiled for your
+    GPU architecture (Cuda compute capability).
+    It may continue to work on CPU.
+    """
+
+    CUDA_VERSION = torch._C._cuda_getCompiledVersion()
+    for d in range(torch.cuda.device_count()):
+        capability = torch.cuda.get_device_capability(d)
+        major = capability[0]
+        name = torch.cuda.get_device_name(d)
+        if CUDA_VERSION < 8000 and major >= 6:
+            warnings.warn(incorrect_binary_warn % (d, name, 8000, CUDA_VERSION))
+            move_to_cpu = True
+        elif CUDA_VERSION < 9000 and major >= 7:
+            warnings.warn(incorrect_binary_warn % (d, name, 9000, CUDA_VERSION))
+            move_to_cpu = True
+        elif capability == (3, 0) or major < 3:
+            warnings.warn(old_gpu_warn % (d, name, major, capability[1]))
+            move_to_cpu = True
+
+    if not torch._C._cuda_isDriverSufficient():
+        move_to_cpu = True
+        if torch._C._cuda_getDriverVersion() == 0:
+            # found no NVIDIA driver on the system
+            warnings.warn("""
+            Found no GPU driver. CPU will be used for processing.
+            """)
+        else:
+            warnings.warn("""
+            The NVIDIA driver on your system is too old (found version {})
+            or your GPU architecture is very old and it's not supported.
+            Please update your GPU driver by downloading and installing
+            a new version from the URL: http://www.nvidia.com/Download/index.aspx
+            Alternatively, go to https://pytorch.org for more info
+            on how to install or build a PyTorch version that has been
+            compiled for your GPU architecture (Cuda compute capability)
+            or for your version of Cuda driver. It may continue to work on CPU.
+            """.format(str(torch._C._cuda_getDriverVersion())))
+
+    return move_to_cpu
+
+
 class ArcGISModel(object):
 
     def __init__(self, data, backbone=None, **kwargs):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
+
+        move_to_cpu = _device_check()
+        # Force move to CPU
+        if move_to_cpu:
+            arcgis.env._processorType = "CPU"
 
         if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
             self._device = torch.device("cuda")
@@ -330,7 +399,8 @@ class ArcGISModel(object):
             backbone_wrapper._is_multispectral = True
             self._backbone = backbone_wrapper
         if not hasattr(data, 'class_mapping') and hasattr(data, 'classes'):
-            data.class_mapping = {v: v for v in data.classes}
+            data.class_mapping = {v:v for v in data.classes}
+
         self.learn = None
         self._data = data
         self._learning_rate = None

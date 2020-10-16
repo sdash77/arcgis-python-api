@@ -13,7 +13,6 @@ import traceback
 
 from ._utils.env import ARCGIS_ENABLE_TF_BACKEND
 
-
 import_exception = None
 try:
     import arcgis
@@ -472,6 +471,11 @@ def prepare_textdata(
     if isinstance(label_columns, (str, bytes)):
         label_columns = [label_columns]
 
+    force_cpu = arcgis.learn.models._arcgis_model._device_check()
+
+    if hasattr(arcgis, "env") and force_cpu == 1:
+        arcgis.env._processorType = "CPU"
+
     if task == "classification":
         return TextDataObject.prepare_data_for_classification(
             path,
@@ -489,7 +493,6 @@ def prepare_textdata(
     else:
         logger = logging.getLogger()
         logger.info(f"Wrong task - {task} provided. This function can handle only `classification` task currently")
-
 
 
 def prepare_tabulardata(
@@ -589,6 +592,11 @@ def prepare_tabulardata(
     import warnings
     if not HAS_FASTAI:
         _raise_fastai_import_error(import_exception)
+
+    force_cpu = arcgis.learn.models._arcgis_model._device_check()
+
+    if hasattr(arcgis, "env") and force_cpu == 1:
+        arcgis.env._processorType = "CPU"
 
     HAS_COLUMN_TRANSFORMS = False
 
@@ -778,8 +786,13 @@ def prepare_data(path,
 
     databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
     databunch_kwargs['bs'] = batch_size
-    
-    if hasattr(arcgis, "env") and getattr(arcgis.env, "_processorType", "") == "CPU":
+
+    force_cpu = arcgis.learn.models._arcgis_model._device_check()
+
+    if hasattr(arcgis, "env") and force_cpu == 1:
+        arcgis.env._processorType = "CPU"
+
+    if getattr(arcgis.env, "_processorType", "") == "CPU":
         databunch_kwargs["device"] = torch.device('cpu')
 
     if ARCGIS_ENABLE_TF_BACKEND:
