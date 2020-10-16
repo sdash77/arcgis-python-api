@@ -1,7 +1,54 @@
 import arcgis
 
-class Header(object):
 
+class Header(object):
+    """
+    Creates a dashboard header widget.
+
+    =========================   ===========================================
+    **Argument**                **Description**
+    -------------------------   -------------------------------------------
+    title                       Optional string. Title of the header.
+    -------------------------   -------------------------------------------
+    subtitle                    Optional string. Subtitle of the header.
+    -------------------------   -------------------------------------------
+    margin                      Optional boolean. Set True to add margin to
+                                header position.
+    -------------------------   -------------------------------------------
+    size                        Optional string. Define size of header from
+                                small, medium, large.
+                                Default is medium.
+    -------------------------   -------------------------------------------
+    logo_image_url              Optional url string. Define a logo image.
+    -------------------------   -------------------------------------------
+    logo_url                    Optional url string. Define a hyperlink for
+                                the logo image.
+    -------------------------   -------------------------------------------
+    background_image_url        Optional url string. Add a background image
+                                to the header.
+    -------------------------   -------------------------------------------
+    background_image_size       Optional string. Select size of the image.
+                                Options:
+                                    fit-width
+                                    fit-height
+                                    fit-both
+                                    repeat
+    -------------------------   -------------------------------------------
+    background_image_position   Optional string. Define the image position
+                                when using fit-width or fit-height.
+                                Allowed options:
+                                fit-height: left, center, right
+                                fit-width: top, middle, bottom
+    -------------------------   -------------------------------------------
+    signout_link                Optional boolean. Parameter to save the best model
+                                during training. If set to `True` the best model
+                                based on validation loss will be saved during
+                                training.
+    -------------------------   -------------------------------------------
+    menu_links                  Optional list of tuples. Each tuple contains
+                                string label and string url.
+    =========================   ===========================================
+    """
     def __init__(
             self,
             title=None,
@@ -16,53 +63,6 @@ class Header(object):
             signout_link=False,
             menu_links=None
     ):
-        """
-        Creates a dashboard header widget.
-
-        =========================   ===========================================
-        **Argument**                **Description**
-        -------------------------   -------------------------------------------
-        title                       Optional string. Title of the header.
-        -------------------------   -------------------------------------------
-        subtitle                    Optional string. Subtitle of the header.
-        -------------------------   -------------------------------------------
-        margin                      Optional boolean. Set True to add margin to
-                                    header position.
-        -------------------------   -------------------------------------------
-        size                        Optional string. Define size of header from
-                                    small, medium, large.
-                                    Default is medium.
-        -------------------------   -------------------------------------------
-        logo_image_url              Optional url string. Define a logo image.
-        -------------------------   -------------------------------------------
-        logo_url                    Optional url string. Define a hyperlink for
-                                    the logo image.
-        -------------------------   -------------------------------------------
-        background_image_url        Optional url string. Add a background image
-                                    to the header.
-        -------------------------   -------------------------------------------
-        background_image_size       Optional string. Select size of the image.
-                                    Options:
-                                        fit-width
-                                        fit-height
-                                        fit-both
-                                        repeat
-        -------------------------   -------------------------------------------
-        background_image_position   Optional string. Define the image position
-                                    when using fit-width or fit-height.
-                                    Allowed options:
-                                    fit-height: left, center, right
-                                    fit-width: top, middle, bottom
-        -------------------------   -------------------------------------------
-        signout_link                Optional boolean. Parameter to save the best model
-                                    during training. If set to `True` the best model
-                                    based on validation loss will be saved during
-                                    training.
-        -------------------------   -------------------------------------------
-        menu_links                  Optional list of tuples. Each tuple contains
-                                    string label and string url.
-        =========================   ===========================================
-        """
         # Header starts here.
 
         self._size = "medium"

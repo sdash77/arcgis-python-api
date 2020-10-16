@@ -5,43 +5,38 @@ from .._utils._basewidget import NoDataProperties
 
 
 class Details(_BaseWidget):
+    """
+    Creates a dashboard Details widget.
 
-    def __init__(self, item, name, layer=0, title="", description="", max_features_displayed=50):
-        """
-        Creates a dashboard Details widget.
-
-        =========================   ===========================================
-        **Argument**                **Description**
-        -------------------------   -------------------------------------------
-        item                        Required Item object. Item from which the
-                                    Indicator is constructed. Item object can 
-                                    be a Feature Layer or a MapWidget.
-        -------------------------   -------------------------------------------
-        name                        Optional string. Name of the widget.
-        -------------------------   -------------------------------------------
-        layer                       Optional integer. Layer number when item is
-                                    a mapwidget.
-        -------------------------   -------------------------------------------
-        title                       Optional string. Title of the widget.
-        -------------------------   -------------------------------------------
-        description                 Optional string. Description of the widget.
-        -------------------------   -------------------------------------------
-        max_features_displayed      Optional integer. Maximum number of features
-                                    to display.
-        =========================   ===========================================
-        """
-
-        super().__init__(title, description)
+    =========================   ===========================================
+    **Argument**                **Description**
+    -------------------------   -------------------------------------------
+    item                        Required Item object. Item from which the
+                                Indicator is constructed. Item object can
+                                be a Feature Layer or a MapWidget.
+    -------------------------   -------------------------------------------
+    name                        Optional string. Name of the widget.
+    -------------------------   -------------------------------------------
+    layer                       Optional integer. Layer number when item is
+                                a mapwidget.
+    -------------------------   -------------------------------------------
+    title                       Optional string. Title of the widget.
+    -------------------------   -------------------------------------------
+    description                 Optional string. Description of the widget.
+    -------------------------   -------------------------------------------
+    max_features_displayed      Optional integer. Maximum number of features
+                                to display.
+    =========================   ===========================================
+    """
+    def __init__(self, item, name='Details', layer=0, title="", description="", max_features_displayed=50):
+        super().__init__(name, title, description)
         if item.type not in ['Feature Service', 'mapWidget']:
             raise Exception("Please specify an item")
-        if not name:
-            raise Exception("Please specify a name")
 
         self.item = item
 
         self._max_features_displayed = max_features_displayed
 
-        self.name = name
         self.type = "detailsWidget"
         self.layer = layer
 
@@ -161,7 +156,7 @@ class Details(_BaseWidget):
             "showMedia": self._show_media,
             "showAttachments": self._show_attachment,
             "datasets": [],
-            "id": self.id,
+            "id": self._id,
             "name": self.name,
             "caption": self.title,
             "description": self.description,

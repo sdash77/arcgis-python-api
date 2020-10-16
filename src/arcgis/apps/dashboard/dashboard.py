@@ -8,37 +8,17 @@ _created_dashboards = []
 
 
 class Dashboard(object):
-    def __init__(self, title, description, summary='', tags=None):
-        """
-        Creates a Dashboard Object.
+    """
+    Creates a Dashboard Object.
 
-        =========================   ===========================================
-        **Argument**                **Description**
-        -------------------------   -------------------------------------------
-        title                       Optional string. Title or Caption for the
-                                   Dashboard.
-        -------------------------   -------------------------------------------
-        description                 Optional string. Description for the Dashboard.
-        -------------------------   -------------------------------------------
-        summary                     Optional string. Summary of the Dashboard.
-        -------------------------   -------------------------------------------
-        tags                        Optional string. Comma separated tags.
-        =========================   ===========================================
-        """
-
-        #Dashboard variables start here.
-
-        if not title:
-            raise Exception("Please specify a title.")
-
-        if not description:
-            raise Exception("Please specify a description.")
-
-        self.title = title
-        self.description = description
-
-        self.summary = summary
-        self.tags = tags if tags else ''
+    =========================   ===========================================
+    **Argument**                **Description**
+    -------------------------   -------------------------------------------
+    item                        Optional Dashboard Item. Dashboard item to hydrate
+                                a Dashboard object using existing dashboard.
+    =========================   ===========================================
+    """
+    def __init__(self, item=None):
         self.elements = []
 
         self._orientation = 'col'
@@ -48,7 +28,36 @@ class Dashboard(object):
         self._side_panel = None
         self._layout = {}
         self._widgets = []
-        #Dashboard variables end here.
+
+        # if item is not None:
+        #     return _from_dashboard(item)
+        
+    def save(self, title, description='', summary='', tags=None, gis=None, overwrite=False):
+        """
+        Saves a Dashboard Object.
+
+        =========================   ===========================================
+        **Argument**                **Description**
+        -------------------------   -------------------------------------------
+        title                       Required string. Title or Caption for the
+                                    Dashboard.
+        -------------------------   -------------------------------------------
+        description                 Optional string. Description for the Dashboard.
+        -------------------------   -------------------------------------------
+        summary                     Optional string. Summary of the Dashboard.
+        -------------------------   -------------------------------------------
+        tags                        Optional string. Comma separated tags.
+        =========================   ===========================================
+        """
+        if not title:
+            raise Exception("Please specify a title.")
+
+        self.title = title
+        self.description = description
+
+        self.summary = summary
+        self.tags = tags if tags else ''
+        return self._publish(gis=gis, overwrite=overwrite)
 
     @property
     def orientation(self):
@@ -115,6 +124,7 @@ class Dashboard(object):
         if self.side_panel:
             json_data['leftPanel'] = self.side_panel._convert_to_json()
 
+        # print(json_data)
         return json_data
 
     @property
@@ -139,17 +149,56 @@ class Dashboard(object):
         :return: widgets of the dashboard
         """
         return self._widgets
+    
+    def _repr_html_(self):
+        url = self._dash_publish()
+        return f"""<iframe src={url} width=900 height=300>"""
 
-    def publish(self, gis):
+    def _dash_publish(self):
+        gis = arcgis.env.active_gis
+        import random
+        import string
+
+        letters = string.ascii_lowercase
+        title = ''.join(random.choice(letters) for i in range(10))
+        summary = ''.join(random.choice(letters) for i in range(10))
+
+        db = Dashboard()
+
+        db.title = title
+        db.summary = summary
+        db.description = ''
+        db.summary = summary
+        db.tags = ''
+
+        db._layout = self._layout
+        db.elements = self.elements
+        db = db._publish(gis)
+        _created_dashboards.append((gis, db))
+        url = f'{gis.url}/apps/opsdashboard/index.html#/{db.itemid}'
+
+        return url
+
+    def _publish(self, gis=None, overwrite=False):
+        if gis is None:
+            gis = arcgis.env.active_gis
+
+        items = gis.content.search(f'title:{self.title}', 'Dashboard')
+        for item in items:
+            if item.title.lower() == self.title.lower() and overwrite is False:
+                raise Exception("A dashboard with same name already exists, to continue set `overwrite` = True")
+            elif item.title.lower() == self.title.lower():
+                item.delete(force=True)
+
         return gis.content.add({
             'type': 'Dashboard',
             'description': self.description,
             'title': self.title,
-            'overwrite': 'true',
+            'overwrite': str(overwrite).lower(),
             'text': json.dumps(self._convert_to_json())}
         )
 
-    def from_dashboard(self, dashboard_item):
+    def _from_dashboard(self, dashboard_item):
         widget_map = {
             "indicatorWidget": arcgis.apps.dashboard.Indicator,
             "gaugeWidget": arcgis.apps.dashboard.Gauge,
@@ -178,19 +227,24 @@ class Dashboard(object):
         letters = string.ascii_lowercase
         title = ''.join(random.choice(letters) for i in range(10))
         summary = ''.join(random.choice(letters) for i in range(10))
-        db = Dashboard(title, summary)
+        db = Dashboard()
 
         if widget.type == 'headerPanel':
             db.header = widget
         elif widget.type == 'leftPanel':
             db.side_panel = widget
+        elif widget.type == 'legendWidget':
+            map_widget_width = widget._map_widget.width
+            widget._map_widget.width = 0.5
+            db.layout = add_row([widget._map_widget, widget])
+            widget._map_widget.width = map_widget_width
         else:
-            if hasattr(widget, 'item') and widget.item.type == 'mapWidget':
+            if hasattr(widget, 'item') and getattr(widget.item, 'type', None) == 'mapWidget':
                 db.layout = add_row([widget.item, widget])
             else:
                 db.layout = add_row([widget])
 
-        db = db.publish(gis)
+        db = db.save(title, summary, gis=gis, overwrite=True)
         _created_dashboards.append((gis, db))
         url = f'{gis.url}/apps/opsdashboard/index.html#/{db.itemid}'
 

@@ -5,48 +5,42 @@ from .._utils._basewidget import NoDataProperties
 
 
 class SerialChart(_BaseWidget):
+    """
+    Creates a dashboard Serial Chart widget.
 
-    def __init__(self, item, name, layer=0, categories_from="groupByValues", title='', description=''):
-        """
-        Creates a dashboard Serial Chart widget.
-
-        =========================   ===========================================
-        **Argument**                **Description**
-        -------------------------   -------------------------------------------
-        item                        Required Item object. Item from which the
-                                    Indicator is constructed. Item object can 
-                                    be a Feature Layer or a MapWidget.
-        -------------------------   -------------------------------------------
-        name                        Optional string. Name of the serial chart
-                                    widget.
-        -------------------------   -------------------------------------------
-        layer                       Optional integer. Layer number when item is
-                                    a mapwidget.
-        -------------------------   -------------------------------------------
-        categories_from             Optional string. Select from groupByValues,
-                                    features or fields.
-        -------------------------   -------------------------------------------
-        title                       Optional string. Title or Caption for the
-                                    widget.
-        -------------------------   -------------------------------------------
-        description                 Optional string. Description for the widget.
-        =========================   ===========================================
-        """
+    =========================   ===========================================
+    **Argument**                **Description**
+    -------------------------   -------------------------------------------
+    item                        Required Item object. Item from which the
+                                Indicator is constructed. Item object can
+                                be a Feature Layer or a MapWidget.
+    -------------------------   -------------------------------------------
+    name                        Optional string. Name of the serial chart
+                                widget.
+    -------------------------   -------------------------------------------
+    layer                       Optional integer. Layer number when item is
+                                a mapwidget.
+    -------------------------   -------------------------------------------
+    categories_from             Optional string. Select from groupByValues,
+                                features or fields.
+    -------------------------   -------------------------------------------
+    title                       Optional string. Title or Caption for the
+                                widget.
+    -------------------------   -------------------------------------------
+    description                 Optional string. Description for the widget.
+    =========================   ===========================================
+    """
+    def __init__(self, item, name='SerialChart', layer=0, categories_from="groupByValues", title='', description=''):
         if item.type not in ['Feature Service', 'mapWidget']:
             raise Exception("Please specify an item")
 
-        super().__init__(title, description)
+        super().__init__(name, title, description)
 
-        self.name = name
         self.item = item
         self.layer = layer
         self.type = "serialChartWidget"
 
-        if categories_from in ["groupByValues", "features", "fields"]:
-            self._categories_from = categories_from
-
-        self._data = SerialChartData._create_serial_chart_data(categories_from)
-        self._max_features = None
+        self._data = SerialChartData._create_serial_chart_data(categories_from, data_item=item)
         self._category_axis_properties = _CategoryAxisProperties._create_category_axis()
         self._scroll = False
         self._value_axis_properties = _ValueAxisProperties._create_value_axis()
@@ -56,6 +50,7 @@ class SerialChart(_BaseWidget):
         self._orientation = 'vertical'
         self._last_update = True
         self._no_data = NoDataProperties._nodata_init()
+        self._events = Events._create_events()
     
     @classmethod
     def _from_json(cls, widget_json):
@@ -69,24 +64,21 @@ class SerialChart(_BaseWidget):
         schart = SerialChart(item, name, 0, categories_from, title, description)
         schart.data.category_field = widget_json["category"]["fieldName"]
         schart.legend.visibility = widget_json["legend"]["enabled"]
-        schart.legend.placement = widget_json["legend"]["position"]
-        schart.max_features = widget_json["dataset"]["maxFeatures"]
-        
+        schart.legend.placement = widget_json["legend"]["position"]        
         return schart
 
     @property
-    def categories_from(self):
+    def events(self):
         """
-        :return: Selected categories from, groupByValues, features or fields.
+        :return: list of events attached to the widget.
         """
-        return self._categories_from
+        return self._events
 
     @property
     def data(self):
         """
         :return: Serial Chart Data object. Set data properties, categories and values.
         """
-
         return self._data
 
     @property
@@ -109,7 +101,6 @@ class SerialChart(_BaseWidget):
         :return: Legend Object, set Visibility and placement
         """
         return self._legend
-
 
     @property
     def scroll(self):
@@ -160,20 +151,6 @@ class SerialChart(_BaseWidget):
         :return: NoDataProperties Object
         """
         return self._no_data
-
-    @property
-    def max_features(self):
-        """
-        :return: Max features to display
-        """
-        return self._max_features
-
-    @max_features.setter
-    def max_features(self, value):
-        """
-        Set max features to display.
-        """
-        self._max_features = value
 
     def _convert_to_json(self):
 
@@ -239,10 +216,11 @@ class SerialChart(_BaseWidget):
             "splitBy": {"defaultColor": "#d6d6d6", "seriesProperties": []},
             "rotate": False if self._orientation == "vertical" else True,
             "commonGraphProperties": common_graph_properties,
+            "events": [],
             "selectionMode": "multi",
             "categoryType": self.data.categories_from,
             "datasets": [],
-            "id": self.id,
+            "id": self._id,
             "name": self.name,
             "caption": self.title,
             "description": self.description,
@@ -252,6 +230,7 @@ class SerialChart(_BaseWidget):
             "showDescriptionWhenNoData": self._no_data._show_description
         }
 
+        json_data['categoryAxis']['parseDates'] = self._data.parse_dates
         if self._no_data._text:
             json_data['noDataText'] = self._no_data._text
         
@@ -267,13 +246,17 @@ class SerialChart(_BaseWidget):
                         "layerId": 0,
                         "table": True
                     }
+        if self.data.orderby_field == "":
+            self._orderby_field = self.data.category_field
+        else:
+            self._orderby_field = self.data.orderby_field
 
         dataset = {
             "type": "serviceDataset",
             "dataSource": self._datasource,
             "outFields": ["*"],
             "groupByFields": [],
-            "orderByFields": ["date asc"],
+            "orderByFields": [self._orderby_field + " asc"] if self._data.categories_from != "groupByValues" else [],
             "statisticDefinitions": [],
             "querySpatialRelationship": "esriSpatialRelIntersects",
             "returnGeometry": False,
@@ -281,8 +264,8 @@ class SerialChart(_BaseWidget):
             "name": "main"
         }
 
-        if self._max_features:
-            dataset['maxFeatures'] = self._max_features
+        if self._data.max_features:
+            dataset['maxFeatures'] = self._data.max_features
 
         if self._color:
             json_data['color'] = self._color
@@ -297,12 +280,16 @@ class SerialChart(_BaseWidget):
                 json_data['splitBy']['fieldName'] = self._split_by_field
                 dataset['groupByFields'].append(self._data._split_by_field)
 
-            dataset['statisticDefinitions'].append({"onStatisticField": "FID", "outStatisticFieldName": "value", "statisticType": self._data.statistic})
+            dataset['statisticDefinitions'].append({"onStatisticField": self._data.statistics_field, "outStatisticFieldName": "value", "statisticType": self._data.statistic})
         elif self._data._categories_from == "fields":
             for category in self._category_fields:
                 dataset['statisticDefinitions'].append({"onStatisticField": category, "outStatisticFieldName": category, "statisticType": self._data.statistic})
 
         json_data['datasets'] = [dataset]
+
+        if self.events.enable:
+            json_data["events"].append({"type":self.events.type, "actions":self.events.synced_widgets})
+            json_data["selectionMode"] = self.events.selection_mode
 
         return json_data
 
@@ -325,8 +312,10 @@ class _CategoryAxisProperties(object):
         category_axis._title_size = 12
         category_axis._labels = True
         category_axis._parse_dates = True
-        category_axis._min_period = "DD"
+        category_axis._minimum_period = "DD"
         category_axis._grid_position = "start"
+
+        category_axis._date_dict = {"days": "DD", "hours": "hh", "seconds": "ss", "minutes":"mm", "months":"MM", "years":"YYYY"}
 
         category_axis._requirements = {
             'title': [str],
@@ -500,6 +489,24 @@ class _CategoryAxisProperties(object):
         """
         self._labels = bool(value)
 
+    @property
+    def minimum_period(self):
+        """
+        :return: Minimum period when dates are parsed.
+        """
+        return self._minimum_period
+
+    @minimum_period.setter
+    def minimum_period(self, value):
+        """
+        Set Minimum period when dates are parsed.
+        Allowed values 'seconds', 'minutes', 'hours', 'days', 'months', 'years'
+        """
+        if isinstance(value, str) and value.lower() in ["seconds", "minutes", "hours", "days", "months", "years"]:
+            self._minimum_period = self._date_dict[value.lower()]
+        else:
+            raise Exception("Please select correct value")
+    
     def __init__(self):
         self._item = {
             "title": '',
@@ -550,7 +557,7 @@ class _CategoryAxisProperties(object):
             "labelsEnabled": self._labels,
             "gridPosition": "start",
             "parseDates": True,
-            "minPeriod": "DD"
+            "minPeriod": self._minimum_period
         }
 
 
@@ -573,7 +580,7 @@ class _ValueAxisProperties(object):
         value_axis._minimum = None
         value_axis._maximum = None
 
-        value_axis._labels = False
+        value_axis._labels = True
 
         value_axis._stackType = "none"
         value_axis._integers_only = False
@@ -831,7 +838,7 @@ class _ValueAxisProperties(object):
 class SerialChartData(object):
 
     @classmethod
-    def _create_serial_chart_data(cls, categories_from):
+    def _create_serial_chart_data(cls, categories_from, data_item=None):
         schart_data = SerialChartData()
 
         schart_data._categories_from = None
@@ -844,12 +851,18 @@ class SerialChartData(object):
             schart_data._series = []
         elif categories_from == "groupByValues":
             schart_data._split_by_field = None
+            schart_data._series = []
 
         schart_data._show_baloon = False
+        schart_data._item = data_item
         schart_data._parse_dates = True
+        schart_data._max_features = None
         schart_data._statistic = "count"
+        schart_data._statistics_field = schart_data.objectid_field
         schart_data._stacking = "off"
         schart_data._labels = True
+        schart_data._orderby = ""
+        schart_data._filters = []
 
         schart_data._category_field = None
         if schart_data._categories_from == "fields":
@@ -865,6 +878,20 @@ class SerialChartData(object):
         :return: Categories from groupByValues, features or fields.
         """
         return self._categories_from
+    
+    @property
+    def max_features(self):
+        """
+        :return: Max features to display
+        """
+        return self._max_features
+
+    @max_features.setter
+    def max_features(self, value):
+        """
+        Set max features to display.
+        """
+        self._max_features = value
 
     @property
     def category_field(self):
@@ -881,7 +908,44 @@ class SerialChartData(object):
         if self._categories_from == "fields":
             raise Exception("Can't set this attribute for 'fields' categories.")
 
+        if self._categories_from == 'groupByValues':
+            raise Exception('Set the field using add_value_field() for "groupByValues" categories')
+        if self._field_type(value) == '<M8[ns]':
+            self.parse_dates = True
+
         self._category_field = value
+
+    @property
+    def orderby_field(self):
+        """
+        :return: OrderBy field from dataset. For groupByValues or features.
+        """
+        return self._orderby
+
+    @orderby_field.setter
+    def orderby_field(self, value):
+        """
+        Set OrderBy field from dataset. For groupByValues or features.
+        """
+
+        self._orderby = value
+    
+    @property
+    def objectid_field(self):
+        """
+        :return: object ID field name.
+        """
+        try:
+            return self._item.tables[0].properties["objectIdField"]
+        except:
+            return "OBJECTID"
+    
+    @property
+    def statistics_field(self):
+        """
+        :return: Statistics field name.
+        """
+        return self._statistics_field
 
     @property
     def parse_dates(self):
@@ -925,12 +989,52 @@ class SerialChartData(object):
         Set field name from the dataset to split data by, for groupByValues.
         """
         self._split_by_field = value
+    
+    @property
+    def filters(self):
+        """
+        :return: filters associated with widget
+        """
+        return self._filters
+    
+    def add_filter(self, field, join, condition, **kwargs):
+        """
+        Add filters associated with widget.
+        """
+        self._filter_field = field
+        if join in ["AND", "OR"]:
+            self._filter_join = join
+        else:
+            raise Exception("Please select from 'AND', 'OR'")
+        if condition in ["between", "not between", "equal", "not equal", "greater than", "greater than or equal", "less than", "less than or equal", "is null", "is not null"]:
+            self._filter_condition = condition
+        else:
+            raise Exception("Please select the right condition")
+
+        if condition in ["between", "not between"]:
+            self._val1 = kwargs.get('start')
+            self._val2 = kwargs.get('end')
+            self._filters.append({"filtertype":self._filter_join, "field":self._filter_field, "operator":self._filter_condition, "start":self._val1, "end":self._val2})
+        else:
+            raise Exception("Please provide 'start' and 'end' values as parameters")
+
+        if condition in ["equal", "not equal", "greater than", "greater than or equal", "less than", "less than or equal"]:
+            self._val = kwargs.get('value')
+            self._filters.append({"filtertype":self._filter_join, "field":self._filter_field, "operator":self._filter_condition, "value":self._val})
+        else:
+            raise Exception("Please provide a 'value' parameter for comparison")
+    
+    def _field_type(self, field_name):
+        f_type = self._item.tables[0].query().sdf[field_name].dtype
+        return f_type
 
     def add_value_field(
             self,
             value_field,
             label=None,
             graph_type='line',
+            show_data_points = False,
+            point_size = 8,
             line_thickness=1,
             line_color="#ffaa00",
             fill_opacity=0,
@@ -949,6 +1053,10 @@ class SerialChartData(object):
         -------------------------   -------------------------------------------
         label                       Optional string. Label to show on the graph.
         -------------------------   -------------------------------------------
+        show_data_points            Optional string. To show data points on the graph.
+        -------------------------   -------------------------------------------
+        point_size                  Optional string. To set data point size.
+        -------------------------   -------------------------------------------
         graph_type                  Optional string. Choose from "line", "bar"
                                     "smoothed_line"
         -------------------------   -------------------------------------------
@@ -965,7 +1073,7 @@ class SerialChartData(object):
 
         data = {
             "valueField": value_field[0] if isinstance(value_field, list) else value_field,
-            "title": label if label else None,
+            "title": label if label else value_field[0] if isinstance(value_field, list) else value_field,
             "lineColor": line_color,
             "lineColorField": "_lineColor_",
             "fillColorsField": "_fillColor_",
@@ -973,12 +1081,12 @@ class SerialChartData(object):
             "fillAlphas": fill_opacity,
             "lineAlpha": line_opacity,
             "lineThickness": line_thickness,
-            "bullet": "round",
+            "bullet": "round" if show_data_points == True else "none",
             "bulletAlpha": 1,
             "bulletBorderAlpha": 0,
             "bulletBorderThickness": 2,
-            "showBalloon": True,
-            "bulletSize": 8
+            "showBalloon": show_data_points,
+            "bulletSize": point_size
         }
         if self._categories_from == "features":
             if not isinstance(self._series, list):
@@ -987,7 +1095,11 @@ class SerialChartData(object):
                 data['title'] = value_field
             self._series.append(data)
         elif self._categories_from == "groupByValues":
-            self._series = data
+            self._series = []
+            data['valueField'] = "value"
+            data['type'] = 'column'
+            self._series.append(data)
+            self._category_field = value_field[0] if isinstance(value_field, list) else value_field
         elif self._categories_from == "fields":
             if isinstance(value_field, list):
                 self._category_fields = value_field
@@ -1045,3 +1157,125 @@ class SerialChartData(object):
         Set labels True or False.
         """
         self._labels = bool(value)
+
+class Events(object):
+
+    @classmethod
+    def _create_events(cls, enable=False):
+        events = Events()
+
+        events._enable = False
+        events._selection_mode = "single"
+        events._type = "selectionChanged"
+        events._actions = []
+
+        events.enable = enable
+
+        return events
+
+    @property
+    def selection_mode(self):
+        """
+        :return: Selection mode of events.
+        """
+        return self._selection_mode
+
+    @selection_mode.setter
+    def selection_mode(self, value):
+        """
+        Set Selection mode of events.
+        """
+        if value in ["single", "multi"]:
+            self._selection_mode = value
+        else:
+            raise Exception("Please specify selection_mode from 'single' and 'multi'")
+    
+    @property
+    def enable(self):
+        """
+        :return: if events are enabled or not.
+        """
+        return self._enable
+
+    @enable.setter
+    def enable(self, value):
+        """
+        Set if events are enabled or not.
+        """
+        self._enable = bool(value)
+
+    @property
+    def type(self):
+        """
+        :return: type of trigger for event.
+        """
+        return self._type
+
+    @property
+    def synced_widgets(self):
+        """
+        :return: List of synced widgets.
+        """
+        return self._actions
+
+    def sync_map(self, action_type, widget):
+        """
+        Synchronize a mapWidget with SerialChart for triggered events.
+
+        =========================   ===========================================
+        **Argument**                **Description**
+        -------------------------   -------------------------------------------
+        action_type                 Required string. Actions can be one of 
+                                    "zoom", "flash", "show_popup", "pan".
+        -------------------------   -------------------------------------------
+        widget                      Required MapWidget item. Name of the map
+                                    widget.
+        =========================   ===========================================
+        """
+        if self.enable == False:
+            raise Exception("Please enable events")
+        else:
+            if widget.type == "mapWidget":
+                if action_type in ["zoom", "flash", "show_popup", "pan"]:
+                    self._actions.append({"type": action_type, "targetId": widget._id})
+                elif action_type == "filter":
+                    if self._targetid is not None:
+                        self._actions.append({"type":action_type, "by":"whereClause", "targetId":self._targetid})
+                    else:
+                        raise Exception("This operation is not suitable for given dataSource.")
+                else:
+                    raise Exception("Please select action_type from 'zoom', 'flash', 'show_popup' and 'pan'")
+            else:
+                raise Exception("Please select a map widget")
+
+
+    def sync_widget(self, widgets):
+        """
+        Synchronize non-mapWidget type widgets with SerialChart for triggered events.
+
+        =========================   ===========================================
+        **Argument**                **Description**
+        -------------------------   -------------------------------------------
+        widget                      Required widget item or list of widget items
+                                    .Name of the widgets to be synced.
+        =========================   ===========================================
+        """
+        if self.enable == False:
+            raise Exception("Please enable events")
+
+        else:
+            if isinstance(widgets, list):
+                for widget in widgets:
+                    if widget.type == "mapWidget":
+                        raise Exception("Use sync_map method to add actions for map widgets") ##duplicate or erase
+                    else:
+                        action_type = "filter"
+                        widget_id = str(widget._id)+'#main'
+                        self._actions.append({"type":action_type, "by":"whereClause", "targetId":widget_id})
+            else:
+                if widgets.type == "mapWidget":
+                    raise Exception("Use sync_map method to add actions for map widgets") ##duplicate or erase
+                else:
+                    action_type = "filter"
+                    widget_id = str(widgets._id)+'#main'
+                    self._actions.append({"type":action_type, "by":"whereClause", "targetId":widget_id})

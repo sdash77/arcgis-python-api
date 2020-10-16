@@ -37,6 +37,7 @@ Submodules
    :maxdepth: 3
 
    arcgis.apps.hub
+   arcgis.apps.dashboard
    arcgis.apps.workforce
    arcgis.apps.storymap
    arcgis.apps.survey123
