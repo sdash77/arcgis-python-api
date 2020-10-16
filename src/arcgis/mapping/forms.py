@@ -7,6 +7,7 @@ import arcgis
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import Item
 from arcgis.features import FeatureLayer
+import copy
 
 
 class FormCollection:
@@ -178,18 +179,19 @@ class FormInfo:
     def __init__(self, layer_data, parent):
         if not isinstance(layer_data, (dict, PropertyMap)):
             raise ValueError("Incorrect layer type passed to FormInfo class. Please pass in a property map")
-        self._layer_data = layer_data.deepcopy()
-        self._title = self._layer_data.get("title")
-        self._description = self._layer_data.get("description")
+        self._original_layer = layer_data
+        self._layer_data = copy.deepcopy(layer_data)
+        self._form = self._layer_data.get("formInfo", {})
+        self._title = self._form.get("title")
+        self._description = self._form.get("description")
         self._expression_infos = []
-        if self._layer_data.get("expressionInfos"):
-            for exp in layer_data["expressionInfos"]:
-                expression = FormExpressionInfo(expression=exp.get("expression"), name=exp.get("name"), title=exp.get("title"))
-                self._expression_infos.append(expression)
-        self._form_elements = self._get_form_element_objects(self._layer_data.get("formElements"))
+        for exp in self._form.get("expressionInfos", []):
+            expression = FormExpressionInfo(expression=exp.get("expression"), name=exp.get("name"), title=exp.get("title"))
+            self._expression_infos.append(expression)
+        self._form_elements = self._get_form_element_objects(self._form.get("formElements", []))
         self._parent = parent
         try:
-            url = self._layer_data["url"]
+            url = self._original_layer["url"]
             self._feature_layer = FeatureLayer(url=url, gis=self._parent._gis)
             self._fields = self._get_fields()
             self._edit_fields = self._get_edit_fields()
@@ -200,9 +202,10 @@ class FormInfo:
     def __repr__(self):
         return "Form " + self.title
 
-    # todo
     def __str__(self):
-        return json.dumps(self._layer_data, indent=2)
+        if self.exists():
+            return json.dumps(self.to_dict(), indent=2)
+        return None
 
     def exists(self):
         """Returns whether or not the form exists for that particular layer."""
@@ -271,21 +274,24 @@ class FormInfo:
         """Saves the form to the backend. If the form was derived from an Item, calling this function is required
         to save the form into the item. If the form was derived from a WebMap, you can either call this
         function or WebMap.update()."""
-        # this function is required to successfully save a form back into an item
-        if not self.exists():
-            # if form doesn't exist, clear it out so it works in mobile
-            self.clear_all()
         if isinstance(self._parent, Item):
             item_data = self._parent.get_data()
-            item_data["layers"][self._layer_data["id"]] = self.form
             self._parent.update(data=item_data)
-        elif isinstance(self._parent, arcgis.mapping.WebMap):
-            try:
-                self._parent.update()
-            except Exception:
-                raise ValueError("As this webmap does not yet exist as an item, please use WebMap.save() to save your form")
+        if isinstance(self._parent, arcgis.mapping.WebMap):
+            self._original_layer = self.to_dict()
         else:
             pass
+
+    def to_dict(self):
+        data = {
+            "expressionInfos": [exp.to_dict() for exp in self._expression_infos],
+            "formElements": [element.to_dict() for element in self._form_elements],
+        }
+        if self._description:
+            data["description"] = self._description
+        if self._title:
+            data["title"] = self._title
+        return data
 
     def add_all_attributes(self):
         """Adds all fields which can be valid form elements (string, date, int, double, small) to the form."""
@@ -510,7 +516,8 @@ class FormInfo:
         except Exception:
             return []
 
-    def _get_form_element_objects(self, form_elements):
+    @staticmethod
+    def _get_form_element_objects(form_elements):
         """Shared between FormInfo and FormGroupElement to construct an array of FormElement objects from dictionaries for external usage."""
         elements = []
         for element in form_elements:
@@ -559,12 +566,9 @@ class FormElement:
 
     def __init__(self, element_type=None, description=None, label=None, visibility_expression=None):
         self._element_type = element_type
-        if description:
-            self._description = description
-        if label:
-            self._label = label
-        if visibility_expression:
-            self._visibility_expression = visibility_expression
+        self._description = description
+        self._label = label
+        self._visibility_expression = visibility_expression
 
     @property
     def description(self):
@@ -607,6 +611,21 @@ class FormElement:
             self._visibility_expression = value
         else:
             raise ValueError("Please pass a FormExpressionInfo object")
+
+    def to_dict(self):
+        el_dict = {}
+        if self._description:
+            el_dict["description"] = self._description
+        if self._label:
+            el_dict["label"] = self._label
+        if self._element_type:
+            el_dict["elementType"] = self._element_type
+        if self._visibility_expression:
+            try:
+                el_dict["visibilityExpression"] = self._visibility_expression.name
+            except AttributeError:
+                el_dict["visibilityExpression"] = self._visibility_expression
+        return el_dict
 
 
 class FormFieldElement(FormElement):
@@ -676,18 +695,18 @@ class FormFieldElement(FormElement):
     def __init__(self, description=None, label=None, visibility_expression=None,
                  domain=None, editable=None, field_name=None, hint=None, input_type=None, required_expression=None):
         super().__init__(element_type="field", description=description, label=label, visibility_expression=visibility_expression)
-        if domain:
-            self._domain = domain
-        if editable:
-            self._editable = editable
-        if field_name:
-            self._field_name = field_name
-        if hint:
-            self._hint = hint
-        if input_type:
-            self._input_type = input_type
-        if required_expression:
-            self._required_expression = required_expression
+        self._domain = domain
+        self._editable = editable
+        self._field_name = field_name
+        self._hint = hint
+        self._input_type = input_type
+        self._required_expression = required_expression
+
+    def __repr__(self):
+        return "Field " + self._label
+
+    def __str__(self):
+        return json.dumps(self.to_dict(), indent=2)
 
     @property
     def domain(self):
@@ -752,9 +771,28 @@ class FormFieldElement(FormElement):
     @required_expression.setter
     def required_expression(self, value):
         if isinstance(value, FormExpressionInfo):
-            self._visibility_expression = value
+            self._required_expression = value
         else:
             raise ValueError("Please pass a FormExpressionInfo object")
+
+    def to_dict(self):
+        el_dict = super().to_dict()
+        if self._domain:
+            el_dict["domain"] = self._domain
+        if self._editable:
+            el_dict["editable"] = self._editable
+        if self._field_name:
+            el_dict["fieldName"] = self._field_name
+        if self._hint:
+            el_dict["hint"] = self._hint
+        if self._input_type:
+            el_dict["inputType"] = self._input_type
+        if self._required_expression:
+            try:
+                el_dict["requiredExpression"] = self._required_expression.name
+            except AttributeError:
+                el_dict["requiredExpression"] = self._required_expression
+        return el_dict
 
 
 class FormGroupElement(FormElement):
@@ -817,9 +855,14 @@ class FormGroupElement(FormElement):
         super().__init__(element_type="group", description=description, label=label, visibility_expression=visibility_expression)
         if elements is None:
             elements = []
-        self._form_elements = elements
-        if initial_state:
-            self._initial_state = initial_state
+        self._form_elements = FormInfo._get_form_element_objects(elements)
+        self._initial_state = initial_state
+
+    def __repr__(self):
+        return "Field " + self._label
+
+    def __str__(self):
+        return json.dumps(self.to_dict(), indent=2)
 
     @property
     def elements(self):
@@ -939,6 +982,14 @@ class FormGroupElement(FormElement):
         except Exception:
             return None
 
+    def to_dict(self):
+        el_dict = super().to_dict()
+        if self._form_elements:
+            el_dict["formElements"] = [element.to_dict() for element in self._form_elements]
+        if self._initial_state:
+            el_dict["initialState"] = self._initial_state
+        return el_dict
+
     # todo add validation here
     def _validate_element(self, element):
         """Validate the element passed to or created by add element is correct"""
@@ -1013,3 +1064,15 @@ class FormExpressionInfo:
     @title.setter
     def title(self, value):
         self._title = value
+
+    def to_dict(self):
+        exp_dict = {}
+        if self._name:
+            exp_dict["name"] = self._name
+        if self._title:
+            exp_dict["title"] = self._title
+        if self._expression:
+            exp_dict["expression"] = self._expression
+        if self._return_type:
+            exp_dict["returnType"] = self._return_type
+        return exp_dict

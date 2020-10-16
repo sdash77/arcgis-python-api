@@ -193,7 +193,7 @@ class Test_Forms(unittest.TestCase):
             got_el = form.get_element(label="Facility ID")
             self.assertIsInstance(got_el, FormFieldElement)
 
-            group = FormGroupElement(form, label="Group 1")
+            group = FormGroupElement(label="Group 1")
             group = form.add_element(group)
             el = group.add_element(field_name="facname")
             got_el = form.get_element(el.label)
@@ -212,11 +212,11 @@ class Test_Forms(unittest.TestCase):
     def test_add_element(self):
         try:
             form = self.forms.get_form(title="Shelters")
-            form_element = FormFieldElement(form, label="Facility Name", field_name="facname")
+            form_element = FormFieldElement(label="Facility Name", field_name="facname")
             form.add_element(form_element)
             self.assertEqual(len(form.elements), 1)
 
-            group_element = FormGroupElement(form, label="Group 1")
+            group_element = FormGroupElement(label="Group 1")
             form.add_element(group_element)
             self.assertEqual(len(form.elements), 2)
 
@@ -233,7 +233,7 @@ class Test_Forms(unittest.TestCase):
     def test_delete_element(self):
         try:
             form = self.forms.get_form(title="Shelters")
-            form_element = FormFieldElement(form, label="Facility Name", field_name="facname")
+            form_element = FormFieldElement(label="Facility Name", field_name="facname")
             form.add_element(form_element)
             form.add_element(field_name="facilityid")
             self.assertEqual(len(form.elements), 2)
@@ -255,7 +255,7 @@ class Test_Forms(unittest.TestCase):
     def test_field_element(self):
         try:
             form = self.forms.get_form(title="Shelters")
-            form_element = FormFieldElement(form, label="Facility Name", field_name="facname", description="test", editable=True, hint="the name",
+            form_element = FormFieldElement(label="Facility Name", field_name="facname", description="test", editable=True, hint="the name",
                                             input_type="text-box")
             form.add_element(form_element)
             self.assertEqual(form.elements[0].label, "Facility Name")
@@ -279,7 +279,7 @@ class Test_Forms(unittest.TestCase):
     def test_group_element(self):
         try:
             form = self.forms.get_form(title="Shelters")
-            group_element = FormGroupElement(form, label="Group 1", description="test", initial_state="collapsed")
+            group_element = FormGroupElement(label="Group 1", description="test", initial_state="collapsed")
             group = form.add_element(group_element)
             self.assertEqual(group.label, "Group 1")
             self.assertEqual(group.description, "test")
@@ -318,7 +318,7 @@ class Test_Forms(unittest.TestCase):
                 expression.name = None
             self.assertEqual(expression.return_type, "boolean")
             expression_2 = FormExpressionInfo(title="New Expression 3", name="expr0", expression="test")
-            el = FormFieldElement(form, label="test", field_name="facname", visibility_expression=expression, required_expression=expression_2)
+            el = FormFieldElement(label="test", field_name="facname", visibility_expression=expression, required_expression=expression_2)
             form.add_element(el)
             self.assertEqual(len(form.expressions), 2)
             form.delete_element(el)
@@ -352,7 +352,7 @@ class Test_Forms(unittest.TestCase):
                 form._validate_input(element="blah")
             with self.assertRaises(ValueError):
                 form._validate_input(field=8)
-            el = FormFieldElement(form, field_name="facname")
+            el = FormFieldElement(field_name="facname")
             with self.assertRaises(ValueError):
                 form._validate_element(el)
             with self.assertRaises(ValueError):
