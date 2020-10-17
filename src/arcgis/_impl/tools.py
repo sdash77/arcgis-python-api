@@ -5782,6 +5782,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         input_rasters_dict={}
         raster_type_dict={}
         upload_rasters_list = []
+        items_on_server=False
         # input rasters
         if isinstance(input_rasters, str):
             if os.path.exists(input_rasters):
@@ -5803,11 +5804,17 @@ class _RasterAnalysisTools(BaseAnalytics):
                     else:
                         uri_list.append(item)
             if upload_rasters_list != []:
-                from arcgis.raster._util import _upload_imagery
-                url_list = _upload_imagery(upload_rasters_list)
+                from arcgis.raster._util import _upload_imagery_agol, _upload_imagery_enterprise
+                if gis._con._product == "AGOL":
+                    url_list = _upload_imagery_agol(upload_rasters_list, gis)
+                else:
+                    item_id_list = _upload_imagery_enterprise(upload_rasters_list, gis)
+                    items_on_server = True
 
             if len(item_id_list) > 0:
                 input_rasters_dict = {"itemIds" : item_id_list }
+                if items_on_server:
+                    input_rasters_dict.update({"itemsOnServer":True})
                 input_raster_specified = True
             elif len(url_list) > 0:
                 input_rasters_dict = {"urls" : url_list}

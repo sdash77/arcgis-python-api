@@ -477,6 +477,7 @@ def build_query_string(field_name, operator, field_values):
         raise ValueError('invalid operator value')
 
 def _generate_direct_access_url(gis=None):
+    """helper fn to get the direct access url for azure storage"""
     gis = _arcgis.env.active_gis if gis is None else gis
     url = "%s/sharing/rest/content/users/%s/generateDirectAccessUrl" % (gis._portal.url,
                                                                  gis._username)
@@ -490,7 +491,9 @@ def _generate_direct_access_url(gis=None):
     else:
         raise RuntimeError("Couldn't generate direct access url")
     
-def _upload_imagery(files, gis=None):
+def _upload_imagery_agol(files, gis=None):
+    """uploads a file to the image layer to AGOL and returns the list of urls"""
+
     try:
         from azure.storage.blob import ContainerClient
     except:
@@ -529,3 +532,41 @@ def _upload_imagery(files, gis=None):
                 url_list.append(url)
 
     return url_list
+
+def _upload_imagery_enterprise(files, gis=None):
+    """uploads a file to the image layer to enterprise and returns the item id"""
+    
+    ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
+    url = "%s/uploads/upload" % ra_url
+    params = {
+        "f" : 'json'
+    }
+
+   
+    if not isinstance(files,list):
+        files = [files]
+
+    item_ids_list = []
+    
+    for file in files:
+        if os.path.exists(file):
+            if(os.path.isdir(file)):
+                for root,d_names,f_names in os.walk(file):
+                    for f in f_names:
+                        fp =os.path.join(root, f)
+                        files_param = {'file' : fp }
+                        res = gis._con.post(path=url, postdata=params, files=files_param)
+                        if 'success' in res and res['success']:
+                            item_id = res['item']['itemID']
+                        if item_id is not None:
+                            item_ids_list.append(item_id)
+
+            else:
+                files_param = {'file' : file }
+                res = gis._con.post(path=url, postdata=params, files=files_param)
+                if 'success' in res and res['success']:
+                    item_id = res['item']['itemID']
+                if item_id is not None:
+                    item_ids_list.append(item_id)
+
+    return item_ids_list
