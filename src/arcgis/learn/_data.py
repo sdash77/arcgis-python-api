@@ -505,7 +505,8 @@ def prepare_tabulardata(
         preprocessors=None,
         val_split_pct=0.1,
         seed=42,
-        batch_size=64
+        batch_size=64,
+        index_field=None
     ):
 
     """
@@ -584,6 +585,11 @@ def prepare_tabulardata(
                             descent (Reduce it if getting CUDA Out of Memory
                             Errors).
                             Default value is 64.
+    ---------------------   -------------------------------------------
+    index_field             Optional string. Field Name in the input features
+                            which will be used as index field for the data.
+                            Used for Time Series, to visualize values on the
+                            x-axis.
     =====================   ===========================================
 
     :returns: `TabularData` object
@@ -600,6 +606,7 @@ def prepare_tabulardata(
 
     HAS_COLUMN_TRANSFORMS = False
 
+    column_transforms_mapping = {}
     if preprocessors and isinstance(preprocessors, list):
         for transform in preprocessors:
             if isinstance(transform, tuple):
@@ -622,6 +629,17 @@ def prepare_tabulardata(
             from sklearn.compose import make_column_transformer
             preprocessors = make_column_transformer(*column_transforms)
 
+    if preprocessors:
+        for transform in preprocessors.transformers:
+            for column in transform[2]:
+                if not column_transforms_mapping.get(column):
+                    column_transforms_mapping[column] = []
+                if 'pipeline' in transform[0]:
+                    for step in transform[1].steps:
+                        column_transforms_mapping[column].append(step[1])
+                else:
+                    column_transforms_mapping[column].append(transform[1])
+
     return TabularDataObject.prepare_data_for_layer_learner(
         input_features,
         variable_predict,
@@ -632,7 +650,9 @@ def prepare_tabulardata(
         procs=preprocessors,
         val_split_pct=val_split_pct,
         seed=seed,
-        batch_size=batch_size
+        batch_size=batch_size,
+        index_field=index_field,
+        column_transforms_mapping=column_transforms_mapping
     )
 
 
