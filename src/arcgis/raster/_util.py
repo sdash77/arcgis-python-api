@@ -549,20 +549,25 @@ def _upload_imagery_enterprise(files, gis=None):
     item_ids_list = []
     
     for file in files:
+        item_id_dict={}
         if os.path.exists(file):
             if(os.path.isdir(file)):
+                folder = os.path.basename(file)
+                basename_len=len(os.path.dirname(file))
                 for root,d_names,f_names in os.walk(file):
                     for f in f_names:
                         fp =os.path.join(root, f)
+                        path = ("/"+root+"/"+f)[basename_len+1:].replace(os.sep, '/')
                         files_param = {'file' : fp }
                         res = gis._con.post(path=url, postdata=params, files=files_param)
                         if 'success' in res and res['success']:
                             item_id = res['item']['itemID']
-                        if item_id is not None:
-                            item_ids_list.append(item_id)
+                            item_id_dict = {"itemId":item_id, "path":fp}
+                        if item_id_dict is not None:
+                            item_ids_list.append(item_id_dict)
 
             else:
-                files_param = {'file' : file }
+                files_param = {'file' : file}
                 res = gis._con.post(path=url, postdata=params, files=files_param)
                 if 'success' in res and res['success']:
                     item_id = res['item']['itemID']

@@ -8770,8 +8770,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                                       raster_type_params=raster_type_params,
                                                                       image_collection_properties=None,
                                                                       use_input_rasters_by_ref=use_input_rasters_by_ref)
+            if isinstance(raster_type, str):
+                try:
+                    raster_type = json.loads(raster_type)
+                except:
+                    pass
             if isinstance (input_raster,dict) and isinstance(raster_type, dict):
-                input_raster.update(raster_type)
+                input_raster.update({"rasterType":raster_type})
 
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
