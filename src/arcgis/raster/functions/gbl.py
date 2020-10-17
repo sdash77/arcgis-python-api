@@ -1613,7 +1613,7 @@ def kernel_density(in_features,
 
                    - GEODESIC-Uses geodesic distances between features. This method takes into account the curvature
                      of the spheroid and correctly deals with data near the poles and the International dateline.
-    :param in_barriers: Optional. The dataset that defines the barriers. The barriers can be a feature layer of polyline or polygon features.
+    :param in_barriers: Optional. The dataset that defines the barriers. The barriers can be a feature layer of polyline or polygon features. (Added in 10.9)
     :return: output raster
     """
 
@@ -1798,7 +1798,7 @@ def euclidean_direction(in_source_data,
                             known as a great circle line if based on a sphere rather than an ellipsoid.
     :param in_barrier_data: Optional barrier raster. The input raster that defines the barriers. The dataset must contain 
                             NoData where there are no barriers. Barriers are represented by valid values including zero. 
-                            The barriers can be defined by an integer or floating-point raster. (Added in 10.9)
+                            The barriers can be defined by an integer or floating-point raster. 
 
     :return: output raster with function applied
     """
