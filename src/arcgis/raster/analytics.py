@@ -1418,6 +1418,7 @@ def calculate_density(input_point_or_line_features,
                       output_cell_size=None,
                       output_name=None,
                       context=None,
+                      input_barriers=None,
                       *,
                       gis=None,
                       future=False,
@@ -1550,6 +1551,9 @@ def calculate_density(input_point_or_line_features,
                                                 Example:
                                                     {'resamplingMethod': "Nearest"} 
     ------------------------------------     --------------------------------------------------------------------
+    input_barriers                           Optional. The dataset that defines the barriers. The barriers can be 
+                                             a feature layer of polyline or polygon features. (Added in 10.9)
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -1583,6 +1587,7 @@ def calculate_density(input_point_or_line_features,
                                                         output_cell_size=output_cell_size,
                                                         context=context,
                                                         future=future,
+                                                        input_barriers=input_barriers,
                                                         **kwargs)
 
 def create_viewshed(input_elevation_surface,
