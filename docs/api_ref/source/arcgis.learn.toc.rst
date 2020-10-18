@@ -15,6 +15,9 @@ classify_pixels
 --------------
 .. autofunction:: arcgis.learn.classify_pixels
 
+compute_accuracy_for_object_detection
+-------------------------------------
+.. autofunction:: arcgis.learn.compute_accuracy_for_object_detection
 
 export_training_data
 ---------------
