@@ -880,18 +880,18 @@ def classify_objects(input_raster,
                                                                           **kwargs)
 
 def compute_accuracy_for_object_detection(detected_features, 
-                                         ground_truth_features, 
-                                         detected_class_value_field=None, 
-                                         ground_truth_class_value_field=None, 
-                                         min_iou=None, 
-                                         mask_features=None,
-                                         out_accuracy_table_name=None, 
-                                         out_accuracy_report_name=None, 
-                                         context=None,
-                                         *,
-                                         gis=None,
-                                         future=False,
-                                         **kwargs):
+                                          ground_truth_features, 
+                                          detected_class_value_field=None, 
+                                          ground_truth_class_value_field=None, 
+                                          min_iou=None, 
+                                          mask_features=None,
+                                          out_accuracy_table_name=None, 
+                                          out_accuracy_report_name=None, 
+                                          context=None,
+                                          *,
+                                          gis=None,
+                                          future=False,
+                                          **kwargs):
 
     """
     Function can be used to calculates accuracy of a deep learning model by comparing the detected objects from 
@@ -937,7 +937,7 @@ def compute_accuracy_for_object_detection(detected_features,
 
                                              min_IoU value should be in the range 0 to 1. [0,1] 
                                              Example:
-                                                "ClassLabel"
+                                                0.5
     ------------------------------------     --------------------------------------------------------------------
     mask_features                            Optional feature layer. A polygon feature service layer that delineates 
                                              the area where accuracy will be computed. Only the image area that 
@@ -981,6 +981,20 @@ def compute_accuracy_for_object_detection(detected_features,
 
     :return:
         The output accuracy table item or/and accuracy report item (or datastore path to accuracy report)
+
+    .. code-block:: python
+
+        # Usage Example: This example generates an accuracy table for a specified minimum IoU value.
+
+        compute_accuracy_op = compute_accuracy_for_object_detection(detected_features=detected_features, 
+                                                                    ground_truth_features=ground_truth_features, 
+                                                                    detected_class_value_field="ClassValue", 
+                                                                    ground_truth_class_value_field="Class", 
+                                                                    min_iou=0.5, 
+                                                                    mask_features=None,
+                                                                    out_accuracy_table_name="accuracy_table", 
+                                                                    out_accuracy_report_name="accuracy_report", 
+                                                                    gis=gis)
 
     """
 
