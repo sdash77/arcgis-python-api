@@ -10839,6 +10839,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     out_accuracy_report_name = {"uri":out_accuracy_report_name}
                 else:
                     out_accuracy_report_name = {"name":out_accuracy_report_name}
+            elif isinstance(out_accuracy_report_name, arcgis.gis.Item):
+                out_accuracy_report_name = {"itemId":out_accuracy_report_name.itemid, "name":out_accuracy_report_name.name}
         gpjob = self._tbx.compute_accuracyfor_object_detection(detected_features=detected_features, 
                                                                ground_truth_features=ground_truth_features, 
                                                                out_accuracy_table_name=out_accuracy_table_name, 
