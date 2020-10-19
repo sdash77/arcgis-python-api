@@ -488,6 +488,7 @@ def get_device():
         device = torch.device("cpu")
     else:
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
     return device    
 
 def read_xyzinumr_label_from_las(filename_las, extra_features):
@@ -849,7 +850,8 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         val_idxs = [i for i,p in enumerate(src.items) if p.parent.name == 'val']
         src = src.split_by_idxs(train_idxs, val_idxs)\
             .label_from_func(lambda x: x, remap=remap, class_mapping=class_mapping)
-        data = src.databunch(bs=batch_size, **databunch_kwargs)
+        device = get_device()
+        data = src.databunch(bs=batch_size, device=device, **databunch_kwargs)
         data.meta = meta
         data.remap = remap
         data.classes =  classes

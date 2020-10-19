@@ -178,9 +178,23 @@ ImageCaptioner
     :inherited-members:
     :undoc-members:
 
+TimeSeriesModel
+-------
+.. autoclass:: arcgis.learn.TimeSeriesModel
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+ScannedMapDigitizer
+------------------
+.. autoclass:: arcgis.learn.ScannedMapDigitizer
+    :members:
+
 Submodules
 --------------
 .. toctree::
    :maxdepth: 3
 
    arcgis.learn.text
+
+

@@ -145,18 +145,10 @@ def extract_entities(tokens, labels):
 
 class TextDataObject:
 
-    databunch_kwargs = {'num_workers': 0} if sys.platform == 'win32' else {}
-    databunch_kwargs["pin_memory"] = True
-    if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
-        databunch_kwargs["device"] = torch.device("cuda")
-    elif getattr(arcgis.env, "_processorType", "") == "CPU":
-        databunch_kwargs["device"] = torch.device("cpu")
-    else:
-        databunch_kwargs["device"] = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-
     def __init__(self, task):
         self.emd = {}
         self.emd_path = None
+
         self._bs = None
         self._is_empty = True
         self._train_df = None
@@ -166,6 +158,16 @@ class TextDataObject:
         self._databunch = None
         self._training_indexes = list()
         self._task = task
+        
+        self.databunch_kwargs = {'num_workers': 0} if sys.platform == 'win32' else {}
+        self.databunch_kwargs["pin_memory"] = True
+        if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
+            self.databunch_kwargs["device"] = torch.device("cuda")
+        elif getattr(arcgis.env, "_processorType", "") == "CPU":
+            self.databunch_kwargs["device"] = torch.device("cpu")
+        else:
+            self.databunch_kwargs["device"] = torch.device('cuda') if torch.cuda.is_available() else torch.device(
+                'cpu')
 
     @classmethod
     def prepare_data_for_entity_recognition(
