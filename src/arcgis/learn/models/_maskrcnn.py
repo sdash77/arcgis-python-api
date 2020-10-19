@@ -266,13 +266,17 @@ class MaskRCNN(ArcGISModel):
 
         return cls(data, **model_params, pretrained_path=str(model_file), **maskrcnn_kwargs)
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         import random
 
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_maskrcnn_inferencing"
-        _emd_template["InferenceFunction"] = "ArcGISInstanceDetector.py"
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISInstanceDetector.py"
+        else:
+            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISInstanceDetector.py"
+        _emd_template["ModelType"] = "InstanceDetection"
         _emd_template["MaskRCNNkwargs"] = self.maskrcnn_kwargs
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["SupportsVariableTileSize"] = True

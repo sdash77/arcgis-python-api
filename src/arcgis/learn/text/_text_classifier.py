@@ -336,7 +336,7 @@ class TextClassifier(ArcGISModel):
             metrics = {"Accuracy": self.accuracy()}
         return metrics
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         _emd_template = {}
         is_multilabel_problem = True if len(self._data._label_cols) > 1 else False
         _emd_template["Architecture"]= self.learn.model._transformer_architecture

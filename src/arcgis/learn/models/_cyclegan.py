@@ -118,11 +118,12 @@ class CycleGAN(ArcGISModel):
             fid_a, fid_b = self.compute_metrics()
         return {'FID_A': f'{fid_a}', 'FID_B': f'{fid_b}'}
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_cyclegan"
         _emd_template["InferenceFunction"] = "ArcGISCycleGAN.py"
+        _emd_template["ModelType"] = "CycleGAN"
         _emd_template["n_channel"] = self._data.n_channel
         _emd_template["SupportsVariableTileSize"] = True
         if self._data._is_multispectral:

@@ -142,11 +142,12 @@ class SuperResolution(ArcGISModel):
         return {'psnr_metric': '{0:1.4e}'.format(psnr_ssim[0]),
                 'ssim_metric': '{0:1.4e}'.format(psnr_ssim[1])}
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_superres"
-        _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+        _emd_template["InferenceFunction"] = "ArcGISSuperResolution.py"
+        _emd_template["ModelType"] = "SuperResolution"
         _emd_template["downsample_factor"] = self._data.downsample_factor
         return _emd_template
 

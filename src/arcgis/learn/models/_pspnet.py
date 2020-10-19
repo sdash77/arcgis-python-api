@@ -338,7 +338,7 @@ class PSPNetClassifier(ArcGISModel):
             return self.learn.validate()[-1].tolist()
 
         
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         import random
         _emd_template = {"ModelParameters" : {}}
         _emd_template["ModelType"] = "ImageClassification"
@@ -348,7 +348,10 @@ class PSPNetClassifier(ArcGISModel):
         _emd_template["ModelParameters"]["unet_aux_loss"] = self._unet_aux_loss
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_psp"
-        _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+        else:
+            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
 

@@ -500,12 +500,15 @@ class YOLOv3(ArcGISModel):
             return dict(zip(self._data.classes[1:], aps))
 
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         
         class_data = {}
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        else:
+            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
         _emd_template["ModelConfiguration"] = "_yolov3_inference"
         _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]

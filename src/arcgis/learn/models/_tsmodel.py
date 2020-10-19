@@ -268,7 +268,7 @@ class TimeSeriesModel(ArcGISModel):
 
         return {'score': self.score()}
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         _emd_template = {}
         _emd_template["ModelType"] = "TimeSeriesModel"
         _emd_template["model_arch"] = self._model_arch

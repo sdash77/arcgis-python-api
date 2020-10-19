@@ -363,7 +363,7 @@ class GeometryType:
     Polygon = 4
 
 
-class ObjectClassifier:
+class ArcGISObjectClassifier:
     def __init__(self):
         self.name = 'Object classifier'
         self.description = 'This python raster function applies deep learning model to classify objects from overlaid imagery'
@@ -698,7 +698,7 @@ attribute_table = {
 
  
 
-class ArcGISImageClassifier:
+class ArcGISSuperResolution:
     def __init__(self):
         self.name = 'Image Classifier'
         self.description = 'Image classification python raster function to inference a pytorch image classifier'

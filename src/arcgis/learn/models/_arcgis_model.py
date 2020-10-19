@@ -656,7 +656,7 @@ class ArcGISModel(object):
         if hasattr(self.learn, 'recorder'):
             self.learn.recorder.plot_losses()
 
-    def _create_emd_template(self, path, compute_metrics=True):
+    def _create_emd_template(self, path, compute_metrics=True, save_inference_file=True):
 
         _emd_template = {}
         # For old models - add lr, ModelName
@@ -690,7 +690,7 @@ class ArcGISModel(object):
             if backbone == 'backbone_wrapper':
                 backbone = self._orig_backbone.__name__
 
-        _emd_template = self._get_emd_params()
+        _emd_template = self._get_emd_params(save_inference_file)
 
         _emd_template["SupportsVariableTileSize"] = _emd_template.get("SupportsVariableTileSize", False)
         _emd_template["ArcGISLearnVersion"] = ArcGISLearnVersion
@@ -768,7 +768,7 @@ class ArcGISModel(object):
 
         return path.stem
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         return {}
 
     @staticmethod
@@ -909,6 +909,7 @@ class ArcGISModel(object):
         save_format = kwargs.get('save_format', 'default')  # 'default', 'tflite'
         post_processed = kwargs.get('post_processed', True)  # True, False
         quantized = kwargs.get('quantized', False)  # True, False
+        save_inference_file = kwargs.get("save_inference_file", False)
         temp = self.learn.path
         if '\\' in name_or_path or '/' in name_or_path:
             path = Path(name_or_path)
@@ -957,7 +958,7 @@ class ArcGISModel(object):
             self.learn.path = temp
             self.learn.model_dir = 'models'
 
-        _emd_template = self._create_emd_template(saved_path.with_suffix('.pth'), compute_metrics=compute_metrics)
+        _emd_template = self._create_emd_template(saved_path.with_suffix('.pth'), compute_metrics, save_inference_file)
 
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get('batch_size', 16)
@@ -979,8 +980,10 @@ class ArcGISModel(object):
                 pass
 
         if _emd_template.get('InferenceFunction', False):
-            with open(saved_path.parent / _emd_template['InferenceFunction'], 'w') as f:
-                f.write(self._code)
+            if _emd_template['ModelType'] not in ["ObjectDetection", "ImageClassification", "InstanceDetection",\
+                                                  "ObjectClassification"] or save_inference_file:
+                with open(saved_path.parent / _emd_template['InferenceFunction'], 'w') as f:
+                    f.write(self._code)
 
         if _emd_template.get('ModelConfigurationFile', False):
             with open(saved_path.parent / _emd_template['ModelConfigurationFile'], 'w') as f:

@@ -470,11 +470,14 @@ class SingleShotDetector(ArcGISModel):
     def _analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ret_scores=True, device=None):
         return postprocess(pred, model=self, thresh=thresh, nms_overlap=nms_overlap, ret_scores=ret_scores, device=device)
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         import random
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        else:
+            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
         _emd_template["ModelConfiguration"] = "_DynamicSSD"
         _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]

@@ -167,7 +167,7 @@ class ImageCaptioner(ArcGISModel):
         """
         return get_bleu(self, self._data, *kwargs)
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         _emd_template = {"DataAttributes": {}, "ModelParameters": {}}
         # arcgis.learn.models._inferencing
         _emd_template["Framework"] = None

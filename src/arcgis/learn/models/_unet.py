@@ -290,13 +290,16 @@ class UnetClassifier(ArcGISModel):
     def _model_metrics(self):
         return {'accuracy': '{0:1.4e}'.format(self._get_model_metrics())}
         
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         import random
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_unet"
         _emd_template["ModelType"] = "ImageClassification"
-        _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+        else:
+            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
         _emd_template["SupportsVariableTileSize"] = True

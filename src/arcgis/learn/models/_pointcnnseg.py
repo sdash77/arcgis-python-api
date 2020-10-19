@@ -239,7 +239,7 @@ class PointCNN(ArcGISModel):
 
         return float(model_accuracy)
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         import random
         _emd_template = {"DataAttributes" : {}, "ModelParameters" : {}}
         _emd_template["Framework"] = "N/A"

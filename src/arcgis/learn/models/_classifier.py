@@ -238,11 +238,15 @@ class FeatureClassifier(ArcGISModel):
     def _model_metrics(self):
         return {}
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         _emd_template = {}
-        _emd_template["Framework"] = "PyTorch"
-        _emd_template["ModelConfiguration"] = "FeatureClassifier"
+        _emd_template["Framework"] = "arcgis.learn.models._inferencing"
+        _emd_template["ModelConfiguration"] = "_FeatureClassifier"
         _emd_template["ModelType"] = "ObjectClassification"
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISObjectClassifier.py"
+        else:
+            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectClassifier.py"
         _emd_template["MetaDataMode"] = self._data._dataset_type
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template['CropSizeFixed'] = 1  # hardcoded
@@ -262,11 +266,13 @@ class FeatureClassifier(ArcGISModel):
             class_data["Color"] = color
             _emd_template['Classes'].append(class_data.copy())
 
-        if getattr(self, '_is_multispectral', False):
-            _emd_template["Framework"] = "arcgis.learn.models._inferencing"
-            _emd_template["ModelConfiguration"] = "_FeatureClassifier"
-            _emd_template["InferenceFunction"] = "ObjectClassifier.py"
-
+        # if getattr(self, '_is_multispectral', False):
+        #     _emd_template["Framework"] = "arcgis.learn.models._inferencing"
+        #     _emd_template["ModelConfiguration"] = "_FeatureClassifier"
+        #     if save_inference_file:
+        #         _emd_template["InferenceFunction"] = "ArcGISObjectClassifier.py"
+        #     else:
+        #         _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectClassifier.py"
 
         return _emd_template
 

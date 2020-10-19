@@ -201,7 +201,7 @@ class FullyConnectedNetwork(ArcGISModel):
 
         return {'score': score}
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         _emd_template = {}
         _emd_template["ModelType"] = "FullyConnectedNetwork"
         _emd_template["layers"] = self._layers
