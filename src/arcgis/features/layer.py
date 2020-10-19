@@ -2701,7 +2701,17 @@ class FeatureLayer(Layer):
         if 'SHAPE' in featureset_dict:
             df.spatial.set_geometry('SHAPE')
         if len(dfields) > 0:
-            df[dfields] = df[dfields].apply(pd.to_datetime, unit='ms')
+            
+            for fld in [fld for fld in dfields if fld in df.columns]:
+                try:
+                    df[fld] = pd.to_datetime(df[fld]/1000,
+                                             infer_datetime_format=True,
+                                             errors='coerce',
+                                             unit='s')
+                except:
+                    
+                    df[fld] = pd.to_datetime(df[fld], errors='coerce',
+                                             infer_datetime_format=True)            
         return df
 
 
