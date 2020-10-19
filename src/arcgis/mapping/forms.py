@@ -188,7 +188,7 @@ class FormInfo:
         for exp in self._form.get("expressionInfos", []):
             expression = FormExpressionInfo(expression=exp.get("expression"), name=exp.get("name"), title=exp.get("title"))
             self._expression_infos.append(expression)
-        self._form_elements = self._get_form_element_objects(self._form.get("formElements", []))
+        self._form_elements = self._get_form_element_objects(self._form.get("formElements", []), self)
         self._parent = parent
         try:
             url = self._original_layer["url"]
@@ -213,6 +213,7 @@ class FormInfo:
 
     def clear_all(self):
         """Clears the form to an empty state. Deletes all form elements currently in the form."""
+        self._expression_infos = []
         self._form_elements = []
 
     def get_element(self, label=None):
@@ -483,6 +484,8 @@ class FormInfo:
 
     def _validate_element(self, element):
         """Validate the element passed to or created by add element is correct."""
+        if element._form is None:
+            element._form = self
         if not element.label:
             raise ValueError("Element must have label")
         if element.element_type == "field":
@@ -497,6 +500,9 @@ class FormInfo:
                 else:
                     if element.field_name == form_el.field_name:
                         raise ValueError("Field already exists in the form, cannot add to the form")
+        elif element.element_type == "group":
+            for el in element.elements:
+                self._validate_element(el)
 
     def _validate_unrestricted_field_name(self, field_name):
         """Validates the field is not a GPS metdata, edit, or id field."""
@@ -517,20 +523,20 @@ class FormInfo:
             return []
 
     @staticmethod
-    def _get_form_element_objects(form_elements):
+    def _get_form_element_objects(form_elements, form=None):
         """Shared between FormInfo and FormGroupElement to construct an array of FormElement objects from dictionaries for external usage."""
         elements = []
         for element in form_elements:
             if element["type"] == "field":
-                el = FormFieldElement(description=element.get("description"), label=element.get("label"),
+                el = FormFieldElement(form=form, description=element.get("description"), label=element.get("label"),
                                       visibility_expression=element.get("visibilityExpression"), domain=element.get("domain"),
                                       editable=element.get("editable"), field_name=element.get("fieldName"),
                                       hint=element.get("hint"), input_type=element.get("inputType"), required_expression=element.get("requiredExpression"))
             elif element["type"] == "group":
-                el = FormGroupElement(elements=element.get("formElements"), initial_state=element.get("initialState"), description=element.get("description"),
+                el = FormGroupElement(form=form, elements=element.get("formElements"), initial_state=element.get("initialState"), description=element.get("description"),
                                       label=element.get("label"), visibility_expression=element.get("visibilityExpression"))
             else:
-                el = FormElement(element_type=element.get("type"), description=element.get("description"), label=element.get("label"),
+                el = FormElement(form=form, element_type=element.get("type"), description=element.get("description"), label=element.get("label"),
                                  visibility_expression=element.get("visibilityExpression"))
             elements.append(el)
         return elements
@@ -564,7 +570,8 @@ class FormElement:
     the two types of field elements. Instantiate a FormFieldElement or FormGroupElement instead of this class.
     """
 
-    def __init__(self, element_type=None, description=None, label=None, visibility_expression=None):
+    def __init__(self, form=None, element_type=None, description=None, label=None, visibility_expression=None):
+        self._form = form
         self._element_type = element_type
         self._description = description
         self._label = label
@@ -692,9 +699,9 @@ class FormFieldElement(FormElement):
             expression_info = FormExpressionInfo(name="expr0",title="New Expression",expression="$feature.inspector == 'Jake'")
             el.visibility_expression = expression_info
         """
-    def __init__(self, description=None, label=None, visibility_expression=None,
+    def __init__(self, form=None, description=None, label=None, visibility_expression=None,
                  domain=None, editable=None, field_name=None, hint=None, input_type=None, required_expression=None):
-        super().__init__(element_type="field", description=description, label=label, visibility_expression=visibility_expression)
+        super().__init__(form=form, element_type="field", description=description, label=label, visibility_expression=visibility_expression)
         self._domain = domain
         self._editable = editable
         self._field_name = field_name
@@ -851,11 +858,11 @@ class FormGroupElement(FormElement):
 
     """
 
-    def __init__(self, elements=None, initial_state=None, description=None, label=None, visibility_expression=None):
-        super().__init__(element_type="group", description=description, label=label, visibility_expression=visibility_expression)
+    def __init__(self, form=None, elements=None, initial_state=None, description=None, label=None, visibility_expression=None):
+        super().__init__(form=form, element_type="group", description=description, label=label, visibility_expression=visibility_expression)
         if elements is None:
             elements = []
-        self._form_elements = FormInfo._get_form_element_objects(elements)
+        self._form_elements = FormInfo._get_form_element_objects(elements, form=form)
         self._initial_state = initial_state
 
     def __repr__(self):
@@ -990,11 +997,14 @@ class FormGroupElement(FormElement):
             el_dict["initialState"] = self._initial_state
         return el_dict
 
-    # todo add validation here
     def _validate_element(self, element):
         """Validate the element passed to or created by add element is correct"""
         if element.element_type == "group":
             raise ValueError("You cannot add a group to another group")
+        try:
+            self._form._validate_element(element)
+        except Exception:
+            pass
 
 
 class FormExpressionInfo:
