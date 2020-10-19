@@ -62,7 +62,7 @@ class TransformersBaseTokenizer(BaseTokenizer):
     def __call__(self, *args, **kwargs):
         return self
 
-    # new improved tokenizer wich can support any transformer model
+    # new improved tokenizer which can support any transformer model
     def tokenizer(self, t:str) -> List[str]:
         ids = self._pretrained_tokenizer.encode(t, max_length=self.max_seq_len, truncation=True)
         tokens = self._pretrained_tokenizer.convert_ids_to_tokens(ids)

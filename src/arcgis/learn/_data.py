@@ -25,7 +25,7 @@ try:
     import torch
     from .models._unet_utils import ArcGISSegmentationItemList, is_no_color
     from .models._maskrcnn_utils import ArcGISInstanceSegmentationItemList, ArcGISInstanceSegmentationMSItemList
-    from .models._ner_utils import ner_prepare_data
+    from .models._ner_utils import _NERData
     from ._utils.pascal_voc_rectangles import ObjectDetectionItemList
     from .models._superres_utils import resize_one
     from ._utils.common import ArcGISMSImage, ArcGISImageList
@@ -1208,9 +1208,8 @@ def prepare_data(path,
             batch_size = 8
         encoding = kwargs.get("encoding", "UTF-8")
         ner_architecture = kwargs.get("ner_architecture", "spacy")
-        return ner_prepare_data(dataset_type=dataset_type, path=path, class_mapping=class_mapping, seed=seed,
-                                val_split_pct=val_split_pct, batch_size=batch_size,
-                                ner_architecture=ner_architecture, encoding=encoding)
+        return _NERData(dataset_type=dataset_type, path=path, class_mapping=class_mapping, seed=seed,
+                                val_split_pct=val_split_pct, batch_size=batch_size, encoding=encoding)
     elif dataset_type == "PointCloud":
         from ._utils.pointcloud_data import Transform3d
         if transforms is None:

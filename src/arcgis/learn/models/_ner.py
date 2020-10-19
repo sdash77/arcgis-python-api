@@ -92,18 +92,19 @@ class EntityRecognizer:
         if create_empty:
             pass
         else:
-            object_type = "spacy" if isinstance(data, spaCyNERDatabunch) else "transformer"
-            if isinstance(data, spaCyNERDatabunch) and backbone == "spacy":
+            # object_type = "spacy" if isinstance(data, spaCyNERDatabunch) else "transformer"
+            if backbone == "spacy":
                 if not HAS_SPACY: _raise_spacy_import_error()
                 self._model = _SpacyEntityRecognizer(data, lang=lang, **kwargs)
-            elif isinstance(data, TextDataObject) and backbone != "spacy":
+            # elif isinstance(data, TextDataObject) and backbone != "spacy":
+            else:
                 if not HAS_TRANSFORMERS: _raise_transformers_import_error()
                 self._model = _TransformerEntityRecognizer(data, backbone, **kwargs)
-            else:
-                error_message = (f"`prepare_data` function is created for `{object_type}` backbone, but"
-                                 f" the `EntityRecognizer` class is called with `{backbone}` backbone. "
-                                 "Please select appropriate backbone to create the class object.")
-                raise Exception(error_message)
+            # else:
+            #     error_message = (f"`prepare_data` function is created for `{object_type}` backbone, but"
+            #                      f" the `EntityRecognizer` class is called with `{backbone}` backbone. "
+            #                      "Please select appropriate backbone to create the class object.")
+            #     raise Exception(error_message)
 
         if create_empty is False:
             self.train_ds = self._model.train_ds
