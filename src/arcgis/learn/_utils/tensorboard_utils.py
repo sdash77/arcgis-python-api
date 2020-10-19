@@ -53,6 +53,10 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
         # txt= self._arcgis_model.show_results(return_text=True)
         elif (type(self._arcgis_model).__name__) == 'FasterRCNN':
             fig1 = self._show_results_modified(2, return_fig=True)
+        elif (type(self._arcgis_model).__name__) == 'CycleGAN':
+            self._arcgis_model.learn.model.arcgis_results = True
+            fig1 = self.show_results(rows=rows)
+            self._arcgis_model.learn.model.arcgis_results = False
         else:
             return
 
@@ -107,6 +111,9 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
                 fig1 = self.segment_show_xyzs(xs, ys, zs)
         elif (type(self._arcgis_model).__name__) == 'SuperResolution':
             fig1 = self.img_img_show_xyzs(xs, ys, zs)
+        elif (type(self._arcgis_model).__name__) == 'CycleGAN':
+            fig1 = self.img_tuple_show_xyzs(xs, ys, zs)
+
         return fig1
 
     def show_xyzs(self, xs, ys, zs, imgsize: int = 4, figsize: Optional[Tuple[int, int]] = None, **kwargs):
@@ -181,6 +188,17 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
             x.show(ax=axs[i, 0], **kwargs)
             y.show(ax=axs[i, 2], **kwargs)
             z.show(ax=axs[i, 1], **kwargs)
+        return fig
+
+    def img_tuple_show_xyzs(self, xs, ys, zs, figsize:Tuple[int,int]=None, **kwargs):
+        """Show `xs` (inputs), `ys` (targets) and `zs` (predictions) on a figure of `figsize`.
+        `kwargs` are passed to the show method."""
+        figsize = ifnone(figsize, (12,3*len(xs)))
+        fig,axs = plt.subplots(len(xs), 2, figsize=figsize)
+        fig.suptitle('Ground truth / Predictions', weight='bold', size=14)
+        for i,(x,z) in enumerate(zip(xs,zs)):
+            x.to_one().show(ax=axs[i,0], **kwargs)
+            z.to_one_pred().show(ax=axs[i,1], **kwargs)
         return fig
 
     def _show_results_modified(self, rows=5, **kwargs):

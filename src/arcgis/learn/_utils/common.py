@@ -82,7 +82,7 @@ def read_image(path):
 
 class ArcGISMSImage(Image):
 
-    def show(self, ax=None, rgb_bands=None):
+    def show(self, ax=None, rgb_bands=None, show_axis=False):
         if rgb_bands is None:
             rgb_bands = getattr(self, 'rgb_bands', [0, 1, 2])
         symbology_data = self.data[rgb_bands]
@@ -91,6 +91,7 @@ class ArcGISMSImage(Image):
         max_vals = symbology_data.view(im_shape[0], -1).max(dim=1)[0]
         strechted_data = ( symbology_data - min_vals.view(im_shape[0], 1, 1) ) / ( max_vals.view(im_shape[0], 1, 1) - min_vals.view(im_shape[0], 1, 1) + .001 )
         data_to_plot = strechted_data.permute(1, 2, 0)
+        if not show_axis:ax.axis('off')
         if ax is not None:
             return ax.imshow(data_to_plot)
         else:

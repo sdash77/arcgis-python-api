@@ -406,6 +406,7 @@ class ArcGISModel(object):
         self._learning_rate = None
         self._backend = getattr(self, '_backend', 'pytorch')
         self._model_metrics_cache = None
+        self._slice_lr = True
 
     def _check_backbone_support(self, backbone):
         "Fetches the backbone name and returns True if it is in the list of supported backbones"
@@ -595,7 +596,9 @@ class ArcGISModel(object):
             print('Finding optimum learning rate.')
 
             lr = self.lr_find(allow_plot=False)
-            lr = slice(lr / 10, lr)
+            if self._slice_lr is True:
+                lr = slice(lr / 10, lr)
+            
 
         self._learning_rate = lr
         self._model_metrics_cache = None
@@ -667,7 +670,8 @@ class ArcGISModel(object):
                 _emd_template["LearningRate"] = "0.0"
             if _emd_template["ModelName"] in [
                 "MaskRCNN",
-                "UnetClassifier"
+                "UnetClassifier",
+                "CycleGAN"
             ]:
                 _emd_template["SupportsVariableTileSize"] = True
             else:
@@ -852,11 +856,15 @@ class ArcGISModel(object):
             <p><b>PSNR Metric:</b> {emd_template.get('psnr_metric')}</p>
             <p><b>SSIM Metric:</b> {emd_template.get('ssim_metric')}</p>
         """
-
         if emd_template.get('per_class_metrics'):
             html_table = pd.read_json(emd_template.get('per_class_metrics')).to_html()
             model_analysis = f"""
             <p><b>Per class metrics:</b> {html_table}</p>
+        """
+        if emd_template.get('FID_A'):
+            model_analysis = f"""
+            <p><b>FID A:</b> {emd_template.get('FID_A')}</p>
+            <p><b>FID B:</b> {emd_template.get('FID_B')}</p>
         """
 
         if model_analysis:
