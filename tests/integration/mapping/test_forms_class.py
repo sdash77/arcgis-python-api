@@ -321,8 +321,6 @@ class Test_Forms(unittest.TestCase):
             el = FormFieldElement(label="test", field_name="facname", visibility_expression=expression, required_expression=expression_2)
             form.add_element(el)
             self.assertEqual(len(form.expressions), 2)
-            form.delete_element(el)
-            self.assertEqual(len(form.expressions), 0)
 
         except AssertionError as assertErrorException:
             raise assertErrorException

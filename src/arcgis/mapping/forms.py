@@ -270,20 +270,21 @@ class FormInfo:
         """Returns Arcade expressions used in the form to the user - a list of :class:`arcgis.mapping.forms.FormExpressionInfo`"""
         return self._expression_infos
 
-    # todo change to persist changes
-    def update(self):
+    def persist_changes(self):
         """Saves the form to the backend. If the form was derived from an Item, calling this function is required
         to save the form into the item. If the form was derived from a WebMap, you can either call this
         function or WebMap.update()."""
-        if isinstance(self._parent, Item):
-            item_data = self._parent.get_data()
-            self._parent.update(data=item_data)
-        if isinstance(self._parent, arcgis.mapping.WebMap):
-            self._original_layer = self.to_dict()
-        else:
-            pass
+        if self.exists:
+            if isinstance(self._parent, Item):
+                item_data = self._parent.get_data()
+                self._parent.update(data=item_data)
+            if isinstance(self._parent, arcgis.mapping.WebMap):
+                self._original_layer["formInfo"] = self.to_dict()
+            else:
+                pass
 
     def to_dict(self):
+        self._hydrate_expression_infos()
         data = {
             "expressionInfos": [exp.to_dict() for exp in self._expression_infos],
             "formElements": [element.to_dict() for element in self._form_elements],
@@ -363,7 +364,6 @@ class FormInfo:
         if label:
             element = self.get_element(label=label)
         try:
-            self._remove_linked_expression_infos(element)
             return self._form_elements.remove(element)
         except Exception:
             return False
@@ -557,12 +557,30 @@ class FormInfo:
         else:
             return False
 
-    def _remove_linked_expression_infos(self, element):
-        """Deletes corresponding visibility and required expressions from the list of FormExpressionInfo."""
+    def _hydrate_expression_infos(self):
+        for form_el in self._form_elements:
+            self._hydrate_element_expressions(form_el)
+            if form_el.element_type == "group":
+                for el in form_el.elements:
+                    self._hydrate_element_expressions(el)
+
+    def _hydrate_element_expressions(self, element):
+        """For each element's visibility and required expression, check if it exists in the expression info list. If it's a FormExpressionInfo object,
+        add it to the list. If it's not, remove the expression as it does not point to anything and we can't form a FormExpressionInfo"""
         if element.visibility_expression:
-            self._delete_expression_info(element.visibility_expression)
+            if isinstance(element.visibility_expression, FormExpressionInfo):
+                if self._get_expression_info(element.visibility_expression.name) is None:
+                    self._expression_infos.append(element.visibility_expression)
+            else:
+                if self._get_expression_info(element.visibility_expression) is None:
+                    element._visibility_expression = None
         if element.element_type == "field" and element.required_expression:
-            self._delete_expression_info(element.visibility_expression)
+            if isinstance(element.required_expression, FormExpressionInfo):
+                if self._get_expression_info(element.required_expression.name) is None:
+                    self._expression_infos.append(element.required_expression)
+            else:
+                if self._get_expression_info(element.required_expression) is None:
+                    element._required_expression = None
 
 
 class FormElement:
@@ -1027,6 +1045,7 @@ class FormExpressionInfo:
                             The user friendly name for the expressionInfo
      ==================     ====================================================================
    """
+
     def __init__(self, expression=None, name=None, title=None):
         self._expression = expression
         self._name = name
