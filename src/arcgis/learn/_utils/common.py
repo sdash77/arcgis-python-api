@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 HAS_FASTAI = False
 try:
-    from .env import raise_fastai_import_error
+    from .env import raise_fastai_import_error, HAS_GDAL, gdal_import_exception, GDAL_INSTALL_MESSAGE
     from fastai.vision.data import ImageList
     from fastai.vision import Image, imagenet_stats, pil2tensor, get_files
     import torch
@@ -20,13 +20,8 @@ except Exception:
     import_exception = traceback.format_exc()
     pass
 
-GDAL_INSTALL_MESSAGE = f"""
-\nPlease install gdal using the following command
-\nconda install gdal=2.3.3
-""".strip()
 
-
-def read_image(path):
+def read_image(path, resize_to: int=None):
     """
     path: file path of image on disk.
 
@@ -37,21 +32,47 @@ def read_image(path):
         raise Exception(f"The image path {path} could not be found on disk, please verify your training data.")
 
     gdal_error = None
-    skimage_error = None
     try:
-        from osgeo import gdal
-        arr = gdal.Open(path).ReadAsArray()
-        if len(arr.shape) > 2:
-            arr = np.rollaxis(arr, 0, 3)
-        return arr
+        if not HAS_GDAL:
+            gdal_error = f"""{gdal_import_exception} \n\n{GDAL_INSTALL_MESSAGE}"""
+        else:
+            from osgeo import gdal
+            ds = gdal.Open(path)
+            if resize_to is None:
+                arr = ds.ReadAsArray()
+            else:
+                gdal_dtype = ds.GetRasterBand(1).DataType
+                transform = ds.GetGeoTransform()
+                dx = transform[1]
+                dy = transform[-1]
+                #
+                dx_new = (ds.RasterXSize / resize_to) * dx
+                dy_new = (ds.RasterYSize / resize_to) * dy
+                #
+                ds_new = gdal.Warp(
+                    '',
+                    path,
+                    dstSRS=ds.GetProjection(),
+                    format='VRT',
+                    outputType=gdal_dtype,
+                    xRes=dx_new,
+                    yRes=dy_new
+                )
+                arr = ds_new.ReadAsArray()
+            if len(arr.shape) > 2:
+                arr = np.rollaxis(arr, 0, 3)
+            return arr
     except Exception as _gdal_error:
         gdal_error = str(_gdal_error)
 
-    try:
-        from skimage.io import imread
-        return imread(path)
-    except Exception as _skimage_error:
-        skimage_error = str(_skimage_error)
+    # Attach gdal error
+    message = f"""
+       Tried opening image using gdal and encountered the following error
+       \n\n{gdal_error}
+       """
+
+    if resize_to is not None:
+        raise Exception(f"`resize_to` parameter is only supported using gdal. \n"+message)
 
     try:
         from skimage.io import imread
@@ -59,19 +80,6 @@ def read_image(path):
     except Exception as _pillow_error:
         pillow_error = str(_pillow_error)
 
-    # Attach gdal error
-    message = f"""
-       Tried opening image using gdal and encountered the following error
-       \n\n{gdal_error}
-       """
-    if (gdal_error) == ModuleNotFoundError:
-        message += GDAL_INSTALL_MESSAGE
-    # Attach skimage error
-    message += f"""
-       \n===================================================================
-       \n\nTried opening image using skimage and encountered the following error
-       \n\n{skimage_error}
-       """
     # Attach pillow error
     message += f"""
        \n===================================================================

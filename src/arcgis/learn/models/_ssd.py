@@ -38,7 +38,7 @@ try:
     import PIL
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
     from .._video_utils import VideoUtils
-    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path, read_image
     from fastprogress.fastprogress import progress_bar
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -681,23 +681,35 @@ class SingleShotDetector(ArcGISModel):
         if not HAS_OPENCV:
             raise Exception("This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24")
 
+
         if isinstance(image_path, str):
-            image = cv2.imread(image_path)
+            #
+            if self._data._is_multispectral:
+                resize_to = None
+                if resize:
+                    if self._data.resize_to is not None:
+                        resize_to = self._data.resize_to
+                    elif self._data.chip_size is not None:
+                        resize_to = self._data.chip_size
+                image = read_image(image_path, resize_to)
+            else:
+                image = cv2.imread(image_path)
         else:
             image = image_path
 
         orig_height, orig_width, _ = image.shape
         orig_frame = image.copy()
 
-        if resize and self._data.resize_to is None\
-                and self._data.chip_size is not None:
-            image = cv2.resize(image, (self._data.chip_size, self._data.chip_size))
+        if not self._data._is_multispectral:
+            if resize and self._data.resize_to is None\
+                    and self._data.chip_size is not None:
+                image = cv2.resize(image, (self._data.chip_size, self._data.chip_size))
 
-        if self._data.resize_to is not None:
-            if isinstance(self._data.resize_to, tuple):
-                image = cv2.resize(image, self._data.resize_to)
-            else:
-                image = cv2.resize(image, (self._data.resize_to, self._data.resize_to))
+            if self._data.resize_to is not None:
+                if isinstance(self._data.resize_to, tuple):
+                    image = cv2.resize(image, self._data.resize_to)
+                else:
+                    image = cv2.resize(image, (self._data.resize_to, self._data.resize_to))
 
         height, width, _ = image.shape
 
@@ -714,7 +726,13 @@ class SingleShotDetector(ArcGISModel):
         self._data.valid_ds.tfms = []
 
         for chip in chips:
-            frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
+            if self._data._is_multispectral:
+                im = PIL.Image.fromarray(chip['chip'])
+                t = pil2tensor(im, dtype=np.float32)[None]
+                scaled_t = self._data._min_max_scaler(t)[0]
+                frame = Image(scaled_t[self._data._extract_bands])
+            else:
+                frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
             bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, model=self)[0]
             if bbox:
                 scores = bbox.scores
@@ -776,11 +794,19 @@ class SingleShotDetector(ArcGISModel):
             ]      
 
         if visualize:
-            image = _draw_predictions(orig_frame, predictions, labels)
+            if self._data._is_multispectral:
+                im = PIL.Image.fromarray(orig_frame)
+                t = pil2tensor(im, dtype=np.float32)[None]
+                scaled_t = self._data._min_max_scaler(t)[0]
+                orig_frame = (scaled_t*255).round().numpy().astype(np.uint8)[self._data._symbology_rgb_bands]
+                orig_frame = np.rollaxis(orig_frame, 0, 3)
+                image = _draw_predictions(orig_frame, predictions, labels).get().astype(np.uint8)
+            else:
+                image = _draw_predictions(orig_frame, predictions, labels)
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             import matplotlib.pyplot as plt
             plt.xticks([])
             plt.yticks([])
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             plt.imshow(PIL.Image.fromarray(image))
 
         if return_scores:
