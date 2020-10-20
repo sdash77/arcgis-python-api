@@ -196,6 +196,7 @@ class FormInfo:
             self._fields = self._get_fields()
             self._edit_fields = self._get_edit_fields()
             self._id_fields = self._get_id_fields()
+            self._required_fields = self._get_required_fields()
         except Exception:
             raise ValueError("A layer url which can be used to generate a feature layer is required to use this module")
 
@@ -275,6 +276,7 @@ class FormInfo:
         to save the form into the item. If the form was derived from a WebMap, you can either call this
         function or WebMap.update()."""
         if self.exists:
+            self._validate_all_required_fields_in_form()
             if isinstance(self._parent, Item):
                 item_data = self._parent.get_data()
                 item_data["layers"][self._layer_data["id"]] = self.to_dict()
@@ -577,6 +579,29 @@ class FormInfo:
             else:
                 if self._get_expression_info(element.required_expression) is None:
                     element._required_expression = None
+
+    def _get_required_fields(self):
+        required_fields = []
+        for field in self._fields:
+            if "nullable" in field and field["nullable"] is False and field not in self._edit_fields and field not in self._edit_fields:
+                required_fields.append(field["name"])
+
+    def _validate_all_required_fields_in_form(self):
+        found = False
+        for field_name in self._required_fields:
+            for el in self._form_elements:
+                if el.element_type == "group":
+                    if field_name in [el.field_name for el in el._form_elements]:
+                        found = True
+                        break
+                else:
+                    if field_name == el.field_name:
+                        found = True
+                        break
+            if not found:
+                raise ValueError(str(field_name) + " is a required field not found in the form. Please add to the form")
+            found = False
+
 
 
 class FormElement:
