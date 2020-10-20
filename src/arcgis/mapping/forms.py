@@ -583,7 +583,7 @@ class FormInfo:
     def _get_required_fields(self):
         required_fields = []
         for field in self._fields:
-            if "nullable" in field and field["nullable"] is False and field not in self._edit_fields and field not in self._edit_fields:
+            if "nullable" in field and field["nullable"] is False and field["name"].lower() not in self._edit_fields and field["name"].lower() not in self._id_fields:
                 required_fields.append(field["name"])
         return required_fields
 
