@@ -158,13 +158,13 @@ class FormInfo:
                 form_info.description = "The editable experience in ArcGIS Field Maps for data collection"
 
                 # get element, add element
-                new_element = FormFieldElement(form_info, label="Inspector Name", field_name="inspectornm",
+                new_element = FormFieldElement(label="Inspector Name", field_name="inspectornm",
                                               editable=True)
                 form_info.add_element(element=new_element)
                 same_element = form_info.get_element(label="Inspector Name")
 
                 # add group, add to group
-                new_group = FormGroupElement(form_info, label="Group 1", description="New Group")
+                new_group = FormGroupElement(label="Group 1", description="New Group")
                 group = form_info.add_element(element=new_group)
                 group.add_element(field_name="inspection_date")
 
@@ -585,23 +585,23 @@ class FormInfo:
         for field in self._fields:
             if "nullable" in field and field["nullable"] is False and field not in self._edit_fields and field not in self._edit_fields:
                 required_fields.append(field["name"])
+        return required_fields
 
     def _validate_all_required_fields_in_form(self):
         found = False
         for field_name in self._required_fields:
             for el in self._form_elements:
                 if el.element_type == "group":
-                    if field_name in [el.field_name for el in el._form_elements]:
+                    if field_name.lower() in [el.field_name.lower() for el in el._form_elements]:
                         found = True
                         break
                 else:
-                    if field_name == el.field_name:
+                    if field_name.lower() == el.field_name.lower():
                         found = True
                         break
             if not found:
                 raise ValueError(str(field_name) + " is a required field not found in the form. Please add to the form")
             found = False
-
 
 
 class FormElement:
