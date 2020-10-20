@@ -182,7 +182,7 @@ class FormInfo:
         self._original_layer = layer_data
         self._layer_data = copy.deepcopy(layer_data)
         self._form = self._layer_data.get("formInfo", {})
-        self._title = self._form.get("title")
+        self._title = self._layer_data.get("title", "New Form")
         self._description = self._form.get("description")
         self._expression_infos = []
         for exp in self._form.get("expressionInfos", []):
@@ -496,8 +496,6 @@ class FormInfo:
         if element.element_type == "field":
             if not self._validate_unrestricted_field_name(element.field_name.lower()):
                 raise ValueError("Cannot add a GPS metadata or edit field to the form")
-            if self._validate_input_type_field_mismatch(element):
-                raise ValueError("Cannot add the input type " + str(element.input_type) + " with this field")
             if element.field_name not in [d.get("name").lower() for d in self._fields]:
                 raise ValueError("You cannot add an element which does not have a corresponding field in the layer")
             for form_el in self._form_elements:
@@ -510,10 +508,6 @@ class FormInfo:
         elif element.element_type == "group":
             for el in element.elements:
                 self._validate_element(el)
-
-    def _validate_input_type_field_mismatch(self):
-
-
 
     def _validate_unrestricted_field_name(self, field_name):
         """Validates the field is not a GPS metdata, edit, or id field."""
@@ -646,7 +640,7 @@ class FormElement:
         if self._label:
             el_dict["label"] = self._label
         if self._element_type:
-            el_dict["elementType"] = self._element_type
+            el_dict["type"] = self._element_type
         if self._visibility_expression:
             try:
                 el_dict["visibilityExpression"] = self._visibility_expression.name
