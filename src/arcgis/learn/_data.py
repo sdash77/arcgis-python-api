@@ -100,7 +100,7 @@ def get_installation_command():
                           "scikit-image=0.15.0 pillow=6.2.2 libtiff=4.0.10 fastai=1.0.60 pytorch=1.4.0 "
                           "torchvision=0.5.0 scikit-learn=0.23.1 --no-pin'"
                           "\n'conda install gdal=2.3.3'"
-                          "\n'pip install transformers==3.0.2'")
+                          "\n'pip install transformers==3.3.0'")
     return installation_steps 
 
 
