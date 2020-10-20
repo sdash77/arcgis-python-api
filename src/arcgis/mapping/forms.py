@@ -270,16 +270,21 @@ class FormInfo:
         """Returns Arcade expressions used in the form to the user - a list of :class:`arcgis.mapping.forms.FormExpressionInfo`"""
         return self._expression_infos
 
-    def persist_changes(self):
+    def update(self):
         """Saves the form to the backend. If the form was derived from an Item, calling this function is required
         to save the form into the item. If the form was derived from a WebMap, you can either call this
         function or WebMap.update()."""
         if self.exists:
             if isinstance(self._parent, Item):
                 item_data = self._parent.get_data()
+                item_data["layers"][self._layer_data["id"]] = self.to_dict()
                 self._parent.update(data=item_data)
             if isinstance(self._parent, arcgis.mapping.WebMap):
                 self._original_layer["formInfo"] = self.to_dict()
+                try:
+                    self._parent.update()
+                except RuntimeError:
+                    raise ValueError("WebMap item does not exist yet. Form is now on your webmap - please use WebMap.save() to persist these changes")
             else:
                 pass
 
@@ -491,6 +496,8 @@ class FormInfo:
         if element.element_type == "field":
             if not self._validate_unrestricted_field_name(element.field_name.lower()):
                 raise ValueError("Cannot add a GPS metadata or edit field to the form")
+            if self._validate_input_type_field_mismatch(element):
+                raise ValueError("Cannot add the input type " + str(element.input_type) + " with this field")
             if element.field_name not in [d.get("name").lower() for d in self._fields]:
                 raise ValueError("You cannot add an element which does not have a corresponding field in the layer")
             for form_el in self._form_elements:
@@ -503,6 +510,10 @@ class FormInfo:
         elif element.element_type == "group":
             for el in element.elements:
                 self._validate_element(el)
+
+    def _validate_input_type_field_mismatch(self):
+
+
 
     def _validate_unrestricted_field_name(self, field_name):
         """Validates the field is not a GPS metdata, edit, or id field."""
@@ -547,15 +558,6 @@ class FormInfo:
             if expression.name == name:
                 return expression
         return None
-
-    def _delete_expression_info(self, name):
-        """Deletes a single expression info by looking up its name in the list of FormExpressionInfo."""
-        expression = self._get_expression_info(name)
-        if expression:
-            self._expression_infos.remove(expression)
-            return True
-        else:
-            return False
 
     def _hydrate_expression_infos(self):
         for form_el in self._form_elements:

@@ -84,6 +84,7 @@ class Test_Forms(unittest.TestCase):
                                   'snippet': 'Map created using Python API for testing',
                                   'tags': ['automation', 'regression', 'python']}
         self.wm_item = self.wm.save(webmap_item_properties)
+        self.wm = WebMap(self.wm_item)
         self.forms = self.wm.forms
 
     def tearDown(self):
@@ -199,6 +200,9 @@ class Test_Forms(unittest.TestCase):
             got_el = form.get_element(el.label)
             self.assertIsInstance(got_el, FormFieldElement)
 
+            got_el = form.get_element(label="blah")
+            self.assertEqual(got_el, None)
+
         except AssertionError as assertErrorException:
             raise assertErrorException
 
@@ -286,6 +290,7 @@ class Test_Forms(unittest.TestCase):
             self.assertEqual(group.initial_state, "collapsed")
             with self.assertRaises(ValueError):
                 group.initial_state = "blah"
+            group.initial_state = "expanded"
 
             el = group.add_element(field_name="facname")
             self.assertEqual(len(group.elements), 1)
@@ -312,15 +317,45 @@ class Test_Forms(unittest.TestCase):
         try:
             form = self.forms.get_form(title="Shelters")
             expression = FormExpressionInfo(title="New Expression", name="expr0", expression="test")
+            self.assertEqual(expression.expression, "test")
             self.assertEqual(expression.title, "New Expression")
             expression.title = "New Expression 2"
+            self.assertEqual(expression.title, "New Expression 2")
             with self.assertRaises(ValueError):
                 expression.name = None
             self.assertEqual(expression.return_type, "boolean")
-            expression_2 = FormExpressionInfo(title="New Expression 3", name="expr0", expression="test")
+            expression_2 = FormExpressionInfo(title="New Expression 3", name="expr1", expression="test")
             el = FormFieldElement(label="test", field_name="facname", visibility_expression=expression, required_expression=expression_2)
             form.add_element(el)
+            self.assertEqual(len(form.expressions), 0)
+            print(form)
             self.assertEqual(len(form.expressions), 2)
+
+        except AssertionError as assertErrorException:
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_form_expression_update(self):
+        try:
+            form = self.forms.get_form(title="Shelters")
+            group_element = FormGroupElement(label="Group 1", description="test", initial_state="collapsed")
+            group = form.add_element(group_element)
+            expression = FormExpressionInfo(title="New Expression", name="expr0", expression="test")
+            el = FormFieldElement(label="test", field_name="facname", visibility_expression=expression)
+            group.add_element(el)
+            form.update()
+
+            new_wm = WebMap(self.wm_item)
+            self.assertIn("formInfo", new_wm.layers[0])
+            self.assertEqual(1, len(new_wm.layers[0]["formInfo"]["formElements"]))
+            self.assertEqual(1, len(new_wm.layers[0]["formInfo"]["formElements"][0]["formElements"]))
+            self.assertEqual(1, len(new_wm.layers[0]["formInfo"]["expressionInfos"]))
 
         except AssertionError as assertErrorException:
             raise assertErrorException
