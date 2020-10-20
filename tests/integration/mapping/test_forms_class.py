@@ -256,6 +256,27 @@ class Test_Forms(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_move_element(self):
+        try:
+            form = self.forms.get_form(title="Shelters")
+            form_element = FormFieldElement(label="Facility Name", field_name="facname")
+            form.add_element(form_element)
+            el = form.add_element(field_name="facilityid")
+            self.assertEqual(form.elements[1], el)
+
+            form.move_element(element=el, index=0)
+            self.assertEqual(form.elements[0], el)
+
+        except AssertionError as assertErrorException:
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_field_element(self):
         try:
             form = self.forms.get_form(title="Shelters")
@@ -356,6 +377,24 @@ class Test_Forms(unittest.TestCase):
             self.assertEqual(1, len(new_wm.layers[0]["formInfo"]["formElements"]))
             self.assertEqual(1, len(new_wm.layers[0]["formInfo"]["formElements"][0]["formElements"]))
             self.assertEqual(1, len(new_wm.layers[0]["formInfo"]["expressionInfos"]))
+
+        except AssertionError as assertErrorException:
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_forms_validate_add_element(self):
+        try:
+            form = self.forms.get_form(title="Shelters")
+            with self.assertRaises(ValueError):
+                form.add_element(field_name="objectid")
+            with self.assertRaises(ValueError):
+                form.add_element(field_name="blah")
 
         except AssertionError as assertErrorException:
             raise assertErrorException

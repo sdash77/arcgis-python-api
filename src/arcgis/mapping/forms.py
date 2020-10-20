@@ -1030,8 +1030,8 @@ class FormGroupElement(FormElement):
 
     def to_dict(self):
         el_dict = super().to_dict()
-        if self._form_elements:
-            el_dict["formElements"] = [element.to_dict() for element in self._form_elements]
+        # don't use if form_elements here as the empty array is required
+        el_dict["formElements"] = [element.to_dict() for element in self._form_elements]
         if self._initial_state:
             el_dict["initialState"] = self._initial_state
         return el_dict
