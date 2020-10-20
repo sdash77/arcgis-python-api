@@ -995,10 +995,6 @@ class WebMap(HasTraits, collections.OrderedDict):
             return False
 
     @property
-    def forms(self):
-        return FormCollection(parent=self)
-
-    @property
     def tables(self):
         """
         Tables in the web map
