@@ -23,7 +23,7 @@ _use_async = True
 def calculate_motion_statistics(input_layer,
                                 track_fields,
                                 motion_statistics="All",
-                                track_history_window=2,
+                                track_history_window=3,
                                 idle_tol_dist=None,
                                 idle_tol_unit=None,
                                 idle_time_tol=None,
@@ -79,9 +79,9 @@ def calculate_motion_statistics(input_layer,
                             current observation) that will be used when calculating summary
                             statistics that are not instantaneous. This includes minimum,
                             maximum, average, and total statistics. The default track history
-                            window is **2**, which means that at each point in a track
+                            window is **3**, which means that at each point in a track
                             summary statistic will be calculated using the current
-                            observation and the previous two observations. This parameter
+                            observation and the previous three observations. This parameter
                             does not affect instantaneous statistics or idle classification.
     ----------------------  ---------------------------------------------------------------
     idle_tol_dist           Optional Float. Used along with `idle_time_tol` to decide if an
