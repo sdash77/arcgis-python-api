@@ -21,6 +21,7 @@ from arcgis.gis import Layer, _GISResource, Item
 from arcgis.mapping._basemap_definitions import basemap_dict
 from arcgis.mapping._scenelyrs import SceneLayer
 from arcgis.mapping.forms import FormCollection
+from arcgis._impl.common._utils import _lazy_property
 try:
     from traitlets import HasTraits, observe
     from arcgis.widgets._mapview._traitlets_extension import ObservableDict
@@ -993,6 +994,10 @@ class WebMap(HasTraits, collections.OrderedDict):
             return True
         else:
             return False
+
+    @_lazy_property
+    def forms(self):
+        return FormCollection(parent=self)
 
     @property
     def tables(self):
