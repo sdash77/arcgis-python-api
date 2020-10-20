@@ -1054,15 +1054,15 @@ class Service(BaseServer):
     def change_provider(self, provider):
         """
         Allows for the switching of the service provide and how it is hosted on the ArcGIS Server instance.
-        
+
         Values:
-        
-           + 'ArcObjects' means the service is running under the ArcMap runtime i.e. published from ArcMap      
+
+           + 'ArcObjects' means the service is running under the ArcMap runtime i.e. published from ArcMap
            + 'ArcObjects11': means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
            + 'DMaps': means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
-        
+
         :returns: Boolean
-        
+
         """
         allowed_providers = ['ArcObjects',  'ArcObjects11', 'DMaps']
         url = self._url + "/changeProvider"
@@ -1445,7 +1445,7 @@ class Service(BaseServer):
         return self._ii
     #----------------------------------------------------------------------
     @property
-    def _jobs(self):
+    def jobs(self):
         """returns a `JobManager` to manage asynchronous geoprocessing tasks"""
         if self._jm is None:
             url = "%s/jobs" % self._url
@@ -1486,7 +1486,7 @@ class JobManager(BaseServer):
         ---------------     --------------------------------------------------------------------
         end_time            Optional Datetime. The end date/time of the geoprocessing job.
         ---------------     --------------------------------------------------------------------
-        status              Optional String. TThe current status of the job. The possible
+        status              Optional String. The current status of the job. The possible
                             statuses are as follows:
 
                             - esriJobNew

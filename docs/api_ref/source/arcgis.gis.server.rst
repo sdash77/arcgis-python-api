@@ -178,4 +178,17 @@ ItemInformationManager
     :members:
     :undoc-members:
     :show-inheritance:
-      
+
+JobManager
+----------------
+.. autoclass:: arcgis.gis.server.JobManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Job
+----------------
+.. autoclass:: arcgis.gis.server.Job
+    :members:
+    :undoc-members:
+    :show-inheritance:
