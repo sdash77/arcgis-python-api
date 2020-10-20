@@ -28,6 +28,46 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
+
+def sum_center_dispersion(input_layers,
+                          summary_type,
+                          ellipse_size=None,
+                          weight_field=None,
+                          group_fields=None,
+                          output_name=None,
+                          gis=None,
+                          future=False,
+                          context=None):
+    """
+    The `sum_center_dispersion` task finds central features and directional
+    distributions. It can be used to answer questions such as the following:
+
+         + Where is the center?
+         + Which feature is the most accessible from all other features?
+         + How dispersed, compact, or integrated are the features?
+         + Are there directional trends?
+
+    For an example, suppose you have used the GeoAnalytics tool Find Point
+    Clusters to identify groups of power outages across an entire year. The
+    result will be time enabled point representing cluster locations of power
+    outages. However, you are interested in identifying the center of the
+    power outages for visualization. To do this, you use Summarize Center And
+    Dispersion a group by field of the outage cluster ids.
+    """
+    param_db = {
+        "input_layers": (_FeatureSet, "inputLayer"),
+        "summary_type" : (str, "summaryType"),
+        "ellipse_size": (str, "ellipseSize"),
+        "weight_field": (float, "weightField"),
+        "group_fields": (str, "groupFields"),
+        "output_name": (str, "outputName"),
+        "context": (str, "context"),
+        "output": (_FeatureSet, "Output Features"),
+    }
+    return_values = [
+        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
+    ]
+
 def build_multivariable_grid(input_layers,
                              variable_calculations,
                              bin_size,
