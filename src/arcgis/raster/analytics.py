@@ -1002,7 +1002,10 @@ def copy_raster(input_raster,
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    input_raster                         Required feature layer. The input feature layer to convert to a raster dataset.
+    input_raster                         Required raster layer. The input raster layer to be copied to.
+                                         The function can create hosted imagery layers on enterprise and AGOL from 
+                                         local raster datasets by uploading the data to the server.
+                                         The function mosaics multiple images into a single dataset to create one layer.
     --------------------------------     --------------------------------------------------------------------
     output_cellsize                      Required dict. The cell size and unit for the output imagery layer.
                                          The available units are Feet, Miles, Meters, and Kilometers.
@@ -1039,6 +1042,18 @@ def copy_raster(input_raster,
                                                 
                                             Example: 
                                                 {"outSR": {spatial reference}}
+    ------------------                   --------------------------------------------------------------------
+    raster_type_name                     Required string. The name of the raster type to use for adding data to 
+                                         the mosaic dataset.
+
+                                         Choice list: ['Raster Dataset','UAV/UAS', 'Aerial', 'ScannedAerial', 'Landsat 7 EMT+', 'Landsat 8', 'Sentinel-2', 'ZY3-SASMAC', 'ZY3-CRESDA']
+    ------------------                   --------------------------------------------------------------------
+    raster_type_params                   Optional dict. Additional ``raster_type`` specific parameters.
+        
+                                         The process of add rasters to the mosaic datset can be
+                                         controlled by specifying additional raster type arguments.
+
+                                         The raster type parameters argument is a dictionary.
     --------------------------------     --------------------------------------------------------------------
     gis                                  Optional GIS object. If not specified, the currently active connection
                                          is used.
@@ -2448,11 +2463,13 @@ def create_image_collection(image_collection,
                                          - An image service URL
                                          - Shared data path (this path must be accessible by the server)
                                          - Name of a folder on the portal
+                                         The function can create hosted imagery layers on enterprise and AGOL from 
+                                         local raster datasets by uploading the data to the server.
     ------------------                   --------------------------------------------------------------------
     raster_type_name                     Required string. The name of the raster type to use for adding data to 
                                          the image collection.
 
-                                         Choice list: ['UAV/UAS', 'Aerial', 'ScannedAerial', 'Landsat 7 EMT+', 'Landsat 8', 'Sentinel-2', 'ZY3-SASMAC', 'ZY3-CRESDA']
+                                         Choice list: ['Raster Dataset', 'UAV/UAS', 'Aerial', 'ScannedAerial', 'Landsat 7 EMT+', 'Landsat 8', 'Sentinel-2', 'ZY3-SASMAC', 'ZY3-CRESDA']
     ------------------                   --------------------------------------------------------------------
     raster_type_params                   Optional dict. Additional ``raster_type`` specific parameters.
         
@@ -2497,6 +2514,12 @@ def create_image_collection(image_collection,
 
                                          Example:
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------                   --------------------------------------------------------------------
+    tiles_only                           Keyword only parameter. Optional boolean. 
+                                         On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                         To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                         Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ==================                   ====================================================================
 
     :returns: The imagery layer item
