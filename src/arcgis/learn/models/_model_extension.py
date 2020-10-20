@@ -138,15 +138,21 @@ class ModelExtension(ArcGISModel):
     def _analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ret_scores=True, device=None):
         return self.model_conf.post_process(pred, nms_overlap, thresh, self.learn.data.chip_size, device)
        
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         import random
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         if self._data.dataset_type == 'Classified_Tiles':
-            _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+            if save_inference_file:
+                _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+            else:
+                _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
             _emd_template['IsEdgeDetection'] = getattr(self, "_is_edge_detection", False)
         else:
-            _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+            if save_inference_file:
+                _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+            else:
+                _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
         _emd_template["ModelConfiguration"] = "_model_extension_inferencing"
         _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]
@@ -179,8 +185,8 @@ class ModelExtension(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from ``prepare_data`` function or None for

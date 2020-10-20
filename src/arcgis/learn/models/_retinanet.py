@@ -145,10 +145,13 @@ class RetinaNet(ArcGISModel):
     def _supported_datasets():
         return ['PASCAL_VOC_rectangles', 'KITTI_rectangles']     
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        else:
+            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
         _emd_template["ModelConfiguration"] = "_RetinaNet_Inference"
         _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]
@@ -183,8 +186,8 @@ class RetinaNet(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from `prepare_data` function or None for

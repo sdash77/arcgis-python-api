@@ -110,6 +110,11 @@ def raise_fastai_import_error(import_exception=fastai_import_exception, installa
 
 HAS_GDAL = False
 gdal_import_exception = None
+GDAL_INSTALL_MESSAGE = f"""
+\nPlease install gdal using the following command
+\nconda install gdal=2.3.3
+""".strip()
+
 try:
     from osgeo import gdal
     HAS_GDAL = True
@@ -118,6 +123,5 @@ except Exception as e:
     pass
 
 def raise_gdal_import_error(import_exception=gdal_import_exception):
-    installation_steps = ("Install gdal using - 'conda install -c esri gdal=2.3.3'")
     message = "gdal is required to work with multispectral datasets."
-    raise Exception(f"""{import_exception} \n\n{message}\n{installation_steps}""")
+    raise Exception(f"""{import_exception} \n\n{message}\n{GDAL_INSTALL_MESSAGE}""")

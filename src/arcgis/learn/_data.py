@@ -41,6 +41,7 @@ try:
     from fastai.tabular import cont_cat_split, add_datepart
     from ._utils.tabular_data import TabularDataObject
     from ._utils.text_data import TextDataObject
+    from ._utils.cyclegan import ImageTupleList, prepare_data_ms_cyclegan
     import random
     import PIL
     HAS_FASTAI = True
@@ -1220,6 +1221,26 @@ def prepare_data(path,
                                           transforms,
                                           resize_to,
                                           **kwargs)
+    elif dataset_type == "CycleGAN":
+        path = path/"Images"
+        if _is_multispectral:
+            data = prepare_data_ms_cyclegan(path, norm_pct, val_split_pct, seed, databunch_kwargs)
+            data.n_channel = data.x[0].data[0].shape[0]
+            data._is_multispectral = _is_multispectral
+            data._imagery_type = _imagery_type
+            data._bands = _bands
+            data._norm_pct = norm_pct
+            data._extract_bands = None
+            data._do_normalize = False
+            x_shape = data.train_ds[0][0].shape
+            data.chip_size = x_shape[-1]
+            return data
+        data = ImageTupleList.from_folders(path, 'train_a', 'train_b')\
+                .split_by_rand_pct(val_split_pct, seed=seed)\
+                .label_empty()
+        img_size = data.x[0].shape[-1]
+        if resize_to is None:
+            kwargs_transforms['size'] = img_size
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
 
@@ -1333,7 +1354,10 @@ def prepare_data(path,
         data = (data.transform(get_transforms(), **kwargs_transforms)
             .databunch(**databunch_kwargs)
             .normalize(imagenet_stats, do_y=True))
-        
+    elif dataset_type == "CycleGAN":
+        data = (data.transform(get_transforms(), **kwargs_transforms)
+            .databunch(**databunch_kwargs))
+        data.n_channel = data.x[0].data[0].shape[0]       
     else:
         data = (data.transform(transforms, **kwargs_transforms)
             .databunch(**databunch_kwargs)

@@ -384,7 +384,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
             metrics["metrics_per_label"] = per_class_metric_df.transpose().to_dict()
         return {"Metrics": json.dumps(metrics)}
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         _emd_template = {}
         _emd_template["Architecture"]= self.learn.model._transformer_architecture
         _emd_template["PretrainedModel"]= self.learn.model._transformer_pretrained_model_name

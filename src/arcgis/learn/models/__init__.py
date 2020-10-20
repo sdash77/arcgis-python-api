@@ -17,4 +17,5 @@ from ._superres import SuperResolution
 from ._hed import HEDEdgeDetector
 from ._bdcn import BDCNEdgeDetector
 from ._image_captioner import ImageCaptioner
+from ._cyclegan import CycleGAN
 from ._tsmodel import TimeSeriesModel

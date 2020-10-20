@@ -190,6 +190,13 @@ ScannedMapDigitizer
 .. autoclass:: arcgis.learn.ScannedMapDigitizer
     :members:
 
+CycleGAN
+------------------
+.. autoclass:: arcgis.learn.CycleGAN
+    :members:
+    :inherited-members:
+    :undoc-members:
+    
 Submodules
 --------------
 .. toctree::

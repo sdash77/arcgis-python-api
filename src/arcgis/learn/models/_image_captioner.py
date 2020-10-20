@@ -95,8 +95,8 @@ class ImageCaptioner(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Optional fastai Databunch. Returned
                                 data object from `prepare_data` function or
@@ -167,7 +167,7 @@ class ImageCaptioner(ArcGISModel):
         """
         return get_bleu(self, self._data, *kwargs)
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         _emd_template = {"DataAttributes": {}, "ModelParameters": {}}
         # arcgis.learn.models._inferencing
         _emd_template["Framework"] = None

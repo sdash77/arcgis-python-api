@@ -406,6 +406,7 @@ class ArcGISModel(object):
         self._learning_rate = None
         self._backend = getattr(self, '_backend', 'pytorch')
         self._model_metrics_cache = None
+        self._slice_lr = True
 
     def _check_backbone_support(self, backbone):
         "Fetches the backbone name and returns True if it is in the list of supported backbones"
@@ -595,7 +596,9 @@ class ArcGISModel(object):
             print('Finding optimum learning rate.')
 
             lr = self.lr_find(allow_plot=False)
-            lr = slice(lr / 10, lr)
+            if self._slice_lr is True:
+                lr = slice(lr / 10, lr)
+            
 
         self._learning_rate = lr
         self._model_metrics_cache = None
@@ -653,7 +656,7 @@ class ArcGISModel(object):
         if hasattr(self.learn, 'recorder'):
             self.learn.recorder.plot_losses()
 
-    def _create_emd_template(self, path, compute_metrics=True):
+    def _create_emd_template(self, path, compute_metrics=True, save_inference_file=True):
 
         _emd_template = {}
         # For old models - add lr, ModelName
@@ -667,7 +670,8 @@ class ArcGISModel(object):
                 _emd_template["LearningRate"] = "0.0"
             if _emd_template["ModelName"] in [
                 "MaskRCNN",
-                "UnetClassifier"
+                "UnetClassifier",
+                "CycleGAN"
             ]:
                 _emd_template["SupportsVariableTileSize"] = True
             else:
@@ -686,7 +690,7 @@ class ArcGISModel(object):
             if backbone == 'backbone_wrapper':
                 backbone = self._orig_backbone.__name__
 
-        _emd_template = self._get_emd_params()
+        _emd_template = self._get_emd_params(save_inference_file)
 
         _emd_template["SupportsVariableTileSize"] = _emd_template.get("SupportsVariableTileSize", False)
         _emd_template["ArcGISLearnVersion"] = ArcGISLearnVersion
@@ -764,7 +768,7 @@ class ArcGISModel(object):
 
         return path.stem
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         return {}
 
     @staticmethod
@@ -852,11 +856,15 @@ class ArcGISModel(object):
             <p><b>PSNR Metric:</b> {emd_template.get('psnr_metric')}</p>
             <p><b>SSIM Metric:</b> {emd_template.get('ssim_metric')}</p>
         """
-
         if emd_template.get('per_class_metrics'):
             html_table = pd.read_json(emd_template.get('per_class_metrics')).to_html()
             model_analysis = f"""
             <p><b>Per class metrics:</b> {html_table}</p>
+        """
+        if emd_template.get('FID_A'):
+            model_analysis = f"""
+            <p><b>FID A:</b> {emd_template.get('FID_A')}</p>
+            <p><b>FID B:</b> {emd_template.get('FID_B')}</p>
         """
 
         if model_analysis:
@@ -901,6 +909,7 @@ class ArcGISModel(object):
         save_format = kwargs.get('save_format', 'default')  # 'default', 'tflite'
         post_processed = kwargs.get('post_processed', True)  # True, False
         quantized = kwargs.get('quantized', False)  # True, False
+        save_inference_file = kwargs.get("save_inference_file", False)
         temp = self.learn.path
         if '\\' in name_or_path or '/' in name_or_path:
             path = Path(name_or_path)
@@ -949,7 +958,7 @@ class ArcGISModel(object):
             self.learn.path = temp
             self.learn.model_dir = 'models'
 
-        _emd_template = self._create_emd_template(saved_path.with_suffix('.pth'), compute_metrics=compute_metrics)
+        _emd_template = self._create_emd_template(saved_path.with_suffix('.pth'), compute_metrics, save_inference_file)
 
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get('batch_size', 16)
@@ -971,8 +980,10 @@ class ArcGISModel(object):
                 pass
 
         if _emd_template.get('InferenceFunction', False):
-            with open(saved_path.parent / _emd_template['InferenceFunction'], 'w') as f:
-                f.write(self._code)
+            if _emd_template['ModelType'] not in ["ObjectDetection", "ImageClassification", "InstanceDetection",\
+                                                  "ObjectClassification"] or save_inference_file:
+                with open(saved_path.parent / _emd_template['InferenceFunction'], 'w') as f:
+                    f.write(self._code)
 
         if _emd_template.get('ModelConfigurationFile', False):
             with open(saved_path.parent / _emd_template['ModelConfigurationFile'], 'w') as f:
