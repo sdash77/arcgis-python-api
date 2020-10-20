@@ -526,7 +526,7 @@ def _upload_imagery_agol(files, gis=None):
             else:
                 blobname = prefix+os.path.basename(file).replace(os.sep, '/')
                 blob=container.get_blob_client(blobname)
-                with open(filepath, "rb") as data:
+                with open(file, "rb") as data:
                     blob.upload_blob(data, blob_type="BlockBlob")
                 url = blob.url.split("?", 1)[0]
                 url_list.append(url)
