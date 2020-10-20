@@ -4853,10 +4853,13 @@ class ContentManager(object):
         -------------------  --------------------------------------------------------------------------
         text                 Optional String. The source text.
         -------------------  --------------------------------------------------------------------------
-        publish_parameters   Optional Dict.A JSON object describing the layer and service to be created
-                             as part of the `publish` operation. The appropriate value for publish
-                             parameters depends on the file type being published. For a complete
-                             description, see the  `Item`'s Publish method.
+        publish_parameters   Optional Dict. A Python dictionary describing the layer and service to be created
+                             as part of the `publish` operation. The appropriate key-value pairs
+                             depend on the file type being published. For a complete
+                             description, see the `Publish Item <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_
+                             documentation in the REST API. Also see the :class:`~arcgis.gis.Item`
+                             :meth:`~arcgis.gis.Item.publish` method. ``CSV``, ``Shapefiles`` and
+                             ``GeoJSON`` file types must have publish parameters provided.
         -------------------  --------------------------------------------------------------------------
         future               Optional Boolean.  This allows the operation to run asynchronously allowing
                              the user to not pause the thread and continue to perform multiple operations.
@@ -4897,12 +4900,19 @@ class ContentManager(object):
             params['itemid'] = item.itemid
             if item.type.lower() == 'shapefile':
                 params['filetype'] = 'shapefile'
+                if publish_parameters in (None, "") and \
+                   self._gis._portal.is_arcgisonline == False:
+                    raise ValueError("A publish parameter is needed for this data type.")                
             elif item.type.lower() == 'gpx':
                 params['filetype'] = 'gpx'
             elif item.type.lower() == 'csv':
                 params['filetype'] = 'csv'
+                if publish_parameters is None:
+                    raise ValueError("A publish parameter is needed for this data type.")
             elif item.type.lower() == 'geojson':
                 params['filetype'] = 'geojson'
+                if publish_parameters is None:
+                    raise ValueError("A publish parameter is needed for this data type.")                
             else:
                 raise Exception(f"Invalid Item Type {item.type}")
 
@@ -4914,16 +4924,21 @@ class ContentManager(object):
             else:
                 raise Exception(f"Invalid file extension: {part}")
         elif file_path and os.path.isfile(file_path):
-            part = os.path.splitext(url)[-1]
+            files = []
+            part = os.path.splitext(file_path)[-1]
             if part in file_types:
                 params['filetype'] = file_types[part]
             else:
                 raise Exception(f"Invalid file extension: {part}")
+            if params['filetype'] in ['shapefile', 'csv', 'geojson'] and \
+               self._gis._portal.is_arcgisonline == False and \
+               params['publishParameters'] in (None, ""):
+                raise ValueError("A publish parameter is needed for this data type.")                
             files.append(('file', file_path, os.path.basename(file_path)))
         elif text:
             params['text'] = text
             params['fileType'] = 'csv'
-
+            
         if future == True:
             executor =  concurrent.futures.ThreadPoolExecutor(1)
             futureobj = executor.submit(self._generate,
