@@ -770,14 +770,6 @@ def prepare_data(path,
                             it will create label images of size 128x128.
                             Default is 4
     ---------------------   -------------------------------------------
-    ner_architecture        Optional string.
-                            Applicable only when dataset_type=IOB, BILUO or ner_json:
-                            The named-entity-recognition task can be performed either
-                            by using 'spacy' or 'transformer' architecture. Data prep
-                            will be different for both of the above architecture.
-                            Valid values are - ['spacy', 'transformer'].
-                            Default is 'spacy'
-    ---------------------   -------------------------------------------
     encoding                Optional string.
                             Applicable only when dataset_type=IOB, BILUO or ner_json:
                             The encoding to read the csv/json file.

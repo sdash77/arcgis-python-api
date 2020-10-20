@@ -154,6 +154,7 @@ class _NERData:
         self.dataset_type = dataset_type
         self.path = path
         self.data = None
+        self.backbone = None
         self.batch_size = batch_size
         self.class_mapping = class_mapping
         self.seed = seed
@@ -163,6 +164,9 @@ class _NERData:
 
     def show_batch(self):
         return self.data.show_batch()
+
+    def get_data_object(self):
+        return self.data
 
     def prepare_data_for_transformer(self):
         unique_tags = set()
@@ -218,6 +222,7 @@ class _NERData:
         self.data = TextDataObject.prepare_data_for_entity_recognition(
             tokens_collection=tokens_collection, tags_collection=tags_collection, address_tag=address_tag,
             unique_tags=unique_tags, seed=self.seed, batch_size=self.batch_size, val_split_pct=self.val_split_pct)
+        self.backbone = "transformers"
 
     def prepare_data_for_spacy(self):
         if not HAS_SPACY:
@@ -258,7 +263,7 @@ class _NERData:
                     # run the standard pipeline against it
                     for name, proc in nlp.pipeline:
                         doc = proc(doc)
-                    text=' '.join(tokens)
+                    text = ' '.join(tokens)
                     tags = _offsets_from_biluo_tags(doc, tags)
                     train_data.append((text,{'entities':tags}))
                 except:
@@ -268,9 +273,10 @@ class _NERData:
                              "Valid values are - 'ner_json', 'BIO', 'IOB', 'LBIOU' and 'BILUO'")
             raise Exception(error_message)
 
-        self.data=spaCyNERDatabunch(train_data, val_split_pct=self.val_split_pct, batch_size=self.batch_size,
-                                    address_tag=address_tag, test_ds=None)
-        self.data.path=path
+        self.data = spaCyNERDatabunch(train_data, val_split_pct=self.val_split_pct, batch_size=self.batch_size,
+                                      address_tag=address_tag, test_ds=None)
+        self.data.path = path
+        self.backbone = "spacy"
 
 
 class _spaCyNERItemlist():

@@ -1,5 +1,6 @@
 import json
 import traceback
+import logging
 from pathlib import Path
 
 try:
@@ -95,11 +96,19 @@ class EntityRecognizer:
             # object_type = "spacy" if isinstance(data, spaCyNERDatabunch) else "transformer"
             if backbone == "spacy":
                 if not HAS_SPACY: _raise_spacy_import_error()
-                self._model = _SpacyEntityRecognizer(data, lang=lang, **kwargs)
+                if data.backbone != "spacy":
+                    logging.info("Preparing data for spacy backbone!")
+                    data.prepare_data_for_spacy()
+                data_obj = data.get_data_object()
+                self._model = _SpacyEntityRecognizer(data_obj, lang=lang, **kwargs)
             # elif isinstance(data, TextDataObject) and backbone != "spacy":
             else:
                 if not HAS_TRANSFORMERS: _raise_transformers_import_error()
-                self._model = _TransformerEntityRecognizer(data, backbone, **kwargs)
+                if data.backbone == "spacy":
+                    logging.info("Preparing data for transformer backbone!")
+                    data.prepare_data_for_transformer()
+                data_obj = data.get_data_object()
+                self._model = _TransformerEntityRecognizer(data_obj, backbone, **kwargs)
             # else:
             #     error_message = (f"`prepare_data` function is created for `{object_type}` backbone, but"
             #                      f" the `EntityRecognizer` class is called with `{backbone}` backbone. "
@@ -109,6 +118,9 @@ class EntityRecognizer:
         if create_empty is False:
             self.train_ds = self._model.train_ds
             self.valid_ds = self._model.val_ds
+
+        from IPython.display import clear_output
+        clear_output()
 
     @classmethod
     def available_backbone_models(cls, architecture):
@@ -191,6 +203,7 @@ class EntityRecognizer:
                                 **Note - Not applicable for models with spaCy backbone
         =====================   ===========================================
         """
+
         self._model.fit(epochs=epochs, lr=lr, one_cycle=one_cycle, early_stopping=early_stopping,
                         checkpoint=checkpoint, tensorboard=tensorboard, **kwargs)
         self.entities = self._model.entities
@@ -227,6 +240,7 @@ class EntityRecognizer:
                                 the item on ArcGIS Online/Enterprise, default False.
         =====================   ===========================================
         """
+
         return self._model.save(name_or_path=name_or_path, **kwargs)
 
     def load(self, name_or_path):
@@ -240,6 +254,7 @@ class EntityRecognizer:
                                 (DLPK) or Esri Model Definition(EMD) file.
         =====================   ===========================================
         """
+
         self._model.load(name_or_path=name_or_path)
         self.entities = self._model.entities
 
@@ -263,14 +278,24 @@ class EntityRecognizer:
 
         :returns: `EntityRecognizer` Object
         """
+
+        data_obj = None
         emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd_json = json.load(f)
         backbone = emd_json.get("ModelType", "spacy").lower()
         if backbone == "spacy":
-            model = _SpacyEntityRecognizer.from_model(emd_path=emd_path, data=data)
+            if data and data.backbone != "spacy":
+                logging.info("Preparing data for spacy backbone!")
+                data.prepare_data_for_spacy()
+            if data: data_obj = data.get_data_object()
+            model = _SpacyEntityRecognizer.from_model(emd_path=emd_path, data=data_obj)
         else:
-            model = _TransformerEntityRecognizer.from_model(emd_path=emd_path, data=data)
+            if data and data.backbone == "spacy":
+                logging.info("Preparing data for transformer backbone!")
+                data.prepare_data_for_transformer()
+            if data: data_obj = data.get_data_object()
+            model = _TransformerEntityRecognizer.from_model(emd_path=emd_path, data=data_obj)
 
         clas_object = cls(data=None, backbone=backbone, create_empty=True)
 
@@ -281,7 +306,7 @@ class EntityRecognizer:
 
         return clas_object
 
-    def extract_entities(self, text_list, drop=True):
+    def extract_entities(self, text_list, drop=True, batch_size=4):
         """
         Extracts the entities from [documents in the mentioned path or text_list].
 
@@ -297,14 +322,20 @@ class EntityRecognizer:
                                 List of documents for entity extraction OR
                                 path to the documents.
         ---------------------   -------------------------------------------
-        drop                    Optional bool.
-                                If documents without address needs to be
-                                dropped from the results.
+        drop                    Optional bool. If documents without address
+                                needs to be dropped from the results.
+                                Default is set to True.
+        ---------------------   -------------------------------------------
+        batch_size              Optional integer. Number of items to process
+                                at once. (Reduce it if getting CUDA Out of Memory
+                                Errors). Default is set to 4.
+                                Not applicable for models with `spaCy` backbone.
         =====================   ===========================================
 
         :returns: Pandas DataFrame
         """
-        return self._model.extract_entities(text_list, drop=drop)
+
+        return self._model.extract_entities(text_list, drop=drop, batch_size=batch_size)
 
     def show_results(self, ds_type='valid'):
         """
@@ -318,6 +349,7 @@ class EntityRecognizer:
 
         :returns: Pandas DataFrame
         """
+
         return self._model.show_results(ds_type=ds_type)
 
     def precision_score(self):
@@ -360,4 +392,5 @@ class EntityRecognizer:
 
         :returns: matplotlib.figure.Figure
         """
+
         return self._model.plot_losses(show=show)

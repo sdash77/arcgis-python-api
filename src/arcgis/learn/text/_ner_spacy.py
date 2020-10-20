@@ -490,7 +490,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         """
         return self.model(text)
 
-    def extract_entities(self, text_list, drop=True):
+    def extract_entities(self, text_list, drop=True, **kwargs):
         """
         Extracts the entities from [documents in the mentioned path or text_list].
 
@@ -505,9 +505,15 @@ class _SpacyEntityRecognizer(ArcGISModel):
         text_list               Required string(path) or list(documents).
                                 List of documents for entity extraction OR
                                 path to the documents.
+        ---------------------   -------------------------------------------
         drop                    Optional bool.
                                 If documents without address needs to be
                                 dropped from the results.
+        ---------------------   -------------------------------------------
+        batch_size              Optional integer. Number of items to process
+                                at once. (Reduce it if getting CUDA Out of Memory
+                                Errors). Default is set to 4.
+                                Not applicable for models with `spaCy` backbone.
         =====================   ===========================================
 
         :returns: Pandas DataFrame
