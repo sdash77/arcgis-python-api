@@ -894,7 +894,7 @@ def compute_accuracy_for_object_detection(detected_features,
                                           **kwargs):
 
     """
-    Function can be used to calculates accuracy of a deep learning model by comparing the detected objects from 
+    Function can be used to calculate the accuracy of a deep learning model by comparing the detected objects from 
     the detect_objects function to ground truth data. 
     Function available in ArcGIS Image Server 10.9 and higher.
 
