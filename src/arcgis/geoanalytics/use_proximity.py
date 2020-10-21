@@ -191,7 +191,7 @@ def create_buffers(input_layer,
     if context is not None:
         params["context"] = context
     else:
-        _set_context(params)
+        _set_context(params )
 
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),

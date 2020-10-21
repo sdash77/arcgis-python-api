@@ -28,6 +28,144 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
+
+def summarize_center_and_dispersion(input_layer,
+                                    summary_type,
+                                    ellipse_size=None,
+                                    weight_field=None,
+                                    group_fields=None,
+                                    output_name=None,
+                                    gis=None,
+                                    context=None,
+                                    future=False):
+    """
+    The `summarize_center_and_dispersion` task finds central features and directional
+    distributions. It can be used to answer questions such as the following:
+
+         + Where is the center?
+         + Which feature is the most accessible from all other features?
+         + How dispersed, compact, or integrated are the features?
+         + Are there directional trends?
+
+    For an example, suppose you have used the GeoAnalytics tool Find Point
+    Clusters to identify groups of power outages across an entire year. The
+    result will be time enabled point representing cluster locations of power
+    outages. However, you are interested in identifying the center of the
+    power outages for visualization. To do this, you use Summarize Center And
+    Dispersion a group by field of the outage cluster ids.
+
+    ===================================================================    =============================================================================
+    **Argument**                                                                                    **Description**
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    input_layer                                                            Required Layer. A layer that will be used in analysis.
+                                                                           See :ref:`Feature Input<gaxFeatureInput>`.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    summary_type                                                           Required String. The method with which to summarize the `input_layer`.
+                                                                           Values: CentralFeature, MeanCenter, MedianCenter, or Ellipse.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    ellipse_size                                                           Optional Integer. The number representing the number of standard deviations
+                                                                           represented in the output ellipse layer. The default ellipse size is 1. Valid
+                                                                           choices are 1, 2, or 3 standard deviations. This option is only used if
+                                                                           Ellipse is chosen from the `summary_type` parameter.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    weight_field                                                           Optional String. A numeric field in the input_layer to be used to weight
+                                                                           locations according to their relative importance.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    group_fields                                                           Optional String. One or more fields used to group features for summarization.
+                                                                           The `group_fields` can be of integer, date, or string type.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    output_name                                                            Optional string. The task will create a feature service of the results. You define the name of the service.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    gis                                                                    Optional GIS. The GIS object where the analysis will take place.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    context                                                                Optional string. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+
+                                                                           #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                           #. Processing spatial reference (``processSR``) The features will be projected into this coordinate system for analysis.
+                                                                           #. Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                                           #. Data store (``dataStore``) Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    future                                                                 optional Boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
+    ===================================================================    =============================================================================
+
+
+
+    """
+    kwargs = locals()
+    input_layer = _prevent_bds_item(input_layer)
+    tool_name = "SummarizeCenterAndDispersion"
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
+    params = {
+        "f" : "json",
+    }
+    for key, value in kwargs.items():
+        if value is not None:
+            params[key] = value
+
+    if output_name is None:
+        output_service_name = 'Sum_Cntr_and_Disp_' + _id_generator()
+        output_name = output_service_name.replace(' ', '_')
+    else:
+        output_service_name = output_name.replace(' ', '_')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Summarize Center And Dispersion', output_datastore=output_datastore)
+
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_service_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
+
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
+
+    param_db = {
+        "input_layer": (_FeatureSet, "inputLayer"),
+        "summary_type" : (str, "summaryType"),
+        "ellipse_size": (str, "ellipseSize"),
+        "weight_field": (float, "weightField"),
+        "group_fields": (str, "groupFields"),
+        "output_name": (str, "outputName"),
+        "context": (str, "context"),
+        "output": (_FeatureSet, "Output Features"),
+        "central_feature_layer" : (_FeatureSet, "centralFeatureLayer"),
+        "mean_center_layer" : (_FeatureSet, "meanCenterLayer"),
+        "median_center_layer" : (_FeatureSet, "medianCenterLayer"),
+        "ellipse_layer" : (_FeatureSet, "ellipseLayer"),
+    }
+    return_values = [
+        {"name" : "central_feature_layer", "display_name" : "Central Feature Layer", "type" : _FeatureSet},
+        {"name" : "mean_center_layer", "display_name" : "Mean Center Layer", "type" : _FeatureSet},
+        {"name" : "median_center_layer", "display_name" : "Median Center Layer", "type" : _FeatureSet},
+        {"name" : "ellipse_layer", "display_name" : "Ellipse Layer", "type" : _FeatureSet}
+    ]
+
+
+
+    try:
+        if future:
+            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+        return output_service
+        #if future:
+            #gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+            #return GAJob(gpjob=gpjob, return_service=output_service)
+        #_execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+        #return output_service
+    except:
+        output_service.delete()
+        raise
+
+
 def build_multivariable_grid(input_layers,
                              variable_calculations,
                              bin_size,
