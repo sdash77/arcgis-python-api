@@ -5808,7 +5808,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if gis._con._product == "AGOL":
                     url_list = _upload_imagery_agol(upload_rasters_list, gis)
                 else:
-                    item_id_list = _upload_imagery_enterprise(upload_rasters_list, gis)
+                    item_id_list = _upload_imagery_enterprise(upload_rasters_list, raster_type_name, gis)
                     items_on_server = True
 
             if len(item_id_list) > 0:
@@ -5842,8 +5842,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                 input_rasters_dict.update({"byref":True})
 
         # raster_type
-        if not isinstance(raster_type_name, str):
-            raise RuntimeError("Invalid input raster_type parameter")
+        if raster_type_name is not None:
+            if not isinstance(raster_type_name, str):
+                raise RuntimeError("Invalid input raster_type parameter")
 
         elevation_set = 0
         if raster_type_params is not None:

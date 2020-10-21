@@ -533,7 +533,7 @@ def _upload_imagery_agol(files, gis=None):
 
     return url_list
 
-def _upload_imagery_enterprise(files, gis=None):
+def _upload_imagery_enterprise(files, raster_type_name=None, gis=None):
     """uploads a file to the image layer to enterprise and returns the item id"""
     
     ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
@@ -547,13 +547,14 @@ def _upload_imagery_enterprise(files, gis=None):
         files = [files]
 
     item_ids_list = []
+    res = {}
     
     append_path = False
     for file in files:
         item_id_dict={}
         if os.path.exists(file):
             if(os.path.isdir(file)):
-                if file.endswith(".crf"):
+                if file.endswith(".crf") or raster_type_name !="Raster Dataset":
                     append_path = True
                 folder = os.path.basename(file)
                 basename_len=len(os.path.dirname(file))
@@ -562,9 +563,14 @@ def _upload_imagery_enterprise(files, gis=None):
                         fp =os.path.join(root, f)
                         path = ("/"+root+"/"+f)[basename_len+1:].replace(os.sep, '/')
                         files_param = {'file' : fp }
-                        res = gis._con.post(path=url, postdata=params, files=files_param)
+                        try:
+                            res = gis._con.post(path=url, postdata=params, files=files_param)
+                        except Exception as e:
+                            _LOGGER.warning('file: '+str(fp)+ " "+ str(e))
+
                         if 'success' in res and res['success']:
                             item_id = res['item']['itemID']
+                            res = {}
                             if append_path:
                                 item_id_dict = {"itemId":item_id, "path":fp}
                                 item_ids_list.append(item_id_dict)
@@ -574,9 +580,13 @@ def _upload_imagery_enterprise(files, gis=None):
 
             else:
                 files_param = {'file' : file}
-                res = gis._con.post(path=url, postdata=params, files=files_param)
+                try:
+                    res = gis._con.post(path=url, postdata=params, files=files_param)
+                except Exception as e:
+                    _LOGGER.warning('file: '+str(file)+ " "+ str(e))
                 if 'success' in res and res['success']:
                     item_id = res['item']['itemID']
+                    res = {}
                 if item_id is not None:
                     item_ids_list.append(item_id)
 
