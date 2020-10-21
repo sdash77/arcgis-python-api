@@ -11,6 +11,7 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs): # parameters adjusted in k
     n_items = kwargs.get('n_items', nrows*ncols)
     n_items = min(n_items, len(self.x))
     nrows = math.ceil(n_items/ncols)
+    nbatches = math.ceil(n_items/self.batch_size)
 
     type_data_loader = kwargs.get('data_loader', 'training') # options : traininig, validation, testing
     if type_data_loader == 'training':
@@ -44,7 +45,7 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs): # parameters adjusted in k
         symbology_bands.append(b_index)
 
     # Get Batch
-    x_batch, y_batch = get_nbatches(data_loader, n_items)
+    x_batch, y_batch = get_nbatches(data_loader, nbatches)
     x_batch = torch.cat(x_batch)
     # Denormalize X
     x_batch = (self._scaled_std_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._scaled_mean_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)
@@ -87,7 +88,15 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs): # parameters adjusted in k
                 else:
                     axi = axi[c]
                 axi.imshow(symbology_x_batch[idx].cpu().numpy())
-                title = f"{self.classes[y_batch[idx].item()]}"
+
+                if self.dataset_type == "MultiLabeled_Tiles":
+                    one_hot_labels = y_batch[idx].tolist()
+                    from itertools import compress
+                    labels = compress(self.classes, one_hot_labels)
+                    title = ";".join(labels)
+                else:
+                    title = f"{self.classes[y_batch[idx].item()]}"
+                
                 axi.set_title(title)
                 axi.axis('off')
             else:

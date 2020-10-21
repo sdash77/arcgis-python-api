@@ -727,8 +727,8 @@ def prepare_data(path,
                             map.txt file. If the path does not contain the 
                             map.txt file pass either of 'PASCAL_VOC_rectangles', 
                             'KITTI_rectangles', 'RCNN_Masks', 'Classified_Tiles', 
-                            'Labeled_Tiles', 'Imagenet', 'PointCloud' and 
-                            'ImageCaptioning'.
+                            'Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet', 
+                            'PointCloud' and 'ImageCaptioning'.
     ---------------------   -------------------------------------------
     resize_to               Optional integer. Resize the image to given size.
     =====================   ===========================================

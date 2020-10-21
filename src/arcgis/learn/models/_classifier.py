@@ -145,9 +145,12 @@ class FeatureClassifier(ArcGISModel):
             if oversample:
                 self.learn.callbacks.append(OverSamplingCallback(self.learn))
             self._arcgis_init_callback() # make first conv weights learnable
+            
             # Add Mixup data augmentation
             if mixup:
-                self.learn = self.learn.mixup()
+                # For mixup to work with multilabel call it with parameter stack_y=False
+                stack_y = getattr(data, '_dataset_type', "Labeled_Tiles") == 'Labeled_Tiles'
+                self.learn = self.learn.mixup(stack_y=stack_y)
 
             self.learn.model = self.learn.model.to(self._device)
 
