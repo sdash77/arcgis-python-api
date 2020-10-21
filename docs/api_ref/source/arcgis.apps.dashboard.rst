@@ -4,7 +4,7 @@ arcgis.apps.dashboard module
 .. automodule:: arcgis.apps.dashboard
 
 The :class:`~arcgis.apps.dashboard.Dashboard` is the main entry point into the Dashboard module.
-It can be used as shown in the following code example.
+
 
 Dashboard
 --------------------------

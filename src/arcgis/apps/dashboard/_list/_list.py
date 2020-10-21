@@ -253,6 +253,7 @@ class List(_BaseWidget):
 
         return json_data
 
+
 class Events(object):
 
     @classmethod
@@ -343,7 +344,6 @@ class Events(object):
             else:
                 raise Exception("Please select a map widget")
 
-
     def sync_widget(self, widgets):
         """
         Synchronize non-mapWidget type widgets with List for triggered events.
@@ -368,7 +368,7 @@ class Events(object):
                         widget_id = str(widget._id)+'#main'
                         self._actions.append({"type":action_type, "by":"whereClause", "targetId":widget_id})
             else:
-                if widget.type == "mapWidget":
+                if widgets.type == "mapWidget":
                     raise Exception("Use sync_map method to add actions for map widgets") ##duplicate or erase
                 else:
                     action_type = "filter"

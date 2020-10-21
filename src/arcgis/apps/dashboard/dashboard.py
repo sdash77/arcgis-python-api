@@ -11,17 +11,11 @@ class Dashboard(object):
     """
     Creates a Dashboard Object.
 
-    =========================   ===========================================
-    **Argument**                **Description**
-    -------------------------   -------------------------------------------
-    item                        Optional Dashboard Item. Dashboard item to hydrate
-                                a Dashboard object using existing dashboard.
-    =========================   ===========================================
+    :return Dashboard object
     """
-    def __init__(self, item=None):
+    def __init__(self):
         self.elements = []
 
-        self._orientation = 'col'
         self._theme = 'light'
 
         self._header = None
@@ -34,7 +28,7 @@ class Dashboard(object):
         
     def save(self, title, description='', summary='', tags=None, gis=None, overwrite=False):
         """
-        Saves a Dashboard Object.
+        Publishes a Dashboard Object.
 
         =========================   ===========================================
         **Argument**                **Description**
@@ -47,6 +41,12 @@ class Dashboard(object):
         summary                     Optional string. Summary of the Dashboard.
         -------------------------   -------------------------------------------
         tags                        Optional string. Comma separated tags.
+        -------------------------   -------------------------------------------
+        gis                         Optional GIS to publish dashboard.
+                                    By default uses active gis.
+        -------------------------   -------------------------------------------
+        overwrite                   Optional Boolean.
+                                    Overwrite existing dashboard.
         =========================   ===========================================
         """
         if not title:
@@ -60,16 +60,6 @@ class Dashboard(object):
         return self._publish(gis=gis, overwrite=overwrite)
 
     @property
-    def orientation(self):
-        return self._orientation
-
-    @orientation.setter
-    def orientation(self, value):
-        self._orientation = value
-        if value not in ["row", "col"]:
-            self._orientation = "row"
-
-    @property
     def theme(self):
         return self._theme
 
@@ -81,18 +71,30 @@ class Dashboard(object):
 
     @property
     def header(self):
+        """
+        :return: Header Object
+        """
         return self._header
 
     @header.setter
     def header(self, value):
+        """
+        Set the header object
+        """
         self._header = value
 
     @property
     def side_panel(self):
+        """
+        :return Side Panel Object
+        """
         return self._side_panel
 
     @side_panel.setter
     def side_panel(self, value):
+        """
+        Set the Side Panel object
+        """
         self._side_panel = value
 
     def _convert_to_json(self):
@@ -137,18 +139,18 @@ class Dashboard(object):
     @layout.setter
     def layout(self, value):
         """
-        Set the layout of the dashboard.
+        Set the layout of the dashboard, using add_row and add_column functions.
         """
         self.elements = value['widgets']
         del value['widgets']
         self._layout = {"rootElement" : value}
 
-    @property
-    def widgets(self):
-        """
-        :return: widgets of the dashboard
-        """
-        return self._widgets
+    # @property
+    # def widgets(self):
+    #     """
+    #     :return: widgets of the dashboard
+    #     """
+    #     return self._widgets
     
     def _repr_html_(self):
         url = self._dash_publish()

@@ -58,6 +58,8 @@ class PieChart(_BaseWidget):
         self._outline = OutlineProperties._outline_init()
         self._events = Events._create_events()
 
+        self._events = Events._create_events()
+
     @classmethod
     def _from_json(cls, widget_json):
         gis = arcgis.env.active_gis
@@ -72,6 +74,13 @@ class PieChart(_BaseWidget):
 
     @property
     def events(self):
+        """
+        :return: list of events attached to the widget.
+        """
+        return self._events
+
+    @property
+    def categories_from(self):
         """
         :return: list of events attached to the widget.
         """
@@ -201,7 +210,7 @@ class PieChart(_BaseWidget):
 
         if self.item.type == 'mapWidget':
             wlayer = self.item.layers[self.layer]
-            widget_id = self.item.id
+            widget_id = self.item._id
             layer_id = wlayer["id"]
             self._datasource = {"id":str(widget_id)+'#'+str(layer_id)}
             self._targetid = self._datasource
@@ -273,7 +282,7 @@ class PieChart(_BaseWidget):
                 "prefix":False,
                 "pattern":"#.##"
             },
-            #"events":[],
+            "events":[],
             "selectionMode":"single",
             "categoryType":self._data.categories_from,
             "datasets":[
@@ -301,6 +310,10 @@ class PieChart(_BaseWidget):
             "showCaptionWhenNoData":self._nodata.show_title,
             "showDescriptionWhenNoData":self._nodata.show_description
         }
+
+        if self.events.enable:
+            json_data["events"].append({"type":self.events.type, "actions":self.events.synced_widgets})
+            json_data["selectionMode"] = self.events.selection_mode
 
         if self.background_color:
             json_data["backgroundColor"] = self.background_color,

@@ -230,13 +230,14 @@ class Gauge(_BaseWidget):
                 })
         if self._data.value_type == 'statistic':
             self._data_statistic_defintion.append({
-                            "onStatisticField":self._data.statistics_field,
-                            "outStatisticFieldName":"value",
-                            "statisticType":self._data.statistic
-                        })
+                "onStatisticField":self._data.statistics_field,
+                "outStatisticFieldName":"value",
+                "statisticType":self._data.statistic
+            })
+
         if self.item.type == 'mapWidget':
             wlayer = self.item.layers[self.layer]
-            widget_id = self.item.id
+            widget_id = self.item._id
             layer_id = wlayer["id"]
             self._datasource = {"id":str(widget_id)+'#'+str(layer_id)}
         else:
@@ -378,6 +379,7 @@ class Gauge(_BaseWidget):
             "showDescriptionWhenNoData":self._nodata.show_description
         }            
         return json_data
+
 
 class GaugeData(object):
 
@@ -556,7 +558,7 @@ class GaugeData(object):
 
         if condition in ["between", "not between"]:
             self._val1 = kwargs.get('start')
-            self,_val2 = kwargs.get('end')
+            self._val2 = kwargs.get('end')
             self._filters.append({"filtertype":self._filter_join, "field":self._filter_field, "operator":self._filter_condition, "start":self._val1, "end":self._val2})
         else:
             raise Exception("Please provide 'start' and 'end' values as parameters")
@@ -624,14 +626,3 @@ class GaugeProperties(object):
                 raise Exception("'circle' shape can only be selected for style 'progress'")
         else:
             raise Exception("Please select gauge shape from 'circle', 'horseshoe', 'halfdonut'")
-
-
-
-        
-
-
-
-
-
-
-

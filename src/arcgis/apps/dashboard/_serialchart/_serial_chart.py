@@ -75,6 +75,13 @@ class SerialChart(_BaseWidget):
         return self._events
 
     @property
+    def categories_from(self):
+        """
+        :return: list of events attached to the widget.
+        """
+        return self._events
+
+    @property
     def data(self):
         """
         :return: Serial Chart Data object. Set data properties, categories and values.
@@ -236,7 +243,7 @@ class SerialChart(_BaseWidget):
         
         if self.item.type == 'mapWidget':
             wlayer = self.item.layers[self.layer]
-            widget_id = self.item.id
+            widget_id = self.item._id
             layer_id = wlayer["id"]
             self._datasource = {"id":str(widget_id)+'#'+str(layer_id)}
         else:
@@ -500,7 +507,6 @@ class _CategoryAxisProperties(object):
     def minimum_period(self, value):
         """
         Set Minimum period when dates are parsed.
-        Allowed values 'seconds', 'minutes', 'hours', 'days', 'months', 'years'
         """
         if isinstance(value, str) and value.lower() in ["seconds", "minutes", "hours", "days", "months", "years"]:
             self._minimum_period = self._date_dict[value.lower()]
@@ -862,6 +868,7 @@ class SerialChartData(object):
         schart_data._stacking = "off"
         schart_data._labels = True
         schart_data._orderby = ""
+
         schart_data._filters = []
 
         schart_data._category_field = None
@@ -1184,6 +1191,7 @@ class Events(object):
     def selection_mode(self, value):
         """
         Set Selection mode of events.
+        Allowed values 'single' and 'multi'
         """
         if value in ["single", "multi"]:
             self._selection_mode = value
@@ -1213,9 +1221,6 @@ class Events(object):
 
     @property
     def synced_widgets(self):
-        """
-        :return: List of synced widgets.
-        """
         return self._actions
 
     def sync_map(self, action_type, widget):
