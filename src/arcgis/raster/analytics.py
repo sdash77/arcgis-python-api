@@ -1235,7 +1235,7 @@ def summarize_raster_within(input_zone_layer,
                                              
                                              False - Statistics will be calculated for all dimensions 
                                              (such as time or depth) of a multidimensional image service.
-                                             Parameter added in 10.8.1.
+                                             Parameter available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     percentile_value                         Optional Double, The percentile to calculate. The default is 90, for the 90th percentile. 
                                              The values can range from 0 to 100. The 0th percentile is essentially 
@@ -1244,7 +1244,7 @@ def summarize_raster_within(input_zone_layer,
                              
                                              This parameter is honoured only available if the statistics_type parameter is 
                                              set to Percentile.
-                                             Parameter added in 10.8.1.
+                                             Parameter available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     percentile_interpolation_type            Optional str. Determines the type of percentile interpolation type when the 
                                              number of values from the input value raster to be calculated are even.
@@ -1259,7 +1259,7 @@ def summarize_raster_within(input_zone_layer,
                                                            desired percentile. In this case, the output pixel 
                                                            type is floating point.
 
-                                             Parameter added in 10.9.
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.

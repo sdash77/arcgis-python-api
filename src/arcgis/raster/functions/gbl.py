@@ -674,7 +674,7 @@ def zonal_statistics(in_zone_data,
                                                         desired percentile. In this case, the output pixel 
                                                         type is floating point.
 
-                                            Parameter added in 10.9.
+                                          Parameter available in ArcGIS Image Server 10.9 and higher.
     :return: output raster with function applied
 
     """
@@ -3836,6 +3836,7 @@ def optimal_path_as_raster(in_destination_data,
 def boundary_clean(input_raster, sort_type = "NO_SORT", number_of_runs="TWO_WAY"):
     """
     The boundary_clean function smooths the boundary between zones in a raster. 
+    Function available in ArcGIS Image Server 10.9 and higher.
 
     ================================     ====================================================================
     **Argument**                         **Description**
