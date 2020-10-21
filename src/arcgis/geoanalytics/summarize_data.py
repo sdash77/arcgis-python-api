@@ -137,7 +137,7 @@ def summarize_center_and_dispersion(input_layer,
         "context": (str, "context"),
         "output": (_FeatureSet, "Output Features"),
         "central_feature_layer" : (_FeatureSet, "centralFeatureLayer"),
-        "mean_center_layer" : (_FeatureSet, "meanCeneterLayer"),
+        "mean_center_layer" : (_FeatureSet, "meanCenterLayer"),
         "median_center_layer" : (_FeatureSet, "medianCenterLayer"),
         "ellipse_layer" : (_FeatureSet, "ellipseLayer"),
     }
