@@ -3645,14 +3645,15 @@ def build_multidimensional_transpose(input_multidimensional_raster,
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
-   delete_tranpose                           Optional boolean. Specifies whether to delete an existing transpose. 
-                                             (Parameter available from 10.9)
+   delete_tranpose                           Optional boolean. Specifies whether to delete an existing transpose.
 
                                                 - True - The transpose, if it exists, will be deleted. 
                                                          No new transpose will be built. 
 
                                                 - False - The transpose will be built. If there is an existing transpose, 
                                                           it will be overwritten. This is the default. 
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS object. the GIS on which this tool runs. If not specified, 
                                              the active GIS is used.
@@ -4051,9 +4052,11 @@ def generate_trend_raster(input_multidimensional_raster,
 
                                              - HARMONIC : Fits the pixel values for a variable along a harmonic trend line.
 
-                                             - MANN-KENDALL :
+                                             - MANN-KENDALL : Variable pixel values will be evaluated using the Mann-Kendall trend test. 
+                                                              Option available in ArcGIS Image Server 10.9 and higher.
                                              
-                                             - SEASONAL-KENDALL : 
+                                             - SEASONAL-KENDALL : Variable pixel values will be evaluated using the Seasonal-Kendall trend test.
+                                                                  Option available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
     frequency                                Optional Integer. 
 
@@ -4136,18 +4139,20 @@ def generate_trend_raster(input_multidimensional_raster,
     ------------------------------------     --------------------------------------------------------------------
     rmse                                     Optional Boolean. Default value is True. Specifies whether the root 
                                              mean square error (RMSE) of the trend fit line will be calculated.
-                                             Available in ArcGIS Image Server 10.8.1 and higher.
+                                             Parameter available  in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     r2                                       Optional Boolean. Default value is False. Specifies whether the 
                                              R-squared goodness-of-fit statistic for the trend fit line will be calculated. 
-                                             Available in ArcGIS Image Server 10.8.1 and higher.
+                                             Parameter available  in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     slope_p_value                            Optional Boolean. Default value is False. Specifies whether the 
                                              p-value statistic for the slope coefficient of the trend line will be calculated. 
-                                             Available in ArcGIS Image Server 10.8.1 and higher.
+                                             Parameter available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     seasonal_period                          Optional String. Specifies the seasonal period. Default - "DAYS"
                                              Possible Options - "DAYS", "MONTHS"
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.

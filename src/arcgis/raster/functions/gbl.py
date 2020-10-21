@@ -3229,12 +3229,13 @@ def distance_accumulation(in_source_data,
     ----------
     :param in_source_data:  Required. The input source locations.
 
-                            This is a raster that identifies the cells or locations from
+                            This is a layer that identifies the cells or locations from
                             or to which the least accumulated cost distance for every output cell location is calculated.
-
+                            This parameter can have either a raster layer input or a feature layer input. 
                             For rasters, the input type can be integer or floating point.
 
-    :param in_barrier_data: Optional barrier raster. The input raster that defines the barriers. The dataset must contain 
+    :param in_barrier_data: Optional. The input layer that defines the barriers. 
+                            This parameter can have either a raster layer input or a feature layer input. The dataset must contain 
                             NoData where there are no barriers. Barriers are represented by valid values including zero. 
                             The barriers can be defined by an integer or floating-point raster. 
 
@@ -3484,14 +3485,15 @@ def distance_allocation(in_source_data,
 
     Parameters
     ----------
-    :param in_source_data:  Required The input source locations.
+    :param in_source_data:  Required. The input source locations.
 
-                            This is a raster that identifies the cells or locations from
+                            This is a layer that identifies the cells or locations from
                             or to which the least accumulated cost distance for every output cell location is calculated.
-
+                            This parameter can have either a raster layer input or a feature layer input.
                             For rasters, the input type can be integer or floating point.
 
-    :param in_barrier_data: Optional barrier raster. The input raster that defines the barriers. The dataset must contain 
+    :param in_barrier_data: Optional. The input layer that defines the barriers. 
+                            This parameter can have either a raster layer input or a feature layer input. The dataset must contain 
                             NoData where there are no barriers. Barriers are represented by valid values including zero. 
                             The barriers can be defined by an integer or floating-point raster. 
 
@@ -3729,10 +3731,12 @@ def optimal_path_as_raster(in_destination_data,
 
     Parameters
     ----------
-    :param in_destination_data: Required raster layer. A raster that identifies locations from which the optimal 
-                                path is determined to the least costly source. The input raster layer must
-                                consists of cells that have valid values (zero is a valid value), and the remaining
-                                cells must be assigned NoData.
+    :param in_destination_data: Required layer. A layer that identifies locations from which the optimal 
+                                path is determined to the least costly source. 
+                                This parameter can have either a raster layer input or a feature layer input.
+
+                                If the input is a raster, it must consists of cells that have valid values 
+                                (zero is a valid value), and the remaining cells must be assigned NoData.
 
     :param in_distance_accumulation_raster: Required raster layer. The distance accumulation raster is used 
                                             to determine the optimal path from the sources to the destinations. 
