@@ -57,7 +57,7 @@ def summarize_center_and_dispersion(input_layer,
     ===================================================================    =============================================================================
     **Argument**                                                                                    **Description**
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    input_layer                                                            Required Layer. A list of input layers that will be used in analysis.
+    input_layer                                                            Required Layer. A layer that will be used in analysis.
                                                                            See :ref:`Feature Input<gaxFeatureInput>`.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     summary_type                                                           Required String. The method with which to summarize the `input_layer`.
