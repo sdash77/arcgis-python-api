@@ -1552,7 +1552,9 @@ def calculate_density(input_point_or_line_features,
                                                     {'resamplingMethod': "Nearest"} 
     ------------------------------------     --------------------------------------------------------------------
     input_barriers                           Optional. The dataset that defines the barriers. The barriers can be 
-                                             a feature layer of polyline or polygon features. (Added in 10.9)
+                                             a feature layer of polyline or polygon features. 
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.

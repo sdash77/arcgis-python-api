@@ -1613,7 +1613,7 @@ def kernel_density(in_features,
 
                    - GEODESIC-Uses geodesic distances between features. This method takes into account the curvature
                      of the spheroid and correctly deals with data near the poles and the International dateline.
-    :param in_barriers: Optional. The dataset that defines the barriers. The barriers can be a feature layer of polyline or polygon features. (Added in 10.9)
+    :param in_barriers: Optional. The dataset that defines the barriers. The barriers can be a feature layer of polyline or polygon features. (Parameter available in ArcGIS Image Server 10.9 and higher.)
     :return: output raster
     """
 
