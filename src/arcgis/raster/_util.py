@@ -548,10 +548,13 @@ def _upload_imagery_enterprise(files, gis=None):
 
     item_ids_list = []
     
+    append_path = False
     for file in files:
         item_id_dict={}
         if os.path.exists(file):
             if(os.path.isdir(file)):
+                if file.endswith(".crf"):
+                    append_path = True
                 folder = os.path.basename(file)
                 basename_len=len(os.path.dirname(file))
                 for root,d_names,f_names in os.walk(file):
@@ -562,9 +565,12 @@ def _upload_imagery_enterprise(files, gis=None):
                         res = gis._con.post(path=url, postdata=params, files=files_param)
                         if 'success' in res and res['success']:
                             item_id = res['item']['itemID']
-                            item_id_dict = {"itemId":item_id, "path":fp}
-                        if item_id_dict is not None:
-                            item_ids_list.append(item_id_dict)
+                            if append_path:
+                                item_id_dict = {"itemId":item_id, "path":fp}
+                                item_ids_list.append(item_id_dict)
+                                item_id_dict={}
+                            else:
+                                item_ids_list.append(item_id)
 
             else:
                 files_param = {'file' : file}
