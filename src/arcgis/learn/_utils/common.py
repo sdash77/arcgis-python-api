@@ -461,3 +461,38 @@ def _get_emd_path(emd_path):
         emd_path = list_files[0]
     return emd_path
 
+
+def _get_gpu_device_id(max_memory=0.8):
+    '''
+    select available device based on the memory utilization status of the device
+    :param max_memory: the maximum memory utilization ratio that is considered available
+    :return: GPU id that is available, -1 means no GPU is available/uses CPU, if GPUtil package is not installed, will
+    return 0
+    '''
+    try:
+        import GPUtil
+    except ModuleNotFoundError:
+        return 0
+
+    GPUs = GPUtil.getGPUs()
+    freeMemory, available = 0, 0
+    for GPU in GPUs:
+        if GPU.memoryUtil > max_memory:
+            continue
+        if GPU.memoryFree >= freeMemory:
+            freeMemory = GPU.memoryFree
+            available = GPU.id
+
+    return available
+
+
+def _get_device_id():
+    import arcgis
+    if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
+        device = _get_gpu_device_id()
+    elif getattr(arcgis.env, "_processorType", "") == "CPU":
+        device = -1
+    else:
+        device = _get_gpu_device_id() if torch.cuda.is_available() else -1
+
+    return device
