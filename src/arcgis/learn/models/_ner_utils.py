@@ -19,7 +19,7 @@ except Exception as e:
     HAS_SPACY = False
 
 
-__all__=["_from_iob_tags", "_from_json", "ner_prepare_data", "even_mults", "_timelapsed"]
+__all__=["_from_iob_tags", "_from_json", "_NERData", "even_mults", "_timelapsed"]
 
 
 def _raise_spacy_import_error():
@@ -132,148 +132,151 @@ def _get_tags_and_tokens_collection(path, ignore_tag_order=False, encoding="UTF-
     return tags_collection, tokens_collection, unique_tags
 
 
-def ner_prepare_data(dataset_type, path, batch_size, class_mapping=None, seed=42, val_split_pct=0.1,
-                     ner_architecture="spacy", encoding="UTF-8"):
-
+class _NERData:
     """
-    Prepares a data object
-
-    =====================   ===========================================
-    **Argument**            **Description**
-    ---------------------   -------------------------------------------
-    dataset_type            Required string. ['ner_json', 'IOB', 'BILUO']
-    ---------------------   -------------------------------------------
-    address_tag             Optional dict. Address field/tag name 
-                            in the training data.
-    ---------------------   -------------------------------------------
-    val_split_pct           Optional Float. Percentage of training data to keep
-                            as validation. The default value is 0.1.
-    =====================   ===========================================
-    returns: A list [text,{entities},text,{entities}] that can be ingested by ``EntityRecognizer``.
+    #     Prepares a data object
+    #
+    #     =====================   ===========================================
+    #     **Argument**            **Description**
+    #     ---------------------   -------------------------------------------
+    #     dataset_type            Required string. ['ner_json', 'IOB', 'BILUO']
+    #     ---------------------   -------------------------------------------
+    #     address_tag             Optional dict. Address field/tag name
+    #                             in the training data.
+    #     ---------------------   -------------------------------------------
+    #     val_split_pct           Optional Float. Percentage of training data to keep
+    #                             as validation. The default value is 0.1.
+    #     =====================   ===========================================
+    #     returns: A list [text,{entities},text,{entities}] that can be ingested by ``EntityRecognizer``.
     """
-    if ner_architecture == "spacy":
-        return ner_prepare_data_for_spacy(
-            dataset_type=dataset_type, path=path, class_mapping=class_mapping, seed=seed,
-            val_split_pct=val_split_pct, batch_size=batch_size, encoding=encoding)
-    elif ner_architecture == "transformer":
-        return ner_prepare_data_for_transformer(
-            dataset_type=dataset_type, path=path, class_mapping=class_mapping, seed=seed,
-            val_split_pct=val_split_pct, batch_size=batch_size, encoding=encoding)
-    else:
-        error_message = (f"Wrong argument - {ner_architecture} supplied for `ner_architecture` "
-                         "parameter. Valid values are - 'spacy' or 'transformer'")
-        raise Exception(error_message)
 
+    def __init__(self, dataset_type, path, batch_size, class_mapping=None, seed=42, val_split_pct=0.1, encoding="UTF-8"):
+        self.dataset_type = dataset_type
+        self.path = path
+        self.data = None
+        self.backbone = None
+        self.batch_size = batch_size
+        self.class_mapping = class_mapping
+        self.seed = seed
+        self.val_split_pct = val_split_pct
+        self.encoding = encoding
+        self.prepare_data_for_spacy()
 
-def ner_prepare_data_for_transformer(dataset_type, path, batch_size, class_mapping=None, seed=42,
-                                     val_split_pct=0.1, encoding="UTF-8"):
-    unique_tags = set()
-    path = Path(path)
-    tags_collection, tokens_collection = [], []
-    if class_mapping:
-        address_tag = class_mapping.get('address_tag')
-    else:
-        address_tag = 'Address'
+    def show_batch(self):
+        return self.data.show_batch()
 
-    if dataset_type == 'ner_json':
-        # converts json schema to a list of list of tokens and tags
-        # json - schema:
-        # ----------
-        # {"id": 1, "text": "Officers were dispatched ...", "labels": [[30, 38, "Crime"], [45, 92, "Address"], ...]}
-        # ----------
-        # converted form:
-        # [('Officers were dispatched to a', 'O'),
-        #  ('robbery', 'Crime'),
-        #  ('of the', 'O'),
-        #  ('Associated Bank in the 1500 block of W Broadway', 'Address')]
-        with open(path, 'r', encoding=encoding) as f:
-            data_list = f.readlines()
+    def get_data_object(self):
+        return self.data
 
-        data_list = [json.loads(item) for item in data_list]
+    def prepare_data_for_transformer(self):
+        unique_tags = set()
+        path = Path(self.path)
+        tags_collection, tokens_collection = [], []
+        if self.class_mapping:
+            address_tag = self.class_mapping.get('address_tag')
+        else:
+            address_tag = 'Address'
 
-        for row in data_list:
-            prev_start = 0
-            tmp_tags_list, tmp_tokens_list = [], []
-            text, labels = row["text"], row["labels"]
-            for item in sorted(labels, key=lambda x: x[0]):
-                c_text = text[prev_start: item[0]].strip()
-                tmp_tags_list.append("O")
-                unique_tags.add("O")
-                tmp_tokens_list.append(c_text)
-                c_text = text[item[0]:item[1]].strip()
-                tmp_tags_list.append(item[2])
-                tmp_tokens_list.append(c_text)
-                unique_tags.add(item[2])
-                prev_start = item[1]
+        if self.dataset_type == 'ner_json':
+            # converts json schema to a list of list of tokens and tags
+            # json - schema:
+            # ----------
+            # {"id": 1, "text": "Officers were dispatched ...", "labels": [[30, 38, "Crime"], [45, 92, "Address"], ...]}
+            # ----------
+            # converted form:
+            # [('Officers were dispatched to a', 'O'),
+            #  ('robbery', 'Crime'),
+            #  ('of the', 'O'),
+            #  ('Associated Bank in the 1500 block of W Broadway', 'Address')]
+            with open(path, 'r', encoding=self.encoding) as f:
+                data_list = f.readlines()
 
-            tags_collection.append(tmp_tags_list)
-            tokens_collection.append(tmp_tokens_list)
+            data_list = [json.loads(item) for item in data_list]
 
-    elif dataset_type in ['BIO', 'IOB', 'LBIOU', 'BILUO']:
-        tags_collection, tokens_collection, unique_tags = _get_tags_and_tokens_collection(
-            path, ignore_tag_order=True, encoding=encoding)
-    else:
-        error_message = (f"Wrong argument - {dataset_type} supplied for `dataset_type` parameter. "
-                         "Valid values are - 'ner_json', 'BIO', 'IOB', 'LBIOU' and 'BILUO'")
-        raise Exception(error_message)
-    data = TextDataObject.prepare_data_for_entity_recognition(
-        tokens_collection=tokens_collection, tags_collection=tags_collection, address_tag=address_tag,
-        unique_tags=unique_tags, seed=seed, batch_size=batch_size, val_split_pct=val_split_pct)
+            for row in data_list:
+                prev_start = 0
+                tmp_tags_list, tmp_tokens_list = [], []
+                text, labels = row["text"], row["labels"]
+                for item in sorted(labels, key=lambda x: x[0]):
+                    c_text = text[prev_start: item[0]].strip()
+                    tmp_tags_list.append("O")
+                    unique_tags.add("O")
+                    tmp_tokens_list.append(c_text)
+                    c_text = text[item[0]:item[1]].strip()
+                    tmp_tags_list.append(item[2])
+                    tmp_tokens_list.append(c_text)
+                    unique_tags.add(item[2])
+                    prev_start = item[1]
 
-    return data
+                tags_collection.append(tmp_tags_list)
+                tokens_collection.append(tmp_tokens_list)
 
-def ner_prepare_data_for_spacy(dataset_type, path, batch_size, class_mapping=None, seed=42,
-                               val_split_pct=0.1, encoding="UTF-8"):
-    if not HAS_SPACY:
-        _raise_spacy_import_error()
+        elif self.dataset_type in ['BIO', 'IOB', 'LBIOU', 'BILUO']:
+            tags_collection, tokens_collection, unique_tags = _get_tags_and_tokens_collection(
+                path, ignore_tag_order=True, encoding=self.encoding)
+        else:
+            error_message = (f"Wrong argument - {self.dataset_type} supplied for `dataset_type` parameter. "
+                             "Valid values are - 'ner_json', 'BIO', 'IOB', 'LBIOU' and 'BILUO'")
+            raise Exception(error_message)
 
-    random.seed(seed)
-    v_list = spacy.__version__.split('.')
-    version = sum([int(j)*10**(2*i) for i,j in enumerate(v_list[::-1])])
-    if version < 20108: #checking spacy version
-        error_message = ("Entity recognition model needs spacy version 2.1.8 or higher." 
-                         f"Your current spacy version is {spacy.__version__}, please update using \'pip install'")
-        return logging.error(error_message)
+        self.data = TextDataObject.prepare_data_for_entity_recognition(
+            tokens_collection=tokens_collection, tags_collection=tags_collection, address_tag=address_tag,
+            unique_tags=unique_tags, seed=self.seed, batch_size=self.batch_size, val_split_pct=self.val_split_pct)
+        self.backbone = "transformers"
 
-    path = Path(path)
-    train_data = []
+    def prepare_data_for_spacy(self):
+        if not HAS_SPACY:
+            _raise_spacy_import_error()
 
-    if class_mapping:
-        address_tag = class_mapping.get('address_tag')
-    else:
-        address_tag = 'Address'
+        random.seed(self.seed)
+        v_list = spacy.__version__.split('.')
+        version = sum([int(j)*10**(2*i) for i,j in enumerate(v_list[::-1])])
+        if version < 20108: #checking spacy version
+            error_message = ("Entity recognition model needs spacy version 2.1.8 or higher." 
+                             f"Your current spacy version is {spacy.__version__}, please update using \'pip install'")
+            return logging.error(error_message)
 
-    if dataset_type == 'ner_json':
-        train_data = _from_json(path=path, encoding=encoding)
-        path = path.parent
-    elif dataset_type == 'BIO' or dataset_type == 'IOB':
-        tags_collection, tokens_collection, _ = _get_tags_and_tokens_collection(path, encoding=encoding)
-        train_data = _from_iob_tags(tags_collection=tags_collection, tokens_collection=tokens_collection)
-    elif dataset_type == 'LBIOU' or dataset_type == 'BILUO':
-        nlp=spacy.blank('en')
-        tags_collection, tokens_collection, _ = _get_tags_and_tokens_collection(path, encoding=encoding)
+        path = Path(self.path)
+        train_data = []
 
-        for tags, tokens in zip(tags_collection, tokens_collection):
-            try:
-                tags = _iob_to_biluo(tags)
+        if self.class_mapping:
+            address_tag = self.class_mapping.get('address_tag')
+        else:
+            address_tag = 'Address'
 
-                doc = spacy.tokens.doc.Doc(
-                nlp.vocab, words = tokens, spaces = [True]*(len(tokens)-1)+[False])
-                # run the standard pipeline against it
-                for name, proc in nlp.pipeline:
-                    doc = proc(doc)
-                text=' '.join(tokens)
-                tags = _offsets_from_biluo_tags(doc, tags)
-                train_data.append((text,{'entities':tags}))
-            except:
-                pass
-    else:
-        error_message = (f"Wrong argument - {dataset_type} supplied for `dataset_type` parameter. "
-                         "Valid values are - 'ner_json', 'BIO', 'IOB', 'LBIOU' and 'BILUO'")
-        raise Exception(error_message)
-    data=spaCyNERDatabunch(train_data, val_split_pct=val_split_pct,batch_size=batch_size,address_tag=address_tag, test_ds=None)
-    data.path=path
-    return data
+        if self.dataset_type == 'ner_json':
+            train_data = _from_json(path=path, encoding=self.encoding)
+            path = path.parent
+        elif self.dataset_type == 'BIO' or self.dataset_type == 'IOB':
+            tags_collection, tokens_collection, _ = _get_tags_and_tokens_collection(path, encoding=self.encoding)
+            train_data = _from_iob_tags(tags_collection=tags_collection, tokens_collection=tokens_collection)
+        elif self.dataset_type == 'LBIOU' or self.dataset_type == 'BILUO':
+            nlp=spacy.blank('en')
+            tags_collection, tokens_collection, _ = _get_tags_and_tokens_collection(path, encoding=self.encoding)
+
+            for tags, tokens in zip(tags_collection, tokens_collection):
+                try:
+                    tags = _iob_to_biluo(tags)
+
+                    doc = spacy.tokens.doc.Doc(
+                    nlp.vocab, words = tokens, spaces = [True]*(len(tokens)-1)+[False])
+                    # run the standard pipeline against it
+                    for name, proc in nlp.pipeline:
+                        doc = proc(doc)
+                    text = ' '.join(tokens)
+                    tags = _offsets_from_biluo_tags(doc, tags)
+                    train_data.append((text,{'entities':tags}))
+                except:
+                    pass
+        else:
+            error_message = (f"Wrong argument - {self.dataset_type} supplied for `dataset_type` parameter. "
+                             "Valid values are - 'ner_json', 'BIO', 'IOB', 'LBIOU' and 'BILUO'")
+            raise Exception(error_message)
+
+        self.data = spaCyNERDatabunch(train_data, val_split_pct=self.val_split_pct, batch_size=self.batch_size,
+                                      address_tag=address_tag, test_ds=None)
+        self.data.path = path
+        self.backbone = "spacy"
 
 
 class _spaCyNERItemlist():

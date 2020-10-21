@@ -25,10 +25,9 @@ except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
     transformer_seq_length = 512
-    class ArcGISTransformer:
-        pass
 
-logger = logging.getLogger()
+    class ArcGISTransformer: pass
+
 
 backbone_models_map = {
     'bert': ('bert-base-cased', 'bert-base-uncased', 'bert-large-cased', 'bert-large-uncased'),
@@ -273,12 +272,12 @@ class _TransformerEntityRecognizer(ArcGISModel):
                                     seq_len=transformer_seq_length):
 
         model_type = infer_model_type(backbone, transformer_architectures)
-        logger.info(f"Inferred Backbone: {model_type}")
+        logging.info(f"Inferred Backbone: {model_type}")
         pretrained_model_name = backbone
 
         transformer_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name)
         if data._is_empty:
-            logger.info('Creating DataBunch')
+            logging.info('Creating DataBunch')
             data._prepare_databunch(tokenizer=transformer_tokenizer, model_type=model_type, seq_len=seq_len)
 
         databunch = data.get_databunch()
@@ -317,7 +316,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
                                  "\nKindly turn off the `mixed_precision` flag to use this model in its default mode,"
                                  f" or choose a different transformer architectures from - {transformer_architectures}")
                 raise Exception(error_message)
-            logger.info("Converting model to 16 Bit Floating Point precision")
+            logging.info("Converting model to 16 Bit Floating Point precision")
             self.learn = to_fp16(self.learn)
 
         if databunch.is_empty:
@@ -461,14 +460,14 @@ class _TransformerEntityRecognizer(ArcGISModel):
                             text_list.append(f.read())
                         file_names.append(item_name)
                     except Exception as e:
-                        logger.exception(e)
+                        logging.exception(e)
                         skipped_docs.append(item_name)
             if len(skipped_docs):
                 print('Unable to read the following documents ', ', '.join(skipped_docs))
 
         tokenizer, id2label = self.learn.model._tokenizer, self.learn.model._config.id2label
         model_type = self.learn.model._transformer_architecture
-        logger.info(f"Generating Inference using - {model_type} transformer model.")
+        logging.info(f"Generating Inference using - {model_type} transformer model.")
         for i in progress_bar(range(0, len(text_list), batch_size)):
             tokens, labels = self.learn.model.generate_inference(text_list[i: i + batch_size], self._device)
             if debug:
@@ -607,7 +606,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         output.pop("accuracy", None)
         output.pop("macro avg", None)
         output.pop("weighted avg", None)
-        df =  pd.DataFrame(output)
+        df = pd.DataFrame(output)
         df.drop("support", inplace=True)
         dataframe = df.T.round(2)
         dataframe.rename(columns=column_mappings, inplace=True)
@@ -632,7 +631,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         self._check_requisites()
         import matplotlib.pyplot as plt
         if not hasattr(self.learn, 'recorder'):  # return none if the recorder is empty
-            logger.error("Model needs to be trained first. Please call `model.fit()` to train the model."
+            logging.error("Model needs to be trained first. Please call `model.fit()` to train the model."
                          " Then call this method to plot/return the loss curve.")
             return
         return_fig = not show

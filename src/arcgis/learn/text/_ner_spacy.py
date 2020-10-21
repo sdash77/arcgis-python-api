@@ -149,8 +149,15 @@ class _SpacyEntityRecognizer(ArcGISModel):
             print('Finding optimum learning rate')
             lr = self.lr_find(allow_plot=False)
 
-        if self.train_ds == None:
+        if kwargs.get("from_lr_find", False) is False and isinstance(lr, slice):
+            lr = lr.stop
+            error_message = ("Passing slice of floats as `lr` value is not supported for models with `spacy` backbone."
+                             f" Picking up the highest value - `{lr}` of the slice as the learning rate.")
+            logging.warning(error_message)
+
+        if self.train_ds is None:
             return logging.warning('Cannot fit the model on empty data.')
+
         TRAIN_DATA = self.train_ds.data
         VAL_DATA = self.val_ds.data
         nlp = self.model
@@ -256,8 +263,9 @@ class _SpacyEntityRecognizer(ArcGISModel):
             self.entities = list(self.model.entity.labels)
             self.lr = lr
 
-    def _create_emd(self, path):
+    def _create_emd(self, path, compute_metrics=True):
         path = Path(path)
+        self._emd_template = {}
         self._emd_template["ModelConfiguration"] = "_ner"
         self._emd_template["InferenceFunction"] = "EntityRecognizer.py"
         self._emd_template['ModelFile'] = str(Path(path).name)
@@ -266,7 +274,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         self._emd_template['Lang'] = self.lang
         self._emd_template['saved_path'] = str(Path(path))
         if hasattr(self, 'lr'): self._emd_template['LearningRate'] = str(self.lr)  # checking if model has lr
-        if len(self.recorder.metrics['precision_score']):  # checking if recorder has metrics
+        if compute_metrics and len(self.recorder.metrics['precision_score']):  # checking if recorder has metrics
             self._emd_template['metrics'] = json.dumps(
                 {'precision_score': [self.recorder.metrics['precision_score'][-1]]
                     , 'recall_score': [self.recorder.metrics['recall_score'][-1]]
@@ -274,9 +282,10 @@ class _SpacyEntityRecognizer(ArcGISModel):
                     , 'metrics_per_label': [self.recorder.metrics['metrics_per_label'][-1]]})
         if self._has_address:
             self._emd_template['address_tag'] = self._address_tag
+
         json.dump(self._emd_template, open(path / Path(path.stem).with_suffix('.emd'), 'w'), indent=4)
         pathstr = path / Path(path.stem).with_suffix('.emd')
-        return str(path.resolve())
+        return path.resolve()
 
     def save(self, name_or_path, **kwargs):
         """
@@ -311,10 +320,14 @@ class _SpacyEntityRecognizer(ArcGISModel):
             if metrics is not None:  # expecting metrics = None for older saved models.
                 metrics.to_html(os.path.join(model_characteristics_dir, 'metrics.html'))  # writing metrics to html
 
-    def _save(self, name_or_path, zip_files=True, save_html=True, **kwargs):
+    def _save(self, name_or_path, zip_files=True, save_html=True, publish=False,
+              gis=None, compute_metrics=True, **kwargs):
         temp = self.path
         if not self._trained:
             return logging.error("Model needs to be fitted, before saving.")
+
+        if kwargs.get("save_optimizer", False):
+            logging.warning("Setting `save_optimizer` = True will not have any effect on models with `spaCy` backbone")
 
         if '\\' in name_or_path or '/' in name_or_path:
             path = Path(name_or_path)
@@ -330,7 +343,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
                 os.makedirs(self.model_dir)
 
         self.model.to_disk(self.model_dir)
-        emd_path = self._create_emd(self.model_dir)
+        emd_path = self._create_emd(self.model_dir, compute_metrics=compute_metrics)
         with open(self.model_dir / self._emd_template['InferenceFunction'], 'w') as f:
             f.write(self._code)
 
@@ -343,7 +356,11 @@ class _SpacyEntityRecognizer(ArcGISModel):
 
         if zip_files:
             _create_zip(name, str(self.model_dir))
-        print(f'Model has been saved to {emd_path}')
+
+        if publish:
+            self._publish_dlpk((emd_path / emd_path.stem).with_suffix('.dlpk'), gis=gis,
+                               overwrite=kwargs.get('overwrite', False))
+        print(f'Model has been saved to {str(emd_path)}')
 
     def load(self, name_or_path):
         """
@@ -473,7 +490,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         """
         return self.model(text)
 
-    def extract_entities(self, text_list, drop=True):
+    def extract_entities(self, text_list, drop=True, **kwargs):
         """
         Extracts the entities from [documents in the mentioned path or text_list].
 
@@ -488,9 +505,15 @@ class _SpacyEntityRecognizer(ArcGISModel):
         text_list               Required string(path) or list(documents).
                                 List of documents for entity extraction OR
                                 path to the documents.
+        ---------------------   -------------------------------------------
         drop                    Optional bool.
                                 If documents without address needs to be
                                 dropped from the results.
+        ---------------------   -------------------------------------------
+        batch_size              Optional integer. Number of items to process
+                                at once. (Reduce it if getting CUDA Out of Memory
+                                Errors). Default is set to 4.
+                                Not applicable for models with `spaCy` backbone.
         =====================   ===========================================
 
         :returns: Pandas DataFrame

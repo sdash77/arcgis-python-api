@@ -507,12 +507,29 @@ class TextClassifier(ArcGISModel):
             labels = [[int(getattr(item, column)) for column in self._data._label_cols] for idx, item in
                       validation_dataframe.iterrows()]
             target_names = self._data._label_cols
-            print(classification_report(labels, predictions, target_names=target_names, zero_division=1))
+            output_dict = classification_report(labels, predictions, target_names=target_names,
+                                           zero_division=1, output_dict=True)
         else:
             predictions = [x[1] for x in self.predict(validation_dataframe[self._data._text_cols].tolist())]
             labels = [x[0] for x in validation_dataframe[self._data._label_cols].values]
             target_names = self.learn.model._config.label2id.keys()
-            print(classification_report(labels, predictions, target_names=target_names, zero_division=1))
+            output_dict = classification_report(labels, predictions, target_names=target_names,
+                                           zero_division=1, output_dict=True)
+
+        return self._create_dataframe_from_dict(output_dict)
+
+    @staticmethod
+    def _create_dataframe_from_dict(out_dict):
+        out_dict.pop("accuracy", None)
+        out_dict.pop("macro avg", None)
+        out_dict.pop("weighted avg", None)
+        df = pd.DataFrame(out_dict)
+        # df.drop("support", inplace=True)
+        dataframe = df.T.round(4)
+        column_mappings = {'precision': 'Precision_score', 'recall': 'Recall_score',
+                           'f1-score': 'F1_score', 'support': 'Support'}
+        dataframe.rename(columns=column_mappings, inplace=True)
+        return dataframe
 
     def get_misclassified_records(self):
         """

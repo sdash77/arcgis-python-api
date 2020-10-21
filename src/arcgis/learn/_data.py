@@ -25,7 +25,7 @@ try:
     import torch
     from .models._unet_utils import ArcGISSegmentationItemList, is_no_color
     from .models._maskrcnn_utils import ArcGISInstanceSegmentationItemList, ArcGISInstanceSegmentationMSItemList
-    from .models._ner_utils import ner_prepare_data
+    from .models._ner_utils import _NERData
     from ._utils.pascal_voc_rectangles import ObjectDetectionItemList
     from .models._superres_utils import resize_one
     from ._utils.common import ArcGISMSImage, ArcGISImageList
@@ -100,7 +100,7 @@ def get_installation_command():
                           "scikit-image=0.15.0 pillow=6.2.2 libtiff=4.0.10 fastai=1.0.60 pytorch=1.4.0 "
                           "torchvision=0.5.0 scikit-learn=0.23.1 --no-pin'"
                           "\n'conda install gdal=2.3.3'"
-                          "\n'pip install transformers==3.0.2'")
+                          "\n'pip install transformers==3.3.0'")
     return installation_steps 
 
 
@@ -771,14 +771,6 @@ def prepare_data(path,
                             it will create label images of size 128x128.
                             Default is 4
     ---------------------   -------------------------------------------
-    ner_architecture        Optional string.
-                            Applicable only when dataset_type=IOB, BILUO or ner_json:
-                            The named-entity-recognition task can be performed either
-                            by using 'spacy' or 'transformer' architecture. Data prep
-                            will be different for both of the above architecture.
-                            Valid values are - ['spacy', 'transformer'].
-                            Default is 'spacy'
-    ---------------------   -------------------------------------------
     encoding                Optional string.
                             Applicable only when dataset_type=IOB, BILUO or ner_json:
                             The encoding to read the csv/json file.
@@ -1209,9 +1201,8 @@ def prepare_data(path,
             batch_size = 8
         encoding = kwargs.get("encoding", "UTF-8")
         ner_architecture = kwargs.get("ner_architecture", "spacy")
-        return ner_prepare_data(dataset_type=dataset_type, path=path, class_mapping=class_mapping, seed=seed,
-                                val_split_pct=val_split_pct, batch_size=batch_size,
-                                ner_architecture=ner_architecture, encoding=encoding)
+        return _NERData(dataset_type=dataset_type, path=path, class_mapping=class_mapping, seed=seed,
+                                val_split_pct=val_split_pct, batch_size=batch_size, encoding=encoding)
     elif dataset_type == "PointCloud":
         from ._utils.pointcloud_data import Transform3d
         if transforms is None:
