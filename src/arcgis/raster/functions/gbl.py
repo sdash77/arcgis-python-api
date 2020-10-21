@@ -3345,9 +3345,8 @@ def distance_accumulation(in_source_data,
             layer3, in_barrier_data, raster_ra3 = _raster_input(in_barrier_data)
         else:
             raster_ra3 = _layer_input(in_barrier_data)
-            in_barrier_data = raster_ra1
-            layer3=raster_ra1
-        layer3, in_barrier_data, raster_ra3 = _raster_input(in_barrier_data)
+            in_barrier_data = raster_ra3
+            layer3 = raster_ra3
 
     if in_surface_raster is not None:
         layer4, in_surface_raster, raster_ra4 = _raster_input(in_surface_raster)
@@ -3600,9 +3599,8 @@ def distance_allocation(in_source_data,
             layer3, in_barrier_data, raster_ra3 = _raster_input(in_barrier_data)
         else:
             raster_ra3 = _layer_input(in_barrier_data)
-            in_barrier_data = raster_ra1
-            layer3=raster_ra1
-        layer3, in_barrier_data, raster_ra3 = _raster_input(in_barrier_data)
+            in_barrier_data = raster_ra3
+            layer3=raster_ra3
 
     if in_surface_raster is not None:
         layer4, in_surface_raster, raster_ra4 = _raster_input(in_surface_raster)
@@ -3769,8 +3767,13 @@ def optimal_path_as_raster(in_destination_data,
 
     :return: output raster with function applied
     """
-
-    layer1, in_destination_data, raster_ra1 = _raster_input(in_destination_data)
+    if in_destination_data is not None:
+        if isinstance (in_destination_data, ImageryLayer):
+            layer1, input_destination_data, raster_ra1 = _raster_input(in_destination_data)
+        else:
+            raster_ra1 = _layer_input(in_destination_data)
+            input_destination_data = raster_ra1
+            layer1=raster_ra1
 
     layer2, in_distance_accumulation_raster, raster_ra2 = _raster_input(in_distance_accumulation_raster)
 
@@ -3782,7 +3785,16 @@ def optimal_path_as_raster(in_destination_data,
             "toolName" : "OptimalPathAsRaster_sa",
             "PrimaryInputParameterName" : "in_destination_data",
             "OutputRasterParameterName":"out_path_accumulation_raster",
-            "in_destination_data" : in_destination_data
+            "in_destination_data" : input_destination_data,
+            "RasterInfo":{"blockWidth" : 2048,
+                "blockHeight":256,
+                "bandCount":1,
+                "pixelType":8,
+                "firstPyramidLevel":1,
+                "maximumPyramidLevel":30,
+                "pixelSizeX":1,
+                "pixelSizeY" :1,
+                "type":"RasterInfo"}
         }
     }
 
@@ -3811,7 +3823,10 @@ def optimal_path_as_raster(in_destination_data,
     if in_back_direction_raster is not None:
         function_chain_ra['rasterFunctionArguments']["in_back_direction_raster"] = raster_ra3
 
-    return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
+    if isinstance(in_destination_data, ImageryLayer):
+        return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
+    else:
+        return _feature_gbl_clone_layer(in_destination_data, template_dict, function_chain_ra)
 
 
 def boundary_clean(input_raster, sort_type = "NO_SORT", number_of_runs="TWO_WAY"):
