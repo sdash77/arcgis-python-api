@@ -355,6 +355,31 @@ def _get_batch_stats(image_list, norm_pct=1, _band_std_values=False):
         "scaled_std_values": scaled_std_values
     }
 
+def sniff_rgb_bands(band_names):
+    band_mapping_reverse = {k.lower(): i for i, k in enumerate(band_names)}
+    rgb_bands = []
+    for b in [
+        'red',
+        'green',
+        'blue'
+    ]:
+        bi = band_mapping_reverse.get(b, None)
+        if bi is None:
+            return
+        rgb_bands.append(bi)
+    return rgb_bands
+
+def data_is_multispectral(emd_info: dict) -> bool:
+    """
+    :param emd_info: Dictionary containing EMD info
+    :return: Boolean value denoting whether data is multispectral or not.
+    """
+    is_multispectral = False
+    if not 'InputRastersProps' in emd_info:
+        return is_multispectral
+    if len(emd_info['InputRastersProps']["BandNames"]) !=3:
+        is_multispectral = True
+    return is_multispectral
 
 def _get_view_shape(tensor_batch, band_factors):
     view_shape = [1 for i in range(len(tensor_batch.shape))]
@@ -780,6 +805,7 @@ def prepare_data(path,
     :returns: data object
 
     """
+    emd = {}
     height_width = []
     not_label_count = [0]
 
@@ -910,11 +936,39 @@ def prepare_data(path,
         _image_space_used = _pixel_space
 
     # Multispectral check
+    # With Python API for ArcGIS 1.9 multispectral workflow will automatically kick in with the following conditions
+    # 1. If the imagery source is not having exactly three bands
+    # 2. If there is any band other than RGB
+    # 3. If None among all three bands in the imagery is unknown
+    #
     imagery_type = 'ASSUMED_RGB'
     if kwargs.get('imagery_type', None) is not None:
         imagery_type = kwargs.get('imagery_type')
     elif _imagery_type is not None:
         imagery_type = _imagery_type
+    if "InputRastersProps" in emd and kwargs.get('imagery_type', None) is None:
+        sensor_name = emd["InputRastersProps"]["SensorName"]
+        if len(emd["AllTilesStats"])!=3:
+            if not (len(emd["AllTilesStats"]) == 4 and emd["InputRastersProps"]["BandNames"][3].lower() == 'alpha'):
+                imagery_type = sensor_name
+        else:
+            # Check by band names
+            band_mapping = {i:b.lower() for i, b in enumerate(emd["InputRastersProps"]["BandNames"])}
+            for b in emd["WellKnownBandNames (FYI, these band names can be used in ExtractBands)"]:
+                if b.lower() in [
+                    "red",
+                    "green",
+                    "blue"
+                ]:
+                    continue
+                if b.lower() in band_mapping:
+                    imagery_type = sensor_name
+                    break
+            # Check by values
+            for stat in emd["AllTilesStats"]:
+                if stat["Min"] < 0 or stat["Max"] > 255:
+                    imagery_type = sensor_name
+                    break
 
     if (not imagery_type in ('ASSUMED_RGB', 'RGB')) and not HAS_GDAL:
         raise_gdal_import_error()
@@ -1251,56 +1305,104 @@ def prepare_data(path,
 
         data = (data.transform(transforms, **kwargs_transforms)
                     .databunch(**databunch_kwargs))
-        
-        if len(data.x) < 300:
+
+        if "InputRastersProps" in emd:
+            # Starting with ArcGIS Pro 2.7 and Python API for ArcGIS 1.9, the following multispectral kwargs have been
+            # deprecated. This is done in favour of the newly added support for Imagery statistics and metadata in the
+            # IA > Export Training data for Deep Learining GP Tool.
+            #
+            #   bands, rgb_bands, norm_pct,
+            #
+            data._emd = emd
+            data._sensor_name = emd['InputRastersProps']['SensorName']
+            bands = data._band_names = emd['InputRastersProps']['BandNames']
+            # data._band_mapping = {i: k for i, k in enumerate(bands)}
+            # data._band_mapping_reverse = {k: i for i, k in data._band_mapping.items()}
+            data._nbands = len(data._band_names)
+            band_min_values = []
+            band_max_values = []
+            band_mean_values = []
+            band_std_values = []
+            for band_stats in  emd['AllTilesStats']:
+                band_min_values.append(band_stats['Min'])
+                band_max_values.append(band_stats['Max'])
+                band_mean_values.append(band_stats['Mean'])
+                band_std_values.append(band_stats['StdDev'])
+
+            data._rgb_bands = rgb_bands
+            data._symbology_rgb_bands = rgb_bands
+
+            data._band_min_values = torch.tensor(band_min_values, dtype=torch.float32)
+            data._band_max_values = torch.tensor(band_max_values, dtype=torch.float32)
+            data._band_mean_values = torch.tensor(band_mean_values, dtype=torch.float32)
+            data._band_std_values = torch.tensor(band_std_values, dtype=torch.float32)
+            data._scaled_min_values = torch.zeros((data._nbands,), dtype=torch.float32)
+            data._scaled_max_values = torch.ones((data._nbands,), dtype=torch.float32)
+            data._scaled_mean_values = _tensor_scaler(data._band_mean_values, min_values=data._band_min_values, max_values=data._band_max_values, mode='minmax')
+            data._scaled_std_values = ((data._band_std_values**2)*(data._scaled_mean_values/data._band_mean_values))**.5
+
+            # Handover to next section
             norm_pct = 1
+            bands = data._band_names
+            rgb_bands = symbology_rgb_bands = sniff_rgb_bands(data._band_names)
+            if rgb_bands is None:
+                rgb_bands = []
+                if len(data._band_names) < 3:
+                    symbology_rgb_bands = [0] # Panchromatic
+                else:
+                    symbology_rgb_bands = [0, 1, 2] # Case where could not find RGB in multiband imagery
+        else:
+            symbology_rgb_bands = rgb_bands
+            if len(data.x) < 300:
+                norm_pct = 1
 
-        # Statistics        
-        dummy_stats = {
-            "batch_stats_for_norm_pct_0" : {
-                "band_min_values":None, 
-                "band_max_values":None, 
-                "band_mean_values":None, 
-                "band_std_values":None, 
-                "scaled_min_values":None, 
-                "scaled_max_values":None, 
-                "scaled_mean_values":None, 
-                "scaled_std_values":None
+            # Statistics
+            dummy_stats = {
+                "batch_stats_for_norm_pct_0" : {
+                    "band_min_values":None,
+                    "band_max_values":None,
+                    "band_mean_values":None,
+                    "band_std_values":None,
+                    "scaled_min_values":None,
+                    "scaled_max_values":None,
+                    "scaled_mean_values":None,
+                    "scaled_std_values":None
+                }
             }
-        }
-        normstats_json_path = os.path.abspath(data.path / '..' / 'esri_normalization_stats.json')
-        if not os.path.exists(normstats_json_path):
-            normstats = dummy_stats
-            with open(normstats_json_path, 'w', encoding='utf-8') as f:
-                json.dump(normstats, f, ensure_ascii=False, indent=4)
-        else:
-            with open(normstats_json_path) as f:
-                normstats = json.load(f)
+            normstats_json_path = os.path.abspath(data.path / '..' / 'esri_normalization_stats.json')
+            if not os.path.exists(normstats_json_path):
+                normstats = dummy_stats
+                with open(normstats_json_path, 'w', encoding='utf-8') as f:
+                    json.dump(normstats, f, ensure_ascii=False, indent=4)
+            else:
+                with open(normstats_json_path) as f:
+                    normstats = json.load(f)
 
-        norm_pct_search = f"batch_stats_for_norm_pct_{round(norm_pct*100)}"
-        if norm_pct_search in normstats:
-            batch_stats = normstats[norm_pct_search]
-            for s in batch_stats:
-                if batch_stats[s] is not None:
-                    batch_stats[s] = torch.tensor(batch_stats[s])
-        else:
-            batch_stats = _get_batch_stats(data.x, norm_pct)
-            normstats[norm_pct_search] = dict(batch_stats)
-            for s in normstats[norm_pct_search]:
-                if normstats[norm_pct_search][s] is not None:
-                    normstats[norm_pct_search][s] = normstats[norm_pct_search][s].tolist()
-            with open(normstats_json_path, 'w', encoding='utf-8') as f:
-                json.dump(normstats, f, ensure_ascii=False, indent=4)
+            norm_pct_search = f"batch_stats_for_norm_pct_{round(norm_pct*100)}"
+            if norm_pct_search in normstats:
+                batch_stats = normstats[norm_pct_search]
+                for s in batch_stats:
+                    if batch_stats[s] is not None:
+                        batch_stats[s] = torch.tensor(batch_stats[s])
+            else:
+                batch_stats = _get_batch_stats(data.x, norm_pct)
+                normstats[norm_pct_search] = dict(batch_stats)
+                for s in normstats[norm_pct_search]:
+                    if normstats[norm_pct_search][s] is not None:
+                        normstats[norm_pct_search][s] = normstats[norm_pct_search][s].tolist()
+                with open(normstats_json_path, 'w', encoding='utf-8') as f:
+                    json.dump(normstats, f, ensure_ascii=False, indent=4)
 
-        # batch_stats -> [band_min_values, band_max_values, band_mean_values, band_std_values, scaled_min_values, scaled_max_values, scaled_mean_values, scaled_std_values]
-        data._band_min_values = batch_stats['band_min_values']
-        data._band_max_values = batch_stats['band_max_values']
-        data._band_mean_values = batch_stats['band_mean_values']
-        data._band_std_values = batch_stats['band_std_values']
-        data._scaled_min_values = batch_stats['scaled_min_values']
-        data._scaled_max_values = batch_stats['scaled_max_values']
-        data._scaled_mean_values = batch_stats['scaled_mean_values']
-        data._scaled_std_values = batch_stats['scaled_std_values']
+            # batch_stats -> [band_min_values, band_max_values, band_mean_values, band_std_values, scaled_min_values, scaled_max_values, scaled_mean_values, scaled_std_values]
+            data._band_min_values = batch_stats['band_min_values']
+            data._band_max_values = batch_stats['band_max_values']
+            data._band_mean_values = batch_stats['band_mean_values']
+            data._band_std_values = batch_stats['band_std_values']
+            data._scaled_min_values = batch_stats['scaled_min_values']
+            data._scaled_max_values = batch_stats['scaled_max_values']
+            data._scaled_mean_values = batch_stats['scaled_mean_values']
+            data._scaled_std_values = batch_stats['scaled_std_values']
+        #
 
         # Prevent Divide by zeros
         data._band_max_values[data._band_min_values == data._band_max_values]+=1
@@ -1450,7 +1552,7 @@ def prepare_data(path,
         data._bands = bands
         data._norm_pct = norm_pct
         data._rgb_bands = rgb_bands
-        data._symbology_rgb_bands = rgb_bands
+        data._symbology_rgb_bands = symbology_rgb_bands
 
         # Handle invalid color mapping 
         data._multispectral_color_mapping = color_mapping

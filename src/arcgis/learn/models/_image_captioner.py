@@ -74,7 +74,7 @@ class ImageCaptioner(ArcGISModel):
                                       message="",
                                       installation_steps=' ')
 
-        super().__init__(data, backbone)
+        super().__init__(data, backbone, **kwargs)
 
         self.decoder_params = kwargs.get('decoder_params', {})
         self.learn = image_captioner_learner(self._data,

@@ -83,7 +83,7 @@ class RetinaNet(ArcGISModel):
         if backbone is None: 
             backbone = models.resnet50
 
-        super().__init__(data, backbone)
+        super().__init__(data, backbone, **kwargs)
 
         
         n_bands = len(getattr(self._data, '_extract_bands', [0, 1, 2]))

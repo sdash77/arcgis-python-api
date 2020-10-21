@@ -104,7 +104,7 @@ class PSPNetClassifier(ArcGISModel):
         if backbone is None: 
             backbone = models.resnet50
       
-        super().__init__(data, backbone)
+        super().__init__(data, backbone, **kwargs)
 
         self._ignore_classes = kwargs.get('ignore_classes', [])
         if self._ignore_classes != [] and len(data.classes) <= 3:

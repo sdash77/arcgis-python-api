@@ -53,13 +53,15 @@ class MyFasterRCNN():
                 backbone = getattr(self.torchvision.models.detection, backbone)
         else:
             backbone = backbone
+        pretrained_backbone = kwargs.get('pretrained_backbone', True)
+        assert type(pretrained_backbone) == bool
         if backbone.__name__ is 'resnet50':
-            model = self.torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True,
+            model = self.torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=pretrained_backbone,
                                                                               min_size = 1.5*data.chip_size,
                                                                               max_size = 2*data.chip_size,
                                                                               **self.fasterrcnn_kwargs)
         elif backbone.__name__ in ['resnet18','resnet34']:
-            backbone_small = self.fastai.vision.learner.create_body(backbone)
+            backbone_small = self.fastai.vision.learner.create_body(backbone, pretrained=pretrained_backbone)
             backbone_small.out_channels = 512
             model = self.torchvision.models.detection.FasterRCNN(backbone_small,
                                                                  91,
@@ -67,7 +69,10 @@ class MyFasterRCNN():
                                                                  max_size = 2*data.chip_size,
                                                                  **self.fasterrcnn_kwargs)
         else:
-            backbone_fpn = self.torchvision.models.detection.backbone_utils.resnet_fpn_backbone(backbone.__name__, True)
+            backbone_fpn = self.torchvision.models.detection.backbone_utils.resnet_fpn_backbone(
+                backbone.__name__,
+                pretrained = pretrained_backbone
+            )
             model = self.torchvision.models.detection.FasterRCNN(backbone_fpn,
                                                                  91,
                                                                  min_size = 1.5*data.chip_size,

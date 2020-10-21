@@ -218,7 +218,21 @@ class SaveModelCallback(TrackerCallback):
 # Multispectral Models Specific resources start #
 
 valid_init_schemes = ['red_band', 'random', 'all_random']
-rgb_map = {'r': 0, 'g': 1, 'b': 2}
+rgb_map = {
+    'r': 0,
+    'red': 0,
+    'g': 1,
+    'green': 1,
+    'b': 2,
+    'blue': 2
+}
+def get_band_mapping(band_name):
+    # Extra Logic goes Here
+    # For example: NIR --> RED(0); Coastal --> BLUE(2)
+    # We can store Custom weights for multispectral models and load them in this logic
+    #
+    return rgb_map.get(band_name.lower(), None)
+
 
 def _get_tail(model):
     if hasattr(model, 'named_children'):
@@ -249,7 +263,7 @@ def _get_ms_tail(tail, data, type_init='random'):
     avg_weights = tail.weight.data.mean(dim=1)
     for i, j in enumerate(data._extract_bands):
         band = str(data._bands[j]).lower()
-        b = rgb_map.get(band, None)
+        b = get_band_mapping(band) #rgb_map.get(band, None)
         if b is not None and not type_init == 'all_random':
             new_tail.weight.data[:, i] = tail.weight.data[:, b]
         else:
@@ -275,16 +289,17 @@ def _set_tail(model, new_tail):
             except:
                 pass
 
-def _change_tail(model, data):
+def _change_tail(model, data, tail_weights_type=None):
     tail_name, tail = _get_tail(model)
-    type_init = getattr(arcgis.env, 'type_init_tail_parameters', 'random')
-    if type_init not in valid_init_schemes:
+    if tail_weights_type is None:
+        tail_weights_type = getattr(arcgis.env, 'type_init_tail_parameters', 'random')
+    if tail_weights_type not in valid_init_schemes:
         raise Exception(f"""
         \n'{type_init}' is not a valid scheme for initializing model tail weights.
         \nplease set a valid scheme from 'red_band', 'random' or 'all_random'.
         \n`arcgis.env.type_init_tail_parameters={{valid_scheme}}`
         """)
-    new_tail = _get_ms_tail(tail, data, type_init=type_init)
+    new_tail = _get_ms_tail(tail, data, type_init=tail_weights_type)
     _set_tail(model, new_tail)
     return model
 
@@ -399,8 +414,15 @@ class ArcGISModel(object):
             self._bands = data._bands
             self._orig_backbone = self._backbone
             @wraps(self._orig_backbone)
-            def backbone_wrapper(*args, **kwargs):
-                return _change_tail(self._orig_backbone(*args, **kwargs), data)
+            def backbone_wrapper(*args, **inkwargs):
+                if 'pretrained_backbone' in kwargs:
+                    pretrained_backbone = kwargs['pretrained_backbone']
+                    assert type(pretrained_backbone) == bool
+                    if len(args) > 0:
+                        args = tuple([pretrained_backbone, *args[1:]])
+                    else:
+                        inkwargs['pretrained'] = pretrained_backbone
+                return _change_tail(self._orig_backbone(*args, **inkwargs), data, kwargs.get('tail_weights_type'))
             backbone_wrapper._is_multispectral = True
             self._backbone = backbone_wrapper
         if not hasattr(data, 'class_mapping') and hasattr(data, 'classes'):

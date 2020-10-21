@@ -1,7 +1,7 @@
 import torch
 import matplotlib.pyplot as plt
 import math
-from .common import get_nbatches
+from .common import get_nbatches, image_batch_stretcher
 
 def show_batch_labeled_tiles(self, rows=3, **kwargs): # parameters adjusted in kwargs   
     nrows = rows
@@ -28,6 +28,7 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs): # parameters adjusted in k
     nodata = kwargs.get('nodata', 0)
     imsize = kwargs.get('imsize', 5)
     statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
+    stretch_type = kwargs.get('stretch_type', 'minmax') # Accepted Values `minmax`, `percentclip`
 
     e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
     symbology_bands = []
@@ -53,11 +54,8 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs): # parameters adjusted in k
 
     # Extract RGB Bands
     symbology_x_batch = x_batch[:, symbology_bands]
-    if statistics_type == 'DRA':
-        shp = symbology_x_batch.shape
-        min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
-        max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
-        symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+    if stretch_type is not None:
+        symbology_x_batch = image_batch_stretcher(symbology_x_batch, stretch_type, statistics_type)
 
     # Channel first to channel last and clamp float values to range 0 - 1 for plotting
     symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)

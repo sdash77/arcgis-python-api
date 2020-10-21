@@ -38,7 +38,7 @@ try:
     import PIL.Image
     import PIL.ExifTags
     from torch.nn import Module as NnModule
-    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path, image_batch_stretcher
     HAS_FASTAI = True
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -113,7 +113,7 @@ class FeatureClassifier(ArcGISModel):
             super().__init__(data, None)
             self._intialize_tensorflow(data, backbone, pretrained_path, mixup, kwargs)
         else:
-            super().__init__(data, backbone)
+            super().__init__(data, backbone, **kwargs)
 
             backbone_cut = None
             backbone_split = None

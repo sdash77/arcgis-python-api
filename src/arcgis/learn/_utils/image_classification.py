@@ -11,7 +11,7 @@ if HAS_TENSORFLOW:
     from .._utils.fastai_tf_fit import _tf_to_pytorch, _pytorch_to_tf_batch, _pytorch_to_tf
     from .common_tf import NormalizationLayerRGB
 
-from .common import get_nbatches
+from .common import get_nbatches, image_batch_stretcher
 
 try:
     import torch
@@ -54,6 +54,7 @@ def IC_show_results(self, nrows=5, **kwargs):
     top = kwargs.get('top', _top)
     
     statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
+    stretch_type = kwargs.get('stretch_type', 'minmax') # Accepted Values `minmax`, `percentclip`
 
     # Get Batch
     x_batch, y_batch = get_nbatches(data_loader, n_items)
@@ -97,11 +98,8 @@ def IC_show_results(self, nrows=5, **kwargs):
         
         # Extract RGB Bands
         symbology_x_batch = x_batch[:, symbology_bands]
-        if statistics_type == 'DRA':
-            shp = symbology_x_batch.shape
-            min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
-            max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
-            symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+        if stretch_type is not None:
+            symbology_x_batch = image_batch_stretcher(symbology_x_batch, stretch_type, statistics_type)
 
     else:
         # normalization stats

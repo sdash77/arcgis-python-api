@@ -350,11 +350,70 @@ def predict_batch(self, imagetensor_batch):
 
 ## Image Stretching Functions start ##
 
+def get_band_percent_minmax(values, min_clip, max_clip):
+    return values[round(values.shape[0] * min_clip)], values[values.shape[0] - round(values.shape[0] * max_clip)]
+
+def get_percent_minmax(imagetensor_batch, min_clip=0.0025, max_clip=0.005):
+    shp = imagetensor_batch.shape
+    _imagetensor_batch = imagetensor_batch.transpose(1, 0).reshape(shp[1], -1)
+    min_vals = []
+    max_vals = []
+    for i in range(shp[1]):
+        v = get_band_percent_minmax(_imagetensor_batch[i].unique(), min_clip, max_clip)
+        min_vals.append(v[0])
+        max_vals.append(v[1])
+    return \
+        torch.tensor(
+            min_vals,
+            dtype=imagetensor_batch.dtype,
+            device=imagetensor_batch.device
+        ),\
+        torch.tensor(
+            max_vals,
+            dtype=imagetensor_batch.dtype,
+            device=imagetensor_batch.device
+        )
+
+def image_batch_stretcher(imagetensor_batch, stretch_type='minmax', statistics_type=None):
+    shp = imagetensor_batch.shape
+    if statistics_type == 'DRA':
+        if stretch_type == 'minmax':
+            min_vals = imagetensor_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
+            max_vals = imagetensor_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
+        elif stretch_type == 'percentclip':
+            min_vals = []
+            max_vals = []
+            for idx in range(shp[0]):
+                v = get_percent_minmax(imagetensor_batch[idx:idx+1])
+                min_vals.append(v[0])
+                max_vals.append(v[1])
+            min_vals = torch.stack(min_vals)
+            max_vals = torch.stack(max_vals)
+        else:
+            raise NotImplementedError
+        min_vals = min_vals.view(shp[0], shp[1], 1, 1)
+        max_vals = max_vals.view(shp[0], shp[1], 1, 1)
+    else:
+        if stretch_type == 'minmax':
+            min_vals = imagetensor_batch.transpose(1, 0).reshape(shp[1], -1).min(dim=1)[0]
+            max_vals = imagetensor_batch.transpose(1, 0).reshape(shp[1], -1).max(dim=1)[0]
+        elif stretch_type == 'percentclip':
+            min_vals, max_vals = get_percent_minmax(imagetensor_batch)
+        else:
+            raise NotImplementedError
+        min_vals = min_vals.view(1, shp[1], 1, 1)
+        max_vals = max_vals.view(1, shp[1], 1, 1)
+    #
+    imagetensor_batch = ( imagetensor_batch - min_vals ) / ( max_vals - min_vals + .001 )
+    imagetensor_batch = imagetensor_batch.clamp(0, 1)
+    return imagetensor_batch
+
 def dynamic_range_adjustment(imagetensor_batch):
     shp = imagetensor_batch.shape
     min_vals = imagetensor_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
     max_vals = imagetensor_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
-    imagetensor_batch = imagetensor_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+    imagetensor_batch = ( imagetensor_batch - min_vals.view(shp[0], shp[1], 1, 1) ) / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+    imagetensor_batch = imagetensor_batch.clamp(0, 1)
     return imagetensor_batch
 
 ## Image Stretching Functions end ##

@@ -96,7 +96,7 @@ class UnetClassifier(ArcGISModel):
             super().__init__(data, None)
             self._intialize_tensorflow(data, backbone, pretrained_path, kwargs)
         else:
-            super().__init__(data, backbone)
+            super().__init__(data, backbone, **kwargs)
 
             self._ignore_classes = kwargs.get('ignore_classes', [])
             if self._ignore_classes != [] and len(data.classes) <= 3:

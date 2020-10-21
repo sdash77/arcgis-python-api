@@ -90,7 +90,7 @@ class ModelExtension(ArcGISModel):
 
     def __init__(self, data, model_conf, backbone=None, pretrained_path=None, **kwargs):
 
-        super().__init__(data, backbone)
+        super().__init__(data, backbone, **kwargs)
         self.model_conf = model_conf()
         self.model_conf_class  = model_conf
         self._backend = 'pytorch'

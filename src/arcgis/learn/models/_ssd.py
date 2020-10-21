@@ -117,7 +117,7 @@ class SingleShotDetector(ArcGISModel):
                  pretrained_path=None, location_loss_factor=None, 
                  ssd_version=2, backend='pytorch', *args, **kwargs):
 
-        super().__init__(data, backbone)
+        super().__init__(data, backbone, **kwargs)
 
         self._backend = backend
         if self._backend == 'tensorflow':

@@ -180,7 +180,7 @@ class DeepLab(ArcGISModel):
         if backbone is None:
             backbone = models.resnet101          
 
-        super().__init__(data, backbone)
+        super().__init__(data, backbone, **kwargs)
 
         self._pointrend = pointrend
         self._ignore_classes = kwargs.get('ignore_classes', [])

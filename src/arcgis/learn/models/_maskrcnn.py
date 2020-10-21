@@ -33,7 +33,7 @@ try:
     from fastai.basic_data import DatasetType
     from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
     import os as arcgis_os
-    from .._utils.common import get_nbatches
+    from .._utils.common import get_nbatches, image_batch_stretcher
 
     HAS_FASTAI = True
 except Exception as e:
@@ -71,7 +71,7 @@ class MaskRCNN(ArcGISModel):
         if backbone is None:
             backbone = models.resnet50
 
-        super().__init__(data, backbone)
+        super().__init__(data, backbone, **kwargs)
         if self._is_multispectral:
             self._backbone_ms = self._backbone
             self._backbone = self._orig_backbone
@@ -387,6 +387,7 @@ class MaskRCNN(ArcGISModel):
             raise(e)
 
         statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
+        stretch_type = kwargs.get('stretch_type', 'minmax') # Accepted Values `minmax`, `percentclip`
 
         cmap_fn = getattr(matplotlib.cm, cmap)
         return_fig = kwargs.get('return_fig', False)
@@ -436,11 +437,8 @@ class MaskRCNN(ArcGISModel):
 
             # Extract RGB Bands
             symbology_x_batch = x_batch[:, symbology_bands]
-            if statistics_type == 'DRA':
-                shp = symbology_x_batch.shape
-                min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
-                max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
-                symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+            if stretch_type is not None:
+                symbology_x_batch = image_batch_stretcher(symbology_x_batch, stretch_type, statistics_type)
 
             # Channel first to channel last for plotting
             symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)

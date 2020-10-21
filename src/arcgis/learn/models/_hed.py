@@ -108,14 +108,13 @@ class HEDEdgeDetector(ModelExtension):
 
     :returns: ``Holistically-Nested Edge Detection`` Object
     """
-    def __init__(self, data, backbone='vgg19', pretrained_path=None):
-
+    def __init__(self, data, backbone='vgg19', pretrained_path=None, **kwargs):
         self._check_dataset_support(data)
         backbone_name = backbone if type(backbone) is str else backbone.__name__
         if backbone_name not in self.supported_backbones:
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
-        super().__init__(data, CustomHED, backbone, pretrained_path)
+        super().__init__(data, CustomHED, backbone, pretrained_path, **kwargs)
         self._freeze()
 
     def unfreeze(self):
