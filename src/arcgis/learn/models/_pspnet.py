@@ -63,7 +63,12 @@ class PSPNetClassifier(ArcGISModel):
     ---------------------   -------------------------------------------
     unet_aux_loss           Optional. Bool If True will use auxillary loss for PSUnet.
                             Default set to False. This flag is applicable only when
-                            use_unet is True.                            
+                            use_unet is True.
+    ---------------------   -------------------------------------------
+    pointrend               Optional boolean. If True, it will use PointRend
+                            architecture on top of the segmentation head.
+                            Default: False. PointRend architecture from
+                            https://arxiv.org/pdf/1912.08193.pdf.                        
     =====================   ===========================================
 
     **kwargs**
@@ -92,7 +97,16 @@ class PSPNetClassifier(ArcGISModel):
     ---------------------   -------------------------------------------    
     ignore_classes          Optional list. It will contain the list of class
                             values on which model will not incur loss.
-                            Default: []                                                                             
+                            Default: []
+    ---------------------   -------------------------------------------
+    keep_dilation           Optional boolean if PointRend architecture will
+                            be used. If True, it will use stride 8 output 
+                            otherwise it will be stride 16 output from the 
+                            backbone network. Default: False. Since it makes 
+                            PointRend fast and less memory consumable without
+                            PointRend stride 8 output used by segmentation head 
+                            if you use keep_dilation=True PointRend accuracies 
+                            could be improved.                                                                              
     =====================   ===========================================    
 
     :returns: `PSPNetClassifier` Object
@@ -119,14 +133,14 @@ class PSPNetClassifier(ArcGISModel):
             if 0 not in self._ignore_mapped_class:
                 self._ignore_mapped_class.insert(0, 0)
             global accuracy
-            accuracy = partial(accuracy, ignore_mapped_class=self._ignore_mapped_class)       
-
-
+            accuracy = partial(accuracy, ignore_mapped_class=self._ignore_mapped_class)
+        self._kwargs = kwargs
         self.mixup = kwargs.get('mixup', False)
         self.class_balancing = kwargs.get('class_balancing', False)
         self.focal_loss = kwargs.get('focal_loss', False)  
         self.dice_loss_fraction = kwargs.get('dice_loss_fraction', False)
         self.weighted_dice = kwargs.get('weighted_dice', False)
+        self.keep_dilation = kwargs.get('keep_dilation', False)
         _backbone = self._backbone
         if hasattr(self, '_orig_backbone'):
             _backbone = self._orig_backbone
@@ -163,6 +177,7 @@ class PSPNetClassifier(ArcGISModel):
                                          pyramid_sizes=pyramid_sizes, 
                                          pretrained=True,
                                          pointrend=self._pointrend,
+                                         keep_dilationa=self.keep_dilation,
                                          metrics=accuracy)
 
 
@@ -264,6 +279,7 @@ class PSPNetClassifier(ArcGISModel):
             model_file = emd_path.parent / model_file
             
         model_params = emd['ModelParameters']
+        kwargs = emd.get('Kwargs', {})
 
         try:
             class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
@@ -280,7 +296,7 @@ class PSPNetClassifier(ArcGISModel):
             data.emd_path = emd_path
             data.emd = emd
 
-        return cls(data, **model_params, pretrained_path=str(model_file))
+        return cls(data, **model_params, pretrained_path=str(model_file),  **kwargs)
 
     def _psp_loss(self, outputs, targets, **kwargs):
         targets = targets.squeeze(1).detach()
@@ -354,7 +370,7 @@ class PSPNetClassifier(ArcGISModel):
             _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
-
+        _emd_template['Kwargs'] = self._kwargs
         _emd_template['Classes'] = []
         class_data = {}
         for i, class_name in enumerate(self._data.classes[1:]):  # 0th index is background

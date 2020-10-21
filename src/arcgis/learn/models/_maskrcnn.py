@@ -25,6 +25,7 @@ try:
     from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
     from fastai.basic_train import Learner
     from ._maskrcnn_utils import is_no_color, mask_rcnn_loss, train_callback, compute_class_AP
+    from ._MaskRCNN_PointRend import create_pointrend
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from fastai.torch_core import split_model_idx
     import matplotlib.pyplot as plt
@@ -61,11 +62,16 @@ class MaskRCNN(ArcGISModel):
     ---------------------   -------------------------------------------
     kwargs                  Optional arguments, torchvision MaskRCNN arguments can be
                             given in form of keyword arguments.
+    ---------------------   -------------------------------------------
+    pointrend               Optional boolean. If True, it will use PointRend
+                            architecture on top of the segmentation head.
+                            Default: False. PointRend architecture from
+                            https://arxiv.org/pdf/1912.08193.pdf.      
     =====================   ===========================================
 
     :returns: ``MaskRCNN`` Object
     """
-    def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
+    def __init__(self, data, backbone=None, pretrained_path=None, pointrend=False, *args, **kwargs):
 
         # Set default backbone to be 'resnet50'
         if backbone is None:
@@ -84,6 +90,8 @@ class MaskRCNN(ArcGISModel):
         self._check_dataset_support(self._data)
 
         self._code = instance_detector_prf
+
+        self._pointrend = pointrend
 
         self.maskrcnn_kwargs, kwargs = split_kwargs_by_func(kwargs, models.detection.MaskRCNN.__init__)
 
@@ -143,13 +151,18 @@ class MaskRCNN(ArcGISModel):
                     max_size = 2*data.chip_size,
                     **self.maskrcnn_kwargs
                 )
+
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, data.c)
-        in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
-        hidden_layer = 256
-        model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
-                                                       hidden_layer,
-                                                       data.c)
+
+        if pointrend:
+            model = create_pointrend(model, data.c)
+        else:
+            in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
+            hidden_layer = 256
+            model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
+                                                        hidden_layer,
+                                                        data.c)
 
         if not _isnotebook() and arcgis_os.name=='posix':
             _set_ddp_multigpu(self)
@@ -269,7 +282,7 @@ class MaskRCNN(ArcGISModel):
     def _get_emd_params(self, save_inference_file):
         import random
 
-        _emd_template = {}
+        _emd_template = {"ModelParameters" : {}}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_maskrcnn_inferencing"
         if save_inference_file:
@@ -278,6 +291,7 @@ class MaskRCNN(ArcGISModel):
             _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISInstanceDetector.py"
         _emd_template["ModelType"] = "InstanceDetection"
         _emd_template["MaskRCNNkwargs"] = self.maskrcnn_kwargs
+        _emd_template["ModelParameters"]["pointrend"] = self._pointrend
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["SupportsVariableTileSize"] = True
         _emd_template['Classes'] = []

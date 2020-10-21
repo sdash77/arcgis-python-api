@@ -42,7 +42,7 @@ from ._PointRend import PointRendSemSegHead
 from fastai.vision import flatten_model
 
 class Deeplab(nn.Module):
-    def __init__(self, num_classes, backbone_fn, chip_size=224, pointrend=True):
+    def __init__(self, num_classes, backbone_fn, chip_size=224, pointrend=True, keep_dilationa=False):
         super().__init__()
         self.pointrend = pointrend
         self.vgg = False
@@ -63,7 +63,7 @@ class Deeplab(nn.Module):
             modify_dilation_index = -5
             self.vgg = True
         else:
-            if self.pointrend:
+            if self.pointrend and not keep_dilationa:
                 modify_dilation_index = -1
             else:
                 modify_dilation_index = -2
@@ -77,7 +77,7 @@ class Deeplab(nn.Module):
             hooks = [hookable_modules[i-1] for i, module in enumerate(hookable_modules) if isinstance(module, nn.MaxPool2d)]
 
         else:
-            hooks = [hookable_modules[-2], hookable_modules[-3], hookable_modules[-4]]
+            hooks = [hookable_modules[-2], hookable_modules[-4]]
 
         custom_idx = 0
         for i, module in enumerate(hookable_modules[modify_dilation_index:]): 
@@ -120,7 +120,7 @@ class Deeplab(nn.Module):
                 num_channels = self.hook[-3].stored.shape[1] + self.hook[-4].stored.shape[1]
                 stride = chip_size / self.hook[-1].stored.shape[2]  
             else:
-                num_channels = self.hook[1].stored.shape[1] + self.hook[2].stored.shape[1]
+                num_channels = self.hook[1].stored.shape[1]
                 stride = chip_size / feature_sizes[-1][2]
 
             subdivision_steps = math.log(stride, 2)
@@ -146,7 +146,7 @@ class Deeplab(nn.Module):
             if self.vgg:
                 pointrend_out = self.pointrend_head(x, [features[-4], features[-3]])
             else:
-                pointrend_out = self.pointrend_head(x, [features[2], features[1]])
+                pointrend_out = self.pointrend_head(x, [features[1]])
 
         result = F.interpolate(x, x_size[2:], mode='bilinear', align_corners=False)
 

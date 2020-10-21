@@ -47,7 +47,7 @@ class _DeepLabOverride(DeepLabV3):
     class to override the DeepLabV3 class such that after forwrd pass we can 
     take output as a tuple instead of dictionary in parent class.
     '''
-    def __init__(self, chip_size, num_class, backbone, classifier, aux_classifier=None, pointrend=False):
+    def __init__(self, chip_size, num_class, backbone, classifier, aux_classifier=None, pointrend=False, keep_dilationa=False):
         super().__init__(backbone, classifier, aux_classifier)
         self.pointrend = pointrend
 
@@ -57,29 +57,34 @@ class _DeepLabOverride(DeepLabV3):
             return_layers['layer2'] = 'res2'
             return_layers['layer1'] = 'res1'
             self.backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
-            remove_dilation = list(self.backbone.children())[-2]
-            change_dilation = list(self.backbone.children())[-1]
-            for n, m in remove_dilation.named_modules():
-                if n == '0.conv2':
-                    m.dilation, m.padding, m.stride = (1, 1), (1, 1), (2, 2)
-                elif 'conv2' in n:
-                    m.dilation, m.padding, m.stride = (1, 1), (1, 1), (1, 1)
-                elif '0.downsample.0' in n:
-                    m.stride = (2, 2)
+            subdivision_steps = 3
+            stride = 8
+            if not keep_dilationa:
+                subdivision_steps = 4
+                stride = 16
+                remove_dilation = list(self.backbone.children())[-2]
+                change_dilation = list(self.backbone.children())[-1]
+                for n, m in remove_dilation.named_modules():
+                    if n == '0.conv2':
+                        m.dilation, m.padding, m.stride = (1, 1), (1, 1), (2, 2)
+                    elif 'conv2' in n:
+                        m.dilation, m.padding, m.stride = (1, 1), (1, 1), (1, 1)
+                    elif '0.downsample.0' in n:
+                        m.stride = (2, 2)
 
-            for n, m in change_dilation.named_modules():
-                if '0.conv2' in n:
-                    m.dilation, m.padding, m.stride = (1, 1), (1, 1), (1, 1)
-                elif 'conv2' in n:
-                    m.dilation, m.padding, m.stride = (2, 2), (2, 2), (1, 1)
-                elif '0.downsample.0' in n:
-                    m.stride = (1, 1)
+                for n, m in change_dilation.named_modules():
+                    if '0.conv2' in n:
+                        m.dilation, m.padding, m.stride = (1, 1), (1, 1), (1, 1)
+                    elif 'conv2' in n:
+                        m.dilation, m.padding, m.stride = (2, 2), (2, 2), (1, 1)
+                    elif '0.downsample.0' in n:
+                        m.stride = (1, 1)
 
             self.pointrend_head = PointRendSemSegHead(num_class,
-                                                      768,
-                                                      train_num_points=(chip_size/16)**2,
-                                                      subdivision_num_points=(chip_size/8)**2,
-                                                      subdivision_steps=4)#backbone_features_channel 256+512=768
+                                                      256,
+                                                      train_num_points=(chip_size/stride)**2,
+                                                      subdivision_num_points=(chip_size/(stride/2))**2,
+                                                      subdivision_steps=subdivision_steps)#backbone_features_channel 256
 
     def forward(self, x):
 
@@ -103,7 +108,7 @@ class _DeepLabOverride(DeepLabV3):
         result = OrderedDict()
         x = features["out"]
         x = self.classifier(x)
-        result["pointrend"] = self.pointrend_head(x, [features["res1"], features["res2"]])
+        result["pointrend"] = self.pointrend_head(x, [features["res1"]])
         result["out"] = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
 
         if self.aux_classifier is not None:
@@ -113,12 +118,19 @@ class _DeepLabOverride(DeepLabV3):
 
         return result
 
-def _create_deeplab(chip_size, num_class, pretrained=True, pointrend=True, **kwargs):
+def _create_deeplab(chip_size, num_class, pretrained=True, pointrend=True, keep_dilationa=False, **kwargs):
     '''
     Create default torchvision pretrained model with resnet101.
     '''
     model = models.segmentation.deeplabv3_resnet101(pretrained=True, progress=True, **kwargs)
-    model = _DeepLabOverride(chip_size, num_class, model.backbone, model.classifier, model.aux_classifier, pointrend)
+    model = _DeepLabOverride(chip_size,
+                             num_class,
+                             model.backbone,
+                             model.classifier,
+                             model.aux_classifier,
+                             pointrend,
+                             keep_dilationa
+                            )
     model.classifier = DeepLabHead(2048, num_class)
     model.aux_classifier = FCNHead(1024, num_class)
 
@@ -142,6 +154,11 @@ class DeepLab(ArcGISModel):
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
+    ---------------------   -------------------------------------------
+    pointrend               Optional boolean. If True, it will use PointRend
+                            architecture on top of the segmentation head.
+                            Default: False. PointRend architecture from
+                            https://arxiv.org/pdf/1912.08193.pdf.                        
     =====================   ===========================================
 
     **kwargs**
@@ -170,7 +187,16 @@ class DeepLab(ArcGISModel):
     ---------------------   -------------------------------------------
     ignore_classes          Optional list. It will contain the list of class
                             values on which model will not incur loss.
-                            Default: []                                                       
+                            Default: []
+    ---------------------   -------------------------------------------
+    keep_dilation           Optional boolean if PointRend architecture will
+                            be used. If True, it will use stride 8 output 
+                            otherwise it will be stride 16 output from the 
+                            backbone network. Default: False. Since it makes 
+                            PointRend fast and less memory consumable without
+                            PointRend stride 8 output used by segmentation head 
+                            if you use keep_dilation=True PointRend accuracies 
+                            could be improved.                    
     =====================   ===========================================     
 
     :returns: ``DeepLab`` Object
@@ -183,6 +209,7 @@ class DeepLab(ArcGISModel):
         super().__init__(data, backbone, **kwargs)
 
         self._pointrend = pointrend
+        self._kwargs = kwargs
         self._ignore_classes = kwargs.get('ignore_classes', [])
         if self._ignore_classes != [] and len(data.classes) <= 3:
             raise Exception(f"`ignore_classes` parameter can only be used when the dataset has more than 2 classes.")
@@ -203,6 +230,7 @@ class DeepLab(ArcGISModel):
         self.focal_loss = kwargs.get('focal_loss', False)
         self.dice_loss_fraction = kwargs.get('dice_loss_fraction', False)
         self.weighted_dice = kwargs.get('weighted_dice', False)
+        self.keep_dilation = kwargs.get('keep_dilation', False)
         
         _backbone = self._backbone
         if hasattr(self, '_orig_backbone'):
@@ -215,11 +243,11 @@ class DeepLab(ArcGISModel):
 
         self._code = image_classifier_prf
         if self._backbone.__name__ is 'resnet101':
-            model = _create_deeplab(data.chip_size, data.c, pointrend=self._pointrend)
+            model = _create_deeplab(data.chip_size, data.c, pointrend=self._pointrend, keep_dilationa=self.keep_dilation)
             if self._is_multispectral:
                 model = _change_tail(model, data)
         else:
-            model = Deeplab(data.c, self._backbone, data.chip_size, self._pointrend)
+            model = Deeplab(data.c, self._backbone, data.chip_size, self._pointrend, keep_dilationa=self.keep_dilation)
 
         if not _isnotebook() and os.name=='posix':
             _set_ddp_multigpu(self)
@@ -317,6 +345,7 @@ class DeepLab(ArcGISModel):
             model_file = emd_path.parent / model_file
             
         model_params = emd['ModelParameters']
+        kwargs = emd.get('Kwargs', {})
 
         try:
             class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
@@ -332,9 +361,9 @@ class DeepLab(ArcGISModel):
             empty_data = get_multispectral_data_params_from_emd(empty_data, emd)
             empty_data.emd_path = emd_path
             empty_data.emd = emd
-            return cls(empty_data, **model_params, pretrained_path=str(model_file))
+            return cls(empty_data, **model_params, pretrained_path=str(model_file), **kwargs)
         else:
-            return cls(data, **model_params, pretrained_path=str(model_file))
+            return cls(data, **model_params, pretrained_path=str(model_file), **kwargs)
 
     def _get_emd_params(self, save_inference_file):
         import random
@@ -350,6 +379,7 @@ class DeepLab(ArcGISModel):
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
         _emd_template['Classes'] = []
+        _emd_template['Kwargs'] = self._kwargs
         class_data = {}
         for i, class_name in enumerate(self._data.classes[1:]):  # 0th index is background
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
