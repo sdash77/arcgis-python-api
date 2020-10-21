@@ -60,13 +60,13 @@ def summarize_center_and_dispersion(input_layer,
     input_layer                                                            Required Layer. A list of input layers that will be used in analysis.
                                                                            See :ref:`Feature Input<gaxFeatureInput>`.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    summary_type                                                           Optional String. The method with which to summarize the `input_layer`.
-                                                                           Values: CentralFeature|MeanCenter|MedianCenter|Ellipse
+    summary_type                                                           Required String. The method with which to summarize the `input_layer`.
+                                                                           Values: CentralFeature, MeanCenter, MedianCenter, or Ellipse.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     ellipse_size                                                           Optional Integer. The number representing the number of standard deviations
-                                                                           represented in output ellipse. The default ellipse size is 1. Valid choices
-                                                                           are 1, 2, or 3 standard deviations. This option is only used if Ellipse is
-                                                                           chosen from the `summary_type` parameter.
+                                                                           represented in the output ellipse layer. The default ellipse size is 1. Valid
+                                                                           choices are 1, 2, or 3 standard deviations. This option is only used if
+                                                                           Ellipse is chosen from the `summary_type` parameter.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     weight_field                                                           Optional String. A numeric field in the input_layer to be used to weight
                                                                            locations according to their relative importance.
