@@ -8,6 +8,7 @@ try:
     import torch
     from fastai.torch_core import split_model_idx
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
+    from ._arcgis_model import _resnet_family, _vgg_family
 
     HAS_FASTAI = True
 
@@ -109,6 +110,11 @@ class HEDEdgeDetector(ModelExtension):
     """
     def __init__(self, data, backbone='vgg19', pretrained_path=None):
 
+        self._check_dataset_support(data)
+        backbone_name = backbone if type(backbone) is str else backbone.__name__
+        if backbone_name not in self.supported_backbones:
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+
         super().__init__(data, CustomHED, backbone, pretrained_path)
         self._freeze()
 
@@ -143,6 +149,24 @@ class HEDEdgeDetector(ModelExtension):
     @property
     def _is_edge_detection(self):
         return True
+
+    @property
+    def supported_backbones(self):
+        """ Supported torchvision backbones for this model. """
+        return HEDEdgeDetector._supported_backbones()
+
+    @staticmethod
+    def _supported_backbones():
+        return [*_resnet_family, *_vgg_family]
+
+    @property
+    def  supported_datasets(self):
+        """ Supported dataset types for this model. """
+        return HEDEdgeDetector._supported_datasets()
+
+    @staticmethod
+    def _supported_datasets():
+        return ['Classified_Tiles']
 
     @classmethod
     def from_model(cls, emd_path, data=None):

@@ -255,13 +255,12 @@ class FasterRCNN(ModelExtension):
     """
     def __init__(self, data, backbone='resnet50', pretrained_path=None, **kwargs):
 
+        self._check_dataset_support(data)
         backbone_name = backbone if type(backbone) is str else backbone.__name__
         if backbone_name not in self.supported_backbones:
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
         super().__init__(data, MyFasterRCNN, backbone, pretrained_path, **kwargs)
-
-        self._check_dataset_support(self._data)
 
         idx = 27
         if self._backbone.__name__ in ['resnet18','resnet34']:

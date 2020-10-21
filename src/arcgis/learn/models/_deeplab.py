@@ -363,6 +363,7 @@ class DeepLab(ArcGISModel):
         return _emd_template
 
     def accuracy(self):
+        self._check_requisites()
         return self.learn.validate()[-1].tolist()
 
     @property
