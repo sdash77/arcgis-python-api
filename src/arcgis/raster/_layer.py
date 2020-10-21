@@ -364,23 +364,27 @@ class ImageryLayer(Layer):
                 self._uri = base64.b64encode(encoded_dict)
             gis = _arcgis.env.active_gis if gis is None else gis
 
-            image_hosting_server_url = None
-            raster_analytics_server_url = None
-            hosting_server_url = None
-            for ds in gis._datastores:
-                if ('serverFunction' in ds._server.keys()) and 'ImageHosting' in ds._server['serverFunction']:
-                    image_hosting_server_url = ds._server['url']
-                    break
-                elif ('serverFunction' in ds._server.keys()) and 'RasterAnalytics' in ds._server['serverFunction']:
-                    raster_analytics_server_url = ds._server['url']
-                elif ('serverFunction' in ds._server.keys()) and ds._server['serverFunction'] == '':
-                    hosting_server_url = ds._server['url']
-            if image_hosting_server_url:
-                url = image_hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
-            elif raster_analytics_server_url:
-                url = raster_analytics_server_url + "/rest/services/System/RasterRendering/ImageServer"
-            elif hosting_server_url:
-                url = hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
+            if gis._con._product == "AGOL":
+                ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
+                url = ra_url.replace("rasteranalysis", "rasterutils").replace("RasterAnalysisTools", "RasterRendering").replace("GPServer", "ImageServer")
+            else:
+                image_hosting_server_url = None
+                raster_analytics_server_url = None
+                hosting_server_url = None
+                for ds in gis._datastores:
+                    if ('serverFunction' in ds._server.keys()) and 'ImageHosting' in ds._server['serverFunction']:
+                        image_hosting_server_url = ds._server['url']
+                        break
+                    elif ('serverFunction' in ds._server.keys()) and 'RasterAnalytics' in ds._server['serverFunction']:
+                        raster_analytics_server_url = ds._server['url']
+                    elif ('serverFunction' in ds._server.keys()) and ds._server['serverFunction'] == '':
+                        hosting_server_url = ds._server['url']
+                if image_hosting_server_url:
+                    url = image_hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
+                elif raster_analytics_server_url:
+                    url = raster_analytics_server_url + "/rest/services/System/RasterRendering/ImageServer"
+                elif hosting_server_url:
+                    url = hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
 
         super(ImageryLayer, self).__init__(url, gis)
         self._spatial_filter = None
@@ -3587,6 +3591,11 @@ class ImageryLayer(Layer):
         ------------------------------------     --------------------------------------------------------------------
         future                                   Optional boolean. If True, the result will be a GPJob object and
                                                  results will be returned asynchronously. Keyword only parameter.
+        ------------------------------------     --------------------------------------------------------------------
+        tiles_only                               On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                                 To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                                 Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
         ====================================     ====================================================================
 
         :return: output_raster - Image layer item
