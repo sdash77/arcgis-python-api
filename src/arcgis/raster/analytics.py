@@ -6084,6 +6084,7 @@ def merge_multidimensional_rasters(input_multidimensional_rasters,
 
     """
     Function merges several multidimensional rasters spatially, or across variables and dimensions into one.  
+    Function available in ArcGIS Image Server 10.9 and higher.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
