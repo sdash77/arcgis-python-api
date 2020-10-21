@@ -5256,6 +5256,8 @@ def optimal_path_as_line(input_destination_data,
                                               to the sources are calculated, which can be overlapping.  This is default.
 
                                              `NETWORK_PATHS` (True): Nonoverlapping network paths are calculated.
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS object. If not specified, the currently active connection
                                              is used.
