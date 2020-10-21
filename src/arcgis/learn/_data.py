@@ -522,7 +522,7 @@ def prepare_textdata(
 
 
 def prepare_tabulardata(
-        input_features,
+        input_features=None,
         variable_predict=None,
         explanatory_variables=None,
         explanatory_rasters=None,
@@ -541,8 +541,9 @@ def prepare_tabulardata(
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    input_features          Required Feature Layer Object or spatially enabled dataframe.
+    input_features          Optional Feature Layer Object or spatially enabled dataframe.
                             This contains features denoting the value of the dependent variable.
+                            Leave empty for using rasters with MLModel.
     ---------------------   -------------------------------------------
     variable_predict        Optional String, denoting the field_name of
                             the variable to predict.
@@ -621,6 +622,9 @@ def prepare_tabulardata(
     :returns: `TabularData` object
 
     """
+    if input_features is None and (explanatory_rasters is None or len(explanatory_rasters) == 0):
+        raise Exception("No Features or Rasters found")
+
     import warnings
     if not HAS_FASTAI:
         _raise_fastai_import_error(import_exception)

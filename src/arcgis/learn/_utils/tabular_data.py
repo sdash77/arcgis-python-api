@@ -253,6 +253,7 @@ class TabularDataObject(object):
             raise Exception("You have some missing values in dependent variable column.")
 
         unique_labels = labels.unique()
+
         labels = np.array(labels)
 
         from numbers import Integral
@@ -264,6 +265,7 @@ class TabularDataObject(object):
 
     def _is_categorical(self, labels):
         unique_labels = labels.unique()
+
         labels = np.array(labels)
 
         from numbers import Integral
@@ -719,92 +721,186 @@ class TabularDataObject(object):
 
     @staticmethod
     def _process_layer(input_features, date_field, distance_layers, rasters, index_field):
+        index_data = None
+        if input_features is not None:
+            if isinstance(input_features, FeatureLayer):
+                input_layer = input_features
+                sdf = input_features.query().sdf
+            else:
+                sdf = input_features
+                input_layer = None
+                try:
+                    input_layer = sdf.spatial.to_feature_collection()
+                except:
+                    warnings.warn("Dataframe is not spatial, Rasters and distance layers will not work")
 
-        if isinstance(input_features, FeatureLayer):
-            input_layer = input_features
-            sdf = input_features.query().sdf
+            if input_layer is not None and distance_layers:
+                # Use proximity tool
+                print("Calculating Distances.")
+                count = 1
+                for distance_layer in distance_layers:
+                    output = arcgis.features.use_proximity.find_nearest(input_layer, distance_layer, max_count=1)
+                    connecting_df = output['connecting_lines_layer'].query().sdf
+                    near_dist = []
+
+                    for i in range(len(connecting_df)):
+                        near_dist.append(connecting_df.iloc[i]['Total_Miles'])
+
+                    sdf[f'NEAR_DIST_{count}'] = near_dist
+                    count = count + 1
+
+            # Process Raster Data to get information.
+            rasters_data = {}
+
+            if input_layer is not None:
+                original_points = []
+                for i in range(len(sdf)):
+                    original_points.append(sdf.iloc[i]["SHAPE"])
+
+                input_layer_spatial_reference = sdf.spatial._sr
+                for raster in rasters:
+                    raster_type = 0
+
+                    raster_calc = TabularDataObject._mean_of
+
+                    if isinstance(raster, tuple):
+                        if isinstance(raster[1], bool):
+                            if raster[1] is True:
+                                raster_type = 1
+                                raster_calc = TabularDataObject._majority_of
+                            if len(raster) > 2:
+                                raster_calc = TabularDataObject._get_calc(raster_type, raster[2])
+                        else:
+                            raster_calc = TabularDataObject._get_calc(raster_type, raster[1])
+
+                        raster = raster[0]
+                    rasters_data[raster.name] = []
+
+                    shape_objects_transformed = arcgis.geometry.project(original_points, input_layer_spatial_reference,
+                                                                        raster.extent['spatialReference'])
+                    for shape in shape_objects_transformed:
+                        shape['spatialReference'] = raster.extent['spatialReference']
+                        if isinstance(shape, arcgis.geometry._types.Point):
+                            raster_value = raster.read(origin_coordinate=(shape['x'], shape['y']), ncols=1, nrows=1)
+                            value = raster_value[0][0][0]
+                        elif isinstance(shape, arcgis.geometry._types.Polygon):
+                            xmin, ymin, xmax, ymax = shape.extent
+                            start_x, start_y = xmin + (raster.mean_cell_width / 2), ymin + (raster.mean_cell_height / 2)
+                            values = []
+                            while start_y < ymax:
+                                while start_x < xmax:
+                                    if shape.contains(arcgis.geometry._types.Point(
+                                            {'x': start_x, 'y': start_y, 'sr': raster.extent['spatialReference']})):
+                                        values.append(raster.read(origin_coordinate=(start_x - raster.mean_cell_width, start_y), ncols=1, nrows=1)[0][0][0])
+                                    start_x = start_x + raster.mean_cell_width
+                                start_y = start_y + raster.mean_cell_height
+                                start_x = xmin + (raster.mean_cell_width / 2)
+
+                            if len(values) == 0:
+                                values.append(raster.read(origin_coordinate=(shape.true_centroid['x'] - raster.mean_cell_width, shape.true_centroid['y']), ncols=1,
+                                                nrows=1)[0][0][0])
+                            value = raster_calc(values)
+                        else:
+                            raise Exception("Input features can be point or polygon only.")
+
+                        rasters_data[raster.name].append(value)
+
+            # Append Raster data to sdf
+            for key, value in rasters_data.items():
+                sdf[key] = value
         else:
-            sdf = input_features
-            input_layer = None
             try:
-                input_layer = sdf.spatial.to_feature_collection()
+                import arcpy
             except:
-                warnings.warn("Dataframe is not spatial, Rasters and distance layers will not work")
+                raise Exception("This function requires arcpy.")
 
-        if input_layer is not None and distance_layers:
-            # Use proximity tool
-            print("Calculating Distances.")
-            count = 1
-            for distance_layer in distance_layers:
-                output = arcgis.features.use_proximity.find_nearest(input_layer, distance_layer, max_count=1)
-                connecting_df = output['connecting_lines_layer'].query().sdf
-                near_dist = []
+            try:
+                import pandas as pd
+            except:
+                raise Exception("This function requires pandas.")
 
-                for i in range(len(connecting_df)):
-                    near_dist.append(connecting_df.iloc[i]['Total_Miles'])
+            raster = rasters[0]
+            if isinstance(raster, tuple):
+                raster = raster[0]
 
-                sdf[f'NEAR_DIST_{count}'] = near_dist
-                count = count + 1
+            arcpy.env.outputCoordinateSystem = raster.extent['spatialReference']['wkt']
 
-        # Process Raster Data to get information.
-        rasters_data = {}
+            xmin = raster.extent['xmin']
+            xmax = raster.extent['xmax']
+            ymin = raster.extent['ymin']
+            ymax = raster.extent['ymax']
+            min_cell_size_x = raster.mean_cell_width
+            min_cell_size_y = raster.mean_cell_height
 
-        if input_layer is not None:
-            original_points = []
-            for i in range(len(sdf)):
-                original_points.append(sdf.iloc[i]["SHAPE"])
+            default_sr = raster.extent['spatialReference']
 
-            input_layer_spatial_reference = sdf.spatial._sr
             for raster in rasters:
-                raster_type = 0
-
-                raster_calc = TabularDataObject._mean_of
-
                 if isinstance(raster, tuple):
-                    if isinstance(raster[1], bool):
-                        if raster[1] is True:
-                            raster_type = 1
-                            raster_calc = TabularDataObject._majority_of
-                        if len(raster) > 2:
-                            raster_calc = TabularDataObject._get_calc(raster_type, raster[2])
-                    else:
-                        raster_calc = TabularDataObject._get_calc(raster_type, raster[1])
-
                     raster = raster[0]
-                rasters_data[raster.name] = []
 
-                shape_objects_transformed = arcgis.geometry.project(original_points, input_layer_spatial_reference,
-                                                                    raster.extent['spatialReference'])
-                for shape in shape_objects_transformed:
-                    shape['spatialReference'] = raster.extent['spatialReference']
-                    if isinstance(shape, arcgis.geometry._types.Point):
-                        raster_value = raster.read(origin_coordinate=(shape['x'], shape['y']), ncols=1, nrows=1)
-                        value = raster_value[0][0][0]
-                    elif isinstance(shape, arcgis.geometry._types.Polygon):
-                        xmin, ymin, xmax, ymax = shape.extent
-                        start_x, start_y = xmin + (raster.mean_cell_width / 2), ymin + (raster.mean_cell_height / 2)
-                        values = []
-                        while start_y < ymax:
-                            while start_x < xmax:
-                                if shape.contains(arcgis.geometry._types.Point(
-                                        {'x': start_x, 'y': start_y, 'sr': raster.extent['spatialReference']})):
-                                    values.append(raster.read(origin_coordinate=(start_x - raster.mean_cell_width, start_y), ncols=1, nrows=1)[0][0][0])
-                                start_x = start_x + raster.mean_cell_width
-                            start_y = start_y + raster.mean_cell_height
-                            start_x = xmin + (raster.mean_cell_width / 2)
+                point_upper = arcgis.geometry.Point(
+                    {'x': raster.extent['xmin'], 'y': raster.extent['ymax'], 'sr': raster.extent['spatialReference']})
+                point_lower = arcgis.geometry.Point(
+                    {'x': raster.extent['xmax'], 'y': raster.extent['ymin'], 'sr': raster.extent['spatialReference']})
+                cell_size = arcgis.geometry.Point(
+                    {'x': raster.mean_cell_width, 'y': raster.mean_cell_height,
+                     'sr': raster.extent['spatialReference']})
 
-                        if len(values) == 0:
-                            values.append(raster.read(origin_coordinate=(shape.true_centroid['x'] - raster.mean_cell_width, shape.true_centroid['y']), ncols=1,
-                                            nrows=1)[0][0][0])
-                        value = raster_calc(values)
-                    else:
-                        raise Exception("Input features can be point or polygon only.")
+                points = arcgis.geometry.project([point_upper, point_lower, cell_size],
+                                                 raster.extent['spatialReference'],
+                                                 default_sr)
+                point_upper = points[0]
+                point_lower = points[1]
+                cell_size = points[2]
 
-                    rasters_data[raster.name].append(value)
+                if xmin > point_upper.x:
+                    xmin = point_upper.x
+                if ymax < point_upper.y:
+                    ymax = point_upper.y
+                if xmax < point_lower.x:
+                    xmax = point_lower.x
+                if ymin > point_lower.y:
+                    ymin = point_lower.y
 
-        # Append Raster data to sdf
-        for key, value in rasters_data.items():
-            sdf[key] = value
+                if min_cell_size_x > cell_size.x:
+                    min_cell_size_x = cell_size.x
+
+                if min_cell_size_y > cell_size.y:
+                    min_cell_size_y = cell_size.y
+
+            max_raster_columns = math.ceil((xmax - xmin) / min_cell_size_x)
+            max_raster_rows = math.ceil((ymax - ymin) / min_cell_size_y)
+
+            point_upper = arcgis.geometry.Point({'x': xmin, 'y': ymax, 'sr': default_sr})
+            cell_size = arcgis.geometry.Point({'x': min_cell_size_x, 'y': min_cell_size_y, 'sr': default_sr})
+
+            raster_data = {}
+            for raster in rasters:
+                if isinstance(raster, tuple):
+                    raster = raster[0]
+                field_name = raster.name
+                point_upper_translated = \
+                arcgis.geometry.project([point_upper], default_sr, raster.extent['spatialReference'])[0]
+                cell_size_translated = \
+                arcgis.geometry.project([cell_size], default_sr, raster.extent['spatialReference'])[0]
+                raster_data[field_name] = raster.read(
+                    origin_coordinate=(point_upper_translated.x, point_upper_translated.y),
+                    ncols=max_raster_columns, nrows=max_raster_rows,
+                    cell_size=(cell_size_translated.x, cell_size_translated.y))
+
+            processed_data = []
+            for row in range(max_raster_rows):
+                for column in range(max_raster_columns):
+                    processed_row = []
+                    for raster_name in sorted(raster_data):
+                        value = raster_data[raster_name][row][column]
+                        if len(value) > 0:
+                            processed_row.append(value[0])
+                        else:
+                            processed_row.append(0)
+                    processed_data.append(processed_row)
+
+            sdf = pd.DataFrame(processed_data, columns=raster_data.keys())
 
         if date_field:
             try:
@@ -812,7 +908,6 @@ class TabularDataObject(object):
             except:
                 pass
 
-        index_data = None
         if index_field in list(sdf.columns.values):
             index_data = sdf[index_field].values
 

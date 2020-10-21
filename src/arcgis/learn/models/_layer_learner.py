@@ -559,4 +559,4 @@ class FullyConnectedNetwork(ArcGISModel):
         if self._data._is_classification:
             return (np.array(predictions)==labels).mean()
         else:
-            return float(r2_score(torch.tensor(np.array(predictions)), torch.tensor(np.array(labels))))
+            return float(r2_score(torch.tensor(np.array(predictions, dtype='float64')), torch.tensor(np.array(labels, dtype='float64'))))
