@@ -29,7 +29,7 @@ _log = _logging.getLogger(__name__)
 _use_async = True
 
 
-def summarize_center_and_dispersion(input_layers,
+def summarize_center_and_dispersion(input_layer,
                                     summary_type,
                                     ellipse_size=None,
                                     weight_field=None,
@@ -68,7 +68,7 @@ def summarize_center_and_dispersion(input_layers,
                                                                            are 1, 2, or 3 standard deviations. This option is only used if Ellipse is
                                                                            chosen from the `summary_type` parameter.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    weight_field                                                           Optional String. A numeric field in the inputLayer to be used to weight
+    weight_field                                                           Optional String. A numeric field in the input_layer to be used to weight
                                                                            locations according to their relative importance.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     group_fields                                                           Optional String. One or more fields used to group features for summarization.
@@ -128,7 +128,7 @@ def summarize_center_and_dispersion(input_layers,
         _set_context(params)
 
     param_db = {
-        "input_layers": (_FeatureSet, "inputLayer"),
+        "input_layer": (_FeatureSet, "inputLayer"),
         "summary_type" : (str, "summaryType"),
         "ellipse_size": (str, "ellipseSize"),
         "weight_field": (float, "weightField"),
@@ -136,13 +136,19 @@ def summarize_center_and_dispersion(input_layers,
         "output_name": (str, "outputName"),
         "context": (str, "context"),
         "output": (_FeatureSet, "Output Features"),
+        "central_feature_layer" : (_FeatureSet, "centralFeatureLayer"),
+        "mean_center_layer" : (_FeatureSet, "meanCeneterLayer"),
+        "median_center_layer" : (_FeatureSet, "medianCenterLayer"),
+        "ellipse_layer" : (_FeatureSet, "ellipseLayer"),
     }
     return_values = [
-        {"name" : "centralFeatureLayer", "display_name" : "Central Feature Layer", "type" : _FeatureSet},
-        {"name" : "meanCenterLayer", "display_name" : "Mean Center Layer", "type" : _FeatureSet},
-        {"name" : "medianCenterLayer", "display_name" : "Median Center Layer", "type" : _FeatureSet},
-        {"name" : "ellipseLayer", "display_name" : "Ellipse Layer", "type" : _FeatureSet}
+        {"name" : "central_feature_layer", "display_name" : "Central Feature Layer", "type" : _FeatureSet},
+        {"name" : "mean_center_layer", "display_name" : "Mean Center Layer", "type" : _FeatureSet},
+        {"name" : "median_center_layer", "display_name" : "Median Center Layer", "type" : _FeatureSet},
+        {"name" : "ellipse_layer", "display_name" : "Ellipse Layer", "type" : _FeatureSet}
     ]
+
+
 
     try:
         if future:
@@ -150,6 +156,11 @@ def summarize_center_and_dispersion(input_layers,
             return GAJob(gpjob=gpjob, return_service=output_service)
         _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
+        #if future:
+            #gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+            #return GAJob(gpjob=gpjob, return_service=output_service)
+        #_execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+        #return output_service
     except:
         output_service.delete()
         raise
