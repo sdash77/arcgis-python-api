@@ -3645,7 +3645,7 @@ def build_multidimensional_transpose(input_multidimensional_raster,
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
-   delete_tranpose                           Optional boolean. Specifies whether to delete an existing transpose.
+    delete_tranpose                          Optional boolean. Specifies whether to delete an existing transpose.
 
                                                 - True - The transpose, if it exists, will be deleted. 
                                                          No new transpose will be built. 
