@@ -401,6 +401,12 @@ def classify_pixels(input_raster,
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -645,6 +651,10 @@ def export_training_data(input_raster,
     #task = "ExportTrainingDataforDeepLearning"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+
+    if gis._con._product == "AGOL":
+        raise RuntimeError("ArcGIS Online does not support export_training_data function.")
+
     return gis._tools.rasteranalysis.export_training_data_for_deep_learning(input_raster=input_raster,
                                                                             input_class_data=input_class_data,
                                                                             chip_format=chip_format,
@@ -758,6 +768,8 @@ def list_models(*,
     #task = "ListDeepLearningModels"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if gis._con._product == "AGOL":
+        raise RuntimeError("ArcGIS Online does not support list_models function.")
     return gis._tools.rasteranalysis.list_deep_learning_models(future=future,
                                                                **kwargs)
     """
@@ -991,6 +1003,9 @@ class Model:
         #task = "InstallDeepLearningModel"
 
         gis = _arcgis.env.active_gis if gis is None else gis
+
+        if gis._con._product == "AGOL":
+            raise RuntimeError("ArcGIS Online does not support install method on a Model Object. The Model object can be directly used with deep learning functions without installation.")
         return gis._tools.rasteranalysis.install_deep_learning_model(model_package=self._model,
                                                                      future=future,
                                                                      **kwargs)
@@ -1114,6 +1129,8 @@ class Model:
         #task = "UninstallDeepLearningModel"
 
         gis = _arcgis.env.active_gis if gis is None else gis
+        if gis._con._product == "AGOL":
+            raise RuntimeError("ArcGIS Online does not support uninstall method on a Model Object.")
 
         if self._model is None:
             raise RuntimeError('model_package cannot be None')
