@@ -161,9 +161,13 @@ def show_batch_pascal_voc_rectangles(self, rows=3, alpha=1, **kwargs): # paramet
                 for i, bbox in enumerate(bboxes):
                     xs = bbox[[1, 1, 3, 3, 1]]
                     ys = bbox[[0, 2, 2, 0, 0]]
-                    color = self._multispectral_color_array[classes[i]]
+                    color = self._multispectral_color_array[classes[i]].tolist()
                     axi.plot(xs.cpu().numpy(), ys.cpu().numpy(), color=color, linewidth=2)
-                    axi.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self.classes[classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=.5, foreground='gray')])
+                    class_value = classes[i].item()
+                    lbl = self.classes[class_value]
+                    if lbl.strip()=='':
+                        lbl=str(class_value)
+                    axi.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), lbl, size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=.5, foreground='gray')])
                 axi.axis('off')
             else:
                 axi.axis('off')
@@ -326,9 +330,13 @@ def show_results_multispectral(self, nrows=5, alpha=1, **kwargs): # parameters a
         for i, bbox in enumerate(gt_bboxes):
             xs = bbox[[1, 1, 3, 3, 1]]
             ys = bbox[[0, 2, 2, 0, 0]]
-            color = self._data._multispectral_color_array[gt_classes[i]]
+            color = self._data._multispectral_color_array[gt_classes[i]].tolist()
             ax_ground_truth.plot(xs.cpu().numpy(), ys.cpu().numpy(), color=color, linewidth=2, path_effects=[patheffects.Stroke(linewidth=3, foreground='black'), patheffects.Normal()])
-            ax_ground_truth.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[gt_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=1, foreground='black'), patheffects.Normal()])
+            class_value = gt_classes[i].item()
+            lbl = self._data.classes[class_value]
+            if lbl.strip() == '':
+                lbl = str(class_value)
+            ax_ground_truth.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), lbl, size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=1, foreground='black'), patheffects.Normal()])
 
         # Plot Predictions
         ax_prediction  = ax_i[1]
@@ -353,9 +361,13 @@ def show_results_multispectral(self, nrows=5, alpha=1, **kwargs): # parameters a
                 for i, bbox in enumerate(predicted_bboxes):
                     xs = bbox[[1, 1, 3, 3, 1]]
                     ys = bbox[[0, 2, 2, 0, 0]]
-                    color = self._data._multispectral_color_array[predicted_classes[i]]
+                    color = self._data._multispectral_color_array[predicted_classes[i]].tolist()
                     ax_prediction.plot(xs.detach().cpu().numpy(), ys.detach().cpu().numpy(), color=color, linewidth=2, path_effects=[patheffects.Stroke(linewidth=3, foreground='black'), patheffects.Normal()])
-                    ax_prediction.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[predicted_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=1, foreground='black'), patheffects.Normal()])
+                    class_value = predicted_classes[i].item()
+                    lblp = self._data.classes[class_value]
+                    if lblp.strip() == '':
+                        lblp = str(class_value)
+                    ax_prediction.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), lblp, size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=1, foreground='black'), patheffects.Normal()])
             
         idx+=1
-        return fig,axs
+    return fig,axs
