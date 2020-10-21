@@ -16,14 +16,16 @@ try:
     import torch
     import torch.nn as nn
     import pandas as pd
-    from fastai.text import Tokenizer
+    from fastai.text.transform import Tokenizer
     from fastprogress.fastprogress import progress_bar
     from fastai.basic_train import Learner, DatasetType
     from fastai.train import to_fp16
     from fastai.metrics import accuracy, error_rate, accuracy_thresh
     # from transformers import AdamW
     from transformers import AutoTokenizer, AutoConfig
-    from sklearn.metrics import classification_report
+    from .._utils.env  import LAMBDA_TEXT_CLASSIFICATION
+    if not LAMBDA_TEXT_CLASSIFICATION:
+        from sklearn.metrics import classification_report
     from ._arcgis_transformer import ModelBackbone, infer_model_type
     from .._utils.common import _get_emd_path
     from .._utils.text_data import TextDataObject, save_data_in_model_metrics_html, copy_metrics
@@ -174,9 +176,9 @@ class TextClassifier(ArcGISModel):
                 raise Exception(error_message)
             logger.info("Converting model to 16 Bit Floating Point precision")
             self.learn = to_fp16(self.learn)
-
-        from IPython.display import clear_output
-        clear_output()
+        if not LAMBDA_TEXT_CLASSIFICATION:
+            from IPython.display import clear_output
+            clear_output()
 
     def __str__(self):
         return self.__repr__()

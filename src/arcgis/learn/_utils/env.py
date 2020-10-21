@@ -5,9 +5,26 @@ import traceback
 
 HAS_BACKEND_SET = False
 ARCGIS_ENABLE_TF_BACKEND = os.environ.get('ARCGIS_ENABLE_TF_BACKEND') is '1'
+LAMBDA_TEXT_CLASSIFICATION = os.environ.get('LAMBDA_TEXT_CLASSIFICATION') is '1'
 
 HAS_TENSORFLOW = False
 tf_import_exception = None
+
+
+
+class FakeImport():
+    def __getattr__(self, attr):
+        return self
+    def __call__(self, *args, **kwargs):
+        return self
+
+if LAMBDA_TEXT_CLASSIFICATION:
+    default_module = FakeImport()
+    missing_modules = ['scipy','scipy.stats', 'spacy','spacy.symbols','spacy.blank', 'matplotlib',\
+        'matplotlib.pyplot', 'matplotlib.patches', 'matplotlib.cm', 'scipy.special', 'PIL']
+    for module_name in missing_modules: 
+        sys.modules[module_name] = default_module
+
 try:
     if ARCGIS_ENABLE_TF_BACKEND:
         import tensorflow as tf

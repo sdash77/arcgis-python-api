@@ -1,5 +1,6 @@
 "Functions for calling the Deep Learning Tools."
 from . import _utils
+from ._utils.env import LAMBDA_TEXT_CLASSIFICATION
 from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, \
      _analysis_job_status, _layer_input
 import json as _json
@@ -8,12 +9,12 @@ from arcgis.raster._layer import ImageryLayer as _ImageryLayer
 from arcgis.raster._util import _set_context, _id_generator
 from ._scannedmapdigitizer import ScannedMapDigitizer
 
-from .models import SingleShotDetector, UnetClassifier, FeatureClassifier, RetinaNet, \
+if not LAMBDA_TEXT_CLASSIFICATION:
+    from .models import SingleShotDetector, UnetClassifier, FeatureClassifier, RetinaNet, \
       PSPNetClassifier, EntityRecognizer, MaskRCNN, DeepLab, PointCNN, ModelExtension, \
       FasterRCNN, SuperResolution, FullyConnectedNetwork, MLModel, YOLOv3, HEDEdgeDetector, \
       BDCNEdgeDetector, ImageCaptioner, TimeSeriesModel, CycleGAN
-
-from ._utils.pointcloud_data import Transform3d
+    from ._utils.pointcloud_data import Transform3d
 from ._data import prepare_data, prepare_tabulardata, prepare_textdata
 from ._process_df import process_df, add_datepart
 
