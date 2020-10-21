@@ -1,4 +1,4 @@
-from ._codetemplate import cyclegan_template
+from ._codetemplate import image_translation_prf
 import json
 import traceback
 from .._data import _raise_fastai_import_error
@@ -43,7 +43,7 @@ class CycleGAN(ArcGISModel):
         self._slice_lr = False
         if pretrained_path is not None:
             self.load(pretrained_path)
-        self._code = cyclegan_template
+        self._code = image_translation_prf
         def __str__(self):
             return self.__repr__()
         def __repr__(self):
@@ -122,7 +122,7 @@ class CycleGAN(ArcGISModel):
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_cyclegan"
-        _emd_template["InferenceFunction"] = "ArcGISCycleGAN.py"
+        _emd_template["InferenceFunction"] = "ArcGISImageTranslation.py"
         _emd_template["ModelType"] = "CycleGAN"
         _emd_template["n_channel"] = self._data.n_channel
         _emd_template["SupportsVariableTileSize"] = True

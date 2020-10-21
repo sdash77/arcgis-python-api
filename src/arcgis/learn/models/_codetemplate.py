@@ -698,7 +698,7 @@ attribute_table = {
 
  
 
-class ArcGISSuperResolution:
+class ArcGISImageClassifier:
     def __init__(self):
         self.name = 'Image Classifier'
         self.description = 'Image classification python raster function to inference a pytorch image classifier'
@@ -1167,7 +1167,7 @@ def patch_chips(imgs, n_rows, n_cols):
     return np.vstack(h_stacks)
  
 
-class ArcGISImageClassifier:
+class ArcGISSuperResolution:
     def __init__(self):
         self.name = 'Image Classifier'
         self.description = 'Image classification python raster function to inference a pytorch image classifier'
@@ -1279,7 +1279,7 @@ class ArcGISImageClassifier:
 
 """
 
-cyclegan_template = """
+image_translation_prf = """
 import arcpy
 import numpy as np
 import json
@@ -1334,7 +1334,7 @@ def patch_chips(imgs, n_rows, n_cols):
         h_stacks.append(np.hstack(imgs[i*n_cols:n_cols*(i+1) ]))
     return np.vstack(h_stacks)
  
-class ArcGISCycleGAN:
+class ArcGISImageTranslation:
     def __init__(self):
         self.name = 'Image Classifier'
         self.description = 'Image classification python raster function to inference a pytorch image classifier'
