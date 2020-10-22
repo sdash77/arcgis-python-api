@@ -883,13 +883,7 @@ def prepare_data(path,
         raise Exception("Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid esri files")
     
     stats_file = path / 'esri_accumulated_stats.json'
-    if has_esri_files and dataset_type is None:
-        json_file = path/ 'esri_model_definition.emd'
-        with open(json_file) as f:
-            emd = json.load(f)
-        dataset_type = emd['MetaDataMode']
-
-    if dataset_type == "superres" or dataset_type == "Export_Tiles":
+    if dataset_type == "superres" and has_esri_files:
 
         json_file = path/ 'esri_model_definition.emd'
         with open(json_file) as f:
@@ -1251,7 +1245,7 @@ def prepare_data(path,
                 ]
             val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
-    elif dataset_type == "superres" or dataset_type == "Export_Tiles":
+    elif dataset_type == "superres":
         path_hr = path/'images'
         path_lr = path/'labels'
         il = ImageList.from_folder(path_hr)
@@ -1500,7 +1494,7 @@ def prepare_data(path,
         data.train_ds.x._div = 255.
         data.valid_ds.x._div = 255.
     
-    elif dataset_type == "superres" or dataset_type == "Export_Tiles":
+    elif dataset_type == "superres":
         data = (data.transform(get_transforms(), **kwargs_transforms)
             .databunch(**databunch_kwargs)
             .normalize(imagenet_stats, do_y=True))
@@ -1548,7 +1542,7 @@ def prepare_data(path,
             stats = json.load(f)
             data._dataset_type = stats['MetaDataMode']
     
-    if dataset_type == "superres" or dataset_type == "Export_Tiles":
+    if dataset_type == "superres":
         data._dataset_type = "SuperResolution"
 
     if alter_class_mapping:
