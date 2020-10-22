@@ -5542,6 +5542,13 @@ class _RasterAnalysisTools(BaseAnalytics):
             self._gptbx._is_ra = True
         return self._gptbx
     #----------------------------------------------------------------------
+    @property
+    def _current_version(self):
+        if ('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()):
+            return self._gis._tools.rasteranalysis.properties["currentVersion"]
+        else:
+            return None
+    #----------------------------------------------------------------------
     def __str__(self):
         return '<%s url:"%s">' % (type(self).__name__, self._url)
     #----------------------------------------------------------------------
@@ -6147,6 +6154,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                           output_area_units="SquareMiles",
                           output_cell_size=None,
                           context=None,
+                          input_barriers=None,
                           future=False,
                           **kwargs):
 
@@ -6184,15 +6192,32 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
-        gpjob = self._tbx.calculate_density(input_point_or_line_features=input_point_or_line_features,
-                                            output_name=output_raster,
-                                            count_field=count_field,
-                                            search_distance=search_distance,
-                                            output_area_units=output_area_units,
-                                            output_cell_size=output_cell_size,
-                                            context=context,
-                                            gis=self._gis,
-                                            future=True)
+        if input_barriers is not None:
+            input_barriers = self._feature_input(input_barriers)
+
+        if self._current_version is not None:
+            current_version = self._current_version
+            if((current_version is not None) and current_version<10.9):
+                gpjob = self._tbx.calculate_density(input_point_or_line_features=input_point_or_line_features,
+                                                    output_name=output_raster,
+                                                    count_field=count_field,
+                                                    search_distance=search_distance,
+                                                    output_area_units=output_area_units,
+                                                    output_cell_size=output_cell_size,
+                                                    context=context,
+                                                    gis=self._gis,
+                                                    future=True)
+            elif((current_version is not None) and current_version>=10.9):
+                gpjob = self._tbx.calculate_density(input_point_or_line_features=input_point_or_line_features,
+                                                    output_name=output_raster,
+                                                    count_field=count_field,
+                                                    search_distance=search_distance,
+                                                    output_area_units=output_area_units,
+                                                    output_cell_size=output_cell_size,
+                                                    context=context,
+                                                    in_barriers=input_barriers,
+                                                    gis=self._gis,
+                                                    future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
