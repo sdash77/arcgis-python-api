@@ -58,8 +58,6 @@ class PieChart(_BaseWidget):
         self._outline = OutlineProperties._outline_init()
         self._events = Events._create_events()
 
-        self._events = Events._create_events()
-
     @classmethod
     def _from_json(cls, widget_json):
         gis = arcgis.env.active_gis
@@ -74,13 +72,6 @@ class PieChart(_BaseWidget):
 
     @property
     def events(self):
-        """
-        :return: list of events attached to the widget.
-        """
-        return self._events
-
-    @property
-    def categories_from(self):
         """
         :return: list of events attached to the widget.
         """

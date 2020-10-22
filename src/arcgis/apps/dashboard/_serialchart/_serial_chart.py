@@ -75,13 +75,6 @@ class SerialChart(_BaseWidget):
         return self._events
 
     @property
-    def categories_from(self):
-        """
-        :return: list of events attached to the widget.
-        """
-        return self._events
-
-    @property
     def data(self):
         """
         :return: Serial Chart Data object. Set data properties, categories and values.
@@ -195,6 +188,7 @@ class SerialChart(_BaseWidget):
                 "prefix": True,
                 "pattern": "#,###.#"
             },
+            "dateParsingPattern": self._data.parsing_pattern,
             "datePeriodPatterns": [{"period": "ss", "pattern": "HH:mm:ss"}, {"period": "mm", "pattern": "HH:mm"},
                                    {"period": "hh", "pattern": "HH:mm"}, {"period": "DD", "pattern": "MMM d"},
                                    {"period": "MM", "pattern": "MMM"}, {"period": "YYYY", "pattern": "yyyy"}],
@@ -237,7 +231,7 @@ class SerialChart(_BaseWidget):
             "showDescriptionWhenNoData": self._no_data._show_description
         }
 
-        json_data['categoryAxis']['parseDates'] = self._data.parse_dates
+        # json_data['categoryAxis']['parseDates'] = self._data.parse_dates
         if self._no_data._text:
             json_data['noDataText'] = self._no_data._text
         
@@ -253,7 +247,7 @@ class SerialChart(_BaseWidget):
                         "layerId": 0,
                         "table": True
                     }
-        if self.data.orderby_field == "":
+        if self.data.orderby_field == "" and self._data._categories_from != "groupByValues":
             self._orderby_field = self.data.category_field
         else:
             self._orderby_field = self.data.orderby_field
@@ -263,11 +257,11 @@ class SerialChart(_BaseWidget):
             "dataSource": self._datasource,
             "outFields": ["*"],
             "groupByFields": [],
-            "orderByFields": [self._orderby_field + " asc"] if self._data.categories_from != "groupByValues" else [],
+            "orderByFields": [self._orderby_field + " asc"] if self._orderby_field else [],
             "statisticDefinitions": [],
             "querySpatialRelationship": "esriSpatialRelIntersects",
             "returnGeometry": False,
-            "clientSideStatistics": False,
+            "clientSideStatistics": False,#False if self._data._categories_from == "groupByValues" else True,
             "name": "main"
         }
 
@@ -281,6 +275,7 @@ class SerialChart(_BaseWidget):
             json_data['fontSize'] = self._font_size
 
         if self._data._categories_from == "groupByValues":
+            json_data['categoryAxis']['parseDates'] = self._data._parse_dates
             if self._data._category_field:
                 dataset['groupByFields'].append(self._data._category_field)
             if self._data._split_by_field:
@@ -507,6 +502,7 @@ class _CategoryAxisProperties(object):
     def minimum_period(self, value):
         """
         Set Minimum period when dates are parsed.
+        Allowed values 'seconds', 'minutes', 'hours', 'days', 'months', 'years'
         """
         if isinstance(value, str) and value.lower() in ["seconds", "minutes", "hours", "days", "months", "years"]:
             self._minimum_period = self._date_dict[value.lower()]
@@ -861,7 +857,7 @@ class SerialChartData(object):
 
         schart_data._show_baloon = False
         schart_data._item = data_item
-        schart_data._parse_dates = True
+        schart_data._parse_dates = False
         schart_data._max_features = None
         schart_data._statistic = "count"
         schart_data._statistics_field = schart_data.objectid_field
@@ -871,6 +867,7 @@ class SerialChartData(object):
 
         schart_data._filters = []
 
+        schart_data._parsing_pattern = "yyyyMMdd"
         schart_data._category_field = None
         if schart_data._categories_from == "fields":
             schart_data._category_field = "category"
@@ -967,6 +964,23 @@ class SerialChartData(object):
         Set True to parse input category fields of type date. For groupByValues and features.
         """
         self._parse_dates = bool(value)
+
+    @property
+    def parsing_pattern(self):
+        """
+        :return: Parsing pattern for date fields.
+        """
+        return self._parsing_pattern
+
+    @parsing_pattern.setter
+    def parsing_pattern(self, value):
+        """
+        Set a date parsing pattern for date field.
+        """
+        if not isinstance(value, str):
+            raise Exception("Please enter a string pattern")
+
+        self._parsing_pattern = value
 
     @property
     def statistic(self):
@@ -1107,6 +1121,8 @@ class SerialChartData(object):
             data['type'] = 'column'
             self._series.append(data)
             self._category_field = value_field[0] if isinstance(value_field, list) else value_field
+            if self._field_type(self._category_field) == '<M8[ns]':
+                self.parse_dates = True
         elif self._categories_from == "fields":
             if isinstance(value_field, list):
                 self._category_fields = value_field
@@ -1221,6 +1237,9 @@ class Events(object):
 
     @property
     def synced_widgets(self):
+        """
+        :return: List of synced widgets.
+        """
         return self._actions
 
     def sync_map(self, action_type, widget):
