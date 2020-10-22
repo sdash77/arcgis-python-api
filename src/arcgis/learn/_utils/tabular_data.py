@@ -823,7 +823,10 @@ class TabularDataObject(object):
             if isinstance(raster, tuple):
                 raster = raster[0]
 
-            arcpy.env.outputCoordinateSystem = raster.extent['spatialReference']['wkt']
+            try:
+                arcpy.env.outputCoordinateSystem = raster.extent['spatialReference']['wkt']
+            except:
+                arcpy.env.outputCoordinateSystem = raster.extent['spatialReference']['wkid']
 
             xmin = raster.extent['xmin']
             xmax = raster.extent['xmax']
