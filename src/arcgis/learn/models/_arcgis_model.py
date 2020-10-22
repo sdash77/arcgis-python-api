@@ -680,8 +680,10 @@ class ArcGISModel(object):
         """
         Plot validation and training losses after fitting the model.
         """
-        if hasattr(self.learn, 'recorder'):
+        try:
             self.learn.recorder.plot_losses()
+        except:
+            raise Exception("You need to train your model to compute losses")
 
     def _create_emd_template(self, path, compute_metrics=True, save_inference_file=True):
 
