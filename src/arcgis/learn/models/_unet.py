@@ -464,8 +464,6 @@ class UnetClassifier(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        self                    segmentation model object -> [PSPNetClassifier | UnetClassifier | DeepLab]
-        ---------------------   -------------------------------------------
         ignore_classes          Optional list. It will contain the list of class
                                 values on which model will not incur loss.
                                 Default: []    
