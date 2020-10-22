@@ -5256,6 +5256,7 @@ def optimal_path_as_line(input_destination_data,
                          path_type="EACH_ZONE", 
                          output_feature_name=None, 
                          context=None, 
+                         create_network_paths='DESTINATIONS_TO_SOURCES',
                          *, 
                          gis=None, 
                          future=False, 
@@ -5323,7 +5324,20 @@ def optimal_path_as_line(input_destination_data,
                                              Alternatively, you can pass in the name of the output feature layer  that should be created by this method to be used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not specified, the currently active connection
+    context                                  Optional dict. Context contains additional settings that affect task execution.
+    ------------------------------------     --------------------------------------------------------------------
+    create_network_paths                     Optional string or boolean. Specifies whether complete, and possibly 
+                                             overlapping, paths from the destinations to the sources are calculated 
+                                             or if  nonoverlapping network paths are created.
+
+                                             `DESTINATIONS_TO_SOURCES` (False): Complete paths from the destinations 
+                                              to the sources are calculated, which can be overlapping.  This is default.
+
+                                             `NETWORK_PATHS` (True): Nonoverlapping network paths are calculated.
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Keyword only parameter. Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -5349,6 +5363,7 @@ def optimal_path_as_line(input_destination_data,
                                                           destination_field=destination_field, 
                                                           path_type=path_type, 
                                                           context=context,
+                                                          create_network_paths=create_network_paths,
                                                           future=future,
                                                           **kwargs)
 

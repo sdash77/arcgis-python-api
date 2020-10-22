@@ -5956,6 +5956,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             input_raster_specified = True
 
         return input_rasters_dict
+
     #----------------------------------------------------------------------
     def add_image(self,
                   image_collection,
@@ -9953,6 +9954,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                              path_type=None,
                              context=None,
                              future=False,
+                             create_network_paths="DESTINATIONS_TO_SOURCES",
                              **kwargs):
         """
         Parameters
@@ -10042,16 +10044,39 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_polyline_name = json.dumps({"serviceProperties": {"name": output_polyline_service_name , "serviceUrl": output_polyline_service.url},
                                            "itemProperties": {"itemId": output_polyline_service.itemid}})
 
+        if create_network_paths is not None:
+            if isinstance(create_network_paths, str):
+                if create_network_paths.upper() == "NETWORK_PATHS":
+                    create_network_paths = True
+                elif create_network_paths.upper() == "DESTINATIONS_TO_SOURCES":
+                    create_network_paths = False
+            if not isinstance(create_network_paths, bool):
+                raise RuntimeError('create_network_paths should be one of the following - NETWORK_PATHS, DESTINATIONS_TO_SOURCES or should be of type bool.')
 
-        gpjob = self._tbx.optimal_path_as_line(input_destination_raster_or_features=input_destination_raster_or_features,
-                                               input_distance_accumulation_raster=input_distance_accumulation_raster,
-                                               input_back_direction_raster=input_back_direction_raster,
-                                               output_polyline_name=output_polyline_name,
-                                               path_type=path_type_val,
-                                               destination_field=destination_field,
-                                               context=context,
-                                               gis=self._gis,
-                                               future=True)
+        if self._current_version is not None:
+            current_version = self._current_version
+            if((current_version is not None) and current_version<10.9):
+                gpjob = self._tbx.optimal_path_as_line(input_destination_raster_or_features=input_destination_raster_or_features,
+                                                       input_distance_accumulation_raster=input_distance_accumulation_raster,
+                                                       input_back_direction_raster=input_back_direction_raster,
+                                                       output_polyline_name=output_polyline_name,
+                                                       path_type=path_type_val,
+                                                       destination_field=destination_field,
+                                                       context=context,
+                                                       gis=self._gis,
+                                                       future=True)
+            elif((current_version is not None) and current_version>=10.9):
+                gpjob = self._tbx.optimal_path_as_line(input_destination_raster_or_features=input_destination_raster_or_features,
+                                                       input_distance_accumulation_raster=input_distance_accumulation_raster,
+                                                       input_back_direction_raster=input_back_direction_raster,
+                                                       output_polyline_name=output_polyline_name,
+                                                       path_type=path_type_val,
+                                                       destination_field=destination_field,
+                                                       create_network_paths=create_network_paths,
+                                                       context=context,
+                                                       gis=self._gis,
+                                                       future=True)
+
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
