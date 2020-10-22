@@ -985,6 +985,8 @@ def copy_raster(input_raster,
                 process_as_multidimensional=None,
                 build_transpose=None,
                 context=None,
+                raster_type_name=None,
+                raster_type_params = None,
                 *,
                 gis=None,
                 future=False,
@@ -994,13 +996,19 @@ def copy_raster(input_raster,
     .. image:: _static/images/ra_copy_raster/ra_copy_raster.png 
 
     The Copy Raster task takes single raster input and generates the output image using parallel processing.
-
     The input raster can be clipped, resampled, and reprojected based on the setting.
+
+    The function can also create hosted imagery layers on enterprise and AGOL from local raster datasets by uploading the data to the server.
+    Multiple images are mosaicked into a single dataset to create one layer.
+    For this functionality to work on AGOL, Azure library packages for Python (version - azure-storage-blob-12.5.0)
+    needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    input_raster                         Required feature layer. The input feature layer to convert to a raster dataset.
+    input_raster                         Required raster layer or string. The input raster layer to be copied to.
+                                         Path to a local raster dataset can also be given to create hosted imagery 
+                                         layers on enterprise and AGOL.
     --------------------------------     --------------------------------------------------------------------
     output_cellsize                      Required dict. The cell size and unit for the output imagery layer.
                                          The available units are Feet, Miles, Meters, and Kilometers.
@@ -1037,6 +1045,18 @@ def copy_raster(input_raster,
                                                 
                                             Example: 
                                                 {"outSR": {spatial reference}}
+    ------------------                   --------------------------------------------------------------------
+    raster_type_name                     Required string. The name of the raster type to use for adding data to 
+                                         the mosaic dataset.
+
+                                         Choice list: ['Raster Dataset','UAV/UAS', 'Aerial', 'ScannedAerial', 'Landsat 7 EMT+', 'Landsat 8', 'Sentinel-2', 'ZY3-SASMAC', 'ZY3-CRESDA']
+    ------------------                   --------------------------------------------------------------------
+    raster_type_params                   Optional dict. Additional ``raster_type`` specific parameters.
+        
+                                         The process of add rasters to the mosaic datset can be
+                                         controlled by specifying additional raster type arguments.
+
+                                         The raster type parameters argument is a dictionary.
     --------------------------------     --------------------------------------------------------------------
     gis                                  Optional GIS object. If not specified, the currently active connection
                                          is used.
@@ -1060,6 +1080,27 @@ def copy_raster(input_raster,
 
     :return:
     output_raster : Imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1: This example creates a tiled image layer in AGOL. (To create dynamic imagery layer set the tiles_only keyword argument to False)
+
+        copy_raster_op = copy_raster(input_raster="C:\\data\\input_raster.tif",
+                                     output_name="output_name",
+                                     raster_type_name="Raster Dataset",
+                                     gis=gis,
+                                     tiles_only=True)
+
+    .. code-block:: python
+
+        # Usage Example 2: This example creates a tiled image layer in AGOL from the datasets detected in the input folder. (To create dynamic imagery layer set the tiles_only keyword argument to False)
+
+        copy_raster_op = copy_raster(input_raster="C:\\data",
+                                     output_name="output_name",
+                                     raster_type_name="Raster Dataset",
+                                     gis=gis,
+                                     tiles_only=True)
+
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -1078,6 +1119,8 @@ def copy_raster(input_raster,
                                                  output_name=output_name,
                                                  context=context,
                                                  future=future,
+                                                 raster_type_name=raster_type_name,
+                                                 raster_type_params = raster_type_params,
                                                  **kwargs)
 
 
@@ -2428,6 +2471,11 @@ def create_image_collection(image_collection,
     Provides provision to use input rasters by reference 
     and to specify image collection properties through context parameter.
 
+    The function can also create hosted imagery layers on enterprise and AGOL from local raster datasets by uploading the data to the server.
+    A collection can be created from multiple input rasters.
+    For this functionality to work on AGOL, Azure library packages for Python (version - azure-storage-blob-12.5.0)
+    needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install
+
     ==================                   ====================================================================
     **Argument**                         **Description**
     ------------------                   --------------------------------------------------------------------
@@ -2451,11 +2499,13 @@ def create_image_collection(image_collection,
                                          - An image service URL
                                          - Shared data path (this path must be accessible by the server)
                                          - Name of a folder on the portal
+                                         The function can create hosted imagery layers on enterprise and AGOL from 
+                                         local raster datasets by uploading the data to the server.
     ------------------                   --------------------------------------------------------------------
     raster_type_name                     Required string. The name of the raster type to use for adding data to 
                                          the image collection.
 
-                                         Choice list: ['UAV/UAS', 'Aerial', 'ScannedAerial', 'Landsat 7 EMT+', 'Landsat 8', 'Sentinel-2', 'ZY3-SASMAC', 'ZY3-CRESDA']
+                                         Choice list: ['Raster Dataset', 'UAV/UAS', 'Aerial', 'ScannedAerial', 'Landsat 7 EMT+', 'Landsat 8', 'Sentinel-2', 'ZY3-SASMAC', 'ZY3-CRESDA']
     ------------------                   --------------------------------------------------------------------
     raster_type_params                   Optional dict. Additional ``raster_type`` specific parameters.
         
@@ -2500,13 +2550,19 @@ def create_image_collection(image_collection,
 
                                          Example:
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------                   --------------------------------------------------------------------
+    tiles_only                           Keyword only parameter. Optional boolean. 
+                                         On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                         To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                         Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ==================                   ====================================================================
 
     :returns: The imagery layer item
 
     .. code-block:: python
 
-            # Usage Example: To create an image collection.
+            # Usage Example 1: To create an image collection.
             image_item_list = [<Item title:"YUN_0040.JPG" type:Image owner:admin>,
                                <Item title:"YUN_0041.JPG" type:Image owner:admin>,
                                <Item title:"YUN_0042.JPG" type:Image owner:admin>,
@@ -2527,6 +2583,16 @@ def create_image_collection(image_collection,
                                                       raster_type_name="UAV/UAS",
                                                       raster_type_params=params,
                                                       out_sr=32632)
+
+    .. code-block:: python
+
+        # Usage Example 2: This example creates a dynamic image layer in AGOL from the datasets detected in the input folder.
+
+        img_coll_result = create_image_collection(image_collection="imageCollection",
+                                                  input_rasters="C:\\data",
+                                                  raster_type_name="Raster Dataset",
+                                                  gis=gis,
+                                                  tiles_only=False)
 
     """
 

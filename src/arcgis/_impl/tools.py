@@ -5789,7 +5789,12 @@ class _RasterAnalysisTools(BaseAnalytics):
         input_raster_specified = False
         input_rasters_dict={}
         raster_type_dict={}
+        upload_rasters_list = []
+        items_on_server=False
         # input rasters
+        if isinstance(input_rasters, str):
+            if os.path.exists(input_rasters):
+                input_rasters = [input_rasters]
         if isinstance(input_rasters, list):
             # extract the IDs of all the input items
             # and then convert the list to JSON
@@ -5802,11 +5807,22 @@ class _RasterAnalysisTools(BaseAnalytics):
                 elif isinstance(item, str):
                     if 'http:' in item or 'https:' in item:
                         url_list.append(item)
+                    elif (os.path.exists(item)):
+                        upload_rasters_list.append(item)
                     else:
                         uri_list.append(item)
+            if upload_rasters_list != []:
+                from arcgis.raster._util import _upload_imagery_agol, _upload_imagery_enterprise
+                if gis._con._product == "AGOL":
+                    url_list = _upload_imagery_agol(upload_rasters_list, gis)
+                else:
+                    item_id_list = _upload_imagery_enterprise(upload_rasters_list, raster_type_name, gis)
+                    items_on_server = True
 
             if len(item_id_list) > 0:
                 input_rasters_dict = {"itemIds" : item_id_list }
+                if items_on_server:
+                    input_rasters_dict.update({"itemsOnServer":True})
                 input_raster_specified = True
             elif len(url_list) > 0:
                 input_rasters_dict = {"urls" : url_list}
@@ -5834,8 +5850,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                 input_rasters_dict.update({"byref":True})
 
         # raster_type
-        if not isinstance(raster_type_name, str):
-            raise RuntimeError("Invalid input raster_type parameter")
+        if raster_type_name is not None:
+            if not isinstance(raster_type_name, str):
+                raise RuntimeError("Invalid input raster_type parameter")
 
         elevation_set = 0
         if raster_type_params is not None:
@@ -8729,6 +8746,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     output_name=None,
                     context=None,
                     future=False,
+                    raster_type_name=None,
+                    raster_type_params = None,
                     **kwargs):
         """
         input_raster: inputRaster (str). Required parameter.
@@ -8758,12 +8777,34 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         gis = self._gis
 
+        use_input_rasters_by_ref = None
+        if context is not None:
+            if "byref" in context:
+                use_input_rasters_by_ref = context["byref"]
+                del context["byref"]
+
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
             context = context_param['context']
 
-        input_raster = self._layer_input(input_layer=input_raster)
+        if not isinstance(input_raster, str) and not isinstance(input_raster, list):
+            input_raster = self._layer_input(input_layer=input_raster)
+
+        else:
+            input_raster, raster_type = self._build_param_dictionary(input_rasters=input_raster,
+                                                                      raster_type_name=raster_type_name,
+                                                                      raster_type_params=raster_type_params,
+                                                                      image_collection_properties=None,
+                                                                      use_input_rasters_by_ref=use_input_rasters_by_ref)
+            if isinstance(raster_type, str):
+                try:
+                    raster_type = json.loads(raster_type)
+                except:
+                    pass
+            if isinstance (input_raster,dict) and isinstance(raster_type, dict):
+                input_raster.update({"rasterType":raster_type})
+
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
         gpjob = self._tbx.copy_raster(input_raster=input_raster,
