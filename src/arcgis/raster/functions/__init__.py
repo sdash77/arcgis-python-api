@@ -1277,7 +1277,7 @@ def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_fact
 
     """
 
-    layer, raster, raster_ra = _raster_input(raster)
+    layer1, raster_1, raster_ra1 = _raster_input(raster)
 
     layer2=None
     if dem is not None:
@@ -1286,7 +1286,7 @@ def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_fact
     template_dict = {
         "rasterFunction": "Geometric",
         "rasterFunctionArguments": {
-            "Raster": raster
+            "Raster": raster_1
         },
         "variableName": "Raster"
     }
@@ -1311,8 +1311,8 @@ def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_fact
 
     if dem is not None:
         template_dict["rasterFunctionArguments"]["DEM"] = raster_2
-        return _clone_layer(layer, template_dict, raster_ra, raster_ra2)
-    return _clone_layer(layer, template_dict, raster_ra)
+        return _clone_layer(layer1, template_dict, raster_ra1, raster_ra2)
+    return _clone_layer(layer1, template_dict, raster_ra1)
 
 
 def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_power=None, psz_factor=None,
