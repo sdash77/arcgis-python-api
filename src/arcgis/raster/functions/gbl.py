@@ -674,7 +674,7 @@ def zonal_statistics(in_zone_data,
                                                         desired percentile. In this case, the output pixel 
                                                         type is floating point.
 
-                                            Parameter added in 10.9.
+                                          Parameter available in ArcGIS Image Server 10.9 and higher.
     :return: output raster with function applied
 
     """
@@ -1558,7 +1558,8 @@ def kernel_density(in_features,
                    search_radius=None,
                    area_unit_scale_factor="SQUARE_MAP_UNITS",
                    out_cell_values="DENSITIES",
-                   method="PLANAR"):
+                   method="PLANAR",
+                   in_barriers=None):
     """
     Calculates a magnitude-per-unit area from point or polyline features using a kernel function to
     fit a smoothly tapered surface to each point or polyline.
@@ -1612,7 +1613,7 @@ def kernel_density(in_features,
 
                    - GEODESIC-Uses geodesic distances between features. This method takes into account the curvature
                      of the spheroid and correctly deals with data near the poles and the International dateline.
-
+    :param in_barriers: Optional. The dataset that defines the barriers. The barriers can be a feature layer of polyline or polygon features. (Parameter available in ArcGIS Image Server 10.9 and higher.)
     :return: output raster
     """
 
@@ -1660,6 +1661,10 @@ def kernel_density(in_features,
     if method.upper() not in method_list:
         raise RuntimeError('method should be one of the following '+ str(method_list))
     template_dict["rasterFunctionArguments"]["method"] = method
+
+    if in_barriers is not None:
+        input_barriers = _layer_input(in_barriers)
+        template_dict["rasterFunctionArguments"]["in_barriers"] = input_barriers
 
     if isinstance(in_features, Item):
         in_features = in_features.layers[0]
@@ -3836,6 +3841,7 @@ def optimal_path_as_raster(in_destination_data,
 def boundary_clean(input_raster, sort_type = "NO_SORT", number_of_runs="TWO_WAY"):
     """
     The boundary_clean function smooths the boundary between zones in a raster. 
+    Function available in ArcGIS Image Server 10.9 and higher.
 
     ================================     ====================================================================
     **Argument**                         **Description**

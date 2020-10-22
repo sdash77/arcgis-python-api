@@ -5542,6 +5542,13 @@ class _RasterAnalysisTools(BaseAnalytics):
             self._gptbx._is_ra = True
         return self._gptbx
     #----------------------------------------------------------------------
+    @property
+    def _current_version(self):
+        if ('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()):
+            return self._gis._tools.rasteranalysis.properties["currentVersion"]
+        else:
+            return None
+    #----------------------------------------------------------------------
     def __str__(self):
         return '<%s url:"%s">' % (type(self).__name__, self._url)
     #----------------------------------------------------------------------
@@ -5782,7 +5789,12 @@ class _RasterAnalysisTools(BaseAnalytics):
         input_raster_specified = False
         input_rasters_dict={}
         raster_type_dict={}
+        upload_rasters_list = []
+        items_on_server=False
         # input rasters
+        if isinstance(input_rasters, str):
+            if os.path.exists(input_rasters):
+                input_rasters = [input_rasters]
         if isinstance(input_rasters, list):
             # extract the IDs of all the input items
             # and then convert the list to JSON
@@ -5795,11 +5807,22 @@ class _RasterAnalysisTools(BaseAnalytics):
                 elif isinstance(item, str):
                     if 'http:' in item or 'https:' in item:
                         url_list.append(item)
+                    elif (os.path.exists(item)):
+                        upload_rasters_list.append(item)
                     else:
                         uri_list.append(item)
+            if upload_rasters_list != []:
+                from arcgis.raster._util import _upload_imagery_agol, _upload_imagery_enterprise
+                if gis._con._product == "AGOL":
+                    url_list = _upload_imagery_agol(upload_rasters_list, gis)
+                else:
+                    item_id_list = _upload_imagery_enterprise(upload_rasters_list, raster_type_name, gis)
+                    items_on_server = True
 
             if len(item_id_list) > 0:
                 input_rasters_dict = {"itemIds" : item_id_list }
+                if items_on_server:
+                    input_rasters_dict.update({"itemsOnServer":True})
                 input_raster_specified = True
             elif len(url_list) > 0:
                 input_rasters_dict = {"urls" : url_list}
@@ -5827,8 +5850,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                 input_rasters_dict.update({"byref":True})
 
         # raster_type
-        if not isinstance(raster_type_name, str):
-            raise RuntimeError("Invalid input raster_type parameter")
+        if raster_type_name is not None:
+            if not isinstance(raster_type_name, str):
+                raise RuntimeError("Invalid input raster_type parameter")
 
         elevation_set = 0
         if raster_type_params is not None:
@@ -5932,6 +5956,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             input_raster_specified = True
 
         return input_rasters_dict
+
     #----------------------------------------------------------------------
     def add_image(self,
                   image_collection,
@@ -6147,6 +6172,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                           output_area_units="SquareMiles",
                           output_cell_size=None,
                           context=None,
+                          input_barriers=None,
                           future=False,
                           **kwargs):
 
@@ -6184,15 +6210,32 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
-        gpjob = self._tbx.calculate_density(input_point_or_line_features=input_point_or_line_features,
-                                            output_name=output_raster,
-                                            count_field=count_field,
-                                            search_distance=search_distance,
-                                            output_area_units=output_area_units,
-                                            output_cell_size=output_cell_size,
-                                            context=context,
-                                            gis=self._gis,
-                                            future=True)
+        if input_barriers is not None:
+            input_barriers = self._feature_input(input_barriers)
+
+        if self._current_version is not None:
+            current_version = self._current_version
+            if((current_version is not None) and current_version<10.9):
+                gpjob = self._tbx.calculate_density(input_point_or_line_features=input_point_or_line_features,
+                                                    output_name=output_raster,
+                                                    count_field=count_field,
+                                                    search_distance=search_distance,
+                                                    output_area_units=output_area_units,
+                                                    output_cell_size=output_cell_size,
+                                                    context=context,
+                                                    gis=self._gis,
+                                                    future=True)
+            elif((current_version is not None) and current_version>=10.9):
+                gpjob = self._tbx.calculate_density(input_point_or_line_features=input_point_or_line_features,
+                                                    output_name=output_raster,
+                                                    count_field=count_field,
+                                                    search_distance=search_distance,
+                                                    output_area_units=output_area_units,
+                                                    output_cell_size=output_cell_size,
+                                                    context=context,
+                                                    in_barriers=input_barriers,
+                                                    gis=self._gis,
+                                                    future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
@@ -8704,6 +8747,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     output_name=None,
                     context=None,
                     future=False,
+                    raster_type_name=None,
+                    raster_type_params = None,
                     **kwargs):
         """
         input_raster: inputRaster (str). Required parameter.
@@ -8733,12 +8778,34 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         gis = self._gis
 
+        use_input_rasters_by_ref = None
+        if context is not None:
+            if "byref" in context:
+                use_input_rasters_by_ref = context["byref"]
+                del context["byref"]
+
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
             context = context_param['context']
 
-        input_raster = self._layer_input(input_layer=input_raster)
+        if not isinstance(input_raster, str) and not isinstance(input_raster, list):
+            input_raster = self._layer_input(input_layer=input_raster)
+
+        else:
+            input_raster, raster_type = self._build_param_dictionary(input_rasters=input_raster,
+                                                                      raster_type_name=raster_type_name,
+                                                                      raster_type_params=raster_type_params,
+                                                                      image_collection_properties=None,
+                                                                      use_input_rasters_by_ref=use_input_rasters_by_ref)
+            if isinstance(raster_type, str):
+                try:
+                    raster_type = json.loads(raster_type)
+                except:
+                    pass
+            if isinstance (input_raster,dict) and isinstance(raster_type, dict):
+                input_raster.update({"rasterType":raster_type})
+
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
         gpjob = self._tbx.copy_raster(input_raster=input_raster,
@@ -9887,6 +9954,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                              path_type=None,
                              context=None,
                              future=False,
+                             create_network_paths="DESTINATIONS_TO_SOURCES",
                              **kwargs):
         """
         Parameters
@@ -9976,16 +10044,39 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_polyline_name = json.dumps({"serviceProperties": {"name": output_polyline_service_name , "serviceUrl": output_polyline_service.url},
                                            "itemProperties": {"itemId": output_polyline_service.itemid}})
 
+        if create_network_paths is not None:
+            if isinstance(create_network_paths, str):
+                if create_network_paths.upper() == "NETWORK_PATHS":
+                    create_network_paths = True
+                elif create_network_paths.upper() == "DESTINATIONS_TO_SOURCES":
+                    create_network_paths = False
+            if not isinstance(create_network_paths, bool):
+                raise RuntimeError('create_network_paths should be one of the following - NETWORK_PATHS, DESTINATIONS_TO_SOURCES or should be of type bool.')
 
-        gpjob = self._tbx.optimal_path_as_line(input_destination_raster_or_features=input_destination_raster_or_features,
-                                               input_distance_accumulation_raster=input_distance_accumulation_raster,
-                                               input_back_direction_raster=input_back_direction_raster,
-                                               output_polyline_name=output_polyline_name,
-                                               path_type=path_type_val,
-                                               destination_field=destination_field,
-                                               context=context,
-                                               gis=self._gis,
-                                               future=True)
+        if self._current_version is not None:
+            current_version = self._current_version
+            if((current_version is not None) and current_version<10.9):
+                gpjob = self._tbx.optimal_path_as_line(input_destination_raster_or_features=input_destination_raster_or_features,
+                                                       input_distance_accumulation_raster=input_distance_accumulation_raster,
+                                                       input_back_direction_raster=input_back_direction_raster,
+                                                       output_polyline_name=output_polyline_name,
+                                                       path_type=path_type_val,
+                                                       destination_field=destination_field,
+                                                       context=context,
+                                                       gis=self._gis,
+                                                       future=True)
+            elif((current_version is not None) and current_version>=10.9):
+                gpjob = self._tbx.optimal_path_as_line(input_destination_raster_or_features=input_destination_raster_or_features,
+                                                       input_distance_accumulation_raster=input_distance_accumulation_raster,
+                                                       input_back_direction_raster=input_back_direction_raster,
+                                                       output_polyline_name=output_polyline_name,
+                                                       path_type=path_type_val,
+                                                       destination_field=destination_field,
+                                                       create_network_paths=create_network_paths,
+                                                       context=context,
+                                                       gis=self._gis,
+                                                       future=True)
+
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
@@ -10753,6 +10844,158 @@ class _RasterAnalysisTools(BaseAnalytics):
                                 gis=self._gis,
                                 future=True)
 
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    def compute_accuracyfor_object_detection(self, 
+                                             detected_features, 
+                                             ground_truth_features, 
+                                             out_accuracy_table_name=None, 
+                                             out_accuracy_report_name=None, 
+                                             detected_class_value_field=None, 
+                                             ground_truth_class_value_field=None, 
+                                             min_iou=None, 
+                                             mask_features=None, 
+                                             context=None,
+                                             future=False,
+                                             **kwargs):
+        """
+        detected_features: detectedFeatures (str). Required parameter.  
+
+        ground_truth_features: groundTruthFeatures (str). Required parameter.  
+
+        out_accuracy_table_name: outAccuracyTableName (str). Required parameter.  
+
+        out_accuracy_report_name: outAccuracyReportName (str). Optional parameter.  
+
+        detected_class_value_field: detectedClassValueField (str). Optional parameter.  
+
+        ground_truth_class_value_field: groundTruthClassValuField (str). Optional parameter.  
+
+        min_io_u: minIoU (str). Optional parameter.  
+
+        mask_features: maskFeatures (str). Optional parameter.  
+
+        context: context (str). Optional parameter.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        """
+
+        task = "ComputeAccuracyforObjectDetection"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        detected_features = self._feature_input(input_layer=detected_features)
+
+        ground_truth_features = self._feature_input(input_layer=ground_truth_features)
+
+        if mask_features is not None:
+            mask_features = self._feature_input(input_layer=mask_features)
+
+        folder = None
+        folderId = None
+
+        if out_accuracy_table_name is None:
+            out_accuracy_table_name = str(task) + '_' + _id_generator()
+
+        if kwargs is not None:
+            if "folder" in kwargs:
+                folder = kwargs["folder"]
+        if folder is not None:
+            if isinstance(folder, dict):
+                if "id" in folder:
+                    folderId = folder["id"]
+                    folder=folder["title"]
+            else:
+                owner = gis.properties.user.username
+                folderId = gis._portal.get_folder_id(owner, folder)
+            if folderId is None:
+                folder_dict = gis.content.create_folder(folder, owner)
+                folder = folder_dict["title"]
+                folderId = folder_dict["id"]
+            out_accuracy_table_name =  json.dumps({"serviceProperties": {"name" : out_accuracy_table_name}, "itemProperties": {"folderId" : folderId}})
+        else:
+            out_accuracy_table_name = json.dumps({"serviceProperties": {"name" : out_accuracy_table_name}})
+
+        if out_accuracy_report_name is not None:
+            if isinstance(out_accuracy_report_name, str):
+                if '/fileShares/' in out_accuracy_report_name or '/rasterStores/' in out_accuracy_report_name:
+                    out_accuracy_report_name = {"uri":out_accuracy_report_name}
+                else:
+                    out_accuracy_report_name = {"name":out_accuracy_report_name}
+            elif isinstance(out_accuracy_report_name, arcgis.gis.Item):
+                out_accuracy_report_name = {"itemId":out_accuracy_report_name.itemid, "name":out_accuracy_report_name.name}
+        gpjob = self._tbx.compute_accuracyfor_object_detection(detected_features=detected_features, 
+                                                               ground_truth_features=ground_truth_features, 
+                                                               out_accuracy_table_name=out_accuracy_table_name, 
+                                                               out_accuracy_report_name=out_accuracy_report_name, 
+                                                               detected_class_value_field=detected_class_value_field, 
+                                                               ground_truth_class_value_field=ground_truth_class_value_field, 
+                                                               min_io_u=min_iou, 
+                                                               mask_features=mask_features,
+                                                               context=context,
+                                                               gis=self._gis,
+                                                               future=True)
+
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    def merge_multidimensional_rasters(self,
+                                       input_multidimensional_rasters,
+                                       resolve_overlap_method='FIRST',
+                                       output_name=None, 
+                                       context=None,
+                                       future=False,
+                                       **kwargs):
+        """
+       input_multidimensional_rasters: inputMultidimensionalRasters (str). Required parameter.  
+
+       output_name: outputName (str). Required parameter.  
+
+       resolve_overlap_method: resolveOverlapMethod (str). Optional parameter.  
+          Choice list:FIRST,LAST,MIN,MAX,MEAN,SUM
+       context: context (str). Optional parameter.
+       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        """
+
+        task = "MergeMultidimensionalRasters"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_multidimensional_rasters = self._set_multiple_raster_inputs(input_multidimensional_rasters)
+        resolve_overlap_method_allowed_values = self._tbx.choice_list.merge_multidimensional_rasters["resolve_overlap_method"]
+        if [element.lower() for element in resolve_overlap_method_allowed_values].count(resolve_overlap_method.lower()) <= 0 :
+            raise RuntimeError('resolve_overlap_method can only be one of the following: '+str(resolve_overlap_method_allowed_values))
+        for element in resolve_overlap_method_allowed_values:
+            if resolve_overlap_method.lower() == element.lower():
+                resolve_overlap_method = element
+
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.merge_multidimensional_rasters(input_multidimensional_rasters=input_multidimensional_rasters, 
+                                                        resolve_overlap_method=resolve_overlap_method, 
+                                                        output_name=output_raster,
+                                                        context=context,
+                                                        gis=self._gis,
+                                                        future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:

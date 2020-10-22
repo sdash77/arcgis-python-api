@@ -23,4 +23,5 @@ if not LAMBDA_TEXT_CLASSIFICATION:
     from ._cyclegan import CycleGAN
     from ._tsmodel import TimeSeriesModel
     from ._multi_task_road_extractor import MultiTaskRoadExtractor
+    from ._change_detector import ChangeDetector
 

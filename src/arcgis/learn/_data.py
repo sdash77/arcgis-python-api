@@ -281,7 +281,11 @@ def _get_class_mapping(path, **kwargs):
     return class_mapping
 
 
-def _get_batch_stats(image_list, norm_pct=1, _band_std_values=False):
+def _get_batch_stats(image_list, 
+                     norm_pct=1, 
+                     _band_std_values=False, 
+                     scaled_std=True, 
+                     reshape=True):
     n_normalization_samples = round(len(image_list)*norm_pct)
     #n_normalization_samples = max(256, n_normalization_samples)
     random_indexes = np.random.randint(0, len(image_list), size=min(n_normalization_samples, len(image_list)))
@@ -296,20 +300,29 @@ def _get_batch_stats(image_list, norm_pct=1, _band_std_values=False):
     feasible_chunk = round(512*4*400/(n_bands*data_shape[1])) # ~3gb footprint
     chunk = min(feasible_chunk, n_normalization_samples)
     i = 0
+    n_c = image_list[0].data.shape[0]
     for i in range(0, n_normalization_samples, chunk):
-        x_tensor_chunk = torch.stack([ x.data for x in image_list[random_indexes[i:i+chunk]] ] )
-        """
-        min_values = torch.zeros(n_bands)
-        max_values = torch.zeros(n_bands)
-        mean_values = torch.zeros(n_bands)
-        for bi in range(n_bands):
-            min_values[bi] = x_tensor_chunk[:, bi].min()
-            max_values[bi] = x_tensor_chunk[:, bi].max()
-            mean_values[bi] = x_tensor_chunk[:, bi].mean()
-        """
-        min_values = x_tensor_chunk.min(dim=0)[0].min(dim=1)[0].min(dim=1)[0]
-        max_values = x_tensor_chunk.max(dim=0)[0].max(dim=1)[0].max(dim=1)[0]
-        mean_values = x_tensor_chunk.mean((0, 2, 3))
+        if reshape:
+            x_tensor_chunk = torch.cat([x.data.view(n_c, -1) for x in image_list[random_indexes[i:i+chunk]]], dim=1)
+            min_values = x_tensor_chunk.min(dim=1).values
+            max_values = x_tensor_chunk.max(dim=1).values
+            mean_values = x_tensor_chunk.mean(dim=1)
+            print('min_values', min_values, type(min_values))
+            print(x_tensor_chunk.shape, "hi")
+        else:
+            """
+            min_values = torch.zeros(n_bands)
+            max_values = torch.zeros(n_bands)
+            mean_values = torch.zeros(n_bands)
+            for bi in range(n_bands):
+                min_values[bi] = x_tensor_chunk[:, bi].min()
+                max_values[bi] = x_tensor_chunk[:, bi].max()
+                mean_values[bi] = x_tensor_chunk[:, bi].mean()
+            """          
+            x_tensor_chunk = torch.stack([x.data for x in image_list[random_indexes[i:i+chunk]]])
+            min_values = x_tensor_chunk.min(dim=0)[0].min(dim=1)[0].min(dim=1)[0]
+            max_values = x_tensor_chunk.max(dim=0)[0].max(dim=1)[0].max(dim=1)[0]
+            mean_values = x_tensor_chunk.mean((0, 2, 3))
         min_values_store.append(min_values)
         max_values_store.append(max_values)
         mean_values_store.append(mean_values)
@@ -335,13 +348,16 @@ def _get_batch_stats(image_list, norm_pct=1, _band_std_values=False):
     scaled_max_values = torch.tensor([1 for i in range(n_bands)], dtype=torch.float32)
     scaled_mean_values = _tensor_scaler(band_mean_values, band_min_values, band_max_values, mode='minmax')
     
-    scaled_std_values_store = []
-    for i in range(0, n_normalization_samples, chunk):
-        x_tensor_chunk = torch.stack([ x.data for x in image_list[random_indexes[i:i+chunk]] ] )
-        x_tensor_chunk = _tensor_scaler(x_tensor_chunk, band_min_values, band_max_values, mode='minmax')
-        std_values = (x_tensor_chunk - scaled_mean_values.view(view_shape)).pow(2).sum((0, 2, 3))
-        scaled_std_values_store.append(std_values)
-    scaled_std_values = (torch.stack(scaled_std_values_store).sum(dim=0) / ((n_normalization_samples * data_shape[1] * data_shape[2])-1)).sqrt()
+    if scaled_std:
+        scaled_std_values_store = []
+        for i in range(0, n_normalization_samples, chunk):
+            x_tensor_chunk = torch.stack([ x.data for x in image_list[random_indexes[i:i+chunk]] ] )
+            x_tensor_chunk = _tensor_scaler(x_tensor_chunk, band_min_values, band_max_values, mode='minmax')
+            std_values = (x_tensor_chunk - scaled_mean_values.view(view_shape)).pow(2).sum((0, 2, 3))
+            scaled_std_values_store.append(std_values)
+        scaled_std_values = (torch.stack(scaled_std_values_store).sum(dim=0) / ((n_normalization_samples * data_shape[1] * data_shape[2])-1)).sqrt()
+    else:
+        scaled_std_values = None
 
     #return band_min_values, band_max_values, band_mean_values, band_std_values, scaled_min_values, scaled_max_values, scaled_mean_values, scaled_std_values
     return {
@@ -756,8 +772,13 @@ def prepare_data(path,
                             map.txt file. If the path does not contain the 
                             map.txt file pass either of 'PASCAL_VOC_rectangles', 
                             'KITTI_rectangles', 'RCNN_Masks', 'Classified_Tiles', 
-                            'Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet', 
-                            'PointCloud' and 'ImageCaptioning'.
+                            'Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet',  
+                            'PointCloud', 'ImageCaptioning', 'ChangeDetection',
+                            'superres' and 'CycleGAN'.
+                            This parameter is mandatory for data which are not
+                            exported by ArcGIS Pro / Enterprise which includes
+                            'PointCloud', 'ImageCaptioning', 'ChangeDetection',
+                            'superres' and 'CycleGAN'.
     ---------------------   -------------------------------------------
     resize_to               Optional integer. Resize the image to given size.
     =====================   ===========================================
@@ -1285,6 +1306,23 @@ def prepare_data(path,
                                           transforms,
                                           resize_to,
                                           **kwargs)
+    elif dataset_type == "ChangeDetection":
+        from ._utils.change_detection_data import prepare_change_detection_data
+        kwargs.pop('rgb_bands', None)
+        kwargs.pop('bands', None)
+        kwargs.pop('norm_pct', None)
+        return prepare_change_detection_data(path,
+                                             chip_size,
+                                             batch_size,
+                                             val_split_pct,
+                                             transforms,
+                                             _is_multispectral=_is_multispectral,
+                                             rgb_bands=rgb_bands,
+                                             bands=bands,
+                                             extract_bands=kwargs.pop('extract_bands', None),
+                                             norm_pct=norm_pct,
+                                             **kwargs)
+
     elif dataset_type == "CycleGAN":
         path = path/"Images"
         if _is_multispectral:

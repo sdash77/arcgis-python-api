@@ -213,7 +213,8 @@ from arcgis.learn._utils.classified_tiles import calculate_intersection, calcula
 
 
 def expand_outputs(preds,trues):
-
+    if preds.shape == trues.shape:
+        return trues
     encoded_trues=preds.detach()*0
     encoded_trues.scatter_(1, trues, 1)
     return encoded_trues

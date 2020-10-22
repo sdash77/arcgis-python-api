@@ -431,7 +431,10 @@ class FullyConnectedNetwork(ArcGISModel):
 
         fields_needed = self._data._continuous_variables + self._data._categorical_variables
 
-        arcpy.env.outputCoordinateSystem = rasters[0].extent['spatialReference']['wkt']
+        try:
+            arcpy.env.outputCoordinateSystem = rasters[0].extent['spatialReference']['wkt']
+        except:
+            arcpy.env.outputCoordinateSystem = rasters[0].extent['spatialReference']['wkid']
 
         xmin = rasters[0].extent['xmin']
         xmax = rasters[0].extent['xmax']
