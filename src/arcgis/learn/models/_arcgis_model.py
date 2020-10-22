@@ -629,9 +629,16 @@ class ArcGISModel(object):
 
         self._learning_rate = lr
         self._model_metrics_cache = None
-        if getattr(self._data, '_dataset_type', None) == 'Classified_Tiles' and dice not in self.learn.metrics:
-            if not getattr(self, "_is_edge_detection", False):
-                self.learn.metrics.extend([dice])
+        if getattr(self._data, "_dataset_type", None) == "Classified_Tiles" and (
+                dice.__qualname__
+                not in [
+                    metric.func.__qualname__
+                    if hasattr(metric, "func")
+                    else metric.__qualname__
+                    for metric in self.learn.metrics
+                ]
+        ):
+            self.learn.metrics.extend([dice])
         if arcgis.env.verbose:
             logger.info('Fitting the model.')
 
@@ -645,9 +652,12 @@ class ArcGISModel(object):
         if checkpoint:
             from datetime import datetime
             now = datetime.now()
-            callbacks.append(SaveModelCallback(self, monitor='valid_loss', every='improvement',
-                                               name=now.strftime("checkpoint_%Y-%m-%d_%H-%M-%S")))
-
+            save_callback_params = kwargs.get("save_callback_params", {"monitor": "valid_loss", "every": "improvement"})
+            #callbacks.append(SaveModelCallback(self, monitor='valid_loss', every='improvement',
+            #                                   name=now.strftime("checkpoint_%Y-%m-%d_%H-%M-%S")))
+            callbacks.append(SaveModelCallback(self,
+                                               name=now.strftime("checkpoint_%Y-%m-%d_%H-%M-%S"), **save_callback_params))
+        kwargs.pop("save_callback_params", None)
         # If tensorboardx is installed write a log with name as timestamp
         if tensorboard and HAS_TENSORBOARDX:
             training_id = time.strftime("log_%Y-%m-%d_%H-%M-%S")
@@ -788,7 +798,8 @@ class ArcGISModel(object):
             _emd_template["DoNormalize"] = self._data._do_normalize
         if getattr(self._data, '_dataset_type', None) == 'Classified_Tiles':
             if not getattr(self, "_is_edge_detection", False):
-                _emd_template['per_class_metrics'] = self.per_class_metrics().to_json()
+                if not getattr(self, "_orient_data", False):
+                    _emd_template['per_class_metrics'] = self.per_class_metrics().to_json()
         return _emd_template
 
     @staticmethod

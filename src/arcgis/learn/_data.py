@@ -1493,6 +1493,7 @@ def prepare_data(path,
     # to consider transforms and resizing
     x_shape = data.train_ds[0][0].shape
     data.chip_size = x_shape[-1]
+    data._val_split_pct = val_split_pct
 
     # Alpha channel check with GDAL
     if HAS_GDAL and x_shape[0] == 4:

@@ -41,7 +41,7 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
         nms_overlap = 0.1
         obj_det_models = ['FeatureClassifier', 'SingleShotDetector', 'RetinaNet']
         img_to_img_models = ['UnetClassifier', 'SuperResolution', 'PSPNetClassifier', 'DeepLab']
-        other_models = ['ImageCaptioner', 'PointCNN', 'MaskRCNN']
+        other_models = ['ImageCaptioner', 'PointCNN', 'MaskRCNN','MultiTaskRoadExtractor']
         text_models = ['TextClassifier']
         if (type(self._arcgis_model).__name__) in obj_det_models:
             fig1 = self.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self._arcgis_model)
