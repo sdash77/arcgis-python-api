@@ -654,14 +654,6 @@ class ImageryLayer(Layer):
         if "noDataValues" in self.properties:
             self._raster_info.update({"noDataValues":self.properties.noDataValues})
 
-        if ("extent" in self.properties) and "spatialReference" in dict(self.properties.extent).keys():
-            if ("wkid" in self.properties.extent['spatialReference'].keys()) and self.properties.extent['spatialReference']['wkid'] is not None:
-                self._raster_info.update({"geodataXform":{"spatialReference": self.properties.extent['spatialReference'],
-                                                          "type":'IdentityXform'}})
-            else:
-                self._raster_info.update({"geodataXform":{"type":'IdentityXform'}})
-
-
         return self._raster_info
 
     @extent.setter
@@ -6989,7 +6981,15 @@ class _ArcpyRaster(Raster,ImageryLayer):
         import arcpy
         if isinstance(path, RasterInfo):
             ri = arcpy.RasterInfo()
-            ri.fromJSONString(json.dumps(path.to_dict()))
+            rinfo = path.to_dict()
+            if "geodataXform" not in rinfo.keys():
+                if ("extent" in rinfo.keys()) and "spatialReference" in rinfo["extent"].keys():
+                    if ("wkid" in rinfo["extent"]["spatialReference"].keys()) and rinfo["extent"]["spatialReference"]["wkid"] is not None:
+                        rinfo.update({"geodataXform":{"spatialReference": rinfo["extent"]["spatialReference"],
+                                                                  "type":"IdentityXform"}})
+                    else:
+                        rinfo.update({"geodataXform":{"type":"IdentityXform"}})
+            ri.fromJSONString(json.dumps(rinfo))
             self._raster = arcpy.ia.Raster(ri, is_multidimensional)            
             self._uri=str(self._raster)
             self._path=str(self._raster)
