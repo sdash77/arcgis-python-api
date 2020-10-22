@@ -7531,6 +7531,10 @@ class _ArcpyRaster(Raster,ImageryLayer):
 
         # convert extent and spatial reference
         extent, spatial_reference = None, None
+        if isinstance(bbox_sr, dict):
+            if "wkid" in bbox_sr.keys():
+                if bbox_sr["wkid"] is None:
+                    bbox_sr=None
         if bbox_sr is not None and not isinstance(bbox_sr, _arcgis.geometry.SpatialReference):
             bbox_sr = _arcgis.geometry.SpatialReference(bbox_sr)
             bbox_sr = bbox_sr.as_arcpy
