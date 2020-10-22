@@ -47,7 +47,7 @@ class _DeepLabOverride(DeepLabV3):
     class to override the DeepLabV3 class such that after forwrd pass we can 
     take output as a tuple instead of dictionary in parent class.
     '''
-    def __init__(self, chip_size, num_class, backbone, classifier, aux_classifier=None, pointrend=False, keep_dilationa=False):
+    def __init__(self, chip_size, num_class, backbone, classifier, aux_classifier=None, pointrend=False, keep_dilation=False):
         super().__init__(backbone, classifier, aux_classifier)
         self.pointrend = pointrend
 
@@ -59,7 +59,7 @@ class _DeepLabOverride(DeepLabV3):
             self.backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
             subdivision_steps = 3
             stride = 8
-            if not keep_dilationa:
+            if not keep_dilation:
                 subdivision_steps = 4
                 stride = 16
                 remove_dilation = list(self.backbone.children())[-2]
@@ -118,7 +118,7 @@ class _DeepLabOverride(DeepLabV3):
 
         return result
 
-def _create_deeplab(chip_size, num_class, pretrained=True, pointrend=True, keep_dilationa=False, **kwargs):
+def _create_deeplab(chip_size, num_class, pretrained=True, pointrend=True, keep_dilation=False, **kwargs):
     '''
     Create default torchvision pretrained model with resnet101.
     '''
@@ -129,7 +129,7 @@ def _create_deeplab(chip_size, num_class, pretrained=True, pointrend=True, keep_
                              model.classifier,
                              model.aux_classifier,
                              pointrend,
-                             keep_dilationa
+                             keep_dilation
                             )
     model.classifier = DeepLabHead(2048, num_class)
     model.aux_classifier = FCNHead(1024, num_class)
@@ -138,7 +138,9 @@ def _create_deeplab(chip_size, num_class, pretrained=True, pointrend=True, keep_
 
 class DeepLab(ArcGISModel):
     """
-    Creates a ``DeepLab`` Semantic segmentation object
+    Model architecture from https://arxiv.org/abs/1706.05587.
+    Creates a ``DeepLab`` Image Segmentation/ Pixel Classification model,
+    based on https://github.com/pytorch/vision/tree/master/torchvision/models/segmentation.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -243,11 +245,11 @@ class DeepLab(ArcGISModel):
 
         self._code = image_classifier_prf
         if self._backbone.__name__ is 'resnet101':
-            model = _create_deeplab(data.chip_size, data.c, pointrend=self._pointrend, keep_dilationa=self.keep_dilation)
+            model = _create_deeplab(data.chip_size, data.c, pointrend=self._pointrend, keep_dilation=self.keep_dilation)
             if self._is_multispectral:
                 model = _change_tail(model, data)
         else:
-            model = Deeplab(data.c, self._backbone, data.chip_size, self._pointrend, keep_dilationa=self.keep_dilation)
+            model = Deeplab(data.c, self._backbone, data.chip_size, self._pointrend, keep_dilation=self.keep_dilation)
 
         if not _isnotebook() and os.name=='posix':
             _set_ddp_multigpu(self)
@@ -515,6 +517,7 @@ class DeepLab(ArcGISModel):
     def per_class_metrics(self, ignore_classes=[]):
         """
         Computer per class precision, recall and f1-score on validation set.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -523,7 +526,8 @@ class DeepLab(ArcGISModel):
         ignore_classes          Optional list. It will contain the list of class
                                 values on which model will not incur loss.
                                 Default: []    
-        -------------------------------------------------------------------
+        =====================   ===========================================
+
         Returns per class precision, recall and f1 scores 
         """
         ## Calling imported function `per_class_metrics`        

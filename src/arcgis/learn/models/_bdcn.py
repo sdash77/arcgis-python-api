@@ -220,3 +220,27 @@ class BDCNEdgeDetector(ModelExtension):
             data.dataset_type = emd['DatasetType']
         
         return cls(data, backbone, pretrained_path=str(model_file))
+
+    def compute_precision_recall(self, thresh=0.5, buffer=3, show_progress=True):
+
+        """
+        Computes precision, recall and f1 score on validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        thresh                  Optional float. The probability on which
+                                the detection will be considered edge pixel.
+        ---------------------   -------------------------------------------
+        buffer                  Optional int. pixels in neighborhood to
+                                consider true detection.
+        =====================   ===========================================
+
+        :returns: `dict` 
+        """
+
+    def show_results(self, rows=5, thresh=0.5, thinning=True,**kwargs):
+
+        """
+        Displays the results of a trained model on a part of the validation set.
+        """

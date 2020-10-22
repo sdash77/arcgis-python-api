@@ -227,12 +227,18 @@ class HEDEdgeDetector(ModelExtension):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        thresh                  Optional float. The probabilty above which
-                                a detection will be considered edge pixel.
+        thresh                  Optional float. The probability on which
+                                the detection will be considered edge pixel.
         ---------------------   -------------------------------------------
         buffer                  Optional int. pixels in neighborhood to
                                 consider true detection.
         =====================   ===========================================
 
         :returns: `dict` 
+        """
+
+    def show_results(self, rows=5, thresh=0.5, thinning=True,**kwargs):
+
+        """
+        Displays the results of a trained model on a part of the validation set.
         """

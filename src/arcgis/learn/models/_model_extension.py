@@ -53,7 +53,7 @@ except Exception:
 
 class ModelExtension(ArcGISModel):
     """
-    Creates a ``ModelExtension`` object, object detection model to train a model from your own source.
+    Creates a ModelExtension object, to train the model for object detection, semantic segmentation, and edge detection.
 
     =====================   ============================================================
     **Argument**            **Description**
@@ -77,7 +77,10 @@ class ModelExtension(ArcGISModel):
                                 * ``loss(self, model_output, *model_target)``: to return loss value of the model, and 
 
                                 * ``post_process(self, pred, nms_overlap, thres, chip_size, device)``: to post-process
-                                  the output of the model.
+                                  the output of the object-detection model.
+
+                                * ``post_process(self, pred, thres)``: to post-process the output of the segmentation model.
+                                  
     ---------------------   ------------------------------------------------------------
     backbone                Optional function. If custom model requires any backbone.
     ---------------------   ------------------------------------------------------------
@@ -472,7 +475,6 @@ class ModelExtension(ArcGISModel):
         self._check_requisites()
         acc = accuracies(self, self._data.valid_dl, detect_thresh=thresh, buffer=buffer, show_progress=show_progress)
         return acc
-
 
     def _predict(
         self,
