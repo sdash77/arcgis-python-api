@@ -210,7 +210,7 @@ class PSPNet(nn.Module):
     """
     Vanilla PSPNet
     """
-    def __init__(self, num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, pointrend=False, keep_dilationa=False):
+    def __init__(self, num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, pointrend=False, keep_dilation=False):
         super(PSPNet, self).__init__()        
         self.pointrend = pointrend
         self.vgg = False
@@ -231,7 +231,7 @@ class PSPNet(nn.Module):
             modify_dilation_index = -5
             self.vgg = True
         else:
-            if self.pointrend and not keep_dilationa:
+            if self.pointrend and not keep_dilation:
                 modify_dilation_index = -1
             else:
                 modify_dilation_index = -2
@@ -356,9 +356,9 @@ class DummyDistributed:
     def __getitem__(self, item):
         return eval('self.' + item)
 
-def _pspnet_learner(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, pointrend=False, keep_dilationa=False, **kwargs):
+def _pspnet_learner(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, pointrend=False, keep_dilation=False, **kwargs):
     "Build psp_net learner from `data` and `arch`."
-    model = to_device(PSPNet(data.c, backbone, chip_size, pyramid_sizes, pretrained, pointrend, keep_dilationa), data.device)
+    model = to_device(PSPNet(data.c, backbone, chip_size, pyramid_sizes, pretrained, pointrend, keep_dilation), data.device)
     if not _isnotebook() and arcgis_os.name=='posix':
         distributed_prep = DummyDistributed()
         _set_ddp_multigpu(distributed_prep)

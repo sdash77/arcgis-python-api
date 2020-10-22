@@ -177,7 +177,7 @@ class PSPNetClassifier(ArcGISModel):
                                          pyramid_sizes=pyramid_sizes, 
                                          pretrained=True,
                                          pointrend=self._pointrend,
-                                         keep_dilationa=self.keep_dilation,
+                                         keep_dilation=self.keep_dilation,
                                          metrics=accuracy)
 
 
@@ -457,6 +457,7 @@ class PSPNetClassifier(ArcGISModel):
     def per_class_metrics(self, ignore_classes=[]):
         """
         Computer per class precision, recall and f1-score on validation set.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -465,7 +466,8 @@ class PSPNetClassifier(ArcGISModel):
         ignore_classes          Optional list. It will contain the list of class
                                 values on which model will not incur loss.
                                 Default: []    
-        -------------------------------------------------------------------
+        =====================   ===========================================
+
         Returns per class precision, recall and f1 scores 
         """
         ## Calling imported function `per_class_metrics`        

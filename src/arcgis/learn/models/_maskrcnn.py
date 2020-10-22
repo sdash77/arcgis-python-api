@@ -44,7 +44,9 @@ except Exception as e:
 
 class MaskRCNN(ArcGISModel):
     """
-    Creates a ``MaskRCNN`` Instance segmentation object
+    Model architecture from https://arxiv.org/abs/1703.06870.
+    Creates a ``MaskRCNN`` Instance segmentation model,
+    based on https://github.com/pytorch/vision/blob/master/torchvision/models/detection/mask_rcnn.py.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -60,14 +62,85 @@ class MaskRCNN(ArcGISModel):
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     ---------------------   -------------------------------------------
-    kwargs                  Optional arguments, torchvision MaskRCNN arguments can be
-                            given in form of keyword arguments.
-    ---------------------   -------------------------------------------
     pointrend               Optional boolean. If True, it will use PointRend
                             architecture on top of the segmentation head.
                             Default: False. PointRend architecture from
                             https://arxiv.org/pdf/1912.08193.pdf.      
     =====================   ===========================================
+    
+    **kwargs**
+
+    =============================   =============================================
+    **Argument**                    **Description**
+    -----------------------------   ---------------------------------------------
+    rpn_pre_nms_top_n_train         Optional int. Number of proposals to keep before
+                                    applying NMS during training.
+                                    Default: 2000
+    -----------------------------   ---------------------------------------------
+    rpn_pre_nms_top_n_test          Optional int. Number of proposals to keep before
+                                    applying NMS during testing.
+                                    Default: 1000
+    -----------------------------   ---------------------------------------------
+    rpn_post_nms_top_n_train        Optional int. Number of proposals to keep after
+                                    applying NMS during training.
+                                    Default: 2000
+    -----------------------------   ---------------------------------------------
+    rpn_post_nms_top_n_test         Optional int. Number of proposals to keep after
+                                    applying NMS during testing.
+                                    Default: 1000
+    -----------------------------   ---------------------------------------------
+    rpn_nms_thresh                  Optional float. NMS threshold used for postprocessing
+                                    the RPN proposals.
+                                    Default: 0.7
+    -----------------------------   ---------------------------------------------
+    rpn_fg_iou_thresh               Optional float. Minimum IoU between the anchor
+                                    and the GT box so that they can be considered
+                                    as positive during training of the RPN.
+                                    Default: 0.7
+    -----------------------------   ---------------------------------------------
+    rpn_bg_iou_thresh               Optional float. Maximum IoU between the anchor and
+                                    the GT box so that they can be considered as negative
+                                    during training of the RPN.
+                                    Default: 0.3
+    -----------------------------   ---------------------------------------------
+    rpn_batch_size_per_image        Optional int. Number of anchors that are sampled
+                                    during training of the RPN for computing the loss.
+                                    Default: 256
+    -----------------------------   ---------------------------------------------
+    rpn_positive_fraction           Optional float. Proportion of positive anchors in a
+                                    mini-batch during training of the RPN.
+                                    Default: 0.5
+    -----------------------------   ---------------------------------------------
+    box_score_thresh                Optional float. During inference, only return proposals
+                                    with a classification score greater than box_score_thresh
+                                    Default: 0.05
+    -----------------------------   ---------------------------------------------
+    box_nms_thresh                  Optional float. NMS threshold for the prediction head.
+                                    Used during inference.
+                                    Default: 0.5
+    -----------------------------   ---------------------------------------------
+    box_detections_per_img          Optional int. Maximum number of detections per
+                                    image, for all classes.
+                                    Default: 100
+    -----------------------------   ---------------------------------------------
+    box_fg_iou_thresh               Optional float. Minimum IoU between the proposals and
+                                    the GT box so that they can be considered as positive
+                                    during training of the classification head.
+                                    Default: 0.5
+    -----------------------------   ---------------------------------------------
+    box_bg_iou_thresh               Optional float. Maximum IoU between the proposals and 
+                                    the GT box so that they can be considered as negative 
+                                    during training of the classification head.
+                                    Default: 0.5
+    -----------------------------   ---------------------------------------------
+    box_batch_size_per_image        Optional int. Number of proposals that are sampled during
+                                    training of the classification head.
+                                    Default: 512
+    -----------------------------   ---------------------------------------------
+    box_positive_fraction           Optional float. Proportion of positive proposals in a
+                                    mini-batch during training of the classification head.
+                                    Default: 0.25
+    =============================   =============================================
 
     :returns: ``MaskRCNN`` Object
     """

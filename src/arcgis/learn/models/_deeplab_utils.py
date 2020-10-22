@@ -42,7 +42,7 @@ from ._PointRend import PointRendSemSegHead
 from fastai.vision import flatten_model
 
 class Deeplab(nn.Module):
-    def __init__(self, num_classes, backbone_fn, chip_size=224, pointrend=True, keep_dilationa=False):
+    def __init__(self, num_classes, backbone_fn, chip_size=224, pointrend=True, keep_dilation=False):
         super().__init__()
         self.pointrend = pointrend
         self.vgg = False
@@ -63,7 +63,7 @@ class Deeplab(nn.Module):
             modify_dilation_index = -5
             self.vgg = True
         else:
-            if self.pointrend and not keep_dilationa:
+            if self.pointrend and not keep_dilation:
                 modify_dilation_index = -1
             else:
                 modify_dilation_index = -2

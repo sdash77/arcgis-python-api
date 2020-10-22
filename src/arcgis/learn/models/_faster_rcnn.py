@@ -236,25 +236,99 @@ class MyFasterRCNN():
 
 class FasterRCNN(ModelExtension):
     """
-    Creates a ``FasterRCNN`` model
+    Model architecture from https://arxiv.org/abs/1506.01497.
+    Creates a ``FasterRCNN`` object detection model,
+    based on https://github.com/pytorch/vision/blob/master/torchvision/models/detection/faster_rcnn.py.
 
-    =====================   ===========================================
-    **Argument**            **Description**
-    ---------------------   -------------------------------------------
-    data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
-    ---------------------   -------------------------------------------
-    backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the `FasterRCNN`, which
-                            is `resnet50` by default. 
-                            Compatible backbones: 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152'
-    ---------------------   -------------------------------------------
-    pretrained_path         Optional string. Path where pre-trained model is
-                            saved.
-    ---------------------   -------------------------------------------
-    kwargs                  Optional arguments, torchvision FasterRCNN arguments can be
-                            given in form of keyword arguments.
-    =====================   ===========================================
+    =============================   =============================================
+    **Argument**                    **Description**
+    -----------------------------   ---------------------------------------------
+    data                            Required fastai Databunch. Returned data object from
+                                    ``prepare_data`` function.
+    -----------------------------   ---------------------------------------------
+    backbone                        Optional function. Backbone CNN model to be used for
+                                    creating the base of the `FasterRCNN`, which
+                                    is `resnet50` by default. 
+                                    Compatible backbones: 'resnet18', 'resnet34', 
+                                    'resnet50', 'resnet101', 'resnet152'
+    -----------------------------   ---------------------------------------------
+    pretrained_path                 Optional string. Path where pre-trained model is
+                                    saved.
+    =============================   =============================================
+
+    **kwargs**
+
+    =============================   =============================================
+    **Argument**                    **Description**
+    -----------------------------   ---------------------------------------------
+    rpn_pre_nms_top_n_train         Optional int. Number of proposals to keep before
+                                    applying NMS during training.
+                                    Default: 2000
+    -----------------------------   ---------------------------------------------
+    rpn_pre_nms_top_n_test          Optional int. Number of proposals to keep before
+                                    applying NMS during testing.
+                                    Default: 1000
+    -----------------------------   ---------------------------------------------
+    rpn_post_nms_top_n_train        Optional int. Number of proposals to keep after
+                                    applying NMS during training.
+                                    Default: 2000
+    -----------------------------   ---------------------------------------------
+    rpn_post_nms_top_n_test         Optional int. Number of proposals to keep after
+                                    applying NMS during testing.
+                                    Default: 1000
+    -----------------------------   ---------------------------------------------
+    rpn_nms_thresh                  Optional float. NMS threshold used for postprocessing
+                                    the RPN proposals.
+                                    Default: 0.7
+    -----------------------------   ---------------------------------------------
+    rpn_fg_iou_thresh               Optional float. Minimum IoU between the anchor
+                                    and the GT box so that they can be considered
+                                    as positive during training of the RPN.
+                                    Default: 0.7
+    -----------------------------   ---------------------------------------------
+    rpn_bg_iou_thresh               Optional float. Maximum IoU between the anchor and
+                                    the GT box so that they can be considered as negative
+                                    during training of the RPN.
+                                    Default: 0.3
+    -----------------------------   ---------------------------------------------
+    rpn_batch_size_per_image        Optional int. Number of anchors that are sampled
+                                    during training of the RPN for computing the loss.
+                                    Default: 256
+    -----------------------------   ---------------------------------------------
+    rpn_positive_fraction           Optional float. Proportion of positive anchors in a
+                                    mini-batch during training of the RPN.
+                                    Default: 0.5
+    -----------------------------   ---------------------------------------------
+    box_score_thresh                Optional float. During inference, only return proposals
+                                    with a classification score greater than box_score_thresh
+                                    Default: 0.05
+    -----------------------------   ---------------------------------------------
+    box_nms_thresh                  Optional float. NMS threshold for the prediction head.
+                                    Used during inference.
+                                    Default: 0.5
+    -----------------------------   ---------------------------------------------
+    box_detections_per_img          Optional int. Maximum number of detections per
+                                    image, for all classes.
+                                    Default: 100
+    -----------------------------   ---------------------------------------------
+    box_fg_iou_thresh               Optional float. Minimum IoU between the proposals and
+                                    the GT box so that they can be considered as positive
+                                    during training of the classification head.
+                                    Default: 0.5
+    -----------------------------   ---------------------------------------------
+    box_bg_iou_thresh               Optional float. Maximum IoU between the proposals and 
+                                    the GT box so that they can be considered as negative 
+                                    during training of the classification head.
+                                    Default: 0.5
+    -----------------------------   ---------------------------------------------
+    box_batch_size_per_image        Optional int. Number of proposals that are sampled during
+                                    training of the classification head.
+                                    Default: 512
+    -----------------------------   ---------------------------------------------
+    box_positive_fraction           Optional float. Proportion of positive proposals in a
+                                    mini-batch during training of the classification head.
+                                    Default: 0.25
+    =============================   =============================================
 
     :returns: ``FasterRCNN`` Object
     """
@@ -523,3 +597,34 @@ class FasterRCNN(ModelExtension):
             =====================   ===========================================
             
             """
+
+    def average_precision_score(self, detect_thresh=0.2, iou_thresh=0.1, mean=False, show_progress=True):
+
+        """
+        Computes average precision on the validation set for each class.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        detect_thresh           Optional float. The probabilty above which
+                                a detection will be considered for computing
+                                average precision.
+        ---------------------   -------------------------------------------
+        iou_thresh              Optional float. The intersection over union
+                                threshold with the ground truth labels, above
+                                which a predicted bounding box will be
+                                considered a true positive.
+        ---------------------   -------------------------------------------
+        mean                    Optional bool. If False returns class-wise
+                                average precision otherwise returns mean
+                                average precision.                        
+        =====================   ===========================================
+        
+        :returns: `dict` if mean is False otherwise `float`
+        """
+
+    def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
+
+        """
+        Displays the results of a trained model on a part of the validation set.
+        """
