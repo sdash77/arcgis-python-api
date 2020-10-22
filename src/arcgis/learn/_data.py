@@ -454,12 +454,13 @@ def prepare_textdata(
     ---------------------   -------------------------------------------------
     task                    Required string. The task for which the dataset is
                             prepared. Available choice at this point is "classification"
+                            and "sequence_translation".
     ---------------------   -------------------------------------------------
     text_columns            Required string. The column that will be used as
                             feature.
     ---------------------   -------------------------------------------------
     label_columns           Required list. The list of columns denoting the
-                            class label to predict. Provide a list of columns
+                            class label/translated text to predict. Provide a list of columns
                             in case of multi-label classification problem
     ---------------------   -------------------------------------------------
     train_file              Optional string. The file name containing the
@@ -532,9 +533,25 @@ def prepare_textdata(
             remove_html_tags=remove_html_tags,
             remove_urls=remove_urls
         )
+    
+    elif task.lower() == "sequence_translation":
+        return TextDataObject.prepare_data_for_seq2seq(
+            path,
+            text_columns,
+            label_columns,
+            train_file=train_file,
+            val_split_pct=val_split_pct,
+            seed=seed,
+            batch_size=batch_size,
+            process_labels=process_labels,
+            remove_html_tags=remove_html_tags,
+            remove_urls=remove_urls
+        )
+
     else:
         logger = logging.getLogger()
-        logger.info(f"Wrong task - {task} provided. This function can handle only `classification` task currently")
+        logger.error(f"Wrong task - {task} provided. This function can handle only `classification` and 'sequence_translation' task currently")
+        raise Exception(f"Wrong task - {task} provided. This function can handle only `classification` and 'sequence_translation' task currently")
 
 
 def prepare_tabulardata(
