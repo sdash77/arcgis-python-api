@@ -38,7 +38,7 @@ class ServiceFactoryTest(unittest.TestCase):
         service = Service(url=url)
         self.assertIsInstance(service, Toolbox)
         from arcgis.gis import GIS
-        gis = GIS(profile='your_online_profile', verify_cert=False)
+        gis = GIS("https://deldev.maps.arcgis.com", "demos_deldev", "DelDevs12", verify_cert=False)
         service = Service(url=url)
         assert service.execute_911_calls_hotspot()
         self.assertIsInstance(service, Toolbox)
