@@ -175,3 +175,7 @@ manage_multidimensional_raster
 sample
 ------
 .. autofunction:: arcgis.raster.analytics.sample
+
+merge_multidimensional_rasters
+------------------------------
+.. autofunction:: arcgis.raster.analytics.merge_multidimensional_rasters

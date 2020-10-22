@@ -894,6 +894,139 @@ def classify_objects(input_raster,
                                                                           future=future,
                                                                           **kwargs)
 
+def compute_accuracy_for_object_detection(detected_features, 
+                                          ground_truth_features, 
+                                          detected_class_value_field=None, 
+                                          ground_truth_class_value_field=None, 
+                                          min_iou=None, 
+                                          mask_features=None,
+                                          out_accuracy_table_name=None, 
+                                          out_accuracy_report_name=None, 
+                                          context=None,
+                                          *,
+                                          gis=None,
+                                          future=False,
+                                          **kwargs):
+
+    """
+    Function can be used to calculate the accuracy of a deep learning model by comparing the detected objects from 
+    the detect_objects function to ground truth data. 
+    Function available in ArcGIS Image Server 10.9 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    detected_features                        Required. The input polygon feature layer containing the objects 
+                                             detected from the detect_objects function.
+    ------------------------------------     --------------------------------------------------------------------
+    ground_truth_features                    Required. The polygon feature layer containing ground truth data.  
+    ------------------------------------     --------------------------------------------------------------------
+    detected_class_value_field               Optional dictionary. The field in the detected objects feature class 
+                                             that contains the class names or class values. 
+
+                                             If a field name is not specified, a Classvalue or Value field will 
+                                             be used. If these fields do not exist, all records will be 
+                                             identified as belonging to one class. 
+
+                                             The class values or class names must match those in the ground truth feature class exactly.
+
+                                             Syntax: A string describing the detected class value field. 
+
+                                             Example: "class"
+    ------------------------------------     --------------------------------------------------------------------
+    ground_truth_class_value_field           The field in the ground truth feature class that contains the class 
+                                             names or class values. 
+
+                                             If a field name is not specified, a Classvalue or Value field will 
+                                             be used. If these fields do not exist, all records will be 
+                                             identified as belonging to one class. 
+
+                                             The class values or class names must match those in the detected objects feature class exactly.
+
+                                             Example: "class"
+    ------------------------------------     --------------------------------------------------------------------
+    min_iou                                  The Intersection over Union (IoU) ratio to use as a threshold to 
+                                             evaluate the accuracy of the object-detection model. The numerator 
+                                             is the area of overlap between the predicted bounding box and 
+                                             the ground truth bounding box. The denominator is the area of 
+                                             union or the area encompassed by both bounding boxes. 
+
+                                             min_IoU value should be in the range 0 to 1. [0,1] 
+                                             Example:
+                                                0.5
+    ------------------------------------     --------------------------------------------------------------------
+    mask_features                            Optional feature layer. A polygon feature service layer that delineates 
+                                             the area where accuracy will be computed. Only the image area that 
+                                             falls completely within the polygons will be assessed for accuracy. 
+    ------------------------------------     --------------------------------------------------------------------
+    out_accuracy_table_name                  Optional. Name of the output accuracy table item to be created.
+                                             If not provided, a random name is generated by the method and used as 
+                                             the output name.
+    ------------------------------------     --------------------------------------------------------------------
+    out_accuracy_report_name                 Optional. Accuracy report can either be added as an item to the portal.
+                                             or can be written to a datastore.
+                                             To add as an item, specify the name of the output report item (pdf item) 
+                                             to be created.
+                                             Example: 
+
+                                                "accuracyReport"
+
+                                             In order to write accuracy report to datastore, specify the datastore path as value to uri key.
+                                             
+                                             Example - 
+                                                "/fileShares/yourFileShareFolderName/accuracyReport"
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Optional dictionary. Context contains additional settings that affect task execution.
+                                             Dictionary can contain value for following keys:
+
+                                             - cellSize - Set the output raster cell size, or resolution
+
+                                             - extent - Sets the processing extent used by the function
+
+                                             - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
+
+                                             - processorType - Sets the processor type. "CPU" or "GPU"
+
+                                             Eg: {"processorType" : "CPU"}
+
+                                             Setting context parameter will override the values set using arcgis.env 
+                                             variable for this particular function.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ====================================     ====================================================================
+
+    :return:
+        The output accuracy table item or/and accuracy report item (or datastore path to accuracy report)
+
+    .. code-block:: python
+
+        # Usage Example: This example generates an accuracy table for a specified minimum IoU value.
+
+        compute_accuracy_op = compute_accuracy_for_object_detection(detected_features=detected_features, 
+                                                                    ground_truth_features=ground_truth_features, 
+                                                                    detected_class_value_field="ClassValue", 
+                                                                    ground_truth_class_value_field="Class", 
+                                                                    min_iou=0.5, 
+                                                                    mask_features=None,
+                                                                    out_accuracy_table_name="accuracy_table", 
+                                                                    out_accuracy_report_name="accuracy_report", 
+                                                                    gis=gis)
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.compute_accuracyfor_object_detection(detected_features=detected_features, 
+                                                                          ground_truth_features=ground_truth_features, 
+                                                                          detected_class_value_field=detected_class_value_field, 
+                                                                          ground_truth_class_value_field=ground_truth_class_value_field, 
+                                                                          min_iou=min_iou, 
+                                                                          mask_features=mask_features,
+                                                                          out_accuracy_table_name=out_accuracy_table_name, 
+                                                                          out_accuracy_report_name=out_accuracy_report_name, 
+                                                                          context=context,
+                                                                          future=future,
+                                                                          **kwargs)
+
 class Model:
     def __init__(self, model = None):
         self._model_package = False

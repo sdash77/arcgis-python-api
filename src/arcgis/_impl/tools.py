@@ -10825,6 +10825,158 @@ class _RasterAnalysisTools(BaseAnalytics):
             return gpjob
         return gpjob.result()
 
+    def compute_accuracyfor_object_detection(self, 
+                                             detected_features, 
+                                             ground_truth_features, 
+                                             out_accuracy_table_name=None, 
+                                             out_accuracy_report_name=None, 
+                                             detected_class_value_field=None, 
+                                             ground_truth_class_value_field=None, 
+                                             min_iou=None, 
+                                             mask_features=None, 
+                                             context=None,
+                                             future=False,
+                                             **kwargs):
+        """
+        detected_features: detectedFeatures (str). Required parameter.  
+
+        ground_truth_features: groundTruthFeatures (str). Required parameter.  
+
+        out_accuracy_table_name: outAccuracyTableName (str). Required parameter.  
+
+        out_accuracy_report_name: outAccuracyReportName (str). Optional parameter.  
+
+        detected_class_value_field: detectedClassValueField (str). Optional parameter.  
+
+        ground_truth_class_value_field: groundTruthClassValuField (str). Optional parameter.  
+
+        min_io_u: minIoU (str). Optional parameter.  
+
+        mask_features: maskFeatures (str). Optional parameter.  
+
+        context: context (str). Optional parameter.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        """
+
+        task = "ComputeAccuracyforObjectDetection"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        detected_features = self._feature_input(input_layer=detected_features)
+
+        ground_truth_features = self._feature_input(input_layer=ground_truth_features)
+
+        if mask_features is not None:
+            mask_features = self._feature_input(input_layer=mask_features)
+
+        folder = None
+        folderId = None
+
+        if out_accuracy_table_name is None:
+            out_accuracy_table_name = str(task) + '_' + _id_generator()
+
+        if kwargs is not None:
+            if "folder" in kwargs:
+                folder = kwargs["folder"]
+        if folder is not None:
+            if isinstance(folder, dict):
+                if "id" in folder:
+                    folderId = folder["id"]
+                    folder=folder["title"]
+            else:
+                owner = gis.properties.user.username
+                folderId = gis._portal.get_folder_id(owner, folder)
+            if folderId is None:
+                folder_dict = gis.content.create_folder(folder, owner)
+                folder = folder_dict["title"]
+                folderId = folder_dict["id"]
+            out_accuracy_table_name =  json.dumps({"serviceProperties": {"name" : out_accuracy_table_name}, "itemProperties": {"folderId" : folderId}})
+        else:
+            out_accuracy_table_name = json.dumps({"serviceProperties": {"name" : out_accuracy_table_name}})
+
+        if out_accuracy_report_name is not None:
+            if isinstance(out_accuracy_report_name, str):
+                if '/fileShares/' in out_accuracy_report_name or '/rasterStores/' in out_accuracy_report_name:
+                    out_accuracy_report_name = {"uri":out_accuracy_report_name}
+                else:
+                    out_accuracy_report_name = {"name":out_accuracy_report_name}
+            elif isinstance(out_accuracy_report_name, arcgis.gis.Item):
+                out_accuracy_report_name = {"itemId":out_accuracy_report_name.itemid, "name":out_accuracy_report_name.name}
+        gpjob = self._tbx.compute_accuracyfor_object_detection(detected_features=detected_features, 
+                                                               ground_truth_features=ground_truth_features, 
+                                                               out_accuracy_table_name=out_accuracy_table_name, 
+                                                               out_accuracy_report_name=out_accuracy_report_name, 
+                                                               detected_class_value_field=detected_class_value_field, 
+                                                               ground_truth_class_value_field=ground_truth_class_value_field, 
+                                                               min_io_u=min_iou, 
+                                                               mask_features=mask_features,
+                                                               context=context,
+                                                               gis=self._gis,
+                                                               future=True)
+
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    def merge_multidimensional_rasters(self,
+                                       input_multidimensional_rasters,
+                                       resolve_overlap_method='FIRST',
+                                       output_name=None, 
+                                       context=None,
+                                       future=False,
+                                       **kwargs):
+        """
+       input_multidimensional_rasters: inputMultidimensionalRasters (str). Required parameter.  
+
+       output_name: outputName (str). Required parameter.  
+
+       resolve_overlap_method: resolveOverlapMethod (str). Optional parameter.  
+          Choice list:FIRST,LAST,MIN,MAX,MEAN,SUM
+       context: context (str). Optional parameter.
+       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        """
+
+        task = "MergeMultidimensionalRasters"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_multidimensional_rasters = self._set_multiple_raster_inputs(input_multidimensional_rasters)
+        resolve_overlap_method_allowed_values = self._tbx.choice_list.merge_multidimensional_rasters["resolve_overlap_method"]
+        if [element.lower() for element in resolve_overlap_method_allowed_values].count(resolve_overlap_method.lower()) <= 0 :
+            raise RuntimeError('resolve_overlap_method can only be one of the following: '+str(resolve_overlap_method_allowed_values))
+        for element in resolve_overlap_method_allowed_values:
+            if resolve_overlap_method.lower() == element.lower():
+                resolve_overlap_method = element
+
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.merge_multidimensional_rasters(input_multidimensional_rasters=input_multidimensional_rasters, 
+                                                        resolve_overlap_method=resolve_overlap_method, 
+                                                        output_name=output_raster,
+                                                        context=context,
+                                                        gis=self._gis,
+                                                        future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
 ###########################################################################
 class _GeoanalyticsTools(_AsyncService):
     """
