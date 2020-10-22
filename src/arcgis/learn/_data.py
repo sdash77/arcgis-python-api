@@ -862,7 +862,13 @@ def prepare_data(path,
         raise Exception("Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid esri files")
     
     stats_file = path / 'esri_accumulated_stats.json'
-    if dataset_type == "superres" and has_esri_files:
+    if has_esri_files and dataset_type is None:
+        json_file = path/ 'esri_model_definition.emd'
+        with open(json_file) as f:
+            emd = json.load(f)
+        dataset_type = emd['MetaDataMode']
+
+    if dataset_type == "superres" or dataset_type == "Export_Tiles":
 
         json_file = path/ 'esri_model_definition.emd'
         with open(json_file) as f:
@@ -1224,7 +1230,7 @@ def prepare_data(path,
                 ]
             val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
-    elif dataset_type == "superres":
+    elif dataset_type == "superres" or dataset_type == "Export_Tiles":
         path_hr = path/'images'
         path_lr = path/'labels'
         il = ImageList.from_folder(path_hr)
@@ -1456,7 +1462,7 @@ def prepare_data(path,
         data.train_ds.x._div = 255.
         data.valid_ds.x._div = 255.
     
-    elif dataset_type == "superres":
+    elif dataset_type == "superres" or dataset_type == "Export_Tiles":
         data = (data.transform(get_transforms(), **kwargs_transforms)
             .databunch(**databunch_kwargs)
             .normalize(imagenet_stats, do_y=True))
@@ -1487,6 +1493,7 @@ def prepare_data(path,
     # to consider transforms and resizing
     x_shape = data.train_ds[0][0].shape
     data.chip_size = x_shape[-1]
+    data._val_split_pct = val_split_pct
 
     # Alpha channel check with GDAL
     if HAS_GDAL and x_shape[0] == 4:
@@ -1503,7 +1510,7 @@ def prepare_data(path,
             stats = json.load(f)
             data._dataset_type = stats['MetaDataMode']
     
-    if dataset_type == "superres":
+    if dataset_type == "superres" or dataset_type == "Export_Tiles":
         data._dataset_type = "SuperResolution"
 
     if alter_class_mapping:

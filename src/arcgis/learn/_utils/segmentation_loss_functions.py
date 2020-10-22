@@ -201,6 +201,7 @@
 #    limitations under the License.
 
 
+from typing import List, Tuple
 from torch import nn
 import torch.nn.functional as F
 from functools import partial
@@ -218,23 +219,21 @@ def expand_outputs(preds,trues):
     return encoded_trues
 
 
-def dice(preds, targs, eps=1e-8, iou=False, soft=False, ignore_classes=[0], weighted=False,  **kwargs,):
-    
+def dice(preds, *targs, eps=1e-8, iou=False, soft=False, ignore_classes=[0], weighted=False, **kwargs, ):
     """
     Calculates dice coefficient over a batch.
-
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    preds                   Required torch.tensor. 
+    preds                   Required torch.tensor.
                             Predictions form a segmentation model.
                             file.
     ---------------------   -------------------------------------------
-    targs                   Required torch.tensor. 
+    targs                   Required torch.tensor.
                             A batch of ground truth segmentation mask.
     ---------------------   -------------------------------------------
-    eps                     Optional float. 
-                            A very small floating point number to avoid deviding 
+    eps                     Optional float.
+                            A very small floating point number to avoid deviding
                             by zero errors.
                             Default : 1e-08
     ---------------------   -------------------------------------------
@@ -250,32 +249,48 @@ def dice(preds, targs, eps=1e-8, iou=False, soft=False, ignore_classes=[0], weig
                             Not implemented
                             Default False.
     =====================   ===========================================
-
     :returns: Dice Coefficient->Rank 0 torch.tensor
     """
-
+    if (
+            isinstance(preds, (List, Tuple))
+            and isinstance(targs, (List, Tuple))
+            and len(preds) == len(targs)
+    ):
+        return torch.FloatTensor(
+            [
+                dice(pred, targ, ignore_classes=ignore_class)
+                for pred, targ, ignore_class in zip(preds, targs, ignore_classes)
+            ]
+        )
+    if isinstance(preds, (List, Tuple)):
+        preds = preds[0]
+    if isinstance(targs, (List, Tuple)) and len(targs) == 1:
+        targs = targs[0].long()
+    if len(targs.size()) == 3:
+        targs = targs.unsqueeze(1)
     num = preds.size(0)
     classes = preds.size(1)
-    preds = F.softmax(preds, dim=1)                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+    preds = F.softmax(preds, dim=1)
     keep_classes = [v for v in range(classes) if v not in ignore_classes]
     encoded_targs = expand_outputs(preds, targs)
 
     if weighted:
-        #need to work on a weighted metric and loss function
+        # need to work on a weighted metric and loss function
         pass
 
-
-    if not soft: #for metric calculation
+    if not soft:  # for metric calculation
         preds = preds.argmax(dim=1)
         preds = torch.nn.functional.one_hot(preds, classes).permute(0, 3, 1, 2)
- 
-    preds= preds.contiguous().float().view(num, classes, -1)[:,keep_classes,:].view(num,-1)
-    encoded_targs = encoded_targs.float().view(num, classes, -1)[:,keep_classes,:].view(num,-1)
+
+    preds = preds.contiguous().float().view(num, classes, -1)[:, keep_classes, :].view(num, -1)
+    encoded_targs = encoded_targs.float().view(num, classes, -1)[:, keep_classes, :].view(num, -1)
     intersection = calculate_intersection(preds, encoded_targs, mode='mean')
     union = calculate_union(preds, encoded_targs, intersection, mode='mean')
 
-    if not iou: score = 2. * intersection / (union + intersection + eps)
-    else: score = intersection / (union + eps)
+    if not iou:
+        score = 2. * intersection / (union + intersection + eps)
+    else:
+        score = intersection / (union + eps)
 
     score[union == 0.] = 1.
     mean_per_img = score.mean(dim=0)

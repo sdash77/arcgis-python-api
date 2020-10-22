@@ -192,9 +192,8 @@ def compute_miou(model, dl, mean, num_classes, show_progress, ignore_mapped_clas
             pred = model.learn.model(input)
             target = target.squeeze(1)
             if ignore_mapped_class != []:
-                _, total_classes, _, _ = pred.shape
                 for k in ignore_mapped_class:
-                    pred[:, k] = -1
+                    pred[:, k] = -1000
                 pred = pred.argmax(dim=1)
             else:
                 pred = pred.argmax(dim=1)

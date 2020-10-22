@@ -445,6 +445,7 @@ class PSPNetClassifier(ArcGISModel):
         num_classes = torch.arange(self._data.c)
         miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress, self._ignore_mapped_class)
         if mean:
+            miou = [miou[i] for i in range(len(miou)) if i not in self._ignore_mapped_class]
             return np.mean(miou)
         if self._ignore_mapped_class == []:
             return dict(zip(['0'] + self._data.classes[1:], miou))
