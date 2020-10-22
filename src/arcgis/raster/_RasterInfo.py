@@ -2,14 +2,33 @@ import json
 
 class RasterInfo(object):
     """
-    Class allows to create RasterInfo object that can be used in raster functions that takes in raster info as a parameter
-    example: arcgis.raster.functions.constant_raster(), arcgis.raster.functions.random_raster()
+    Class allows to create RasterInfo object that describes a set of raster properties to
+    facilitate the creation of local raster dataset using the Raster class (requires arcpy)
 
-    Information about the raster can be set through the following properties:
+    A RasterInfo object can be created by instantiating it from a dictionary,
+    or by calling an Imagery Layer/Raster object's raster_info property
+
+    Information about the raster can also be set through the following properties available on the RasterInfo object:
     band_count, extent , pixel_size_x, pixel_size_y, pixel_type, block_height, block_width, no_data_values, spatial_reference
 
-    To construct RasterInfo object from a dictionary,
-    use from_dict method on this class
+    To construct RasterInfo object from a dictionary, use from_dict method on this class.
+
+    .. code-block:: python
+
+        # Usage Example 1: This example creates a new Raster object from the raster_info of another Raster object. (requires arcpy)
+        raster_obj = Raster(<raster dataset path>)
+        ras_info = RasterInfo(raster_obj.raster_info)
+        rinfo_based_ras = Raster(rasInfo2)
+
+        #To write pixel values to this temporary Raster object:
+        rinfo_based_ras.write(<numpy_array>)
+
+        #To save this temporary raster locally:
+        rinfo_based_ras.save(r"C:\data\persisted_raster.crf")
+
+    RasterInfo object can also be used in raster functions that take in raster info as a parameter. (does not require arcpy)
+    example: As value to the raster_info parameter for arcgis.raster.functions.constant_raster() and arcgis.raster.functions.random_raster()
+
     """
     def __init__(self, raster_info_dict=None):
         self._band_count = None
@@ -134,7 +153,7 @@ class RasterInfo(object):
 
     def to_dict(self):
         """
-        To return Raster Info in JSON format
+        To return Raster Info in dictionary format
         """
         #rinfo_dict = self.__dict__
         new_rinfo_dict = {}
@@ -164,26 +183,28 @@ class RasterInfo(object):
     def from_dict(self, raster_info_dict):
         """
         Function used to initialise RasterInfo object from raster info dictionary
-        
-        eg usage:
-        rinfo = RasterInfo()
-        rinfo.from_dict({'bandCount': 3, 
-                         'extent': {"xmin": 4488761.95,
-                                     "ymin": 5478609.805,
-                                     "xmax": 4489727.05,
-                                     "ymax": 5479555.305,
-                                     "spatialReference": {
-                                       "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
-                                       GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\",DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
-                                       SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],PRIMEM[\"Greenwich\",0.0],
-                                       UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],
-                                       PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
-                                       PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
-                                       PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
-                                     }}, 
-                         'pixelSizeX': 0.0999999999999614, 
-                         'pixelSizeY': 0.1, 
-                         'pixelType': 'U8'})
+
+        .. code-block:: python
+
+            # Usage Example : 
+            rinfo = RasterInfo()
+            rinfo.from_dict({'bandCount': 3,
+                             'extent': {"xmin": 4488761.95,
+                                         "ymin": 5478609.805,
+                                         "xmax": 4489727.05,
+                                         "ymax": 5479555.305,
+                                         "spatialReference": {
+                                           "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
+                                           GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\",DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
+                                           SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],PRIMEM[\"Greenwich\",0.0],
+                                           UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],
+                                           PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
+                                           PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
+                                           PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
+                                         }}, 
+                             'pixelSizeX': 0.0999999999999614, 
+                             'pixelSizeY': 0.1, 
+                             'pixelType': 'U8'})
         """
         if raster_info_dict is not None and isinstance(raster_info_dict, dict):
 
