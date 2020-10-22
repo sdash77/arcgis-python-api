@@ -654,6 +654,14 @@ class ImageryLayer(Layer):
         if "noDataValues" in self.properties:
             self._raster_info.update({"noDataValues":self.properties.noDataValues})
 
+        if ("extent" in self.properties) and "spatialReference" in dict(self.properties.extent).keys():
+            if ("wkid" in self.properties.extent['spatialReference'].keys()) and self.properties.extent['spatialReference']['wkid'] is not None:
+                self._raster_info.update({"geodataXform":{"spatialReference": self.properties.extent['spatialReference'],
+                                                          "type":'IdentityXform'}})
+            else:
+                self._raster_info.update({"geodataXform":{"type":'IdentityXform'}})
+
+
         return self._raster_info
 
     @extent.setter
