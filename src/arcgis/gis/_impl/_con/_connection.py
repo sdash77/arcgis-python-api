@@ -10,6 +10,8 @@ try:
     HASARCPY = True
 except ImportError:
     HASARCPY = False
+except:
+    HASARCPY = False
 
 import sys
 if sys.platform == 'win32':

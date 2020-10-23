@@ -5043,7 +5043,7 @@ class ContentManager(object):
                 params['filetype'] = 'shapefile'
                 if publish_parameters in (None, "") and \
                    self._gis._portal.is_arcgisonline == False:
-                    raise ValueError("A publish parameter is needed for this data type.")                
+                    raise ValueError("A publish parameter is needed for this data type.")
             elif item.type.lower() == 'gpx':
                 params['filetype'] = 'gpx'
             elif item.type.lower() == 'csv':
@@ -5053,7 +5053,7 @@ class ContentManager(object):
             elif item.type.lower() == 'geojson':
                 params['filetype'] = 'geojson'
                 if publish_parameters is None:
-                    raise ValueError("A publish parameter is needed for this data type.")                
+                    raise ValueError("A publish parameter is needed for this data type.")
             else:
                 raise Exception(f"Invalid Item Type {item.type}")
 
@@ -5074,12 +5074,12 @@ class ContentManager(object):
             if params['filetype'] in ['shapefile', 'csv', 'geojson'] and \
                self._gis._portal.is_arcgisonline == False and \
                params['publishParameters'] in (None, ""):
-                raise ValueError("A publish parameter is needed for this data type.")                
+                raise ValueError("A publish parameter is needed for this data type.")
             files.append(('file', file_path, os.path.basename(file_path)))
         elif text:
             params['text'] = text
             params['fileType'] = 'csv'
-            
+
         if future == True:
             executor =  concurrent.futures.ThreadPoolExecutor(1)
             futureobj = executor.submit(self._generate,
@@ -5227,6 +5227,8 @@ class ContentManager(object):
             import arcpy
             has_arcpy = True
         except ImportError:
+            has_arcpy = False
+        except RuntimeError:
             has_arcpy = False
         try:
             import shapefile
