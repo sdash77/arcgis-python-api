@@ -42,6 +42,7 @@ try:
     from ._utils.tabular_data import TabularDataObject
     from ._utils.text_data import TextDataObject
     from ._utils.cyclegan import ImageTupleList, prepare_data_ms_cyclegan
+    from ._utils.pix2pix import ImageTupleList2
     import random
     import PIL
     HAS_FASTAI = True
@@ -1354,9 +1355,14 @@ def prepare_data(path,
         img_size = data.x[0].shape[-1]
         if resize_to is None:
             kwargs_transforms['size'] = img_size
+    elif dataset_type == "Pix2Pix":
+        path = path/"Images"
+        data = (ImageTupleList2.from_folders(path, 'train_a', 'train_b')
+                      .split_by_rand_pct(val_split_pct, seed=seed)
+                      .label_empty())
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
-
+    
     if _is_multispectral:
         # Normalize multispectral imagery by calculating stats
         if dataset_type == 'RCNN_Masks':
@@ -1504,12 +1510,16 @@ def prepare_data(path,
     elif dataset_type == 'RCNN_Masks':
         data = (data.transform(transforms, **kwargs_transforms)
                 .databunch(**databunch_kwargs))
-        data.show_batch = types.MethodType( show_batch_rcnn_masks, data )
+        data.show_batch = types.MethodType( show_batch_rcnn_masks, data)
         # Exceptional case
         # We are dividing image pixel values by 255, at the time of opening it for rcnn masks
         # Not normalizing imagery here because model will normalize image internally
         data.train_ds.x._div = 255.
         data.valid_ds.x._div = 255.
+    elif dataset_type == "Pix2Pix":
+        data = (data.transform(get_transforms(), **kwargs_transforms)
+            .databunch(**databunch_kwargs)) 
+        data.n_channel = data.x[0].data[0].shape[0]
     
     elif dataset_type == "superres":
         data = (data.transform(get_transforms(), **kwargs_transforms)

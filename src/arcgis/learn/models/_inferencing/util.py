@@ -237,6 +237,12 @@ def cyclegan_image(model, images, device, direction):
     else:
         output = model.G_B(normed_batch_tensor)
     return output
+
+def pix2pix_image(model, images, device):
+    model = model.to(device)
+    normed_batch_tensor = tensor(images).to(device).float()
+    output = model.G(normed_batch_tensor)
+    return output 
     
 def remap(tensor, idx2pixel):
     modified_tensor = torch.zeros_like(tensor)
@@ -284,7 +290,16 @@ def pixel_classify_cyclegan_image(model, tiles, device, direction, model_info):
     cyclegan_predictions = cyclegan_image(model, img_normed, device, direction)
     cyclegan_predictions = cyclegan_predictions/2 + 0.5
     return cyclegan_predictions
-    
+
+def pixel_classify_pix2pix_image(model, tiles, device):
+    tile_height, tile_width = tiles.shape[2], tiles.shape[3]
+
+    img_normed = norm(tiles.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
+    pix2pix_predictions = pix2pix_image(model, img_normed, device)
+    pix2pix_predictions = (pix2pix_predictions * torch.tensor(imagenet_stats[1]).view(1, -1, 1, 1).to(pix2pix_predictions)) + torch.tensor(imagenet_stats[0]).view(1, -1, 1, 1).to(pix2pix_predictions)
+    pix2pix_predictions = pix2pix_predictions.clamp(0, 1)
+
+    return pix2pix_predictions
 
 def variable_tile_size_check(json_info, parameters):
     if json_info.get("SupportsVariableTileSize", False):
