@@ -896,18 +896,16 @@ def prepare_data(path,
     _imagery_type = None
     _is_multispectral = False
     _show_batch_multispectral = None
+    stats_file = path / 'esri_accumulated_stats.json'
 
     if dataset_type is None and not has_esri_files:
         raise Exception("Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid esri files")
+    elif dataset_type is None and has_esri_files:
+        with open(stats_file) as f:
+            stats = json.load(f)
+            dataset_type = stats['MetaDataMode']
     
-    stats_file = path / 'esri_accumulated_stats.json'
-    if dataset_type == "superres" and has_esri_files:
-
-        json_file = path/ 'esri_model_definition.emd'
-        with open(json_file) as f:
-            emd = json.load(f)
-
-    elif dataset_type != "Imagenet" and has_esri_files:
+    if dataset_type not in ["Imagenet", "superres", "Export_Tiles"] and has_esri_files:
         with open(stats_file) as f:
             stats = json.load(f)
             dataset_type = stats['MetaDataMode']
@@ -1263,7 +1261,7 @@ def prepare_data(path,
                 ]
             val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
-    elif dataset_type == "superres":
+    elif dataset_type == "superres" or dataset_type == "Export_Tiles":
         path_hr = path/'images'
         path_lr = path/'labels'
         il = ImageList.from_folder(path_hr)
@@ -1521,7 +1519,7 @@ def prepare_data(path,
             .databunch(**databunch_kwargs)) 
         data.n_channel = data.x[0].data[0].shape[0]
     
-    elif dataset_type == "superres":
+    elif dataset_type == "superres" or dataset_type == "Export_Tiles":
         data = (data.transform(get_transforms(), **kwargs_transforms)
             .databunch(**databunch_kwargs)
             .normalize(imagenet_stats, do_y=True))
@@ -1569,7 +1567,7 @@ def prepare_data(path,
             stats = json.load(f)
             data._dataset_type = stats['MetaDataMode']
     
-    if dataset_type == "superres":
+    if dataset_type == "superres" or dataset_type == "Export_Tiles":
         data._dataset_type = "SuperResolution"
 
     if alter_class_mapping:
