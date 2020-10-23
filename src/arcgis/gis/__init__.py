@@ -1584,7 +1584,148 @@ class DatastoreManager(object):
             print("Big Data file share exists for " + name)
 
         return output
+    #----------------------------------------------------------------------
+    def add_amazon_s3(self,
+                      name,
+                      bucket_name,
+                      access_key,
+                      access_secret,
+                      region,
+                      folder=None,
+                      default_protocal="https"):
+        """
 
+        Allows administrators to registered Amazon S3 Buckets as Datastores.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        name                   Required string. The name of the Amazon S3 instance.
+        ------------------     --------------------------------------------------------------------
+        bucket_name            Required String. The name of the S3 bucket.
+        ------------------     --------------------------------------------------------------------
+        access_key             Required String. The key value for the S3 Bucket.
+        ------------------     --------------------------------------------------------------------
+        access_secret          Required String. The access secret value for the S3 bucket.
+        ------------------     --------------------------------------------------------------------
+        region                 Required String. The Amazon region as a string.
+        ------------------     --------------------------------------------------------------------
+        folder                 Optional String. The S3 folder within the S3 Bucket.
+        ------------------     --------------------------------------------------------------------
+        default_protocal       Optional String. The URL scheme to contact the S3 bucket.
+        ==================     ====================================================================
+
+        :return: DataStore
+
+        """
+        if folder is not None:
+            bucket_name = f"{bucket_name}/{folder}"
+        path = self._admin_url + "/data/registerItem"
+        template = {
+            "path": f"/cloudStores/{name}",
+            "type": "cloudStore",
+            "provider": "amazon",
+            "info": {
+                "isManaged": False,
+                "objectStore" : bucket_name,
+                "connectionString": {
+                    "accessKeyId": f"{access_key}",
+                    "secretAccessKey": f"{access_secret}",
+                    "region": region,
+                    "defaultEndpointsProtocol": default_protocal,
+                    "credentialType": "accesskey"
+                }
+            }
+
+        }
+        params = {
+            'f' : 'json',
+            'item' : json.dumps(template)
+        }
+
+        status, msg = self._validate_item(item=params['item'])
+        if status == False:
+            raise Exception(msg)
+        res = self._portal.con.post(path, params, verify_cert=False)
+
+        if res['status'] == 'success' or res['status'] == 'exists':
+            output = Datastore(self, "/cloudStores/" + name)
+
+        if res['success']:
+            print("Created cloud store for " + name)
+        elif res['success'] == False and res['status'] != 'exists':
+            raise Exception("Could not create cloud store: %s" % name)
+        elif res['status'] == 'exists':
+            print("Cloud store exists for exists for " + name)
+        return output
+    #----------------------------------------------------------------------
+    def add_ms_azure_storage(self,
+                             cloud_storage_name,
+                             account_key,
+                             account_name,
+                             container_name,
+                             folder=None
+                             ):
+        """
+        Creates a cloud store for an Amazon or Microsoft Azure store.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        cloud_storage_name     Required string. The name of the storage entry.
+        ------------------     --------------------------------------------------------------------
+        access_key             Required String. The key value for the Azure storage.
+        ------------------     --------------------------------------------------------------------
+        access_secret          Required String. The access secret value for the Azure storage.
+        ------------------     --------------------------------------------------------------------
+        coontainer_name        Required String. The container holding the data.
+        ------------------     --------------------------------------------------------------------
+        folder                 Optional String. The Azure folder within the datastore item.
+        ==================     ====================================================================
+
+        :return: DataStore
+
+        """
+        path = self._admin_url + "/data/registerItem"
+        object_store = ""
+        if folder:
+            object_store = f"{container_name}/{folder}"
+        else:
+            object_store = f"{container_name}"
+        template = {
+            "type":"cloudStore",
+            "info":{
+                "isManaged":False,
+                "connectionString":{
+                    "accountKey": account_key,
+                    "accountName": account_name,
+                    "defaultEndpointsProtocol":"https",
+                    "accountEndpoint": "core.windows.net",
+                    "credentialType" : "accessKey"},
+                "objectStore": object_store},
+            "path": f"/cloudStores/{cloud_storage_name}",
+            "provider" : "azure"
+        }
+        params = {
+            'f' : 'json',
+            'item' : json.dumps(template)
+        }
+
+        status, msg = self._validate_item(item=params['item'])
+        if status == False:
+            raise Exception(msg)
+        res = self._portal.con.post(path, params, verify_cert=False)
+
+        if res['status'] == 'success' or res['status'] == 'exists':
+            output = Datastore(self, "/cloudStores/" + cloud_storage_name)
+
+        if res['success']:
+            print("Created cloud store for " + cloud_storage_name)
+        elif res['success'] == False and res['status'] != 'exists':
+            raise Exception("Could not create cloud store: %s" % cloud_storage_name)
+        elif res['status'] == 'exists':
+            print("Cloud store exists for exists for " + cloud_storage_name)
+        return output
     #----------------------------------------------------------------------
     def add_cloudstore(self, name, conn_str, object_store,
                        provider, managed=False, folder=None):
