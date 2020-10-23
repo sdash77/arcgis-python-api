@@ -353,165 +353,165 @@ def find_closest_facilities(
     gis=None,
     future=False):
     """
-    Finds one or more facilities that are closest from an incident based on travel time or travel distance and outputs the best routes, 
-    driving directions between the incidents and the chosen facilities, and a copy of the chosen facilities. You can use the tool, for example, 
-    to find the closest hospital to an accident, the closest police cars to a crime scene, or the closest store to a customer's address., When 
-    finding closest facilities, you can specify how many to find and whether the direction of travel is toward or away from them. You can also 
-    specify the time of day to account for travel times based on live or predictive traffic conditions for that time and date. For instance, 
-    you can use the tool to search for hospitals within a 15-minute drive time of the site of an accident at a given time of day. Any hospitals 
+    Finds one or more facilities that are closest from an incident based on travel time or travel distance and outputs the best routes,
+    driving directions between the incidents and the chosen facilities, and a copy of the chosen facilities. You can use the tool, for example,
+    to find the closest hospital to an accident, the closest police cars to a crime scene, or the closest store to a customer's address., When
+    finding closest facilities, you can specify how many to find and whether the direction of travel is toward or away from them. You can also
+    specify the time of day to account for travel times based on live or predictive traffic conditions for that time and date. For instance,
+    you can use the tool to search for hospitals within a 15-minute drive time of the site of an accident at a given time of day. Any hospitals
     that take longer than 15 minutes to reach based on the traffic conditions will not be included in the results.
 
     ======================================  ==========================================================================================================================================
     **Argument**                            **Description**
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    incidents                               Required FeatureSet. Specify one or more incidents (up to 1,000). These are the locations from which the 
+    incidents                               Required FeatureSet. Specify one or more incidents (up to 1,000). These are the locations from which the
                                             tool searches for the nearby locations.
-                                            When specifying the incidents, you can set properties for each one, such as its name or service time, 
+                                            When specifying the incidents, you can set properties for each one, such as its name or service time,
                                             by using attributes. The incidents can be specified with the following attributes:
 
-                                                * ``Name`` - The name of the incident. The name is used in the driving directions. If the name is 
+                                                * ``Name`` - The name of the incident. The name is used in the driving directions. If the name is
                                                   not specified, a unique name prefixed with Location is automatically generated in the output routes and directions.
-                                                * ``ID`` - A unique identifier for the incident. The identifier is included in the output routes (as 
-                                                  the IncidentID field) and can help join additional information from the output routes, such as the 
-                                                  total travel time or total distance, to attributes from your incidents or vice versa. If the ID isn't 
-                                                  specified, the service autogenerates a unique identifier for each incident.  
-                                                * ``AdditionalTime``-The amount 
-                                                  of time spent at the incident, which is added to the total time of the route. The units for this attribute 
-                                                  value are specified by the Measurement Units parameter. The attribute value is included in the analysis 
-                                                  only when the measurement units are time based. The default value is 0. If you are finding the closest 
-                                                  fire stations from fire incidents to estimate response times, the ``AdditionalTime`` attribute can store the 
-                                                  amount of time it takes firefighters to hook up their equipment at the location of the incident before 
-                                                  they can begin fighting the fire. 
-                                                * ``AdditionalDistance``- The extra distance traveled at the incident, which 
-                                                  is added to the total distance of the route. The units for this attribute value are specified by the 
-                                                  Measurement Units parameter. The attribute value is included in the analysis only when the measurement 
-                                                  units are distance based. The default value is 0. Generally, the location of an incident, such as a home, 
-                                                  isn't exactly on the streets; it is set back somewhat from the road. This attribute value can be used to 
-                                                  model the distance between the actual incident location and its location on the street, if it is important 
+                                                * ``ID`` - A unique identifier for the incident. The identifier is included in the output routes (as
+                                                  the IncidentID field) and can help join additional information from the output routes, such as the
+                                                  total travel time or total distance, to attributes from your incidents or vice versa. If the ID isn't
+                                                  specified, the service autogenerates a unique identifier for each incident.
+                                                * ``AdditionalTime``-The amount
+                                                  of time spent at the incident, which is added to the total time of the route. The units for this attribute
+                                                  value are specified by the Measurement Units parameter. The attribute value is included in the analysis
+                                                  only when the measurement units are time based. The default value is 0. If you are finding the closest
+                                                  fire stations from fire incidents to estimate response times, the ``AdditionalTime`` attribute can store the
+                                                  amount of time it takes firefighters to hook up their equipment at the location of the incident before
+                                                  they can begin fighting the fire.
+                                                * ``AdditionalDistance``- The extra distance traveled at the incident, which
+                                                  is added to the total distance of the route. The units for this attribute value are specified by the
+                                                  Measurement Units parameter. The attribute value is included in the analysis only when the measurement
+                                                  units are distance based. The default value is 0. Generally, the location of an incident, such as a home,
+                                                  isn't exactly on the streets; it is set back somewhat from the road. This attribute value can be used to
+                                                  model the distance between the actual incident location and its location on the street, if it is important
                                                   to include that distance in the total travel distance.
-                                                * ``CurbApproach`` - Specifies the direction a vehicle may arrive at and depart from the incident. 
+                                                * ``CurbApproach`` - Specifies the direction a vehicle may arrive at and depart from the incident.
                                                   The field value is specified as one of the following integers (use the numeric code, not the name in parentheses):
 
                                                   =========================  ===============================================================
                                                   **Setting**                **Description**
                                                   -------------------------  ---------------------------------------------------------------
                                                   Either side of vehicle     |either|
-                                                                              The vehicle can approach and depart the order in either 
-                                                                              direction, so a U-turn is allowed at the order. This setting 
-                                                                              can be chosen if it is possible and desirable for your vehicle 
-                                                                              to turn around at the order. This decision may depend on the 
-                                                                              width of the road and the amount of traffic or whether the 
-                                                                              order has a parking lot where vehicles can pull in and turn 
+                                                                              The vehicle can approach and depart the order in either
+                                                                              direction, so a U-turn is allowed at the order. This setting
+                                                                              can be chosen if it is possible and desirable for your vehicle
+                                                                              to turn around at the order. This decision may depend on the
+                                                                              width of the road and the amount of traffic or whether the
+                                                                              order has a parking lot where vehicles can pull in and turn
                                                                               around.
                                                   -------------------------  ---------------------------------------------------------------
                                                   right side of vehicle      |right|
-                                                                              When the vehicle approaches and departs the order, the order must 
-                                                                              be on the right side of the vehicle. A U-turn is prohibited. This is 
-                                                                              typically used for vehicles like buses that must arrive with the bus 
+                                                                              When the vehicle approaches and departs the order, the order must
+                                                                              be on the right side of the vehicle. A U-turn is prohibited. This is
+                                                                              typically used for vehicles like buses that must arrive with the bus
                                                                               stop on the right side.
                                                   -------------------------  ---------------------------------------------------------------
-                                                  left side of vehicle       |left| 
-                                                                              When the vehicle approaches and departs the order, the curb must 
-                                                                              be on the left side of the vehicle. A U-turn is prohibited. 
-                                                                              This is typically used for vehicles like buses that must arrive 
+                                                  left side of vehicle       |left|
+                                                                              When the vehicle approaches and departs the order, the curb must
+                                                                              be on the left side of the vehicle. A U-turn is prohibited.
+                                                                              This is typically used for vehicles like buses that must arrive
                                                                               with the bus stop on the left-hand side.
                                                   -------------------------  ---------------------------------------------------------------
                                                   No U-Turn                  |turn|
                                                                               When the vehicle approaches the order, the curb can be on either side
                                                                               of the vehicle; however, the vehicle must depart without turning around.
                                                   =========================  ===============================================================
-                                                  
-                                                  The ``CurbApproach`` property is designed to work with both kinds of national driving standards: right-hand traffic (United States) and 
-                                                  left-hand traffic (United Kingdom). First, consider an incident on the left side of a vehicle. It is always on the left side regardless 
-                                                  of whether the vehicle travels on the left or right half of the road. What may change with national driving standards is your decision 
-                                                  to approach an incident from one of two directions, that is, so it ends up on the right or left side of the vehicle. For example, if you 
-                                                  want to arrive at an incident and not have a lane of traffic between the vehicle and the incident, you would choose Right side of vehicle (1) 
+
+                                                  The ``CurbApproach`` property is designed to work with both kinds of national driving standards: right-hand traffic (United States) and
+                                                  left-hand traffic (United Kingdom). First, consider an incident on the left side of a vehicle. It is always on the left side regardless
+                                                  of whether the vehicle travels on the left or right half of the road. What may change with national driving standards is your decision
+                                                  to approach an incident from one of two directions, that is, so it ends up on the right or left side of the vehicle. For example, if you
+                                                  want to arrive at an incident and not have a lane of traffic between the vehicle and the incident, you would choose Right side of vehicle (1)
                                                   in the United States but Left side of vehicle (2) in the United Kingdom.
-                                                * ``Attr_TravelTime``: Specifies the amount of time for cars, in minutes, that will be added to the total travel time of the route between the 
-                                                  incident and the closest facility. The attribute value can be used to model the time spent at the incident. For example, if you are finding 
-                                                  the three closest fire stations from a fire incident, the attribute can store the amount of time spent at the fire incident. This could be 
+                                                * ``Attr_TravelTime``: Specifies the amount of time for cars, in minutes, that will be added to the total travel time of the route between the
+                                                  incident and the closest facility. The attribute value can be used to model the time spent at the incident. For example, if you are finding
+                                                  the three closest fire stations from a fire incident, the attribute can store the amount of time spent at the fire incident. This could be
                                                   the time it takes for firefighters to hook up their equipment and begin fighting the fire.
-                                                  The value for this attribute is included in the total travel time for the route and is also displayed in driving directions as service time. 
+                                                  The value for this attribute is included in the total travel time for the route and is also displayed in driving directions as service time.
                                                   A zero or null value indicates that the incident requires no service time. The default value is 0.
-                                                * ``Attr_TruckTravelTime``: Specifies the amount of time for trucks, in minutes, that will be added to the total travel time of the route between 
+                                                * ``Attr_TruckTravelTime``: Specifies the amount of time for trucks, in minutes, that will be added to the total travel time of the route between
                                                   the incident and the closest facility. The attribute value can be used to model the time spent at the incident.
-                                                  The value for this attribute is included in the total travel time for the route and is also displayed in driving directions as service time. A zero or null value indicates 
+                                                  The value for this attribute is included in the total travel time for the route and is also displayed in driving directions as service time. A zero or null value indicates
                                                   that the incident requires no service time. The default value is 0.
-                                                * ``Attr_WalkTime``: Specifies the amount of time for pedestrians, in minutes, that will be added to the total travel time of the route 
+                                                * ``Attr_WalkTime``: Specifies the amount of time for pedestrians, in minutes, that will be added to the total travel time of the route
                                                   between the incident and the closest facility. The attribute value can be used to model the time spent at the incident.
-                                                  The value for this attribute is included in the total travel time for the route and is also displayed in walking directions as service time. 
+                                                  The value for this attribute is included in the total travel time for the route and is also displayed in walking directions as service time.
                                                   A zero or null value indicates that the incident requires no service time. The default value is 0.
-                                                * ``Attr_Miles``: Specifies the distance in miles that will be added to the total distance of the route between 
-                                                  the incident and the closest facility. Generally the locations of the incidents are not exactly on the streets 
-                                                  but are set back somewhat from the road. This attribute value can be used to model the distance between the 
-                                                  actual incident location and its location on the street if it is important to include that distance in the 
+                                                * ``Attr_Miles``: Specifies the distance in miles that will be added to the total distance of the route between
+                                                  the incident and the closest facility. Generally the locations of the incidents are not exactly on the streets
+                                                  but are set back somewhat from the road. This attribute value can be used to model the distance between the
+                                                  actual incident location and its location on the street if it is important to include that distance in the
                                                   total travel distance. The default value is 0.
-                                                * ``Attr_Kilometers``: Specifies the distance in kilometers that will added to the total distance of the route 
-                                                  between the incident and the closest facility. Generally the locations of the incidents are not exactly on the 
-                                                  streets but are set back somewhat from the road. This attribute value can be used to model the distance between 
-                                                  the actual incident location and its location on the street if it is important to include that distance in the 
+                                                * ``Attr_Kilometers``: Specifies the distance in kilometers that will added to the total distance of the route
+                                                  between the incident and the closest facility. Generally the locations of the incidents are not exactly on the
+                                                  streets but are set back somewhat from the road. This attribute value can be used to model the distance between
+                                                  the actual incident location and its location on the street if it is important to include that distance in the
                                                   total travel distance. The default value is 0.
-                                                * ``Cutoff_TravelTime``: Specify the travel time for cars, in minutes, at which to stop searching for facilities 
+                                                * ``Cutoff_TravelTime``: Specify the travel time for cars, in minutes, at which to stop searching for facilities
                                                   for a given incident. Any incident beyond the cutoff value will not be searched.
-                                                  If ``Cutoff_TravelTime`` is not set for an incident, the service will use the value specified as the defa``ultCutoff parameter. 
-                                                  The value for the ``Cutoff_TravelTime`` attribute allows the ability to overwrite the ``defaultCutoff`` value on a per incident basis. 
+                                                  If ``Cutoff_TravelTime`` is not set for an incident, the service will use the value specified as the defa``ultCutoff parameter.
+                                                  The value for the ``Cutoff_TravelTime`` attribute allows the ability to overwrite the ``defaultCutoff`` value on a per incident basis.
                                                   The default value for this attribute is null which indicates not to use any cutoff.
-                                                * ``Cutoff_TruckTravelTime``: Specify the travel time for trucks, in minutes, at which to stop searching for facilities for a 
+                                                * ``Cutoff_TruckTravelTime``: Specify the travel time for trucks, in minutes, at which to stop searching for facilities for a
                                                   given incident. Any incident beyond the cutoff value will not be searched.
-                                                  If ``Cutoff_TruckTravelTime`` is not set for an incident, the service will use the value specified as the ``defaultCutoff`` parameter. 
-                                                  The value for the ``Cutoff_TruckTravelTime`` attribute allows the ability to overwrite the ``defaultCutoff`` value on a per incident basis. 
+                                                  If ``Cutoff_TruckTravelTime`` is not set for an incident, the service will use the value specified as the ``defaultCutoff`` parameter.
+                                                  The value for the ``Cutoff_TruckTravelTime`` attribute allows the ability to overwrite the ``defaultCutoff`` value on a per incident basis.
                                                   The default value for this attribute is null which indicates not to use any cutoff.
                                                 * ``Cutoff_WalkTime``: Specify the travel time for pedestrians, in minutes, at which to stop searching for facilities for a given incident. Any incident beyond the cutoff value will not be searched.
-                                                  If Cutoff_WalkTime is not set for an incident, the service will use the value specified as the ``defaultCutoff`` parameter. The value for the Cutoff_WalkTime attribute allows the ability to overwrite the defaultCutoff value on a per incident basis. 
+                                                  If Cutoff_WalkTime is not set for an incident, the service will use the value specified as the ``defaultCutoff`` parameter. The value for the Cutoff_WalkTime attribute allows the ability to overwrite the defaultCutoff value on a per incident basis.
                                                   The default value for this attribute is null which indicates not to use any cutoff.
                                                 * ``Cutoff_Miles``: Specify the travel distance in miles at which to stop searching for facilities for a given incident. Any incident beyond the cutoff value will not be searched.
-                                                  If ``Cutoff_Miles`` is not set for an incident, the service will use the value specified as the ``defaultCutoff`` parameter. The value for the Cutoff_Miles attribute allows the 
-                                                  ability to overwrite the ``defaultCutoff`` value on a per incident basis. 
+                                                  If ``Cutoff_Miles`` is not set for an incident, the service will use the value specified as the ``defaultCutoff`` parameter. The value for the Cutoff_Miles attribute allows the
+                                                  ability to overwrite the ``defaultCutoff`` value on a per incident basis.
                                                   The default value for this attribute is null which indicates not to use any cutoff.
-                                                * ``Cutoff_Kilometers``: Specify the travel distance in kilometers at which to stop searching for facilities for a given incident. 
+                                                * ``Cutoff_Kilometers``: Specify the travel distance in kilometers at which to stop searching for facilities for a given incident.
                                                   Any incident beyond the cutoff value will not be searched.
-                                                  If ``Cutoff_Kilometers`` is not set for an incident, the service will use the value specified as the ``defaultCutoff`` parameter. 
-                                                  The value for the ``Cutoff_Kilometers`` attribute allows the ability to overwrite the ``defaultCutoff`` value on a per incident basis. 
+                                                  If ``Cutoff_Kilometers`` is not set for an incident, the service will use the value specified as the ``defaultCutoff`` parameter.
+                                                  The value for the ``Cutoff_Kilometers`` attribute allows the ability to overwrite the ``defaultCutoff`` value on a per incident basis.
                                                   The default value for this attribute is null which indicates not to use any cutoff.
                                                 * ``TargetFacilityCount``: Specify the number of facilities that need to be found for the incident.
-                                                  If ``TargetFacilityCount`` is not set for an incident, the service will use the value specified as the 
-                                                  ``defaultTargetFacilityCount`` parameter. The value for the ``TargetFacilityCount`` attribute allows the ability to 
-                                                  overwrite the ``defaultTargetFacilityCount`` value on a per incident basis. The default value for this attribute 
-                                                  is null which causes the service to use the value set for the ``defaultTargetFacilityCount`` parameter. If the 
-                                                  ``TargetFacilityCount`` attribute is set to a value other than null, the ``defaultTargetFacilityCount`` value is 
+                                                  If ``TargetFacilityCount`` is not set for an incident, the service will use the value specified as the
+                                                  ``defaultTargetFacilityCount`` parameter. The value for the ``TargetFacilityCount`` attribute allows the ability to
+                                                  overwrite the ``defaultTargetFacilityCount`` value on a per incident basis. The default value for this attribute
+                                                  is null which causes the service to use the value set for the ``defaultTargetFacilityCount`` parameter. If the
+                                                  ``TargetFacilityCount`` attribute is set to a value other than null, the ``defaultTargetFacilityCount`` value is
                                                   overwritten.
-                                                * ``Bearing``: Specify the direction the vehicle or person is moving in. ``Bearing`` is measured clockwise from true 
-                                                  north and must be in degrees. Typically, values are between 0 and 360; however, negative values are interpreted 
+                                                * ``Bearing``: Specify the direction the vehicle or person is moving in. ``Bearing`` is measured clockwise from true
+                                                  north and must be in degrees. Typically, values are between 0 and 360; however, negative values are interpreted
                                                   by subtracting them from 360 degrees.
-                                                * ``BearingTol``: Short for bearing tolerance, this field specifies the maximum acceptable difference between the heading 
-                                                  of a vehicle and a tangent line from the point on a street where Network Analyst attempts to locate the vehicle. 
-                                                  The bearing tolerance is used to determine whether the direction in which a vehicle is moving generally aligns with the underlying road. 
+                                                * ``BearingTol``: Short for bearing tolerance, this field specifies the maximum acceptable difference between the heading
+                                                  of a vehicle and a tangent line from the point on a street where Network Analyst attempts to locate the vehicle.
+                                                  The bearing tolerance is used to determine whether the direction in which a vehicle is moving generally aligns with the underlying road.
                                                   If they align within the given tolerance, the vehicle is located on that edge; if not, the next nearest eligible edge is evaluated.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     facilities                              Required FeatureSet. Specify one or more facilities (up to 1,000). These are the locations that are searched for when
-                                            finding the closest location. mWhen specifying the facilities, you can set properties for each one, such as its 
+                                            finding the closest location. mWhen specifying the facilities, you can set properties for each one, such as its
                                             name or service time, by using attributes. The facilities can be specified with the following attributes:
 
                                                 * ``Name`` - The name of the facility. The name is used in the driving
                                                   directions. If the name is not specified, a unique name prefixed
                                                   with Location is automatically generated in the output routes and
                                                   directions.
-                                                * ``ID`` - A unique identifier for the facility. The identifier is included in the output routes (as the 
-                                                  FacilityID field) and the output closest facilities as FacilityID fields. The FacilityID field can be used 
-                                                  to join additional information from the output routes, such as the total travel time or total distance, 
-                                                  to attributes from your facilities. If the ID isn't specified, the service autogenerates a unique identifier 
-                                                  for each facility. 
-                                                * ``AdditionalTime``-The amount of time spent at the facility, which is added to the total time 
-                                                  of the route. The units for this attribute value are specified by the Measurement Units parameter. The 
+                                                * ``ID`` - A unique identifier for the facility. The identifier is included in the output routes (as the
+                                                  FacilityID field) and the output closest facilities as FacilityID fields. The FacilityID field can be used
+                                                  to join additional information from the output routes, such as the total travel time or total distance,
+                                                  to attributes from your facilities. If the ID isn't specified, the service autogenerates a unique identifier
+                                                  for each facility.
+                                                * ``AdditionalTime``-The amount of time spent at the facility, which is added to the total time
+                                                  of the route. The units for this attribute value are specified by the Measurement Units parameter. The
                                                   attribute value is included in the analysis only when the measurement units are time based. The default value is 0.
                                                   If you are finding the closest fire stations to fire incidents, ``AdditionalTime`` can store the
                                                   time it tends to takes a crew to don the appropriate protective equipment
                                                   and exit the fire station.
-                                                * ``AdditionalDistance`` - The extra distance traveled at the facility, which is added to the total distance of 
-                                                  the route. The units for this attribute value are specified by the Measurement Units parameter. The attribute 
-                                                  value is included in the analysis only when the measurement units are distance based. The default value is 0. 
-                                                  Generally the location of a facility, such as a fire station, isn't exactly on a street; it is set back somewhat 
-                                                  from the road. ``AdditionalDistance`` can model the distance between the actual facility location and its location on 
+                                                * ``AdditionalDistance`` - The extra distance traveled at the facility, which is added to the total distance of
+                                                  the route. The units for this attribute value are specified by the Measurement Units parameter. The attribute
+                                                  value is included in the analysis only when the measurement units are distance based. The default value is 0.
+                                                  Generally the location of a facility, such as a fire station, isn't exactly on a street; it is set back somewhat
+                                                  from the road. ``AdditionalDistance`` can model the distance between the actual facility location and its location on
                                                   the street, if it is important to include that distance in the total travel distance.
                                                 * ``CurbApproach``:  Specifies the direction a vehicle may arrive at and depart
                                                   from the facility. The field value is specified as one of the
@@ -521,24 +521,24 @@ def find_closest_facilities(
                                                   **Setting**                **Description**
                                                   -------------------------  ---------------------------------------------------------------
                                                   Either side of vehicle     |either|
-                                                                             The vehicle can approach and depart the order in either 
-                                                                             direction, so a U-turn is allowed at the order. This setting 
-                                                                             can be chosen if it is possible and desirable for your vehicle 
-                                                                             to turn around at the order. This decision may depend on the 
-                                                                             width of the road and the amount of traffic or whether the 
-                                                                             order has a parking lot where vehicles can pull in and turn 
+                                                                             The vehicle can approach and depart the order in either
+                                                                             direction, so a U-turn is allowed at the order. This setting
+                                                                             can be chosen if it is possible and desirable for your vehicle
+                                                                             to turn around at the order. This decision may depend on the
+                                                                             width of the road and the amount of traffic or whether the
+                                                                             order has a parking lot where vehicles can pull in and turn
                                                                              around.
                                                   -------------------------  ---------------------------------------------------------------
                                                   right side of vehicle      |right|
-                                                                             When the vehicle approaches and departs the order, the order must 
-                                                                             be on the right side of the vehicle. A U-turn is prohibited. This is 
-                                                                             typically used for vehicles like buses that must arrive with the bus 
+                                                                             When the vehicle approaches and departs the order, the order must
+                                                                             be on the right side of the vehicle. A U-turn is prohibited. This is
+                                                                             typically used for vehicles like buses that must arrive with the bus
                                                                              stop on the right side.
                                                   -------------------------  ---------------------------------------------------------------
-                                                  left side of vehicle       |left| 
-                                                                             When the vehicle approaches and departs the order, the curb must 
-                                                                             be on the left side of the vehicle. A U-turn is prohibited. 
-                                                                             This is typically used for vehicles like buses that must arrive 
+                                                  left side of vehicle       |left|
+                                                                             When the vehicle approaches and departs the order, the curb must
+                                                                             be on the left side of the vehicle. A U-turn is prohibited.
+                                                                             This is typically used for vehicles like buses that must arrive
                                                                              with the bus stop on the left-hand side.
                                                   -------------------------  ---------------------------------------------------------------
                                                   No U-Turn                  |turn|
@@ -546,44 +546,44 @@ def find_closest_facilities(
                                                                              of the vehicle; however, the vehicle must depart without turning around.
                                                   =========================  ===============================================================
 
-                                                  The ``CurbApproach`` property was designed to work with both kinds of national driving standards: right-hand 
-                                                  traffic (United States) and left-hand traffic (United Kingdom). First, consider a facility on the left side 
-                                                  of a vehicle. It is always on the left side regardless of whether the vehicle travels on the left or right 
-                                                  half of the road. What may change with national driving standards is your decision to approach a facility 
-                                                  from one of two directions, that is, so it ends up on the right or left side of the vehicle. For example, 
-                                                  if you want to arrive at a facility and not have a lane of traffic between the vehicle and the facility, 
+                                                  The ``CurbApproach`` property was designed to work with both kinds of national driving standards: right-hand
+                                                  traffic (United States) and left-hand traffic (United Kingdom). First, consider a facility on the left side
+                                                  of a vehicle. It is always on the left side regardless of whether the vehicle travels on the left or right
+                                                  half of the road. What may change with national driving standards is your decision to approach a facility
+                                                  from one of two directions, that is, so it ends up on the right or left side of the vehicle. For example,
+                                                  if you want to arrive at a facility and not have a lane of traffic between the vehicle and the facility,
                                                   you would choose Right side of vehicle (1) in the United States but Left side of vehicle (2) in the United Kingdom.
-                                                * ``Attr_TravelTime``: Specifies the amount of time for cars, in minutes, that will be added to the total travel 
-                                                  time of the route between the incident and the closest facility. The attribute value can be used to specify the 
-                                                  turnout time for the facility. For example, when finding the three closest fire stations from a fire incident, 
-                                                  this attribute can be used to store the time it takes a crew to don the appropriate protective equipment and exit 
+                                                * ``Attr_TravelTime``: Specifies the amount of time for cars, in minutes, that will be added to the total travel
+                                                  time of the route between the incident and the closest facility. The attribute value can be used to specify the
+                                                  turnout time for the facility. For example, when finding the three closest fire stations from a fire incident,
+                                                  this attribute can be used to store the time it takes a crew to don the appropriate protective equipment and exit
                                                   the fire station.
-                                                  The value for this attribute is included in the total travel time for the route and is also displayed in driving 
-                                                  directions as service time. A zero or null value indicates that the facility requires no service time. The default 
+                                                  The value for this attribute is included in the total travel time for the route and is also displayed in driving
+                                                  directions as service time. A zero or null value indicates that the facility requires no service time. The default
                                                   value is 0.
-                                                * ``Attr_TruckTravelTime``: Specifies the amount of time for trucks, in minutes, that will be added to the total 
+                                                * ``Attr_TruckTravelTime``: Specifies the amount of time for trucks, in minutes, that will be added to the total
                                                   travel time of the route between the incident and the closest facility.
-                                                  The value for this attribute is included in the total travel time for the route and is also displayed in driving 
+                                                  The value for this attribute is included in the total travel time for the route and is also displayed in driving
                                                   directions as service time. A zero or null value indicates that the facility requires no service time. The default value is 0.
-                                                * ``Attr_WalkTime``: Specifies the amount of time for pedestrians, in minutes, that will be added to the total travel time 
+                                                * ``Attr_WalkTime``: Specifies the amount of time for pedestrians, in minutes, that will be added to the total travel time
                                                   of the route between the incident and the closest facility.
-                                                  The value for this attribute is included in the total travel time for the route and is also displayed in walking directions 
+                                                  The value for this attribute is included in the total travel time for the route and is also displayed in walking directions
                                                   as service time. A zero or null value indicates that the facility requires no service time. The default value is 0.
-                                                * ``Attr_Miles``: Specifies the distance in miles that will added to the total distance of the route between the incident and 
-                                                  the closest facility. Generally the locations of the facilities are not exactly on the streets but are set back somewhat from the 
-                                                  road. This attribute value can be used to model the distance between the actual facility location and its location on the street if 
+                                                * ``Attr_Miles``: Specifies the distance in miles that will added to the total distance of the route between the incident and
+                                                  the closest facility. Generally the locations of the facilities are not exactly on the streets but are set back somewhat from the
+                                                  road. This attribute value can be used to model the distance between the actual facility location and its location on the street if
                                                   it is important to include that distance in the total travel distance. The default value is 0.
-                                                * ``Attr_Kilometers``: Specifies the distance in kilometers that will added to the total distance of the route between the incident 
-                                                  and the closest facility. Generally the locations of the facilities are not exactly on the streets but are set back somewhat from the road. 
-                                                  This attribute value can be used to model the distance between the actual facility location and its location on the street if it is important 
+                                                * ``Attr_Kilometers``: Specifies the distance in kilometers that will added to the total distance of the route between the incident
+                                                  and the closest facility. Generally the locations of the facilities are not exactly on the streets but are set back somewhat from the road.
+                                                  This attribute value can be used to model the distance between the actual facility location and its location on the street if it is important
                                                   to include that distance in the total travel distance. The default value is 0.
-                                                * ``Cutoff_TravelTime``: Specify the travel time for cars, in minutes, at which to stop searching for facilities for a given incident. 
+                                                * ``Cutoff_TravelTime``: Specify the travel time for cars, in minutes, at which to stop searching for facilities for a given incident.
                                                   Any incident beyond the cutoff value will not be searched.
-                                                  If ``Cutoff_TravelTime`` is not set for a facility, the service will use the value specified as the ``defaultCutoff`` parameter. 
-                                                  The value for the ``Cutoff_TravelTime`` attribute allows the ability to overwrite the ``defaultCutoff`` value on a per facility basis. 
+                                                  If ``Cutoff_TravelTime`` is not set for a facility, the service will use the value specified as the ``defaultCutoff`` parameter.
+                                                  The value for the ``Cutoff_TravelTime`` attribute allows the ability to overwrite the ``defaultCutoff`` value on a per facility basis.
                                                   The default value for this attribute is null which indicates not to use any cutoff.
                                                 * ``Cutoff_TruckTravelTime``: Specify the travel time for trucks, in minutes, at which to stop searching for facilities for a given incident. Any incident beyond the cutoff value will not be searched.
-                                                  If ``Cutoff_TruckTravelTime`` is not set for a facility, the service will use the value specified as the ``defaultCutoff`` parameter. The value for the Cutoff_TruckTravelTime attribute allows the ability 
+                                                  If ``Cutoff_TruckTravelTime`` is not set for a facility, the service will use the value specified as the ``defaultCutoff`` parameter. The value for the Cutoff_TruckTravelTime attribute allows the ability
                                                   to overwrite the ``defaultCutoff`` value on a per facility basis. The default value for this attribute is null which indicates not to use any cutoff.
                                                 * ``Cutoff_WalkTime``: Specify the travel time for trucks, in minutes, at which to stop searching for facilities for a given incident. Any incident beyond the cutoff value will not be searched.
                                                   ``Cutoff_WalkTime`` is not set for a facility, the service will use the value specified as the ``defaultCutoff`` parameter. The value for the Cutoff_WalkTime attribute allows the ability to overwrite the defaultCutoff value on a per facility basis. The default value for this attribute is null which indicates not to use any cutoff.
@@ -591,28 +591,28 @@ def find_closest_facilities(
                                                   If ``Cutoff_Miles`` is not set for a facility, the service will use the value specified as the ``defaultCutoff`` parameter. The value for the Cutoff_Miles attribute allows the ability to overwrite the defaultCutoff value on a per facility basis. The default value for this attribute is null which indicates not to use any cutoff.
                                                 * ``Cutoff_Kilometers``: Specify the travel distance in kilometers at which to stop searching for facilities for a given incident. Any incident beyond the cutoff value will not be searched.
                                                   If Cutoff_Kilometers is not set for a facility, the service will use the value specified as the ``defaultCutoff`` parameter. The value for the Cutoff_Kilometers attribute allows the ability to overwrite the defaultCutoff value on a per facility basis. The default value for this attribute is null which indicates not to use any cutoff.
-                                                * ``Bearing``: Specify the direction the vehicle or person is moving in. ``Bearing`` is measured clockwise from true north and must be in degrees. 
+                                                * ``Bearing``: Specify the direction the vehicle or person is moving in. ``Bearing`` is measured clockwise from true north and must be in degrees.
                                                   Typically, values are between 0 and 360; however, negative values are interpreted by subtracting them from 360 degrees.
-                                                * ``BearingTol``: Short for bearing tolerance, this field specifies the maximum acceptable difference between the heading of a vehicle and a tangent 
-                                                  line from the point on a street where Network Analyst attempts to locate the vehicle. The bearing tolerance is 
-                                                  used to determine whether the direction in which a vehicle is moving 
-                                                  generally aligns with the underlying road. If they align within the given tolerance, the vehicle is located on 
+                                                * ``BearingTol``: Short for bearing tolerance, this field specifies the maximum acceptable difference between the heading of a vehicle and a tangent
+                                                  line from the point on a street where Network Analyst attempts to locate the vehicle. The bearing tolerance is
+                                                  used to determine whether the direction in which a vehicle is moving
+                                                  generally aligns with the underlying road. If they align within the given tolerance, the vehicle is located on
                                                   that edge; if not, the next nearest eligible edge is evaluated.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    measurement_units                       Required parameter. Specify the units that should be used to measure and report the total travel time or travel 
-                                            distance for the output routes. The tool finds the closest facility by measuring the travel time or the travel distance 
+    measurement_units                       Required parameter. Specify the units that should be used to measure and report the total travel time or travel
+                                            distance for the output routes. The tool finds the closest facility by measuring the travel time or the travel distance
                                             along streets.
-                                            The units you choose for this parameter determine whether the tool will measure driving distance or driving time to find 
-                                            what is closest. Choose a time unit to measure driving time. To measure driving distance, choose a distance unit. Your 
-                                            choice also determines in which units the tool will report total driving time or distance in the results. 
-                                            
+                                            The units you choose for this parameter determine whether the tool will measure driving distance or driving time to find
+                                            what is closest. Choose a time unit to measure driving time. To measure driving distance, choose a distance unit. Your
+                                            choice also determines in which units the tool will report total driving time or distance in the results.
+
                                             Choice list:['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles', 'Nautical Miles', 'Seconds', 'Minutes', 'Hours', 'Days']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     analysis_region                         Optional string. Specify the region in which to perform the analysis. If a value is not specified for this parameter, the tool
                                             will automatically calculate the region name based on the location
                                             of the input points. Setting the name of the region is recommended to speed up the
-                                            tool execution. 
-                                   
+                                            tool execution.
+
                                             Choice list:['NorthAmerica', 'SouthAmerica', 'Europe', 'MiddleEastAndAfrica', 'India', 'SouthAsia', 'SouthEastAsia', 'Thailand', 'Taiwan', 'Japan', 'Oceania', 'Greece', 'Korea']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     number_of_facilities_to_find            Optional integer. Specify the number of
@@ -620,7 +620,7 @@ def find_closest_facilities(
                                             situations, such as a fire, where multiple fire engines may be
                                             required from different fire stations. You can specify, for
                                             example, to find the three nearest fire stations to a fire.
-                                            The tool can find up to 100 facilities from each incident.                            
+                                            The tool can find up to 100 facilities from each incident.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     cutoff                                  Optional float. Specify the travel time or travel distance value at which
                                             to stop searching for facilities for a given incident. For
@@ -656,7 +656,7 @@ def find_closest_facilities(
                                             the emergency (incident). A retail store (facility) is more
                                             concerned with the time it takes the shoppers (incidents) to reach
                                             the store; therefore, stores commonly choose Incident to Facility.
-                                            
+
                                             Choice list: ['Incident to Facility', 'Facility to Incident']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     use_hierarchy                           Optional boolean. Specify whether hierarchy should be used when finding the best
@@ -667,8 +667,8 @@ def find_closest_facilities(
                                                 freeways) to lower-order streets (such as local roads), and can be used
                                                 to simulate the driver preference of traveling on freeways instead
                                                 of local roads even if that means a longer trip. This is especially
-                                                true when finding routes to faraway facilities, because drivers on long-distance 
-                                                trips tend to prefer traveling on freeways where stops, intersections, and turns can be avoided. 
+                                                true when finding routes to faraway facilities, because drivers on long-distance
+                                                trips tend to prefer traveling on freeways where stops, intersections, and turns can be avoided.
                                                 Using hierarchy is computationally faster,
                                                 especially for long-distance routes, as the tool has to select the
                                                 best route from a relatively smaller subset of streets.
@@ -694,7 +694,7 @@ def find_closest_facilities(
                                             estimation of travel time between the incident and facility because the
                                             travel times account for the traffic conditions that are applicable
                                             for that date and time.
-                                            The Time Zone for Time of Day parameter specifies whether this time and date 
+                                            The Time Zone for Time of Day parameter specifies whether this time and date
                                             refer to UTC or the time zone in which the facility or incident is located.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     time_of_day_usage                       Optional string. Indicates whether the Time of Day parameter value
@@ -709,26 +709,26 @@ def find_closest_facilities(
                                                   or incident. This option is useful if you want to know what time to
                                                   depart from a location so you arrive at the destination at the
                                                   time specified in Time of Day.
-                                            
+
                                             Choice list: ['Start Time', 'End Time']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     uturn_at_junctions                      Optional string. The U-Turn policy at junctions. Allowing U-turns implies the solver can turn around at a junction and double back on the same street.
 
-                                            Given that junctions represent street intersections and dead ends, different vehicles  may be able to turn around 
-                                            at some junctions but not at others-it depends on whether the junction represents an intersection or dead end. 
-                                            To accommodate, the U-turn policy parameter is implicitly specified by how many edges connect to the junction, 
-                                            which is known as junction valency. The acceptable values for this parameter are listed below; each is followed 
+                                            Given that junctions represent street intersections and dead ends, different vehicles  may be able to turn around
+                                            at some junctions but not at others-it depends on whether the junction represents an intersection or dead end.
+                                            To accommodate, the U-turn policy parameter is implicitly specified by how many edges connect to the junction,
+                                            which is known as junction valency. The acceptable values for this parameter are listed below; each is followed
                                             by a description of its meaning in terms of junction valency.
-                                            Allowed-U-turns are permitted at junctions with any number of connected edges. This is the default value.  
-                                            Not Allowed-U-turns are prohibited at all junctions, regardless of junction valency. Note, however, that 
-                                            U-turns are still permitted at network locations even when this setting is chosen; however, you can set the 
-                                            individual network locations' CurbApproach property to prohibit U-turns there as well.  Allowed only at Dead 
-                                            Ends-U-turns are prohibited at all junctions, except those that have only one adjacent edge (a dead end). 
-                                            Allowed only at Intersections and Dead Ends-U-turns are prohibited at junctions where exactly two adjacent edges meet 
-                                            but are permitted at intersections (junctions with three or more adjacent edges) and dead ends (junctions with exactly 
-                                            one adjacent edge).  Oftentimes, networks have extraneous junctions in the middle of road segments. This option 
+                                            Allowed-U-turns are permitted at junctions with any number of connected edges. This is the default value.
+                                            Not Allowed-U-turns are prohibited at all junctions, regardless of junction valency. Note, however, that
+                                            U-turns are still permitted at network locations even when this setting is chosen; however, you can set the
+                                            individual network locations' CurbApproach property to prohibit U-turns there as well.  Allowed only at Dead
+                                            Ends-U-turns are prohibited at all junctions, except those that have only one adjacent edge (a dead end).
+                                            Allowed only at Intersections and Dead Ends-U-turns are prohibited at junctions where exactly two adjacent edges meet
+                                            but are permitted at intersections (junctions with three or more adjacent edges) and dead ends (junctions with exactly
+                                            one adjacent edge).  Oftentimes, networks have extraneous junctions in the middle of road segments. This option
                                             prevents vehicles from making U-turns at these locations.
-                                            
+
                                             Choice list: ['Allowed', 'Not Allowed', 'Allowed Only at Dead Ends', 'Allowed Only at Intersections and Dead Ends']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     point_barriers                          Optional FeatureSet. Specify one or more points to act as temporary
@@ -739,8 +739,8 @@ def find_closest_facilities(
 
                                             The tool imposes a limit of 250 points that can be added
                                             as barriers.
-                                            When specifying the point barriers, you can set properties for each one, such as its name or barrier type, 
-                                            by using attributes. The point barriers can be specified with the following attributes: 
+                                            When specifying the point barriers, you can set properties for each one, such as its name or barrier type,
+                                            by using attributes. The point barriers can be specified with the following attributes:
 
                                                 * ``Name``: The name of the barrier.
                                                 * ``BarrierType``: Specifies whether the point barrier restricts travel
@@ -780,7 +780,7 @@ def find_closest_facilities(
                                             the number of lines you can specify as line barriers, the combined
                                             number of streets intersected by all the lines cannot exceed
                                             500.
-                                            When specifying the line barriers, you can set a name property for each one by using the following attribute: 
+                                            When specifying the line barriers, you can set a name property for each one by using the following attribute:
 
                                               * ``Name``: The name of the barrier.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
@@ -793,9 +793,9 @@ def find_closest_facilities(
                                             no limit on the number of polygons you can specify as the polygon
                                             barriers, the combined number of streets intersected by all the
                                             polygons should not exceed 2,000.
-                                            When specifying the polygon barriers, you can set properties for each one, such as its name or barrier type, 
-                                            by using attributes. The polygon barriers can be specified with the following attributes: 
-                                            
+                                            When specifying the polygon barriers, you can set properties for each one, such as its name or barrier type,
+                                            by using attributes. The polygon barriers can be specified with the following attributes:
+
                                                 * ``Name``: The name of the barrier.
                                                 * ``BarrierType``: Specifies whether the barrier restricts travel completely
                                                   or scales the time or distance for traveling through it. The field
@@ -828,13 +828,13 @@ def find_closest_facilities(
                                                   units are distance based. The attribute value must be greater than
                                                   zero.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    restrictions                            Optional string. Specify which restrictions should be honored by the tool when finding the best routes between 
-                                            incidents and facilities. A restriction represents a driving preference or requirement. In most cases, restrictions 
-                                            cause roads to be prohibited, but they can also cause them to be avoided or preferred. For instance, using an Avoid 
-                                            Toll Roads restriction will result in a route that will include toll roads only when it is absolutely required to 
-                                            travel on toll roads in order to visit an incident or a facility. Height Restriction makes it possible to route 
-                                            around any clearances that are lower than the height of your vehicle. If you are carrying corrosive materials on 
-                                            your vehicle, using the Any Hazmat Prohibited restriction prevents hauling the materials along roads where it is 
+    restrictions                            Optional string. Specify which restrictions should be honored by the tool when finding the best routes between
+                                            incidents and facilities. A restriction represents a driving preference or requirement. In most cases, restrictions
+                                            cause roads to be prohibited, but they can also cause them to be avoided or preferred. For instance, using an Avoid
+                                            Toll Roads restriction will result in a route that will include toll roads only when it is absolutely required to
+                                            travel on toll roads in order to visit an incident or a facility. Height Restriction makes it possible to route
+                                            around any clearances that are lower than the height of your vehicle. If you are carrying corrosive materials on
+                                            your vehicle, using the Any Hazmat Prohibited restriction prevents hauling the materials along roads where it is
                                             marked as illegal to do so. Below is a list of available restrictions and a short description.
                                             Some restrictions require an additional value to be
                                             specified for their desired use. This value needs to be associated
@@ -844,16 +844,16 @@ def find_closest_facilities(
                                             Parameter Values parameter. The ParameterValue field should be
                                             specified in the Attribute Parameter Values parameter for the
                                             restriction to be correctly used when finding traversable roads.
-                                            Some restrictions are supported only in certain countries; their availability is stated by region in the list below. 
-                                            Of the restrictions that have limited availability within a region, you can check whether the restriction is available 
-                                            in a particular country by looking at the table in the Country List section of the Data coverage for network analysis 
-                                            services web page. If a country has a value of  Yes in the Logistics Attribute column, the restriction with select 
-                                            availability in the region is supported in that country. If you specify restriction names that are not available in the 
-                                            country where your incidents are located, the service ignores the invalid restrictions. The service also ignores 
-                                            restrictions whose Restriction Usage parameter value is between 0 and 1 (see the Attribute Parameter Value parameter). 
+                                            Some restrictions are supported only in certain countries; their availability is stated by region in the list below.
+                                            Of the restrictions that have limited availability within a region, you can check whether the restriction is available
+                                            in a particular country by looking at the table in the Country List section of the Data coverage for network analysis
+                                            services web page. If a country has a value of  Yes in the Logistics Attribute column, the restriction with select
+                                            availability in the region is supported in that country. If you specify restriction names that are not available in the
+                                            country where your incidents are located, the service ignores the invalid restrictions. The service also ignores
+                                            restrictions whose Restriction Usage parameter value is between 0 and 1 (see the Attribute Parameter Value parameter).
                                             It prohibits all restrictions whose Restriction Usage parameter value is greater than 0.
                                             The tool supports the following restrictions:
-                                            
+
                                             ========================================  ================================================
                                             **Parameter**                             **Description**
                                             ----------------------------------------  ------------------------------------------------
@@ -871,7 +871,7 @@ def find_closest_facilities(
                                                                                       as express lanes.
                                                                                       Availability: All countries
                                             ----------------------------------------  ------------------------------------------------
-                                            Avoid Ferries                             The results will avoid ferries. 
+                                            Avoid Ferries                             The results will avoid ferries.
                                                                                       Availability: All countries
                                             ----------------------------------------  ------------------------------------------------
                                             Avoid Gates                               The results will avoid roads where there are
@@ -966,7 +966,7 @@ def find_closest_facilities(
                                                                                       include roads that are under construction.
                                                                                       Availability: All countries
                                             ----------------------------------------  ------------------------------------------------
-                                            Semi or Tractor with One                  The results will not include roads where semis or tractors with 
+                                            Semi or Tractor with One                  The results will not include roads where semis or tractors with
                                             or More Trailers Prohibited               one or more trailers are prohibited.
                                                                                       Availability: Select countries in North America and Europe
                                             ----------------------------------------  ------------------------------------------------
@@ -1028,18 +1028,18 @@ def find_closest_facilities(
                                                                                       restriction parameter.
                                                                                       Availability: Select countries in North America and Europe
                                             ========================================  ================================================
-             
-                                            Choice list:['Any Hazmat Prohibited', 'Avoid Carpool Roads', 'Avoid Express Lanes', 'Avoid Ferries', 'Avoid Gates', 
-                                            'Avoid Limited Access Roads', 'Avoid Private Roads', 'Avoid Roads Unsuitable for Pedestrians', 'Avoid Stairways', 
-                                            'Avoid Toll Roads', 'Avoid Toll Roads for Trucks', 'Avoid Truck Restricted Roads', 'Avoid Unpaved Roads', 'Axle Count Restriction', 
-                                            'Driving a Bus', 'Driving a Delivery Vehicle', 'Driving a Taxi', 'Driving a Truck', 'Driving an Automobile', 'Driving an Emergency Vehicle', 
-                                            'Height Restriction', 'Kingpin to Rear Axle Length Restriction', 'Length Restriction', 'Preferred for Pedestrians', 'Riding a Motorcycle', 
-                                            'Roads Under Construction Prohibited', 'Semi or Tractor with One or More Trailers Prohibited', 'Single Axle Vehicles Prohibited', 
-                                            'Tandem Axle Vehicles Prohibited', 'Through Traffic Prohibited', 'Truck with Trailers Restriction', 'Use Preferred Hazmat Routes', 
+
+                                            Choice list:['Any Hazmat Prohibited', 'Avoid Carpool Roads', 'Avoid Express Lanes', 'Avoid Ferries', 'Avoid Gates',
+                                            'Avoid Limited Access Roads', 'Avoid Private Roads', 'Avoid Roads Unsuitable for Pedestrians', 'Avoid Stairways',
+                                            'Avoid Toll Roads', 'Avoid Toll Roads for Trucks', 'Avoid Truck Restricted Roads', 'Avoid Unpaved Roads', 'Axle Count Restriction',
+                                            'Driving a Bus', 'Driving a Delivery Vehicle', 'Driving a Taxi', 'Driving a Truck', 'Driving an Automobile', 'Driving an Emergency Vehicle',
+                                            'Height Restriction', 'Kingpin to Rear Axle Length Restriction', 'Length Restriction', 'Preferred for Pedestrians', 'Riding a Motorcycle',
+                                            'Roads Under Construction Prohibited', 'Semi or Tractor with One or More Trailers Prohibited', 'Single Axle Vehicles Prohibited',
+                                            'Tandem Axle Vehicles Prohibited', 'Through Traffic Prohibited', 'Truck with Trailers Restriction', 'Use Preferred Hazmat Routes',
                                             'Use Preferred Truck Routes', 'Walking', 'Weight Restriction', 'Weight per Axle Restriction', 'Width Restriction']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    attribute_parameter_values              Optional FeatureSet. Specify additional values required by some restrictions, such as the weight of a vehicle for 
-                                            Weight Restriction. You can also use the attribute parameter to specify whether any restriction prohibits, avoids, 
+    attribute_parameter_values              Optional FeatureSet. Specify additional values required by some restrictions, such as the weight of a vehicle for
+                                            Weight Restriction. You can also use the attribute parameter to specify whether any restriction prohibits, avoids,
                                             or prefers travel on roads that use the restriction. If the restriction is
                                             meant to avoid or prefer roads, you can further specify the degree
                                             to which they are avoided or preferred using this
@@ -1145,10 +1145,10 @@ def find_closest_facilities(
                                             facilities. This means that only the route shapes are different,
                                             not the underlying streets that are searched when finding the
                                             route.
-                                            
+
                                             Choice list:['True Shape', 'Straight Line', 'None']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    route_line_simplification_tolerance     Optional LinearUnit. Specify by how much you want to simplify the geometry of the output lines for 
+    route_line_simplification_tolerance     Optional LinearUnit. Specify by how much you want to simplify the geometry of the output lines for
                                             routes and directions. The tool ignores this parameter if the Route Shape parameter isn't set to True Shape.
                                             Simplification maintains critical
                                             points on a route, such as turns at intersections, to define the
@@ -1175,12 +1175,12 @@ def find_closest_facilities(
                                             Directions parameter is checked, or set to True.
 
                                             The parameter value can be
-                                            specified using one of the following two- or five-character language codes: 
-                                           
+                                            specified using one of the following two- or five-character language codes:
+
                                             Choice list: ['ar-Arabic', 'cs-Czech', 'de-German', 'el-Greek', 'en-English', 'es-Spanish', 'et-Estonian', 'fr-French', 'he-Hebrew', 'it-Italian',
-                                            'ja-Japanese', 'ko-Korean', 'lt-Lithuanian', 'lv-Latvian', 'nl-Dutch', 'pl-Polish', 'pt-BR-Brazilian', 'Portuguese', 'pt-PT-European', 'Portuguese', 'ru-Russian', 
+                                            'ja-Japanese', 'ko-Korean', 'lt-Lithuanian', 'lv-Latvian', 'nl-Dutch', 'pl-Polish', 'pt-BR-Brazilian', 'Portuguese', 'pt-PT-European', 'Portuguese', 'ru-Russian',
                                             'sv-Swedish', 'th-Thai', 'tr-Turkish', 'zh-CN-Simplified', 'Chinese']
-                                            
+
                                             If an unsupported language code is specified, the tool
                                             returns the directions using the default language,
                                             English.
@@ -1189,7 +1189,7 @@ def find_closest_facilities(
                                             driving directions. This parameter is used only when the Populate
                                             Directions parameter is checked, or set to True.
                                             Miles Kilometers Meters Feet Yards NauticalMiles
-                                            
+
                                             Choice list: ['Miles', 'Kilometers', 'Meters', 'Feet', 'Yards', 'NauticalMiles']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     directions_style_name                   Optional string. Specify the name of the formatting style for the
@@ -1199,32 +1199,32 @@ def find_closest_facilities(
 
                                             ``NA Desktop``: Generates turn-by-turn directions suitable for printing.
                                             ``NA Navigation``: Generates turn-by-turn directions designed for an in-vehicle navigation device.
-                                            
+
                                             Choice list: ['NA Desktop', 'NA Navigation']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     time_zone_for_time_of_day               Optional string. Specifies the time zone of the Time of Day parameter.
-                                            Geographically Local: The Time of Day parameter refers to the time zone in which the facilities or incidents are 
-                                            located.  If Time of Day Usage is set to Start Time and Travel Direction is Facility to Incident, this is the time 
-                                            zone of the facilities.  If Time of Day Usage is set to Start Time and Travel Direction is Incident to Facility, 
-                                            this is the time zone of the incidents.  If Time of Day Usage is set to End Time and Travel Direction is Facility 
-                                            to Incident, this is the time zone of the incidents.  If Time of Day Usage is set to End Time and Travel Direction 
-                                            is Incident to Facility, this is the time zone of the facilities.  UTC: The Time of Day parameter refers to 
-                                            Coordinated Universal Time (UTC). Choose this option if you want to find what's nearest for a specific time, such as 
+                                            Geographically Local: The Time of Day parameter refers to the time zone in which the facilities or incidents are
+                                            located.  If Time of Day Usage is set to Start Time and Travel Direction is Facility to Incident, this is the time
+                                            zone of the facilities.  If Time of Day Usage is set to Start Time and Travel Direction is Incident to Facility,
+                                            this is the time zone of the incidents.  If Time of Day Usage is set to End Time and Travel Direction is Facility
+                                            to Incident, this is the time zone of the incidents.  If Time of Day Usage is set to End Time and Travel Direction
+                                            is Incident to Facility, this is the time zone of the facilities.  UTC: The Time of Day parameter refers to
+                                            Coordinated Universal Time (UTC). Choose this option if you want to find what's nearest for a specific time, such as
                                             now, but aren't certain in which time zone the facilities or incidents will be located.
                                             Irrespective of the Time Zone for Time of Day setting, if your facilities
                                             and incidents are in multiple time zones, the following rules are
                                             enforced by the tool:
-                                            
+
                                             All incidents must be in the same time zone
                                               when: Specifying a start time and traveling from incident to facility. Specifying an end time and traveling from facility to incident.
 
                                             All facilities must be in the same time zone
                                               when: Specifying a start time and traveling from facility to incident. Specifying an end time and traveling from incident to facility.
-                                            
+
                                             Choice list:['Geographically Local', 'UTC']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    travel_mode                             Optional string. Specify the mode of transportation to model in the analysis. Travel modes are managed in ArcGIS 
-                                            Online and can be configured by the administrator of your organization to better reflect your organization's 
+    travel_mode                             Optional string. Specify the mode of transportation to model in the analysis. Travel modes are managed in ArcGIS
+                                            Online and can be configured by the administrator of your organization to better reflect your organization's
                                             workflows. You need to specify the name of a travel mode supported by your organization.
 
                                             To get a list of supported travel mode names, run the GetTravelModes tool from the Utilities toolbox available under the same GIS Server connection
@@ -1238,23 +1238,23 @@ def find_closest_facilities(
                                             Once you have identified the analysis settings, you should work with your organization's administrator and save these settings as part of new or existing travel mode so that
                                             everyone in your organization can rerun the analysis with the same settings.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    impedance                               Optional string. Specify the impedance, which is a value that represents the effort or cost of traveling along 
+    impedance                               Optional string. Specify the impedance, which is a value that represents the effort or cost of traveling along
                                             road segments or on other parts of the transportation network.
-                                            Travel distance is an impedance; the length of a road in kilometers can be thought of as impedance. 
-                                            Travel distance in this sense is the same for all modes-a kilometer for a pedestrian is also a kilometer for a car. 
-                                            (What may change is the pathways on which the different modes are allowed to travel, which affects distance between points, 
-                                            and this is modeled by travel mode settings.) Travel time can also be an impedance; a car may take one minute to travel a mile 
-                                            along an empty road. Travel times can vary by travel mode-a pedestrian may take more than 20  minutes to walk the same mile, 
-                                            so it is important to choose the right impedance for the travel mode you are modeling.  Choose from the following impedance values: 
-                                            Drive Time-Models travel times for a car. These travel times are dynamic and fluctuate according to traffic flows in areas where 
-                                            traffic data is available. This is the default value. Truck Time-Models travel times for a truck.  These travel times are static for 
-                                            each road and don't fluctuate with traffic. Walk Time-Models travel times for a pedestrian. Travel Distance-Stores  length measurements 
-                                            along roads and paths. To model walk distance, choose this option and ensure Walking is  set in the Restriction parameter. Similarly, 
-                                            to model drive or truck distance, choose Travel Distance here and set the appropriate restrictions so your vehicle travels only on 
-                                            roads where it is permitted to do so. The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which 
-                                            is the default value. If you choose Drive Time, Truck Time, or Walk Time, the Measurement Units parameter must be set to a time-based 
+                                            Travel distance is an impedance; the length of a road in kilometers can be thought of as impedance.
+                                            Travel distance in this sense is the same for all modes-a kilometer for a pedestrian is also a kilometer for a car.
+                                            (What may change is the pathways on which the different modes are allowed to travel, which affects distance between points,
+                                            and this is modeled by travel mode settings.) Travel time can also be an impedance; a car may take one minute to travel a mile
+                                            along an empty road. Travel times can vary by travel mode-a pedestrian may take more than 20  minutes to walk the same mile,
+                                            so it is important to choose the right impedance for the travel mode you are modeling.  Choose from the following impedance values:
+                                            Drive Time-Models travel times for a car. These travel times are dynamic and fluctuate according to traffic flows in areas where
+                                            traffic data is available. This is the default value. Truck Time-Models travel times for a truck.  These travel times are static for
+                                            each road and don't fluctuate with traffic. Walk Time-Models travel times for a pedestrian. Travel Distance-Stores  length measurements
+                                            along roads and paths. To model walk distance, choose this option and ensure Walking is  set in the Restriction parameter. Similarly,
+                                            to model drive or truck distance, choose Travel Distance here and set the appropriate restrictions so your vehicle travels only on
+                                            roads where it is permitted to do so. The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which
+                                            is the default value. If you choose Drive Time, Truck Time, or Walk Time, the Measurement Units parameter must be set to a time-based
                                             value; if you choose Travel Distance for Impedance, Measurement Units must be distance-based.
-                                            
+
                                             Choice list:['Drive Time', 'Truck Time', 'Walk Time', 'Travel Distance']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     gis                                     Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
@@ -1299,42 +1299,44 @@ def find_closest_facilities(
     if route_line_simplification_tolerance is None:
         route_line_simplification_tolerance = defaults['route_line_simplification_tolerance']
 
-
-
-
-    job = tbx.find_closest_facilities(incidents=incidents,
-                                      facilities=facilities,
-                                      measurement_units=measurement_units,
-                                      analysis_region=analysis_region,
-                                      number_of_facilities_to_find=number_of_facilities_to_find,
-                                      cutoff=cutoff,
-                                      travel_direction=travel_direction,
-                                      use_hierarchy=use_hierarchy,
-                                      time_of_day=time_of_day,
-                                      time_of_day_usage=time_of_day_usage,
-                                      uturn_at_junctions=uturn_at_junctions,
-                                      point_barriers=point_barriers,
-                                      line_barriers=line_barriers,
-                                      polygon_barriers=polygon_barriers,
-                                      restrictions=restrictions,
-                                      attribute_parameter_values=attribute_parameter_values,
-                                      route_shape=route_shape,
-                                      route_line_simplification_tolerance=route_line_simplification_tolerance,
-                                      populate_directions=populate_directions,
-                                      directions_language=directions_language,
-                                      directions_distance_units=directions_distance_units,
-                                      directions_style_name=directions_style_name,
-                                      time_zone_for_time_of_day=time_zone_for_time_of_day,
-                                      travel_mode=travel_mode,
-                                      impedance=impedance,
-                                      save_output_network_analysis_layer=save_output_network_analysis_layer,
-                                      overrides=overrides,
-                                      save_route_data=save_route_data,
-                                      time_impedance=time_impedance,
-                                      distance_impedance=distance_impedance,
-                                      output_format=output_format,
-                                      gis=gis,
-                                      future=True)
+    from arcgis._impl.common._utils import inspect_function_inputs
+    params = {
+        "incidents" : incidents,
+        "facilities" : facilities,
+        "measurement_units" : measurement_units,
+        "analysis_region" : analysis_region,
+        "number_of_facilities_to_find" : number_of_facilities_to_find,
+        "cutoff" : cutoff,
+        "travel_direction" : travel_direction,
+        "use_hierarchy" : use_hierarchy,
+        "time_of_day" : time_of_day,
+        "time_of_day_usage" : time_of_day_usage,
+        "uturn_at_junctions" : uturn_at_junctions,
+        "point_barriers" : point_barriers,
+        "line_barriers" : line_barriers,
+        "polygon_barriers" : polygon_barriers,
+        "restrictions" : restrictions,
+        "attribute_parameter_values" : attribute_parameter_values,
+        "route_shape" : route_shape,
+        "route_line_simplification_tolerance" : route_line_simplification_tolerance,
+        "populate_directions" : populate_directions,
+        "directions_language" : directions_language,
+        "directions_distance_units" : directions_distance_units,
+        "directions_style_name" : directions_style_name,
+        "time_zone_for_time_of_day" : time_zone_for_time_of_day,
+        "travel_mode" : travel_mode,
+        "impedance" : impedance,
+        "save_output_network_analysis_layer" : save_output_network_analysis_layer,
+        "overrides" : overrides,
+        "save_route_data" : save_route_data,
+        "time_impedance" : time_impedance,
+        "distance_impedance" : distance_impedance,
+        "output_format" : output_format,
+        "gis" : gis,
+        "future" : True
+    }
+    params = inspect_function_inputs(tbx.find_closest_facilities, **params)
+    job = tbx.find_closest_facilities(**params)
     if future:
         return job
     return job.result()

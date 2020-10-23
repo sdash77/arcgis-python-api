@@ -340,11 +340,11 @@ def generate_service_areas(
                                                           described below:
 
                                                             * ``ObjectID``: The system-managed ID field.
-                                                            * ``Name``:  The name of the facility. If the name is not specified, a name is automatically 
-                                                              generated at solve time. 
+                                                            * ``Name``:  The name of the facility. If the name is not specified, a name is automatically
+                                                              generated at solve time.
 
-                                                          All fields from the input facilities are included in the output 
-                                                          polygons when the Polygons for Multiple Facilities parameter is set to Overlapping or Not 
+                                                          All fields from the input facilities are included in the output
+                                                          polygons when the Polygons for Multiple Facilities parameter is set to Overlapping or Not
                                                           Overlapping. The ObjectID field on the input facilities is transferred to the ``FacilityOID`` field
                                                           on the output polygons.
     -------------------------------------------------     ------------------------------------------------------------------------
@@ -373,7 +373,7 @@ def generate_service_areas(
     analysis_region                                       Optional string. Specify the region in which to perform the
                                                           analysis. If a value is not specified for this parameter, the tool will automatically
                                                           calculate the region name based on the location of the input points. Setting the name of the
-                                                          region is recommended to speed up the tool execution. 
+                                                          region is recommended to speed up the tool execution.
 
                                                           Choice list: ['NorthAmerica', 'SouthAmerica', 'Europe', 'MiddleEastAndAfrica', 'India',
                                                           'SouthAsia', 'SouthEastAsia', 'Thailand', 'Taiwan', 'Japan', 'Oceania', 'Greece', 'Korea']
@@ -434,23 +434,23 @@ def generate_service_areas(
                                                           **Parameter**                             **Description**
                                                           ----------------------------------------  ------------------------------------------------
                                                           ALLOW_UTURNS                              |ALLOW_UTURNS|
-                                                                                                    U-turns are permitted everywhere. Allowing U-turns implies 
-                                                                                                    that the vehicle can turn around at a junction or intersection 
+                                                                                                    U-turns are permitted everywhere. Allowing U-turns implies
+                                                                                                    that the vehicle can turn around at a junction or intersection
                                                                                                     and double back on the same street.
                                                           ----------------------------------------  ------------------------------------------------
                                                           ALLOW_DEAD_ENDS_AND                       |ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY|
-                                                          _INTERSECTIONS_ONLY                       U-turns are prohibited at junctions where exactly two 
+                                                          _INTERSECTIONS_ONLY                       U-turns are prohibited at junctions where exactly two
                                                                                                     adjacent streets meet.
                                                           ----------------------------------------  ------------------------------------------------
-                                                          ALLOW_DEAD_ENDS_ONLY                      |ALLOW_DEAD_ENDS_ONLY| 
-                                                                                                    U-turns are prohibited at all junctions and interesections 
+                                                          ALLOW_DEAD_ENDS_ONLY                      |ALLOW_DEAD_ENDS_ONLY|
+                                                                                                    U-turns are prohibited at all junctions and interesections
                                                                                                     and are permitted only at dead ends.
                                                           ----------------------------------------  ------------------------------------------------
-                                                          NO_UTURNS                                 U-turns are prohibited at all junctions, intersections, and dead-ends. 
-                                                                                                    Note that even when this parameter value is chosen, a route can still 
-                                                                                                    make U-turns at stops. If you wish to prohibit U-turns at a stop, you can set 
+                                                          NO_UTURNS                                 U-turns are prohibited at all junctions, intersections, and dead-ends.
+                                                                                                    Note that even when this parameter value is chosen, a route can still
+                                                                                                    make U-turns at stops. If you wish to prohibit U-turns at a stop, you can set
                                                                                                     its CurbApproach property to the appropriate value (3).
-    
+
                                                                                                     The default value for this parameter is 'ALLOW_UTURNS'.
                                                           ========================================  ================================================
 
@@ -476,7 +476,7 @@ def generate_service_areas(
                                                           Choice list: ['Overlapping', 'Not Overlapping', 'Merge by Break Value']
     -------------------------------------------------     ------------------------------------------------------------------------
     polygon_overlap_type                                  Optional string. Specifies the option to create concentric service area
-                                                          polygons as disks or rings. This option is applicable only when multiple break 
+                                                          polygons as disks or rings. This option is applicable only when multiple break
                                                           values are specified for the facilities.
 
                                                             * ``Rings`` - The polygons representing larger breaks exclude the polygons of smaller breaks.
@@ -591,8 +591,8 @@ def generate_service_areas(
                                                           no limit on the number of polygons you can specify as the polygon
                                                           barriers, the combined number of streets intersected by all the
                                                           polygons should not exceed 2,000.
-                                                          When specifying the polygon barriers, you can set properties for each one, such as its name or barrier type, 
-                                                          by using attributes. The polygon barriers can be specified with the following attributes: 
+                                                          When specifying the polygon barriers, you can set properties for each one, such as its name or barrier type,
+                                                          by using attributes. The polygon barriers can be specified with the following attributes:
                                                             * ``Name``: The name of the barrier.
                                                             * ``BarrierType``: Specifies whether the barrier restricts travel completely
                                                               or scales the time or distance for traveling through it. The field
@@ -623,14 +623,14 @@ def generate_service_areas(
                                                               units are distance based. The attribute value must be greater than
                                                               zero.
     -------------------------------------------------     ------------------------------------------------------------------------
-    restrictions                                          Optional string. Specify which restrictions should be honored by the tool when finding the best routes 
+    restrictions                                          Optional string. Specify which restrictions should be honored by the tool when finding the best routes
                                                           between facilities and demand points. A restriction represents a driving
                                                           preference or requirement. In most cases, restrictions cause roads
-                                                          to be prohibited. For instance, using an Avoid Toll Roads restriction will result in a route that will 
-                                                          include toll roads only when it is absolutely required to travel on toll roads in order to visit an 
-                                                          incident or a facility. Height Restriction makes it possible to route around any clearances that are 
-                                                          lower than the height of your vehicle. If you are carrying corrosive materials on your vehicle, using 
-                                                          the Any Hazmat Prohibited restriction prevents hauling the materials along roads where it is marked as 
+                                                          to be prohibited. For instance, using an Avoid Toll Roads restriction will result in a route that will
+                                                          include toll roads only when it is absolutely required to travel on toll roads in order to visit an
+                                                          incident or a facility. Height Restriction makes it possible to route around any clearances that are
+                                                          lower than the height of your vehicle. If you are carrying corrosive materials on your vehicle, using
+                                                          the Any Hazmat Prohibited restriction prevents hauling the materials along roads where it is marked as
                                                           illegal to do so.
                                                           Below is a list of available restrictions and a short description.
                                                           Some restrictions require an additional value to be
@@ -641,14 +641,14 @@ def generate_service_areas(
                                                           Parameter Values parameter. The ParameterValue field should be
                                                           specified in the Attribute Parameter Values parameter for the
                                                           restriction to be correctly used when finding traversable roads.
-                                                          Some restrictions are supported only in certain countries; their availability is stated by region in 
-                                                          the list below. Of the restrictions that have limited availability within a region, you can check whether 
-                                                          the restriction is available in a particular country by looking at the table in the Country List section 
-                                                          of the Data coverage for network analysis services web page. If a country has a value of  Yes in the 
-                                                          Logistics Attribute column, the restriction with select availability in the region is supported in that country. 
-                                                          If you specify restriction names that are not available in the country where your incidents are located, 
-                                                          the service ignores the invalid restrictions. The service also ignores restrictions whose Restriction Usage 
-                                                          parameter value is between 0 and 1 (see the Attribute Parameter Value parameter). It prohibits all restrictions 
+                                                          Some restrictions are supported only in certain countries; their availability is stated by region in
+                                                          the list below. Of the restrictions that have limited availability within a region, you can check whether
+                                                          the restriction is available in a particular country by looking at the table in the Country List section
+                                                          of the Data coverage for network analysis services web page. If a country has a value of  Yes in the
+                                                          Logistics Attribute column, the restriction with select availability in the region is supported in that country.
+                                                          If you specify restriction names that are not available in the country where your incidents are located,
+                                                          the service ignores the invalid restrictions. The service also ignores restrictions whose Restriction Usage
+                                                          parameter value is between 0 and 1 (see the Attribute Parameter Value parameter). It prohibits all restrictions
                                                           whose Restriction Usage parameter value is greater than 0.
                                                           The service supports the restriction names listed in the following table:
 
@@ -669,7 +669,7 @@ def generate_service_areas(
                                                                                                     as express lanes.
                                                                                                     Availability: All countries
                                                           ----------------------------------------  ------------------------------------------------
-                                                          Avoid Ferries                             The results will avoid ferries. 
+                                                          Avoid Ferries                             The results will avoid ferries.
                                                                                                     Availability: All countries
                                                           ----------------------------------------  ------------------------------------------------
                                                           Avoid Gates                               The results will avoid roads where there are
@@ -764,7 +764,7 @@ def generate_service_areas(
                                                                                                     include roads that are under construction.
                                                                                                     Availability: All countries
                                                           ----------------------------------------  ------------------------------------------------
-                                                          Semi or Tractor with One                  The results will not include roads where semis or tractors with 
+                                                          Semi or Tractor with One                  The results will not include roads where semis or tractors with
                                                           or More Trailers Prohibited               one or more trailers are prohibited.
                                                                                                     Availability: Select countries in North America and Europe
                                                           ----------------------------------------  ------------------------------------------------
@@ -826,16 +826,16 @@ def generate_service_areas(
                                                                                                     restriction parameter.
                                                                                                     Availability: Select countries in North America and Europe
                                                           ========================================  ================================================
-                                                          
-                                                          Choice list: ['Any Hazmat Prohibited', 'Avoid Carpool Roads', 'Avoid Express Lanes', 'Avoid Ferries', 
-                                                          'Avoid Gates', 'Avoid Limited Access Roads', 'Avoid Private Roads', 'Avoid Roads Unsuitable for Pedestrians', 
-                                                          'Avoid Stairways', 'Avoid Toll Roads', 'Avoid Toll Roads for Trucks', 'Avoid Truck Restricted Roads', 
-                                                          'Avoid Unpaved Roads', 'Axle Count Restriction', 'Driving a Bus', 'Driving a Delivery Vehicle', 'Driving a Taxi', 
-                                                          'Driving a Truck', 'Driving an Automobile', 'Driving an Emergency Vehicle', 'Height Restriction', 
-                                                          'Kingpin to Rear Axle Length Restriction', 'Length Restriction', 'Preferred for Pedestrians', 'Riding a Motorcycle', 
-                                                          'Roads Under Construction Prohibited', 'Semi or Tractor with One or More Trailers Prohibited', 
-                                                          'Single Axle Vehicles Prohibited', 'Tandem Axle Vehicles Prohibited', 'Through Traffic Prohibited', 
-                                                          'Truck with Trailers Restriction', 'Use Preferred Hazmat Routes', 'Use Preferred Truck Routes', 'Walking', 
+
+                                                          Choice list: ['Any Hazmat Prohibited', 'Avoid Carpool Roads', 'Avoid Express Lanes', 'Avoid Ferries',
+                                                          'Avoid Gates', 'Avoid Limited Access Roads', 'Avoid Private Roads', 'Avoid Roads Unsuitable for Pedestrians',
+                                                          'Avoid Stairways', 'Avoid Toll Roads', 'Avoid Toll Roads for Trucks', 'Avoid Truck Restricted Roads',
+                                                          'Avoid Unpaved Roads', 'Axle Count Restriction', 'Driving a Bus', 'Driving a Delivery Vehicle', 'Driving a Taxi',
+                                                          'Driving a Truck', 'Driving an Automobile', 'Driving an Emergency Vehicle', 'Height Restriction',
+                                                          'Kingpin to Rear Axle Length Restriction', 'Length Restriction', 'Preferred for Pedestrians', 'Riding a Motorcycle',
+                                                          'Roads Under Construction Prohibited', 'Semi or Tractor with One or More Trailers Prohibited',
+                                                          'Single Axle Vehicles Prohibited', 'Tandem Axle Vehicles Prohibited', 'Through Traffic Prohibited',
+                                                          'Truck with Trailers Restriction', 'Use Preferred Hazmat Routes', 'Use Preferred Truck Routes', 'Walking',
                                                           'Weight Restriction', 'Weight per Axle Restriction', 'Width Restriction']
     -------------------------------------------------     ------------------------------------------------------------------------
     attribute_parameter_values                            Optional FeatureSet. Specify additional values required by some
@@ -984,50 +984,50 @@ def generate_service_areas(
 
                                                           Choice list:['Drive Time', 'Truck Time', 'Walk Time', 'Travel Distance']
     -------------------------------------------------     ------------------------------------------------------------------------
-    save_output_network_analysis_layer                    Optional boolean. Specify if the tool should save the analysis settings as a network analysis layer file. 
-                                                          You cannot directly work with this file even when you open the file in an ArcGIS Desktop application like ArcMap. 
+    save_output_network_analysis_layer                    Optional boolean. Specify if the tool should save the analysis settings as a network analysis layer file.
+                                                          You cannot directly work with this file even when you open the file in an ArcGIS Desktop application like ArcMap.
                                                           It is meant to be sent to Esri Technical Support to diagnose the quality of results returned from the tool.
-                                                          True: Save the network analysis layer file. The file is downloaded in a temporary directory on your machine. 
-                                                          In ArcGIS Pro, the location of the downloaded file can be determined by viewing the value for the Output Network Analysis 
-                                                          Layer parameter in the entry corresponding to the tool execution in the Geoprocessing history of your Project. In ArcMap, 
-                                                          the location of the file can be determined by accessing the Copy Location option in the shortcut menu on the Output Network 
+                                                          True: Save the network analysis layer file. The file is downloaded in a temporary directory on your machine.
+                                                          In ArcGIS Pro, the location of the downloaded file can be determined by viewing the value for the Output Network Analysis
+                                                          Layer parameter in the entry corresponding to the tool execution in the Geoprocessing history of your Project. In ArcMap,
+                                                          the location of the file can be determined by accessing the Copy Location option in the shortcut menu on the Output Network
                                                           Analysis Layer parameter in the entry corresponding to the tool execution in the Geoprocessing Results window.
                                                           False: Do not save the network analysis layer file. This is the default.
     -------------------------------------------------     ------------------------------------------------------------------------
-    overrides                                             Optional string. Specify additional settings that can influence the behavior of the solver when finding solutions 
-                                                          for the network analysis problems. The value for this parameter needs to be specified in dict. For example, a valid value is 
-                                                          of the following form {"overrideSetting1" : "value1", "overrideSetting2" : 
-                                                          "value2"}. The override setting name is always enclosed in double quotes. The values can be a number, Boolean, 
-                                                          or string. The default value for this parameter is no value, which indicates not to override any solver settings. Overrides 
-                                                          are advanced settings that should be used only after careful analysis of the results obtained before and after applying 
-                                                          the settings. A list of supported override settings for each solver and their acceptable values can be obtained by contacting 
+    overrides                                             Optional string. Specify additional settings that can influence the behavior of the solver when finding solutions
+                                                          for the network analysis problems. The value for this parameter needs to be specified in dict. For example, a valid value is
+                                                          of the following form {"overrideSetting1" : "value1", "overrideSetting2" :
+                                                          "value2"}. The override setting name is always enclosed in double quotes. The values can be a number, Boolean,
+                                                          or string. The default value for this parameter is no value, which indicates not to override any solver settings. Overrides
+                                                          are advanced settings that should be used only after careful analysis of the results obtained before and after applying
+                                                          the settings. A list of supported override settings for each solver and their acceptable values can be obtained by contacting
                                                           Esri Technical Support.
     -------------------------------------------------     ------------------------------------------------------------------------
     time_impedance                                        Optional string. Specify the time-based impedance.
     -------------------------------------------------     ------------------------------------------------------------------------
     distance_impedence                                    Optional string. Specify the distance-based impedance.
     -------------------------------------------------     ------------------------------------------------------------------------
-    polygon_detail                                        Optional string. Specify the detail of the polygon you want to create. 
-                                                          
+    polygon_detail                                        Optional string. Specify the detail of the polygon you want to create.
+
                                                           Choice list: ["Generalized", "Standard", "High"]
     -------------------------------------------------     ------------------------------------------------------------------------
     output_format                                         Optional. Specify the format in which the output features are created.
 
                                                           Choose from the following formats:
-                                                          
+
                                                             * Feature Set - The output features are returned as feature classes and tables. This is the default.
-                                                            * JSON File - The output features are returned as a compressed file containing the 
-                                                              JSON representation of the outputs. When this option is specified, the output is a single 
-                                                              file (with a .zip extension) that contains one or more JSON files (with a .json extension) 
+                                                            * JSON File - The output features are returned as a compressed file containing the
+                                                              JSON representation of the outputs. When this option is specified, the output is a single
+                                                              file (with a .zip extension) that contains one or more JSON files (with a .json extension)
                                                               for each of the outputs created by the service.
-                                                            * GeoJSON File - The output features are returned as a compressed file containing the GeoJSON 
-                                                              representation of the outputs. When this option is specified, the output is a single file 
-                                                              (with a .zip extension) that contains one or more GeoJSON files (with a .geojson extension) 
+                                                            * GeoJSON File - The output features are returned as a compressed file containing the GeoJSON
+                                                              representation of the outputs. When this option is specified, the output is a single file
+                                                              (with a .zip extension) that contains one or more GeoJSON files (with a .geojson extension)
                                                               for each of the outputs created by the service.
     -------------------------------------------------     ------------------------------------------------------------------------
     gis                                                   Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------------------------------     ------------------------------------------------------------------------
-    future                                                Optional boolean. If True, a GPJob is returned instead of results. 
+    future                                                Optional boolean. If True, a GPJob is returned instead of results.
                                                           The GPJob can be queried on the status of the execution.
     =================================================     ========================================================================
 
@@ -1075,50 +1075,55 @@ def generate_service_areas(
         attribute_parameter_values = defaults['attribute_parameter_values']
     if overrides is None:
         overrides = defaults['overrides']
-    if time_impedance is None:
+    if time_impedance is None and 'time_impedance' in defaults:
         time_impedance = defaults['time_impedance']
-    if distance_impedance is None:
+    if distance_impedance is None and 'distance_impedance' in defaults:
         distance_impedance = defaults['distance_impedance']
     if polygon_detail is None:
-        polygon_detail = defaults['polygon_detail']
+        polygon_detail = defaults.get('polygon_detail', None)
     if output_type is None:
-        output_type = defaults['output_type']
+        output_type = defaults.get('output_type', None)
     if output_format is None:
-        output_format = defaults['output_format']
+        output_format = defaults.get('output_format', None)
 
     if isinstance(break_values, list):
         break_values = ' '.join(map(str, break_values))
-
-    job = tbx.generate_service_areas(facilities=facilities,
-                                     break_values=break_values,
-                                     break_units=break_units,
-                                     analysis_region=analysis_region,
-                                     travel_direction=travel_direction,
-                                     time_of_day=time_of_day,
-                                     use_hierarchy=use_hierarchy,
-                                     uturn_at_junctions=uturn_at_junctions,
-                                     polygons_for_multiple_facilities=polygons_for_multiple_facilities,
-                                     polygon_overlap_type=polygon_overlap_type,
-                                     detailed_polygons=detailed_polygons,
-                                     polygon_trim_distance=polygon_trim_distance,
-                                     polygon_simplification_tolerance=polygon_simplification_tolerance,
-                                     point_barriers=point_barriers,
-                                     line_barriers=line_barriers,
-                                     polygon_barriers=polygon_barriers,
-                                     restrictions=restrictions,
-                                     attribute_parameter_values=attribute_parameter_values,
-                                     time_zone_for_time_of_day=time_zone_for_time_of_day,
-                                     travel_mode=travel_mode,
-                                     impedance=impedance,
-                                     save_output_network_analysis_layer=save_output_network_analysis_layer,
-                                     overrides=overrides,
-                                     time_impedance=time_impedance,
-                                     distance_impedance=distance_impedance,
-                                     polygon_detail=polygon_detail,
-                                     output_type=output_type,
-                                     output_format=output_format,
-                                     gis=gis,
-                                     future=True)
+    from arcgis._impl.common._utils import inspect_function_inputs
+    params = {
+        "facilities" : facilities,
+        "break_values" : break_values,
+        "break_units" : break_units,
+        "analysis_region" : analysis_region,
+        "travel_direction" : travel_direction,
+        "time_of_day" : time_of_day,
+        "use_hierarchy" : use_hierarchy,
+        "uturn_at_junctions" : uturn_at_junctions,
+        "polygons_for_multiple_facilities" : polygons_for_multiple_facilities,
+        "polygon_overlap_type" : polygon_overlap_type,
+        "detailed_polygons" : detailed_polygons,
+        "polygon_trim_distance" : polygon_trim_distance,
+        "polygon_simplification_tolerance" : polygon_simplification_tolerance,
+        "point_barriers" : point_barriers,
+        "line_barriers" : line_barriers,
+        "polygon_barriers" : polygon_barriers,
+        "restrictions" : restrictions,
+        "attribute_parameter_values" : attribute_parameter_values,
+        "time_zone_for_time_of_day" : time_zone_for_time_of_day,
+        "travel_mode" : travel_mode,
+        "impedance" : impedance,
+        "save_output_network_analysis_layer" : save_output_network_analysis_layer,
+        "overrides" : overrides,
+        "time_impedance" : time_impedance,
+        "distance_impedance" : distance_impedance,
+        "polygon_detail" : polygon_detail,
+        "output_type" : output_type,
+        "output_format" : output_format,
+        "gis" : gis,
+        "future" : True
+    }
+    params = inspect_function_inputs(tbx.generate_service_areas, **params)
+    params['future'] = True
+    job = tbx.generate_service_areas(**params)
     if future:
         return job
     return job.result()

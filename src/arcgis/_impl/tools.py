@@ -30,6 +30,7 @@ from urllib.error import HTTPError
 from arcgis.geoprocessing import import_toolbox
 from ._async.jobs import GeometryJob
 from arcgis.raster._util import _set_context as _set_raster_context
+from arcgis._impl.common._utils import inspect_function_inputs
 _log = logging.getLogger(__name__)
 
 try:
@@ -1142,6 +1143,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         -------
         drive_time_areas_layer : layer (FeatureCollection)
         """
+        #kwargs = locals()
         params = {}
         task ="CreateDriveTimeAreas"
 
@@ -1201,21 +1203,31 @@ class _FeatureAnalysisTools(BaseAnalytics):
             from arcgis.features._credits import _estimate_credits
             return _estimate_credits(task=task,
                                      parameters=params)
-        gpjob = self._tbx.create_drive_time_areas(input_layer=input_layer,
-                                                  break_values=break_values,
-                                                  break_units=break_units,
-                                                  travel_mode=travel_mode,
-                                                  overlap_policy=overlap_policy,
-                                                  time_of_day=time_of_day,
-                                                  time_zone_for_time_of_day=time_zone_for_time_of_day,
-                                                  output_name=output_name,
-                                                  context=context, point_barrier_layer=point_barrier_layer,
-                                                  line_barrier_layer=line_barrier_layer,
-                                                  polygon_barrier_layer=polygon_barrier_layer,
-                                                  gis=self._gis, future=True,
-                                                  travel_direction=travel_direction,
-                                                  show_holes=show_holes,
-                                                  include_reachable_streets=include_reachable_streets)
+
+        params = {
+            "input_layer":input_layer,
+            "break_values":break_values,
+            "break_units":break_units,
+            "travel_mode":travel_mode,
+            "overlap_policy":overlap_policy,
+            "time_of_day":time_of_day,
+            "time_zone_for_time_of_day":time_zone_for_time_of_day,
+            "output_name":output_name,
+            "context":context,
+            "point_barrier_layer":point_barrier_layer or "",
+            "line_barrier_layer":line_barrier_layer or "",
+            "polygon_barrier_layer":polygon_barrier_layer or "",
+            "gis":self._gis,
+            "future":True,
+            "travel_direction":travel_direction,
+            "show_holes":show_holes,
+            "include_reachable_streets":include_reachable_streets
+        }
+        params = inspect_function_inputs(fn=self._tbx.create_drive_time_areas,
+                                         **params)
+        params['future'] = True
+        params.pop('estimate', None)
+        gpjob = self._tbx.create_drive_time_areas(**params)
         gpjob._is_fa = True
         if future:
             return gpjob
@@ -10850,34 +10862,34 @@ class _RasterAnalysisTools(BaseAnalytics):
             return gpjob
         return gpjob.result()
 
-    def compute_accuracyfor_object_detection(self, 
-                                             detected_features, 
-                                             ground_truth_features, 
-                                             out_accuracy_table_name=None, 
-                                             out_accuracy_report_name=None, 
-                                             detected_class_value_field=None, 
-                                             ground_truth_class_value_field=None, 
-                                             min_iou=None, 
-                                             mask_features=None, 
+    def compute_accuracyfor_object_detection(self,
+                                             detected_features,
+                                             ground_truth_features,
+                                             out_accuracy_table_name=None,
+                                             out_accuracy_report_name=None,
+                                             detected_class_value_field=None,
+                                             ground_truth_class_value_field=None,
+                                             min_iou=None,
+                                             mask_features=None,
                                              context=None,
                                              future=False,
                                              **kwargs):
         """
-        detected_features: detectedFeatures (str). Required parameter.  
+        detected_features: detectedFeatures (str). Required parameter.
 
-        ground_truth_features: groundTruthFeatures (str). Required parameter.  
+        ground_truth_features: groundTruthFeatures (str). Required parameter.
 
-        out_accuracy_table_name: outAccuracyTableName (str). Required parameter.  
+        out_accuracy_table_name: outAccuracyTableName (str). Required parameter.
 
-        out_accuracy_report_name: outAccuracyReportName (str). Optional parameter.  
+        out_accuracy_report_name: outAccuracyReportName (str). Optional parameter.
 
-        detected_class_value_field: detectedClassValueField (str). Optional parameter.  
+        detected_class_value_field: detectedClassValueField (str). Optional parameter.
 
-        ground_truth_class_value_field: groundTruthClassValuField (str). Optional parameter.  
+        ground_truth_class_value_field: groundTruthClassValuField (str). Optional parameter.
 
-        min_io_u: minIoU (str). Optional parameter.  
+        min_io_u: minIoU (str). Optional parameter.
 
-        mask_features: maskFeatures (str). Optional parameter.  
+        mask_features: maskFeatures (str). Optional parameter.
 
         context: context (str). Optional parameter.
         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
@@ -10933,13 +10945,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                     out_accuracy_report_name = {"name":out_accuracy_report_name}
             elif isinstance(out_accuracy_report_name, arcgis.gis.Item):
                 out_accuracy_report_name = {"itemId":out_accuracy_report_name.itemid, "name":out_accuracy_report_name.name}
-        gpjob = self._tbx.compute_accuracyfor_object_detection(detected_features=detected_features, 
-                                                               ground_truth_features=ground_truth_features, 
-                                                               out_accuracy_table_name=out_accuracy_table_name, 
-                                                               out_accuracy_report_name=out_accuracy_report_name, 
-                                                               detected_class_value_field=detected_class_value_field, 
-                                                               ground_truth_class_value_field=ground_truth_class_value_field, 
-                                                               min_io_u=min_iou, 
+        gpjob = self._tbx.compute_accuracyfor_object_detection(detected_features=detected_features,
+                                                               ground_truth_features=ground_truth_features,
+                                                               out_accuracy_table_name=out_accuracy_table_name,
+                                                               out_accuracy_report_name=out_accuracy_report_name,
+                                                               detected_class_value_field=detected_class_value_field,
+                                                               ground_truth_class_value_field=ground_truth_class_value_field,
+                                                               min_io_u=min_iou,
                                                                mask_features=mask_features,
                                                                context=context,
                                                                gis=self._gis,
@@ -10954,16 +10966,16 @@ class _RasterAnalysisTools(BaseAnalytics):
     def merge_multidimensional_rasters(self,
                                        input_multidimensional_rasters,
                                        resolve_overlap_method='FIRST',
-                                       output_name=None, 
+                                       output_name=None,
                                        context=None,
                                        future=False,
                                        **kwargs):
         """
-       input_multidimensional_rasters: inputMultidimensionalRasters (str). Required parameter.  
+       input_multidimensional_rasters: inputMultidimensionalRasters (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.  
+       output_name: outputName (str). Required parameter.
 
-       resolve_overlap_method: resolveOverlapMethod (str). Optional parameter.  
+       resolve_overlap_method: resolveOverlapMethod (str). Optional parameter.
           Choice list:FIRST,LAST,MIN,MAX,MEAN,SUM
        context: context (str). Optional parameter.
        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
@@ -10990,8 +11002,8 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
-        gpjob = self._tbx.merge_multidimensional_rasters(input_multidimensional_rasters=input_multidimensional_rasters, 
-                                                        resolve_overlap_method=resolve_overlap_method, 
+        gpjob = self._tbx.merge_multidimensional_rasters(input_multidimensional_rasters=input_multidimensional_rasters,
+                                                        resolve_overlap_method=resolve_overlap_method,
                                                         output_name=output_raster,
                                                         context=context,
                                                         gis=self._gis,

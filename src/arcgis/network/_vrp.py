@@ -529,7 +529,8 @@ def edit_vehicle_routing_problem(orders,
                                  distance_impedance=None,
                                  populate_stop_shapes=False,
                                  output_format=None,
-                                 gis=None):
+                                 gis=None,
+                                 ignore_invalid_order_locations=False):
     """
     This ArcGIS Online service solves a vehicle routing problem (VRP) to find the best routes for a
     fleet of vehicles. It is similar to `solve_vehicle_routing_problem`, but `edit_vehicle_routing_problem`
@@ -711,6 +712,11 @@ def edit_vehicle_routing_problem(orders,
 
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. If provided this connection is used to perform the operation.
+    ------------------------------------     --------------------------------------------------------------------
+    ignore_invalid_order_locations           Specifies whether invalid orders will be ignored when solving the vehicle routing problem.
+
+                                             `True` - The solve operation will ignore any invalid orders and return a solution, given it didn't encounter any other errors. If you need to generate routes and deliver them to drivers immediately, you may be able to ignore invalid orders, solve, and distribute the routes to your drivers. Next, resolve any invalid orders from the last solve and include them in the VRP analysis for the next workday or work shift.
+                                             `False` - The solve operation will fail when any invalid orders are encountered. An invalid order is an order that the VRP solver can't reach. An order may be unreachable for a variety of reasons, including if it's located on a prohibited network element, it isn't located on the network at all, or it's located on a disconnected portion of the network.
     ====================================     ====================================================================
 
     :returns: Named Tuple
@@ -781,52 +787,57 @@ def edit_vehicle_routing_problem(orders,
     if save_route_data is None:
         save_route_data = defaults['save_route_data']
     if time_impedance is None:
-        time_impedance = defaults['time_impedance']
+        time_impedance = defaults.get('time_impedance', None)
     if distance_impedance is None:
-        distance_impedance = defaults['distance_impedance']
+        distance_impedance = defaults.get('distance_impedance', None)
     if populate_stop_shapes is None:
-        populate_stop_shapes = defaults['populate_stop_shapes']
+        populate_stop_shapes = defaults.get('populate_stop_shapes', None)
     if output_format is None:
-        output_format = defaults['output_format']
-
-    result = tbx.edit_vehicle_routing_problem(orders=orders,
-                                 depots=depots,
-                                 routes=routes,
-                                 breaks=breaks,
-                                 time_units=time_units,
-                                 distance_units=distance_units,
-                                 analysis_region=analysis_region,
-                                 default_date=default_date,
-                                 uturn_policy=uturn_policy,
-                                 time_window_factor=time_window_factor,
-                                 spatially_cluster_routes=spatially_cluster_routes,
-                                 route_zones=route_zones,
-                                 route_renewals=route_renewals,
-                                 order_pairs=order_pairs,
-                                 excess_transit_factor=excess_transit_factor,
-                                 point_barriers=point_barriers,
-                                 line_barriers=line_barriers,
-                                 polygon_barriers=polygon_barriers,
-                                 use_hierarchy_in_analysis=use_hierarchy_in_analysis,
-                                 restrictions=restrictions,
-                                 attribute_parameter_values=attribute_parameter_values,
-                                 populate_route_lines=populate_route_lines,
-                                 route_line_simplification_tolerance=route_line_simplification_tolerance,
-                                 populate_directions=populate_directions,
-                                 directions_language=directions_language,
-                                 directions_style_name=directions_style_name,
-                                 travel_mode=travel_mode,
-                                 impedance=impedance,
-                                 time_zone_usage_for_time_fields=time_zone_usage_for_time_fields,
-                                 save_output_layer=save_output_layer,
-                                 overrides=overrides,
-                                 save_route_data=save_route_data,
-                                 time_impedance=time_impedance,
-                                 distance_impedance=distance_impedance,
-                                 populate_stop_shapes=populate_stop_shapes,
-                                 output_format=output_format,
-                                 gis=gis,
-                                 future=True)
+        output_format = defaults.get('output_format', None)
+    from arcgis._impl.common._utils import inspect_function_inputs
+    params = {
+        "orders" : orders,
+        "depots" : depots,
+        "routes" : routes,
+        "breaks" : breaks,
+        "time_units" : time_units,
+        "distance_units" : distance_units,
+        "analysis_region" : analysis_region,
+        "default_date" : default_date,
+        "uturn_policy" : uturn_policy,
+        "time_window_factor" : time_window_factor,
+        "spatially_cluster_routes" : spatially_cluster_routes,
+        "route_zones" : route_zones,
+        "route_renewals" : route_renewals,
+        "order_pairs" : order_pairs,
+        "excess_transit_factor" : excess_transit_factor,
+        "point_barriers" : point_barriers,
+        "line_barriers" : line_barriers,
+        "polygon_barriers" : polygon_barriers,
+        "use_hierarchy_in_analysis" : use_hierarchy_in_analysis,
+        "restrictions" : restrictions,
+        "attribute_parameter_values" : attribute_parameter_values,
+        "populate_route_lines" : populate_route_lines,
+        "route_line_simplification_tolerance" : route_line_simplification_tolerance,
+        "populate_directions" : populate_directions,
+        "directions_language" : directions_language,
+        "directions_style_name" : directions_style_name,
+        "travel_mode" : travel_mode,
+        "impedance" : impedance,
+        "time_zone_usage_for_time_fields" : time_zone_usage_for_time_fields,
+        "save_output_layer" : save_output_layer,
+        "overrides" : overrides,
+        "save_route_data" : save_route_data,
+        "time_impedance" : time_impedance,
+        "distance_impedance" : distance_impedance,
+        "populate_stop_shapes" : populate_stop_shapes,
+        "output_format" : output_format,
+        "ignore_invalid_order_locations" : ignore_invalid_order_locations,
+        "gis" : gis,
+        "future" : True
+    }
+    params = inspect_function_inputs(tbx.edit_vehicle_routing_problem, **params)
+    result = tbx.edit_vehicle_routing_problem(**params)
     return result
 
 def solve_vehicle_routing_problem(
@@ -867,17 +878,18 @@ def solve_vehicle_routing_problem(
     distance_impedance=None,
     populate_stop_shapes=False,
     output_format=None,
-    future=False
+    future=False,
+    ignore_invalid_order_locations=False
 ):
     """
     .. |either| image:: _static/images/solve_vehicle_routing_problem/either_side.png
     .. |left| image:: _static/images/solve_vehicle_routing_problem/left_side.png
     .. |turn| image:: _static/images/solve_vehicle_routing_problem/no_u_turn.png
     .. |right| image:: _static/images/solve_vehicle_routing_problem/right_side.png
-    .. |ALLOW_UTURNS| image:: _static/images/solve_vehicle_routing_problem/ALLOW_UTURNS.png    
-    .. |NO_UTURNS| image:: _static/images/solve_vehicle_routing_problem/NO_UTURNS.png    
-    .. |ALLOW_DEAD_ENDS_ONLY| image:: _static/images/solve_vehicle_routing_problem/ALLOW_DEAD_ENDS_ONLY.png    
-    .. |ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY| image:: _static/images/solve_vehicle_routing_problem/ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY.png    
+    .. |ALLOW_UTURNS| image:: _static/images/solve_vehicle_routing_problem/ALLOW_UTURNS.png
+    .. |NO_UTURNS| image:: _static/images/solve_vehicle_routing_problem/NO_UTURNS.png
+    .. |ALLOW_DEAD_ENDS_ONLY| image:: _static/images/solve_vehicle_routing_problem/ALLOW_DEAD_ENDS_ONLY.png
+    .. |ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY| image:: _static/images/solve_vehicle_routing_problem/ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY.png
 
 
     ``solve_vehicle_routing_problem`` tool solves a vehicle routing problem (VRP) to find the best routes for a fleet of vehicles.
@@ -887,8 +899,8 @@ def solve_vehicle_routing_problem(
     any time windows while keeping the overall operating and investment costs for each route as low as possible. The
     constraints are to complete the routes with available resources and within the time limits imposed by driver work
     shifts, driving speeds, and customer commitments. This method can be used to determine solutions for such complex
-    fleet management tasks. 
-    
+    fleet management tasks.
+
     Consider an example of delivering goods to grocery stores from a central warehouse location.
     A fleet of three trucks is available at the warehouse. The warehouse operates only within a certain time window (from
     8:00 a.m. to 5:00 p.m.) during which all trucks must return back to the warehouse. Each truck has a capacity of 15,000
@@ -904,36 +916,36 @@ def solve_vehicle_routing_problem(
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     orders                                  Required FeatureSet. Specify one or more orders (up to 2,000). These are the locations
                                             that the routes of the vehicle routing problem (VRP) analysis
-                                            should visit. An order can represent a delivery (for example, furniture delivery), 
-                                            a pickup (such as an airport shuttle bus picking up a passenger), or some type of service 
+                                            should visit. An order can represent a delivery (for example, furniture delivery),
+                                            a pickup (such as an airport shuttle bus picking up a passenger), or some type of service
                                             or inspection (a tree trimming job or building inspection, for instance).
-                                
+
                                             When specifying the orders, you can set properties for each one, such as its name or service time, by using
                                             attributes. The orders can be specified with the following attributes:
                                               * ``ObjectID``: The system-managed ID field.
-                                              * ``Name``:  The name of the order. The name must be unique. If the name is left null, 
+                                              * ``Name``:  The name of the order. The name must be unique. If the name is left null,
                                                 a name is automatically generated at solve time.
-                                              * ``Description``: The descriptive information about the order. This can contain any 
-                                                textual information for the order and has no restrictions for uniqueness. You may want 
-                                                to store a client's ID number in the Name field and the client's actual name or address 
-                                                in the ``Description`` field.  
+                                              * ``Description``: The descriptive information about the order. This can contain any
+                                                textual information for the order and has no restrictions for uniqueness. You may want
+                                                to store a client's ID number in the Name field and the client's actual name or address
+                                                in the ``Description`` field.
                                               * ``ServiceTime``:  This property specifies how much time will be spent at the
                                                 network location when the route visits it; that is, it stores the
                                                 impedance value for the network location. A zero or null value
                                                 indicates the network location requires no service time.
                                                 The unit for this field value is specified by the ``time_units`` parameter.
                                               * ``TimeWindowStart1``: The beginning time of the first time window for the
-                                                network location. This field can contain a null value; a null value 
-                                                indicates no beginning time. 
-                                                
-                                                A time window only states when a vehicle can 
+                                                network location. This field can contain a null value; a null value
+                                                indicates no beginning time.
+
+                                                A time window only states when a vehicle can
                                                 arrive at an order; it doesn't state when the service time must be
-                                                completed. To account for service time and leave before the time window is over, 
+                                                completed. To account for service time and leave before the time window is over,
                                                 subtract ``ServiceTime`` from the ``TimeWindowEnd1`` field.
-                                                
-                                                The time window fields (``TimeWindowStart1``, ``TimeWindowEnd1``, ``TimeWindowStart2``, and ``TimeWindowEnd2``) 
+
+                                                The time window fields (``TimeWindowStart1``, ``TimeWindowEnd1``, ``TimeWindowStart2``, and ``TimeWindowEnd2``)
                                                 can contain a time-only value or a date and time value. If a time field such as ``TimeWindowStart1`` has a
-                                                time-only value (for example, 8:00 AM), the date is assumed to be the date specified by the Default Date parameter. 
+                                                time-only value (for example, 8:00 AM), the date is assumed to be the date specified by the Default Date parameter.
                                                 Using date and time values (for example, 7/11/2010 8:00 AM) allows you to set time windows that span multiple days.
 
                                                 When solving a problem that spans multiple time zones, each order's time-window values refer to the time
@@ -952,7 +964,7 @@ def solve_vehicle_routing_problem(
 
                                                 If both time windows are non null, they can't
                                                 overlap. Also, the second time window must occur after the
-                                                first.          
+                                                first.
                                               * ``TimeWindowEnd2``:  The ending time of the second time window for the
                                                 network location. This field can contain a null
                                                 value.
@@ -999,53 +1011,53 @@ def solve_vehicle_routing_problem(
                                               * ``MaxViolationTime2``: The maximum allowable violation time for the second
                                                 time window of the order. This field is analogous to the
                                                 ``MaxViolationTime1`` field.
-                                              * ``InboundArriveTime``: Defines when the item to be delivered to the order will be ready at 
-                                                the starting depot. The order can be assigned to a route only if the inbound arrive time 
-                                                the route's latest start time value; this way, the route cannot leave the depot before the 
-                                                item is ready to be loaded onto it. 
-                                                
-                                                This field can help model scenarios involving inbound-wave transshipments. For example, a 
-                                                job at an order requires special materials that are not currently 
-                                                available at the depot. The materials are being shipped from another location and will arrive 
-                                                at the depot at 11:00 a.m. To ensure a route that leaves before the shipment arrives isn't 
-                                                assigned to the order, the order's inbound arrive time is set to 11:00 a.m. The special materials 
-                                                arrive at 11:00 a.m., they are loaded onto the vehicle, and the vehicle departs from the depot 
+                                              * ``InboundArriveTime``: Defines when the item to be delivered to the order will be ready at
+                                                the starting depot. The order can be assigned to a route only if the inbound arrive time
+                                                the route's latest start time value; this way, the route cannot leave the depot before the
+                                                item is ready to be loaded onto it.
+
+                                                This field can help model scenarios involving inbound-wave transshipments. For example, a
+                                                job at an order requires special materials that are not currently
+                                                available at the depot. The materials are being shipped from another location and will arrive
+                                                at the depot at 11:00 a.m. To ensure a route that leaves before the shipment arrives isn't
+                                                assigned to the order, the order's inbound arrive time is set to 11:00 a.m. The special materials
+                                                arrive at 11:00 a.m., they are loaded onto the vehicle, and the vehicle departs from the depot
                                                 to visit its assigned orders.
                                               .. note::
-                                              
-                                                  * The route's start time, which includes service times, must occur after the inbound arrive time. 
-                                                    If a route begins before an order's inbound arrive time, the order cannot be assigned to the route. 
+
+                                                  * The route's start time, which includes service times, must occur after the inbound arrive time.
+                                                    If a route begins before an order's inbound arrive time, the order cannot be assigned to the route.
                                                     The assignment is invalid even if the route has a start-depot service time that lasts until after the inbound arrive time.
-                                                  * This time field can contain a time-only value or a date and time value. If a time-only value is 
-                                                    set (for example, 11:00 AM), the date is assumed to be the date specified by the Default Date parameter.  
-                                                    The default date is ignored, however, when any time field in the Depots, Routes, Orders, or Breaks includes a 
+                                                  * This time field can contain a time-only value or a date and time value. If a time-only value is
+                                                    set (for example, 11:00 AM), the date is assumed to be the date specified by the Default Date parameter.
+                                                    The default date is ignored, however, when any time field in the Depots, Routes, Orders, or Breaks includes a
                                                     date with the time. In that case, specify all such fields with a date and time (for example, 7/11/2015 11:00 AM).
-                                                  * The VRP solver honors InboundArriveTime regardless of the DeliveryQuantities value. 
-                                                  * If an outbound depart time is also specified, its time value must occur after the inbound arrive time. 
-                                              * ``OutboundDepartTime``: Defines when the item to be picked up at the order must arrive at the ending depot. 
-                                                The order can be assigned to a route only if the route can visit the order and reach its end depot before 
-                                                the specified outbound depart time. 
-                                                
-                                                This field can help model scenarios involving outbound-wave transshipments. 
-                                                For instance, a shipping company sends out delivery trucks to pick up packages from orders and bring them into a 
-                                                depot where they are forwarded on to other facilities, en route to their final destination.  
-                                                At 3:00 p.m. every day, a semitrailer stops at the depot to pick up the high-priority packages and take them 
-                                                directly to a central processing station. To avoid delaying the high-priority packages until the next day's 3:00 p.m. 
-                                                trip, the shipping company tries to have delivery trucks pick up the high-priority packages from orders and bring them 
+                                                  * The VRP solver honors InboundArriveTime regardless of the DeliveryQuantities value.
+                                                  * If an outbound depart time is also specified, its time value must occur after the inbound arrive time.
+                                              * ``OutboundDepartTime``: Defines when the item to be picked up at the order must arrive at the ending depot.
+                                                The order can be assigned to a route only if the route can visit the order and reach its end depot before
+                                                the specified outbound depart time.
+
+                                                This field can help model scenarios involving outbound-wave transshipments.
+                                                For instance, a shipping company sends out delivery trucks to pick up packages from orders and bring them into a
+                                                depot where they are forwarded on to other facilities, en route to their final destination.
+                                                At 3:00 p.m. every day, a semitrailer stops at the depot to pick up the high-priority packages and take them
+                                                directly to a central processing station. To avoid delaying the high-priority packages until the next day's 3:00 p.m.
+                                                trip, the shipping company tries to have delivery trucks pick up the high-priority packages from orders and bring them
                                                 to the depot before the 3:00 p.m. deadline. This is done by setting  the outbound depart time to 3:00 p.m.
                                               .. note::
-                                              
-                                                  * The route's end time, including service times, must occur before the outbound depart time. If a route reaches 
-                                                    a depot but doesn't complete its end-depot service time prior to the order's outbound depart time, the order cannot 
+
+                                                  * The route's end time, including service times, must occur before the outbound depart time. If a route reaches
+                                                    a depot but doesn't complete its end-depot service time prior to the order's outbound depart time, the order cannot
                                                     be assigned to the route.
-                                                  * This time field can contain a time-only value or a date and time value. If a time-only value is 
-                                                    set (for example, 11:00 AM), the date is assumed to be the date specified by the Default Date parameter.  
-                                                    The default date is ignored, however, when any time field in Depots, Routes, Orders, or Breaks includes 
+                                                  * This time field can contain a time-only value or a date and time value. If a time-only value is
+                                                    set (for example, 11:00 AM), the date is assumed to be the date specified by the Default Date parameter.
+                                                    The default date is ignored, however, when any time field in Depots, Routes, Orders, or Breaks includes
                                                     a date with the time. In that case, specify all such fields with a date and time (for example, 7/11/2015 11:00 AM).
-                                                  * The VRP solver honors ``OutboundDepartTime`` regardless of the ``PickupQuantities`` value. 
-                                                  * If an inbound arrive time is also specified, its time value must occur before the  outbound depart time. 
-                                                  
-                                              * ``DeliveryQuantities``: The size of the delivery. You can specify size in any dimension you want, such as weight, 
+                                                  * The VRP solver honors ``OutboundDepartTime`` regardless of the ``PickupQuantities`` value.
+                                                  * If an inbound arrive time is also specified, its time value must occur before the  outbound depart time.
+
+                                              * ``DeliveryQuantities``: The size of the delivery. You can specify size in any dimension you want, such as weight,
                                                 volume, or quantity. You can even specify multiple dimensions, for example, weight and volume.
 
                                                 Enter delivery quantities without indicating units.
@@ -1144,39 +1156,39 @@ def solve_vehicle_routing_problem(
                                                     operation. However, a new route or sequence for the order may
                                                     be assigned if it helps minimize the overall value of the objective
                                                     function. This is the default value.
-                                                  * 4 (Anchor first) - The solver ignores the route and sequence preassignment (if any) 
-                                                    for the order during the solve operation. It assigns a route to the order and makes 
+                                                  * 4 (Anchor first) - The solver ignores the route and sequence preassignment (if any)
+                                                    for the order during the solve operation. It assigns a route to the order and makes
                                                     it the first order on that route to minimize the overall value of the objective function.
-                                                  * 5 (Anchor last) - The solver ignores the route and sequence preassignment (if any) for the 
-                                                    order during the solve operation. It assigns a route to the order and makes it the last 
-                                                    order on that route to minimize the overall value of the objective function.  
+                                                  * 5 (Anchor last) - The solver ignores the route and sequence preassignment (if any) for the
+                                                    order during the solve operation. It assigns a route to the order and makes it the last
+                                                    order on that route to minimize the overall value of the objective function.
                                                     This field can't contain a null value.
-                                              * ``CurbApproach``:  Specifies the direction a vehicle may arrive at and depart from the order. 
-                                                The field value is specified as one of the following integers shown in the parentheses (use the 
+                                              * ``CurbApproach``:  Specifies the direction a vehicle may arrive at and depart from the order.
+                                                The field value is specified as one of the following integers shown in the parentheses (use the
                                                 numeric code, not the name in parentheses):
-                                  
+
                                                 =========================  ===============================================================
                                                 **Setting**                **Description**
                                                 -------------------------  ---------------------------------------------------------------
                                                 Either side of vehicle     |either|
-                                                                           The vehicle can approach and depart the order in either 
-                                                                           direction, so a U-turn is allowed at the order. This setting 
-                                                                           can be chosen if it is possible and desirable for your vehicle 
-                                                                           to turn around at the order. This decision may depend on the 
-                                                                           width of the road and the amount of traffic or whether the 
-                                                                           order has a parking lot where vehicles can pull in and turn 
+                                                                           The vehicle can approach and depart the order in either
+                                                                           direction, so a U-turn is allowed at the order. This setting
+                                                                           can be chosen if it is possible and desirable for your vehicle
+                                                                           to turn around at the order. This decision may depend on the
+                                                                           width of the road and the amount of traffic or whether the
+                                                                           order has a parking lot where vehicles can pull in and turn
                                                                            around.
                                                 -------------------------  ---------------------------------------------------------------
                                                 right side of vehicle      |right|
-                                                                           When the vehicle approaches and departs the order, the order must 
-                                                                           be on the right side of the vehicle. A U-turn is prohibited. This is 
-                                                                           typically used for vehicles like buses that must arrive with the bus 
+                                                                           When the vehicle approaches and departs the order, the order must
+                                                                           be on the right side of the vehicle. A U-turn is prohibited. This is
+                                                                           typically used for vehicles like buses that must arrive with the bus
                                                                            stop on the right side.
                                                 -------------------------  ---------------------------------------------------------------
-                                                left side of vehicle       |left| 
-                                                                           When the vehicle approaches and departs the order, the curb must 
-                                                                           be on the left side of the vehicle. A U-turn is prohibited. 
-                                                                           This is typically used for vehicles like buses that must arrive 
+                                                left side of vehicle       |left|
+                                                                           When the vehicle approaches and departs the order, the curb must
+                                                                           be on the left side of the vehicle. A U-turn is prohibited.
+                                                                           This is typically used for vehicles like buses that must arrive
                                                                            with the bus stop on the left-hand side.
                                                 -------------------------  ---------------------------------------------------------------
                                                 No U-Turn                  |turn|
@@ -1185,15 +1197,15 @@ def solve_vehicle_routing_problem(
                                                 =========================  ===============================================================
 
 
-                                                The ``CurbApproach`` property is designed to work with both kinds of national driving standards: 
-                                                right-hand traffic (United States) and left-hand traffic (United Kingdom). First, consider an 
-                                                order on the left side of a vehicle. It is always on the left side regardless of whether the 
-                                                vehicle travels on the left or right half of the road. What may change with national driving 
-                                                standards is your decision to approach an order from one of two directions, that is, so it ends 
-                                                up on the right or left side of the vehicle. For example, if you want to arrive at an order and 
-                                                not have a lane of traffic between the vehicle and the order, you would choose 1 (Right side of 
-                                                vehicle) in the United States but 2 (Left side of vehicle) in the United Kingdom. 
-                                              
+                                                The ``CurbApproach`` property is designed to work with both kinds of national driving standards:
+                                                right-hand traffic (United States) and left-hand traffic (United Kingdom). First, consider an
+                                                order on the left side of a vehicle. It is always on the left side regardless of whether the
+                                                vehicle travels on the left or right half of the road. What may change with national driving
+                                                standards is your decision to approach an order from one of two directions, that is, so it ends
+                                                up on the right or left side of the vehicle. For example, if you want to arrive at an order and
+                                                not have a lane of traffic between the vehicle and the order, you would choose 1 (Right side of
+                                                vehicle) in the United States but 2 (Left side of vehicle) in the United Kingdom.
+
                                               * ``RouteName``: The name of the route to which the order is assigned. As an input field, this field is used to preassign
                                                 an order to a specific route. (A maximum of 200 orders can be preassigned to one route name.) It can contain a null value,
                                                 indicating that the order is not preassigned to any route, and the solver determines the best possible route assignment for the order.
@@ -1220,60 +1232,60 @@ def solve_vehicle_routing_problem(
                                                 and breaks; start from 1 (at the starting depot); and are
                                                 consecutive. So the smallest possible output sequence value for a
                                                 routed order is 2, since a route always begins at a depot.
-                                              * ``Bearing``: The direction in which a point is moving. The units are degrees and are measured 
+                                              * ``Bearing``: The direction in which a point is moving. The units are degrees and are measured
                                                 clockwise from true north. This field is used in conjunction with the BearingTol field.
-                                                Bearing data is usually sent automatically from a mobile device equipped with a GPS receiver. 
+                                                Bearing data is usually sent automatically from a mobile device equipped with a GPS receiver.
                                                 Try to include bearing data if you are loading an input location that is moving, such as a pedestrian or a vehicle.
-                                                Using this field tends to prevent adding locations to the wrong edges, which can occur when a vehicle is near an 
-                                                intersection or an overpass for example. Bearing also helps the tool determine on which side of the street the point is.  
-                                              * ``BearingTol``: The bearing tolerance value creates a range of acceptable bearing values when 
-                                                locating moving points on an edge using the Bearing field. If the value from the Bearing field is 
-                                                within the range of acceptable values that are generated from the bearing tolerance on an edge, the 
+                                                Using this field tends to prevent adding locations to the wrong edges, which can occur when a vehicle is near an
+                                                intersection or an overpass for example. Bearing also helps the tool determine on which side of the street the point is.
+                                              * ``BearingTol``: The bearing tolerance value creates a range of acceptable bearing values when
+                                                locating moving points on an edge using the Bearing field. If the value from the Bearing field is
+                                                within the range of acceptable values that are generated from the bearing tolerance on an edge, the
                                                 point can be added as a network location there; otherwise, the closest point on the next-nearest edge is evaluated.
-                                          
-                                                The units are in degrees, and the default value is 30. Values must be greater than 0 and less than 180. 
-                                                A value of 30 means that when ArcGIS Network Analyst extension attempts to add a network location on an 
-                                                edge, a range of acceptable bearing values is generated 15 degrees to either side of the edge (left and right) 
-                                                and in both digitized directions of the edge.  
-                                              * ``NavLatency``: This field is only used in the solve process if Bearing and BearingTol also have values; however, 
-                                                entering a ``NavLatency`` value is optional, even when values are present in Bearing and ``BearingTol``. ``NavLatency`` 
-                                                indicates how much time is expected to elapse from the moment GPS information is sent from a moving vehicle 
+
+                                                The units are in degrees, and the default value is 30. Values must be greater than 0 and less than 180.
+                                                A value of 30 means that when ArcGIS Network Analyst extension attempts to add a network location on an
+                                                edge, a range of acceptable bearing values is generated 15 degrees to either side of the edge (left and right)
+                                                and in both digitized directions of the edge.
+                                              * ``NavLatency``: This field is only used in the solve process if Bearing and BearingTol also have values; however,
+                                                entering a ``NavLatency`` value is optional, even when values are present in Bearing and ``BearingTol``. ``NavLatency``
+                                                indicates how much time is expected to elapse from the moment GPS information is sent from a moving vehicle
                                                 to a server and the moment the processed route is received by the vehicle's navigation device.
 
-                                                The time units of ``NavLatency`` are the same as the units specified by the ``timeUnits`` property of the analysis object.  
+                                                The time units of ``NavLatency`` are the same as the units specified by the ``timeUnits`` property of the analysis object.
 
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    depots                                  Required FeatureSet. Specify one or more depots for the given vehicle routing problem. A depot is a location that 
-                                            a vehicle departs from at the beginning of its workday and returns to at the end of the workday. Vehicles are 
+    depots                                  Required FeatureSet. Specify one or more depots for the given vehicle routing problem. A depot is a location that
+                                            a vehicle departs from at the beginning of its workday and returns to at the end of the workday. Vehicles are
                                             loaded (for deliveries) or unloaded (for pickups) at depots at the start of the route. In some cases, a depot can also act as a
                                             renewal location whereby the vehicle can unload or reload and continue performing deliveries and pickups. A depot has open and
                                             close times, as specified by a hard time window. Vehicles can't arrive at a depot outside of this time window.
-                                            When specifying the orders, you can set properties for each one, such as its name or service time, by using attributes. 
-                                            
-                                            The orders can be specified with the following attributes: 
+                                            When specifying the orders, you can set properties for each one, such as its name or service time, by using attributes.
+
+                                            The orders can be specified with the following attributes:
 
                                               * ``ObjectID``: The system-managed ID field.
                                               * ``Name``: The name of the depot. The ``StartDepotName`` and ``EndDepotName`` fields of the Routes record set reference the names you specify
                                                 here. It is also referenced by the Route Renewals record set, when used.
 
                                                 Depot names are case insensitive and have to be nonempty and unique.
-                                              * ``Description`` : The descriptive information about the depot location. This can contain any textual information and has 
+                                              * ``Description`` : The descriptive information about the depot location. This can contain any textual information and has
                                                 no restrictions for uniqueness.
 
-                                                For example, if you want to note which region a depot is in or the depot's address and telephone number, you can enter 
+                                                For example, if you want to note which region a depot is in or the depot's address and telephone number, you can enter
                                                 the information here rather than in the Name field.
-                                              * ``TimeWindowStart1``: The beginning time of the first time window for the network location. This field can contain a null value; 
+                                              * ``TimeWindowStart1``: The beginning time of the first time window for the network location. This field can contain a null value;
                                                 a null value indicates no beginning time.
-                                              
+
                                                 Time window fields can contain a time-only value or a date and time value. If a time field has a time-only value (for example,
                                                 8:00 AM), the date is assumed to be the date specified by the Default Date parameter of the analysis layer. Using date and time
                                                 values (for example, 7/11/2010 8:00 AM) allows you to set time windows that span multiple days.
 
-                                                When solving a problem that spans multiple time zones, each depot's time-window values refer to the time zone in which the depot is located. 
+                                                When solving a problem that spans multiple time zones, each depot's time-window values refer to the time zone in which the depot is located.
                                               * ``TimeWindowEnd1``: The ending time of the first window for the network
                                                 location. This field can contain a null value; a null value
                                                 indicates no ending time.
-                                              * ``TimeWindowStart2``: The beginning time of the second time window for the network location. 
+                                              * ``TimeWindowStart2``: The beginning time of the second time window for the network location.
                                                 This field can contain a null value; a null value indicates that there is no second time window.
 
                                                 If the first time window is null, as specified by the
@@ -1287,50 +1299,50 @@ def solve_vehicle_routing_problem(
 
                                                 When ``TimeWindowStart2`` and ``TimeWindowEnd2`` are both null,
                                                 there is no second time window.
-                      
+
                                                 When ``TimeWindowStart2`` is not null but ``TimeWindowEnd2`` is
                                                 null, there is a second time window that has a starting time but no
                                                 ending time. This is valid.
                                               * ``CurbApproach``:  Specifies the direction a vehicle may arrive at and depart
                                                 from the depot. The field value is specified as one of the
                                                 following integers shown in the parentheses (use the numeric code, not the name in parentheses):
-                                              
+
                                                 =========================  ===============================================================
                                                 **Setting**                **Description**
                                                 -------------------------  ---------------------------------------------------------------
                                                 Either side of vehicle     |either|
-                                                                            The vehicle can approach and depart the order in either 
-                                                                            direction, so a U-turn is allowed at the order. This setting 
-                                                                            can be chosen if it is possible and desirable for your vehicle 
-                                                                            to turn around at the order. This decision may depend on the 
-                                                                            width of the road and the amount of traffic or whether the 
-                                                                            order has a parking lot where vehicles can pull in and turn 
+                                                                            The vehicle can approach and depart the order in either
+                                                                            direction, so a U-turn is allowed at the order. This setting
+                                                                            can be chosen if it is possible and desirable for your vehicle
+                                                                            to turn around at the order. This decision may depend on the
+                                                                            width of the road and the amount of traffic or whether the
+                                                                            order has a parking lot where vehicles can pull in and turn
                                                                             around.
                                                 -------------------------  ---------------------------------------------------------------
                                                 right side of vehicle      |right|
-                                                                            When the vehicle approaches and departs the order, the order must 
-                                                                            be on the right side of the vehicle. A U-turn is prohibited. This is 
-                                                                            typically used for vehicles like buses that must arrive with the bus 
+                                                                            When the vehicle approaches and departs the order, the order must
+                                                                            be on the right side of the vehicle. A U-turn is prohibited. This is
+                                                                            typically used for vehicles like buses that must arrive with the bus
                                                                             stop on the right side.
                                                 -------------------------  ---------------------------------------------------------------
-                                                left side of vehicle       |left| 
-                                                                            When the vehicle approaches and departs the order, the curb must 
-                                                                            be on the left side of the vehicle. A U-turn is prohibited. 
-                                                                            This is typically used for vehicles like buses that must arrive 
+                                                left side of vehicle       |left|
+                                                                            When the vehicle approaches and departs the order, the curb must
+                                                                            be on the left side of the vehicle. A U-turn is prohibited.
+                                                                            This is typically used for vehicles like buses that must arrive
                                                                             with the bus stop on the left side.
                                                 -------------------------  ---------------------------------------------------------------
                                                 No U-Turn                  |turn|
                                                                             When the vehicle approaches the order, the curb can be on either side
                                                                             of the vehicle; however, the vehicle must depart without turning around.
                                                 =========================  ===============================================================
-                                              
-                                                The ``CurbApproach`` property is designed to work with both kinds of national driving standards: right-hand traffic (United States) 
-                                                and left-hand traffic (United Kingdom). First, consider a depot on the left side of a vehicle. It is always on the left side 
-                                                regardless of whether the vehicle travels on the left or right half of the road. What may change with national driving standards 
-                                                is your decision to approach a depot from one of two directions, that is, so it ends up on the right or left side of the vehicle. 
-                                                For example, if you want to arrive at a depot and not have a lane of traffic between the vehicle and the depot, you would choose 
-                                                1 (Right side of vehicle) in the United States but 2 (Left side of vehicle) in the United Kingdom. 
-                                              
+
+                                                The ``CurbApproach`` property is designed to work with both kinds of national driving standards: right-hand traffic (United States)
+                                                and left-hand traffic (United Kingdom). First, consider a depot on the left side of a vehicle. It is always on the left side
+                                                regardless of whether the vehicle travels on the left or right half of the road. What may change with national driving standards
+                                                is your decision to approach a depot from one of two directions, that is, so it ends up on the right or left side of the vehicle.
+                                                For example, if you want to arrive at a depot and not have a lane of traffic between the vehicle and the depot, you would choose
+                                                1 (Right side of vehicle) in the United States but 2 (Left side of vehicle) in the United Kingdom.
+
                                               * ``Bearing``: The direction in which a point is moving. The units are degrees and measured in a clockwise fashion from true north.
                                                 This field is used in conjunction with the ``BearingTol`` field.
 
@@ -1338,12 +1350,12 @@ def solve_vehicle_routing_problem(
                                                 device equipped with a GPS receiver. Try to include bearing
                                                 data if you are loading an order that is moving, such as a
                                                 pedestrian or a vehicle.
-                          
+
                                                 Using this field tends to prevent adding locations to the
                                                 wrong edges, which can occur when a vehicle is near an intersection
                                                 or an overpass, for example. Bearing also helps the tool
                                                 determine on which side of the street the point is.
-                                                For more information, see the Bearing and Bearing Tolerance Help topic (http://links.esri.com/bearing-and-bearing-tolerance). 
+                                                For more information, see the Bearing and Bearing Tolerance Help topic (http://links.esri.com/bearing-and-bearing-tolerance).
                                               * ``BearingTol``: The bearing tolerance value creates a range of acceptable
                                                 bearing values when locating moving points on an edge using the
                                                 Bearing field. If the value from the Bearing field is within the
@@ -1359,7 +1371,7 @@ def solve_vehicle_routing_problem(
                                                 add a network location on an edge, a range of acceptable bearing
                                                 values is generated 15 degrees to either side of the edge (left and
                                                 right) and in both digitized directions of the edge.
-                                                For more information, see the Bearing and Bearing Tolerance topic in the ArcGIS help system (http://links.esri.com/bearing-and-bearing-tolerance). 
+                                                For more information, see the Bearing and Bearing Tolerance topic in the ArcGIS help system (http://links.esri.com/bearing-and-bearing-tolerance).
                                               * ``NavLatency``: This field is only used in the solve process if Bearing
                                                 and BearingTol also have values; however, entering a ``NavLatency``
                                                 value is optional, even when values are present in Bearing and
@@ -1375,8 +1387,8 @@ def solve_vehicle_routing_problem(
                                             depots and orders.
 
                                             A route can have start and end depot service times, a  fixed or flexible starting time, time-based operating costs,
-                                            distance-based operating costs, multiple capacities, various constraints on a driver's workday, and so on. 
-                                            When specifying the routes, you can set properties for each one by using attributes. 
+                                            distance-based operating costs, multiple capacities, various constraints on a driver's workday, and so on.
+                                            When specifying the routes, you can set properties for each one by using attributes.
                                             The routes can be specified with the following attributes:
 
                                               * ``Name``: The name of the route. The name must be unique.
@@ -1403,7 +1415,7 @@ def solve_vehicle_routing_problem(
                                                 delivery orders before the first renewal visit are loaded at the
                                                 start depot or virtual depot.
                                               * ``EndDepotName``: The name of the ending depot for the route. This field is a foreign key to the Name field in the Depots class.
-                                              * ``StartDepotServiceTime``: The service time at the starting depot. This can be used to model the time spent for loading the vehicle. 
+                                              * ``StartDepotServiceTime``: The service time at the starting depot. This can be used to model the time spent for loading the vehicle.
                                                 This field can contain a null value; a null value indicates zero service time.
 
                                                 The unit for this field value is specified by the Time
@@ -1417,9 +1429,9 @@ def solve_vehicle_routing_problem(
                                                 depot service times could be given values corresponding to a full
                                                 truckload or an average truckload, or you could make your own time
                                                 estimate.
-                                              * ``EndDepotServiceTime``: The service time at the ending depot. This can be used to model the time spent for unloading the vehicle. 
+                                              * ``EndDepotServiceTime``: The service time at the ending depot. This can be used to model the time spent for unloading the vehicle.
                                                 This field can contain a null value; a null value indicates zero service time.
-                          
+
                                                 The unit for this field value is specified by the Time
                                                 Field Units parameter.
 
@@ -1435,7 +1447,7 @@ def solve_vehicle_routing_problem(
                                                 is used by the solver in conjunction with the time window of the
                                                 starting depot for determining feasible route start
                                                 times.
-                        
+
                                                 This field can't contain null values and has a default
                                                 time-only value of 8:00 AM; the default value is interpreted as
                                                 8:00 a.m. on the date given by the Default Date
@@ -1487,7 +1499,7 @@ def solve_vehicle_routing_problem(
                                                 option. (Note that multiple routes may need to be sent when other
                                                 constraints-such as specialties, time windows, or
                                                 capacities-require it.)
-                                                The unit for this field value is specified by the time_units parameter. 
+                                                The unit for this field value is specified by the time_units parameter.
                                               * ``Capacities``: The maximum capacity of the vehicle. You can specify
                                                 capacity in any dimension you want, such as weight, volume, or
                                                 quantity. You can even specify multiple dimensions, for example,
@@ -1541,12 +1553,12 @@ def solve_vehicle_routing_problem(
                                                 times and wait times at orders, depots, and breaks. This field
                                                 can't contain a null value and has a default value of
                                                 1.0.
-                                                The unit for this field value is specified by the time_units parameter. 
+                                                The unit for this field value is specified by the time_units parameter.
                                               * ``CostPerUnitDistance``: The monetary cost incurred-per unit of distance
                                                 traveled-for the route length (total travel distance). This field
                                                 can contain null values; a null value indicates zero
                                                 cost.
-                                                The unit for this field value is specified by the distance_units parameter. 
+                                                The unit for this field value is specified by the distance_units parameter.
                                               * ``OvertimeStartTime``: The duration of regular work time before overtime
                                                 computation begins. This field can contain null values; a null
                                                 value indicates that overtime does not apply.
@@ -1567,16 +1579,16 @@ def solve_vehicle_routing_problem(
                                                 depots, and breaks. This field can contain null values; a null
                                                 value indicates that there is no constraint on the route
                                                 duration.
-                                                The unit for this field value is specified by the time_units parameter. 
+                                                The unit for this field value is specified by the time_units parameter.
                                               * ``MaxTotalTravelTime``: The maximum allowable travel time for the route. The
                                                 travel time includes only the time spent driving on the network and
                                                 does not include service or wait times.
-                          
+
                                                 This field can contain null values; a null value indicates
                                                 there is no constraint on the maximum allowable travel time. This
                                                 field value can't be larger than the ``MaxTotalTime`` field
                                                 value.
-                                                The unit for this field value is specified by the time_units parameter. 
+                                                The unit for this field value is specified by the time_units parameter.
                                               * ``MaxTotalDistance``: The maximum allowable travel distance for the
                                                 route.
                                                 The unit for this field value is specified by the distance_units parameter.
@@ -1586,10 +1598,10 @@ def solve_vehicle_routing_problem(
                                               * ``SpecialtyNames``: A space-separated string containing the names of the
                                                 specialties supported by the route. A null value indicates that the
                                                 route does not support any specialties.
-                            
+
                                                 This field is a foreign key to the ``SpecialtyNames`` field in
                                                 the orders class.
-                          
+
                                                 To illustrate what specialties are and how they work,
                                                 assume a lawn care and tree trimming company has a portion of its
                                                 orders that requires a bucket truck to trim tall trees. The company
@@ -1618,11 +1630,11 @@ def solve_vehicle_routing_problem(
                                             There are three options for establishing when a break begins: using
                                             a time window, a maximum travel time, or a maximum work
                                             time.
-                                            When specifying the breaks, you can set properties for each one, such as its name or service time, by using attributes. 
+                                            When specifying the breaks, you can set properties for each one, such as its name or service time, by using attributes.
                                             The breaks parameter can be specified with the following attributes:
                                               * ``RouteName``: The name of the route that the break applies to. Although
                                                 a break is assigned to exactly one route, many breaks can be
-                                                assigned to the same route. 
+                                                assigned to the same route.
 
                                                 This field is a foreign key to the Name field in the
                                                 routes parameter, so it can't have a null value.
@@ -1635,7 +1647,7 @@ def solve_vehicle_routing_problem(
                                                 maximum-work-time breaks.
                                               * ``ServiceTime``: The duration of the break. This field can contain null
                                                 values; a null value indicates no service time.
-                                                The unit for this field value is specified by the time_units parameter. 
+                                                The unit for this field value is specified by the time_units parameter.
                                               * ``TimeWindowStart``: The starting time of the break's time window.
 
                                                 If this field is null and ``TimeWindowEnd`` has a valid
@@ -1658,9 +1670,9 @@ def solve_vehicle_routing_problem(
                                                 PM) allows you to specify time windows that span two or more days.
                                                 This is especially beneficial when a break should be taken sometime
                                                 before and after midnight.
-                                                When solving a problem that spans multiple time zones, each break's time-window 
-                                                values refer to the time zone in which the associated route, as specified by the ``RouteName`` field,  
-                                                is located. 
+                                                When solving a problem that spans multiple time zones, each break's time-window
+                                                values refer to the time zone in which the associated route, as specified by the ``RouteName`` field,
+                                                is located.
                                               * ``TimeWindowEnd``: The ending time of the break's time window.
 
                                                 If this field is null and ``TimeWindowStart`` has a valid
@@ -1687,7 +1699,7 @@ def solve_vehicle_routing_problem(
                                                 limit on the allowable violation time. If
                                                 ``MaxTravelTimeBetweenBreaks`` or ``MaxCumulWorkTime`` has a value,
                                                 ``MaxViolationTime`` must be null.
-                                                The unit for this field value is specified by the time_units parameter. 
+                                                The unit for this field value is specified by the time_units parameter.
                                               * ``MaxTravelTimeBetweenBreaks``: The maximum amount of travel time that can be accumulated
                                                 before the break is taken. The travel time is accumulated either
                                                 from the end of the previous break or, if a break has not yet been
@@ -1709,7 +1721,7 @@ def solve_vehicle_routing_problem(
                                                 If this field has a value, ``TimeWindowStart``, ``TimeWindowEnd``,
                                                 ``MaxViolationTime``, and ``MaxCumulWorkTime`` must be null for an analysis
                                                 to solve successfully.
-                                                The unit for this field value is specified by the time_units parameter. 
+                                                The unit for this field value is specified by the time_units parameter.
                                               * ``MaxCumulWorkTime``: The maximum amount of work time that can be accumulated
                                                 before the break is taken. Work time is always accumulated from the
                                                 beginning of the route.
@@ -1740,7 +1752,7 @@ def solve_vehicle_routing_problem(
                                                 If this field has a value, ``TimeWindowStart``, ``TimeWindowEnd``,
                                                 ``MaxViolationTime``, and ``MaxTravelTimeBetweenBreaks`` must be null for
                                                 an analysis to solve successfully.
-                                                The unit for this field value is specified by the time_units parameter. 
+                                                The unit for this field value is specified by the time_units parameter.
                                               * ``IsPaid``: A Boolean value indicating whether the break is paid or
                                                 unpaid. A True value indicates that the time spent at the break is
                                                 included in the route cost computation and overtime determination.
@@ -1756,7 +1768,7 @@ def solve_vehicle_routing_problem(
                                                 this field contains the sequence value of the break on its route.
                                                 Output sequence values for a route are shared across depot visits,
                                                 orders, and breaks; start from 1 (at the starting depot); and are
-                                                consecutive. 
+                                                consecutive.
                                               * ``ArriveTimeUTC``: The date and time value indicating the arrival time in UTC time.
                                               * ``DepartTimeUTC``: The date and time value indicating the departure time in UTC time.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
@@ -1770,7 +1782,7 @@ def solve_vehicle_routing_problem(
 
                                             Note that output time-based fields use the same units specified by this parameter.
 
-                                            Choice list:['Seconds', 'Minutes', 'Hours', 'Days']    
+                                            Choice list:['Seconds', 'Minutes', 'Hours', 'Days']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     distance_units                          Optional string. The distance units for all distance-based field values in
                                             the analysis. Many features and records in a VRP analysis have
@@ -1783,7 +1795,7 @@ def solve_vehicle_routing_problem(
 
                                             Note that output distance-based fields use the same units
                                             specified by this parameter.
-                                            
+
                                             Choice list:['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles', 'NauticalMiles']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     analysis_region                         Optional string. Specify the region in which to perform the analysis. If a value is not specified for this parameter, the tool
@@ -1791,42 +1803,42 @@ def solve_vehicle_routing_problem(
                                             of the input points. Setting the name of the region is recommended to speed up the
                                             tool execution. To specify a region, use one of
                                             the following values:  Europe Greece  India  Japan Korea  MiddleEastAndAfrica  NorthAmerica  Oceania  SouthAmerica  SouthEastAsia Taiwan Thailand
-                                            
+
                                             Choice list:['NorthAmerica', 'SouthAmerica', 'Europe', 'MiddleEastAndAfrica', 'India', 'SouthAsia', 'SouthEastAsia', 'Thailand', 'Taiwan', 'Japan', 'Oceania', 'Greece', 'Korea']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     default_date                            Optional datetime. The default date for time field values that specify a time
-                                            of day without including a date. You can find these time fields in various input 
+                                            of day without including a date. You can find these time fields in various input
                                             parameters, such as the ServiceTime attributes in the orders and breaks parameters.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    uturn_policy                            Optional string. Use this parameter to restrict or permit the service area to make U-turns at junctions. 
-                                            In order to understand the parameter values, consider for a moment the following terminology: a junction is 
-                                            a point where a street segment ends and potentially connects to one or more other segments; a pseudo-junction is 
-                                            a point where exactly two streets connect to one another; an intersection is a point where three or more streets 
-                                            connect; and a  dead-end is where one street segment ends without connecting to another. Given this information, 
+    uturn_policy                            Optional string. Use this parameter to restrict or permit the service area to make U-turns at junctions.
+                                            In order to understand the parameter values, consider for a moment the following terminology: a junction is
+                                            a point where a street segment ends and potentially connects to one or more other segments; a pseudo-junction is
+                                            a point where exactly two streets connect to one another; an intersection is a point where three or more streets
+                                            connect; and a  dead-end is where one street segment ends without connecting to another. Given this information,
                                             the parameter can have the following values:
-                                            
+
                                             Choice list:['ALLOW_UTURNS', 'NO_UTURNS', 'ALLOW_DEAD_ENDS_ONLY', 'ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY']
 
                                             ========================================  ================================================
                                             **Parameter**                             **Description**
                                             ----------------------------------------  ------------------------------------------------
                                             ALLOW_UTURNS                              |ALLOW_UTURNS|
-                                                                                      U-turns are permitted everywhere. Allowing U-turns implies 
-                                                                                      that the vehicle can turn around at a junction or intersection 
+                                                                                      U-turns are permitted everywhere. Allowing U-turns implies
+                                                                                      that the vehicle can turn around at a junction or intersection
                                                                                       and double back on the same street.
                                             ----------------------------------------  ------------------------------------------------
                                             ALLOW_DEAD_ENDS_AND _INTERSECTIONS_ONLY   |ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY|
-                                                                                      U-turns are prohibited at 
-                                                                                      junctions where exactly two 
+                                                                                      U-turns are prohibited at
+                                                                                      junctions where exactly two
                                                                                       adjacent streets meet.
                                             ----------------------------------------  ------------------------------------------------
-                                            ALLOW_DEAD_ENDS_ONLY                      |ALLOW_DEAD_ENDS_ONLY| 
-                                                                                      U-turns are prohibited at all junctions and interesections 
+                                            ALLOW_DEAD_ENDS_ONLY                      |ALLOW_DEAD_ENDS_ONLY|
+                                                                                      U-turns are prohibited at all junctions and interesections
                                                                                         nd are permitted only at dead ends.
                                             ----------------------------------------  ------------------------------------------------
-                                            NO_UTURNS                                 U-turns are prohibited at all junctions, intersections, and dead-ends. 
-                                                                                      Note that even when this parameter value is chosen, a route can still 
-                                                                                      make U-turns at stops. If you wish to prohibit U-turns at a stop, you can set 
+                                            NO_UTURNS                                 U-turns are prohibited at all junctions, intersections, and dead-ends.
+                                                                                      Note that even when this parameter value is chosen, a route can still
+                                                                                      make U-turns at stops. If you wish to prohibit U-turns at a stop, you can set
                                                                                       its CurbApproach property to the appropriate value (3).
 
                                                                                       The default value for this parameter is 'ALLOW_UTURNS'.
@@ -1840,7 +1852,7 @@ def solve_vehicle_routing_problem(
                                                 than on minimizing drive times. Organizations that make
                                                 time-critical deliveries or that are very concerned with customer
                                                 service would choose High.
-  
+
                                               * ``Medium`` - This is the default value. Balances the importance
                                                 of minimizing drive times and arriving within time
                                                 windows.
@@ -1854,8 +1866,8 @@ def solve_vehicle_routing_problem(
 
                                             The default value is 'Medium'.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    spatially_cluster_routes                Optional boolean. 
-    
+    spatially_cluster_routes                Optional boolean.
+
                                             CLUSTER (True) - Dynamic seed points are automatically created for
                                             all routes and the orders assigned to an individual
                                             route are spatially clustered. Clustering orders tends to keep
@@ -1884,9 +1896,9 @@ def solve_vehicle_routing_problem(
                                                 close to your maintenance garage. You can create a soft or hard
                                                 route zone to keep the vehicle nearby.
 
-                                            When specifying the route zones, you need to set properties for each one, such as its associated route, 
-                                            by using attributes. The route zones can be specified with the following attributes: 
-                                            
+                                            When specifying the route zones, you need to set properties for each one, such as its associated route,
+                                            by using attributes. The route zones can be specified with the following attributes:
+
                                               * ``RouteName``: The name of the route to which this zone applies. A route
                                                 zone can have a maximum of one associated route. This field can't
                                                 contain null values, and it is a foreign key to the Name field in
@@ -1930,9 +1942,9 @@ def solve_vehicle_routing_problem(
                                                 * In some cases where there may be several potential renewal
                                                   locations for a route, the closest available renewal location is
                                                   chosen by the solver.
-                                            When specifying the route renewals, you need to set properties for each one, such 
-                                            as the name of the depot where the route renewal can occur, by using attributes. 
-                                            The route renewals can be specified with the following attributes: 
+                                            When specifying the route renewals, you need to set properties for each one, such
+                                            as the name of the depot where the route renewal can occur, by using attributes.
+                                            The route renewals can be specified with the following attributes:
                                             * ``ObjectID``: The system-managed ID field.
                                             * ``DepotName``: The name of the depot where this renewal takes place. This
                                               field can't contain a null value and is a foreign key to the Name
@@ -1963,8 +1975,8 @@ def solve_vehicle_routing_problem(
                                             vehicle can also be assigned; for example, the package might be a
                                             blood sample that has to be transported from the doctor's office to
                                             the lab within two hours.
-                                            When specifying the order pairs, you need to set properties for each one, such as the names of the two orders, 
-                                            by using attributes. The order pairs can be specified with the following attributes: 
+                                            When specifying the order pairs, you need to set properties for each one, such as the names of the two orders,
+                                            by using attributes. The order pairs can be specified with the following attributes:
                                             * ``ObjectID``: The system-managed ID field.
                                             * ``FirstOrderName``: The name of the first order of the pair. This field is a
                                               foreign key to the Name field in the orders parameter.
@@ -2004,7 +2016,7 @@ def solve_vehicle_routing_problem(
                                                 * Ignore the overall excess transit time and, instead,
                                                   minimize the travel cost for the fleet.
 
-                                              By assigning an importance level for the ``excess_transit_factor`` parameter, you 
+                                              By assigning an importance level for the ``excess_transit_factor`` parameter, you
                                               are in effect choosing one of these
                                               three approaches. Regardless of the importance level, the solver
                                               will always return an error if the ``MaxTransitTime`` value is
@@ -2025,7 +2037,7 @@ def solve_vehicle_routing_problem(
                                                 setting if you are transporting people between paired orders and
                                                 you want to shorten their ride time. This is characteristic of taxi
                                                 services.
-  
+
                                               * ``Medium`` - This is the default setting. The solver looks for
                                                 a balance between reducing excess transit time and reducing the
                                                 overall solution cost.
@@ -2037,7 +2049,7 @@ def solve_vehicle_routing_problem(
                                                 about ride time. Using Low allows the couriers to service paired
                                                 orders in the proper sequence and minimize the overall solution
                                                 cost.
-  
+
                                             The default value is 'Medium'.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     point_barriers                          Optional FeatureSet. Specify one or more points to act as temporary
@@ -2048,9 +2060,9 @@ def solve_vehicle_routing_problem(
 
                                             The tool imposes a limit of 250 points that can be added
                                             as barriers.
-                                            When specifying the point barriers, you can set properties for each one, 
-                                            such as its name or barrier type, by using attributes. The point barriers 
-                                            can be specified with the following attributes: 
+                                            When specifying the point barriers, you can set properties for each one,
+                                            such as its name or barrier type, by using attributes. The point barriers
+                                            can be specified with the following attributes:
 
                                               * ``Name``: The name of the barrier.
                                               * ``BarrierType``: Specifies whether the point barrier restricts travel
@@ -2075,58 +2087,58 @@ def solve_vehicle_routing_problem(
                                                 and only if the measurement units are distance based. The field value
                                                 must be greater than or equal to zero, and its units are the same as those specified in the
                                                 Measurement Units parameter.
-                                              * ``Additional_Cost``: Indicates how much cost is added when the barrier is traversed. 
-                                                This field is applicable only for added-cost barriers and only if the travel mode used 
+                                              * ``Additional_Cost``: Indicates how much cost is added when the barrier is traversed.
+                                                This field is applicable only for added-cost barriers and only if the travel mode used
                                                 for the analysis uses an impedance attribute that is neither time-based or distance-based.
-                                              * ``FullEdge``: Specify how the restriction point barriers are applied to the edge elements 
-                                                during the analysis. The field value is specified as one of the following integers (use the 
+                                              * ``FullEdge``: Specify how the restriction point barriers are applied to the edge elements
+                                                during the analysis. The field value is specified as one of the following integers (use the
                                                 numeric code, not the name in parentheses):
 
                                                 * 0 (False): Permits travel on the edge up to the barrier, but not through it. This is the default value.
                                                 * 1 (True): Restricts travel anywhere on the associated edge.
-                                              * ``CurbApproach``: Specifies the direction of traffic that is affected by the barrier. 
-                                                The field value is specified as one of the following integers (use the numeric code, 
+                                              * ``CurbApproach``: Specifies the direction of traffic that is affected by the barrier.
+                                                The field value is specified as one of the following integers (use the numeric code,
                                                 not the name in parentheses):
 
                                                   * 0 (Either side of vehicle): The barrier affects travel over the edge in both directions.
-                                                  * 1 (Right side of vehicle): Vehicles are only affected if the barrier is on their right 
-                                                    side during the approach. Vehicles that traverse the same edge but approach the barrier 
+                                                  * 1 (Right side of vehicle): Vehicles are only affected if the barrier is on their right
+                                                    side during the approach. Vehicles that traverse the same edge but approach the barrier
                                                     on their left side are not affected by the barrier.
-                                                  * 2 (Left side of vehicle): Vehicles are only affected if the barrier is on their left side 
-                                                    during the approach. Vehicles that traverse the same edge but approach the barrier on their 
+                                                  * 2 (Left side of vehicle): Vehicles are only affected if the barrier is on their left side
+                                                    during the approach. Vehicles that traverse the same edge but approach the barrier on their
                                                     right side are not affected by the barrier.
-                                                Since junctions are points and don't have a side, barriers on junctions affect all vehicles 
+                                                Since junctions are points and don't have a side, barriers on junctions affect all vehicles
                                                 regardless of the curb approach.
 
-                                                The ``CurbApproach`` property was designed to work with both kinds of national driving standards: 
-                                                right-hand traffic (United States) and left-hand traffic (United Kingdom). First, consider a 
-                                                facility on the left side of a vehicle. It is always on the left side regardless of whether 
-                                                the vehicle travels on the left or right half of the road. What may change with national driving 
-                                                standards is your decision to approach a facility from one of two directions, that is, so it 
-                                                ends up on the right or left side of the vehicle. For example, if you want to arrive at a facility 
-                                                and not have a lane of traffic between the vehicle and the facility, you would choose Right side of 
+                                                The ``CurbApproach`` property was designed to work with both kinds of national driving standards:
+                                                right-hand traffic (United States) and left-hand traffic (United Kingdom). First, consider a
+                                                facility on the left side of a vehicle. It is always on the left side regardless of whether
+                                                the vehicle travels on the left or right half of the road. What may change with national driving
+                                                standards is your decision to approach a facility from one of two directions, that is, so it
+                                                ends up on the right or left side of the vehicle. For example, if you want to arrive at a facility
+                                                and not have a lane of traffic between the vehicle and the facility, you would choose Right side of
                                                 vehicle (1) in the United States but Left side of vehicle (2) in the United Kingdom.
-                                              * ``Bearing``: The direction in which a point is moving. The units are degrees and are measured clockwise 
+                                              * ``Bearing``: The direction in which a point is moving. The units are degrees and are measured clockwise
                                                 from true north. This field is used in conjunction with the ``BearingTol`` field.
 
-                                                Bearing data is usually sent automatically from a mobile device equipped with a GPS receiver. 
+                                                Bearing data is usually sent automatically from a mobile device equipped with a GPS receiver.
                                                 Try to include bearing data if you are loading an input location that is moving, such as a pedestrian or a vehicle.
 
-                                                Using this field tends to prevent adding locations to the wrong edges, which can occur when a vehicle 
-                                                is near an intersection or an overpass for example. Bearing also helps the tool determine on which side 
+                                                Using this field tends to prevent adding locations to the wrong edges, which can occur when a vehicle
+                                                is near an intersection or an overpass for example. Bearing also helps the tool determine on which side
                                                 of the street the point is.
-                                              * ``BearingTol``: The bearing tolerance value creates a range of acceptable bearing values when locating moving 
-                                                points on an edge using the Bearing field. If the value from the Bearing field is within the range of acceptable 
-                                                values that are generated from the bearing tolerance on an edge, the point can be added as a network location 
+                                              * ``BearingTol``: The bearing tolerance value creates a range of acceptable bearing values when locating moving
+                                                points on an edge using the Bearing field. If the value from the Bearing field is within the range of acceptable
+                                                values that are generated from the bearing tolerance on an edge, the point can be added as a network location
                                                 there; otherwise, the closest point on the next-nearest edge is evaluated.
 
-                                                The units are in degrees, and the default value is 30. Values must be greater than 0 and less than 180. 
-                                                A value of 30 means that when ArcGIS Network Analyst extension attempts to add a network location on an edge, 
-                                                a range of acceptable bearing values is generated 15 degrees to either side of the edge (left and right) and 
+                                                The units are in degrees, and the default value is 30. Values must be greater than 0 and less than 180.
+                                                A value of 30 means that when ArcGIS Network Analyst extension attempts to add a network location on an edge,
+                                                a range of acceptable bearing values is generated 15 degrees to either side of the edge (left and right) and
                                                 in both digitized directions of the edge.
-                                              * ``NavLatency``: This field is only used in the solve process if Bearing and ``BearingTol`` also have values; 
-                                                however, entering a ``NavLatency`` value is optional, even when values are present in Bearing and ``BearingTol``. 
-                                                ``NavLatency`` indicates how much time is expected to elapse from the moment GPS information is sent from a 
+                                              * ``NavLatency``: This field is only used in the solve process if Bearing and ``BearingTol`` also have values;
+                                                however, entering a ``NavLatency`` value is optional, even when values are present in Bearing and ``BearingTol``.
+                                                ``NavLatency`` indicates how much time is expected to elapse from the moment GPS information is sent from a
                                                 moving vehicle to a server and the moment the processed route is received by the vehicle's navigation device.
 
                                                 The time units of ``NavLatency`` are the same as the units specified by the ``timeUnits`` property of the analysis object.
@@ -2144,7 +2156,7 @@ def solve_vehicle_routing_problem(
                                             the number of lines you can specify as line barriers, the combined
                                             number of streets intersected by all the lines cannot exceed
                                             500.
-                                            When specifying the line barriers, you can set a name property for each one by using the following attribute: 
+                                            When specifying the line barriers, you can set a name property for each one by using the following attribute:
                                               * ``Name``: The name of the barrier.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     polygon_barriers                        Optional FeatureSet. Specify polygons that either completely restrict travel or
@@ -2156,9 +2168,9 @@ def solve_vehicle_routing_problem(
                                             no limit on the number of polygons you can specify as the polygon
                                             barriers, the combined number of streets intersected by all the
                                             polygons should not exceed 2,000.
-                                            When specifying the polygon barriers, you can set properties for each one, 
-                                            such as its name or barrier type, by using attributes. 
-                                            The polygon barriers can be specified with the following attributes: 
+                                            When specifying the polygon barriers, you can set properties for each one,
+                                            such as its name or barrier type, by using attributes.
+                                            The polygon barriers can be specified with the following attributes:
                                               * ``Name``: The name of the barrier.
                                               * ``BarrierType``: Specifies whether the barrier restricts travel completely
                                                 or scales the time or distance for traveling through it. The field
@@ -2192,7 +2204,7 @@ def solve_vehicle_routing_problem(
                                                 zero.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     use_hierarchy_in_analysis               Optional boolean. Specify whether hierarchy should be used when finding the best routes.
-                                            
+
                                             Checked (True) - Use hierarchy when finding routes. When
                                             hierarchy is used, the tool prefers higher-order streets, such as
                                             freeways, to lower-order streets, such as local roads, and can be used
@@ -2212,13 +2224,13 @@ def solve_vehicle_routing_problem(
                                             greater than 50 miles, even if you have set this parameter to not use hierarchy.
                                             The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is the default value.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    restrictions                            Optional string. Specify which restrictions should be honored by the tool when finding the best routes.  The value you provide for this parameter 
+    restrictions                            Optional string. Specify which restrictions should be honored by the tool when finding the best routes.  The value you provide for this parameter
                                             is ignored unless Travel Mode is set to Custom, which is the default value. A restriction represents a driving
                                             preference or requirement. In most cases, restrictions cause roads
-                                            to be prohibited. For instance, using an Avoid Toll Roads restriction will result in a route that will include 
-                                            roads only when it is absolutely required to travel on toll roads in order to visit an incident or a facility. 
-                                            Height Restriction makes it possible to route around any clearances that are lower than the height of your vehicle. 
-                                            If you are carrying corrosive materials on your vehicle, using the Any Hazmat Prohibited restriction prevents hauling 
+                                            to be prohibited. For instance, using an Avoid Toll Roads restriction will result in a route that will include
+                                            roads only when it is absolutely required to travel on toll roads in order to visit an incident or a facility.
+                                            Height Restriction makes it possible to route around any clearances that are lower than the height of your vehicle.
+                                            If you are carrying corrosive materials on your vehicle, using the Any Hazmat Prohibited restriction prevents hauling
                                             the materials along roads where it is marked as illegal to do so.
 
                                             Below is a list of available restrictions and a short description.
@@ -2231,24 +2243,24 @@ def solve_vehicle_routing_problem(
                                             specified in the Attribute Parameter Values parameter for the
                                             restriction to be correctly used when finding traversable roads.
 
-                                            Some restrictions are supported only in certain countries; their availability is stated by region in the list below. 
-                                            Of the restrictions that have limited availability within a region, you can check whether the restriction is available 
-                                            in a particular country by looking at the table in the Country List section of the Data coverage for network analysis 
-                                            services web page. If a country has a value of  Yes in the Logistics Attribute column, the restriction with select 
-                                            availability in the region is supported in that country. If you specify restriction names that are not available in 
-                                            the country where your incidents are located, the service ignores the invalid restrictions. The service also ignores 
-                                            restrictions whose Restriction Usage parameter value is between 0 and 1 (see the Attribute Parameter Value parameter). 
+                                            Some restrictions are supported only in certain countries; their availability is stated by region in the list below.
+                                            Of the restrictions that have limited availability within a region, you can check whether the restriction is available
+                                            in a particular country by looking at the table in the Country List section of the Data coverage for network analysis
+                                            services web page. If a country has a value of  Yes in the Logistics Attribute column, the restriction with select
+                                            availability in the region is supported in that country. If you specify restriction names that are not available in
+                                            the country where your incidents are located, the service ignores the invalid restrictions. The service also ignores
+                                            restrictions whose Restriction Usage parameter value is between 0 and 1 (see the Attribute Parameter Value parameter).
                                             It prohibits all restrictions whose Restriction Usage parameter value is greater than 0.
-                                            
-                                            Choice list:['Any Hazmat Prohibited', 'Avoid Carpool Roads', 'Avoid Express Lanes', 'Avoid Ferries', 'Avoid Gates', 
-                                            'Avoid Limited Access Roads', 'Avoid Private Roads', 'Avoid Roads Unsuitable for Pedestrians', 'Avoid Stairways', 
-                                            'Avoid Toll Roads', 'Avoid Toll Roads for Trucks', 'Avoid Truck Restricted Roads', 'Avoid Unpaved Roads', 
-                                            'Axle Count Restriction', 'Driving a Bus', 'Driving a Delivery Vehicle', 'Driving a Taxi', 'Driving a Truck', 
-                                            'Driving an Automobile', 'Driving an Emergency Vehicle', 'Height Restriction', 
-                                            'Kingpin to Rear Axle Length Restriction', 'Length Restriction', 'Preferred for Pedestrians', 
-                                            'Riding a Motorcycle', 'Roads Under Construction Prohibited', 'Semi or Tractor with One or More Trailers Prohibited', 
-                                            'Single Axle Vehicles Prohibited', 'Tandem Axle Vehicles Prohibited', 'Through Traffic Prohibited', 
-                                            'Truck with Trailers Restriction', 'Use Preferred Hazmat Routes', 'Use Preferred Truck Routes', 'Walking', 
+
+                                            Choice list:['Any Hazmat Prohibited', 'Avoid Carpool Roads', 'Avoid Express Lanes', 'Avoid Ferries', 'Avoid Gates',
+                                            'Avoid Limited Access Roads', 'Avoid Private Roads', 'Avoid Roads Unsuitable for Pedestrians', 'Avoid Stairways',
+                                            'Avoid Toll Roads', 'Avoid Toll Roads for Trucks', 'Avoid Truck Restricted Roads', 'Avoid Unpaved Roads',
+                                            'Axle Count Restriction', 'Driving a Bus', 'Driving a Delivery Vehicle', 'Driving a Taxi', 'Driving a Truck',
+                                            'Driving an Automobile', 'Driving an Emergency Vehicle', 'Height Restriction',
+                                            'Kingpin to Rear Axle Length Restriction', 'Length Restriction', 'Preferred for Pedestrians',
+                                            'Riding a Motorcycle', 'Roads Under Construction Prohibited', 'Semi or Tractor with One or More Trailers Prohibited',
+                                            'Single Axle Vehicles Prohibited', 'Tandem Axle Vehicles Prohibited', 'Through Traffic Prohibited',
+                                            'Truck with Trailers Restriction', 'Use Preferred Hazmat Routes', 'Use Preferred Truck Routes', 'Walking',
                                             'Weight Restriction', 'Weight per Axle Restriction', 'Width Restriction']
 
                                             The service supports the restriction names listed in the following table:
@@ -2270,7 +2282,7 @@ def solve_vehicle_routing_problem(
                                                                                       as express lanes.
                                                                                       Availability: All countries
                                             ----------------------------------------  ------------------------------------------------
-                                            Avoid Ferries                             The results will avoid ferries. 
+                                            Avoid Ferries                             The results will avoid ferries.
                                                                                       Availability: All countries
                                             ----------------------------------------  ------------------------------------------------
                                             Avoid Gates                               The results will avoid roads where there are
@@ -2365,7 +2377,7 @@ def solve_vehicle_routing_problem(
                                                                                       include roads that are under construction.
                                                                                       Availability: All countries
                                             ----------------------------------------  ------------------------------------------------
-                                            Semi or Tractor with One                  The results will not include roads where semis or tractors with 
+                                            Semi or Tractor with One                  The results will not include roads where semis or tractors with
                                             or More Trailers Prohibited               one or more trailers are prohibited.
                                                                                       Availability: Select countries in North America and Europe
                                             ----------------------------------------  ------------------------------------------------
@@ -2427,18 +2439,18 @@ def solve_vehicle_routing_problem(
                                                                                       restriction parameter.
                                                                                       Availability: Select countries in North America and Europe
                                             ========================================  ================================================
-      
+
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    attribute_parameter_values              Optional FeatureSet.  Specify additional values required by some restrictions, such as the weight of a vehicle 
-                                            for Weight Restriction. You can also use the attribute parameter to specify whether any restriction prohibits, 
+    attribute_parameter_values              Optional FeatureSet.  Specify additional values required by some restrictions, such as the weight of a vehicle
+                                            for Weight Restriction. You can also use the attribute parameter to specify whether any restriction prohibits,
                                             avoids, or prefers travel on roads that use the restriction. If the restriction is
                                             meant to avoid or prefer roads, you can further specify the degree
                                             to which they are avoided or preferred using this
-                                            parameter. For example, you can choose to never use toll roads, avoid them as much as possible, or even highly 
+                                            parameter. For example, you can choose to never use toll roads, avoid them as much as possible, or even highly
                                             prefer them.
                                             The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is the default value.
                                             If you specify the Attribute Parameter Values parameter from a feature class, the field names on the feature class must match the fields as described below:
-                                            
+
                                               * ``AttributeName``: Lists the name of the restriction.
                                               * ``ParameterName``: Lists the name of the parameter associated with the restriction. A restriction can have one or more ParameterName field
                                                 values based on its intended use.
@@ -2503,11 +2515,11 @@ def solve_vehicle_routing_problem(
                                                 the value for Restriction Usage. The higher the preference, the
                                                 farther the tool will go out of its way to travel on the roads
                                                 associated with the restriction.
-                                            ========================================  =========================  ======================= 
+                                            ========================================  =========================  =======================
                                             **AttributeName**                             **ParameterName**      **ParameterValue**
                                             ----------------------------------------  -------------------------  -----------------------
                                             Any Hazmat Prohibited                     Restriction Usage          PROHIBITED
-                                            
+
                                             ----------------------------------------  -------------------------  -----------------------
                                             Avoid Carpool Roads                        Restriction Usage         PROHIBITED
                                             ----------------------------------------  -------------------------  -----------------------
@@ -2534,7 +2546,7 @@ def solve_vehicle_routing_problem(
                                             Avoid Unpaved Roads                       Restriction Usage          AVOID_HIGH
                                             ----------------------------------------  -------------------------  -----------------------
                                             Axle Count Restriction                    Number of Axles            0
-                                                                                  
+
                                                                                       Restriction Usage          PROHIBITED
                                             ----------------------------------------  -------------------------  -----------------------
                                             Driving a Bus                             Restriction Usage          PROHIBITED
@@ -2548,13 +2560,13 @@ def solve_vehicle_routing_problem(
                                             Driving an Emergency Vehicle              Restriction Usage          PROHIBITED
                                             ----------------------------------------  -------------------------  -----------------------
                                             Height Restriction                        Restriction Usage          PROHIBITED
-                                                                                 
+
                                                                                       Vehicle Height (meters)    0
                                             ----------------------------------------  -------------------------  -----------------------
-                                            Kingpin to Rear Axle                      Restriction Usage          PROHIBITED                                    
-                                            Length Restriction                     
+                                            Kingpin to Rear Axle                      Restriction Usage          PROHIBITED
+                                            Length Restriction
                                                                                       Vehicle Kingpin to Rear    0
-                                                                                      Axle Length (meters)    
+                                                                                      Axle Length (meters)
                                             ----------------------------------------  -------------------------  -----------------------
                                             Length Restriction                        Restriction Usage          PROHIBITED
 
@@ -2567,7 +2579,7 @@ def solve_vehicle_routing_problem(
                                             Roads Under Construction Prohibited       Restriction Usage          PROHIBITED
                                             ----------------------------------------  -------------------------  -----------------------
                                             Semi or Tractor with One                  Restriction Usage          PROHIBITED
-                                            or more trailers prohibited                 
+                                            or more trailers prohibited
                                             ----------------------------------------  -------------------------  -----------------------
                                             Single Axle Vehicles Prohibited           Restriction Usage          PROHIBITED
                                             ----------------------------------------  -------------------------  -----------------------
@@ -2589,7 +2601,7 @@ def solve_vehicle_routing_problem(
                                             WalkTime                                  Walking Speed (km/h)       5
                                             ----------------------------------------  -------------------------  -----------------------
                                             Weight Restriction                        Restriction Usage          PROHIBITED
-                                                                                      
+
                                                                                       Vehicle Weight             0
                                                                                       (kilograms)
                                             ----------------------------------------  -------------------------  -----------------------
@@ -2602,16 +2614,16 @@ def solve_vehicle_routing_problem(
 
                                                                                       Vehicle Width              0
                                                                                       (meters)
-                                            ========================================  =========================  =======================     
+                                            ========================================  =========================  =======================
 
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    populate_route_lines                    Optional boolean. 
-                                            
+    populate_route_lines                    Optional boolean.
+
                                             Checked (True) - The output routes will have the
                                             exact shape of the underlying streets.
 
                                             Unchecked (False) - No shape is generated for the
-                                            output routes, yet the routes will still contain tabular information about the solution. 
+                                            output routes, yet the routes will still contain tabular information about the solution.
                                             You won't be able to generate driving directions if
                                             route lines aren't created.
 
@@ -2627,9 +2639,9 @@ def solve_vehicle_routing_problem(
                                             not the underlying streets that are searched when finding the
                                             route.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    route_line_simplifi cation_tolerance    Optional LinearUnit. Specify by how much you want to simplify the geometry of the output lines for 
-                                            routes and directions. The value you provide for this parameter is ignored unless Travel Mode is set to 
-                                            Custom, which is the default value. The tool also ignores this parameter if the ``populate_route_lines`` parameter 
+    route_line_simplifi cation_tolerance    Optional LinearUnit. Specify by how much you want to simplify the geometry of the output lines for
+                                            routes and directions. The value you provide for this parameter is ignored unless Travel Mode is set to
+                                            Custom, which is the default value. The tool also ignores this parameter if the ``populate_route_lines`` parameter
                                             is unchecked (False).
                                             Simplification maintains critical
                                             points on a route, such as turns at intersections, to define the
@@ -2654,8 +2666,8 @@ def solve_vehicle_routing_problem(
     directions_language                     Optional string. Specify the language that should be used when generating
                                             driving directions.
                                             This parameter is used only when the populate_directions parameter is checked, or set to True.
-                                            The parameter value can be specified using one of the following two- or five-character language codes:  
-                                            ar-Arabic cs-Czech  de-German el-Greek  en-English  es-Spanish et-Estonian  fr-French  he-Hebrew  it-Italian  
+                                            The parameter value can be specified using one of the following two- or five-character language codes:
+                                            ar-Arabic cs-Czech  de-German el-Greek  en-English  es-Spanish et-Estonian  fr-French  he-Hebrew  it-Italian
                                             ja-Japanese  ko-Korean  lt-Lithuanian lv-Latvian  nl-Dutch  pl-Polish
                                             pt-BR-Brazilian Portuguese pt-PT-European Portuguese
                                             ru-Russian  sv-Swedish  th-Thai tr-Turkish
@@ -2674,7 +2686,7 @@ def solve_vehicle_routing_problem(
 
                                             ``NA Desktop``: Generates turn-by-turn directions suitable for printing.
                                             ``NA Navigation``: Generates turn-by-turn directions designed for an in-vehicle navigation device.
-                                            
+
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     travel_mode                             Optional string. Specify the mode of transportation to model in the analysis. Travel modes are managed in ArcGIS Online and can be configured by the administrator of your
                                             organization to better reflect your organization's workflows. You need to specify the name of a travel mode supported by your organization.
@@ -2690,69 +2702,69 @@ def solve_vehicle_routing_problem(
                                             Once you have identified the analysis settings, you should work with your organization's administrator and save these settings as part of new or existing travel mode so that
                                             everyone in your organization can rerun the analysis with the same settings.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    impedance                               Optional string. Specify the impedance, which is a value that represents the effort or cost of traveling 
+    impedance                               Optional string. Specify the impedance, which is a value that represents the effort or cost of traveling
                                             along road segments or on other parts of the transportation network.
-                                            Travel time is an impedance; a car taking one minute to travel a mile along an empty road is an example of impedance. 
-                                            Travel times can vary by travel mode-a pedestrian may take more than 20 minutes to walk the same mile-so it is important to 
-                                            choose the right impedance for the travel mode you are modeling. Choose from the following impedance values: Drive Time-Models 
-                                            travel times for a car. These travel times are static for each road and don't fluctuate with traffic. Truck Time-Models travel 
-                                            times for a truck.  These travel times are static for each road and don't fluctuate with traffic. Walk Time-Models travel 
-                                            times for a pedestrian. The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is 
+                                            Travel time is an impedance; a car taking one minute to travel a mile along an empty road is an example of impedance.
+                                            Travel times can vary by travel mode-a pedestrian may take more than 20 minutes to walk the same mile-so it is important to
+                                            choose the right impedance for the travel mode you are modeling. Choose from the following impedance values: Drive Time-Models
+                                            travel times for a car. These travel times are static for each road and don't fluctuate with traffic. Truck Time-Models travel
+                                            times for a truck.  These travel times are static for each road and don't fluctuate with traffic. Walk Time-Models travel
+                                            times for a pedestrian. The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is
                                             the default value.
-                                           
+
                                             Choice list:['Drive Time', 'Truck Time', 'Walk Time']
 
                                             The default value is 'Drive Time'.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     gis                                     Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    time_zone_usage_ for_time_fields        Optional string. Specifies the time zone for the input date-time fields supported by the tool. This 
-                                            parameter specifies the time zone for the following fields: ``TimeWindowStart1``, ``TimeWindowEnd1``, ``TimeWindowStart2``, 
-                                            ``TimeWindowEnd2``, ``InboundArriveTime``, and ``OutboundDepartTime`` on orders. ``TimeWindowStart1``, ``TimeWindowEnd1``, 
-                                            ``TimeWindowStart2``, and ``TimeWindowEnd2`` on depots. ``EarliestStartTime`` and ``LatestStartTime`` on routes. 
-                                            ``TimeWindowStart`` and ``TimeWindowEnd`` on breaks. 
-                                            
+    time_zone_usage_ for_time_fields        Optional string. Specifies the time zone for the input date-time fields supported by the tool. This
+                                            parameter specifies the time zone for the following fields: ``TimeWindowStart1``, ``TimeWindowEnd1``, ``TimeWindowStart2``,
+                                            ``TimeWindowEnd2``, ``InboundArriveTime``, and ``OutboundDepartTime`` on orders. ``TimeWindowStart1``, ``TimeWindowEnd1``,
+                                            ``TimeWindowStart2``, and ``TimeWindowEnd2`` on depots. ``EarliestStartTime`` and ``LatestStartTime`` on routes.
+                                            ``TimeWindowStart`` and ``TimeWindowEnd`` on breaks.
+
                                             Choice list:['UTC', 'GEO_LOCAL']
 
-                                            GEO_LOCAL: The date-time values associated with the orders 
-                                            or depots are in the time zone in which the orders and depots are located. For routes, the date-time 
-                                            values are based on the time zone in which the starting depot for the route is located. If a route does not have a starting depot, 
-                                            all orders and depots across all the routes must be in a single time zone. For breaks, the date-time values are based on the time 
-                                            zone of the routes. For example, if your depot is located in an area that follows eastern standard time and has the first time window 
-                                            values (specified as TimeWindowStart1 and TimeWindowEnd1) of 8 AM and 5 PM, the time window values will be treated as 8:00 a.m. and 5:00 p.m. 
-                                            eastern standard time. 
-                                            
-                                            UTC: The date-time values associated with the orders or depots are in the in coordinated universal time (UTC) and are not based on the time zone 
-                                            in which the orders or depots are located. For example, if your depot is located in an area that follows eastern standard time and has the first 
-                                            time window values (specified as TimeWindowStart1 and TimeWindowEnd1) of 8 AM and 5 PM, the time window values will be treated as 12:00 p.m. 
-                                            and 9:00 p.m. eastern standard time assuming the eastern standard time is obeying the daylight saving time. Specifying the date-time values 
-                                            in UTC is useful if you do not know the time zone in which the orders or depots are located or when you have orders and depots in multiple time 
-                                            zones, and you want all the date-time values to start simultaneously. The UTC option is applicable only when your network dataset 
-                                            defines a time zone attribute. Otherwise, all the date-time values are always treated as GEO_LOCAL.              
+                                            GEO_LOCAL: The date-time values associated with the orders
+                                            or depots are in the time zone in which the orders and depots are located. For routes, the date-time
+                                            values are based on the time zone in which the starting depot for the route is located. If a route does not have a starting depot,
+                                            all orders and depots across all the routes must be in a single time zone. For breaks, the date-time values are based on the time
+                                            zone of the routes. For example, if your depot is located in an area that follows eastern standard time and has the first time window
+                                            values (specified as TimeWindowStart1 and TimeWindowEnd1) of 8 AM and 5 PM, the time window values will be treated as 8:00 a.m. and 5:00 p.m.
+                                            eastern standard time.
+
+                                            UTC: The date-time values associated with the orders or depots are in the in coordinated universal time (UTC) and are not based on the time zone
+                                            in which the orders or depots are located. For example, if your depot is located in an area that follows eastern standard time and has the first
+                                            time window values (specified as TimeWindowStart1 and TimeWindowEnd1) of 8 AM and 5 PM, the time window values will be treated as 12:00 p.m.
+                                            and 9:00 p.m. eastern standard time assuming the eastern standard time is obeying the daylight saving time. Specifying the date-time values
+                                            in UTC is useful if you do not know the time zone in which the orders or depots are located or when you have orders and depots in multiple time
+                                            zones, and you want all the date-time values to start simultaneously. The UTC option is applicable only when your network dataset
+                                            defines a time zone attribute. Otherwise, all the date-time values are always treated as GEO_LOCAL.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    save_output_layer                       Optional boolean. Specify if the tool should save the analysis settings as a network analysis layer file. 
-                                            You cannot directly work with this file even when you open the file in an ArcGIS Desktop application like ArcMap. 
+    save_output_layer                       Optional boolean. Specify if the tool should save the analysis settings as a network analysis layer file.
+                                            You cannot directly work with this file even when you open the file in an ArcGIS Desktop application like ArcMap.
                                             It is meant to be sent to Esri Technical Support to diagnose the quality of results returned from the tool.
                                             True: Save the network analysis layer file. The file is downloaded in a temporary directory on your machine. In ArcGIS Pro, the location of the downloaded file can be determined by viewing the value for the Output Network Analysis Layer parameter in the entry corresponding to the tool execution in the Geoprocessing history of your Project. In ArcMap, the location of the file can be determined by accessing the Copy Location option in the shortcut menu on the Output Network Analysis Layer parameter in the entry corresponding to the tool execution in the Geoprocessing Results window.
                                             False: Do not save the network analysis layer file. This is the default.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    overrides                               Optional string. Specify additional settings that can influence the behavior of the solver when finding solutions 
-                                            for the network analysis problems. The value for this parameter needs to be specified in dict. For example, a valid value is of the following form {"overrideSetting1" : "value1", "overrideSetting2" : 
-                                            "value2"}. The override setting name is always enclosed in double quotes. The values can be a number, Boolean, 
-                                            or string. The default value for this parameter is no value, which indicates not to override any solver settings. Overrides 
-                                            are advanced settings that should be used only after careful analysis of the results obtained before and after applying 
-                                            the settings. A list of supported override settings for each solver and their acceptable values can be obtained by contacting 
+    overrides                               Optional string. Specify additional settings that can influence the behavior of the solver when finding solutions
+                                            for the network analysis problems. The value for this parameter needs to be specified in dict. For example, a valid value is of the following form {"overrideSetting1" : "value1", "overrideSetting2" :
+                                            "value2"}. The override setting name is always enclosed in double quotes. The values can be a number, Boolean,
+                                            or string. The default value for this parameter is no value, which indicates not to override any solver settings. Overrides
+                                            are advanced settings that should be used only after careful analysis of the results obtained before and after applying
+                                            the settings. A list of supported override settings for each solver and their acceptable values can be obtained by contacting
                                             Esri Technical Support.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    save_route_data                         Optional boolean. Choose whether the output includes a zip file that contains a file geodatabase holding the inputs 
-                                            and outputs of the analysis in a format that can be used to share route layers with ArcGIS Online or Portal for 
+    save_route_data                         Optional boolean. Choose whether the output includes a zip file that contains a file geodatabase holding the inputs
+                                            and outputs of the analysis in a format that can be used to share route layers with ArcGIS Online or Portal for
                                             ArcGIS.
-                                            True: Save the route data as a zip file. The file is downloaded in a temporary directory on your machine. In ArcGIS Pro, 
-                                            the location of the downloaded file can be determined by viewing the value for the Output Route Data parameter in the entry 
-                                            corresponding to the tool execution in the Geoprocessing history of your Project. In ArcMap, the location of the file can be 
-                                            determined by accessing the Copy Location option in the shortcut menu on the Output Route Data parameter in the entry corresponding 
+                                            True: Save the route data as a zip file. The file is downloaded in a temporary directory on your machine. In ArcGIS Pro,
+                                            the location of the downloaded file can be determined by viewing the value for the Output Route Data parameter in the entry
+                                            corresponding to the tool execution in the Geoprocessing history of your Project. In ArcMap, the location of the file can be
+                                            determined by accessing the Copy Location option in the shortcut menu on the Output Route Data parameter in the entry corresponding
                                             to the tool execution in the Geoprocessing Results window.
-                                            False: Do not save the route data. This is the default.  
+                                            False: Do not save the route data. This is the default.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     time_impedance                          Optional string. Specify the time-based impedance.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
@@ -2767,10 +2779,15 @@ def solve_vehicle_routing_problem(
                                               * JSON File - The output features are returned as a compressed file containing the JSON representation of the outputs. When this option is specified, the output is a single file (with a .zip extension) that contains one or more JSON files (with a .json extension) for each of the outputs created by the service.
                                               * GeoJSON File - The output features are returned as a compressed file containing the GeoJSON representation of the outputs. When this option is specified, the output is a single file (with a .zip extension) that contains one or more GeoJSON files (with a .geojson extension) for each of the outputs created by the service.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    future                                  Optional boolean. If True, a GPJob is returned instead of results. 
+    future                                  Optional boolean. If True, a GPJob is returned instead of results.
                                             The GPJob can be queried on the status of the execution.
+    --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
+    ignore_invalid_order_locations          Specifies whether invalid orders will be ignored when solving the vehicle routing problem.
+
+                                            `True` - The solve operation will ignore any invalid orders and return a solution, given it didn't encounter any other errors. If you need to generate routes and deliver them to drivers immediately, you may be able to ignore invalid orders, solve, and distribute the routes to your drivers. Next, resolve any invalid orders from the last solve and include them in the VRP analysis for the next workday or work shift.
+                                            `False` - The solve operation will fail when any invalid orders are encountered. An invalid order is an order that the VRP solver can't reach. An order may be unreachable for a variety of reasons, including if it's located on a prohibited network element, it isn't located on the network at all, or it's located on a disconnected portion of the network.
     ======================================  ==========================================================================================================================================
-    
+
       : returns: the following as a named tuple:
           * out_unassigned_stops - Output Unassigned Stops as a FeatureSet
           * out_stops - Output Stops as a FeatureSet
@@ -2787,11 +2804,11 @@ def solve_vehicle_routing_problem(
     defaults = dict(zip(tbx.solve_vehicle_routing_problem.__annotations__.keys(),
                         tbx.solve_vehicle_routing_problem.__defaults__))
     if time_impedance is None:
-        time_impedance = defaults['time_impedance']
+        time_impedance = defaults.get('time_impedance', None)
     if distance_impedance is None:
-        distance_impedance = defaults['distance_impedance']
+        distance_impedance = defaults.get('distance_impedance', None)
     if output_format is None:
-        output_format = defaults['output_format']
+        output_format = defaults.get('output_format', None)
     if orders is None:
         orders = defaults['orders']
     if depots is None:
@@ -2827,42 +2844,51 @@ def solve_vehicle_routing_problem(
 
     if isinstance(overrides, dict):
         overrides = json.dumps(overrides)
-
-    job = tbx.solve_vehicle_routing_problem(orders=orders,
-                                            depots=depots,
-                                            routes=routes,
-                                            breaks=breaks,
-                                            time_units=time_units,
-                                            distance_units=distance_units,
-                                            analysis_region=analysis_region,
-                                            default_date=default_date,
-                                            uturn_policy=uturn_policy,
-                                            time_window_factor=time_window_factor,
-                                            spatially_cluster_routes=spatially_cluster_routes,
-                                            route_zones=route_zones,
-                                            route_renewals=route_renewals, order_pairs=order_pairs,
-                                            excess_transit_factor=excess_transit_factor,
-                                            point_barriers=point_barriers,
-                                            line_barriers=line_barriers,
-                                            polygon_barriers=polygon_barriers,
-                                            use_hierarchy_in_analysis=use_hierarchy_in_analysis,
-                                            restrictions=restrictions,
-                                            attribute_parameter_values=attribute_parameter_values,
-                                            populate_route_lines=populate_route_lines,
-                                            route_line_simplification_tolerance=route_line_simplification_tolerance,
-                                            populate_directions=populate_directions,
-                                            directions_language=directions_language,
-                                            directions_style_name=directions_style_name,
-                                            travel_mode=travel_mode,
-                                            impedance=impedance,
-                                            time_zone_usage_for_time_fields=time_zone_usage_for_time_fields,
-                                            save_output_layer=save_output_layer,
-                                            overrides=overrides,
-                                            save_route_data=save_route_data,
-                                            time_impedance=time_impedance,
-                                            distance_impedance=distance_impedance,
-                                            populate_stop_shapes=populate_stop_shapes,
-                                            output_format=output_format, gis=gis, future=True)
+    from arcgis._impl.common._utils import inspect_function_inputs
+    params = {
+        "orders" : orders,
+        "depots" : depots,
+        "routes" : routes,
+        "breaks" : breaks,
+        "time_units" : time_units,
+        "distance_units" : distance_units,
+        "analysis_region" : analysis_region,
+        "default_date" : default_date,
+        "uturn_policy" : uturn_policy,
+        "time_window_factor" : time_window_factor,
+        "spatially_cluster_routes" : spatially_cluster_routes,
+        "route_zones" : route_zones,
+        "route_renewals" : route_renewals,
+        "order_pairs" : order_pairs,
+        "excess_transit_factor" : excess_transit_factor,
+        "point_barriers" : point_barriers,
+        "line_barriers" : line_barriers,
+        "polygon_barriers" : polygon_barriers,
+        "use_hierarchy_in_analysis" : use_hierarchy_in_analysis,
+        "restrictions" : restrictions,
+        "attribute_parameter_values" : attribute_parameter_values,
+        "populate_route_lines" : populate_route_lines,
+        "route_line_simplification_tolerance" : route_line_simplification_tolerance,
+        "populate_directions" : populate_directions,
+        "directions_language" : directions_language,
+        "directions_style_name" : directions_style_name,
+        "travel_mode" : travel_mode,
+        "impedance" : impedance,
+        "time_zone_usage_for_time_fields" : time_zone_usage_for_time_fields,
+        "save_output_layer" : save_output_layer,
+        "overrides" : overrides,
+        "save_route_data" : save_route_data,
+        "time_impedance" : time_impedance,
+        "distance_impedance" : distance_impedance,
+        "populate_stop_shapes" : populate_stop_shapes,
+        "output_format" : output_format,
+        "gis" : gis,
+        "future" : True,
+        "ignore_invalid_order_locations" : ignore_invalid_order_locations
+    }
+    params = inspect_function_inputs(tbx.solve_vehicle_routing_problem, **params)
+    params['future'] = True
+    job = tbx.solve_vehicle_routing_problem(**params)
 
     if future:
         return job
