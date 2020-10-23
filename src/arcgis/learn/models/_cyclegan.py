@@ -7,7 +7,7 @@ try:
     from ._cyclegan_utils import CycleGanLoss, CycleGANTrainer, optim, compute_fid_metric
     from ._cyclegan_utils import  CycleGAN as CycleGAN_model
     from .._utils.cyclegan import ImageTuple, ImageTupleList, ImageTupleListMS
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from torchvision import transforms
     from pathlib import Path
     from fastai.vision import DatasetType, Learner, partial, open_image
@@ -61,8 +61,8 @@ class CycleGAN(ArcGISModel):
                                 object from `prepare_data` function or None for
                                 inferencing.
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         =====================   ===========================================
         
         :returns: `CycleGAN` Object
@@ -71,7 +71,7 @@ class CycleGAN(ArcGISModel):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
             
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
 

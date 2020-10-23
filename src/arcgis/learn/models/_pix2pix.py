@@ -12,6 +12,7 @@ try:
     from fastai.vision import *
     from fastai.vision import DatasetType, Learner, partial, open_image
     import torch
+    from .._utils.common import _get_emd_path
 
     HAS_FASTAI = True
 except Exception as e:
@@ -66,8 +67,8 @@ class Pix2Pix(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from `prepare_data` function or None for
@@ -80,7 +81,7 @@ class Pix2Pix(ArcGISModel):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
             
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
 
