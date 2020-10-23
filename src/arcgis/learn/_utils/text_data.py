@@ -11,12 +11,15 @@ import traceback
 import pandas as pd
 from functools import partial
 
+
 HAS_FASTAI = True
 try:
     import torch
     import arcgis
-    from fastai.text import TextList, TextClasDataBunch, pad_collate
+    from fastai.text import TextList, TextClasDataBunch, pad_collate, TextDataBunch,\
+            SortishSampler, SortSampler, ItemList, ItemBase, Text
     from fastai.data_block import CategoryList, MultiCategoryList
+    from arcgis.learn._utils._seq2seq_utils import SequenceToSequenceTextList, shift_tfm
     from .text_transforms import TransformerNERDataset, TransformerNERDataBunch, process_text
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -33,6 +36,7 @@ else:
 HAS_NUMPY = True
 try:
     import numpy as np
+    warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning) 
 except:
     HAS_NUMPY = False
 
@@ -47,7 +51,7 @@ def _raise_fastai_exception(exception):
                           "scikit-image=0.15.0 pillow=6.2.2 libtiff=4.0.10 fastai=1.0.60 pytorch=1.4.0 "
                           "torchvision=0.5.0 scikit-learn=0.23.1 --no-pin'"
                           "\n'conda install gdal=2.3.3'"
-                          "\n'pip install transformers==3.0.2'")
+                          "\n'pip install transformers==3.3.0'")
     raise Exception(error_message)
 
 
@@ -158,6 +162,7 @@ class TextDataObject:
         self._databunch = None
         self._training_indexes = list()
         self._task = task
+        self._backbone = None
         
         self.databunch_kwargs = {'num_workers': 0} if sys.platform == 'win32' else {}
         self.databunch_kwargs["pin_memory"] = True
@@ -284,6 +289,63 @@ class TextDataObject:
 
         return text_data
 
+    @classmethod
+    def prepare_data_for_seq2seq(
+            cls,
+            data,
+            text_cols,
+            label_cols,
+            train_file="train.csv",
+            val_split_pct=0.1,
+            seed=42,
+            batch_size=8,
+            process_labels=True,
+            remove_html_tags=False,
+            remove_urls=False,
+        ):
+
+        if not HAS_FASTAI:
+            _raise_fastai_exception(import_exception)
+
+        text_data = cls("sequence_translation")
+        if not os.path.exists(data):
+            raise Exception(f"Provided data directory - {data}, does not exists")
+
+        training_file_path = os.path.join(data, train_file)
+
+        if not os.path.exists(training_file_path):
+            raise Exception(f"Provided data directory does not contain {train_file} file")
+
+        train_df = read_file(training_file_path)
+        train_df = cls._preprocess_df(train_df, text_cols, label_cols, process_labels, remove_html_tags, remove_urls)
+
+        random.seed(seed)
+        
+        validation_indexes = random.sample(range(train_df.shape[0]), round(val_split_pct * train_df.shape[0]))
+        training_indexes = list(set([i for i in range(train_df.shape[0])]) - set(validation_indexes))
+
+        temp_df = copy.deepcopy(train_df)
+        train_df = temp_df.loc[training_indexes]
+        valid_df = temp_df.loc[validation_indexes]
+        # Removing rows with empty strings in the text_cols from the training and validation data
+        train_df[text_cols].replace('', np.nan, inplace=True)
+        train_df.dropna(inplace=True)
+        valid_df[text_cols].replace('', np.nan, inplace=True)
+        valid_df.dropna(inplace=True)
+        # Resetting dataframe indexes for training anf validation dataframe
+        train_df.reset_index(drop=True, inplace=True)
+        valid_df.reset_index(drop=True, inplace=True)
+        del temp_df
+        text_data._bs = batch_size
+        text_data._text_cols = text_cols
+        text_data._label_cols = label_cols
+        text_data._train_df = train_df[[text_cols] + label_cols]
+        text_data._valid_df = valid_df[[text_cols] + label_cols]
+        text_data.val_split_pct = val_split_pct
+        text_data._training_indexes = range(0, train_df.shape[0])
+        text_data._model_type = None
+        return text_data
+
     def get_databunch(self):
         if self._is_empty:
             return None
@@ -334,6 +396,27 @@ class TextDataObject:
 
         self._is_empty = False
 
+    def _prepare_seq2seq_databunch(self, transformer_processor, pad_first, pad_idx, **kwargs):
+        """
+        Wrapper to create fastai TextDataBunch Object
+        """
+        self._model_type = kwargs.get('model_type')
+        
+        if not HAS_FASTAI:
+            return
+        dl_tfms=None
+        if self._model_type in ['t5', 'bart', 'mbart']:
+            dl_tfms=shift_tfm
+        data = SequenceToSequenceTextList.from_df(self._train_df,cols=self._text_cols, processor=transformer_processor)\
+                        .split_by_rand_pct(valid_pct=self.val_split_pct)\
+                        .label_from_df(cols= self._label_cols, label_cls=TextList, processor=transformer_processor)\
+                        .databunch(bs=self._bs, pad_first=pad_first, pad_idx=pad_idx, dl_tfms=dl_tfms, **self.databunch_kwargs)
+        
+        self._is_empty = False
+        self._databunch = data
+        
+        self._backbone = kwargs.get('backbone')
+
     @staticmethod
     def _preprocess_df(dataframe, text_cols, label_cols, process_labels, remove_html_tags=False, remove_urls=False):
         """
@@ -377,6 +460,8 @@ class TextDataObject:
             return self._classification_show_batch(rows=rows, max_len=max_len)
         elif self._task == "ner":
             return self._ner_show_batch(rows=rows)
+        elif self._task == "sequence_translation":
+            return self._classification_show_batch(rows=rows, max_len=max_len)
         else:
             raise Exception(f"Wrong task - {self._task} selected. Allowed values are 'ner', 'classification'")
 
@@ -402,6 +487,8 @@ class TextDataObject:
         processed_data = []
         rows = min(len(self._training_indexes), rows)
         random_batch = random.sample(self._training_indexes, rows)
+        # rows = min(len(self._train_df), rows)
+        # random_batch = np.random.randint(0,self._train_df.index.max(),rows)
         dataframe = self._train_df.loc[random_batch]
         if len(self._label_cols) > 1:
             for idx, item in dataframe.iterrows():
@@ -433,6 +520,15 @@ class TextDataObject:
             self._databunch = text_list.label_const(0, label_cls=MultiCategoryList, classes=classes).databunch()
         else:
             self._databunch = text_list.label_const(0, label_cls=CategoryList, classes=classes).databunch()
+
+    def create_empty_seq2seq_data(self, text_cols, label_cols):
+        self._text_cols = text_cols
+        self._label_cols = label_cols
+
+        self._databunch = SequenceToSequenceTextList([])\
+                        .split_none()\
+                        .label_const()\
+                        .databunch()
         self._is_empty = False
 
         # self._train_df = self._create_empty_df(batch_size, [text_cols] + label_cols)

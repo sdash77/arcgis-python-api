@@ -1087,7 +1087,7 @@ class ArcGISModel(object):
 
         if self.__str__() == '<PointCNN>':
             self.show_results(save_html=True, save_path=model_characteristics_dir)
-        elif self.__str__() in ["<TextClassifier>", "<TransformerEntityRecognizer>"]:
+        elif self.__str__() in ["<TextClassifier>", "<TransformerEntityRecognizer>","<SequenceToSequence>"]:
             pass
         elif hasattr(self, 'show_results'):
             self.show_results()

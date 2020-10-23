@@ -16,13 +16,16 @@ except Exception as e:
 transformer_seq_length = 512
 
 def infer_model_type(model_name, transformer_architectures):
-    model_type = 'Others'
-    model_name = model_name.split('/')[-1]
-    for architecture in sorted(transformer_architectures, key=len, reverse=True):
-        if model_name.startswith(architecture.lower()):
-            model_type = architecture.lower()
-            break
-    return model_type
+        model_type = 'Others'
+        model_name = model_name.split('/')[-1]
+        for architecture in sorted(transformer_architectures, key=len, reverse=True):
+            if model_name.startswith(architecture.lower()) or model_name.endswith(architecture.lower()):
+                model_type = architecture.lower()
+                break
+            elif model_name.startswith('opus-mt'):
+                model_type = 'marian'
+                break
+        return model_type
 
 
 class ModelBackbone:

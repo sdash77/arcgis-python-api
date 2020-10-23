@@ -30,8 +30,10 @@ def split_into_layer_groups(model, architecture, task="classification"):
         splitter = get_layer_group_splitter_for_classification(architecture)
     elif task == "ner":
         splitter = get_layer_group_splitter_for_ner(architecture)
+    elif task == "sequence_translation":
+        splitter = get_layer_group_splitter_for_sequence_translation(architecture)
     else:
-        raise Exception(f"Wrong task - {task} selected. Allowed values are 'ner', 'classification'")
+        raise Exception(f"Wrong task - {task} selected. Allowed values are 'ner', 'classification','sequence_translation'")
 
     logger.info(f"Invoking - {splitter.__name__} function for splitting {architecture} model into layer groups")
     return splitter(model, architecture)
@@ -64,7 +66,6 @@ def get_layer_group_splitter_for_ner(architecture):
     else:
         return naive_model_splitter
 
-
 def get_layer_group_splitter_for_classification(architecture):
     """
     This function will return the appropriate function which will
@@ -90,6 +91,26 @@ def get_layer_group_splitter_for_classification(architecture):
     else:
         return naive_model_splitter
 
+def get_layer_group_splitter_for_sequence_translation(architecture):
+    """
+    This function will return the appropriate function which will
+    then be used to split the transformer model into layer groups
+
+    =====================   =================================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------------
+    architecture            Required string. The transformer architecture for
+                            which we wish to get the layer groups. This param
+                            will be used to return the correct function to
+                            split model layers
+    ---------------------   -------------------------------------------------
+    """
+    if architecture in ["t5"]:
+        return _t5_conditional_generation_splitter
+    elif architecture in ["bart","mbart",'marian']:
+        return _bart_conditional_generation_splitter
+    else:
+        return naive_model_splitter
 
 def naive_model_splitter(model, model_name):
     linear_layer_found = False
@@ -262,3 +283,27 @@ def _xlm_layer_splitter(model, model_name, task="classification"):
         return groups
     else:
         raise Exception("Error in splitting the model into layer groups")
+
+def _t5_conditional_generation_splitter(model, model_name):
+    """
+    Split Hugging Face t5 Model into layer groups
+    """
+    try:
+        t = model
+        groups = [[t.encoder.block,t.decoder.block],[t.lm_head]]
+        return groups
+    except:
+        raise Exception("Error in splitting the model into layer groups")
+
+def _bart_conditional_generation_splitter(model, model_name):
+    """
+    Split Hugging Face t5 Model into layer groups
+    """
+    try:
+        t = model.model
+        groups = [[t.encoder.embed_positions,t.encoder.layers,t.decoder.embed_positions,t.decoder.layers],[t.shared]]
+        return groups
+    except:
+        raise Exception("Error in splitting the model into layer groups")
+
+        

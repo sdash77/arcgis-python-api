@@ -363,11 +363,12 @@ class _TransformerEntityRecognizer(ArcGISModel):
         zip_files = kwargs.pop('zip_files', True)
         overwrite = kwargs.pop('overwrite', False)
         path = super().save(name_or_path, framework, publish=False, gis=None, compute_metrics=compute_metrics,
-                            save_optimizer=save_optimizer, **kwargs)
+                            save_optimizer=save_optimizer, zip_files=False, **kwargs)
 
         self._save_df_to_html(path)
 
         if zip_files:
+            print('Packaging dlpk...')
             _create_zip(path.name, str(path))
 
         if publish:
