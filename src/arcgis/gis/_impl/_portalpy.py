@@ -83,6 +83,7 @@ class Portal(object):
         """ The Portal constructor. Requires URL and optionally username/password."""
         url = url.strip()            # be permissive in accepting home app urls
         homepos = url.find('/home')
+        trust_env = kwargs.get("trust_env", None)
         if homepos != -1:
             url = url[:homepos]
 
@@ -148,7 +149,8 @@ class Portal(object):
                                       proxy_port=proxy_port,
                                       verify_cert=verify_cert,
                                       custom_auth=custom_auth,
-                                      token=token)
+                                      token=token,
+                                      trust_env=trust_env)
             else:
                 self.con = Connection(baseurl=self.resturl,
                                       tokenurl=tokenurl,
@@ -165,7 +167,8 @@ class Portal(object):
                                       client_id=client_id,
                                       client_secret=kwargs.pop('client_secret', None),
                                       custom_auth=custom_auth,
-                                      token=token)
+                                      token=token,
+                                      trust_env=trust_env)
         #self.get_version(True)
         self.get_properties(True)
 

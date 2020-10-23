@@ -91,9 +91,11 @@ class Connection(object):
         token_url
         AUTH keys = HOME, BUILTIN, PRO, ANON, PKI, HANDLER, UNKNOWN (Internal)
         custom_auth = Requests authencation handler
+        trust_env = T/F if to ignore netrc files
         """
         from arcgis.gis import GIS
         self._all_ssl = kwargs.pop("all_ssl", True)
+        self.trust_env = kwargs.pop("trust_env", None)
         if baseurl:
             while baseurl.endswith("/"):
                 baseurl = baseurl[:-1]
@@ -243,6 +245,7 @@ class Connection(object):
         self._session = Session()
         self._session.verify = self._verify_cert
         self._session.stream = True
+        self._session.trust_env = self.trust_env
         self._session.headers.update(self._header)
         self._session.proxies = proxies
         if self._referer is None and\
