@@ -27,6 +27,7 @@ from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, 
 from .utility import _raster_input_rft, _get_raster_ra_rft, _input_rft, _find_object_ref, \
                      _python_variable_name
 from arcgis.features.layer import FeatureLayer as _FeatureLayer
+from .._RasterInfo import RasterInfo
 import logging
 _LOGGER = logging.getLogger(__name__)
 from datetime import datetime
@@ -4400,7 +4401,7 @@ def constant_raster(constant, raster_info, gis=None):
     Creates a virtual raster with a single pixel value.
 
     :param constant: Required list. The value of the constant to be added to the virtual raster.
-    :param raster_info: Required Raster info dictionary or ImageryLayer object to set the properties of the output raster.
+    :param raster_info: Required Raster info dictionary or arcgis.raster.RasterInfo object or ImageryLayer object to set the properties of the output raster.
                         if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
 
                         Example for RasterInfo dict - 
@@ -4443,6 +4444,8 @@ def constant_raster(constant, raster_info, gis=None):
         layer_raster_info = {}
         if isinstance(raster_info, ImageryLayer):
             layer_raster_info = copy.deepcopy(raster_info.raster_info)
+        elif isinstance(raster_info, RasterInfo):
+            layer_raster_info = copy.deepcopy(raster_info.to_dict())
         else:
             layer_raster_info = copy.deepcopy(raster_info)
         if "pixelType" in layer_raster_info.keys():
@@ -4469,7 +4472,7 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
     """
     Creates a virtual raster with random values for each cell.
 
-    :param raster_info: Required Raster info dictionary or ImageryLayer object to set the properties of the output raster.
+    :param raster_info: Required Raster info dictionary or arcgis.raster.RasterInfo object or ImageryLayer object to set the properties of the output raster.
                         if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
 
                         Example for RasterInfo dict - 
@@ -4607,6 +4610,8 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
         layer_raster_info = {}
         if isinstance(raster_info, ImageryLayer):
             layer_raster_info = copy.deepcopy(raster_info.raster_info)
+        elif isinstance(raster_info, RasterInfo):
+            layer_raster_info = copy.deepcopy(raster_info.to_dict())
         else:
             layer_raster_info = copy.deepcopy(raster_info)
         if "pixelType" in layer_raster_info.keys():
