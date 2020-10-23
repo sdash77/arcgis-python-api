@@ -86,6 +86,11 @@ class TabularDataObject(object):
             index_field
         )
 
+        if input_features is None:
+            tabular_data._is_raster_only = True
+        else:
+            tabular_data._is_raster_only = False
+
         tabular_data._dataframe = tabular_data._dataframe.reindex(sorted(tabular_data._dataframe.columns), axis=1)
 
         tabular_data._categorical_variables = tabular_data._field_mapping['categorical_variables']
@@ -353,10 +358,86 @@ class TabularDataObject(object):
 
             self._index_seq = np.array(bunched)
 
+        if self._is_raster_only:
+            return self._raster_timeseries_bunch(normalize, bunch)
+
         if len(list(self._dataframe.columns.values)) == 1:
             return self._univariate_bunch(seq_len, normalize, bunch)
         else:
             return self._multivariate_bunch(seq_len, normalize, bunch)
+
+    def _raster_timeseries_bunch(self, normalize=True, bunched=True):
+        kwargs_variables = {'num_workers': 0} if sys.platform == 'win32' else {}
+
+        kwargs_variables['bs'] = self._bs
+
+        if hasattr(arcgis, "env") and getattr(arcgis.env, "_processorType", "") == "CPU":
+            kwargs_variables["device"] = torch.device('cpu')
+
+        self._encoder_mapping = None
+        mapping = {}
+        df = self._dataframe.copy()  # .drop(self._dependent_variable, axis=1)
+
+        for col in list(df.columns.values):
+            if self._is_categorical(df[col]):
+                labelEncoder = LabelEncoder()
+                df[col] = np.array(labelEncoder.fit_transform(df[col]), dtype='int64')
+                mapping[col] = labelEncoder
+
+        self._encoder_mapping = mapping
+
+        if normalize:
+            if len(self._column_transforms_mapping) == 0:
+                for col in list(df.columns):
+                    self._column_transforms_mapping[col] = [MinMaxScaler()]
+            else:
+                for col in list(df.columns):
+                    if len(self._column_transforms_mapping.get(col, [])) == 0:
+                        self._column_transforms_mapping[col] = [DummyTransform()]
+
+            processed_dataframe = df.copy()
+            for col in list(df.columns):
+                transformed_data = df[col]
+                for transform in self._column_transforms_mapping.get(col, []):
+                    transformed_data = transform.fit_transform(
+                        np.array(transformed_data, dtype=df[col].dtype).reshape(-1, 1))
+                    transformed_data = transformed_data.squeeze(1)
+                processed_dataframe[col] = np.array(transformed_data, dtype=df[col].dtype)
+        else:
+            processed_dataframe = df.copy()
+
+        big_bunch = []
+
+        proc_df = processed_dataframe.copy()
+        proc_df = proc_df.drop(self._dependent_variable, axis=1)
+
+        for i in range(len(processed_dataframe)):
+            big_bunch.append([proc_df.iloc[i].values])
+
+        big_bunch = np.array(big_bunch)
+
+        random.seed(self._seed)
+        validation_indexes = random.sample(range(big_bunch.shape[0]),
+                                           round(self._val_split_pct * big_bunch.shape[0]))
+        self._validation_indexes_ts = validation_indexes
+
+        self._training_indexes_ts = list(
+            set([i for i in range(big_bunch.shape[0])]) - set(validation_indexes))
+
+        X_train = big_bunch.take(self._training_indexes_ts, axis=0)
+        X_valid = big_bunch.take(self._validation_indexes_ts, axis=0)
+
+        y_train = np.array(processed_dataframe[self._dependent_variable].take(self._training_indexes_ts))
+        y_valid = np.array(processed_dataframe[self._dependent_variable].take(self._validation_indexes_ts))
+
+        if bunched is False:
+            return X_train, X_valid, y_train, y_valid
+
+        data = (ItemLists('.', TimeSeriesList(X_train), TimeSeriesList(X_valid))
+                .label_from_lists(y_train, y_valid, label_cls=FloatList)
+                .databunch(**kwargs_variables))
+
+        return data
 
     def _multivariate_bunch(self, seq_len, normalize=True, bunched=True):
         kwargs_variables = {'num_workers': 0} if sys.platform == 'win32' else {}
@@ -544,6 +625,7 @@ class TabularDataObject(object):
     def show_batch(self, rows=5, graph=False, seq_len=None):
         """
         Shows a batch of dataframe prepared without applying transforms.
+        In case of raster only, seq_len = number of rasters
         """
 
         if seq_len is not None or graph is True:

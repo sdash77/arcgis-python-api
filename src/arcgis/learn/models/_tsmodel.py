@@ -75,7 +75,8 @@ class TimeSeriesModel(ArcGISModel):
     data                    Required TabularDataObject. Returned data object from
                             `prepare_tabulardata` function.
     ---------------------   -------------------------------------------
-    seq_length              Required Integer. Sequence Length for the series.
+    seq_len                 Required Integer. Sequence Length for the series.
+                            In case of raster only, seq_len = number of rasters
     ---------------------   -------------------------------------------
     model_arch              Optional string. Model Architecture.
                             Allowed "InceptionTime", "ResCNN",
@@ -301,13 +302,14 @@ class TimeSeriesModel(ArcGISModel):
 
     def predict(
             self,
-            input_features,
-            rasters=None,
+            input_features=None,
+            explanatory_rasters=None,
             datefield=None,
-            distance_feature_layers=None,
+            distance_features=None,
             output_layer_name="Prediction Layer",
             gis=None,
             prediction_type='features',
+            output_raster_path=None,
             match_field_names=None,
             number_of_predictions=None
     ):
@@ -318,10 +320,12 @@ class TimeSeriesModel(ArcGISModel):
         =================================   =========================================================================
         **Argument**                        **Description**
         ---------------------------------   -------------------------------------------------------------------------
-        input_features                      Required Feature Layer or spatially enabled dataframe.
+        input_features                      Optional Feature Layer or spatially enabled dataframe.
                                             Contains features with location of the input data.
+                                            Required if prediction_type is 'features' or 'dataframe'
         ---------------------------------   -------------------------------------------------------------------------
         explanatory_rasters                 Optional list of Raster Objects.
+                                            Required if prediction_type is 'rasters'
         ---------------------------------   -------------------------------------------------------------------------
         distance_features                   Optional List of Feature Layer objects.
                                             These layers are used for calculation of field "NEAR_DIST_1",
@@ -349,6 +353,143 @@ class TimeSeriesModel(ArcGISModel):
         :returns Feature Layer if prediction_type='features' else returns a dataframe
         """
 
+        rasters = explanatory_rasters if explanatory_rasters else []
+        if prediction_type in ['features', 'dataframe']:
+
+            if input_features is None:
+                raise Exception("Feature Layer required for predict_features=True")
+
+            gis = gis if gis else arcgis.env.active_gis
+            return self._predict_features(input_features, rasters, datefield, distance_features, output_layer_name, gis,
+                                          match_field_names, number_of_predictions, prediction_type)
+        else:
+            if not rasters:
+                raise Exception("Rasters required for predict_features=False")
+
+            if not output_raster_path:
+                raise Exception("Please specify output_raster_folder_path to save the output.")
+
+            return self._predict_rasters(output_raster_path, rasters, match_field_names)
+
+    def _predict_rasters(self, output_raster_path, rasters, match_field_names=None):
+        if len(rasters) != self._seq_len:
+            raise Exception("Not enough rasters to make prediction!")
+
+        if not os.path.exists(os.path.dirname(output_raster_path)):
+            raise Exception("Output directory doesn't exist")
+
+        if os.path.exists(output_raster_path):
+            raise Exception("Output Folder already exists")
+
+        try:
+            import arcpy
+        except:
+            raise Exception("This function requires arcpy.")
+
+        if not HAS_NUMPY:
+            raise Exception("This function requires numpy.")
+
+        try:
+            import pandas as pd
+        except:
+            raise Exception("This function requires pandas.")
+
+        fields_needed = self._data._categorical_variables + self._data._continuous_variables
+
+        try:
+            arcpy.env.outputCoordinateSystem = rasters[0].extent['spatialReference']['wkt']
+        except:
+            arcpy.env.outputCoordinateSystem = rasters[0].extent['spatialReference']['wkid']
+
+        xmin = rasters[0].extent['xmin']
+        xmax = rasters[0].extent['xmax']
+        ymin = rasters[0].extent['ymin']
+        ymax = rasters[0].extent['ymax']
+        min_cell_size_x = rasters[0].mean_cell_width
+        min_cell_size_y = rasters[0].mean_cell_height
+
+        default_sr = rasters[0].extent['spatialReference']
+
+        for raster in rasters:
+            point_upper = arcgis.geometry.Point(
+                {'x': raster.extent['xmin'], 'y': raster.extent['ymax'], 'sr': raster.extent['spatialReference']})
+            point_lower = arcgis.geometry.Point(
+                {'x': raster.extent['xmax'], 'y': raster.extent['ymin'], 'sr': raster.extent['spatialReference']})
+            cell_size = arcgis.geometry.Point(
+                {'x': raster.mean_cell_width, 'y': raster.mean_cell_height, 'sr': raster.extent['spatialReference']})
+
+            points = arcgis.geometry.project([point_upper, point_lower, cell_size], raster.extent['spatialReference'],
+                                             default_sr)
+            point_upper = points[0]
+            point_lower = points[1]
+            cell_size = points[2]
+
+            if xmin > point_upper.x:
+                xmin = point_upper.x
+            if ymax < point_upper.y:
+                ymax = point_upper.y
+            if xmax < point_lower.x:
+                xmax = point_lower.x
+            if ymin > point_lower.y:
+                ymin = point_lower.y
+
+            if min_cell_size_x > cell_size.x:
+                min_cell_size_x = cell_size.x
+
+            if min_cell_size_y > cell_size.y:
+                min_cell_size_y = cell_size.y
+
+        max_raster_columns = math.ceil((xmax - xmin) / min_cell_size_x)
+        max_raster_rows = math.ceil((ymax - ymin) / min_cell_size_y)
+
+        point_upper = arcgis.geometry.Point({'x': xmin, 'y': ymax, 'sr': default_sr})
+        cell_size = arcgis.geometry.Point({'x': min_cell_size_x, 'y': min_cell_size_y, 'sr': default_sr})
+
+        raster_data = {}
+        for raster in rasters:
+            field_name = raster.name
+            point_upper_translated = \
+            arcgis.geometry.project([point_upper], default_sr, raster.extent['spatialReference'])[0]
+            cell_size_translated = arcgis.geometry.project([cell_size], default_sr, raster.extent['spatialReference'])[
+                0]
+            if field_name in fields_needed:
+                raster_data[field_name] = raster.read(
+                    origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns,
+                    nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
+            elif match_field_names and match_field_names.get(raster.name):
+                field_name = match_field_names.get(raster.name)
+                raster_data[field_name] = raster.read(
+                    origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns,
+                    nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
+            else:
+                continue
+
+        for field in fields_needed:
+            if field not in list(raster_data.keys()) and match_field_names and match_field_names.get(field, None) is None:
+                raise Exception(f"Field missing {field}")
+
+        processed_output = []
+        for row in progress_bar(range(max_raster_rows)):
+            for column in range(max_raster_columns):
+                processed_row = []
+                for raster_name in sorted(raster_data):
+                    value = raster_data[raster_name][row][column]
+                    if len(value) > 0:
+                        processed_row.append(value[0])
+                    else:
+                        processed_row.append(0)
+
+                processed_output.append(self._predict([processed_row]))
+
+        processed_numpy = np.array(processed_output, dtype='float64')
+        processed_numpy = processed_numpy.reshape([max_raster_rows, max_raster_columns])
+        processed_raster = arcpy.NumPyArrayToRaster(processed_numpy, arcpy.Point(xmin, ymin),
+                                                    x_cell_size=min_cell_size_x, y_cell_size=min_cell_size_y)
+        processed_raster.save(output_raster_path)
+
+        return True
+
+    def _predict_features(self, input_features, rasters=None, datefield=None, distance_features=None, output_layer_name='Prediction Layer', gis=None, match_field_names=None, number_of_predictions=None, prediction_type='features'):
         if not HAS_PANDAS:
             raise Exception("This function requires pandas library")
 
@@ -387,7 +528,7 @@ class TimeSeriesModel(ArcGISModel):
         dataframe = orig_dataframe.copy()
 
         fields_needed = self._data._categorical_variables + self._data._continuous_variables + [self._data._dependent_variable]
-        distance_feature_layers = distance_feature_layers if distance_feature_layers else []
+        distance_feature_layers = distance_features if distance_features else []
 
         continuous_variables = self._data._continuous_variables
 

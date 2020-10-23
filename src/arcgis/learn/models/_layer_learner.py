@@ -321,6 +321,7 @@ class FullyConnectedNetwork(ArcGISModel):
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 
+            gis = gis if gis else arcgis.env.active_gis
             return self._predict_features(input_features, rasters, datefield, distance_features, output_layer_name, gis, match_field_names, prediction_type)
         else:
             if not rasters:
@@ -494,7 +495,7 @@ class FullyConnectedNetwork(ArcGISModel):
                 continue
 
         for field in fields_needed:
-            if field not in list(raster_data.keys()):
+            if field not in list(raster_data.keys()) and match_field_names and match_field_names.get(field, None) is None:
                 raise Exception(f"Field missing {field}")
 
         processed_data = []
