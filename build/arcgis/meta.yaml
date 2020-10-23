@@ -1,7 +1,4 @@
-about:
-  home: https://developers.arcgis.com/python
-  license: Esri Master License Agreement (MLA)
-  summary: ArcGIS API for Python
+
 build:
   number: '0'
 package:
@@ -58,3 +55,7 @@ source:
 test:
   imports:
   - arcgis.gis
+about:
+  home: https://developers.arcgis.com/python
+  license: Esri Master License Agreement (MLA)
+  summary: ArcGIS API for Python
