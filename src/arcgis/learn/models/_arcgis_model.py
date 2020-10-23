@@ -433,6 +433,7 @@ class ArcGISModel(object):
         self._learning_rate = None
         self._backend = getattr(self, '_backend', 'pytorch')
         self._model_metrics_cache = None
+        self._slice_lr = True
 
     def _check_backbone_support(self, backbone):
         "Fetches the backbone name and returns True if it is in the list of supported backbones"
