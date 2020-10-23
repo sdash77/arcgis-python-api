@@ -1292,29 +1292,39 @@ def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, 
 
 
 def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_factor=None, z_offset=None, constant_z=None,
-              correct_geoid=None, astype=None):
+              correct_geoid=None, astype=None, tolerance=None, dem= None):
     """
     The geometric function transforms the image (for example, orthorectification) based on a sensor definition and a
     terrain model.This function was added at 10.1.The arguments for the geometric function are as follows:
 
-    :param raster: input raster
+    :param raster: The input raster.
     :param geodata_transforms: Please refer to the Geodata Transformations documentation for more details.
-    :param append_geodata_xform: boolean
-    :param z_factor: double
-    :param z_offset: double
-    :param constant_z: double
-    :param correct_geoid: boolean
-    :param astype: output pixel type
-    :return: the output raster
+    :param append_geodata_xform: Optional boolean. Indicates whether the geodata transformation is appended to the existing one from the input raster.
+    :param z_factor: Optional double. Satellite rational polynomial coefficients (RPCs) are scaled for 
+                     elevation datasets with vertical units in meters. If your elevation uses other 
+                     vertical units, enter a Z Factor to rescale to meters. For example, if your 
+                     elevation units are in feet, you would use a value of 0.3048 to convert your 
+                     elevation units from feet to meters.
+    :param z_offset: Optional double. The base value to be added to the elevation value in the DEM. 
+                     This could be used to offset elevation values that do not start at sea level.
+    :param constant_z: Optional double. Specify a constant elevation to use for the Geometric function.
+    :param correct_geoid: Optional boolean. Set it to True to apply the geoid (EGM96) correction to the z-values, 
+                          unless your DEM is already referenced to ellipsoidal heights.
+    :param tolerance: Optional double. Specify the maximum tolerable error in the geometric function, given in number of pixels.
+    :param dem: Optional Raster. Specify the DEM to use for the Geometric function
 
     """
 
-    layer, raster, raster_ra = _raster_input(raster)
+    layer1, raster_1, raster_ra1 = _raster_input(raster)
+
+    layer2=None
+    if dem is not None:
+        layer2, raster_2, raster_ra2 = _raster_input(raster, dem)
 
     template_dict = {
         "rasterFunction": "Geometric",
         "rasterFunctionArguments": {
-            "Raster": raster
+            "Raster": raster_1
         },
         "variableName": "Raster"
     }
@@ -1334,8 +1344,13 @@ def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_fact
         template_dict["rasterFunctionArguments"]["ConstantZ"] = constant_z
     if correct_geoid is not None:
         template_dict["rasterFunctionArguments"]["CorrectGeoid"] = correct_geoid
+    if tolerance is not None:
+        template_dict["rasterFunctionArguments"]["Tolerance"] = tolerance
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    if dem is not None:
+        template_dict["rasterFunctionArguments"]["DEM"] = raster_2
+        return _clone_layer(layer1, template_dict, raster_ra1, raster_ra2)
+    return _clone_layer(layer1, template_dict, raster_ra1)
 
 
 def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_power=None, psz_factor=None,
