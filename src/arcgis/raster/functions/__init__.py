@@ -1025,12 +1025,14 @@ def colormap(raster, colormap_name=None, colormap=None, colorramp=None, astype=N
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def composite_band(rasters, astype=None):
+def composite_band(rasters, astype=None, cellsize_type='MaxOf'):
     """
     Combines multiple images to form a multiband image.
 
     :param rasters: input rasters
     :param astype: output pixel type
+    :param cellsize_type: The cell size used to create the output raster.
+                          one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
     :return: the multiband image
     """
     layer, raster, raster_ra = _raster_input(rasters)
@@ -1045,6 +1047,20 @@ def composite_band(rasters, astype=None):
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
+
+    cellsize_types = {
+        "firstof" : 0,
+        "minof" : 1,
+        "maxof" : 2,
+        "meanof" : 3,
+        "lastof" : 4
+    }      
+
+    if cellsize_type is not None:
+        if isinstance(cellsize_type, str):
+            template_dict["rasterFunctionArguments"]['CellsizeType'] = cellsize_types[cellsize_type.lower()]
+        elif isinstance(cellsize_type,int):
+            template_dict["rasterFunctionArguments"]['CellsizeType'] = cellsize_type
 
     return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
 
