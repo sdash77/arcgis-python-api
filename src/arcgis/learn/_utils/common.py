@@ -96,7 +96,7 @@ def read_image(path, resize_to: int=None):
 
 class ArcGISMSImage(Image):
 
-    def show(self, ax=None, rgb_bands=None, show_axis=False):
+    def show(self, ax=None, rgb_bands=None, show_axis=False, title=None):
         if rgb_bands is None:
             rgb_bands = getattr(self, 'rgb_bands', [0, 1, 2])
         symbology_data = self.data[rgb_bands]
@@ -107,9 +107,14 @@ class ArcGISMSImage(Image):
         data_to_plot = strechted_data.permute(1, 2, 0)
         if not show_axis:ax.axis('off')
         if ax is not None:
-            return ax.imshow(data_to_plot)
+            ax.imshow(data_to_plot)
+            if title is not None:
+                ax.set_title(title)
         else:
-            return plt.imshow(data_to_plot)
+            plt.imshow(data_to_plot)
+            if title:
+                plt.title(title)
+
 
     def print_method(self):
         return self.show()
