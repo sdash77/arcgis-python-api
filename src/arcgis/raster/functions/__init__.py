@@ -167,9 +167,9 @@ def _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2=None, varia
         try:            
             import arcpy, json
             arcpylyr=arcpy.ia.Apply(layer._uri,json.dumps(function_chain_ra))
-            newlyr = Raster(str(arcpylyr), is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
-        except:
-            pass
+            newlyr = Raster(arcpylyr, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        except Exception as err:
+            _LOGGER.warning(err)
 
     #newlyr.properties = layer.properties
     newlyr._engine_obj._fn = function_chain
@@ -195,10 +195,12 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
         newlyr = Raster(layer._url, is_multidimensional= layer._is_multidimensional, engine= layer._engine,  gis=layer._gis)
 
     if layer._engine==_ArcpyRaster:
-        import arcpy, json
-        arcpylyr=arcpy.ia.Apply(layer._uri,json.dumps(function_chain_ra))
-        newlyr = Raster(str(arcpylyr), is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
-
+        try:
+            import arcpy, json
+            arcpylyr=arcpy.ia.Apply(layer._uri,json.dumps(function_chain_ra))
+            newlyr = Raster(arcpylyr, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        except Exception as err:
+            _LOGGER.warning(err)
 
     #newlyr.properties = layer.properties
     newlyr._engine_obj._fn = function_chain

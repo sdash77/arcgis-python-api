@@ -356,36 +356,38 @@ class ImageryLayer(Layer):
             url = url.decode("UTF-8")
             import ast
             url = ast.literal_eval(url)
-        if '/fileShares/' in url or '/rasterStores/' in url or '/cloudStores/' in url or isinstance(url,dict) or '/vsi' in url or isinstance(url, bytes):
-            self._gis = _arcgis.env.active_gis if gis is None else gis
-            self._datastore_raster = True
-            self._uri = url
-            if isinstance(url,dict):
-                encoded_dict = str(self._uri).encode('utf-8')
-                self._uri = base64.b64encode(encoded_dict)
-            gis = _arcgis.env.active_gis if gis is None else gis
-
-            if gis._con._product == "AGOL":
-                ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
-                url = ra_url.replace("rasteranalysis", "rasterutils").replace("RasterAnalysisTools", "RasterRendering").replace("GPServer", "ImageServer")
-            else:
-                image_hosting_server_url = None
-                raster_analytics_server_url = None
-                hosting_server_url = None
-                for ds in gis._datastores:
-                    if ('serverFunction' in ds._server.keys()) and 'ImageHosting' in ds._server['serverFunction']:
-                        image_hosting_server_url = ds._server['url']
-                        break
-                    elif ('serverFunction' in ds._server.keys()) and 'RasterAnalytics' in ds._server['serverFunction']:
-                        raster_analytics_server_url = ds._server['url']
-                    elif ('serverFunction' in ds._server.keys()) and ds._server['serverFunction'] == '':
-                        hosting_server_url = ds._server['url']
-                if image_hosting_server_url:
-                    url = image_hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
-                elif raster_analytics_server_url:
-                    url = raster_analytics_server_url + "/rest/services/System/RasterRendering/ImageServer"
-                elif hosting_server_url:
-                    url = hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
+        if isinstance(url, str) or isinstance(url, dict) or isinstance(url, bytes):
+            if '/fileShares/' in url or '/rasterStores/' in url or '/cloudStores/' in url or isinstance(url,dict) or '/vsi' in url or isinstance(url, bytes) or "ImageServer" not in url:
+                self._gis = _arcgis.env.active_gis if gis is None else gis
+                self._datastore_raster = True
+                self._uri = url
+                if isinstance(url,dict):
+                    encoded_dict = str(self._uri).encode('utf-8')
+                    self._uri = base64.b64encode(encoded_dict)
+                gis = _arcgis.env.active_gis if gis is None else gis
+                if gis is not None:
+                    if gis._con._product == "AGOL":
+                        ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
+                        url = ra_url.replace("rasteranalysis", "rasterutils").replace("RasterAnalysisTools", "RasterRendering").replace("GPServer", "ImageServer")
+                    else:
+                        image_hosting_server_url = None
+                        raster_analytics_server_url = None
+                        hosting_server_url = None
+                
+                        for ds in gis._datastores:
+                            if ('serverFunction' in ds._server.keys()) and 'ImageHosting' in ds._server['serverFunction']:
+                                image_hosting_server_url = ds._server['url']
+                                break
+                            elif ('serverFunction' in ds._server.keys()) and 'RasterAnalytics' in ds._server['serverFunction']:
+                                raster_analytics_server_url = ds._server['url']
+                            elif ('serverFunction' in ds._server.keys()) and ds._server['serverFunction'] == '':
+                                hosting_server_url = ds._server['url']
+                        if image_hosting_server_url:
+                            url = image_hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
+                        elif raster_analytics_server_url:
+                            url = raster_analytics_server_url + "/rest/services/System/RasterRendering/ImageServer"
+                        elif hosting_server_url:
+                            url = hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
 
         super(ImageryLayer, self).__init__(url, gis)
         self._spatial_filter = None
@@ -4592,6 +4594,30 @@ class ImageryLayer(Layer):
         from arcgis.raster.functions import boolean_or
         return boolean_or([other, self])
 
+    def __ne__(self, other):
+        from arcgis.raster.functions import not_equal
+        return not_equal([self, other])
+
+    def __eq__(self, other):
+        from arcgis.raster.functions import equal_to
+        return equal_to([self, other])
+
+    def __gt__(self, other):
+        from arcgis.raster.functions import greater_than
+        return greater_than([self, other])
+
+    def __ge__(self, other):
+        from arcgis.raster.functions import greater_than_equal
+        return greater_than_equal([self, other])
+
+    def __lt__(self, other):
+        from arcgis.raster.functions import less_than
+        return less_than([self, other])
+
+    def __le__(self, other):
+        from arcgis.raster.functions import less_than_equal
+        return less_than_equal([self, other])
+
         # Raster.Raster.__pos__ = unaryPos         # +v
 # Raster.Raster.__abs__ = Functions.Abs    # abs(v)
 #
@@ -5936,6 +5962,24 @@ class Raster():
     def __ror__(self, other):
         return self._engine_obj.__ror__(other)
 
+    def __ne__(self, other):
+        return self._engine_obj.__ne__(other)
+
+    def __eq__(self, other):
+        return self._engine_obj.__eq__(other)
+
+    def __gt__(self, other):
+        return self._engine_obj.__gt__(other)
+
+    def __ge__(self, other):
+        return self._engine_obj.__ge__(other)
+
+    def __lt__(self, other):
+        return self._engine_obj.__lt__(other)
+
+    def __le__(self, other):
+        return self._engine_obj.__le__(other)
+
         # bbox_sr = None
         # if not isinstance(bbox, arcpy.arcobjects.Extent):
         #     bbox_list = []
@@ -7024,7 +7068,6 @@ class _ArcpyRaster(Raster,ImageryLayer):
         self._datastore_raster=True
         self._do_not_hydrate=False
 
-
     @property
     def _lyr_dict(self):
         url = self._path
@@ -7739,6 +7782,30 @@ class _ArcpyRaster(Raster,ImageryLayer):
     def __ror__(self, other):
         from arcgis.raster.functions import boolean_or
         return boolean_or([other, self])
+
+    def __ne__(self, other):
+        from arcgis.raster.functions import not_equal
+        return not_equal([self, other])
+
+    def __eq__(self, other):
+        from arcgis.raster.functions import equal_to
+        return equal_to([self, other])
+
+    def __gt__(self, other):
+        from arcgis.raster.functions import greater_than
+        return greater_than([self, other])
+
+    def __ge__(self, other):
+        from arcgis.raster.functions import greater_than_equal
+        return greater_than_equal([self, other])
+
+    def __lt__(self, other):
+        from arcgis.raster.functions import less_than
+        return less_than([self, other])
+
+    def __le__(self, other):
+        from arcgis.raster.functions import less_than_equal
+        return less_than_equal([self, other])
 
 def _get_raster_collection_engine(engine):
 
@@ -8688,12 +8755,12 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         data = {}
         value_rasters=[]
         value_geometries=[]
-        for field in self.fields:
+        for index, field in enumerate(self.fields):
             try:
                 value = self.get_field_values(field)
                 if field=="Raster":
                     for ele in value:
-                        value_rasters.append(Raster(ele))
+                        value_rasters.append(Raster(self._raster_collection[index]['Raster']))
                     data[field] = value_rasters
                 elif field=="Shape":
                     for ele in value:
