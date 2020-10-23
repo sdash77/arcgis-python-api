@@ -542,7 +542,13 @@ def band_arithmetic(raster, band_indexes=None, astype=None, method=0):
                    20 = IronOxide,
                    21 = FerrousMinerals,
                    22 = ClayMinerals,
-                   23 = WNDWI
+                   23 = WNDWI,
+                   24 = BAI,
+                   25 = NBR,
+                   26 = NDBI,
+                   27 = NDMI,
+                   28 = NDSI,
+                   29 = MNDWI
 
     :return: band_arithmetic applied to the input raster
     """
@@ -900,6 +906,94 @@ def wndwi(raster, band_indexes="2 5 6 0.5", astype=None):
 
     """
     return band_arithmetic(raster, band_indexes, astype, 23)
+
+def bai(raster, band_indexes="3 4", astype=None):
+    """
+    The Burn Area Index (BAI) uses the reflectance values in the red and NIR portion of the spectrum to identify
+    the areas of the terrain affected by fire.
+
+    BAI = 1/((0.1 -RED)^2 + (0.06 - NIR)^2)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Red NIR", e.g., "3 4" or [3,4]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 24)
+
+def nbr(raster, band_indexes="7 5", astype=None):
+    """
+    The Normalized Burn Ratio Index (NBRI) uses the NIR and SWIR bands to emphasize burned areas,
+    while mitigating illumination and atmospheric effects. Your images should be corrected to reflectance values
+    before using this index.
+
+    NBR = (NIR - SWIR) / (NIR+ SWIR)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "SWIR NIR", e.g., "7 5" or [7,5]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 25)
+
+def ndbi(raster, band_indexes="6 5", astype=None):
+    """
+    The Normalized Difference Built-up Index (NDBI) uses the NIR and SWIR bands to emphasize  man-made built-up areas.
+    It is ratio based to mitigate the effects of terrain illumination differences as well as atmospheric effects.
+
+    NDBI = (SWIR - NIR) / (SWIR + NIR)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "SWIR NIR", e.g., "6 5" or [6,5]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 26)
+
+def ndmi(raster, band_indexes="5 6", astype=None):
+    """
+    The Normalized Difference Moisture Index (NDMI) is sensitive to the moisture levels in vegetation.
+    It is used to monitor droughts as well as monitor fuel levels in fire-prone areas. It uses NIR and SWIR bands to
+    create a ratio designed to mitigate illumination and atmospheric effects.
+
+    NDMI = (NIR - SWIR1)/(NIR + SWIR1)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR SWIR1", e.g., "5 6" or [5,6]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 27)
+
+def ndsi(raster, band_indexes="4 6", astype=None):
+    """
+    The Normalized Difference Snow Index (NDSI) is designed to use MODIS (band 4 and band 6) and
+    Landsat TM (band 2 and band 5) for identification of snow cover while ignoring cloud cover. Since it is ratio based,
+    it also mitigates atmospheric effects.
+
+    NDSI = (Green - SWIR) / (Green + SWIR)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Green SWIR", e.g., "4 6" or [4,6]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 28)
+
+def mndwi(raster, band_indexes="3 6", astype=None):
+    """
+    The Modified Normalized Difference Water Index (MNDWI) uses green and SWIR bands for the enhancement 
+    of open water features. It also diminishes built-up area features that are often correlated with open
+    water in other indices.
+
+    MNDWI = (Green - SWIR) / (Green + SWIR)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Green SWIR", e.g., "3 6" or [3,6]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 29)
 
 def expression(raster, expression="(B3 - B1 / B3 + B1)", astype=None):
     """
