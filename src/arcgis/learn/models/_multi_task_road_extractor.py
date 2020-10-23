@@ -62,7 +62,7 @@ def safe_json(data):
 
 class MultiTaskRoadExtractor(ArcGISModel):
     """
-    Creates a Multi-Task Learning model wrapper for binary segmentation.
+    Creates a Multi-Task Learning model for binary segmentation
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -454,7 +454,10 @@ class MultiTaskRoadExtractor(ArcGISModel):
 
         """
         self._check_requisites()
-        self.learn.show_results(rows=rows, **kwargs)
+        self.return_fig = kwargs.get("return_fig", False)
+        fig=self.learn.show_results(rows=rows, **kwargs)
+        if self.return_fig:
+            return fig
 
     @property
     def _model_metrics(self):

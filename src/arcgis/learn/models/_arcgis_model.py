@@ -27,7 +27,7 @@ try:
 
     from fastai.callbacks import TrackerCallback, EarlyStoppingCallback
     from fastai.basic_train import LearnerCallback
-    
+
     from torch import nn
     import torch
     import numpy as np
@@ -45,8 +45,12 @@ try:
 except ImportError as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
+
+
     class TrackerCallback():
         pass
+
+
     class LearnerCallback():
         pass
 
@@ -73,6 +77,7 @@ if HAS_FASTAI and not LAMBDA_TEXT_CLASSIFICATION:
                       models.resnet101.__name__, models.resnet152.__name__]
     _densenet_family = [models.densenet121.__name__, models.densenet169.__name__, models.densenet161.__name__,
                         models.densenet201.__name__]
+
 
 @contextlib.contextmanager
 def nostdout():
@@ -108,6 +113,7 @@ class _MultiGPUCallback(LearnerCallback):
     """
     Parallelize over multiple GPUs only if multiple GPUs are present.
     """
+
     def __init__(self, learn):
         super(_MultiGPUCallback, self).__init__(learn)
 
@@ -122,10 +128,12 @@ class _MultiGPUCallback(LearnerCallback):
         if self.multi_gpu:
             self.learn.model = self.learn.model.module
 
+
 def _set_multigpu_callback(model):
     if (not hasattr(arcgis.env, "_gpuid")) or \
             (arcgis.env._gpuid >= torch.cuda.device_count()):
         model.learn.callback_fns.append(_MultiGPUCallback)
+
 
 def _set_ddp_multigpu(model):
     parser = argparse.ArgumentParser()
@@ -145,12 +153,13 @@ def _set_ddp_multigpu(model):
         return
     model._multigpu_training = True
     torch.cuda.set_device(args.gpu)
-    torch.distributed.init_process_group(backend='nccl', init_method='env://', world_size=args.world_size,rank=args.rank)
+    torch.distributed.init_process_group(backend='nccl', init_method='env://', world_size=args.world_size,
+                                         rank=args.rank)
     torch.distributed.barrier()
     model._rank_distributed = args.gpu
 
-def _isnotebook():
 
+def _isnotebook():
     try:
         shell = get_ipython().__class__.__name__
         if shell == 'ZMQInteractiveShell':
@@ -161,6 +170,7 @@ def _isnotebook():
             return False
     except NameError:
         return False
+
 
 def _create_zip(zipname, path):
     import shutil
@@ -215,6 +225,7 @@ class SaveModelCallback(TrackerCallback):
             except:
                 pass
 
+
 # Multispectral Models Specific resources start #
 
 valid_init_schemes = ['red_band', 'random', 'all_random']
@@ -226,6 +237,8 @@ rgb_map = {
     'b': 2,
     'blue': 2
 }
+
+
 def get_band_mapping(band_name):
     # Extra Logic goes Here
     # For example: NIR --> RED(0); Coastal --> BLUE(2)
@@ -248,6 +261,7 @@ def _get_tail(model):
             except:
                 pass
 
+
 def _get_ms_tail(tail, data, type_init='random'):
     new_tail = nn.Conv2d(
         in_channels=len(data._extract_bands),
@@ -263,7 +277,7 @@ def _get_ms_tail(tail, data, type_init='random'):
     avg_weights = tail.weight.data.mean(dim=1)
     for i, j in enumerate(data._extract_bands):
         band = str(data._bands[j]).lower()
-        b = get_band_mapping(band) #rgb_map.get(band, None)
+        b = get_band_mapping(band)  # rgb_map.get(band, None)
         if b is not None and not type_init == 'all_random':
             new_tail.weight.data[:, i] = tail.weight.data[:, b]
         else:
@@ -273,6 +287,7 @@ def _get_ms_tail(tail, data, type_init='random'):
                 # Random Weights for all other band weights
                 pass
     return new_tail
+
 
 def _set_tail(model, new_tail):
     updated = False
@@ -288,6 +303,7 @@ def _set_tail(model, new_tail):
                 return
             except:
                 pass
+
 
 def _change_tail(model, data, tail_weights_type=None):
     tail_name, tail = _get_tail(model)
@@ -308,11 +324,11 @@ def _get_backbone_meta(arch_name):
     _model_meta = {i.__name__: j for i, j in model_meta.items()}
     return _model_meta.get(arch_name, _default_meta)
 
+
 # Multispectral Models Specific resources end #
 
 
 def _device_check():
-
     if hasattr(arcgis, 'env') and getattr(arcgis.env, '_processorType', "") == "CPU":
         return True
 
@@ -413,6 +429,7 @@ class ArcGISModel(object):
             self._imagery_type = data._imagery_type
             self._bands = data._bands
             self._orig_backbone = self._backbone
+
             @wraps(self._orig_backbone)
             def backbone_wrapper(*args, **inkwargs):
                 if 'pretrained_backbone' in kwargs:
@@ -423,10 +440,11 @@ class ArcGISModel(object):
                     else:
                         inkwargs['pretrained'] = pretrained_backbone
                 return _change_tail(self._orig_backbone(*args, **inkwargs), data, kwargs.get('tail_weights_type'))
+
             backbone_wrapper._is_multispectral = True
             self._backbone = backbone_wrapper
         if not hasattr(data, 'class_mapping') and hasattr(data, 'classes'):
-            data.class_mapping = {v:v for v in data.classes}
+            data.class_mapping = {v: v for v in data.classes}
 
         self.learn = None
         self._data = data
@@ -625,7 +643,6 @@ class ArcGISModel(object):
             lr = self.lr_find(allow_plot=False)
             if self._slice_lr is True:
                 lr = slice(lr / 10, lr)
-            
 
         self._learning_rate = lr
         self._model_metrics_cache = None
@@ -653,27 +670,30 @@ class ArcGISModel(object):
             from datetime import datetime
             now = datetime.now()
             save_callback_params = kwargs.get("save_callback_params", {"monitor": "valid_loss", "every": "improvement"})
-            #callbacks.append(SaveModelCallback(self, monitor='valid_loss', every='improvement',
+            # callbacks.append(SaveModelCallback(self, monitor='valid_loss', every='improvement',
             #                                   name=now.strftime("checkpoint_%Y-%m-%d_%H-%M-%S")))
             callbacks.append(SaveModelCallback(self,
-                                               name=now.strftime("checkpoint_%Y-%m-%d_%H-%M-%S"), **save_callback_params))
+                                               name=now.strftime("checkpoint_%Y-%m-%d_%H-%M-%S"),
+                                               **save_callback_params))
         kwargs.pop("save_callback_params", None)
         # If tensorboardx is installed write a log with name as timestamp
         if tensorboard and HAS_TENSORBOARDX:
             training_id = time.strftime("log_%Y-%m-%d_%H-%M-%S")
             log_path = Path(os.path.dirname(self._data.path)) / 'training_log'
-            #iter_dl = iter(self._data.train_dl)
-            #with torch.no_grad():
+            abs_path = os.path.abspath(log_path)
+            # iter_dl = iter(self._data.train_dl)
+            # with torch.no_grad():
             #    self.learn.model(next(iter_dl)[0]).detach().cpu()
-            #del iter_dl
+            # del iter_dl
             callbacks.append(LearnerTensorboardWriter(learn=self.learn, base_dir=log_path, name=training_id))
-            training_id=type(self).__name__+"_"+training_id
-            self.learn.callback_fns.append(partial(ArcGISTBCallback, base_dir=log_path, name=training_id, arcgis_model=self))
+            training_id = type(self).__name__ + "_" + training_id
+            self.learn.callback_fns.append(
+                partial(ArcGISTBCallback, base_dir=log_path, name=training_id, arcgis_model=self))
             hostname = socket.gethostname()
-            print("Monitor training using Tensorboard using the following command: 'tensorboard --host={} --logdir={}'".format(hostname, log_path))
+            print("Monitor training using Tensorboard using the following command: 'tensorboard --host={} --logdir=\"{}\"'".format(hostname, abs_path))
         # Send out a warning if tensorboardX is not installed
         elif tensorboard:
-            warn("Install tensorboardX 1.7 'pip install tensorboardx==1.7' to write training log")
+            warn("Install tensorboardX 2.1 'pip install tensorboardx==2.1' to write training log")
 
         if one_cycle:
             self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
@@ -918,7 +938,7 @@ class ArcGISModel(object):
                 <p><b>Sample Results</b></p>
                 <img src="{encoded_showresults}" alt="Sample Results">
             """
-        
+
         # For PointCNN and 3d models.
         if iframe_showresults:
             HTML_TEMPLATE += f"""
@@ -926,7 +946,6 @@ class ArcGISModel(object):
                 <iframe src="ModelCharacteristics/show_results.html" style="width:100%;height:70%;" scrolling="no" frameborder="0">
                     </iframe>
             """
-
 
         if metrics_html:
             HTML_TEMPLATE += f"""
@@ -1020,7 +1039,7 @@ class ArcGISModel(object):
                 pass
 
         if _emd_template.get('InferenceFunction', False):
-            if _emd_template['ModelType'] not in ["ObjectDetection", "ImageClassification", "InstanceDetection",\
+            if _emd_template['ModelType'] not in ["ObjectDetection", "ImageClassification", "InstanceDetection", \
                                                   "ObjectClassification"] or save_inference_file:
                 with open(saved_path.parent / _emd_template['InferenceFunction'], 'w') as f:
                     f.write(self._code)
@@ -1087,7 +1106,7 @@ class ArcGISModel(object):
 
         if self.__str__() == '<PointCNN>':
             self.show_results(save_html=True, save_path=model_characteristics_dir)
-        elif self.__str__() in ["<TextClassifier>", "<TransformerEntityRecognizer>","<SequenceToSequence>"]:
+        elif self.__str__() in ["<TextClassifier>", "<TransformerEntityRecognizer>", "<SequenceToSequence>"]:
             pass
         elif hasattr(self, 'show_results'):
             self.show_results()
