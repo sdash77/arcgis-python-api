@@ -68,11 +68,15 @@ class MultiTaskRoadExtractor(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            ``prepare_data`` function.
     ---------------------   -------------------------------------------
     backbone                Optional String. Backbone CNN model to be used for
                             creating the base of the `linknet` model.
                             Default: 'resnet34'
+
+                            Supported backbones: 'resnet18', 'resnet34',
+                            'resnet50', 'resnet101', 'resnet152'
+
                             If hourglass is chosen as the mtl_model
                             (Architecture),then this parameter is ignored
                             as hourglass uses a special customised
@@ -80,29 +84,32 @@ class MultiTaskRoadExtractor(ArcGISModel):
     ---------------------   -------------------------------------------
     mtl_model               Optional String. It is used to create model
                             from linknet or hourglass based neural architectures.
+
                             Supported: 'linknet', 'hourglass'.
+
                             Default: 'hourglass'
     ---------------------   -------------------------------------------
     pretrained_path         Optional String. Path where pre-trained model is
                             saved.
     =====================   ===========================================
-    **Keyword Arguments**
 
-    =====================   ===========================================
-    **Argument**            **Description**
-    ---------------------   -------------------------------------------
-    gaussian_thresh         Optional float. Sets the gaussian threshold
-                            which allows to set the required road width.
-                            Is in range 0.0 to 1.0
-                            Default:0.76
-    ---------------------   -------------------------------------------
-    orient_bin_size         Optional Int. Sets the bin size for
-                            orientation angles.
-                            Default:20
-    ---------------------   -------------------------------------------
-    orient_theta            Optional Int. Sets the width of orientation
-                            mask. Default:8
-    ---------------------   -------------------------------------------
+    **kwargs**
+
+    =============================   =============================================
+    **Argument**                    **Description**
+    -----------------------------   ---------------------------------------------
+    gaussian_thresh                 Optional float. Sets the gaussian threshold
+                                    which allows to set the required road width.
+                                    Is in range 0.0 to 1.0
+                                    Default:0.76
+    -----------------------------   ---------------------------------------------
+    orient_bin_size                 Optional Int. Sets the bin size for
+                                    orientation angles.
+                                    Default:20
+    -----------------------------   ---------------------------------------------
+    orient_theta                    Optional Int. Sets the width of orientation mask.
+                                    Default:8
+    =============================   =============================================
 
     :returns: `MultiTaskRoadExtractor` Object
     """
@@ -429,23 +436,22 @@ class MultiTaskRoadExtractor(ArcGISModel):
 
     def show_results(self, rows=2, **kwargs):
         """
-        Show `rows` result of predictions on `ds_type` dataset.
+        Shows the ground truth and predictions of model side by side.
+
+        **kwargs**
 
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        rows                    number of rows of data to be displayed, if
-                                batch size is smaller than the rows will
-                                display the number provided for batch size.
+        rows                    Number of rows of data to be displayed, if
+                                batch size is smaller, then the rows will
+                                display the value provided for batch size.
+        ---------------------   -------------------------------------------
+        alpha                   Optional Float. Opacity parameter for label
+                                overlay on image. Float [0..1]
+                                Default: 0.6
         =====================   ===========================================
-        **Keyword Arguments**
 
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        alpha                   Opacity parameter for label overlay on image
-                                float [0..1]
-        ---------------------   -------------------------------------------
         """
         self._check_requisites()
         self.learn.show_results(rows=rows, **kwargs)
