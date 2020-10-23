@@ -181,6 +181,7 @@ def _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2=None, varia
     newlyr._engine_obj._filtered = layer._filtered
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
+    newlyr._engine_obj.extent = layer.extent
 
     if layer._do_not_hydrate:
         newlyr._engine_obj.token = layer.token
@@ -212,6 +213,7 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
     newlyr._engine_obj._filtered = layer._filtered
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
+    newlyr._engine_obj.extent = layer.extent
 
     if layer._do_not_hydrate:
         newlyr._engine_obj.token = layer.token

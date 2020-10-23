@@ -6179,10 +6179,18 @@ class _ImageServerRaster(ImageryLayer, Raster):
         self._do_not_hydrate=False
         self._created_from_collection=False
         self._mdinfo=None
+        self._extent=None
         
     @property
     def extent(self):
-        return super().extent
+        if self._extent is None:
+            return super().extent
+        else:
+            return self._extent
+
+    @extent.setter
+    def extent(self, value):
+        self._extent = value
 
     @property
     def pixel_type(self):
