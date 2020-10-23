@@ -1080,7 +1080,7 @@ class Service(BaseServer):
             self._init()
         return self._extensions
     #----------------------------------------------------------------------
-    def _modify_extensions(self,
+    def modify_extensions(self,
                           extension_objects=None):
         """
         enables/disables a service extension type based on the name
@@ -1101,7 +1101,7 @@ class Service(BaseServer):
            isinstance(extension_objects[0], Extension):
             self._extensions = extension_objects
             self._json_dict['extensions'] = [x.value for x in extension_objects]
-            res = self.edit(str(self))
+            res = self.edit(str(self._json_dict))
             self._json = None
             self._init()
             return res
