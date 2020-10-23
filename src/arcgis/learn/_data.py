@@ -792,11 +792,11 @@ def prepare_data(path,
                             'KITTI_rectangles', 'RCNN_Masks', 'Classified_Tiles', 
                             'Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet',  
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
-                            'superres' and 'CycleGAN'.
+                            'superres', 'CycleGAN' and 'Pix2Pix'.
                             This parameter is mandatory for data which are not
                             exported by ArcGIS Pro / Enterprise which includes
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
-                            'superres' and 'CycleGAN'.
+                            'superres', 'CycleGAN' and 'Pix2Pix'.
     ---------------------   -------------------------------------------
     resize_to               Optional integer. Resize the image to given size.
     =====================   ===========================================
