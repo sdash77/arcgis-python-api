@@ -83,6 +83,10 @@ class RetinaNet(ArcGISModel):
         if backbone is None: 
             backbone = models.resnet50
 
+        self._check_dataset_support(data)
+        if not (self._check_backbone_support(backbone)):
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+
         super().__init__(data, backbone, **kwargs)
 
         
@@ -90,12 +94,6 @@ class RetinaNet(ArcGISModel):
         _backbone = self._backbone
         if hasattr(self, '_orig_backbone'):
             _backbone = self._orig_backbone
-
-        # Check if a backbone provided is compatible, use resnet50 as default
-        if not self._check_backbone_support(_backbone):
-            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
-
-        self._check_dataset_support(self._data)
 
         self.name = "RetinaNet"
         self._code = code

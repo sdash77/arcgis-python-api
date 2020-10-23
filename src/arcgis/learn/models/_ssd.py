@@ -138,27 +138,10 @@ class SingleShotDetector(ArcGISModel):
             backbone_cut = None
             backbone_split = None
 
-            if hasattr(self, '_orig_backbone'):
-                self._backbone_ms = self._backbone
-                self._backbone = self._orig_backbone
-                _backbone_meta = cnn_config(self._orig_backbone)
-                backbone_cut = _backbone_meta['cut']
-                backbone_split = _backbone_meta['split']
-
-            if backbone is None:
-                self._backbone = models.resnet34
-                backbone_name = 'res'
-            elif type(backbone) is str:
-                self._backbone = getattr(models, backbone)
-                backbone_name = backbone[:3]
-            else:
-                self._backbone = backbone
-                backbone_name = 'custom'
-
-            if not self._check_backbone_support(self._backbone):
-                raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
-
             self._check_dataset_support(self._data)
+            if not (self._check_backbone_support(getattr(self, '_backbone', backbone))):
+                raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+            backbone_name = self._backbone.__name__[:3]
 
             if self._backbone == models.mobilenet_v2:
                 backbone_cut = -1

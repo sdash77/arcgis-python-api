@@ -117,7 +117,11 @@ class PSPNetClassifier(ArcGISModel):
         # Set default backbone to be 'resnet50'
         if backbone is None: 
             backbone = models.resnet50
-      
+        
+        self._check_dataset_support(data)
+        if not (self._check_backbone_support(backbone)):
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+
         super().__init__(data, backbone, **kwargs)
 
         self._ignore_classes = kwargs.get('ignore_classes', [])
@@ -141,16 +145,6 @@ class PSPNetClassifier(ArcGISModel):
         self.dice_loss_fraction = kwargs.get('dice_loss_fraction', False)
         self.weighted_dice = kwargs.get('weighted_dice', False)
         self.keep_dilation = kwargs.get('keep_dilation', False)
-        _backbone = self._backbone
-        if hasattr(self, '_orig_backbone'):
-            _backbone = self._orig_backbone
-       
-        # Check if a backbone provided is compatible, use resnet50 as default
-        if not self._check_backbone_support(_backbone):
-            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")              
-
-        self._check_dataset_support(self._data)
-
         self._code = image_classifier_prf
         self.pyramid_sizes = pyramid_sizes
         self._use_unet = use_unet

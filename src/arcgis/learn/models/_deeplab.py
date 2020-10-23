@@ -206,7 +206,11 @@ class DeepLab(ArcGISModel):
     def __init__(self, data, backbone=None, pretrained_path=None, pointrend=False, *args, **kwargs):
         # Set default backbone to be 'resnet101'
         if backbone is None:
-            backbone = models.resnet101          
+            backbone = models.resnet101
+
+        self._check_dataset_support(data)
+        if not (self._check_backbone_support(backbone)):
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
         super().__init__(data, backbone, **kwargs)
 
@@ -234,15 +238,6 @@ class DeepLab(ArcGISModel):
         self.weighted_dice = kwargs.get('weighted_dice', False)
         self.keep_dilation = kwargs.get('keep_dilation', False)
         
-        _backbone = self._backbone
-        if hasattr(self, '_orig_backbone'):
-            _backbone = self._orig_backbone
-    
-        if not self._check_backbone_support(_backbone):
-            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
-
-        self._check_dataset_support(self._data)
-
         self._code = image_classifier_prf
         if self._backbone.__name__ is 'resnet101':
             model = _create_deeplab(data.chip_size, data.c, pointrend=self._pointrend, keep_dilation=self.keep_dilation)

@@ -98,6 +98,10 @@ class UnetClassifier(ArcGISModel):
         else:
             super().__init__(data, backbone, **kwargs)
 
+            self._check_dataset_support(self._data)
+            if not (self._check_backbone_support(getattr(self, '_backbone', backbone))):
+                raise Exception(f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+
             self._ignore_classes = kwargs.get('ignore_classes', [])
             if self._ignore_classes != [] and len(data.classes) <= 3:
                 raise Exception(f"`ignore_classes` parameter can only be used when the dataset has more than 2 classes.")
@@ -123,15 +127,6 @@ class UnetClassifier(ArcGISModel):
 
             backbone_cut = None
             backbone_split = None
-
-            _backbone = self._backbone
-            if hasattr(self, '_orig_backbone'):
-                _backbone = self._orig_backbone
-
-            if not (self._check_backbone_support(_backbone)):
-                raise Exception(f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
-
-            self._check_dataset_support(self._data)
 
             if hasattr(self, '_orig_backbone'):
                 _backbone_meta = cnn_config(self._orig_backbone)
