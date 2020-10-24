@@ -260,7 +260,8 @@ class RouteLayer(NetworkLayer):
               return_z=False,
               overrides=None,
               preserve_objectid=False,
-              future=False):
+              future=False,
+              time_windows_are_utc=False):
         """
         The solve operation is performed on a network layer resource.
         The solve operation is supported on a network layer whose layerType
@@ -347,6 +348,10 @@ class RouteLayer(NetworkLayer):
         -----------------------------------     --------------------------------------------------------------------
         use_time_window                         Optional boolean. If true, the solver should consider time windows.
                                                 The default is as defined in the network layer.
+        -----------------------------------     --------------------------------------------------------------------
+        time_windows_are_utc                    Optional boolean. Specify whether the TimeWindowStart and TimeWindowEnd
+                                                attribute values on stops are specified in coordinated universal time (UTC)
+                                                or geographically local time.
         -----------------------------------     --------------------------------------------------------------------
         start_time                              Optional string. The time the route begins. If not specified, the
                                                 solver will use the default as defined in the network layer.
@@ -503,6 +508,8 @@ class RouteLayer(NetworkLayer):
             params['preserveLastStop'] = preserve_last_stop
         if not use_time_windows is None:
             params['useTimeWindows'] = use_time_windows
+        if not time_windows_are_utc is None:
+            params['timeWindowsAreUTC'] = time_windows_are_utc
         if not start_time is None:
             if isinstance(start_time, datetime.datetime):
                 start_time = f"{start_time.timestamp() * 1000}"
@@ -880,7 +887,8 @@ class ClosestFacilityLayer(NetworkLayer):
                                overrides=None,
                                preserve_objectid=False,
                                future=False,
-                               ignore_invalid_locations = True):
+                               ignore_invalid_locations=True,
+                               directions_output_type=None):
         """The solve operation is performed on a network layer resource of
         type closest facility (layerType is esriNAServerClosestFacilityLayer).
         You can provide arguments to the solve route operation as query
@@ -1074,6 +1082,8 @@ class ClosestFacilityLayer(NetworkLayer):
             params['directionsLengthUnits'] = directions_length_units
         if not directions_time_attribute_name is None:
             params['directionsTimeAttributeName'] = directions_time_attribute_name
+        if not directions_output_type is None:
+            params['directionsOutputType'] = directions_output_type
         if not return_cf_routes is None:
             params['returnCFRoutes'] = return_cf_routes
         if not return_facilities is None:
