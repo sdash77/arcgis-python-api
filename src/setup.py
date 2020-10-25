@@ -270,7 +270,7 @@ kwargs = {
     #     'sample': ['package_data.dat'],
     # },
     'package_data':{
-        'arcgis':['raster/*.dll', 'raster/*.so'],
+        'arcgis':['raster/*.dll', 'raster/*.so', 'learn/*.dll', 'learn/*.so'],
     },
 
     # Although 'package_data' is the preferred approach, in some case you may
