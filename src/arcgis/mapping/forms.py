@@ -212,7 +212,7 @@ class FormInfo:
         """Returns whether or not the form exists for that particular layer."""
         return len(self._form_elements) > 0
 
-    def clear_all(self):
+    def clear(self):
         """Clears the form to an empty state. Deletes all form elements currently in the form."""
         self._expression_infos = []
         self._form_elements = []
@@ -466,7 +466,8 @@ class FormInfo:
     def _is_valid_field_type(field_type):
         """Check the field type from the feature layer field is valid to be added to the form"""
         return field_type in ["esriFieldTypeDate", "esriFieldTypeDouble", "esriFieldTypeInteger",
-                              "esriFieldTypeSingle", "esriFieldTypeSmallInteger", "esriFieldTypeString"]
+                              "esriFieldTypeSingle", "esriFieldTypeSmallInteger", "esriFieldTypeString",
+                              "esriFieldTypeGUID"]
 
     @staticmethod
     def _get_default_input_type(field):
@@ -497,7 +498,7 @@ class FormInfo:
             raise ValueError("Element must have label")
         if element.element_type == "field":
             if not self._validate_unrestricted_field_name(element.field_name.lower()):
-                raise ValueError("Cannot add a GPS metadata or edit field to the form")
+                raise ValueError("Cannot add a GPS metadata or editor tracking fields to the form")
             if element.field_name not in [d.get("name").lower() for d in self._fields]:
                 raise ValueError("You cannot add an element which does not have a corresponding field in the layer")
             for form_el in self._form_elements:
@@ -686,6 +687,10 @@ class FormFieldElement(FormElement):
         ======================     ====================================================================
         **Argument**               **Description**
         ----------------------     --------------------------------------------------------------------
+        form                       Optional :class:`arcgis.mapping.forms.FormInfo`.
+                                   The form which contains this field element.
+        ----------------------     --------------------------------------------------------------------
+
         description                Optional :class:`str`.
                                    The description of the form element
         ----------------------     --------------------------------------------------------------------
@@ -852,7 +857,7 @@ class FormGroupElement(FormElement):
         ======================     ====================================================================
         **Argument**               **Description**
         ----------------------     --------------------------------------------------------------------
-        form_obj                   Required :class:`arcgis.mapping.forms.FormInfo`.
+        form                       Optional :class:`arcgis.mapping.forms.FormInfo`.
                                    The form which contains this group element.
         ----------------------     --------------------------------------------------------------------
         description                Optional :class:`str`.
@@ -905,7 +910,7 @@ class FormGroupElement(FormElement):
         self._initial_state = initial_state
 
     def __repr__(self):
-        return "Field " + self._label
+        return "Group " + self._label
 
     def __str__(self):
         return json.dumps(self.to_dict(), indent=2)

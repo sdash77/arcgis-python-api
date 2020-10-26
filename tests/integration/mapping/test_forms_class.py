@@ -172,7 +172,7 @@ class Test_Forms(unittest.TestCase):
             form = self.forms.get_form(title="Shelters")
             form.add_element(field_name="facilityid")
             self.assertEqual(len(form.elements), 1)
-            form.clear_all()
+            form.clear()
             self.assertEqual(len(form.elements), 0)
             self.assertEqual(form.exists(), False)
 
