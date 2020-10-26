@@ -996,11 +996,7 @@ class MapView(widgets.DOMWidget):
         basemap field and the corresponding JSON without loading the rest
         of the `gallery_basemaps` property (which has a long load time)
         """
-        if self.gis._portal.con.token is None:
-            # With the introduction of API keys, have all maps made with anon
-            # GIS connections use an OSM map (doesn't need an API key)
-            self.basemap = "streets-vector"#"osm"
-        elif basemap:
+        if basemap:
             # used instead of basemap setter to avoid the reset of the associated webmap's basemap on instantiation
             self._gallery_basemaps['base'] = basemap
             self._basemap = 'base'
