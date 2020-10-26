@@ -230,8 +230,8 @@ class MapView(widgets.DOMWidget):
         Note: If the Jupyter Notebook server is running over http, you need to
         configure your portal/organization to allow your host and port; or else
         you will run into CORs issues.
-        
-        This can be accomplished by signing into your portal/organization in a 
+
+        This can be accomplished by signing into your portal/organization in a
         browser, then navigating to:
 
         `Organization` > `Settings` > `Security` > `Allow origins` > `Add` > http://localhost:8888 (replace with the host/port you are running on)
@@ -856,9 +856,9 @@ class MapView(widgets.DOMWidget):
             the function hasn't finished yet.
 
         .. note::
-            When this function is called with `set_as_preview = True`, the 
+            When this function is called with `set_as_preview = True`, the
             static image preview will overwrite the embedded HTML element
-            preview from any previous `MapView.embed_html(set_as_preview=True)` 
+            preview from any previous `MapView.embed_html(set_as_preview=True)`
             call
 
         """
@@ -896,35 +896,35 @@ class MapView(widgets.DOMWidget):
            HTML(self._assemble_img_preview_html_str("")))
 
     def embed(self, output_in_cell=True, set_as_preview=True):
-        """Embeds the current state of the map into the underlying notebook 
+        """Embeds the current state of the map into the underlying notebook
         as an interactive HTML/JS/CSS element. This element will always display
         this 'snapshot' state of the map, regardless of any future Python code ran.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        output_in_cell         Optional bool, default `True`. Will display the embedded HTML 
-                               interactive map in the output area of the cell where this function 
+        output_in_cell         Optional bool, default `True`. Will display the embedded HTML
+                               interactive map in the output area of the cell where this function
                                is called.
         ------------------     --------------------------------------------------------------------
-        set_as_preview         Optional bool, default `True`. Will display the embedded HTML 
-                               interactive map in the cell where the map widget is being displayed. 
-                               Use this flag if you want the generated HTML previews of your 
+        set_as_preview         Optional bool, default `True`. Will display the embedded HTML
+                               interactive map in the cell where the map widget is being displayed.
+                               Use this flag if you want the generated HTML previews of your
                                notebook to have an interactive map displayed.
         ==================     ====================================================================
 
         In all notebook outputs, each embedded HTML element will contain
-        the entire map state and all relevant HTML wrapped in an <iframe> 
+        the entire map state and all relevant HTML wrapped in an <iframe>
         element. This means that the data for the embedded HTML element lives
         inside the notebook file itself, allowing for easy sharing of
         notebooks and generated HTML previews of notebooks.
 
         .. note::
-            When this function is called with `set_as_preview = True`, the 
-            embedded HTML preview element will overwrite the static image 
-            preview from any previous `MapView.take_screenshot(set_as_preview=True)` 
+            When this function is called with `set_as_preview = True`, the
+            embedded HTML preview element will overwrite the static image
+            preview from any previous `MapView.take_screenshot(set_as_preview=True)`
             call
- 
+
         .. note::
             Any embedded maps must only reference publicly available data. The
             embedded map must also have access to the https://unpkg.com
@@ -932,7 +932,7 @@ class MapView(widgets.DOMWidget):
 
         """
         self._clear_static_image_preview()
-        html_repr_path = os.path.join(tempfile.gettempdir(), 
+        html_repr_path = os.path.join(tempfile.gettempdir(),
                                       f".{self._uuid}.html")
         self.export_to_html(html_repr_path)
         with open(html_repr_path, "r") as f:
@@ -999,7 +999,7 @@ class MapView(widgets.DOMWidget):
         if self.gis._portal.con.token is None:
             # With the introduction of API keys, have all maps made with anon
             # GIS connections use an OSM map (doesn't need an API key)
-            self.basemap = "osm"
+            self.basemap = "streets-vector"#"osm"
         elif basemap:
             # used instead of basemap setter to avoid the reset of the associated webmap's basemap on instantiation
             self._gallery_basemaps['base'] = basemap
@@ -1110,7 +1110,7 @@ class MapView(widgets.DOMWidget):
                                FeatureLayer, ImageryLayer, MapImageLayer, FeatureSet,
                                FeatureCollection, ``arcgis.raster.Raster`` objects, etc.
 
-                               Item objects will have all of their layers individually 
+                               Item objects will have all of their layers individually
                                added to the map widget.
         ------------------     --------------------------------------------------------------------
         options                Optional dict. Specify visualization options such as renderer info,
