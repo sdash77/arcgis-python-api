@@ -39,7 +39,7 @@ class FormCollection:
             form_list = form_collection.get_forms()
             form_info_2 = form_list[0]
             form_info = form_collection.get_form(title="Manhole Inspection")
-            form_info.clear_all()
+            form_info.clear()
             form_info.add_element(field_name="inspector")
             form_info.update()
 
@@ -274,21 +274,27 @@ class FormInfo:
     def update(self):
         """Saves the form to the backend. If the form was derived from an Item, calling this function is required
         to save the form into the item. If the form was derived from a WebMap, you can either call this
-        function or WebMap.update()."""
-        if self.exists:
+        function or WebMap.update(). If form has been cleared, removes formInfo from webmap"""
+        if self.exists():
             self._validate_all_required_fields_in_form()
-            if isinstance(self._parent, Item):
-                item_data = self._parent.get_data()
-                item_data["layers"][self._layer_data["id"]] = self.to_dict()
-                self._parent.update(data=item_data)
-            if isinstance(self._parent, arcgis.mapping.WebMap):
-                self._original_layer["formInfo"] = self.to_dict()
-                try:
-                    self._parent.update()
-                except RuntimeError:
-                    raise ValueError("WebMap item does not exist yet. Form is now on your webmap - please use WebMap.save() to persist these changes")
+        if isinstance(self._parent, Item):
+            item_data = self._parent.get_data()
+            if self.exists():
+                item_data["layers"][self._layer_data["id"]]["formInfo"] = self.to_dict()
             else:
-                pass
+                item_data["layers"][self._layer_data["id"]].pop("formInfo", None)
+            self._parent.update(data=item_data)
+        if isinstance(self._parent, arcgis.mapping.WebMap):
+            if self.exists():
+                self._original_layer["formInfo"] = self.to_dict()
+            else:
+                self._original_layer.pop("formInfo", None)
+            try:
+                self._parent.update()
+            except RuntimeError:
+                raise ValueError("WebMap item does not exist yet. Form is now on your webmap - please use WebMap.save() to persist these changes")
+        else:
+            pass
 
     def to_dict(self):
         self._hydrate_expression_infos()
