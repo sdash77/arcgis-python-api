@@ -219,6 +219,8 @@ class FormInfo:
         """Clears the form to an empty state. Deletes all form elements currently in the form."""
         self._expression_infos = []
         self._form_elements = []
+        self._title = None
+        self._description = None
 
     def get_element(self, label=None):
         """
@@ -410,44 +412,6 @@ class FormInfo:
             element = self.get_element(label=label)
         self.delete_element(element)
         return self.add_element(element, index=index)
-
-    def _convert_from_popup(self):
-        """Converts popup into a form"""
-        if self.exists():
-            raise ValueError("Convert from popup can only be used when the form is empty")
-        if "popupInfo" not in self._layer_data:
-            raise ValueError("No popup info in the layer. Could not convert from popup")
-        # check if there are fields saved into the popupElements. If not, add all fields in parent fieldInfo
-        if "popupElements" in self._layer_data["popupInfo"] and len(self._layer_data["popupInfo"]["popupElements"][0].get("fieldInfos", [])) > 0:
-            # we use i here instead of enumerate because we want the group number to only update when we get to else
-            i = 0
-            for element in self._layer_data["popupInfo"]["popupElements"]:
-                if element["type"] != "fields":
-                    continue
-                else:
-                    # add a group corresponding to the popup group
-                    group_element = FormGroupElement(label="Group " + str(i + 1))
-                    i = i + 1
-                    self.add_element(group_element)
-                    # add fields which are valid to the form
-                    for field in element.get("fieldInfos", []):
-                        try:
-                            field_element = self._get_field_form_element(label=field.get("label"), editable=field.get("isEditable"),
-                                                                         field_name=field.get("fieldName"))
-                            group_element.add_element(field_element)
-                        except Exception:
-                            pass
-        else:
-            for field in self._layer_data["popupInfo"]["fieldInfos"]:
-                try:
-                    field_element = self._get_field_form_element(label=field.get("label"), editable=field.get("isEditable"), field_name=field.get("fieldName"))
-                    self.add_element(field_element)
-                except Exception:
-                    pass
-        # clear empty groups
-        for element in self._form_elements:
-            if element.element_type == "group" and len(element._form_elements) == 0:
-                self.delete_element(element)
 
     def _get_field_form_element(self, label=None, editable=None, field_name=None):
         """From inputs, get the input type from the corresponding field and return the FormFieldElement for adding to the form."""
