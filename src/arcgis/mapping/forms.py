@@ -206,7 +206,7 @@ class FormInfo:
     def __str__(self):
         if self.exists():
             return json.dumps(self.to_dict(), indent=2)
-        return None
+        return "None"
 
     def exists(self):
         """Returns whether or not the form exists for that particular layer."""
