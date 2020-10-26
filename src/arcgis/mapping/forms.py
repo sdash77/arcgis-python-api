@@ -182,7 +182,7 @@ class FormInfo:
         self._original_layer = layer_data
         self._layer_data = copy.deepcopy(layer_data)
         self._form = self._layer_data.get("formInfo", {})
-        self._title = self._layer_data.get("title", "New Form")
+        self._title = self._layer_data.get("title", None)
         self._description = self._form.get("description")
         self._expression_infos = []
         for exp in self._form.get("expressionInfos", []):
@@ -201,7 +201,10 @@ class FormInfo:
             raise ValueError("A layer url which can be used to generate a feature layer is required to use this module")
 
     def __repr__(self):
-        return "Form " + self.title
+        if self.title:
+            return "Form: " + self.title
+        else:
+            return "Form"
 
     def __str__(self):
         if self.exists():
@@ -760,7 +763,10 @@ class FormFieldElement(FormElement):
         self._required_expression = required_expression
 
     def __repr__(self):
-        return "Field " + self._label
+        if self._label:
+            return "Field " + self._label
+        else:
+            return "Field"
 
     def __str__(self):
         return json.dumps(self.to_dict(), indent=2)
@@ -916,7 +922,7 @@ class FormGroupElement(FormElement):
         self._initial_state = initial_state
 
     def __repr__(self):
-        return "Group " + self._label
+        return "Group: " + self._label
 
     def __str__(self):
         return json.dumps(self.to_dict(), indent=2)
@@ -1083,6 +1089,12 @@ class FormExpressionInfo:
         self._name = name
         self._return_type = "boolean"
         self._title = title
+
+    def __repr__(self):
+        if self._title:
+            return "Expression: " + self._title
+        else:
+            return "Expression"
 
     @property
     def expression(self):
