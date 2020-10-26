@@ -83,7 +83,7 @@ def summarize_center_and_dispersion(input_layer,
                                                                            #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                                                            #. Processing spatial reference (``processSR``) The features will be projected into this coordinate system for analysis.
                                                                            #. Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                                           #. Data store (``dataStore``) Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                                           #. Data store (``dataStore``) Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     future                                                                 optional Boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
     ===================================================================    =============================================================================
@@ -321,7 +321,7 @@ def build_multivariable_grid(input_layers,
                                                                            #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                                                            #. Processing spatial reference (``processSR``) The features will be projected into this coordinate system for analysis.
                                                                            #. Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                                           #. Data store (``dataStore``) Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                                           #. Data store (``dataStore``) Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     future                                                                 optional Boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
     ===================================================================    =============================================================================
@@ -562,7 +562,7 @@ def aggregate_points(point_layer,
                                                               *  Extent (``extent``) - a bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                                               * Processing spatial reference (``processSR``) The features will be projected into this coordinate system for analysis.
                                                               * Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                              * Data store (``dataStore``) Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                              * Data store (``dataStore``) Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     -------------------------------------------------     ------------------------------------------------------------------------
     future                                                optional Boolean. If True, a GPJob is returned instead of
                                                           results. The GPJob can be queried on the status of the execution.
@@ -710,7 +710,7 @@ def describe_dataset(input_layer,
                       #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                       #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                       #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                      #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                      #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     ----------------  ---------------------------------------------------------------
     future            Optional boolean. If True, a GPJob is returned instead of
                       results. The GPJob can be queried on the status of the execution.
@@ -972,7 +972,7 @@ def join_features(target_layer,
                                                                                                                 #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                                                                                                 #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                                                                                                                 #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                                                                                #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                                                                                #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
     future                                                                                                      Optional boolean. If 'True', a GPJob is returned instead of
                                                                                                                 results. The GPJob can be queried on the status of the execution.
@@ -1202,7 +1202,7 @@ def reconstruct_tracks(input_layer,
                                                                                             #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                                                                             #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                                                                                             #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                                                            #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                                                            #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------------------------------------------------------------------  ---------------------------------------------------------------
     future                                                                                  Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
 
@@ -1350,7 +1350,7 @@ def summarize_attributes(input_layer,
                                                                                  there is one setting:
 
                                                                                  #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                                                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
     future                                                                       Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
 
@@ -1627,7 +1627,7 @@ def summarize_within(summarized_layer,
                                                                                  #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                                                                  #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                                                                                  #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
     gis                                                                          Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ---------------------------------------------------------------------------  ---------------------------------------------------------------

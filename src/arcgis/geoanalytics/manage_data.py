@@ -264,7 +264,7 @@ def dissolve_boundaries(input_layer,
                       #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                       #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                       #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                      #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                      #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
                       #. Default aggregation styles (``defaultAggregationStyles``) - If set to true, results will have square, hexagon, and triangle aggregation styles enabled on results map services.
     ----------------  ---------------------------------------------------------------
     future            optional boolean. If True, a GPJob is returned instead of
@@ -435,7 +435,7 @@ def merge_layers(input_layer,
                       #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                       #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                       #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                      #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                      #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
                       #. Default aggregation styles (``defaultAggregationStyles``) - If set to 'True', results will have square, hexagon, and triangle aggregation styles enabled on results map services.
     ----------------  ---------------------------------------------------------------
     future            Optional boolean. If 'True', a GPJob is returned instead of
@@ -552,7 +552,7 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None
                          into this coordinate system after the analysis to be saved.
                          The output spatial reference for the spatiotemporal big data store is always WGS84.
                       #. Data store (``dataStore``) - Results will be saved to the specified data store.
-                         The default is the spatiotemporal big data store.
+                         For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     ----------------  ---------------------------------------------------------------
     gis               optional GIS. The GIS object where the analysis will take place.
     ----------------  ---------------------------------------------------------------
@@ -722,7 +722,7 @@ def overlay_data(input_layer,
                             #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                             #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                             #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                            #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                            #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     ----------------------  -------------------------------------------------------------------------------
     future                  Optional boolean. If 'True', a GPJob is returned instead of
                             results. The GPJob can be queried on the status of the execution.
@@ -961,7 +961,7 @@ def calculate_fields(input_layer,
                                                         #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                                         #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                                                         #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                        #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                        #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     =================================================   ===============================================================
 
 
@@ -1079,7 +1079,7 @@ def copy_to_data_store(
                                  #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                  #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                                  #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
                                  #. Default aggregation styles (``defaultAggregationStyles``) - If set to 'True', results will have square, hexagon, and triangle aggregation styles enabled on results map services.
     --------------------------   ---------------------------------------------------------------
      future                      Optional boolean. If 'True', the result comes back as a GPJob.
