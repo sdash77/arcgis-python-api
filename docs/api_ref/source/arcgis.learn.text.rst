@@ -10,6 +10,13 @@ TextClassifier
     :inherited-members:
     :undoc-members:
 
+SequenceToSequence
+------------------
+.. autoclass:: arcgis.learn.text.SequenceToSequence
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Inference Only Models
 ---------------------
 

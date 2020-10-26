@@ -381,7 +381,7 @@ class SequenceToSequence(ArcGISModel):
                 metrics = {x: round(float(metrics_values[i]), 4) for i, x in enumerate(metrics_names)}
         return metrics
 
-    def predict(self, text_or_list, batch_size=64, show_progress=True):
+    def predict(self, text_or_list, batch_size=64, show_progress=True, **kwargs):
         """
         Predicts the translated outcome.
 
@@ -390,14 +390,33 @@ class SequenceToSequence(ArcGISModel):
         ---------------------   -------------------------------------------
         text_or_list            Required input string or list of input strings.
         ---------------------   -------------------------------------------
-        batch_size              Optional integer. Number of inputs to be processed
-                                at once. Try reducing the batch size in case of out of
+        batch_size              Optional integer. 
+                                Number of inputs to be processed at once. 
+                                Try reducing the batch size in case of out of
                                 memory errors.
                                 Default value : 64
         ---------------------   -------------------------------------------
-        show_progress           Optional bool. To show or not to show the progress of 
-                                prediction task.
+        show_progress           Optional bool. 
+                                To show or not to show the progress of prediction task.
                                 Default value : True
+        =====================   ===========================================
+        
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        num_beams               Optional integer.
+                                Number of beams for beam search. 1 means no beam search.
+                                Default value is set to 1
+        ---------------------   -------------------------------------------
+        max_length              Optional integer. 
+                                The maximum length of the sequence to be generated. 
+                                Default value is set to 20
+        ---------------------   -------------------------------------------
+        min_length              Optional integer. 
+                                The minimum length of the sequence to be generated. 
+                                Default value is set to 10
         =====================   ===========================================
 
         :returns: list of tuples(input , predicted output strings).
@@ -405,7 +424,8 @@ class SequenceToSequence(ArcGISModel):
 
         if isinstance(text_or_list, str):
             text_or_list = [text_or_list]
-        return list(zip(text_or_list,self.learn.predict(text_or_list, batch_size, show_progress)))
+        preds = self.learn.predict(text_or_list, batch_size, show_progress, **kwargs)
+        return list(zip(text_or_list,preds))
 
     def _save_df_to_html(self, path):
 

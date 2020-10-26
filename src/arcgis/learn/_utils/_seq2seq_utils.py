@@ -104,27 +104,34 @@ class SequenceToSequenceLearner(Learner):
         with pd.option_context('display.max_colwidth', -1):
             display(HTML(df.to_html(index=False)))
     
-    def predict_batch(self, batch_text, num_beams, max_len):
+    def predict_batch(self, batch_text, num_beams, max_length, min_length):
         tok = self.model._tokenizer
         encoded_input_batch = tok.batch_encode_plus(batch_text, padding=True, return_tensors='pt')['input_ids']
-        encoded_output_batch =  self.model._transformer.generate(encoded_input_batch.to(self.model._transformer.device.type), num_beams=num_beams, max_length=max_len)
+        encoded_output_batch =  self.model._transformer.generate(encoded_input_batch.to(self.model._transformer.device.type),\
+                                                                 num_beams=num_beams, max_length=max_length, min_length=min_length)
         decoded_output_batch = tok.batch_decode(encoded_output_batch, skip_special_tokens=True)
         return decoded_output_batch, encoded_output_batch
 
 
-    def predict(self, text_list, batch_size, show_progress, num_beams=4, max_len=50):
+    def predict(self, text_list, batch_size, show_progress, **kwargs):# num_beams=4, max_len=50):
         tok = self.model._tokenizer
+        num_beams = kwargs.get('num_beams', 1)
+        max_length = kwargs.get('max_length', 20)
+        min_length = kwargs.get('min_length', 10)
+
         
         if isinstance(text_list,(list)):
             decoded_output = []
             for i in progress_bar(range(0, len(text_list), batch_size), display=show_progress):
                 batch_text = text_list[i:i+batch_size]
-                decoded_output_batch, encoded_output_batch = self.predict_batch(batch_text, num_beams, max_len)
+                decoded_output_batch, encoded_output_batch = self.predict_batch(batch_text, \
+                                                                num_beams=num_beams, max_length=max_length, min_length=min_length)
                 decoded_output.extend(decoded_output_batch)
         else:
             encoded_input = text_list
             # encoded_input.unsqueeze_(0)
-            encoded_output =  self.model._transformer.generate(encoded_input.to(self.model._transformer.device.type), num_beams=num_beams, max_length=max_len)
+            encoded_output =  self.model._transformer.generate(encoded_input.to(self.model._transformer.device.type),\
+                                                             num_beams=num_beams, max_length=max_length, min_length=min_length)
             decoded_output = tok.batch_decode(encoded_output, skip_special_tokens=True)
         return decoded_output
 
