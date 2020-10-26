@@ -892,8 +892,8 @@ class ArcGISModel(object):
 
         model_analysis = None
         if confusion_matrix_img:
-            model_analysis = f""" <p><b>Confusion Matrix</p></b>
-                    <img src="{confusion_matrix_img}" alt="Confusion Matrix" width="500" height="333">
+            model_analysis = f"""
+                    <img src="{confusion_matrix_img}" alt="Confusion Matrix">
             """
 
         if emd_template.get('accuracy'):

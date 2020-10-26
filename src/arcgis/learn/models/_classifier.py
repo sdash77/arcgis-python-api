@@ -39,6 +39,7 @@ try:
     import PIL.ExifTags
     from torch.nn import Module as NnModule
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path, image_batch_stretcher
+    from matplotlib import pyplot as plt
     HAS_FASTAI = True
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -229,8 +230,6 @@ class FeatureClassifier(ArcGISModel):
         return predicted_classes, predictions_conf
 
     def _save_confusion_matrix(self, path):
-        from matplotlib import pyplot as plt
-
         from IPython.utils import io
         with io.capture_output() as captured:
             self.plot_confusion_matrix()
@@ -355,13 +354,70 @@ class FeatureClassifier(ArcGISModel):
 
         return cls(data, **model_params, pretrained_path=str(model_file))
 
-    def plot_confusion_matrix(self):
+    def plot_confusion_matrix(self, **kwargs):
         """
         Plots a confusion matrix of the model predictions to evaluate accuracy
+        kwargs: 'thresh' - confidence score threshold for multilabel predictions, defaults to 0.5
         """
-        self._check_requisites()
-        interp = ClassificationInterpretation.from_learner(self.learn)
-        interp.plot_confusion_matrix()
+        if self._data._dataset_type == 'MultiLabeled_Tiles':
+            # Get x, y from validation dataset
+            data_loader = self._data.valid_dl
+            nbatches = math.ceil(len(self._data.valid_ds)/self._data.batch_size)
+            from .._utils.common import get_nbatches
+            x_batch, y_batch = get_nbatches(data_loader, nbatches)
+            x_batch = torch.cat(x_batch)
+            y_batch = torch.cat(y_batch)
+            score_thresh = kwargs.get('thresh', 0.5)
+
+            # Get predictions
+            predictions = []
+            for i in range(0, x_batch.shape[0], self._data.batch_size):
+                batch_preds = self.learn.pred_batch(batch=(x_batch[i:i+self._data.batch_size], y_batch[i:i+self._data.batch_size]))
+                predictions.append(batch_preds)
+            predictions = torch.cat(predictions)
+            one_hot_preds = (predictions >= score_thresh)
+
+            # Use Scikit-learn multilabel confusion matrix
+            from sklearn.metrics import multilabel_confusion_matrix
+            y_true = y_batch.to('cpu').numpy()
+            y_pred = one_hot_preds.to('cpu').numpy()
+            confusion_matrix = multilabel_confusion_matrix(y_true, y_pred)
+
+            # Plot the classwise confusion matrix
+            nrows=self._data.c
+            plt_size = 4
+            fig, axs = plt.subplots(nrows=nrows, figsize=(plt_size, (nrows)*plt_size))
+            fig.suptitle('Confusion Matrix', fontsize=16)
+            top = 1 - (math.sqrt(16)/math.sqrt(100*nrows*plt_size))
+            fig.subplots_adjust(top=top, hspace=0.5)
+
+            for i, (classname, matrix) in enumerate(zip(self._data.classes, confusion_matrix)):
+                cm = np.fliplr(np.flipud(matrix))
+                axi = axs[i]
+                cmap = "Blues"
+                axi.imshow(cm, interpolation='nearest', cmap=cmap)
+                title = classname
+                axi.set_title(title)
+                tick_marks = np.arange(2)
+                axi.set_xticks(ticks=tick_marks)
+                axi.set_xticklabels([classname, 'Rest'])
+                axi.set_yticks(ticks=tick_marks)
+                axi.set_yticklabels([classname, 'Rest'])
+                axi.set_ylabel('Actual')
+                axi.set_xlabel('Predicted')
+                axi.grid(False)
+
+                import itertools
+                thresh = cm.max() / 2.
+                for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+                    coeff = f'{cm[i, j]}'
+                    axi.text(j, i, coeff, horizontalalignment="center", verticalalignment="center", color="white" if cm[i, j] > thresh else "black")
+
+        # For single label classification
+        else:
+            self._check_requisites()
+            interp = ClassificationInterpretation.from_learner(self.learn)
+            interp.plot_confusion_matrix()
 
     def plot_hard_examples(self, num_examples):
         """
