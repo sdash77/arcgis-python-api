@@ -203,7 +203,7 @@ class MapFeatureLayer(Layer):
         The `MapImageLayer` to which this layer belongs.
         """
         if self._storage is None:
-            self._storage = MapImageLayer(url=self._url.rstrip(digits)[:-1])
+            self._storage = MapImageLayer(url=self._url.rstrip(digits)[:-1], gis=self._gis)
         return self._storage
     #----------------------------------------------------------------------
     def export_attachments(self, output_folder, label_field=None):
