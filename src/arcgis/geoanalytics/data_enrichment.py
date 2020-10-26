@@ -145,7 +145,7 @@ def calculate_motion_statistics(input_layer,
                             #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                             #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                             #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                            #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                            #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
                             #. Default aggregation styles (``defaultAggregationStyles``) - If set to 'True', results will have square, hexagon, and triangle aggregation styles enabled on results map services.
     ----------------------  ---------------------------------------------------------------
     future                  optional boolean. If 'True', a GPJob is returned instead of
@@ -279,7 +279,7 @@ def enrich_from_grid(input_layer,
                             #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                             #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                             #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                            #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                            #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
                             #. Default aggregation styles (``defaultAggregationStyles``) - If set to 'True', results will have square, hexagon, and triangle aggregation styles enabled on results map services.
     ----------------------  ---------------------------------------------------------------
     future                  optional boolean. If 'True', a GPJob is returned instead of
