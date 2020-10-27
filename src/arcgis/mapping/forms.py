@@ -592,7 +592,7 @@ class FormElement:
     the two types of field elements. Instantiate a FormFieldElement or FormGroupElement instead of this class.
     """
 
-    def __init__(self, form=None, element_type=None, description=None, label=None, visibility_expression=None):
+    def __init__(self, form=None, element_type=None, description=None, label=None, visibility_expression=None, **kwargs):
         self._form = form
         self._element_type = element_type
         self._description = description
@@ -726,7 +726,7 @@ class FormFieldElement(FormElement):
             el.visibility_expression = expression_info
         """
     def __init__(self, form=None, description=None, label=None, visibility_expression=None,
-                 domain=None, editable=None, field_name=None, hint=None, input_type=None, required_expression=None):
+                 domain=None, editable=None, field_name=None, hint=None, input_type=None, required_expression=None, **kwargs):
         super().__init__(form=form, element_type="field", description=description, label=label, visibility_expression=visibility_expression)
         self._domain = domain
         self._editable = editable
@@ -887,7 +887,7 @@ class FormGroupElement(FormElement):
 
     """
 
-    def __init__(self, form=None, elements=None, initial_state=None, description=None, label=None, visibility_expression=None):
+    def __init__(self, form=None, elements=None, initial_state=None, description=None, label=None, visibility_expression=None, **kwargs):
         super().__init__(form=form, element_type="group", description=description, label=label, visibility_expression=visibility_expression)
         if elements is None:
             elements = []
