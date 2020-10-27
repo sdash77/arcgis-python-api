@@ -36,8 +36,7 @@ class FormCollection:
 
             # get forms from webmap, get individual form from FormCollection, modify form
             form_collection = wm.forms
-            form_list = form_collection.get_forms()
-            form_info_2 = form_list[0]
+            form_info_2 = form_collection[0]
             form_info = form_collection.get_form(title="Manhole Inspection")
             form_info.clear()
             form_info.add_element(field_name="inspector")
@@ -55,6 +54,7 @@ class FormCollection:
 
     def __init__(self, parent):
         self._parent = parent
+        self._index = 0
         if isinstance(parent, arcgis.mapping.WebMap):
             self.forms = self._get_forms_from_webmap(parent)
         elif isinstance(parent, Item):
@@ -64,9 +64,18 @@ class FormCollection:
         else:
             raise ValueError("Parent item must be webmap or feature layer collection")
 
-    def get_forms(self):
-        """Returns a list of :class:`~arcgis.mapping.forms.FormInfo` objects, each corresponding to a layer or table in the parent."""
-        return self.forms
+    def __getitem__(self, key):
+        return self.forms[key]
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._index >= len(self.forms):
+            return StopIteration
+        else:
+            self._index += 1
+            return self.forms[self._index-1]
 
     def get_form(self, item_id=None, title=None, layer_id=None):
         """

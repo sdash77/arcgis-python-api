@@ -116,11 +116,11 @@ class Test_Forms(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
-    def test_get_forms(self):
+    def test_form_indexing(self):
         try:
-            forms = self.forms.get_forms()
-            self.assertIsInstance(forms, list)
-            self.assertIsInstance(forms[0], FormInfo)
+            form = self.forms[0]
+            self.assertIsInstance(form, FormInfo)
+            self.assertIsInstance(next(self.forms), FormInfo)
 
         except AssertionError as assertErrorException:
             raise assertErrorException
