@@ -7,7 +7,13 @@ from arcgis.learn import MLModel, FasterRCNN, SuperResolution, EntityRecognizer,
     prepare_tabulardata
 import json
 
-data_folder = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model"
+
+os.environ["run_nightly"] = "1"
+
+if os.environ["run_nightly"] == "1":
+    data_folder = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model_regression"
+else:
+    data_folder = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model"
 data_folder_inference = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_inference"
 data_folder_ms = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model_ms"
 authorization_path = r"/home/administrator/Raster/Test_Data/data_for_testing_1/properties/properties.json"
@@ -21,6 +27,7 @@ X = ['altitude_m', 'wind_speed', 'dayl__s_', 'prcp__mm_d', 'srad__W_m_', 'swe__k
 
 
 def setuposenviron():
+    os.environ["run_nightly"] = "1"
     with open(authorization_path) as f:
         authorization_data = json.load(f)
     return authorization_data
