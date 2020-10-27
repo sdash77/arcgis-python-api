@@ -3,7 +3,7 @@ build:
   number: '0'
 package:
   name: arcgis
-  version: 1.8.3
+  version: 1.9.0
 requirements:
   build:
   - python
