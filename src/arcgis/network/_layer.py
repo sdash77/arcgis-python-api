@@ -349,10 +349,6 @@ class RouteLayer(NetworkLayer):
         use_time_window                         Optional boolean. If true, the solver should consider time windows.
                                                 The default is as defined in the network layer.
         -----------------------------------     --------------------------------------------------------------------
-        time_windows_are_utc                    Optional boolean. Specify whether the TimeWindowStart and TimeWindowEnd
-                                                attribute values on stops are specified in coordinated universal time (UTC)
-                                                or geographically local time.
-        -----------------------------------     --------------------------------------------------------------------
         start_time                              Optional string. The time the route begins. If not specified, the
                                                 solver will use the default as defined in the network layer.
         -----------------------------------     --------------------------------------------------------------------
@@ -433,6 +429,10 @@ class RouteLayer(NetworkLayer):
         -----------------------------------     --------------------------------------------------------------------
         future                                  Optional Boolean.  If True, the process is run asynchronously. The
                                                 default is False.
+        -----------------------------------     --------------------------------------------------------------------
+        time_windows_are_utc                    Optional boolean. Specify whether the TimeWindowStart and TimeWindowEnd
+                                                attribute values on stops are specified in coordinated universal time (UTC)
+                                                or geographically local time.
         ===================================     ====================================================================
 
 
