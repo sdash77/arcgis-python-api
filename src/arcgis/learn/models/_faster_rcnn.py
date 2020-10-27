@@ -222,9 +222,6 @@ class MyFasterRCNN():
         for p in pred:
             
             bbox, label, score = p["boxes"], p["labels"], p["scores"]
-            #take only those predictions which have probabilty greater than thresold
-            score_mask = score>thres
-            bbox, label, score = bbox[score_mask], label[score_mask], score[score_mask]
             #convert bboxes in range -1 to 1.
             bbox = bbox/(chip_size/2) - 1
             #convert bboxes in format [y1,x1,y2,x2]
