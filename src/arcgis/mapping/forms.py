@@ -191,7 +191,7 @@ class FormInfo:
         self._original_layer = layer_data
         self._layer_data = copy.deepcopy(layer_data)
         self._form = self._layer_data.get("formInfo", {})
-        self._title = self._layer_data.get("title", None)
+        self._title = self._form.get("title", self._layer_data.get("title", None))
         self._description = self._form.get("description")
         self._expression_infos = []
         for exp in self._form.get("expressionInfos", []):
