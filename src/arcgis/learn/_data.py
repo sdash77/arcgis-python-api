@@ -1402,7 +1402,7 @@ def prepare_data(path,
             data._scaled_min_values = torch.zeros((data._nbands,), dtype=torch.float32)
             data._scaled_max_values = torch.ones((data._nbands,), dtype=torch.float32)
             data._scaled_mean_values = _tensor_scaler(data._band_mean_values, min_values=data._band_min_values, max_values=data._band_max_values, mode='minmax')
-            data._scaled_std_values = ((data._band_std_values**2)*(data._scaled_mean_values/data._band_mean_values))**.5
+            data._scaled_std_values = data._band_std_values*(data._scaled_mean_values/data._band_mean_values)
 
             # Handover to next section
             norm_pct = 1
