@@ -21,7 +21,7 @@ def trace_proximity_events(input_points,
                            entity_id_field=None,
                            entities_of_interest=None,
                            entities_of_interest_record_set=None,
-                           distance_method=None,
+                           distance_method="Planar",
                            spatial_search_distance=None,
                            spatial_search_distance_unit=None,
                            temporal_search_distance=None,
@@ -34,6 +34,55 @@ def trace_proximity_events(input_points,
                            gis=None,
                            future=False):
     """
+    The Trace Proximity Events task analyzes time-enabled point features representing moving entities.
+    The task will follow entities of interest in space (location) and time to see which other entities
+    the entities of interest have interacted with. The trace will continue from entity to entity to a
+    configurable maximum degrees of separation from the original entity of interest.
+
+
+    ===================================================================    =============================================================================
+    **Argument**                                                                                    **Description**
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    input_points                                                           Required Layer. A layer that will be used in analysis.
+                                                                           See :ref:`Feature Input<gaxFeatureInput>`.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    entity_id_field=None,
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    entities_of_interest=None,
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    entities_of_interest_record_set=None,
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    distance_method="Planar",
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    spatial_search_distance=None,
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    spatial_search_distance_unit=None,
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    temporal_search_distance=None,
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    temporal_search_distance_unit=None,
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    include_tracks_layer=False,
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    max_trace_depth=None,
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    attribute_match_criteria=None,
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    output_name                                                            Optional string. The task will create a feature service of the results. You define the name of the service.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    gis                                                                    Optional GIS. The GIS object where the analysis will take place.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    context                                                                Optional string. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+
+                                                                           #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                           #. Processing spatial reference (``processSR``) The features will be projected into this coordinate system for analysis.
+                                                                           #. Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                                           #. Data store (``dataStore``) Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    future                                                                 optional Boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
+    ===================================================================    =============================================================================
+
+    :returns: Item when Future=False or GAJob when Future=True
 
     """
     input_points = _prevent_bds_item(input_points)
@@ -60,6 +109,25 @@ def trace_proximity_events(input_points,
     output_service = _create_output_service(gis, output_name, output_service_name, 'Trace Proximity Events',
                                             output_datastore=output_datastore)
 
+    params = {
+        "input_points" : input_points,
+        "entity_id_field" : entity_id_field,
+        "entities_of_interest" : entities_of_interest,
+        "entities_of_interest_record_set" : entities_of_interest_record_set or "",
+        'distance_method': distance_method or "Planar",
+        "spatial_search_distance" : spatial_search_distance,
+        "spatial_search_distance_unit": spatial_search_distance_unit,
+        "temporal_search_distance": temporal_search_distance,
+        "temporal_search_distance_unit":temporal_search_distance_unit,
+        "include_tracks_layer":include_tracks_layer,
+        "max_trace_depth": max_trace_depth,
+        "attribute_match_criteria":attribute_match_criteria,
+        "output_name": output_name,
+        "context":context,
+        "gis" : gis,
+        "future": True,
+    }
+
     if output_service:
         params['output_name'] = _json.dumps({
             "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
@@ -74,36 +142,19 @@ def trace_proximity_events(input_points,
         _set_context(params )
 
 
-    params = {
-        "input_points" : input_points,
-        "entity_id_field" : entities_of_interest,
-        "entities_of_interest" : entities_of_interest,
-        "entities_of_interest_record_set" : entities_of_interest_record_set,
-        "distance_method":distance_method,
-        "spatial_search_distance" : spatial_search_distance,
-        "spatial_search_distance_unit":spatial_search_distance_unit,
-        "temporal_search_distance":temporal_search_distance,
-        "temporal_search_distance_unit":temporal_search_distance_unit,
-        "include_tracks_layer":include_tracks_layer,
-        "max_trace_depth": max_trace_depth,
-        "attribute_match_criteria":attribute_match_criteria,
-        "output_name": output_name,
-        "context":context,
-        "gis" : gis,
-        "future": True,
-    }
-    params = {}
-    for key, value in kwargs.items():
+    import copy
+    kwargs = {}
+    for key, value in params.items():
         if key != 'field':
             if value is not None:
-                params[key] = value
+                kwargs[key] = value
         elif key == 'field' and value:
-            params[key] = value
-    params = inspect_function_inputs(tbx.trace_proximity_events, **params)
+            kwargs[key] = value
+    params = inspect_function_inputs(tbx.trace_proximity_events, **kwargs)
     params['future'] = True
 
     try:
-        gpjob = tbx.trace_proximity_events(**params)
+        gpjob = tbx.trace_proximity_events(**kwargs)
         if future:
             return GAJob(gpjob=gpjob, return_service=output_service)
         gpjob.result()
