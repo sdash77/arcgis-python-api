@@ -416,6 +416,8 @@ class FormInfo:
 
           :return: `True`
         """
+        if index is None:
+            raise ValueError("Please provide an index to this function")
         self._validate_input(element=element, field=label)
         if label:
             element = self.get_element(label=label)
@@ -992,7 +994,7 @@ class FormGroupElement(FormElement):
 
           :return: The element that was moved - :class:`arcgis.mapping.forms.FormFieldElement`
         """
-        if not index:
+        if index is None:
             raise ValueError("Please provide an index")
         if label:
             element = self.get_element(label=label)
