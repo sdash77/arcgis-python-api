@@ -10,10 +10,110 @@ import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet, FeatureCollection
 from arcgis.geoprocessing._support import _execute_gp_tool
 from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob, _prevent_bds_item
+from arcgis._impl.common._utils import inspect_function_inputs
+from arcgis.geoprocessing import import_toolbox
 
 _log = _logging.getLogger(__name__)
 
 _use_async = True
+
+def trace_proximity_events(input_points,
+                           entity_id_field=None,
+                           entities_of_interest=None,
+                           entities_of_interest_record_set=None,
+                           distance_method=None,
+                           spatial_search_distance=None,
+                           spatial_search_distance_unit=None,
+                           temporal_search_distance=None,
+                           temporal_search_distance_unit=None,
+                           include_tracks_layer=False,
+                           max_trace_depth=None,
+                           attribute_match_criteria=None,
+                           output_name=None,
+                           context=None,
+                           gis=None,
+                           future=False):
+    """
+
+    """
+    input_points = _prevent_bds_item(input_points)
+
+    if isinstance(input_points, FeatureCollection) and \
+       'layers' in input_points.properties and \
+       len(input_points.properties.layers) > 0:
+        input_points = _FeatureSet.from_dict(
+            featureset_dict=input_points._lazy_properties.layers[0].featureSet)
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
+    tbx = import_toolbox(url_or_item=url, gis=gis)
+
+    if output_name is None:
+        output_service_name = 'TraceProximityEvents_' + _id_generator()
+        output_name = output_service_name.replace(' ', '_')
+    else:
+        output_service_name = output_name.replace(' ', '_')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Trace Proximity Events',
+                                            output_datastore=output_datastore)
+
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
+
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params )
+
+
+    params = {
+        "input_points" : input_points,
+        "entity_id_field" : entities_of_interest,
+        "entities_of_interest" : entities_of_interest,
+        "entities_of_interest_record_set" : entities_of_interest_record_set,
+        "distance_method":distance_method,
+        "spatial_search_distance" : spatial_search_distance,
+        "spatial_search_distance_unit":spatial_search_distance_unit,
+        "temporal_search_distance":temporal_search_distance,
+        "temporal_search_distance_unit":temporal_search_distance_unit,
+        "include_tracks_layer":include_tracks_layer,
+        "max_trace_depth": max_trace_depth,
+        "attribute_match_criteria":attribute_match_criteria,
+        "output_name": output_name,
+        "context":context,
+        "gis" : gis,
+        "future": True,
+    }
+    params = {}
+    for key, value in kwargs.items():
+        if key != 'field':
+            if value is not None:
+                params[key] = value
+        elif key == 'field' and value:
+            params[key] = value
+    params = inspect_function_inputs(tbx.trace_proximity_events, **params)
+    params['future'] = True
+
+    try:
+        gpjob = tbx.trace_proximity_events(**params)
+        if future:
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        gpjob.result()
+        return output_service
+    except:
+        output_service.delete()
+        raise
+
+
+    return
 
 def create_buffers(input_layer,
                    distance=1,
