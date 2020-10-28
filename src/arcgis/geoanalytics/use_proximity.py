@@ -18,14 +18,14 @@ _log = _logging.getLogger(__name__)
 _use_async = True
 
 def trace_proximity_events(input_points,
+                           spatial_search_distance,
+                           spatial_search_distance_unit,
+                           temporal_search_distance,
+                           temporal_search_distance_unit,
                            entity_id_field=None,
                            entities_of_interest=None,
                            entities_of_interest_record_set=None,
                            distance_method="Planar",
-                           spatial_search_distance=None,
-                           spatial_search_distance_unit=None,
-                           temporal_search_distance=None,
-                           temporal_search_distance_unit=None,
                            include_tracks_layer=False,
                            max_trace_depth=None,
                            attribute_match_criteria=None,
@@ -46,27 +46,43 @@ def trace_proximity_events(input_points,
     input_points                                                           Required Layer. A layer that will be used in analysis.
                                                                            See :ref:`Feature Input<gaxFeatureInput>`.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    entity_id_field=None,
+    spatial_search_distance                                                Required Float. The maximum distance between two points to be considered in
+                                                                           proximity. Features closer together in space and that also meet
+                                                                           `temporal_search_distance` criteria are considered in proximity of each other.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    entities_of_interest=None,
+    spatial_search_distance_unit                                           Required String. The unit of of measure for `spatial_search_distance`.
+                                                                           Values: Meters | Kilometers | Feet | Miles | NauticalMiles | Yards
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    entities_of_interest_record_set=None,
+    temporal_search_distance                                               Required Float. The maximum duration between two points that are considered
+                                                                           in proximity. Features closer together in time and that also meet the
+                                                                           `spatial_search_distance` criteria are considered in proximity of each other.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    distance_method="Planar",
+    temporal_search_distance_unit                                          Required String. The unit of `temporal_search_distance`.
+                                                                           Values: Milliseconds | Seconds | Minutes | Hours | Days | Weeks| Months | Years
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    spatial_search_distance=None,
+    entity_id_field                                                        Optional String. The field used to identify distinct entities.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    spatial_search_distance_unit=None,
+    entities_of_interest                                                   Optional List. JSON used to specify one or more entities that you are
+                                                                           interested in tracing from. You can optionally include a time to start tracing
+                                                                           from. If you do not specify a time, January 1, 1970, at 12:00 a.m. will be used.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    temporal_search_distance=None,
+    entities_of_interest_record_set                                        Optional Layer. A feature class used to specify one or more entities that you
+                                                                           are interested in tracing from.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    temporal_search_distance_unit=None,
+    distance_method                                                        Required String. The distance type that will be used for the `spatial_search_distance`.
+                                                                           The default is `Planar`.  Allowed values: `Planar` or `Geodesic`.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    include_tracks_layer=False,
+    include_tracks_layer                                                   Optional Boolean. Determines whether or not an additional layer will be
+                                                                           created containing the first trace event in tracks and all subsequent
+                                                                           features. The default is `False`.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    max_trace_depth=None,
+    max_trace_depth                                                        Optional Integer. The maximum degrees of separation between an entity of
+                                                                           interest and an entity further down the trace.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    attribute_match_criteria=None,
+    attribute_match_criteria                                               Optional String. One or more attributes used to constrain the proximity
+                                                                           events. Entities will only be considered near when the `spatial_search_distance`
+                                                                           and `temporal_search_distance` criteria are met and the two entities have
+                                                                           equal values of the attributes specified.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     output_name                                                            Optional string. The task will create a feature service of the results. You define the name of the service.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
@@ -92,6 +108,11 @@ def trace_proximity_events(input_points,
        len(input_points.properties.layers) > 0:
         input_points = _FeatureSet.from_dict(
             featureset_dict=input_points._lazy_properties.layers[0].featureSet)
+    if isinstance(entities_of_interest_record_set, FeatureCollection ) and \
+       'layers' in entities_of_interest_record_set.properties and \
+       len(entities_of_interest_record_set.layers) > 0:
+        entities_of_interest_record_set = _FeatureSet.from_dict(
+            featureset_dict=entities_of_interest_record_set._lazy_properties.layers[0].featureSet)
 
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
@@ -141,8 +162,6 @@ def trace_proximity_events(input_points,
     else:
         _set_context(params )
 
-
-    import copy
     kwargs = {}
     for key, value in params.items():
         if key != 'field':
