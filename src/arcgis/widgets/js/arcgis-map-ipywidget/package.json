@@ -2,6 +2,7 @@
   "name": "arcgis-map-ipywidget",
   "version": "1.9.0",
   "description": "The map widget for the ArcGIS API for Python",
+  "homepage": "https://github.com/Esri/arcgis-python-api",
   "author": "esri",
   "license": "SEE LICENSE IN license.txt",
   "main": "dist/index.js",
