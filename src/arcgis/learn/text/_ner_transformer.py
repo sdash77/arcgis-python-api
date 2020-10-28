@@ -1,7 +1,6 @@
 import os
 import json
 import torch
-import logging
 import traceback
 from pathlib import Path
 from functools import partial
@@ -12,6 +11,7 @@ try:
     import numpy as np
     import pandas as pd
     import torch.nn as nn
+    from transformers import logging
     from fastai.train import to_fp16
     from fastprogress.fastprogress import progress_bar
     from fastai.basic_train import Learner, DatasetType
@@ -238,6 +238,12 @@ class _TransformerEntityRecognizer(ArcGISModel):
             from .._data import _raise_fastai_import_error
             _raise_fastai_import_error(import_exception=import_exception)
 
+        self.logger = logging.get_logger()
+        if kwargs.get('verbose', None):
+            self.logger.setLevel(kwargs.get('verbose').upper())
+        else:
+            self.logger.setLevel(logging.ERROR)
+
         model_backbone = ModelBackbone(backbone)
         super().__init__(data, model_backbone)
         self.stats = "macro"
@@ -272,13 +278,14 @@ class _TransformerEntityRecognizer(ArcGISModel):
                                     seq_len=transformer_seq_length):
 
         model_type = infer_model_type(backbone, transformer_architectures)
-        logging.info(f"Inferred Backbone: {model_type}")
+        self.logger.info(f"Inferred Backbone: {model_type}")
         pretrained_model_name = backbone
 
         transformer_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name)
-        if data._is_empty:
-            logging.info('Creating DataBunch')
-            data._prepare_databunch(tokenizer=transformer_tokenizer, model_type=model_type, seq_len=seq_len)
+        if data._is_empty or data._backbone != backbone:
+            self.logger.info('Creating DataBunch')
+            data._prepare_databunch(tokenizer=transformer_tokenizer, model_type=model_type,
+                                    seq_len=seq_len, backbone=backbone, logger=self.logger)
 
         databunch = data.get_databunch()
 
@@ -316,7 +323,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
                                  "\nKindly turn off the `mixed_precision` flag to use this model in its default mode,"
                                  f" or choose a different transformer architectures from - {transformer_architectures}")
                 raise Exception(error_message)
-            logging.info("Converting model to 16 Bit Floating Point precision")
+            self.logger.info("Converting model to 16 Bit Floating Point precision")
             self.learn = to_fp16(self.learn)
 
         if databunch.is_empty:
@@ -330,8 +337,6 @@ class _TransformerEntityRecognizer(ArcGISModel):
 
         self.entities = data._unique_tags
         self._address_tag = data._address_tag
-        from IPython.display import clear_output
-        clear_output()
 
     def _freeze(self):
         """
@@ -368,7 +373,6 @@ class _TransformerEntityRecognizer(ArcGISModel):
         self._save_df_to_html(path)
 
         if zip_files:
-            print('Packaging dlpk...')
             _create_zip(path.name, str(path))
 
         if publish:
@@ -461,14 +465,14 @@ class _TransformerEntityRecognizer(ArcGISModel):
                             text_list.append(f.read())
                         file_names.append(item_name)
                     except Exception as e:
-                        logging.exception(e)
+                        self.logger.exception(e)
                         skipped_docs.append(item_name)
             if len(skipped_docs):
                 print('Unable to read the following documents ', ', '.join(skipped_docs))
 
         tokenizer, id2label = self.learn.model._tokenizer, self.learn.model._config.id2label
         model_type = self.learn.model._transformer_architecture
-        logging.info(f"Generating Inference using - {model_type} transformer model.")
+        self.logger.info(f"Generating Inference using - {model_type} transformer model.")
         for i in progress_bar(range(0, len(text_list), batch_size)):
             tokens, labels = self.learn.model.generate_inference(text_list[i: i + batch_size], self._device)
             if debug:
@@ -632,7 +636,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         self._check_requisites()
         import matplotlib.pyplot as plt
         if not hasattr(self.learn, 'recorder'):  # return none if the recorder is empty
-            logging.error("Model needs to be trained first. Please call `model.fit()` to train the model."
+            self.logger.error("Model needs to be trained first. Please call `model.fit()` to train the model."
                          " Then call this method to plot/return the loss curve.")
             return
         return_fig = not show

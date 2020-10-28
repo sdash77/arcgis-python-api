@@ -35,7 +35,7 @@ def split_into_layer_groups(model, architecture, task="classification"):
     else:
         raise Exception(f"Wrong task - {task} selected. Allowed values are 'ner', 'classification','sequence_translation'")
 
-    logger.info(f"Invoking - {splitter.__name__} function for splitting {architecture} model into layer groups")
+    # logger.info(f"Invoking - {splitter.__name__} function for splitting {architecture} model into layer groups")
     return splitter(model, architecture)
 
 

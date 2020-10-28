@@ -1,5 +1,4 @@
 import traceback
-from .._utils.common import _get_device_id
 from .._data import _raise_fastai_import_error
 HAS_TRANSFORMER = True
 
@@ -9,11 +8,14 @@ logger = logging.getLogger()
 try:
     import torch
     from transformers import pipeline
-    from transformers.modeling_auto import MODEL_FOR_QUESTION_ANSWERING_MAPPING
+    from .._utils.common import _get_device_id
     from fastprogress.fastprogress import progress_bar
+    from transformers.modeling_auto import MODEL_FOR_QUESTION_ANSWERING_MAPPING
+    EXPECTED_MODEL_TYPES = [x.__name__.replace('Config', '') for x in MODEL_FOR_QUESTION_ANSWERING_MAPPING.keys()]
 except Exception as e:
     transformer_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_TRANSFORMER = False
+    EXPECTED_MODEL_TYPES = []
 
 
 class QuestionAnswering:
@@ -36,18 +38,20 @@ class QuestionAnswering:
     :returns: `QuestionAnswering` Object
     """
 
+    #: supported transformer backbones
+    supported_backbones = EXPECTED_MODEL_TYPES
+
     def __init__(self, backbone=None):
         if not HAS_TRANSFORMER:
             _raise_fastai_import_error(import_exception=transformer_exception)
 
         self._device = _get_device_id()
         self._task = "question-answering"
-        expected_model_types = [x.__name__.replace('Config', '') for x in MODEL_FOR_QUESTION_ANSWERING_MAPPING.keys()]
         try:
             self.model = pipeline(self._task, model=backbone, device=self._device)
         except Exception as e:
             error_message = (f"Model - `{backbone}` cannot be used for {self._task} task.\n"
-                             f"Model type should be one of {expected_model_types}.")
+                             f"Model type should be one of {EXPECTED_MODEL_TYPES}.")
             raise Exception(error_message)
 
         from IPython.display import clear_output
@@ -104,17 +108,17 @@ class QuestionAnswering:
         for i in progress_bar(range(len(text_or_list))):
             results.append(self.model(question=text_or_list[i], context=context, **kwargs_dict))
 
-        return self._process_result(results)
+        return self._process_result(results, text_or_list)
 
     @staticmethod
-    def _process_result(result_list):
+    def _process_result(result_list, question_list):
         processed_results = []
-        for result in result_list:
+        for result, question in zip(result_list, question_list):
             if isinstance(result, dict):
-                tmp_dict = {"answer": result["answer"], "score": result["score"]}
+                tmp_dict = {"question": question, "answer": result["answer"], "score": result["score"]}
                 processed_results.append(tmp_dict)
             elif isinstance(result, list):
-                item_list = [{"answer": item["answer"], "score": item["score"]} for item in result]
+                item_list = [{"question": question, "answer": item["answer"], "score": item["score"]} for item in result]
                 processed_results.append(item_list)
 
         return processed_results

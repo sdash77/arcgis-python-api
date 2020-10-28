@@ -8,7 +8,6 @@ import sys
 import json 
 import logging      
 import types
-import tempfile
 import traceback
 
 from ._utils.env import ARCGIS_ENABLE_TF_BACKEND
@@ -25,7 +24,7 @@ try:
     import torch
     from .models._unet_utils import ArcGISSegmentationItemList, is_no_color
     from .models._maskrcnn_utils import ArcGISInstanceSegmentationItemList, ArcGISInstanceSegmentationMSItemList
-    from .models._ner_utils import _NERData
+    from ._utils._ner_utils import _NERData
     from ._utils.pascal_voc_rectangles import ObjectDetectionItemList
     from .models._superres_utils import resize_one
     from ._utils.common import ArcGISMSImage, ArcGISImageList

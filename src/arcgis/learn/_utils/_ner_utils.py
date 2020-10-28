@@ -6,7 +6,7 @@ import tempfile
 import datetime
 import traceback
 from pathlib import Path
-from .._utils.text_data import TextDataObject
+from .text_data import TextDataObject
 try:
     import spacy
     from spacy.gold import offsets_from_biluo_tags as _offsets_from_biluo_tags
