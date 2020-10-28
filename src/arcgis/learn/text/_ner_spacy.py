@@ -107,7 +107,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         N = smoothening  # smoothening factor
         self.recorder.losses = np.convolve(self.recorder.losses, np.ones((N,)) / N, mode='valid').tolist()
         self.recorder.lrs = np.convolve(self.recorder.lrs, np.ones((N,)) / N, mode='valid').tolist()
-        lr, index = self._find_lr(losses_skipped=0, trailing_losses_skipped=1, section_factor=2)
+        lr, index = self._find_lr(losses_skipped=0, trailing_losses_skipped=0, section_factor=2)
 
         if allow_plot:
             self._show_lr_plot(index, losses_skipped=0, trailing_losses_skipped=1)
@@ -237,7 +237,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
                         sum(epoch_loss) / batch_index)  # averaging loss per epoch
 
                 if lr_find:
-                    self.recorder.losses.append(np.min(losses_list))
+                    self.recorder.losses.append(np.mean(losses_list))
                     self.recorder.lrs.append(self.optimizer.alpha)
                     self.recorder.val_loss.append(np.min(val_loss_list))
                     update_recorder = False
