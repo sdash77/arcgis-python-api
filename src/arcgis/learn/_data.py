@@ -308,8 +308,6 @@ def _get_batch_stats(image_list,
             min_values = x_tensor_chunk.min(dim=1).values
             max_values = x_tensor_chunk.max(dim=1).values
             mean_values = x_tensor_chunk.mean(dim=1)
-            print('min_values', min_values, type(min_values))
-            print(x_tensor_chunk.shape, "hi")
         else:
             """
             min_values = torch.zeros(n_bands)
@@ -888,6 +886,23 @@ def prepare_data(path,
         kwargs_transforms['resize_method'] = ResizeMethod.SQUISH
 
     has_esri_files = _check_esri_files(path)
+
+    # For change detection export data using export tiles format.
+    if dataset_type == 'ChangeDetection':
+        from ._utils.change_detection_data import folder_check
+        folder_check(path)
+        json_file = path / 'images_before' / 'esri_model_definition.emd'
+        if json_file.exists():
+            with open(json_file) as f:
+                emd = json.load(f)
+        else:
+            from ._utils.change_detection_data import get_files, image_extensions
+            files_list = get_files(path  / 'images_before',
+                                  extensions=image_extensions,
+                                  recurse=True)
+            msimage_list = ArcGISImageList(files_list)
+            if msimage_list[0].shape[0] != 3:
+                kwargs['imagery_type'] = 'ms'
     alter_class_mapping = False
     color_mapping = None
 

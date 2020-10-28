@@ -25,7 +25,7 @@ try:
     from .common import get_nbatches, get_top_padding
     from .common import ArcGISMSImage, ArcGISImageList
     from .._data import _extract_bands_tfm, _tensor_scaler, _tensor_scaler_tfm
-    from .._data import _get_batch_stats
+    from .._data import _get_batch_stats, sniff_rgb_bands
     HAS_FASTAI = True
 except ImportError:
     import_exception = traceback.format_exc()
@@ -65,60 +65,114 @@ def multispectral_additions(data,
                             **kwargs):
 
     # Normalize multispectral imagery by calculating stats
+    json_file = data.path / 'images_before' / 'esri_model_definition.emd'
+    if json_file.exists():
+        with open(json_file) as f:
+            emd = json.load(f)
+        if "InputRastersProps" in emd:
+            # Starting with ArcGIS Pro 2.7 and Python API for ArcGIS 1.9, the following multispectral kwargs have been
+            # deprecated. This is done in favour of the newly added support for Imagery statistics and metadata in the
+            # IA > Export Training data for Deep Learining GP Tool.
+            #
+            #   bands, rgb_bands, norm_pct,
+            #
+            data._emd = emd
+            data._sensor_name = emd['InputRastersProps']['SensorName']
+            bands = data._band_names = emd['InputRastersProps']['BandNames']
+            # data._band_mapping = {i: k for i, k in enumerate(bands)}
+            # data._band_mapping_reverse = {k: i for i, k in data._band_mapping.items()}
+            data._nbands = len(data._band_names)
+            band_min_values = []
+            band_max_values = []
+            band_mean_values = []
+            band_std_values = []
+            for band_stats in  emd['AllTilesStats']:
+                band_min_values.append(band_stats['Min'])
+                band_max_values.append(band_stats['Max'])
+                band_mean_values.append(band_stats['Mean'])
+                band_std_values.append(band_stats['StdDev'])
 
-    if len(data.train_ds) < 300:
-        norm_pct = 1
+            data._rgb_bands = rgb_bands
+            data._symbology_rgb_bands = rgb_bands
 
-    # Statistics
-    dummy_stats = {
-        "batch_stats_for_norm_pct_0" : {
-            "band_min_values": None,
-            "band_max_values": None,
-            "band_mean_values": None,
-            "band_std_values": None,
-            "scaled_min_values": None,
-            "scaled_max_values": None,
-            "scaled_mean_values": None,
-            "scaled_std_values": None
+            data._band_min_values = torch.tensor(band_min_values, dtype=torch.float32)
+            data._band_max_values = torch.tensor(band_max_values, dtype=torch.float32)
+            data._band_mean_values = torch.tensor(band_mean_values, dtype=torch.float32)
+            data._band_std_values = torch.tensor(band_std_values, dtype=torch.float32)
+            data._scaled_min_values = torch.zeros((data._nbands,), dtype=torch.float32)
+            data._scaled_max_values = torch.ones((data._nbands,), dtype=torch.float32)
+            data._scaled_mean_values = _tensor_scaler(data._band_mean_values,
+                                                        min_values=data._band_min_values,
+                                                        max_values=data._band_max_values, 
+                                                        mode='minmax')
+                                                        
+            data._scaled_std_values = ((data._band_std_values**2)*(data._scaled_mean_values/data._band_mean_values))**.5
+
+            # Handover to next section
+            norm_pct = 1
+            bands = data._band_names
+            rgb_bands = symbology_rgb_bands = sniff_rgb_bands(data._band_names)
+            if rgb_bands is None:
+                rgb_bands = []
+                if len(data._band_names) < 3:
+                    symbology_rgb_bands = [0] # Panchromatic
+                else:
+                    symbology_rgb_bands = [0, 1, 2] # Case where could not find RGB in multiband imagery
+
+    else:
+        if len(data.train_ds) < 300:
+            norm_pct = 1
+
+        # Statistics
+        dummy_stats = {
+            "batch_stats_for_norm_pct_0" : {
+                "band_min_values": None,
+                "band_max_values": None,
+                "band_mean_values": None,
+                "band_std_values": None,
+                "scaled_min_values": None,
+                "scaled_max_values": None,
+                "scaled_mean_values": None,
+                "scaled_std_values": None
+            }
         }
-    }
-    normstats_json_path = os.path.abspath(data.path / 'esri_normalization_stats.json')
-    if not os.path.exists(normstats_json_path):
-        normstats = dummy_stats
-        with open(normstats_json_path, 'w', encoding='utf-8') as f:
-            json.dump(normstats, f, ensure_ascii=False, indent=4)
-    else:
-        with open(normstats_json_path) as f:
-            normstats = json.load(f)
+        normstats_json_path = os.path.abspath(data.path / 'esri_normalization_stats.json')
+        if not os.path.exists(normstats_json_path):
+            normstats = dummy_stats
+            with open(normstats_json_path, 'w', encoding='utf-8') as f:
+                json.dump(normstats, f, ensure_ascii=False, indent=4)
+        else:
+            with open(normstats_json_path) as f:
+                normstats = json.load(f)
 
-    norm_pct_search = f"batch_stats_for_norm_pct_{round(norm_pct*100)}"
-    if norm_pct_search in normstats:
-        batch_stats = normstats[norm_pct_search]
-        for s in batch_stats:
-            if batch_stats[s] is not None:
-                batch_stats[s] = torch.tensor(batch_stats[s])
-    else:
-        batch_stats = _get_batch_stats(data.x, norm_pct, scaled_std=False, reshape=True)
-        normstats[norm_pct_search] = dict(batch_stats)
-        for s in normstats[norm_pct_search]:
-            if normstats[norm_pct_search][s] is not None:
-                normstats[norm_pct_search][s] = normstats[norm_pct_search][s].tolist()
-        with open(normstats_json_path, 'w', encoding='utf-8') as f:
-            json.dump(normstats, f, ensure_ascii=False, indent=4)
+        norm_pct_search = f"batch_stats_for_norm_pct_{round(norm_pct*100)}"
+        if norm_pct_search in normstats:
+            batch_stats = normstats[norm_pct_search]
+            for s in batch_stats:
+                if batch_stats[s] is not None:
+                    batch_stats[s] = torch.tensor(batch_stats[s])
+        else:
+            batch_stats = _get_batch_stats(data.x, norm_pct, scaled_std=False, reshape=True)
+            normstats[norm_pct_search] = dict(batch_stats)
+            for s in normstats[norm_pct_search]:
+                if normstats[norm_pct_search][s] is not None:
+                    normstats[norm_pct_search][s] = normstats[norm_pct_search][s].tolist()
+            with open(normstats_json_path, 'w', encoding='utf-8') as f:
+                json.dump(normstats, f, ensure_ascii=False, indent=4)
 
-    # batch_stats -> [band_min_values, band_max_values, band_mean_values, band_std_values, scaled_min_values, scaled_max_values, scaled_mean_values, scaled_std_values]
-    data._band_min_values = batch_stats['band_min_values']
-    data._band_max_values = batch_stats['band_max_values']
-    data._band_mean_values = batch_stats['band_mean_values']
-    data._band_std_values = batch_stats['band_std_values']
-    data._scaled_min_values = batch_stats['scaled_min_values']
-    data._scaled_max_values = batch_stats['scaled_max_values']
-    data._scaled_mean_values = batch_stats['scaled_mean_values']
-    data._scaled_std_values = batch_stats['scaled_std_values']
+        # batch_stats -> [band_min_values, band_max_values, band_mean_values, band_std_values, scaled_min_values, scaled_max_values, scaled_mean_values, scaled_std_values]
+        data._band_min_values = batch_stats['band_min_values']
+        data._band_max_values = batch_stats['band_max_values']
+        data._band_mean_values = batch_stats['band_mean_values']
+        data._band_std_values = batch_stats['band_std_values']
+        data._scaled_min_values = batch_stats['scaled_min_values']
+        data._scaled_max_values = batch_stats['scaled_max_values']
+        data._scaled_mean_values = batch_stats['scaled_mean_values']
+        data._scaled_std_values = batch_stats['scaled_std_values']
 
-    # Prevent Divide by zeros
-    data._band_max_values[data._band_min_values == data._band_max_values]+=1
-    # data._scaled_std_values[data._scaled_std_values == 0]+=1e-02
+        # Prevent Divide by zeros
+        data._band_max_values[data._band_min_values == data._band_max_values] += 1
+        # data._scaled_std_values[data._scaled_std_values == 0]+=1e-02
 
     # Scaling
     data._min_max_scaler = partial(_tensor_scaler,
@@ -161,7 +215,6 @@ def multispectral_additions(data,
         data._norm_pct = norm_pct
         data._rgb_bands = rgb_bands
         data._symbology_rgb_bands = rgb_bands
-
         # Prepare unknown bands list if bands data is missing
         if data._bands is None:
             n_bands = data.x[0].data.shape[0]
@@ -172,7 +225,8 @@ def multispectral_additions(data,
                 data._bands = ['u' for i in range(n_bands)]
                 if n_bands == 2: # Handle Data with two channels
                     data._symbology_rgb_bands = [0]
-
+        else:
+            n_bands = len(bands)
         #
         if data._rgb_bands is None:
             data._rgb_bands = []
@@ -180,6 +234,8 @@ def multispectral_additions(data,
         #
         if data._symbology_rgb_bands is None:
             data._symbology_rgb_bands = [0, 1, 2][:min(n_bands, 3)]
+        elif data._symbology_rgb_bands == []:
+            data._symbology_rgb_bands = list(range(n_bands))[:min(n_bands, 3)]
 
         # Complete symbology rgb bands
         if len(data._bands) > 2 and len(data._symbology_rgb_bands) < 3:
@@ -286,6 +342,7 @@ class ChangeDetectionDataset(Dataset):
             image_after = open_image(self.after_list[idx])
         change_label = open_mask(self.label_list[idx])
 
+        assert (image_before.shape[1:] == image_after.shape[1:] == change_label.shape[1:]), f"The image size of {self.before_list[idx]}, {self.after_list[idx]}, {self.label_list[idx]} is not same"
         # resolving transforms first so that
         # both before and after images are
         # cropped and zoomed the same way.
@@ -352,6 +409,13 @@ def apply_tfms(images, crop_tfm, other_tfms):
     with others hence, applying it differently.
     """
     image_before, image_after, change_label = images
+    size = crop_tfm[0].kwargs['size']
+    # To fix when the disk image size is smaller than 
+    # crop size, otherwise crop_tfm behaves strange
+    if min(image_before.shape[1:]) / size < 1:
+        image_before = image_before.resize(size)
+        image_after = image_after.resize(size)
+        change_label = change_label.resize(size)
 
     image_before = image_before.apply_tfms(crop_tfm,
                                            do_resolve=False)
@@ -481,11 +545,14 @@ def create_train_val_sets(path,
     elif split_type == 'random':
         folder_check(path)
         images_before = get_files(path / 'images_before',
-                                  extensions=image_extensions)
+                                  extensions=image_extensions,
+                                  recurse=True)
         images_after = get_files(path / 'images_after',
-                                 extensions=image_extensions)
+                                 extensions=image_extensions,
+                                 recurse=True)
         labels = get_files(path / 'labels',
-                           extensions=image_extensions)
+                           extensions=image_extensions,
+                           recurse=True)
 
         total_num_images = len(images_before)
         val_num_images = int(total_num_images * val_split_pct)
@@ -653,6 +720,8 @@ def prepare_change_detection_data(path,
     data.class_mapping = class_mapping
     data.color_mapping = color_mapping
     data.classes = list(data.class_mapping.values())
+    # fix save model path.
+    data.path = data.path / 'images_before'
     # return databunch.
     return data
 
