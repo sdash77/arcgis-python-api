@@ -5,6 +5,10 @@ import warnings
 import traceback
 from ..models._arcgis_model import ArcGISModel, model_characteristics_folder
 
+import logging
+logger = logging.getLogger()
+
+
 HAS_NUMPY = True
 HAS_FASTAI = True
 
@@ -28,7 +32,6 @@ try:
     from .._utils.text_transforms import TransformersBaseTokenizer, TransformersVocab
     from ._transformer_text_classifier import TransformerForTextClassification, backbone_models_reverse_map, \
         transformer_architectures, transformer_seq_length
-    from transformers import logging
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
@@ -97,12 +100,6 @@ class TextClassifier(ArcGISModel):
             from .._data import _raise_fastai_import_error
             _raise_fastai_import_error(import_exception=import_exception)
 
-        self.logger = logging.get_logger()
-        if kwargs.get('verbose', None):
-            self.logger.setLevel(kwargs.get('verbose').upper())
-        else:
-            self.logger.setLevel(logging.ERROR)
-
         model_backbone = ModelBackbone(backbone)
         super().__init__(data, model_backbone)
         self.is_multilabel_problem = False
@@ -120,7 +117,7 @@ class TextClassifier(ArcGISModel):
     def _create_text_learner_object(self, data, backbone, pretrained_path=None, mixed_precision=False,
                                     seq_len=transformer_seq_length):
         model_type = infer_model_type(backbone, transformer_architectures)
-        self.logger.info(f"Inferred Backbone: {model_type}")
+        logger.info(f"Inferred Backbone: {model_type}")
         pretrained_model_name = backbone
 
         transformer_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name)
@@ -133,10 +130,9 @@ class TextClassifier(ArcGISModel):
         tokenizer = Tokenizer(tok_func=base_tokenizer, pre_rules=[], post_rules=[])
         vocab = TransformersVocab(tokenizer=transformer_tokenizer)
 
-        if data._is_empty or data._backbone != backbone:
-            self.logger.info('Creating DataBunch')
-            data._prepare_databunch(tokenizer=tokenizer, vocab=vocab, pad_first=pad_first,
-                                    pad_idx=pad_idx, backbone=backbone, logger=self.logger)
+        if data._is_empty:
+            logger.info('Creating DataBunch')
+            data._prepare_databunch(tokenizer=tokenizer, vocab=vocab, pad_first=pad_first, pad_idx=pad_idx)
 
         databunch = data.get_databunch()
 
@@ -153,6 +149,7 @@ class TextClassifier(ArcGISModel):
             pretrained_model_path=pretrained_path,
             seq_len=seq_len
         )
+
         model.init_model()
         # opt_func = partial(AdamW, correct_bias=False)
 
@@ -178,8 +175,11 @@ class TextClassifier(ArcGISModel):
                     "\nKindly turn off the `mixed_precision` flag to use this model in its default mode,"
                     f" or choose a different transformer architectures from - {transformer_architectures}")
                 raise Exception(error_message)
-            self.logger.info("Converting model to 16 Bit Floating Point precision")
+            logger.info("Converting model to 16 Bit Floating Point precision")
             self.learn = to_fp16(self.learn)
+        if not LAMBDA_TEXT_CLASSIFICATION:
+            from IPython.display import clear_output
+            clear_output()
 
     def __str__(self):
         return self.__repr__()
@@ -325,6 +325,7 @@ class TextClassifier(ArcGISModel):
         self._save_df_to_html(path)
 
         if zip_files:
+            print('Packaging dlpk...')
             _create_zip(path.name, str(path))
 
         if publish:
@@ -397,7 +398,7 @@ class TextClassifier(ArcGISModel):
         return metric
 
     def _calculate_model_metric(self):
-        self.logger.info("Calculating Model Metrics")
+        logger.info("Calculating Model Metrics")
         validation_dataframe = self._data._valid_df
 
         if self.is_multilabel_problem:
@@ -448,7 +449,7 @@ class TextClassifier(ArcGISModel):
                   predicted labels, 0's otherwise and list containing a score for each label
         """
         if self.is_multilabel_problem is False and thresh is not None:
-            self.logger.error("Passing a threshold value for non multi-label classification task "
+            logger.warning("Passing a threshold value for non multi-label classification task "
                            "will not have any affect on the predicting the class label")
 
         if isinstance(text_or_list, (list, tuple, np.ndarray)):

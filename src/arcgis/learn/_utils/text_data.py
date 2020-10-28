@@ -42,6 +42,7 @@ except:
 
 
 max_len=100
+logger = logging.getLogger()
 
 
 def _raise_fastai_exception(exception):
@@ -358,8 +359,7 @@ class TextDataObject:
         if not HAS_FASTAI:
             _raise_fastai_exception(import_exception)
 
-        logger = kwargs.get("logger")
-        if logger:logger.info(f"Preparing databunch for task type - {self._task}")
+        logger.info(f"Preparing databunch for task type - {self._task}")
         if self._task == "classification":
             self._databunch = TextClasDataBunch.\
                 from_df(".",
@@ -395,7 +395,6 @@ class TextDataObject:
             raise Exception(f"Wrong task - {self._task} selected. Allowed values are 'ner', 'classification'")
 
         self._is_empty = False
-        self._backbone = kwargs.get('backbone')
 
     def _prepare_seq2seq_databunch(self, transformer_processor, pad_first, pad_idx, **kwargs):
         """

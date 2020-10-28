@@ -11,12 +11,10 @@ from ._scannedmapdigitizer import ScannedMapDigitizer
 
 if not LAMBDA_TEXT_CLASSIFICATION:
     from .models import SingleShotDetector, UnetClassifier, FeatureClassifier, RetinaNet, \
-      PSPNetClassifier, MaskRCNN, DeepLab, PointCNN, ModelExtension, \
+      PSPNetClassifier, EntityRecognizer, MaskRCNN, DeepLab, PointCNN, ModelExtension, \
       FasterRCNN, SuperResolution, FullyConnectedNetwork, MLModel, YOLOv3, HEDEdgeDetector, \
       BDCNEdgeDetector, ImageCaptioner, TimeSeriesModel, CycleGAN, MultiTaskRoadExtractor, \
       ChangeDetector, Pix2Pix
-
-    from .text import EntityRecognizer
     from ._utils.pointcloud_data import Transform3d
 from ._data import prepare_data, prepare_tabulardata, prepare_textdata
 from ._process_df import process_df, add_datepart
