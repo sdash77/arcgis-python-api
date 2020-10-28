@@ -725,7 +725,7 @@ def edit_vehicle_routing_problem(orders,
     if gis is None:
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.syncVRP.url[:-len('/EditVehicleRoutingProblem')]
-    tbx = import_toolbox(url)
+    tbx = import_toolbox(url, gis=gis)
     defaults = dict(zip(tbx.edit_vehicle_routing_problem.__annotations__.keys(),
                         tbx.edit_vehicle_routing_problem.__defaults__))
     if breaks is None:
@@ -2800,7 +2800,7 @@ def solve_vehicle_routing_problem(
     if gis is None:
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.asyncVRP.url[:-len('/SolveVehicleRoutingProblem')]
-    tbx = import_toolbox(url)
+    tbx = import_toolbox(url, gis=gis)
     defaults = dict(zip(tbx.solve_vehicle_routing_problem.__annotations__.keys(),
                         tbx.solve_vehicle_routing_problem.__defaults__))
     if time_impedance is None:

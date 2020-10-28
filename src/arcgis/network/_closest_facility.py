@@ -1273,7 +1273,7 @@ def find_closest_facilities(
     if gis is None:
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.asyncClosestFacility.url[:-len('/FindClosestFacilities')]
-    tbx = import_toolbox(url)
+    tbx = import_toolbox(url, gis=gis)
     defaults = dict(zip(tbx.find_closest_facilities.__annotations__.keys(),
                         tbx.find_closest_facilities.__defaults__))
     if restrictions is None:

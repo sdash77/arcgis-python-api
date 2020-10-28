@@ -881,7 +881,7 @@ def solve_location_allocation(facilities,
     if gis is None:
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.asyncLocationAllocation.url
-    tbx = import_toolbox(url)
+    tbx = import_toolbox(url, gis=gis)
     defaults = dict(zip(tbx.solve_location_allocation.__annotations__.keys(),
                         tbx.solve_location_allocation.__defaults__))
     if default_capacity is None:

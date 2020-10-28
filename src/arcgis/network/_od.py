@@ -845,7 +845,7 @@ def generate_origin_destination_cost_matrix(origins,
     if gis is None:
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.asyncODCostMatrix.url
-    tbx = import_toolbox(url)
+    tbx = import_toolbox(url, gis=gis)
     defaults = dict(zip(tbx.generate_origin_destination_cost_matrix.__annotations__.keys(),
                         tbx.generate_origin_destination_cost_matrix.__defaults__))
     if origins is None:
