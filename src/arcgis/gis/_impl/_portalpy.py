@@ -14,7 +14,7 @@ from ..._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = '1.8.0'
+__version__ = '1.9.0'
 
 _log = logging.getLogger(__name__)
 
