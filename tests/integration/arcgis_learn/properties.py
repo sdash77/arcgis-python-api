@@ -7,9 +7,6 @@ from arcgis.learn import MLModel, FasterRCNN, SuperResolution, EntityRecognizer,
     prepare_tabulardata
 import json
 
-
-os.environ["run_nightly"] = "1"
-
 if os.environ["run_nightly"] == "1":
     data_folder = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model_regression"
 else:
