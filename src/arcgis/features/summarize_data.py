@@ -661,7 +661,21 @@ def join_features(target_layer,
                                                       output_name='join features',
                                                       context={"extent":{"xmin":-9375809.87305117,"ymin":4031882.3806860778,"xmax":-9370182.196843527,"ymax":4034872.9794178144,"spatialReference":{"wkid":102100,"latestWkid":3857}}}, )
     """
-    kwargs = locals()
+    kwargs = {
+        "target_layer" : target_layer,
+        "join_layer" : join_layer,
+        "spatial_relationship" : spatial_relationship,
+        "spatial_relationship_distance" : spatial_relationship_distance,
+        "spatial_relationship_distance_units" : spatial_relationship_distance_units,
+        "attribute_relationship" : attribute_relationship,
+        "join_operation" : join_operation,
+        "summary_fields" : summary_fields,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "future" : future,
+        "join_type" : join_type
+    }
     gis = _arcgis.env.active_gis if gis is None else gis
     params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.join_features, **kwargs)
     if not estimate is None:
