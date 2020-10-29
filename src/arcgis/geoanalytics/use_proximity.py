@@ -23,8 +23,8 @@ def trace_proximity_events(input_points,
                            temporal_search_distance,
                            temporal_search_distance_unit,
                            entity_id_field=None,
-                           entities_of_interest=None,
-                           entities_of_interest_record_set=None,
+                           entities_of_interest_ids=None,
+                           entities_of_interest_layer=None,
                            distance_method="Planar",
                            include_tracks_layer=False,
                            max_trace_depth=None,
@@ -62,11 +62,11 @@ def trace_proximity_events(input_points,
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     entity_id_field                                                        Optional String. The field used to identify distinct entities.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    entities_of_interest                                                   Optional List. JSON used to specify one or more entities that you are
+    entities_of_interest_ids                                               Optional List. JSON used to specify one or more entities that you are
                                                                            interested in tracing from. You can optionally include a time to start tracing
                                                                            from. If you do not specify a time, January 1, 1970, at 12:00 a.m. will be used.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    entities_of_interest_record_set                                        Optional Layer. A feature class used to specify one or more entities that you
+    entities_of_interest_layer                                             Optional Layer. A feature class used to specify one or more entities that you
                                                                            are interested in tracing from.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     distance_method                                                        Required String. The distance type that will be used for the `spatial_search_distance`.
@@ -108,11 +108,11 @@ def trace_proximity_events(input_points,
        len(input_points.properties.layers) > 0:
         input_points = _FeatureSet.from_dict(
             featureset_dict=input_points._lazy_properties.layers[0].featureSet)
-    if isinstance(entities_of_interest_record_set, FeatureCollection ) and \
-       'layers' in entities_of_interest_record_set.properties and \
-       len(entities_of_interest_record_set.layers) > 0:
-        entities_of_interest_record_set = _FeatureSet.from_dict(
-            featureset_dict=entities_of_interest_record_set._lazy_properties.layers[0].featureSet)
+    if isinstance(entities_of_interest_layer, FeatureCollection ) and \
+       'layers' in entities_of_interest_layer.properties and \
+       len(entities_of_interest_layer.layers) > 0:
+        entities_of_interest_layer = _FeatureSet.from_dict(
+            featureset_dict=entities_of_interest_layer._lazy_properties.layers[0].featureSet)
 
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
@@ -133,8 +133,8 @@ def trace_proximity_events(input_points,
     params = {
         "input_points" : input_points,
         "entity_id_field" : entity_id_field,
-        "entities_of_interest" : entities_of_interest,
-        "entities_of_interest_record_set" : entities_of_interest_record_set or "",
+        "entities_of_interest_ids" : entities_of_interest_ids,
+        "entities_of_interest_layer" : entities_of_interest_layer,#"entities_of_interest_record_set" : entities_of_interest_record_set or "",
         'distance_method' : distance_method or "Planar",
         "spatial_search_distance" : spatial_search_distance,
         "spatial_search_distance_unit" : spatial_search_distance_unit,
@@ -173,7 +173,7 @@ def trace_proximity_events(input_points,
     params['future'] = True
 
     try:
-        gpjob = tbx.trace_proximity_events(**kwargs)
+        gpjob = tbx.trace_proximity_events(**params)
         if future:
             return GAJob(gpjob=gpjob, return_service=output_service)
         gpjob.result()
