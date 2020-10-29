@@ -24,7 +24,6 @@ X = ['altitude_m', 'wind_speed', 'dayl__s_', 'prcp__mm_d', 'srad__W_m_', 'swe__k
 
 
 def setuposenviron():
-    os.environ["run_nightly"] = "1"
     with open(authorization_path) as f:
         authorization_data = json.load(f)
     return authorization_data
