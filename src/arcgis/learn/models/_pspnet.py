@@ -138,13 +138,13 @@ class PSPNetClassifier(ArcGISModel):
                 self._ignore_mapped_class.insert(0, 0)
             global accuracy
             accuracy = partial(accuracy, ignore_mapped_class=self._ignore_mapped_class)
-        self._kwargs = kwargs
         self.mixup = kwargs.get('mixup', False)
         self.class_balancing = kwargs.get('class_balancing', False)
-        self.focal_loss = kwargs.get('focal_loss', False)  
+        self.focal_loss = kwargs.get('focal_loss', False)
         self.dice_loss_fraction = kwargs.get('dice_loss_fraction', False)
         self.weighted_dice = kwargs.get('weighted_dice', False)
         self.keep_dilation = kwargs.get('keep_dilation', False)
+        self._vggv2 = kwargs.get('vggv2', True)
         self._code = image_classifier_prf
         self.pyramid_sizes = pyramid_sizes
         self._use_unet = use_unet
@@ -158,7 +158,8 @@ class PSPNetClassifier(ArcGISModel):
                                                    pyramid_sizes=pyramid_sizes, 
                                                    pretrained=True, 
                                                    metrics=accuracy, 
-                                                   unet_aux_loss=unet_aux_loss)
+                                                   unet_aux_loss=unet_aux_loss,
+                                                   vggv2=self._vggv2)
 
             if self.class_balancing and data.class_weight is not None:
                 class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(self._device)
@@ -273,7 +274,7 @@ class PSPNetClassifier(ArcGISModel):
             model_file = emd_path.parent / model_file
             
         model_params = emd['ModelParameters']
-        kwargs = emd.get('Kwargs', {})
+        model_params['vggv2'] = model_params.get('vggv2', False)
 
         try:
             class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
@@ -290,7 +291,7 @@ class PSPNetClassifier(ArcGISModel):
             data.emd_path = emd_path
             data.emd = emd
 
-        return cls(data, **model_params, pretrained_path=str(model_file),  **kwargs)
+        return cls(data, **model_params, pretrained_path=str(model_file))
 
     def _psp_loss(self, outputs, targets, **kwargs):
         targets = targets.squeeze(1).detach()
@@ -355,6 +356,8 @@ class PSPNetClassifier(ArcGISModel):
         _emd_template["ModelParameters"]["pyramid_sizes"] = self.pyramid_sizes
         _emd_template["ModelParameters"]["use_unet"] = self._use_unet
         _emd_template["ModelParameters"]["pointrend"] = self._pointrend
+        _emd_template["ModelParameters"]["keep_dilation"] = self.keep_dilation
+        _emd_template["ModelParameters"]["vggv2"] = self._vggv2
         _emd_template["ModelParameters"]["unet_aux_loss"] = self._unet_aux_loss
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_psp"
@@ -364,7 +367,6 @@ class PSPNetClassifier(ArcGISModel):
             _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
-        _emd_template['Kwargs'] = self._kwargs
         _emd_template['Classes'] = []
         class_data = {}
         for i, class_name in enumerate(self._data.classes[1:]):  # 0th index is background
