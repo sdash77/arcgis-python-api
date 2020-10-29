@@ -17,7 +17,7 @@ import random, os
 import datetime
 from copy import deepcopy
 from collections.abc import Iterable
-from ..models._ner_utils import even_mults, _timelapsed
+from .._utils._ner_utils import even_mults, _timelapsed
 from ..models._arcgis_model import ArcGISModel, _create_zip
 
 

@@ -156,7 +156,7 @@ class SequenceToSequence(ArcGISModel):
                     "\nKindly turn off the `mixed_precision` flag to use this model in its default mode,"
                     f" or choose a different transformer architectures from - {transformer_architectures}")
                 raise Exception(error_message)
-            logger.info("Converting model to 16 Bit Floating Point precision")
+            self.logger.info("Converting model to 16 Bit Floating Point precision")
             self.learn = to_fp16(self.learn)
 
     def __str__(self):
@@ -302,7 +302,6 @@ class SequenceToSequence(ArcGISModel):
         self._save_df_to_html(path)
 
         if zip_files:
-            print('Packaging dlpk...')
             _create_zip(path.name, str(path))
 
         if publish:

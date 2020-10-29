@@ -199,16 +199,13 @@ TimeSeriesModel
 
 Unstructured Text Models
 ------------------------
+arcgis.learn.text module
+^^^^^^^^^^^^^^^^^^^^^^^^
 .. toctree::
    :maxdepth: 3
 
    arcgis.learn.text
 
-EntityRecognizer
-^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.learn.EntityRecognizer
-    :members:
-    :undoc-members:
 
 Inferencing Methods (Image Server)
 ----------------------------------

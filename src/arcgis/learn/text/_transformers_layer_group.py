@@ -1,7 +1,16 @@
 import logging
-import torch.nn as nn
+import traceback
 from functools import partial
-from fastai.torch_core import flatten_model
+
+
+HAS_FASTAI = True
+
+try:
+    import torch.nn as nn
+    from fastai.torch_core import flatten_model
+except Exception as e:
+    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
+    HAS_FASTAI = False
 
 logger = logging.getLogger()
 
@@ -35,7 +44,7 @@ def split_into_layer_groups(model, architecture, task="classification"):
     else:
         raise Exception(f"Wrong task - {task} selected. Allowed values are 'ner', 'classification','sequence_translation'")
 
-    logger.info(f"Invoking - {splitter.__name__} function for splitting {architecture} model into layer groups")
+    # logger.info(f"Invoking - {splitter.__name__} function for splitting {architecture} model into layer groups")
     return splitter(model, architecture)
 
 
@@ -112,7 +121,11 @@ def get_layer_group_splitter_for_sequence_translation(architecture):
     else:
         return naive_model_splitter
 
+
 def naive_model_splitter(model, model_name):
+    if not HAS_FASTAI:
+        from .._data import _raise_fastai_import_error
+        _raise_fastai_import_error(import_exception=import_exception)
     linear_layer_found = False
     index, last_index = -1, -1
     layers = flatten_model(model)
