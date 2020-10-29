@@ -79,7 +79,7 @@ def _show_batch(
 def _show_pairs(
     xs, ys, orients, imgsize: int = 4,
     figsize: Optional[Tuple[int, int]] = None,
-    bin_size: int = 10,
+    bin_size: int = 20,
 ):
     """
     Show Image - Road Label - Orientation Vector label pairs
@@ -97,7 +97,7 @@ def _show_pairs(
     #plt.tight_layout()
 
 
-def _plotOrientationOnImage(ax, orientMap, image, bin_size=10):
+def _plotOrientationOnImage(ax, orientMap, image, bin_size=20):
     """
     Plot Orientation Vectors overlay on Image
     """
@@ -289,7 +289,7 @@ class RoadOrientation():
 class RoadOrientDataset(Dataset):
     def __init__(
         self, orig_data,data_files: Dict, transforms: List = None, multi_scale: List = None,
-        orient_theta: int = 5, orient_bin_size: int = 10, **kwargs,
+        orient_theta: int = 5, orient_bin_size: int = 20, **kwargs,
     ):
         """
         PyTorch Dataset class to create Road-Orientaion pair for training.

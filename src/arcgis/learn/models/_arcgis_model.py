@@ -900,6 +900,10 @@ class ArcGISModel(object):
             model_analysis = f"""
             <p><b>Accuracy:</b> {emd_template.get('accuracy')}</p>
         """
+        if emd_template.get('mIoU'):
+            model_analysis = f"""
+            <p><b>mIoU:</b> {emd_template.get('mIoU')}</p>
+        """
 
         if emd_template.get('average_precision_score'):
             model_analysis = f"""
@@ -1236,8 +1240,7 @@ class ArcGISModel(object):
 
     def load(self, name_or_path):
         """
-        Loads a saved model for inferencing or fine tuning from the specified
-        path or model name.
+        Loads a saved model for inferencing or fine tuning from the disk.
 
         =====================   ===========================================
         **Argument**            **Description**
