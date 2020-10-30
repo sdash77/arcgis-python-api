@@ -9860,7 +9860,10 @@ class Item(dict):
            that can be converted to string using data.decode('utf-8'). Zero byte files will return None.
         """
         folder = None
-        item_data = self._portal.get_item_data(self.itemid, try_json, folder)
+        try:
+            item_data = self._portal.get_item_data(self.itemid, try_json, folder)
+        except:
+            item_data = {}
 
         if item_data == '':
             return None
