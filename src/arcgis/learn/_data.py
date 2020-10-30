@@ -630,6 +630,9 @@ def prepare_tabulardata(
                             Categorical data is by default encoded.
                             If nothing is specified, default transforms are applied
                             to fill missing values and normalize categorical data.
+                            For Raster use raster.name for the the first band,
+                            raster.name_1 for 2nd band, raster.name_2 for 3rd
+                            and so on.
     ---------------------   -------------------------------------------
     val_split_pct           Optional float. Percentage of training data to keep
                             as validation.
