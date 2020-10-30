@@ -213,10 +213,29 @@ def connect_origins_to_destinations(origins_layer,
                                          time_of_day=datetime(1990, 1, 4, 1, 3),
                                          output_name="routes_from_offices_to_hq")
     """
-    kwargs = locals()
+
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.connect_origins_to_destinations, 
-                                     **kwargs)    
+    kwargs = {
+        "origins_layer" : origins_layer,
+        "destinations_layer" : destinations_layer,
+        "measurement_type" : measurement_type,
+        "origins_layer_route_id_field" : origins_layer_route_id_field,
+        "destinations_layer_route_id_field" : destinations_layer_route_id_field,
+        "time_of_day" : time_of_day,
+        "time_zone_for_time_of_day" : time_zone_for_time_of_day,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "point_barrier_layer" : point_barrier_layer,
+        "line_barrier_layer" : line_barrier_layer,
+        "polygon_barrier_layer"  : polygon_barrier_layer,
+        "future" : future,
+        "route_shape" : route_shape,
+        "include_route_layers" : include_route_layers
+    }
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.connect_origins_to_destinations,
+                                     **kwargs)
 
     if isinstance(measurement_type, str):
         route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
@@ -230,20 +249,19 @@ def connect_origins_to_destinations(origins_layer,
 
     return gis._tools.featureanalysis.connect_origins_to_destinations(**params)
 #--------------------------------------------------------------------------
-def create_buffers(
-    input_layer,
-        distances=[],
-        field=None,
-        units="Meters",
-        dissolve_type="None",
-        ring_type="Disks",
-        side_type="Full",
-        end_type="Round",
-        output_name=None,
-        context=None,
-        gis=None,
-        estimate=False,
-        future=False):
+def create_buffers(input_layer,
+                   distances=[],
+                   field=None,
+                   units="Meters",
+                   dissolve_type="None",
+                   ring_type="Disks",
+                   side_type="Full",
+                   end_type="Round",
+                   output_name=None,
+                   context=None,
+                   gis=None,
+                   estimate=False,
+                   future=False):
     """
     .. image:: _static/images/create_buffers/create_buffers.png
 
@@ -381,10 +399,25 @@ def create_buffers(
                                  output_name='create_buffers',
                                  context={"extent":{"xmin":-12555831.656684224,"ymin":5698027.566358956,"xmax":-11835489.102124758,"ymax":6104672.556836072,"spatialReference":{"wkid":102100,"latestWkid":3857}}})
     """
-    kwargs = locals()
+
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.create_buffers, 
-                                     **kwargs)    
+    kwargs = {
+        "input_layer" : input_layer,
+        "distances" : distances,
+        "field" : field,
+        "units" : units,
+        "dissolve_type" : dissolve_type,
+        "ring_type" : ring_type,
+        "side_type" : side_type,
+        "end_type" : end_type,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "future" : future
+    }
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.create_buffers,
+                                     **kwargs)
     return gis._tools.featureanalysis.create_buffers(**params)
 #--------------------------------------------------------------------------
 def create_drive_time_areas(input_layer,
@@ -594,10 +627,30 @@ def create_drive_time_areas(input_layer,
                                        output_name='create_drive_time_areas',
                                        context={"extent":{"xmin":-11134400.655784884,"ymin":3368261.7800108367,"xmax":-10682810.692676282,"ymax":3630899.409198575,"spatialReference":{"wkid":102100,"latestWkid":3857}}}) """
 
-    kwargs = locals()
+
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.create_drive_time_areas, 
-                                     **kwargs)    
+    kwargs = {
+        "input_layer" : input_layer,
+        "break_values" : break_values,
+        "break_units" : break_units,
+        "travel_mode" : travel_mode,
+        "overlap_policy" : overlap_policy,
+        "time_of_day" : time_of_day,
+        "time_zone_for_time_of_day" : time_zone_for_time_of_day,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "point_barrier_layer" : point_barrier_layer,
+        "line_barrier_layer" : line_barrier_layer,
+        "polygon_barrier_layer" : polygon_barrier_layer,
+        "future" : future,
+        "travel_direction" : travel_direction,
+        "show_holes" : show_holes,
+        "include_reachable_streets" : include_reachable_streets
+    }
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.create_drive_time_areas,
+                                     **kwargs)
 
     if isinstance(travel_mode, str):
         route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
@@ -790,8 +843,8 @@ def find_nearest(
     """
     kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_nearest, 
-                                     **kwargs)    
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_nearest,
+                                     **kwargs)
     if isinstance(measurement_type, str):
         route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
         travelmodes = route_service.retrieve_travel_modes()
@@ -1087,8 +1140,8 @@ def plan_routes(
     """
     kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.plan_routes, 
-                                     **kwargs)    
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.plan_routes,
+                                     **kwargs)
     if isinstance(travel_mode, str):
         route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
         travelmodes = route_service.retrieve_travel_modes()
