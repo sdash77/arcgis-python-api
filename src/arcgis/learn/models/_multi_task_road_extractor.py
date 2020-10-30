@@ -88,7 +88,8 @@ class MultiTaskRoadExtractor(ArcGISModel):
                             Default: 'hourglass'
     ---------------------   -------------------------------------------
     pretrained_path         Optional String. Path where pre-trained model is
-                            saved.
+                            saved. Accepts a Deep Learning Package (DLPK) or
+                            Esri Model Definition(EMD) file.
     =====================   ===========================================
 
     **kwargs**
@@ -125,6 +126,8 @@ class MultiTaskRoadExtractor(ArcGISModel):
         if backbone is None:
             backbone = models.resnet34
         super().__init__(data, backbone, **kwargs)
+        self._slice_lr = False  # Road models just have a single layer group due to which we cant slice the lr.
+        # Causes Divide by zero error in  fastai library
         if hasattr(self._data, "orig_path"):  # If true the data is not empty class obtained from from_model
             if pretrained_path is not None:
                 if os.path.isdir(pretrained_path):
@@ -304,7 +307,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
             **learner_kwargs,
         )
         if pretrained_path is not None:
-            self.load(str(pretrained_path))
+            super().load(str(pretrained_path))
         self._arcgis_init_callback()  # make first conv weights learnable
 
     def __str__(self):
@@ -502,6 +505,23 @@ class MultiTaskRoadExtractor(ArcGISModel):
             "accuracy": "{}".format(acc),
             "mIoU": "{}".format(mean_iou),
         }
+
+    def load(self, name_or_path):
+        """
+        Loads a saved model for inferencing or fine tuning from the disk.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        name_or_path            Required string. Required string. Path to
+                                Deep Learning Package (DLPK) or
+                                Esri Model Definition(EMD) file.
+        =====================   ===========================================
+        """
+        warnings.warn('If the attributes of the data you used to initialize the current model are different from'
+                      'the attributes of the data used for creating the stored model, then the current data attributes'
+                      'will be overriddden.This is to ensure the saved model compatibility with current data.')
+        model = self.from_model(name_or_path)
 
     def _get_model_metrics(self, **kwargs):
         checkpoint = kwargs.get("checkpoint", True)

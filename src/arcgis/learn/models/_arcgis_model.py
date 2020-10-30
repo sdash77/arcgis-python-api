@@ -1245,11 +1245,9 @@ class ArcGISModel(object):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        name_or_path            Required string. Name of the model to load from
-                                the pre-defined location. If path is passed then
-                                it loads from the specified path with model name
-                                as directory name. Path to ".pth" file can also
-                                be passed
+        name_or_path            Required string. Required string. Path to
+                                Deep Learning Package (DLPK) or
+                                Esri Model Definition(EMD) file.
         =====================   ===========================================
         """
         temp = self.learn.path
