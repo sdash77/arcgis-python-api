@@ -1,5 +1,6 @@
 from functools import partial
 from pathlib import Path
+import sys
 import json
 import warnings
 import traceback
@@ -131,6 +132,7 @@ class TextClassifier(ArcGISModel):
 
         base_tokenizer = TransformersBaseTokenizer(pretrained_tokenizer=transformer_tokenizer, seq_len=seq_len)
         tokenizer = Tokenizer(tok_func=base_tokenizer, pre_rules=[], post_rules=[])
+        if sys.platform == 'win32': tokenizer.n_cpus = 1
         vocab = TransformersVocab(tokenizer=transformer_tokenizer)
 
         if data._is_empty or data._backbone != backbone:
