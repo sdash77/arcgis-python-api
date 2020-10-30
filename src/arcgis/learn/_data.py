@@ -212,7 +212,7 @@ def _get_bbox_classes(label_file, class_mapping , height_width=[], **kwargs):
             height_width.append(((xmax - xmin)*1.25, (ymax - ymin)*1.25))
 
     if len(bboxes) == 0:
-        return [[[0, 0, 0, 0]], [list(class_mapping.values())[0]]]
+        return [[[0., 0., 0., 0.]], [list(class_mapping.values())[0]]]
     return [bboxes, classes]
 
 
