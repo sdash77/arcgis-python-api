@@ -234,6 +234,23 @@ class Test_Forms(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_add_group_element(self):
+        try:
+            form = self.forms.get_form(title="Shelters")
+            form.add_group_element(label="Group 4", description="Hi")
+            assert form.get_element(label="Group 4")
+            assert form.get_element(label="Group 4").description == "Hi"
+
+        except AssertionError as assertErrorException:
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_delete_element(self):
         try:
             form = self.forms.get_form(title="Shelters")

@@ -40,6 +40,7 @@ class FormCollection:
             form_info = form_collection.get_form(title="Manhole Inspection")
             form_info.clear()
             form_info.add_element(field_name="inspector")
+            form_info.add_group_element(label="Group 1",initial_state="collapsed")
             form_info.update()
 
             # USAGE EXAMPLE 2: Create Form Collection
@@ -172,7 +173,8 @@ class FormInfo:
                 form_info.add_element(element=new_element)
                 same_element = form_info.get_element(label="Inspector Name")
 
-                # add group, add to group
+                # add group, add second group, add to group
+                form_info.add_group_element(label="Inspector Group",description="This is a group for inspectors")
                 new_group = FormGroupElement(label="Group 1", description="New Group")
                 group = form_info.add_element(element=new_group)
                 group.add_element(field_name="inspection_date")
@@ -365,6 +367,29 @@ class FormInfo:
             index = len(self._form_elements)
         self._form_elements.insert(index, element)
         return element
+
+    def add_group_element(self, label, description=None, visibility_expression=None, initial_state=None, **kwargs):
+        """
+          Adds a single :class:`~arcgis.mapping.forms.GroupElement` to the form
+
+          ======================     ====================================================================
+          **Argument**               **Description**
+          ----------------------     --------------------------------------------------------------------
+          label                      Required :class:`str`. The label of the group
+          ----------------------     --------------------------------------------------------------------
+          description                Optional :class:`str`. The description of the group
+          ----------------------     --------------------------------------------------------------------
+          visibility_expression      Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+                                     The conditional visibility Arcade expression determining the
+                                     visibility of the form element during data collection
+          ----------------------     --------------------------------------------------------------------
+          initial_state              Optional :class:`str`. The initial state of the group
+          ======================     ====================================================================
+
+          :return: The element that was added - :class:`arcgis.mapping.forms.FormGroupElement`
+        """
+        group_el = FormGroupElement(label=label, description=description, visibility_expression=visibility_expression, initial_state=initial_state, **kwargs)
+        return self.add_element(group_el)
 
     def delete_element(self, element=None, label=None):
         """
