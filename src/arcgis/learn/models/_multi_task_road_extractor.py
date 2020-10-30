@@ -516,11 +516,15 @@ class MultiTaskRoadExtractor(ArcGISModel):
         name_or_path            Required string. Required string. Path to
                                 Deep Learning Package (DLPK) or
                                 Esri Model Definition(EMD) file.
+                                Note - If the attributes of the data you used
+                                to initialize the current model are different
+                                from the attributes of the data used by the model
+                                being loaded, then the current data attributes will
+                                be overriddden.
+                                This is to ensure the saved model is compatibile
+                                with current data.
         =====================   ===========================================
         """
-        warnings.warn('If the attributes of the data you used to initialize the current model are different from'
-                      'the attributes of the data used for creating the stored model, then the current data attributes'
-                      'will be overriddden.This is to ensure the saved model compatibility with current data.')
         model = self.from_model(name_or_path)
 
     def _get_model_metrics(self, **kwargs):
