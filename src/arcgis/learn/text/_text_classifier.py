@@ -160,7 +160,9 @@ class TextClassifier(ArcGISModel):
 
         self.is_multilabel_problem = True if len(data._label_cols) > 1 else False
         if self.is_multilabel_problem:
-            metrics = [partial(accuracy_thresh, thresh=self.thresh)]
+            accuracy_multi = partial(accuracy_thresh, thresh=self.thresh)
+            accuracy_multi.__name__ = "accuracy"
+            metrics = [accuracy_multi]
             loss_func = nn.BCEWithLogitsLoss()
             # self.learn = Learner(databunch, model, opt_func=opt_func, loss_func=loss_func, metrics=metrics)
             self.learn = Learner(databunch, model, loss_func=loss_func, metrics=metrics)
@@ -257,6 +259,7 @@ class TextClassifier(ArcGISModel):
         if data is None:
             data_is_none = True
             data = TextDataObject(task="classification")
+            data._backbone = pretrained_model
             data.create_empty_object_for_classification(text_cols, label_cols, class_labels, is_multilabel_problem)
             data.emd, data.emd_path = emd, emd_path.parent
         cls_object = cls(data, pretrained_model, pretrained_path=str(emd_path),
@@ -390,8 +393,7 @@ class TextClassifier(ArcGISModel):
             metrics_values = self.learn.recorder.metrics
             if len(metrics_names) > 0 and len(metrics_values) > 0:
                 metrics = {x: round(metrics_values[-1][i].item(), 4) for i, x in enumerate(metrics_names)}
-                if self.is_multilabel_problem:  metric = metrics["accuracy_thresh"]
-                else:                           metric = metrics["accuracy"]
+                metric = metrics["accuracy"]
             else:
                 metric = self._calculate_model_metric()
         else:
@@ -524,7 +526,9 @@ class TextClassifier(ArcGISModel):
     @staticmethod
     def _create_dataframe_from_dict(out_dict):
         out_dict.pop("accuracy", None)
+        out_dict.pop("micro avg", None)
         out_dict.pop("macro avg", None)
+        out_dict.pop("samples avg", None)
         out_dict.pop("weighted avg", None)
         df = pd.DataFrame(out_dict)
         # df.drop("support", inplace=True)

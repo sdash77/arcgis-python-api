@@ -522,6 +522,8 @@ class TextDataObject:
         else:
             self._databunch = text_list.label_const(0, label_cls=CategoryList, classes=classes).databunch()
 
+        self._is_empty = False
+
     def create_empty_seq2seq_data(self, text_cols, label_cols):
         self._text_cols = text_cols
         self._label_cols = label_cols

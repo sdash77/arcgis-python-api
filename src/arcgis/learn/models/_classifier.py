@@ -138,6 +138,8 @@ class FeatureClassifier(ArcGISModel):
             self._code = feature_classifier_prf
 
             if getattr(data, '_dataset_type', "Labeled_Tiles") == 'MultiLabeled_Tiles':
+                # ToDo: allow option to change `thresh` parameter by user
+                accuracy_multi.__name__ = "accuracy"
                 metrics = [accuracy_multi, MultiLabelFbeta()]
             else:
                 metrics = accuracy
