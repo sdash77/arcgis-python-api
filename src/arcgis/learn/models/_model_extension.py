@@ -380,7 +380,21 @@ class ModelExtension(ArcGISModel):
         xb,yb = self.learn.data.one_batch(ds_type, detach=False, denorm=False)
         self.learn.model.eval()
         transform_kwargs, kwargs = split_kwargs_by_func(kwargs, self.model_conf.transform_input)
-        preds = self.learn.model(self.model_conf.transform_input(xb, **transform_kwargs))
+        try:
+            preds = self.learn.model(self.model_conf.transform_input(xb, **transform_kwargs))
+        except Exception as e:
+
+            if getattr(self, "_is_fasterrcnn", False):
+                preds = []
+                for _ in range(xb.shape[0]):
+                    res={}
+                    res['boxes'] = torch.empty(0,4)
+                    res['scores'] = torch.tensor([])
+                    res['labels'] = torch.tensor([])
+                    preds.append(res)
+            else:
+                raise e
+
         x,y = to_cpu(xb),to_cpu(yb)
         norm = getattr(self.learn.data,'norm',False)
         if norm:
@@ -404,7 +418,20 @@ class ModelExtension(ArcGISModel):
         batch = self.learn.data.one_item(item)
         transform_kwargs, kwargs = split_kwargs_by_func(kwargs, self.model_conf.transform_input)
         self.learn.model.eval()
-        pred = self.learn.model(self.model_conf.transform_input(batch[0], **transform_kwargs))
+        try:
+            pred = self.learn.model(self.model_conf.transform_input(batch[0], **transform_kwargs))
+        except Exception as e:
+
+            if getattr(self, "_is_fasterrcnn", False):
+                pred = []
+                for _ in range(batch[0].shape[0]):
+                    res={}
+                    res['boxes'] = torch.empty(0,4)
+                    res['scores'] = torch.tensor([])
+                    res['labels'] = torch.tensor([])
+                    pred.append(res)
+            else:
+                raise e
         ds = self.learn.data.single_ds
         analyze_kwargs,kwargs = split_kwargs_by_func(kwargs, ds.y.analyze_pred)
         pred = ds.y.analyze_pred(pred, **analyze_kwargs)
