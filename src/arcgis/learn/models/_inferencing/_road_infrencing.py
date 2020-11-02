@@ -251,7 +251,7 @@ class ChildImageClassifier:
     def pixel_classify_image(self, model, tiles, device, classes, predict_bg, model_info):
         model = model.to(device).eval()
         #logger.info("Tiles length is ", len(tiles))
-        normed_batch_tensor = tensor(tiles).to(device).float() / 255.0
+        normed_batch_tensor = tensor(tiles).to(device).float()
         #logger.info("Normed length is ", len(normed_batch_tensor))
         with torch.no_grad():
             output, _ = model(normed_batch_tensor)

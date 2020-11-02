@@ -306,6 +306,8 @@ class MultiTaskRoadExtractor(ArcGISModel):
             metrics=[pixel_accuracy, road_iou, dice_coeff],
             **learner_kwargs,
         )
+        if hasattr(self._data, "orig_path"):
+            self.learn.path= self._data.orig_path
         if pretrained_path is not None:
             super().load(str(pretrained_path))
         self._arcgis_init_callback()  # make first conv weights learnable
