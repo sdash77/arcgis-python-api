@@ -841,10 +841,30 @@ def find_nearest(
                                include_route_layers=True,
                                point_barrier_layer=road_closures_lyr))
     """
-    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
+    kwargs = {
+        "analysis_layer" : analysis_layer,
+        "near_layer" : near_layer,
+        "measurement_type" : measurement_type,
+        "max_count" : max_count,
+        "search_cutoff" : search_cutoff,
+        "search_cutoff_units" : search_cutoff_units,
+        "time_of_day" : time_of_day,
+        "time_zone_for_time_of_day" : time_zone_for_time_of_day,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "include_route_layers" : include_route_layers,
+        "point_barrier_layer" : point_barrier_layer,
+        "line_barrier_layer" : line_barrier_layer,
+        "polygon_barrier_layer" : polygon_barrier_layer,
+        "future" : future
+    }
+
     params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_nearest,
                                      **kwargs)
+    params['estimate'] = estimate
     if isinstance(measurement_type, str):
         route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
         travelmodes = route_service.retrieve_travel_modes()
@@ -856,8 +876,7 @@ def find_nearest(
                 params['measurement_type'] = measurement_type
     params['time_of_day'] = _date_handler(time_of_day)
     return gis._tools.featureanalysis.find_nearest(**params)
-
-
+#--------------------------------------------------------------------------
 def plan_routes(
     stops_layer,
         route_count,
@@ -1138,10 +1157,35 @@ def plan_routes(
                             output_name='plan route for employees')
 
     """
-    kwargs = locals()
+
     gis = _arcgis.env.active_gis if gis is None else gis
+    kwargs = {
+        "stops_layer" : stops_layer,
+        "route_count" : route_count,
+        "max_stops_per_route" : max_stops_per_route,
+        "route_start_time" : route_start_time,
+        "start_layer" : start_layer,
+        "start_layer_route_id_field" : start_layer_route_id_field,
+        "return_to_start" : return_to_start,
+        "end_layer" : end_layer,
+        "end_layer_route_id_field" : end_layer_route_id_field,
+        "travel_mode" : travel_mode,
+        "stop_service_time" : stop_service_time,
+        "max_route_time" : max_route_time,
+        "include_route_layers" : include_route_layers,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "point_barrier_layer" : point_barrier_layer,
+        "line_barrier_layer" : line_barrier_layer,
+        "polygon_barrier_layer" : polygon_barrier_layer,
+        "future" : future
+    }
     params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.plan_routes,
                                      **kwargs)
+    params['estimate'] = estimate
+
     if isinstance(travel_mode, str):
         route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
         travelmodes = route_service.retrieve_travel_modes()
