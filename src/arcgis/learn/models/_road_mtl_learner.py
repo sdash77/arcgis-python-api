@@ -20,9 +20,9 @@ try:
         to_detach,
     )
     from fastai.basic_data import DatasetType
-    from ..models._unet_utils import show_results_multispectral
-    from .._utils.common import dynamic_range_adjustment,kwarg_fill_none
-    from ..models._unet_utils import ArcGISSegmentationLabelList
+    from arcgis.learn.models._unet_utils import show_results_multispectral
+    from arcgis.learn._utils.common import dynamic_range_adjustment,kwarg_fill_none
+    from arcgis.learn.models._unet_utils import ArcGISSegmentationLabelList
     from arcgis.learn._data_utils._road_orient_data import (
         _plotOrientationOnImage,
         _to_np,

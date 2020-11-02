@@ -1,7 +1,9 @@
-arcgis.learn.text module
-========================
-
-.. automodule:: arcgis.learn.text
+EntityRecognizer
+------------------
+.. autoclass:: arcgis.learn.text.EntityRecognizer
+    :members:
+    :inherited-members:
+    :undoc-members:
 
 TextClassifier
 ------------------
@@ -19,7 +21,6 @@ SequenceToSequence
 
 Inference Only Models
 ---------------------
-
 FillMask
 ^^^^^^^^
 .. autoclass:: arcgis.learn.text.FillMask

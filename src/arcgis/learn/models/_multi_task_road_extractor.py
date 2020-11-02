@@ -5,6 +5,7 @@ import traceback
 from functools import partial
 from pathlib import Path
 import glob
+import warnings
 import os
 
 from arcgis.learn._data import _raise_fastai_import_error
@@ -30,10 +31,10 @@ try:
         road_orient_loss,
     )
     from arcgis.learn.models._hourglass_utils import StackHourglassMultiTaskModel
-    from arcgis.learn._learners._road_mtl_learner import MultiTaskRoadLearner
+    from ._road_mtl_learner import MultiTaskRoadLearner
     from arcgis.learn.models._arcgis_model import _resnet_family, _EmptyData
     from arcgis.learn._utils.common import (
-        get_multispectral_data_params_from_emd
+        get_multispectral_data_params_from_emd ,_get_emd_path
     )
     from arcgis.learn._utils.segmentation_loss_functions import dice
     from .._data_utils._pixel_classifier_data import ClassifiedTilesData
@@ -70,27 +71,25 @@ class MultiTaskRoadExtractor(ArcGISModel):
     data                    Required fastai Databunch. Returned data object from
                             ``prepare_data`` function.
     ---------------------   -------------------------------------------
-    backbone                Optional String. Backbone CNN model to be used for
-                            creating the base of the `linknet` model.
+    backbone                Optional String.Backbone CNN model to be used for
+                            creating the base.If hourglass is chosen as
+                            the mtl_model (Architecture),then this parameter is
+                            ignored as hourglass uses a special customised
+                            architecture.
+                            This parameter is used with `linknet` model.
                             Default: 'resnet34'
 
                             Supported backbones: 'resnet18', 'resnet34',
                             'resnet50', 'resnet101', 'resnet152'
-
-                            If hourglass is chosen as the mtl_model
-                            (Architecture),then this parameter is ignored
-                            as hourglass uses a special customised
-                            architecture.
     ---------------------   -------------------------------------------
     mtl_model               Optional String. It is used to create model
                             from linknet or hourglass based neural architectures.
-
                             Supported: 'linknet', 'hourglass'.
-
                             Default: 'hourglass'
     ---------------------   -------------------------------------------
     pretrained_path         Optional String. Path where pre-trained model is
-                            saved.
+                            saved. Accepts a Deep Learning Package (DLPK) or
+                            Esri Model Definition(EMD) file.
     =====================   ===========================================
 
     **kwargs**
@@ -100,14 +99,15 @@ class MultiTaskRoadExtractor(ArcGISModel):
     -----------------------------   ---------------------------------------------
     gaussian_thresh                 Optional float. Sets the gaussian threshold
                                     which allows to set the required road width.
-                                    Is in range 0.0 to 1.0
+                                    Range: 0.0 to 1.0
                                     Default:0.76
     -----------------------------   ---------------------------------------------
     orient_bin_size                 Optional Int. Sets the bin size for
                                     orientation angles.
                                     Default:20
     -----------------------------   ---------------------------------------------
-    orient_theta                    Optional Int. Sets the width of orientation mask.
+    orient_theta                    Optional Int. Sets the width of orientation
+                                    mask.
                                     Default:8
     =============================   =============================================
 
@@ -122,18 +122,47 @@ class MultiTaskRoadExtractor(ArcGISModel):
         #        "This model only works for road extraction. And In order to use this model it's corresponding model-specific parameters should also be passed at prepare_data."
         #    )
         # Set default backbone to be 'resnet34'
+        self._validate_kwargs(**kwargs)
         if backbone is None:
             backbone = models.resnet34
         super().__init__(data, backbone, **kwargs)
-        if  hasattr(self._data,"orig_path"):# If true the data is not empty class obtained from from_model
+        self._slice_lr = False  # Road models just have a single layer group due to which we cant slice the lr.
+        # Causes Divide by zero error in  fastai library
+        if hasattr(self._data, "orig_path"):  # If true the data is not empty class obtained from from_model
             if pretrained_path is not None:
-                for file in os.listdir(pretrained_path):
-                    if file.endswith(".emd"):
-                        try:
-                            emd = json.load(open(os.path.join(pretrained_path, file)))
-                            bin_size=emd['RoadOrientation']['orient_bin_size']
-                        except Exception as e:
-                            raise e
+                if os.path.isdir(pretrained_path):
+                    for file in os.listdir(pretrained_path):
+                        if file.endswith(".emd"):
+                            try:
+                                emd = json.load(open(os.path.join(pretrained_path, file)))
+                                bin_size = emd['RoadOrientation']['orient_bin_size']
+                                warnings.warn('Higher preference is given to the model parameters stored in the emd.'
+                                              'You might see some of the data parameters overridden with stored model '
+                                              'parameters if you also pass databunch from prepare_data function')
+                            except Exception as e:
+                                raise e
+                        elif file.endswith(".dlpk"):
+                            try:
+                                emd_path = _get_emd_path(Path(file))
+                                with open(emd_path) as f:
+                                    emd = json.load(f)
+                                bin_size = emd['RoadOrientation']['orient_bin_size']
+                                warnings.warn('Higher preference is given to the model parameters stored in the emd.'
+                                          'You might see some of the data parameters overridden with stored model '
+                                          'parameters if you also pass databunch from prepare_data function')
+                            except Exception as e:
+                                raise e
+                else:
+                    try:
+                        emd_path = _get_emd_path(pretrained_path)
+                        with open(emd_path) as f:
+                            emd = json.load(f)
+                        bin_size = emd['RoadOrientation']['orient_bin_size']
+                        warnings.warn('Higher preference is given to the model parameters stored in the emd.'
+                                      'You might see some of the data parameters overridden with stored model '
+                                      'parameters if you also pass databunch from prepare_data function')
+                    except Exception as e:
+                        raise e
                 try:
                     bin_size
                 except:
@@ -278,7 +307,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
             **learner_kwargs,
         )
         if pretrained_path is not None:
-            self.load(str(pretrained_path))
+            super().load(str(pretrained_path))
         self._arcgis_init_callback()  # make first conv weights learnable
 
     def __str__(self):
@@ -302,6 +331,14 @@ class MultiTaskRoadExtractor(ArcGISModel):
     def _get_optimizer(self, optim_name):
         optim_funcs = {"sgd": optim.SGD}
         return optim_funcs.get(optim_name, None)
+
+    def _validate_kwargs(self, **kwargs):
+        gauss_thresh = kwargs.get("gaussian_thresh", 0.6)
+        orient_bin_size = kwargs.get("orient_bin_size", 20)
+        orient_theta = kwargs.get("orient_theta", 8)
+        assert gauss_thresh > 0.0 and gauss_thresh < 1, 'gauss_thresh should be between 0 and 1'
+        assert orient_bin_size > 0 and orient_bin_size < 360, 'orient_bin_size should be between 1 and 360'
+        assert orient_theta > 0 and orient_theta < 10, 'orient_theta should be between 1 and 10'
 
     def unfreeze(self):
         """
@@ -389,13 +426,14 @@ class MultiTaskRoadExtractor(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a Multi-Task Learning model for Road Extraction from an Esri Model Definition (EMD) file.
+        Creates a Multi-Task Learning model for binary segmentation from a
+        Deep Learning Package(DLPK) or Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from `prepare_data` function or None for
@@ -407,8 +445,9 @@ class MultiTaskRoadExtractor(ArcGISModel):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
 
-        emd_path = Path(emd_path)
-        emd = json.load(open(emd_path))
+        emd_path = _get_emd_path(emd_path)
+        with open(emd_path) as f:
+            emd = json.load(f)
         model_file = Path(emd["ModelFile"])
         chip_size = emd["ImageWidth"]
         model_params = emd["ModelParameters"]
@@ -432,7 +471,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
             data.emd_path = emd_path
             data.emd = emd
 
-        return cls(data, **model_params, pretrained_path=str(model_file))
+        return cls(data, **model_params, pretrained_path=emd_path)
 
     def show_results(self, rows=2, **kwargs):
         """
@@ -448,7 +487,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
                                 display the value provided for batch size.
         ---------------------   -------------------------------------------
         alpha                   Optional Float. Opacity parameter for label
-                                overlay on image. Float [0..1]
+                                overlay on image. Float [0.0 - 1.0]
                                 Default: 0.6
         =====================   ===========================================
 
@@ -463,9 +502,30 @@ class MultiTaskRoadExtractor(ArcGISModel):
     def _model_metrics(self):
         acc, mean_iou = self._get_model_metrics()
         return {
-            "accuracy": "{0:1.4e}".format(acc),
-            "mIoU": "{0:1.4e}".format(mean_iou),
+            "accuracy": "{}".format(acc),
+            "mIoU": "{}".format(mean_iou),
         }
+
+    def load(self, name_or_path):
+        """
+        Loads a saved model for inferencing or fine tuning from the disk.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        name_or_path            Required string. Required string. Path to
+                                Deep Learning Package (DLPK) or
+                                Esri Model Definition(EMD) file.
+                                Note - If the attributes of the data you used
+                                to initialize the current model are different
+                                from the attributes of the data used by the model
+                                being loaded, then the current data attributes will
+                                be overriddden.
+                                This is to ensure the saved model is compatibile
+                                with current data.
+        =====================   ===========================================
+        """
+        model = self.from_model(name_or_path)
 
     def _get_model_metrics(self, **kwargs):
         checkpoint = kwargs.get("checkpoint", True)

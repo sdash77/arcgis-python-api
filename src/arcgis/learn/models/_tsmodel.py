@@ -76,7 +76,8 @@ class TimeSeriesModel(ArcGISModel):
                             `prepare_tabulardata` function.
     ---------------------   -------------------------------------------
     seq_len                 Required Integer. Sequence Length for the series.
-                            In case of raster only, seq_len = number of rasters
+                            In case of raster only, seq_len = number of rasters,
+                            any other passed value will be ignored.
     ---------------------   -------------------------------------------
     model_arch              Optional string. Model Architecture.
                             Allowed "InceptionTime", "ResCNN",
@@ -327,6 +328,18 @@ class TimeSeriesModel(ArcGISModel):
         explanatory_rasters                 Optional list of Raster Objects.
                                             Required if prediction_type is 'rasters'
         ---------------------------------   -------------------------------------------------------------------------
+        datefield                           Optional field_name.
+                                            This field contains the date in the input_features.
+                                            The field type can be a string or date time field.
+                                            If specified, the field will be split into
+                                            Year, month, week, day, dayofweek, dayofyear,
+                                            is_month_end, is_month_start, is_quarter_end,
+                                            is_quarter_start, is_year_end, is_year_start,
+                                            hour, minute, second, elapsed and these will be added
+                                            to the prepared data as columns.
+                                            All fields other than elapsed and dayofyear are treated
+                                            as categorical.
+        ---------------------------------   -------------------------------------------------------------------------
         distance_features                   Optional List of Feature Layer objects.
                                             These layers are used for calculation of field "NEAR_DIST_1",
                                             "NEAR_DIST_2" etc in the output dataframe.
@@ -342,15 +355,20 @@ class TimeSeriesModel(ArcGISModel):
         prediction_type                     Optional String.
                                             Set 'features' or 'dataframe' to make output predictions.
         ---------------------------------   -------------------------------------------------------------------------
+        output_raster_path                  Optional path. Required when prediction_type='raster', saves
+                                            the output raster to this path.
+        ---------------------------------   -------------------------------------------------------------------------
         match_field_names                   Optional string.
                                             Specify mapping of the original training set with prediction set.
         ---------------------------------   -------------------------------------------------------------------------
         number_of_predictions               Optional int for univariate time series.
                                             Specify the number of predictions to make, adds new rows to the dataframe.
                                             For multivariate or if None, it expects the dataframe to have empty rows.
+                                            For prediction_type='raster', a new raster is created.
         =================================   =========================================================================
 
-        :returns Feature Layer if prediction_type='features' else returns a dataframe
+        :returns Feature Layer/dataframe if prediction_type='features'/'dataframe', else returns True and saves output
+        raster at the specified path.
         """
 
         rasters = explanatory_rasters if explanatory_rasters else []
@@ -372,9 +390,6 @@ class TimeSeriesModel(ArcGISModel):
             return self._predict_rasters(output_raster_path, rasters, match_field_names)
 
     def _predict_rasters(self, output_raster_path, rasters, match_field_names=None):
-        if len(rasters) != self._seq_len:
-            raise Exception("Not enough rasters to make prediction!")
-
         if not os.path.exists(os.path.dirname(output_raster_path)):
             raise Exception("Output directory doesn't exist")
 
@@ -453,14 +468,39 @@ class TimeSeriesModel(ArcGISModel):
             cell_size_translated = arcgis.geometry.project([cell_size], default_sr, raster.extent['spatialReference'])[
                 0]
             if field_name in fields_needed:
-                raster_data[field_name] = raster.read(
+                raster_read = raster.read(
                     origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns,
                     nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
+                for row in range(max_raster_rows):
+                    for column in range(max_raster_columns):
+                        values = raster_read[row][column]
+                        index = 0
+                        for value in values:
+                            key = field_name
+                            if index != 0:
+                                key = key + f'_{index}'
+                            if not raster_data.get(key):
+                                raster_data[key] = []
+                            index = index + 1
+                            raster_data[key].append(value)
             elif match_field_names and match_field_names.get(raster.name):
                 field_name = match_field_names.get(raster.name)
-                raster_data[field_name] = raster.read(
+                raster_read = raster.read(
                     origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns,
                     nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
+                for row in range(max_raster_rows):
+                    for column in range(max_raster_columns):
+                        values = raster_read[row][column]
+                        index = 0
+                        for value in values:
+                            key = field_name
+                            if index != 0:
+                                key = key + f'_{index}'
+                            if not raster_data.get(key):
+                                raster_data[key] = []
+
+                            index = index + 1
+                            raster_data[key].append(value)
             else:
                 continue
 
@@ -468,18 +508,13 @@ class TimeSeriesModel(ArcGISModel):
             if field not in list(raster_data.keys()) and match_field_names and match_field_names.get(field, None) is None:
                 raise Exception(f"Field missing {field}")
 
+        length_values = len(raster_data[list(raster_data.keys())[0]])
         processed_output = []
-        for row in progress_bar(range(max_raster_rows)):
-            for column in range(max_raster_columns):
-                processed_row = []
-                for raster_name in sorted(raster_data):
-                    value = raster_data[raster_name][row][column]
-                    if len(value) > 0:
-                        processed_row.append(value[0])
-                    else:
-                        processed_row.append(0)
-
-                processed_output.append(self._predict([processed_row]))
+        for i in progress_bar(range(length_values)):
+            processed_row = []
+            for raster_name in sorted(raster_data.keys()):
+                processed_row.append(raster_data[raster_name][i])
+            processed_output.append(self._predict([processed_row]))
 
         processed_numpy = np.array(processed_output, dtype='float64')
         processed_numpy = processed_numpy.reshape([max_raster_rows, max_raster_columns])

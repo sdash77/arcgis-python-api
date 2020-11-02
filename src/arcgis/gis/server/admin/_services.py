@@ -1002,8 +1002,8 @@ class Service(BaseServer):
         self._url = url
         self._currentURL = url
         self._con = con
-        if url.lower().find('gpserver') > -1:
-            self.jobs = self._jobs
+        #if url.lower().find('gpserver') > -1:
+        #    self.jobs = self._jobs
         if initialize:
             self._init(self._con)
     #----------------------------------------------------------------------
@@ -1446,6 +1446,15 @@ class Service(BaseServer):
     #----------------------------------------------------------------------
     @property
     def jobs(self):
+        """returns a `JobManager` to manage asynchronous geoprocessing tasks"""
+        if self._jm is None:
+            url = "%s/jobs" % self._url
+            self._jm = JobManager(url=url,
+                                  con=self._con)
+        return self._jm
+    #----------------------------------------------------------------------
+    @property
+    def _jobs(self):
         """returns a `JobManager` to manage asynchronous geoprocessing tasks"""
         if self._jm is None:
             url = "%s/jobs" % self._url

@@ -8,7 +8,6 @@ import sys
 import json 
 import logging      
 import types
-import tempfile
 import traceback
 
 from ._utils.env import ARCGIS_ENABLE_TF_BACKEND
@@ -25,7 +24,7 @@ try:
     import torch
     from .models._unet_utils import ArcGISSegmentationItemList, is_no_color
     from .models._maskrcnn_utils import ArcGISInstanceSegmentationItemList, ArcGISInstanceSegmentationMSItemList
-    from .models._ner_utils import _NERData
+    from ._utils._ner_utils import _NERData
     from ._utils.pascal_voc_rectangles import ObjectDetectionItemList
     from .models._superres_utils import resize_one
     from ._utils.common import ArcGISMSImage, ArcGISImageList
@@ -213,7 +212,7 @@ def _get_bbox_classes(label_file, class_mapping , height_width=[], **kwargs):
             height_width.append(((xmax - xmin)*1.25, (ymax - ymin)*1.25))
 
     if len(bboxes) == 0:
-        return [[[0, 0, 0, 0]], [list(class_mapping.values())[0]]]
+        return [[[0., 0., 0., 0.]], [list(class_mapping.values())[0]]]
     return [bboxes, classes]
 
 
@@ -631,6 +630,9 @@ def prepare_tabulardata(
                             Categorical data is by default encoded.
                             If nothing is specified, default transforms are applied
                             to fill missing values and normalize categorical data.
+                            For Raster use raster.name for the the first band,
+                            raster.name_1 for 2nd band, raster.name_2 for 3rd
+                            and so on.
     ---------------------   -------------------------------------------
     val_split_pct           Optional float. Percentage of training data to keep
                             as validation.

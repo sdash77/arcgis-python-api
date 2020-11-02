@@ -1,11 +1,11 @@
 import traceback
-from .._utils.common import _get_device_id
 from .._data import _raise_fastai_import_error
 HAS_TRANSFORMER = True
 
 try:
     import torch
     from transformers import pipeline
+    from .._utils.common import _get_device_id
     from fastprogress.fastprogress import progress_bar
     from transformers import AutoTokenizer, AutoModelWithLMHead
 except Exception as e:
@@ -34,6 +34,9 @@ class TextTranslator:
 
     :returns: `TextTranslator` Object
     """
+
+    #: supported transformer backbones
+    supported_backbones = ["MarianMT"]
 
     def __init__(self, source_language="es", target_language="en"):
         if not HAS_TRANSFORMER:

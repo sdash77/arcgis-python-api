@@ -215,7 +215,7 @@ class DeepLab(ArcGISModel):
         super().__init__(data, backbone, **kwargs)
 
         self._pointrend = pointrend
-        self._kwargs = kwargs
+
         self._ignore_classes = kwargs.get('ignore_classes', [])
         if self._ignore_classes != [] and len(data.classes) <= 3:
             raise Exception(f"`ignore_classes` parameter can only be used when the dataset has more than 2 classes.")
@@ -342,7 +342,6 @@ class DeepLab(ArcGISModel):
             model_file = emd_path.parent / model_file
             
         model_params = emd['ModelParameters']
-        kwargs = emd.get('Kwargs', {})
 
         try:
             class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
@@ -358,9 +357,9 @@ class DeepLab(ArcGISModel):
             empty_data = get_multispectral_data_params_from_emd(empty_data, emd)
             empty_data.emd_path = emd_path
             empty_data.emd = emd
-            return cls(empty_data, **model_params, pretrained_path=str(model_file), **kwargs)
+            return cls(empty_data, **model_params, pretrained_path=str(model_file))
         else:
-            return cls(data, **model_params, pretrained_path=str(model_file), **kwargs)
+            return cls(data, **model_params, pretrained_path=str(model_file))
 
     def _get_emd_params(self, save_inference_file):
         import random
@@ -373,10 +372,10 @@ class DeepLab(ArcGISModel):
             _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
         _emd_template["ModelType"] = "ImageClassification"
         _emd_template["ModelParameters"]["pointrend"] = self._pointrend
+        _emd_template["ModelParameters"]["keep_dilation"] = self.keep_dilation
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
         _emd_template['Classes'] = []
-        _emd_template['Kwargs'] = self._kwargs
         class_data = {}
         for i, class_name in enumerate(self._data.classes[1:]):  # 0th index is background
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}

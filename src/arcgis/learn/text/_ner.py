@@ -1,18 +1,17 @@
 import json
 import traceback
 import logging
-from pathlib import Path
 
 try:
-    from ..text._ner_spacy import _SpacyEntityRecognizer
-    from ._ner_utils import spaCyNERDatabunch
+    from ._ner_spacy import _SpacyEntityRecognizer
+    from .._utils._ner_utils import spaCyNERDatabunch
     HAS_SPACY = True
 except Exception as e:
     spacy_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_SPACY = False
 
 try:
-    from ..text._ner_transformer import _TransformerEntityRecognizer
+    from ._ner_transformer import _TransformerEntityRecognizer
     from .._utils.text_data import TextDataObject
     from .._utils.common import _get_emd_path
     HAS_TRANSFORMERS = True
@@ -32,8 +31,8 @@ def _raise_spacy_import_error():
 
 def _raise_transformers_import_error():
     error_message = (f"{transformer_exception}\n\n\n"
-                     "This module requires transformers version 2.11.0" 
-                     "Install it using 'pip install transformers==2.11.0'")
+                     "This module requires transformers version 3.3.0, " 
+                     "install it using 'pip install transformers==3.3.0'")
     raise Exception(error_message)
 
 

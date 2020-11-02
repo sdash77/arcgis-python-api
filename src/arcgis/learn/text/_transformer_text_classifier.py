@@ -1,11 +1,11 @@
 import os
 import json
-import torch
 import traceback
 
 HAS_TRANSFORMER = True
 
 try:
+    import torch
     from transformers import AutoModelForSequenceClassification
     from ._arcgis_transformer import ArcGISTransformer, transformer_seq_length
 except Exception as e:

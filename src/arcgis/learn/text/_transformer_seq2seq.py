@@ -1,12 +1,12 @@
 import os
 import json
-import torch
 import traceback
 from .._data import _raise_fastai_import_error
 
 HAS_TRANSFORMERS = True
 
 try:
+    import torch
     from transformers import AutoModelForSeq2SeqLM
     from ._arcgis_transformer import ArcGISTransformer
 except Exception as e:

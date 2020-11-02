@@ -125,65 +125,106 @@ class TabularDataObject(object):
         return tabular_data
 
     @staticmethod
-    def _min_of(values):
-        if len(values) == 0:
-            return 0
+    def _min_of(values_list):
+        return_values = []
+        for values in values_list:
+            if len(values) == 0:
+                return_values.append(0)
+                continue
 
-        if len(values) == 1:
-            return values[0]
+            if len(values) == 1:
+                return_values.append(values[0])
+                continue
 
-        min_value = values[0]
-        for value in values:
-            if value < min_value:
-                min_value = value
-        return min_value
+            min_value = values[0]
+            for value in values:
+                if value < min_value:
+                    min_value = value
+            return_values.append(min_value)
 
-    @staticmethod
-    def _max_of(values):
-        if len(values) == 0:
-            return 0
-
-        return max(values)
-
-    @staticmethod
-    def _mean_of(values):
-        if len(values) == 0:
-            return 0
-
-        return sum(values) / len(values)
+        return return_values
 
     @staticmethod
-    def _majority_of(values):
-        if len(values) == 0:
-            return 0
+    def _max_of(values_list):
+        return_values = []
+        for values in values_list:
+            if len(values) == 0:
+                return_values.append(0)
+                continue
 
-        return max(values, key=values.count)
+            return_values.append(max(values))
 
-    @staticmethod
-    def _minority_of(values):
-        if len(values) == 0:
-            return 0
-
-        return min(values, key=values.count)
+        return return_values
 
     @staticmethod
-    def _sum_of(values):
-        if len(values) == 0:
-            return 0
+    def _mean_of(values_list):
+        return_values = []
+        for values in values_list:
+            if len(values) == 0:
+                return_values.append(0)
+                continue
 
-        return sum(values)
+            return_values.append(sum(values) / len(values))
+
+        return return_values
 
     @staticmethod
-    def _std_dev_of(values):
-        if len(values) == 0:
-            return 0
+    def _majority_of(values_list):
+        return_values = []
+        for values in values_list:
+            if len(values) == 0:
+                return_values.append(0)
+                continue
 
+            return_values.append(max(values, key=values.count))
+
+        return return_values
+
+    @staticmethod
+    def _minority_of(values_list):
+        return_values = []
+        for values in values_list:
+            if len(values) == 0:
+                return_values.append(0)
+                continue
+
+            return_values.append(min(values, key=values.count))
+
+        return return_values
+
+    @staticmethod
+    def _sum_of(values_list):
+        return_values = []
+        for values in values_list:
+            if len(values) == 0:
+                return_values.append(0)
+                continue
+
+            return_values.append(sum(values))
+
+        return return_values
+
+    @staticmethod
+    def _std_dev_of(values_list):
         import statistics
-        return statistics.stdev(values)
+        return_values = []
+
+        for values in values_list:
+            if len(values) == 0:
+                return_values.append(0)
+                continue
+
+            return_values.append(statistics.stdev(values))
+
+        return return_values
 
     @staticmethod
-    def _variety(values):
-        return len(list(set(values)))
+    def _variety(values_list):
+        return_values = []
+        for values in values_list:
+            return_values.append(len(list(set(values))))
+
+        return return_values
 
     @staticmethod
     def _get_calc(raster_type, calc_type):
@@ -742,12 +783,27 @@ class TabularDataObject(object):
             if isinstance(raster, tuple):
                 rasters.append(raster[0])
                 if raster[1]:
-                    categorical_variables.append(raster[0].name)
+                    band_count = raster[0].band_count
+                    for index in range(band_count):
+                        if index == 0:
+                            categorical_variables.append(raster[0].name)
+                        else:
+                            categorical_variables.append(raster[0].name + f'_{index}')
                 else:
-                    continuous_variables.append(raster[0].name)
+                    band_count = raster[0].band_count
+                    for index in range(band_count):
+                        if index == 0:
+                            continuous_variables.append(raster[0].name)
+                        else:
+                            continuous_variables.append(raster[0].name + f'_{index}')
             else:
                 rasters.append(raster)
-                continuous_variables.append(raster.name)
+                band_count = raster.band_count
+                for index in range(band_count):
+                    if index == 0:
+                        continuous_variables.append(raster.name)
+                    else:
+                        continuous_variables.append(raster.name + f'_{index}')
 
         dataframe, index_data = TabularDataObject._process_layer(
             input_features,
@@ -856,7 +912,12 @@ class TabularDataObject(object):
                             raster_calc = TabularDataObject._get_calc(raster_type, raster[1])
 
                         raster = raster[0]
-                    rasters_data[raster.name] = []
+
+                    for i in range(raster.band_count):
+                        if i == 0:
+                            rasters_data[raster.name] = []
+                        else:
+                            rasters_data[raster.name + f'_{i}'] = []
 
                     shape_objects_transformed = arcgis.geometry.project(original_points, input_layer_spatial_reference,
                                                                         raster.extent['spatialReference'])
@@ -864,7 +925,7 @@ class TabularDataObject(object):
                         shape['spatialReference'] = raster.extent['spatialReference']
                         if isinstance(shape, arcgis.geometry._types.Point):
                             raster_value = raster.read(origin_coordinate=(shape['x'], shape['y']), ncols=1, nrows=1)
-                            value = raster_value[0][0][0]
+                            value = raster_value[0][0]
                         elif isinstance(shape, arcgis.geometry._types.Polygon):
                             xmin, ymin, xmax, ymax = shape.extent
                             start_x, start_y = xmin + (raster.mean_cell_width / 2), ymin + (raster.mean_cell_height / 2)
@@ -873,19 +934,36 @@ class TabularDataObject(object):
                                 while start_x < xmax:
                                     if shape.contains(arcgis.geometry._types.Point(
                                             {'x': start_x, 'y': start_y, 'sr': raster.extent['spatialReference']})):
-                                        values.append(raster.read(origin_coordinate=(start_x - raster.mean_cell_width, start_y), ncols=1, nrows=1)[0][0][0])
+                                        raster_read = raster.read(origin_coordinate=(start_x - raster.mean_cell_width, start_y),
+                                                    ncols=1, nrows=1)[0][0]
+                                        if len(values) == 0:
+                                            for band in raster_read:
+                                                values.append([band])
+                                        else:
+                                            index = 0
+                                            for band_value in raster_read:
+                                                values[index].append(band_value)
+                                                index = index + 1
+
                                     start_x = start_x + raster.mean_cell_width
                                 start_y = start_y + raster.mean_cell_height
                                 start_x = xmin + (raster.mean_cell_width / 2)
 
                             if len(values) == 0:
-                                values.append(raster.read(origin_coordinate=(shape.true_centroid['x'] - raster.mean_cell_width, shape.true_centroid['y']), ncols=1,
-                                                nrows=1)[0][0][0])
+                                raster_read = raster.read(origin_coordinate=(shape.true_centroid['x'] - raster.mean_cell_width, shape.true_centroid['y']), ncols=1,
+                                                nrows=1)[0][0]
+                                for band_value in raster_read:
+                                    values.append([band_value])
+
                             value = raster_calc(values)
                         else:
                             raise Exception("Input features can be point or polygon only.")
 
-                        rasters_data[raster.name].append(value)
+                        for i in range(len(value)):
+                            if i == 0:
+                                rasters_data[raster.name].append(value[i])
+                            else:
+                                rasters_data[raster.name + f'_{i}'].append(value[i])
 
             # Append Raster data to sdf
             for key, value in rasters_data.items():
@@ -968,24 +1046,27 @@ class TabularDataObject(object):
                 arcgis.geometry.project([point_upper], default_sr, raster.extent['spatialReference'])[0]
                 cell_size_translated = \
                 arcgis.geometry.project([cell_size], default_sr, raster.extent['spatialReference'])[0]
-                raster_data[field_name] = raster.read(
+                raster_read = raster.read(
                     origin_coordinate=(point_upper_translated.x, point_upper_translated.y),
                     ncols=max_raster_columns, nrows=max_raster_rows,
                     cell_size=(cell_size_translated.x, cell_size_translated.y))
 
-            processed_data = []
-            for row in range(max_raster_rows):
-                for column in range(max_raster_columns):
-                    processed_row = []
-                    for raster_name in sorted(raster_data):
-                        value = raster_data[raster_name][row][column]
-                        if len(value) > 0:
-                            processed_row.append(value[0])
-                        else:
-                            processed_row.append(0)
-                    processed_data.append(processed_row)
+                for row in range(max_raster_rows):
+                    for column in range(max_raster_columns):
+                        values = raster_read[row][column]
+                        index = 0
+                        for value in values:
+                            key = field_name
+                            if index != 0:
+                                key = key + f'_{index}'
+                            if not raster_data.get(key):
+                                raster_data[key] = []
 
-            sdf = pd.DataFrame(processed_data, columns=raster_data.keys())
+                            index = index + 1
+
+                            raster_data[key].append(value)
+
+            sdf = pd.DataFrame.from_dict(raster_data)
 
         if date_field:
             try:

@@ -1,8 +1,10 @@
 from pathlib import Path
 import json
+import random
 from ._arcgis_model import ArcGISModel, _EmptyData
 import traceback
 from .._utils.env import raise_fastai_import_error
+from ._codetemplate import image_classifier_prf
 
 try:
     from ._change_detector_utils import get_learner
@@ -66,7 +68,7 @@ class ChangeDetector(ArcGISModel):
         self.learn = get_learner(self._data,
                                  backbone,
                                  self.SA_type)
-
+        self._code = image_classifier_prf
         self._arcgis_init_callback()    # make first conv weights learnable
         if pretrained_path is not None:
             self.load(pretrained_path)
@@ -150,14 +152,6 @@ class ChangeDetector(ArcGISModel):
 
     def _get_emd_params(self, save_inference_file):
         _emd_template = {"DataAttributes": {}, "ModelParameters": {}}
-        # arcgis.learn.models._inferencing
-        _emd_template["Framework"] = None
-        # object classifier config can be used.
-        _emd_template["ModelConfiguration"] = None
-        # handle for different types of spectrums
-        _emd_template["ExtractBands"] = None
-        # Inference function of object classifier.
-        _emd_template["InferenceFunction"] = None
         # add encoder parameters
         _emd_template["ModelParameters"]["attention_type"] = self.SA_type
         # chip size
@@ -183,7 +177,28 @@ class ChangeDetector(ArcGISModel):
         _emd_template["DataAttributes"]["color_mapping"] = self._data.color_mapping
         _emd_template["DataAttributes"]["classes"] = self._data.classes
         _emd_template["DataAttributes"]["batch_size"] = self._data.batch_size
-
+        _emd_template["Framework"] = "arcgis.learn.models._inferencing"
+        # object classifier config can be used.
+        _emd_template["ModelConfiguration"] = "change_detection"
+        _emd_template["ModelType"] = "ImageClassification"
+        # Inference function of object classifier.
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+        else:
+            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+        if self._is_multispectral:
+            # change this when we start to honour extract bands parameter.
+            _emd_template["ExtractBands"] = list(range(len(self._data._extract_bands) * 2))
+        else:
+            # To extract bands from concatenated images (RGB)
+            _emd_template["ExtractBands"] = list(range(6))
+        _emd_template['Classes'] = []
+        class_data = {}
+        for value, class_name in self._data.class_mapping.items():  # 0th index is background
+            class_data["Value"] = value
+            class_data["Name"] = class_name
+            class_data["Color"] = self._data.color_mapping[value]
+            _emd_template['Classes'].append(class_data.copy())
 
         return _emd_template
 

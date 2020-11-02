@@ -722,6 +722,8 @@ def prepare_change_detection_data(path,
     data.classes = list(data.class_mapping.values())
     # fix save model path.
     data.path = data.path / 'images_before'
+    # add dataset_type
+    data._dataset_type = 'ChangeDetection'
     # return databunch.
     return data
 

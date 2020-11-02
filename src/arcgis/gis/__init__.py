@@ -3098,13 +3098,15 @@ class UserManager(object):
                           max_items=0, start=start, sort_field=sort_field,
                           sort_order=sort_order, group_id=group_id, as_dict=as_dict)['total']
         so = {
-            'asc' : 'asc',
-            'desc' : 'desc',
-            'ascending' : 'asc',
-            'descending' : 'desc'
+            'DESC' : 'DESC',
+            'ASC' : "ASC",
+            'asc' : 'asc'.upper(),
+            'desc' : 'desc'.upper(),
+            'ascending' : 'asc'.upper(),
+            'descending' : 'desc'.upper()
         }
         if sort_order:
-            sort_order = so[sort_order]
+            sort_order = so[sort_order].upper()
 
         if return_count:
             max_items = 0
@@ -3147,7 +3149,7 @@ class UserManager(object):
             }
             with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
                 future_to_url = {executor.submit(self.advanced_search, **param): param for param in params}
-                for future in concurrent.futures.as_completed(future_to_url):
+                for future in future_to_url.keys(): # preserves order of query
                     result = future_to_url[future]
                     data = future.result()
                     if 'results' in data:
@@ -9858,7 +9860,10 @@ class Item(dict):
            that can be converted to string using data.decode('utf-8'). Zero byte files will return None.
         """
         folder = None
-        item_data = self._portal.get_item_data(self.itemid, try_json, folder)
+        try:
+            item_data = self._portal.get_item_data(self.itemid, try_json, folder)
+        except:
+            item_data = {}
 
         if item_data == '':
             return None

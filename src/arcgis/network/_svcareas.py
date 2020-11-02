@@ -1054,7 +1054,7 @@ def generate_service_areas(
 
     url = gis.properties.helperServices.asyncServiceArea.url[:-len('/GenerateServiceAreas')]
 
-    tbx = import_toolbox(url)
+    tbx = import_toolbox(url, gis=gis)
     defaults = dict(zip(tbx.generate_service_areas.__annotations__.keys(),
                         tbx.generate_service_areas.__defaults__))
     if facilities is None:

@@ -370,13 +370,13 @@ def _pspnet_learner(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), 
         learn = Learner(data, model, **kwargs)
     return learn
 
-def _pspnet_learner_with_unet(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, unet_aux_loss=False, **kwargs):
+def _pspnet_learner_with_unet(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, unet_aux_loss=False, vggv2=True, **kwargs):
     "Build psunet learner from `data` and `arch`."
     model = unet.DynamicUnet(encoder=_pspnet_unet(data.c, backbone, chip_size, pyramid_sizes, pretrained), n_classes=data.c, last_cross=False)
 
     if unet_aux_loss:
         model = _add_auxillary_branch_to_psunet(model, chip_size, data.c)
-    else:
+    elif vggv2:
         model = PSPUnet(model)
     if not _isnotebook() and arcgis_os.name=='posix':
         distributed_prep = DummyDistributed()

@@ -338,7 +338,7 @@ class UnetClassifier(ArcGISModel):
         self.learn.show_results(rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs)
 
     def accuracy(self):
-        return self.learn.validate()[-1].tolist()     
+        return self.learn.validate()[1].tolist()     
 
     def _get_model_metrics(self, **kwargs):
         checkpoint = kwargs.get('checkpoint', True)

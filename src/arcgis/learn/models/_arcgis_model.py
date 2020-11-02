@@ -801,7 +801,8 @@ class ArcGISModel(object):
         if _emd_template.get("IsMultispectral", False):
             _emd_template["Bands"] = self._data._bands
             _emd_template["ImageryType"] = self._data._imagery_type
-            _emd_template["ExtractBands"] = self._data._extract_bands
+            if getattr(self._data, '_dataset_type', None) != 'ChangeDetection':
+                _emd_template["ExtractBands"] = self._data._extract_bands
             _emd_template["NormalizationStats"] = {
                 "band_min_values": self._data._band_min_values,
                 "band_max_values": self._data._band_max_values,
@@ -899,6 +900,10 @@ class ArcGISModel(object):
         if emd_template.get('accuracy'):
             model_analysis = f"""
             <p><b>Accuracy:</b> {emd_template.get('accuracy')}</p>
+        """
+        if emd_template.get('mIoU'):
+            model_analysis = f"""
+            <p><b>mIoU:</b> {emd_template.get('mIoU')}</p>
         """
 
         if emd_template.get('average_precision_score'):
@@ -1236,17 +1241,14 @@ class ArcGISModel(object):
 
     def load(self, name_or_path):
         """
-        Loads a saved model for inferencing or fine tuning from the specified
-        path or model name.
+        Loads a saved model for inferencing or fine tuning from the disk.
 
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        name_or_path            Required string. Name of the model to load from
-                                the pre-defined location. If path is passed then
-                                it loads from the specified path with model name
-                                as directory name. Path to ".pth" file can also
-                                be passed
+        name_or_path            Required string. Required string. Path to
+                                Deep Learning Package (DLPK) or
+                                Esri Model Definition(EMD) file.
         =====================   ===========================================
         """
         temp = self.learn.path
