@@ -15,11 +15,18 @@ std  = 255* np.array(imagenet_stats[1], dtype=np.float32)
 norm = lambda x: (x-mean)/ std
 denorm = lambda x: x * std + mean
 
-def scale_batch(image_batch, model_info, normalization_stats=None):
+def scale_batch(image_batch, model_info, normalization_stats=None, break_extract_bands=False):
     if normalization_stats is None:
         normalization_stats = model_info.get("NormalizationStats", None)
-    band_min_values = np.array(normalization_stats["band_min_values"])[model_info['ExtractBands']].reshape(1, -1, 1, 1)
-    band_max_values = np.array(normalization_stats["band_max_values"])[model_info['ExtractBands']].reshape(1, -1, 1, 1)
+    if break_extract_bands:
+        # Only for change detection
+        # if subset of extract bands are specified fix this.
+        n_bands = len(model_info['ExtractBands']) // 2
+        band_min_values = np.array(normalization_stats["band_min_values"])[model_info['ExtractBands'][:n_bands]].reshape(1, -1, 1, 1)
+        band_max_values = np.array(normalization_stats["band_max_values"])[model_info['ExtractBands'][:n_bands]].reshape(1, -1, 1, 1)
+    else:
+        band_min_values = np.array(normalization_stats["band_min_values"])[model_info['ExtractBands']].reshape(1, -1, 1, 1)
+        band_max_values = np.array(normalization_stats["band_max_values"])[model_info['ExtractBands']].reshape(1, -1, 1, 1)
     img_scaled = ( image_batch - band_min_values ) / ( band_max_values - band_min_values)
     return img_scaled
 
@@ -316,4 +323,32 @@ def variable_tile_size_check(json_info, parameters):
             ]
         )
     return parameters
+
+def detect_change(model,
+                  batch,
+                  device,
+                  model_info):
+    mean = 255 * np.array([0.5] * (len(model_info['ExtractBands']) // 2), dtype=np.float32)
+    std = 255 * np.array([0.5] * (len(model_info['ExtractBands']) // 2), dtype=np.float32)
+
+    norm = lambda x: (x-mean) / std
+    B, C, H, W = batch.shape
+    batch_before = batch[:, :C//2]
+    batch_after = batch[:, C//2:]
+    
+    if "NormalizationStats" in model_info:
+        batch_before = scale_batch(batch_before, model_info, break_extract_bands=True)
+        batch_after = scale_batch(batch_after, model_info, break_extract_bands=True)        
+
+    batch_before = norm(batch_before.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
+    batch_after = norm(batch_after.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
+    batch_before = torch.tensor(batch_before, device=device).float()
+    batch_after = torch.tensor(batch_after, device=device).float()
+    from ..._utils.change_detection_data import post_process
+    with torch.no_grad():
+        predictions = post_process(model(batch_before, batch_after))
+    # find the non zero class of the two classes.
+    change_class = [c['Value'] for c in model_info['Classes'] if c['Value'] != 0][0]
+    predictions[predictions != 0] = change_class
+    return predictions[:, 0]
 

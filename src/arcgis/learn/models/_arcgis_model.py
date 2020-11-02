@@ -801,7 +801,8 @@ class ArcGISModel(object):
         if _emd_template.get("IsMultispectral", False):
             _emd_template["Bands"] = self._data._bands
             _emd_template["ImageryType"] = self._data._imagery_type
-            _emd_template["ExtractBands"] = self._data._extract_bands
+            if getattr(self._data, '_dataset_type', None) != 'ChangeDetection':
+                _emd_template["ExtractBands"] = self._data._extract_bands
             _emd_template["NormalizationStats"] = {
                 "band_min_values": self._data._band_min_values,
                 "band_max_values": self._data._band_max_values,
