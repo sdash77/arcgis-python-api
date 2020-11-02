@@ -203,7 +203,7 @@ class FormInfo:
         self._parent = parent
         try:
             url = self._original_layer["url"]
-            self._feature_layer = FeatureLayer(url=url, gis=self._parent._gis)
+            self.feature_layer = FeatureLayer(url=url, gis=self._parent._gis)
             self._fields = self._get_fields()
             self._edit_fields = self._get_edit_fields()
             self._id_fields = self._get_id_fields()
@@ -258,6 +258,10 @@ class FormInfo:
                             return grouped_field
         except Exception:
             return None
+
+    def feature_layer(self):
+        """The feature layer associated with the form"""
+        return self.feature_layer
 
     @property
     def title(self):
@@ -469,7 +473,7 @@ class FormInfo:
 
     def _get_fields(self):
         """Get feature layer's fields"""
-        return self._feature_layer.properties.get("fields")
+        return self.feature_layer.properties.get("fields")
 
     @staticmethod
     def _is_valid_field_type(field_type):
@@ -528,14 +532,14 @@ class FormInfo:
     def _get_id_fields(self):
         """Returns the id fields in lower case."""
         try:
-            return [self._feature_layer.properties.get("objectIdField").lower(), self._feature_layer.properties.get("globalIdField").lower()]
+            return [self.feature_layer.properties.get("objectIdField").lower(), self.feature_layer.properties.get("globalIdField").lower()]
         except Exception:
             return []
 
     def _get_edit_fields(self):
         """Gets the edit fields for the feature layer in order to filter them out of the form."""
         try:
-            return [x.lower() for x in list(self._feature_layer.properties.get("editFieldsInfo", {}).values())]
+            return [x.lower() for x in list(self.feature_layer.properties.get("editFieldsInfo", {}).values())]
         except Exception:
             return []
 
@@ -625,6 +629,7 @@ class FormElement:
         self._description = description
         self._label = label
         self._visibility_expression = visibility_expression
+        self._kwargs = kwargs
 
     @property
     def description(self):
@@ -681,6 +686,8 @@ class FormElement:
                 el_dict["visibilityExpression"] = self._visibility_expression.name
             except AttributeError:
                 el_dict["visibilityExpression"] = self._visibility_expression
+        for key, value in self._kwargs.items():
+            el_dict[key] = value
         return el_dict
 
 
@@ -915,7 +922,7 @@ class FormGroupElement(FormElement):
     """
 
     def __init__(self, form=None, elements=None, initial_state=None, description=None, label=None, visibility_expression=None, **kwargs):
-        super().__init__(form=form, element_type="group", description=description, label=label, visibility_expression=visibility_expression)
+        super().__init__(form=form, element_type="group", description=description, label=label, visibility_expression=visibility_expression, **kwargs)
         if elements is None:
             elements = []
         self._form_elements = FormInfo._get_form_element_objects(elements, form=form)
@@ -1057,10 +1064,8 @@ class FormGroupElement(FormElement):
         """Validate the element passed to or created by add element is correct"""
         if element.element_type == "group":
             raise ValueError("You cannot add a group to another group")
-        try:
+        if self._form is not None:
             self._form._validate_element(element)
-        except Exception:
-            pass
 
 
 class FormExpressionInfo:
