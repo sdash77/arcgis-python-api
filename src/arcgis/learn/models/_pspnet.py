@@ -346,7 +346,7 @@ class PSPNetClassifier(ArcGISModel):
         if input is not None or target is not None:
             accuracy(input, target)
         else:
-            return self.learn.validate()[-1].tolist()
+            return self.learn.validate()[1].tolist()
 
         
     def _get_emd_params(self, save_inference_file):

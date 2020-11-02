@@ -390,7 +390,7 @@ class DeepLab(ArcGISModel):
 
     def accuracy(self):
         self._check_requisites()
-        return self.learn.validate()[-1].tolist()
+        return self.learn.validate()[1].tolist()
 
     @property
     def _model_metrics(self):
