@@ -60,7 +60,7 @@ See https://utility.arcgisonline.com/arcgis/rest/directories/arcgisoutput/Utilit
     from arcgis.geoprocessing import DataFile
     from arcgis.geoprocessing._support import _execute_gp_tool
 
-    kwargs = locals()
+
 
     param_db = {
         "web_map_as_json": (str, "Web_Map_as_JSON"),
@@ -74,7 +74,12 @@ See https://utility.arcgisonline.com/arcgis/rest/directories/arcgisoutput/Utilit
 
     if gis is None:
         gis = arcgis.env.active_gis
-
+    kwargs = {
+        "web_map_as_json" : web_map_as_json,
+        "format"  : format,
+        "layout_template" : layout_template,
+        "gis" : gis
+    }
     url = gis.properties.helperServices.printTask.url[:-len('/Export%20Web%20Map%20Task')]
 
     return _execute_gp_tool(gis, "Export Web Map Task", kwargs, param_db, return_values, _use_async, url)
@@ -104,7 +109,7 @@ See https://utility.arcgisonline.com/arcgis/rest/directories/arcgisoutput/Utilit
     from arcgis.geoprocessing import DataFile
     from arcgis.geoprocessing._support import _execute_gp_tool
 
-    kwargs = locals()
+
 
     param_db = {
         "output_json": (str, "Output JSON"),
@@ -117,7 +122,9 @@ See https://utility.arcgisonline.com/arcgis/rest/directories/arcgisoutput/Utilit
         gis = arcgis.env.active_gis
 
     url = gis.properties.helperServices.printTask.url[:-len('/Export%20Web%20Map%20Task')]
-
+    kwargs = {
+        "gis" : gis
+    }
     return _execute_gp_tool(gis, "Get Layout Templates Info Task", kwargs, param_db, return_values, _use_async, url)
 
 get_layout_templates.__annotations__ = {'return': str}
