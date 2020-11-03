@@ -61,19 +61,18 @@ def try_imports(list_of_modules):
         for module in list_of_modules:
             importlib.import_module(module)
     except Exception as e:
-        raise Exception(f"""This function requires {' '.join(list_of_modules)}. Install plotly and laspy using 'conda install -c esri -c plotly laspy=1.6.0 plotly=4.5.0 plotly-orca=1.2.1 psutil' and install h5py using `pip install h5py==2.10.0`.
-\n On Linux systems, Also install `xvfb` \n Additionally visit: https://developers.arcgis.com/python/guide/point-cloud-segmentation-using-pointcnn/ for step by step setup.""")
+        raise Exception(f"""This function requires {' '.join(list_of_modules)}. Visit https://developers.arcgis.com/python/guide/install-and-set-up and https://developers.arcgis.com/python/guide/point-cloud-segmentation-using-pointcnn for installing the dependencies.""")
 
 def try_import(module):
     try:
         importlib.import_module(module)
     except ModuleNotFoundError:
         if module == 'plotly':
-            raise Exception("This function requires plotly. Install it using 'conda install -c plotly plotly=4.5.0 plotly-orca=1.2.1 psutil'")
+            raise Exception("This function requires plotly. Visit https://developers.arcgis.com/python/guide/install-and-set-up and https://developers.arcgis.com/python/guide/point-cloud-segmentation-using-pointcnn for installing the dependencies.")
         elif module == 'laspy':
-            raise Exception("This function requires laspy. Install it using 'conda install -c esri laspy=1.6.0'")
+            raise Exception("This function requires laspy. Visit https://developers.arcgis.com/python/guide/install-and-set-up and https://developers.arcgis.com/python/guide/point-cloud-segmentation-using-pointcnn for installing the dependencies.")
         elif module == 'h5py':
-            raise Exception(f"This function requires h5py. Install it using 'pip install h5py==2.10.0'")
+            raise Exception(f"This function requires h5py. Visit https://developers.arcgis.com/python/guide/install-and-set-up and https://developers.arcgis.com/python/guide/point-cloud-segmentation-using-pointcnn for installing the dependencies.")
         else:
             raise Exception(f"This function requires {module}. Please install it in your environment.")
 
@@ -242,11 +241,8 @@ def show_point_cloud_batch(self, rows=2, figsize=(6,12), color_mapping=None, **k
                             passed in `prepare_data`. 
     ---------------------   -------------------------------------------
     color_mapping           Optional dictionary. Mapping from class value
-                            to RGB values. Default value
-                            Example: {0:[220,220,220],
-                                        1:[255,0,0],
-                                        2:[0,255,0],
-                                        3:[0,0,255]}                                                         
+                            to RGB values. Default value example:
+                            {0:[220,220,220], 2:[255,0,0], 6:[0,255,0]}.
     =====================   ===========================================
 
     **kwargs**
@@ -365,11 +361,8 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
                             passed in `prepare_data`. 
     ---------------------   -------------------------------------------
     color_mapping           Optional dictionary. Mapping from class value
-                            to RGB values. Default value
-                            Example: {0:[220,220,220],
-                                        1:[255,0,0],
-                                        2:[0,255,0],
-                                        3:[0,0,255]}                                                         
+                            to RGB values. Default value example:
+                            {0:[220,220,220], 2:[255,0,0], 6:[0,255,0]}.
     =====================   ===========================================
 
     **kwargs**
@@ -1282,11 +1275,8 @@ def show_results(self, rows, color_mapping=None, **kwargs):
                             value is 2.
     ---------------------   -------------------------------------------
     color_mapping           Optional dictionary. Mapping from class value
-                            to RGB values. Default value
-                            Example: {0:[220,220,220],
-                                        1:[255,0,0],
-                                        2:[0,255,0],
-                                        3:[0,0,255]}                                                         
+                            to RGB values. Default value example:
+                            {0:[220,220,220], 2:[255,0,0], 6:[0,255,0]}.
     =====================   ===========================================
 
     **kwargs**
@@ -1545,8 +1535,8 @@ def augment(points, xforms, range=None):
 class Transform3d(object):
 
     """
-    Creates a Transform3d object which, when passed in prepare data will
-    apply data augmentation to the PointCloud data.
+    Creates a 3D transformation that can be used in `prepare_data` 
+    to apply data augmentation to blocks, with a 50 % probability.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -1558,7 +1548,7 @@ class Transform3d(object):
                             The fourth value in the tuple is the sampling method
                             where 'u' means uniform and 'g' means gaussian.
                             Intrinsic rotation will take place.
-                            Deafult: [math.pi / 72, math.pi, math.pi / 72, 'u']
+                            Default: [math.pi / 72, math.pi, math.pi / 72, 'u'].
     ---------------------   -------------------------------------------
     scaling_range           Optional tuple of length 4. It contains a list
                             of scaling ranges[0-1] which will scale the points.
@@ -1566,11 +1556,11 @@ class Transform3d(object):
                             point cloud block may get distorted. The fourth
                             value in the tuple is the sampling method
                             where 'u' means uniform and 'g' means gaussian.
-                            Default: [0.05, 0.05, 0.05, 'g'] 
+                            Default: [0.05, 0.05, 0.05, 'g'].
     ---------------------   -------------------------------------------
     jitter                  Optional float. The scale to which randomly
                             jitter the points in the point cloud block.
-                            Default: 0.0
+                            Default: 0.0.
     =====================   ===========================================
     
     :returns: `Transform3d` object
@@ -1686,11 +1676,8 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
                             value is 2.
     ---------------------   -------------------------------------------
     color_mapping           Optional dictionary. Mapping from class value
-                            to RGB values. Default value
-                            Example: {0:[220,220,220],
-                                        1:[255,0,0],
-                                        2:[0,255,0],
-                                        3:[0,0,255]}                                                         
+                            to RGB values. Default value example:
+                            {0:[220,220,220], 2:[255,0,0], 6:[0,255,0]}.
     =====================   ===========================================
 
     **kwargs**
