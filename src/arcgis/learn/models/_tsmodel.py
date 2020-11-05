@@ -55,10 +55,10 @@ except:
 
 
 def _get_model_from_path(pretrained_path):
-
     learn = load_learner(
         os.path.dirname(pretrained_path),
-        os.path.basename(pretrained_path).split('.')[0] + "_exported.pth"
+        os.path.basename(pretrained_path).split('.')[0] + "_exported.pth",
+        no_check=True
     )
 
     return learn
@@ -121,6 +121,8 @@ class TimeSeriesModel(ArcGISModel):
 
         self.learn.layer_groups = split_model_idx(self.learn.model, [1])
         self._model_arch = model_arch.lower()
+        if kwargs.get('pretrained_path'):
+            del kwargs['pretrained_path']
         self._kwargs = kwargs
         self._seq_len = seq_len
 
