@@ -798,7 +798,11 @@ def prepare_data(path,
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
                             'superres', 'CycleGAN' and 'Pix2Pix'.
     ---------------------   -------------------------------------------
-    resize_to               Optional integer. Resize the image to given size.
+    resize_to               Optional integer. Resize the image to given size
+                            for "PASCAL_VOC_rectangles" and "superres".
+                            First resizes the image to the given size and
+                            then crops images of size equal to chip_size.
+                            Note: Keep chip_size < resize_to
     =====================   ===========================================
 
     **Keyword Arguments**
