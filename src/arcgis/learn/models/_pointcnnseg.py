@@ -173,9 +173,9 @@ class PointCNN(ArcGISModel):
         epochs                  Required integer. Number of cycles of training
                                 on the data. Increase it if underfitting.
         ---------------------   -------------------------------------------
-        lr                      Optional float or slice of floats. Learning rate
-                                to be used for training the model. If ``lr=None``, 
-                                an optimal learning rate is automatically deduced 
+        lr                      Optional float. Learning rate to be used
+                                for training the model. If ``lr=None``, an
+                                optimal learning rate is automatically deduced
                                 for training the model.
         ---------------------   -------------------------------------------
         one_cycle               Optional boolean. Parameter to select 1cycle
@@ -222,6 +222,9 @@ class PointCNN(ArcGISModel):
         if lr is None:
             print('Finding optimum learning rate.')
             lr = self.lr_find(allow_plot=False)
+
+        if isinstance(lr, slice):
+            lr = lr.stop
         
         super().fit(epochs, lr, one_cycle, early_stopping, checkpoint, tensorboard, **kwargs)
         
@@ -240,6 +243,14 @@ class PointCNN(ArcGISModel):
             model_accuracy = self.learn.recorder.metrics[val_losses.index(min(val_losses))][0]
 
         return float(model_accuracy)
+
+    def unfreeze(self):
+        """
+        Unfreezes the earlier layers of the model for
+        fine-tuning. Not implemented for PointCNN as
+        none of the layers are frozen by default.
+        """
+        self.learn.unfreeze()        
 
     def _get_emd_params(self, save_inference_file):
         import random
@@ -370,6 +381,18 @@ class PointCNN(ArcGISModel):
                                 on. If `remap_classes` is specified, the new 
                                 mapped values will be used for classification. 
                                 Default value is [].
+        ---------------------   -------------------------------------------
+        preserve_classes        Optional list of integers. A list of classes
+                                from the input data, that should be preserved 
+                                in the predicted output.
+                                If a point in the input data belongs to any 
+                                of the classes mentioned in this list, its 
+                                class-code won't be updated with the model's 
+                                predicted class. 
+                                Example: If preserve_classes=[2,6]. The 
+                                class-code of a point won't be updated with 
+                                the predicted class, if it's 2 or 6. 
+                                Default: [].
         =====================   ===========================================
         
         :returns: Path where files are dumped.

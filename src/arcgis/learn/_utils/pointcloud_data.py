@@ -936,6 +936,17 @@ def prediction_selective_classify(labels, las_file, selective_classify):
     return np.vectorize(lambda i:labels[i] if labels[i] in selective_classify\
                                         else classification[i])(all_indexes)
 
+def preserved_overwrite(f_out, labels, preserve_classes):
+    """
+    Does not write class code which is specified
+    in preserve_classes param
+    """
+    orig_classf = f_out.classification
+    bool_mat = np.concatenate([orig_classf[:, None] == c for c in preserve_classes], axis=1)
+    mask = np.any(bool_mat, axis=1)
+    orig_classf[~mask] = labels[~mask]
+    return orig_classf
+
 def write_resulting_las(in_las_filename, 
                         out_las_filename, 
                         labels, 
@@ -943,7 +954,8 @@ def write_resulting_las(in_las_filename,
                         data,
                         print_metrics,
                         reclassify_classes={}, 
-                        selective_classify=[]):
+                        selective_classify=[],
+                        preserve_classes=[]):
     try_import('laspy')
     import laspy
     false_positives = [0] * num_classes
@@ -979,6 +991,9 @@ def write_resulting_las(in_las_filename,
     if selective_classify != []:
         #current_class if current_class in selective_classify else p.classification
         labels = prediction_selective_classify(labels, f, selective_classify)
+
+    if preserve_classes != []:
+        labels = preserved_overwrite(f_out, labels, preserve_classes)
             
     f.close()
     f_out.classification = labels.tolist()
@@ -1040,7 +1055,14 @@ def get_predictions(pointcnn_model, data, batch_idx, points_batch, sample_num, b
         
     return predictions
 
-def inference_las(path, pointcnn_model, out_path=None, print_metrics=False, remap_classes={}, selective_classify=[]):
+def inference_las(path,
+                  pointcnn_model, 
+                  out_path=None, 
+                  print_metrics=False, 
+                  remap_classes={}, 
+                  selective_classify=[],
+                  preserve_classes=[]
+                  ):
     try_import("h5py")
     import h5py
     import pandas as pd    
@@ -1189,7 +1211,8 @@ def inference_las(path, pointcnn_model, out_path=None, print_metrics=False, rema
                                                                                     pointcnn_model._data,
                                                                                     print_metrics,
                                                                                     reclassify_classes,
-                                                                                    selective_classify)
+                                                                                    selective_classify,
+                                                                                    preserve_classes)
                 global_false_positives = np.add(global_false_positives, false_positives)
                 global_true_positives = np.add(global_true_positives, true_positives)
                 global_false_negatives = np.add(global_false_negatives, false_negatives)
