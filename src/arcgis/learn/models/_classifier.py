@@ -96,7 +96,8 @@ class FeatureClassifier(ArcGISModel):
                             The default is set to False.
     ---------------------   -------------------------------------------
     oversample              Optional boolean. If set to True, it oversamples unbalanced
-                            classes of the dataset during training.
+                            classes of the dataset during training. Not supported with
+                            MultiLabel dataset.
     ---------------------   -------------------------------------------
     backend                 Optional string. Controls the backend framework to be used
                             for this model, which is 'pytorch' by default.
