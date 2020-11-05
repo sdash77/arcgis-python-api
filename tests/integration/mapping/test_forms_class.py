@@ -154,7 +154,7 @@ class Test_Forms(unittest.TestCase):
         try:
             form = self.forms.get_form(title="Shelters")
             self.assertEqual(form.exists(), False)
-            form.add_element(field_name="facilityid")
+            form.add_field_element(label="facilityid", field_name="facilityid")
             self.assertEqual(form.exists(), True)
 
         except AssertionError as assertErrorException:
@@ -170,7 +170,7 @@ class Test_Forms(unittest.TestCase):
     def test_form_info_clear_all(self):
         try:
             form = self.forms.get_form(title="Shelters")
-            form.add_element(field_name="facilityid")
+            form.add_field_element(label="facilityid", field_name="facilityid")
             self.assertEqual(len(form.elements), 1)
             form.clear()
             self.assertEqual(len(form.elements), 0)
@@ -189,14 +189,14 @@ class Test_Forms(unittest.TestCase):
     def test_form_info_get_element(self):
         try:
             form = self.forms.get_form(title="Shelters")
-            el = form.add_element(field_name="facilityid")
+            el = form.add_field_element(label="facilityid", field_name="facilityid")
             el.label = "Facility ID"
             got_el = form.get_element(label="Facility ID")
             self.assertIsInstance(got_el, FormFieldElement)
 
             group = FormGroupElement(label="Group 1")
             group = form.add_element(group)
-            el = group.add_element(field_name="facname")
+            el = group.add_field_element(label="Facility Name", field_name="facname")
             got_el = form.get_element(el.label)
             self.assertIsInstance(got_el, FormFieldElement)
 
@@ -223,6 +223,9 @@ class Test_Forms(unittest.TestCase):
             group_element = FormGroupElement(label="Group 1")
             form.add_element(group_element)
             self.assertEqual(len(form.elements), 2)
+
+            form.add_group_element(label="Group 2")
+            self.assertEqual(len(form.elements), 3)
 
         except AssertionError as assertErrorException:
             raise assertErrorException
@@ -254,9 +257,9 @@ class Test_Forms(unittest.TestCase):
     def test_delete_element(self):
         try:
             form = self.forms.get_form(title="Shelters")
+            form.add_field_element(label="facilityid", field_name="facilityid")
             form_element = FormFieldElement(label="Facility Name", field_name="facname")
             form.add_element(form_element)
-            form.add_element(field_name="facilityid")
             self.assertEqual(len(form.elements), 2)
 
             form.delete_element(form_element)
@@ -278,11 +281,19 @@ class Test_Forms(unittest.TestCase):
             form = self.forms.get_form(title="Shelters")
             form_element = FormFieldElement(label="Facility Name", field_name="facname")
             form.add_element(form_element)
-            el = form.add_element(field_name="facilityid")
+            el = form.add_field_element(label="facilityid", field_name="facilityid")
             self.assertEqual(form.elements[1], el)
 
             form.move_element(element=el, index=0)
             self.assertEqual(form.elements[0], el)
+
+            group = form.add_group_element(label="Group 1")
+            form.move_element(element=el, destination=group, index=0)
+            self.assertEqual(len(group.elements), 1)
+            self.assertEqual(group.elements[0], el)
+            group.move_element(element=el, destination=form, index=0)
+            self.assertEqual(len(form.elements), 2)
+            self.assertEqual(len(group.elements), 0)
 
         except AssertionError as assertErrorException:
             raise assertErrorException
@@ -330,7 +341,7 @@ class Test_Forms(unittest.TestCase):
                 group.initial_state = "blah"
             group.initial_state = "expanded"
 
-            el = group.add_element(field_name="facname")
+            el = group.add_field_element(label="facilityid", field_name="facilityid")
             self.assertEqual(len(group.elements), 1)
             got_el = group.get_element(el.label)
             self.assertIsInstance(got_el, FormFieldElement)
@@ -409,9 +420,7 @@ class Test_Forms(unittest.TestCase):
         try:
             form = self.forms.get_form(title="Shelters")
             with self.assertRaises(ValueError):
-                form.add_element(field_name="objectid")
-            with self.assertRaises(ValueError):
-                form.add_element(field_name="blah")
+                form.add_field_element(field_name="blah", label="blah")
 
         except AssertionError as assertErrorException:
             raise assertErrorException
