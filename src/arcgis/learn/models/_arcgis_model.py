@@ -969,11 +969,10 @@ class ArcGISModel(object):
         file.close()
 
     def _save(self, name_or_path, framework='PyTorch', zip_files=True, save_html=True, publish=False, gis=None,
-              compute_metrics=True, save_optimizer=False, **kwargs):
+              compute_metrics=True, save_optimizer=False, save_inference_file=True, **kwargs):
         save_format = kwargs.get('save_format', 'default')  # 'default', 'tflite'
         post_processed = kwargs.get('post_processed', True)  # True, False
         quantized = kwargs.get('quantized', False)  # True, False
-        save_inference_file = kwargs.get("save_inference_file", False)
         temp = self.learn.path
         if '\\' in name_or_path or '/' in name_or_path:
             path = Path(name_or_path)
@@ -1033,6 +1032,24 @@ class ArcGISModel(object):
             self._create_tfonnx_emd_template(_emd_template, saved_path.with_suffix('.onnx'), batch_size)
             os.remove(saved_path.with_suffix('.pth'))
 
+
+        if _emd_template.get('InferenceFunction', False):
+            if _emd_template['ModelType'] not in ["ObjectDetection", "ImageClassification", "InstanceDetection", \
+                                                  "ObjectClassification"] or save_inference_file:
+                inference_file = _emd_template['InferenceFunction']
+                if "[Functions]" in inference_file:
+                    inference_file = inference_file[len("[Functions]System\\DeepLearning\\ArcGISLearn\\"):]
+                    _emd_template['InferenceFunction'] = inference_file
+
+                with open(saved_path.parent / _emd_template['InferenceFunction'], 'w') as f:
+                    f.write(self._code)
+            if not save_inference_file:
+                inference_file = _emd_template['InferenceFunction']
+                if "[Functions]" not in inference_file:
+                    _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\" + _emd_template["InferenceFunction"]
+
+
+
         ArcGISModel._write_emd(_emd_template, saved_path.with_suffix('.emd'))
         zip_name = saved_path.stem
 
@@ -1042,12 +1059,6 @@ class ArcGISModel(object):
                 ArcGISModel._create_html(saved_path)
             except:
                 pass
-
-        if _emd_template.get('InferenceFunction', False):
-            if _emd_template['ModelType'] not in ["ObjectDetection", "ImageClassification", "InstanceDetection", \
-                                                  "ObjectClassification"] or save_inference_file:
-                with open(saved_path.parent / _emd_template['InferenceFunction'], 'w') as f:
-                    f.write(self._code)
 
         if _emd_template.get('ModelConfigurationFile', False):
             with open(saved_path.parent / _emd_template['ModelConfigurationFile'], 'w') as f:
@@ -1197,7 +1208,7 @@ class ArcGISModel(object):
         torch.onnx.export(self.learn.model, dummy_input, saved_path.with_suffix('.onnx'))
 
     def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, compute_metrics=True,
-             save_optimizer=False, **kwargs):
+             save_optimizer=False, save_inference_file=True, **kwargs):
         """
         Saves the model weights, creates an Esri Model Definition and Deep
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
@@ -1229,6 +1240,11 @@ class ArcGISModel(object):
         save_optimizer          Optional boolean. Used for saving the model-optimizer
                                 state along with the model. Default is set to False
         ---------------------   -------------------------------------------
+        save_inference_file     Optional boolean. Used for saving the inference file
+                                along with the model.
+                                If False, the model will not work with ArcGIS Pro 2.6
+                                or earlier. Default is set to True.
+        ---------------------   -------------------------------------------
         kwargs                  Optional Parameters:
                                 Boolean `overwrite` if True, it will overwrite
                                 the item on ArcGIS Online/Enterprise, default False.
@@ -1237,7 +1253,7 @@ class ArcGISModel(object):
         if int(os.environ.get('RANK', 0)):
             return
         return self._save(name_or_path, framework=framework, publish=publish, gis=gis, compute_metrics=compute_metrics,
-                          save_optimizer=save_optimizer, **kwargs)
+                          save_optimizer=save_optimizer, save_inference_file=save_inference_file, **kwargs)
 
     def load(self, name_or_path):
         """
