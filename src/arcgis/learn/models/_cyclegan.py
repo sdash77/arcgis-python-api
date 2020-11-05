@@ -7,7 +7,7 @@ try:
     from ._cyclegan_utils import CycleGanLoss, CycleGANTrainer, optim, compute_fid_metric
     from ._cyclegan_utils import  CycleGAN as CycleGAN_model
     from .._utils.cyclegan import ImageTuple, ImageTupleList, ImageTupleListMS
-    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path, ArcGISMSImage
     from torchvision import transforms
     from pathlib import Path
     from fastai.vision import DatasetType, Learner, partial, open_image
@@ -170,7 +170,10 @@ class CycleGAN(ArcGISModel):
         """
         self.learn.model.arcgis_results = True
         img_path = Path(img_path)
-        raw_img = open_image(img_path)
+        if self._data._is_multispectral:
+            raw_img = ArcGISMSImage.open(img_path)
+        else:
+            raw_img = open_image(img_path)
         raw_img_tuple = ImageTuple(raw_img, raw_img)
         pred_tuple = self.learn.predict(raw_img_tuple)
         if convert_to == 'A' or convert_to == 'a':
