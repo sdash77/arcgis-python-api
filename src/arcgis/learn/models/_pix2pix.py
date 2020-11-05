@@ -6,13 +6,13 @@ from ._arcgis_model import ArcGISModel
 try:
     from ._pix2pix_utils import pix2pixLoss, pix2pixTrainer, optim, compute_fid_metric
     from ._pix2pix_utils import  pix2pix as pix2pix_model
-    from .._utils.pix2pix import ImageTuple, ImageTupleList2
+    from .._utils.pix2pix import ImageTuple, ImageTupleList2, ImageTupleListMS2
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from torchvision import transforms
     from pathlib import Path
     from fastai.vision import *
     from fastai.vision import DatasetType, Learner, partial, open_image
     import torch
-    from .._utils.common import _get_emd_path
 
     HAS_FASTAI = True
 except Exception as e:
@@ -39,9 +39,7 @@ class Pix2Pix(ArcGISModel):
     
     def __init__(self, data, pretrained_path=None, *args, **kwargs):
         super().__init__(data)
-
-        pix2pix_gan = pix2pix_model(3,3)
-
+        pix2pix_gan = pix2pix_model(self._data.n_channel,self._data.n_channel)
         self.learn = Learner(data, 
                              pix2pix_gan, 
                              loss_func=pix2pixLoss(pix2pix_gan), 
@@ -50,7 +48,6 @@ class Pix2Pix(ArcGISModel):
 
         self.learn.model = self.learn.model.to(self._device)
         self._slice_lr = False
-        
         if pretrained_path is not None:
             self.load(pretrained_path)
         self._code = image_translation_prf
@@ -94,22 +91,37 @@ class Pix2Pix(ArcGISModel):
         resize_to = emd.get('resize_to')
         chip_size = emd['ImageHeight']
         if data is None:
-            data = ImageTupleList2.from_folders(emd_path.parent, emd_path.parent, emd_path.parent)\
-                .split_none()\
-                .label_empty()\
-                .transform(size=(chip_size, chip_size))\
-                .databunch(bs=2, no_check = True)
-            data.n_channel = emd['n_channel']
-            data._is_empty = True
-            data.emd_path = emd_path
-            data.emd = emd
+             if emd.get('IsMultispectral', False):
+                data = ImageTupleListMS2.from_folders(emd_path.parent, emd_path.parent, emd_path.parent, batch_stats_a=None, batch_stats_b=None).split_none().label_empty().databunch(bs=2)
+                data.n_channel = emd['n_channel']
+                data = get_multispectral_data_params_from_emd(data, emd)
+                data._is_multispectral = emd.get('IsMultispectral', False)
+                normalization_stats_b = dict(emd.get("NormalizationStats_b"))
+                for _stat in normalization_stats_b:
+                    if normalization_stats_b[_stat] is not None:
+                        normalization_stats_b[_stat] = torch.tensor(normalization_stats_b[_stat])
+                    setattr(data, ('_'+_stat), normalization_stats_b[_stat])
+
+             else:
+                 data = ImageTupleList2.from_folders(emd_path.parent, emd_path.parent, emd_path.parent)\
+                     .split_none()\
+                     .label_empty()\
+                     .transform(size=(chip_size, chip_size))\
+                     .databunch(bs=2, no_check = True)
+        data.n_channel = emd['n_channel']
+        data._is_empty = True
+        data.emd_path = emd_path
+        data.emd = emd
         data.resize_to = chip_size
         
         return cls(data, **model_params, pretrained_path=str(model_file))
         
     @property
     def _model_metrics(self):
-        fid = self.compute_metrics()
+        if self._data._is_multispectral:
+            fid = None
+        else:
+            fid = self.compute_metrics()
         return {'FID': f'{fid}'}
 
     def _get_emd_params(self, save_inference_file):
@@ -119,6 +131,20 @@ class Pix2Pix(ArcGISModel):
         _emd_template["InferenceFunction"] = "ArcGISImageTranslation.py"
         _emd_template["ModelType"] = "Pix2Pix"
         _emd_template["n_channel"] = self._data.n_channel
+        if self._data._is_multispectral:
+            _emd_template["NormalizationStats_b"] = {
+                    "band_min_values": self._data._band_min_values_b,
+                    "band_max_values": self._data._band_max_values_b,
+                    "band_mean_values": self._data._band_mean_values_b,
+                    "band_std_values": self._data._band_std_values_b,
+                    "scaled_min_values": self._data._scaled_min_values_b,
+                    "scaled_max_values": self._data._scaled_max_values_b,
+                    "scaled_mean_values": self._data._scaled_mean_values_b,
+                    "scaled_std_values": self._data._scaled_std_values_b
+        }
+            for _stat in _emd_template["NormalizationStats_b"]:
+                    if _emd_template["NormalizationStats_b"][_stat] is not None:
+                        _emd_template["NormalizationStats_b"][_stat] = _emd_template["NormalizationStats_b"][_stat].tolist()
         return _emd_template
 
     def show_results(self,rows=5):
@@ -145,6 +171,13 @@ class Pix2Pix(ArcGISModel):
         self.learn.model.arcgis_results = True
         img_path = Path(img_path)
         raw_img = open_image(img_path)
+        n_band = self._data.n_channel
+        if n_band > raw_img.shape[0]:
+            cont = []
+            last_tile = np.expand_dims(raw_img.data[raw_img.shape[0]-1,:,:], 0)
+            res = abs(n_band - raw_img.shape[0])
+            for i in range(res):
+                raw_img = Image(torch.tensor(np.concatenate((raw_img.data, last_tile), axis=0)))
         raw_img_tuple = ImageTuple(raw_img, raw_img)
         pred_tuple = self.learn.predict(raw_img_tuple)
         pred_img = pred_tuple[1][0]/2+0.5
@@ -157,5 +190,8 @@ class Pix2Pix(ArcGISModel):
         """
         Computes Frechet Inception Distance (FID) on validation set.
         """
-        fid = compute_fid_metric(self, self._data)
+        if self._data._is_multispectral:
+            fid = None
+        else:
+            fid = compute_fid_metric(self, self._data)
         return fid

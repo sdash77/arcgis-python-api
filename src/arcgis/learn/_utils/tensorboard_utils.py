@@ -57,6 +57,10 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
             self._arcgis_model.learn.model.arcgis_results = True
             fig1 = self.show_results(rows=rows)
             self._arcgis_model.learn.model.arcgis_results = False
+        elif (type(self._arcgis_model).__name__) == 'Pix2Pix':
+            self._arcgis_model.learn.model.arcgis_results = True
+            fig1 = self.show_results(rows=rows)
+            self._arcgis_model.learn.model.arcgis_results = False
         else:
             return
 
@@ -113,7 +117,8 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
             fig1 = self.img_img_show_xyzs(xs, ys, zs)
         elif (type(self._arcgis_model).__name__) == 'CycleGAN':
             fig1 = self.img_tuple_show_xyzs(xs, ys, zs)
-
+        elif (type(self._arcgis_model).__name__) == 'Pix2Pix':
+            fig1 = self.img_tuple_show_xyzs(xs, ys, zs)
         return fig1
 
     def show_xyzs(self, xs, ys, zs, imgsize: int = 4, figsize: Optional[Tuple[int, int]] = None, **kwargs):
