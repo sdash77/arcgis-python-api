@@ -146,18 +146,19 @@ class ModelExtension(ArcGISModel):
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         if self._data.dataset_type == 'Classified_Tiles':
+            _emd_template["ModelType"] = "ImageClassification"
             if save_inference_file:
                 _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
             else:
                 _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
             _emd_template['IsEdgeDetection'] = getattr(self, "_is_edge_detection", False)
         else:
+            _emd_template["ModelType"] = "ObjectDetection"
             if save_inference_file:
                 _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
             else:
                 _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
         _emd_template["ModelConfiguration"] = "_model_extension_inferencing"
-        _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template['Classes'] = []
         _emd_template['ModelConfigurationFile'] = "ModelConfiguration.py"

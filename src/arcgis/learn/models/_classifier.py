@@ -40,6 +40,7 @@ try:
     from torch.nn import Module as NnModule
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path, image_batch_stretcher
     from matplotlib import pyplot as plt
+    import copy
     HAS_FASTAI = True
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -420,7 +421,8 @@ class FeatureClassifier(ArcGISModel):
         # For single label classification
         else:
             self._check_requisites()
-            interp = ClassificationInterpretation.from_learner(self.learn)
+            learn_temp = copy.deepcopy(self.learn)
+            interp = ClassificationInterpretation.from_learner(learn_temp)
             interp.plot_confusion_matrix()
 
     def plot_hard_examples(self, num_examples):
@@ -1456,7 +1458,7 @@ if HAS_FASTAI:
 
         def on_train_begin(self, **kwargs):
             ds,dl = self.data.train_ds,self.data.train_dl
-            self.labels = ds.y.items
+            self.labels = ds.y.items.astype(int)
             assert np.issubdtype(self.labels.dtype, np.integer), "Can only oversample integer values"
             _,self.label_counts = np.unique(self.labels,return_counts=True)
             if self.weights is None: self.weights = torch.DoubleTensor((1/self.label_counts)[self.labels])
