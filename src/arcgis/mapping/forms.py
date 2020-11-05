@@ -561,8 +561,6 @@ class FormInfo:
                 raise ValueError("Not a valid field type to add to the form")
             if not self._validate_unrestricted_field_name(element.field_name.lower()):
                 raise ValueError("Cannot add a GPS metadata or editor tracking fields to the form")
-            if element.field_name not in [d.get("name").lower() for d in self._fields]:
-                raise ValueError("You cannot add an element which does not have a corresponding field in the layer")
             for form_el in self._form_elements:
                 if form_el.element_type == "group":
                     if element.field_name in [el.field_name for el in form_el._form_elements]:
