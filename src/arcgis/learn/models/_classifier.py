@@ -205,7 +205,8 @@ class FeatureClassifier(ArcGISModel):
             **kwargs
         )
         if return_fig:
-            return fig
+            fig1,axs=fig
+            return fig1
 
     def predict(self, img_path):
         """
