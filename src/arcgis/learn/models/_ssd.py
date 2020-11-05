@@ -786,8 +786,9 @@ class SingleShotDetector(ArcGISModel):
 
         if visualize:
             if self._data._is_multispectral:
-                im = PIL.Image.fromarray(orig_frame)
-                t = pil2tensor(im, dtype=np.float32)[None]
+                t = torch.tensor(np.rollaxis(orig_frame, -1, 0).astype(np.float32), dtype=torch.float32)[None]
+                # im = PIL.Image.fromarray(orig_frame)
+                # t = pil2tensor(im, dtype=np.float32)[None]
                 scaled_t = self._data._min_max_scaler(t)[0]
                 orig_frame = (scaled_t*255).round().numpy().astype(np.uint8)[self._data._symbology_rgb_bands]
                 orig_frame = np.rollaxis(orig_frame, 0, 3)
