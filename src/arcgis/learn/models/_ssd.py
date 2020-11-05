@@ -719,8 +719,7 @@ class SingleShotDetector(ArcGISModel):
 
         for chip in chips:
             if self._data._is_multispectral:
-                im = PIL.Image.fromarray(chip['chip'])
-                t = pil2tensor(im, dtype=np.float32)[None]
+                t = torch.tensor(np.rollaxis(chip['chip'], -1, 0).astype(np.float32), dtype=torch.float32)[None]
                 scaled_t = self._data._min_max_scaler(t)[0]
                 frame = Image(scaled_t[self._data._extract_bands])
             else:
