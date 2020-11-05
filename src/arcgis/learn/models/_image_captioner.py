@@ -8,6 +8,7 @@ try:
     from ._image_captioning_utils import (image_captioner_learner,
                                           predict_image, get_bleu)
     from .._utils.image_captioning_data import show_results
+    from ._arcgis_model import _resnet_family
     from .._utils.common import _get_emd_path
     HAS_FASTAI = True
 except ImportError:
@@ -132,13 +133,31 @@ class ImageCaptioner(ArcGISModel):
 
         return cls(data,
                    **model_params,
-                   pretrained_path=str(model_file.parent))
+                   pretrained_path=str(model_file))
 
     def __str__(self):
         return self.__repr__()
 
     def __repr__(self):
         return '<%s>' % (type(self).__name__)
+
+    @property
+    def supported_backbones(self):
+        """ Supported torchvision backbones for this model. """
+        return ImageCaptioner._supported_backbones()
+
+    @staticmethod
+    def _supported_backbones():
+        return [*_resnet_family]
+
+    @property
+    def supported_datasets(self):
+        """ Supported dataset types for this model. """
+        return ImageCaptioner._supported_datasets()
+
+    @staticmethod
+    def _supported_datasets():
+        return ['ImageCaptioning']
 
     @property
     def _model_metrics(self):
@@ -165,6 +184,8 @@ class ImageCaptioner(ArcGISModel):
         =====================   ===========================================
 
         """
+        if isinstance(self._data, _EmptyData):
+            return {'BLEU': self._data.emd['BLEU']}
         return get_bleu(self, self._data, *kwargs)
 
     def _get_emd_params(self, save_inference_file):
@@ -210,6 +231,7 @@ class ImageCaptioner(ArcGISModel):
         =====================   ===========================================
 
         """
+        self._check_requisites()
         return_fig = kwargs.get('return_fig', False)
         fig=show_results(self, rows=rows, **kwargs)
         if return_fig:
