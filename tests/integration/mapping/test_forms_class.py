@@ -289,10 +289,11 @@ class Test_Forms(unittest.TestCase):
 
             group = form.add_group_element(label="Group 1")
             form.move_element(element=el, destination=group, index=0)
+            self.assertEqual(len(form.elements), 2)
             self.assertEqual(len(group.elements), 1)
             self.assertEqual(group.elements[0], el)
             group.move_element(element=el, destination=form, index=0)
-            self.assertEqual(len(form.elements), 2)
+            self.assertEqual(len(form.elements), 3)
             self.assertEqual(len(group.elements), 0)
 
         except AssertionError as assertErrorException:
