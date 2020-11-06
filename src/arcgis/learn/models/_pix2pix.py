@@ -92,7 +92,7 @@ class Pix2Pix(ArcGISModel):
         chip_size = emd['ImageHeight']
         if data is None:
              if emd.get('IsMultispectral', False):
-                data = ImageTupleListMS2.from_folders(emd_path.parent, emd_path.parent, emd_path.parent, batch_stats_a=None, batch_stats_b=None).split_none().label_empty().databunch(bs=2)
+                data = ImageTupleListMS2.from_folders(emd_path.parent, emd_path.parent, emd_path.parent, batch_stats_a=None, batch_stats_b=None).split_none().label_empty().databunch(bs=2,no_check = True)
                 data.n_channel = emd['n_channel']
                 data = get_multispectral_data_params_from_emd(data, emd)
                 data._is_multispectral = emd.get('IsMultispectral', False)

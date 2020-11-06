@@ -305,18 +305,18 @@ def pixel_classify_pix2pix_image(model, tiles, device, model_info):
 
     if model_info.get('IsMultispectral', False):
         norm_stats = model_info.get("NormalizationStats", None)
-        if tiles.shape[1] < num_chanel:
+        img_scaled = scale_batch(tiles, model_info, norm_stats)
+        img_normed = -1 + 2*img_scaled
+        if img_normed.shape[1] < num_chanel:
             cont = []
-            for j in range(tiles.shape[0]):
-                tile = tiles[j,:,:,:]
+            for j in range(img_normed.shape[0]):
+                tile = img_normed[j,:,:,:]
                 last_tile = np.expand_dims(tile[tile.shape[0]-1,:,:], 0)
                 res = abs(num_chanel - tile.shape[0])
                 for i in range(res):
                     tile = np.concatenate((tile, last_tile), axis=0)
                 cont.append(tile)
-            tiles = np.stack(cont, axis = 0)
-        img_scaled = scale_batch(tiles, model_info, norm_stats)
-        img_normed = -1 + 2*img_scaled
+            img_normed = np.stack(cont, axis = 0)
     else:
         img_normed = norm(tiles.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
 
