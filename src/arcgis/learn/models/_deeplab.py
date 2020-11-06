@@ -191,14 +191,9 @@ class DeepLab(ArcGISModel):
                             values on which model will not incur loss.
                             Default: []
     ---------------------   -------------------------------------------
-    keep_dilation           Optional boolean if PointRend architecture will
-                            be used. If True, it will use stride 8 output 
-                            otherwise it will be stride 16 output from the 
-                            backbone network. Default: False. Since it makes 
-                            PointRend fast and less memory consumable without
-                            PointRend stride 8 output used by segmentation head 
-                            if you use keep_dilation=True PointRend accuracies 
-                            could be improved.                    
+    keep_dilation           Optional boolean. When PointRend architecture is used,
+                            keep_dilation=True can potentially improves accuracy
+                            at the cost of memory consumption. Default: False                     
     =====================   ===========================================     
 
     :returns: ``DeepLab`` Object

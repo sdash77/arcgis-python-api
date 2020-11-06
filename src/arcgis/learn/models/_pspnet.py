@@ -99,14 +99,9 @@ class PSPNetClassifier(ArcGISModel):
                             values on which model will not incur loss.
                             Default: []
     ---------------------   -------------------------------------------
-    keep_dilation           Optional boolean if PointRend architecture will
-                            be used. If True, it will use stride 8 output 
-                            otherwise it will be stride 16 output from the 
-                            backbone network. Default: False. Since it makes 
-                            PointRend fast and less memory consumable without
-                            PointRend stride 8 output used by segmentation head 
-                            if you use keep_dilation=True PointRend accuracies 
-                            could be improved.                                                                              
+    keep_dilation           Optional boolean. When PointRend architecture is used,
+                            keep_dilation=True can potentially improves accuracy
+                            at the cost of memory consumption. Default: False                                                                              
     =====================   ===========================================    
 
     :returns: `PSPNetClassifier` Object
@@ -123,6 +118,9 @@ class PSPNetClassifier(ArcGISModel):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
         super().__init__(data, backbone, **kwargs)
+
+        if pointrend:
+            use_unet = False
 
         self._ignore_classes = kwargs.get('ignore_classes', [])
         if self._ignore_classes != [] and len(data.classes) <= 3:

@@ -421,7 +421,7 @@ class FeatureClassifier(ArcGISModel):
         # For single label classification
         else:
             self._check_requisites()
-            learn_temp = copy.deepcopy(self.learn)
+            learn_temp = copy.copy(self.learn)
             interp = ClassificationInterpretation.from_learner(learn_temp)
             interp.plot_confusion_matrix()
 
