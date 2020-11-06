@@ -10,10 +10,12 @@ import logging as _logging
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.features import Table as _Table
-from arcgis.geoprocessing import import_toolbox
+
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing import DataFile
 from arcgis import env as _env
+from arcgis._impl.common._utils import inspect_function_inputs
+from arcgis.geoprocessing import import_toolbox
 from ._util import (_id_generator,
                     _feature_input,
                     _set_context,
@@ -252,7 +254,6 @@ def forest(input_layer,
     allowed_prediction_types = {
         'train' : "Train",
         'trainandpredict' : 'TrainAndPredict'
-
     }
 
     input_layer = _prevent_bds_item(input_layer)
@@ -260,19 +261,40 @@ def forest(input_layer,
         raise ValueError("Invalid Prediction type.")
     else:
         prediction_type = allowed_prediction_types[prediction_type.lower()]
-
-    kwargs=locals()
-
     gis=_arcgis.env.active_gis if gis is None else gis
+
+
 
     if gis.version < [7]:
         return None
     url=gis.properties.helperServices.geoanalytics.url
+    tbx = import_toolbox(url, gis=gis)
 
+    kwargs = {
+        "in_features" : input_layer,
+        "variable_predict" : var_prediction,
+        "explanatory_variables" : var_explanatory,
+        "number_of_trees" : trees,
+        "maximum_tree_depth" : max_tree_depth,
+        "random_variables" : random_vars,
+        "sample_size" : sample_size,
+        "minimum_leaf_size" : min_leaf_size,
+        "prediction_type" : prediction_type,
+        "features_to_predict" : features_to_predict,
+        "percentage_for_validation" : validation,
+        "create_variable_importance_table" : importance_tbl,
+        "explanatory_variable_matching" : exp_var_matching,
+        "output_trained_name" : output_name,
+        "gis" : gis,
+        "context" : context,
+        "future" : future,
+        "return_tuple" : return_tuple
+    }
     params={}
     for key, value in kwargs.items():
         if value is not None:
             params[key]=value
+
     if context is not None:
         params["context"] = context
     else:
@@ -291,58 +313,31 @@ def forest(input_layer,
     output_service=_create_output_service(gis, output_name, output_service_name, 'Forest Based Classification And Regression',
                                           output_datastore=output_datastore)
     if output_service:
-        params['output_name'] = _json.dumps({
+        params['output_trained_name'] = _json.dumps({
             "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
             "itemProperties": {"itemId" : output_service.itemid}})
     else:
-        params['output_name'] = output_service_name
+        params['output_trained_name'] = output_service_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
 
-    param_db={
-        "input_layer": (_FeatureSet, "inFeatures"),
-        "prediction_type" : (str, "predictionType"),
-        "features_to_predict" : (_FeatureSet, "featuresToPredict"),
-        "var_prediction" : (dict, "variablePredict"),
-        "var_explanatory" : (list, "explanatoryVariables"),
-        "exp_var_matching" : (list, "explanatoryVariableMatching"),
-        "trees" : (int, "numberOfTrees"),
-        "max_tree_depth" : (int, "maximumTreeDepth"),
-        "min_leaf_size" : (int, "minimumLeafSize"),
-        "sample_size" : (int, "sampleSize"),
-        "random_vars" : (int, "randomVariables"),
-        "validation" : (float, "percentageForValidation"),
-        "output_name" : (str, "outputTrainedName"),
-        "context": (str, "context"),
-        "return_tuple": (bool, "returnTuple"),
-        "importance_tbl" : (bool, "createVariableImportanceTable"),
-        "output_trained": (_FeatureSet, "outputTrained"),
-        "output_predicted": (_FeatureSet, "outputPredicted"),
-        "variable_of_importance": (_Table, "variableOfImportance"),
-        "process_info": (list, "processInfo")
-    }
-    return_values=[
-        {"name": 'output_trained', "display_name": "Output Features", "type": _FeatureSet},
-        {"name" : "output_predicted", "display_name" : "Output Predicted", "type" : _FeatureSet},
-        {"name" : "variable_of_importance", "display_name" : "Variable of Importance", "type" : _Table},
-        {"name" : "process_info", "display_name" : "Process Information", "type" : list}
-    ]
     if features_to_predict is None and prediction_type == 'TrainAndPredict':
-        params["features_to_predict"] = input_layer
-        #param_db.pop("features_to_predict")
+        params["features_to_predict"] = _prevent_bds_item(input_layer)
+
+    params = inspect_function_inputs(tbx.forest_based_classification_and_regression, **params)
+
     try:
+        gpjob = tbx.forest_based_classification_and_regression(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, "ForestBasedClassificationAndRegression", params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        res = _execute_gp_tool(gis, "ForestBasedClassificationAndRegression", params, param_db, return_values, _use_async, url, True, future=future)
 
         if return_tuple:
-            return res
+            return gpjob.result()
         else:
+            gpjob.result()
             return output_service
     except:
         output_service.delete()
         raise
-
     return
 #--------------------------------------------------------------------------
 def gwr(input_layer,
@@ -355,7 +350,10 @@ def gwr(input_layer,
         distance_band_unit=None,
         number_of_neighbors=None,
         local_weighting_scheme='BiSquare',
-        output_name=None, context=None, gis=None, future=False):
+        output_name=None,
+        context=None,
+        gis=None,
+        future=False):
     """
     This tool performs GeographicallyWeightedRegression (GWR), which is a
     local form of linear regression used to model spatially varying
@@ -452,8 +450,23 @@ def gwr(input_layer,
         output_trained_name = f'GWR_{_id_generator()}'.replace(' ', '_')
     else:
         output_trained_name = output_name.replace(' ', '_')
-    del output_name
-    kwargs=locals()
+
+    kwargs = {
+        "input_layer" : input_layer,
+        "explanatory_variables" : explanatory_variables,
+        "dependent_variable" : dependent_variable,
+        "model_type" : model_type,
+        "neighborhood_selection_method" : neighborhood_selection_method,
+        "neighborhood_type" : neighborhood_type,
+        "distance_band" : distance_band,
+        "distance_band_unit" : distance_band_unit,
+        "number_of_neighbors" : number_of_neighbors,
+        "local_weighting_scheme" : local_weighting_scheme,
+        "output_trained_name" : output_trained_name,
+        "context" : context,
+        "gis" : gis,
+        "future" : future
+    }
 
     tbx = import_toolbox(url, gis=gis)
 
@@ -672,7 +685,21 @@ def glr(input_layer,
         "binary" : "Binary",
         "count" : "Count"
     }
-    kwargs=locals()
+    kwargs = {
+        "input_layer" : input_layer,
+        "dependent_variable" : var_dependent,
+        "explanatory_variables" : var_explanatory,
+        "regression_family" : regression_family,
+        "features_to_predict" : features_to_predict,
+        "generate_coefficient_table" : gen_coeff_table,
+        "explanatory_variable_matching" : exp_var_matching,
+        "dependent_mapping" : dep_mapping,
+        "output_name" : output_name,
+        "gis" : gis,
+        "context" : context,
+        "future" : future,
+        "return_tuple" : return_tuple
+    }
     input_layer = _prevent_bds_item(input_layer)
     if regression_family.lower() in _allowed_regression_family:
         regression_family = _allowed_regression_family[regression_family.lower()]
@@ -686,7 +713,8 @@ def glr(input_layer,
     if gis.version < [7]:
         return None
     url=gis.properties.helperServices.geoanalytics.url
-
+    tbx = import_toolbox(url, gis=gis)
+    # begin creating parameters to pass into the tools
     params={}
     for key, value in kwargs.items():
         if value is not None:
@@ -694,7 +722,7 @@ def glr(input_layer,
 
     if isinstance(var_explanatory, list):
         var_explanatory = ', '.join(var_explanatory)
-        params["var_explanatory"] = var_explanatory
+        params["explanatory_variables"] = var_explanatory
 
 
     if output_name is None:
@@ -722,36 +750,16 @@ def glr(input_layer,
     else:
         _set_context(params)
 
-    param_db={
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "regression_family" : (str, "regressionFamily"),
-        "gen_coeff_table" : (bool, "generateCoefficientTable"),
-        "exp_var_matching" : (list, "explanatoryVariableMatching"),
-        "var_dependent" : (str, "dependentVariable"),
-        "var_explanatory" : (list, "explanatoryVariables"),
-        "features_to_predict" : (_FeatureSet, "featuresToPredict"),
-        "dep_mapping" : (list, "dependentMapping"),
-        "output_name" : (str, "outputName"),
-        "context": (str, "context"),
-        "return_tuple": (bool, "returnTuple"),
-        "output": (_FeatureSet, "output"),
-        "output_predicted": (_FeatureSet, "outputPredicted"),
-        "coefficient_table" : (_Table, "coefficientTable"),
-        "process_info" : (list, "processInfo")
-    }
-    return_values=[
-        {"name": 'output', "display_name": "Output Features", "type": _FeatureSet},
-        {"name" : "output_predicted", "display_name" : "Output Predicted", "type" : _FeatureSet},
-        {"name" : "coefficient_table", "display_name" : "Coefficient Table", "type" : _Table},
-        {"name" : "process_info", "display_name" : "Process Information", "type" : list}
-    ]
+    ## strip out unsupported inputs
+    ##
+    params = inspect_function_inputs(tbx.generalized_linear_regression, **params)
 
     try:
+        params['future'] = True
+        gpjob = tbx.generalized_linear_regression(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, "GeneralizedLinearRegression", params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        res = _execute_gp_tool(gis, "GeneralizedLinearRegression", params, param_db, return_values, _use_async, url, True, future=future)
-
+        res = gpjob.result()
         if return_tuple:
             return res
         else:
@@ -759,7 +767,6 @@ def glr(input_layer,
     except:
         output_service.delete()
         raise
-
     return
 
 #--------------------------------------------------------------------------
@@ -844,16 +851,13 @@ def find_point_clusters(
        Output feature layer item
 
     """
-    kwargs=locals()
+    input_layer = _prevent_bds_item(input_layer)
 
     gis=_arcgis.env.active_gis if gis is None else gis
     url=gis.properties.helperServices.geoanalytics.url
+    tbx = import_toolbox(url, gis=gis)
 
-    params={}
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key]=value
-    input_layer = _prevent_bds_item(input_layer)
+
     if output_name is None:
         output_service_name='Find Point Clusters_' + _id_generator()
         output_name=output_service_name.replace(' ', '_')
@@ -866,6 +870,18 @@ def find_point_clusters(
         output_datastore = None
 
     output_service=_create_output_service(gis, output_name, output_service_name, 'Find Point Clusters', output_datastore=output_datastore)
+
+    params={
+        "input_layer" : input_layer,
+        "cluster_method" : method,
+        "min_features_cluster" : min_feature_clusters,
+        "search_distance" : search_distance,
+        "search_distance_unit" : distance_unit,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "future" : future
+    }
 
     if output_service:
         params['output_name'] = _json.dumps({
@@ -881,28 +897,17 @@ def find_point_clusters(
     else:
         _set_context(params)
 
-    param_db={
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "method" : (str, "clusterMethod"),
-        "min_feature_clusters": (int, "minFeaturesCluster"),
-        "distance_unit": (str, "searchDistanceUnit"),
-        "search_distance" : (float, "searchDistance"),
-        "output_name": (str, "outputName"),
-        "time_method" : (str, "timeMethod"),
-        "search_duration" : (str, "searchDuration"),
-        "duration_unit" : (str, "searchDurationUnit"),
-        "context": (str, "context"),
-        "output": (_FeatureSet, "Output Features"),
-    }
-    return_values=[
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
+    for key in list(params.keys()):
+        if params[key] is None:
+            del params[key]
+    params = inspect_function_inputs(tbx.find_point_clusters, **params)
 
     try:
+        gpjob = tbx.find_point_clusters(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, "FindPointClusters", params, param_db, return_values, _use_async, url, True, future=future)
+
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, "FindPointClusters", params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()
@@ -1065,15 +1070,12 @@ def calculate_density(
                                                radius_unit="Yards")
 
     """
-    kwargs = locals()
+
     input_layer = _prevent_bds_item(input_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
+    tbx = import_toolbox(url, gis=gis)
 
-    params = {}
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
 
     if output_name is None:
         output_service_name = 'Calculate Density Analysis_' + _id_generator()
@@ -1086,6 +1088,27 @@ def calculate_density(
         output_datastore = None
     output_service = _create_output_service(gis, output_name, output_service_name,
                                             'Calculate Density', output_datastore=output_datastore)
+
+    params = {
+        "input_layer" : input_layer,
+        "fields" : fields,
+        "weight" : weight,
+        "bin_type" : bin_type,
+        "bin_size" : bin_size,
+        "bin_size_unit" : bin_size_unit,
+        "time_step_interval" : time_step_interval,
+        "time_step_interval_unit" : time_step_interval_unit,
+        "time_step_repeat_interval" : time_step_repeat_interval,
+        "time_step_repeat_interval_unit" : time_step_repeat_interval_unit,
+        "time_step_reference" : time_step_reference,
+        "radius" : radius,
+        "radius_unit" : radius_unit,
+        "area_units" : area_units,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "future" : future
+    }
 
     if output_service:
         params['output_name'] = _json.dumps({
@@ -1100,40 +1123,17 @@ def calculate_density(
     else:
         _set_context(params)
 
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "fields": (str, "fields"),
-        "weight": (str, "weight"),
-        "bin_type": (str, "binType"),
-        "bin_size": (float, "binSize"),
-        "bin_size_unit": (str, "binSizeUnit"),
-        "time_step_interval": (int, "timeStepInterval"),
-        "time_step_interval_unit": (str, "timeStepIntervalUnit"),
-        "time_step_repeat_interval": (int, "timeStepRepeatInterval"),
-        "time_step_repeat_interval_unit": (str, "timeStepRepeatIntervalUnit"),
-        "time_step_reference": (_datetime, "timeStepReference"),
-        "radius": (float, "radius"),
-        "radius_unit": (str, "radiusUnit"),
-        "area_units": (str, "areaUnits"),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "output": (_FeatureSet, "Output Features"),
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
-
+    params = inspect_function_inputs(tbx.calculate_density, **params)
     try:
+        params['future'] = True
+        gpjob = tbx.calculate_density( **params)
         if future:
-            gpjob = _execute_gp_tool(gis, "CalculateDensity", params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, "CalculateDensity", params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()
         raise
-
-
 #--------------------------------------------------------------------------
 def find_hot_spots(point_layer,
                    bin_size=5,
@@ -1248,15 +1248,11 @@ def find_hot_spots(point_layer,
 
 
     """
-    kwargs=locals()
     point_layer = _prevent_bds_item(point_layer)
     gis=_arcgis.env.active_gis if gis is None else gis
     url=gis.properties.helperServices.geoanalytics.url
+    tbx = import_toolbox(url, gis=gis)
 
-    params={}
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key]=value
 
     if output_name is None:
         output_service_name='Hotspot Analysis_' + _id_generator()
@@ -1269,6 +1265,23 @@ def find_hot_spots(point_layer,
         output_datastore = None
     output_service=_create_output_service(gis, output_name, output_service_name, 'Find Hotspots', output_datastore=output_datastore)
 
+    params={
+        "point_layer" : point_layer,
+        "bin_size" : bin_size,
+        "bin_size_unit" : bin_size_unit,
+        "neighborhood_distance" : neighborhood_distance,
+        "neighborhood_distance_unit" : neighborhood_distance_unit,
+        "time_step_interval" : time_step_interval,
+        "time_step_interval_unit" : time_step_interval_unit,
+        "time_step_alignment" : time_step_alignment,
+        "time_step_reference" : time_step_reference,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "future" : future
+    }
+    if params['context'] is None:
+        del params['context']
     if output_service:
         params['output_name'] = _json.dumps({
             "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
@@ -1282,48 +1295,19 @@ def find_hot_spots(point_layer,
     else:
         _set_context(params)
 
-    param_db={
-        "point_layer": (_FeatureSet, "pointLayer"),
-        "bin_size": (float, "binSize"),
-        "bin_size_unit": (str, "binSizeUnit"),
-        "neighborhood_distance": (float, "neighborhoodDistance"),
-        "neighborhood_distance_unit": (str, "neighborhoodDistanceUnit"),
-        "time_step_interval": (int, "timeStepInterval"),
-        "time_step_interval_unit": (str, "timeStepIntervalUnit"),
-        "time_step_alignment": (str, "timeStepAlignment"),
-        "time_step_reference": (_datetime, "timeStepReference"),
-        #"cell_size" : (int, "cellSize"),
-        #"cell_size_units": (str, "cellSizeUnits"),
-        #"shape_type" : (str, "shapeType"),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "output": (_FeatureSet, "Output Features"),
-    }
-    return_values=[
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
+    params = inspect_function_inputs(tbx.find_hot_spots, **params)
 
     try:
+        params['future'] = True
+        gpjob = tbx.find_hot_spots(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, "FindHotSpots", params, param_db, return_values, _use_async, url, True, future=future)
+
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, "FindHotSpots", params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()
         raise
-
-find_hot_spots.__annotations__={
-    'bin_size': float,
-    'bin_size_unit': str,
-    'neighborhood_distance': float,
-    'neighborhood_distance_unit': str,
-    'time_step_interval': int,
-    'time_step_interval_unit': str,
-    'time_step_alignment': str,
-    'time_step_reference': _datetime,
-    'output_name': str}
-
 #--------------------------------------------------------------------------
 def create_space_time_cube(point_layer: _FeatureSet,
                            bin_size: float,
@@ -1439,41 +1423,36 @@ def create_space_time_cube(point_layer: _FeatureSet,
                                    output_name="spacecube")
     """
 
-    kwargs=locals()
+
     point_layer = _prevent_bds_item(point_layer)
     gis=_arcgis.env.active_gis if gis is None else gis
     url=gis.properties.helperServices.geoanalytics.url
+    tbx = import_toolbox(url, gis=gis)
+    params = {
+        'bin_size': bin_size,
+        'bin_size_unit': bin_size_unit,
+        'context': context,
+        'output_name': output_name,
+        'point_layer': point_layer,
+        'summary_fields': summary_fields,
+        'time_step_alignment': time_step_alignment,
+        'time_step_interval': time_step_interval,
+        'time_step_interval_unit': time_step_interval_unit,
+        'time_step_reference': time_step_reference
+    }
 
-    params={}
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key]=value
 
     if context is not None:
         params["context"] = context
     else:
         _set_context(params)
 
-    param_db={
-        "point_layer": (_FeatureSet, "pointLayer"),
-        "bin_size": (float, "binSize"),
-        "bin_size_unit": (str, "binSizeUnit"),
-        "time_step_interval": (int, "timeStepInterval"),
-        "time_step_interval_unit": (str, "timeStepIntervalUnit"),
-        "time_step_alignment": (str, "timeStepAlignment"),
-        "time_step_reference": (_datetime, "timeStepReference"),
-        "summary_fields": (str, "summaryFields"),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "output_cube": (DataFile, "Output Space Time Cube"),
-    }
-    return_values=[
-        {"name": "output_cube", "display_name": "Output Space Time Cube", "type": DataFile},
-    ]
+    params = inspect_function_inputs(tbx.create_space_time_cube, **params)
+    params['future'] = True
+    gpjob = tbx.create_space_time_cube(**params)
     if future:
         output_service = None
-        gpjob = _execute_gp_tool(gis, "CreateSpaceTimeCube", params, param_db, return_values, _use_async, url, True, future=future)
         return GAJob(gpjob=gpjob, return_service=output_service)
-    return _execute_gp_tool(gis, "CreateSpaceTimeCube", params, param_db, return_values, _use_async, url, True, future=future)
+    return gpjob.result()
 
 
