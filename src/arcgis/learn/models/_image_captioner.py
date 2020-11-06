@@ -3,6 +3,8 @@ import json
 from ._arcgis_model import ArcGISModel, _EmptyData
 import traceback
 from .._utils.env import raise_fastai_import_error
+import logging
+logger = logging.getLogger()
 
 try:
     from ._image_captioning_utils import (image_captioner_learner,
@@ -161,11 +163,10 @@ class ImageCaptioner(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        return {'BLEU': self._get_model_metrics()}
+        return {'Metrics': json.dumps(self._get_model_metrics())}
 
     def _get_model_metrics(self, **kwargs):
-        bleu = self.bleu_score(**kwargs)
-        return float(bleu['BLEU'])
+        return self.bleu_score(**kwargs)
 
     def bleu_score(self, **kwargs):
         """
@@ -185,7 +186,12 @@ class ImageCaptioner(ArcGISModel):
 
         """
         if isinstance(self._data, _EmptyData):
-            return {'BLEU': self._data.emd['BLEU']}
+            scores = self._data.emd.get('Metrics')
+            if scores is None:
+                logger.error("Metric not found in the loaded model")
+                return
+            else:
+                return json.loads(scores)
         return get_bleu(self, self._data, *kwargs)
 
     def _get_emd_params(self, save_inference_file):

@@ -437,6 +437,9 @@ class FeatureClassifier(ArcGISModel):
         =====================   ===========================================
         """
         self._check_requisites()
+        # handling bug in fastai.
+        if num_examples == 1:
+            num_examples = 2
         interp = ClassificationInterpretation.from_learner(self.learn)
         heatmap = True
         if self._backend == 'tensorflow':
@@ -444,7 +447,16 @@ class FeatureClassifier(ArcGISModel):
         if self._data._dataset_type == 'MultiLabeled_Tiles':
             interp.plot_multi_top_losses(num_examples, figsize=(5,5))
             return
-        interp.plot_top_losses(num_examples, figsize=(15,15), heatmap=heatmap)
+        fig = interp.plot_top_losses(num_examples, figsize=(15,15), heatmap=heatmap, return_fig=True)
+        # fastai way of calculating num nrows and ncols
+        cols = math.ceil(math.sqrt(num_examples))
+        rows = math.ceil(num_examples/cols)
+        axes = fig.axes
+        # get number of empty axes from behind.
+        num_empty_ax = rows * cols - num_examples
+        # delete those from back.
+        for k in range(num_empty_ax):
+            fig.delaxes(axes[-(k+1)])
 
     @staticmethod
     def _convert_to_degrees(value, reference):
