@@ -710,6 +710,7 @@ class ArcGISModel(object):
         """
         Plot validation and training losses after fitting the model.
         """
+        self._check_requisites()
         try:
             self.learn.recorder.plot_losses()
         except:

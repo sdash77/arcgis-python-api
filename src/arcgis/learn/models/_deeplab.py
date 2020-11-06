@@ -384,8 +384,14 @@ class DeepLab(ArcGISModel):
         return _emd_template
 
     def accuracy(self):
-        self._check_requisites()
-        return self.learn.validate()[1].tolist()
+        try:
+            return self.learn.validate()[1].tolist()
+        except Exception as e:
+            accuracy = self._data.emd.get('accuracy')
+            if accuracy:
+                return accuracy
+            else:
+                logger.error("Metric not found in the loaded model")
 
     @property
     def _model_metrics(self):
@@ -490,6 +496,7 @@ class DeepLab(ArcGISModel):
         
         :returns: `dict` if mean is False otherwise `float`
         """
+        self._check_requisites()
         num_classes = torch.arange(self._data.c)
         miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress, self._ignore_mapped_class)
 
@@ -518,6 +525,11 @@ class DeepLab(ArcGISModel):
         =====================   ===========================================
 
         Returns per class precision, recall and f1 scores 
-        """
-        ## Calling imported function `per_class_metrics`        
-        return per_class_metrics(self, ignore_classes)
+        """        
+        try:
+            self._check_requisites()
+            ## Calling imported function `per_class_metrics`
+            return per_class_metrics(self, ignore_classes)
+        except:
+            import pandas as pd
+            return pd.read_json(self._data.emd['per_class_metrics'])
