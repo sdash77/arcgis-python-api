@@ -264,7 +264,7 @@ class TextClassifier(ArcGISModel):
             data.emd, data.emd_path = emd, emd_path.parent
         cls_object = cls(data, pretrained_model, pretrained_path=str(emd_path),
                          mixed_precision=mixed_precision, thresh=thresh, seq_len=seq_len)
-        if data_is_none:cls_object._data._is_empty = True
+        if data_is_none: cls_object._data._is_empty = True
         return cls_object
 
     def load(self, name_or_path):
@@ -342,6 +342,8 @@ class TextClassifier(ArcGISModel):
         from IPython.utils import io
         with io.capture_output() as captured:
             metrics = {"Accuracy": self.accuracy()}
+            per_class_metric_df = self.metrics_per_label()
+            metrics["MetricsPerLabel"] = json.dumps(per_class_metric_df.transpose().to_dict())
         return metrics
 
     def _get_emd_params(self, save_inference_file):
@@ -384,21 +386,27 @@ class TextClassifier(ArcGISModel):
                           divided by the total number of items in the validation set
         :returns: a floating point number depicting the accuracy of the classification model.
         """
-
-        self._check_requisites()
-        if not HAS_NUMPY:
-            raise Exception("This function requires numpy.")
-        if hasattr(self.learn, 'recorder'):
-            metrics_names = self.learn.recorder.metrics_names
-            metrics_values = self.learn.recorder.metrics
-            if len(metrics_names) > 0 and len(metrics_values) > 0:
-                metrics = {x: round(metrics_values[-1][i].item(), 4) for i, x in enumerate(metrics_names)}
-                metric = metrics["accuracy"]
+        try:
+            self._check_requisites()
+        except Exception as e:
+            acc = self._data.emd.get('Accuracy')
+            if acc: return acc
+            else:   self.logger.error("Metric not found in the loaded model")
+        else:
+            if not HAS_NUMPY:
+                self.logger.error("This function requires numpy.")
+                return
+            if hasattr(self.learn, 'recorder'):
+                metrics_names = self.learn.recorder.metrics_names
+                metrics_values = self.learn.recorder.metrics
+                if len(metrics_names) > 0 and len(metrics_values) > 0:
+                    metrics = {x: round(metrics_values[-1][i].item(), 4) for i, x in enumerate(metrics_names)}
+                    metric = metrics["accuracy"]
+                else:
+                    metric = self._calculate_model_metric()
             else:
                 metric = self._calculate_model_metric()
-        else:
-            metric = self._calculate_model_metric()
-        return metric
+            return metric
 
     def _calculate_model_metric(self):
         self.logger.info("Calculating Model Metrics")
@@ -505,23 +513,31 @@ class TextClassifier(ArcGISModel):
         """
         :returns: precision, recall and f1 score for each label in the classification model.
         """
-        self._check_requisites()
-        validation_dataframe = self._data._valid_df
-        if self.is_multilabel_problem:
-            predictions = [x[2] for x in self.predict(validation_dataframe[self._data._text_cols].tolist())]
-            labels = [[int(getattr(item, column)) for column in self._data._label_cols] for idx, item in
-                      validation_dataframe.iterrows()]
-            target_names = self._data._label_cols
-            output_dict = classification_report(labels, predictions, target_names=target_names,
-                                           zero_division=1, output_dict=True)
+        try:
+            self._check_requisites()
+        except Exception as e:
+            metrics_per_label = self._data.emd.get('MetricsPerLabel')
+            if metrics_per_label:
+                metrics_per_label = json.loads(metrics_per_label)
+                return self._create_dataframe_from_dict(metrics_per_label)
+            else: self.logger.error("Metric not found in the loaded model")
         else:
-            predictions = [x[1] for x in self.predict(validation_dataframe[self._data._text_cols].tolist())]
-            labels = [x[0] for x in validation_dataframe[self._data._label_cols].values]
-            target_names = self.learn.model._config.label2id.keys()
-            output_dict = classification_report(labels, predictions, target_names=target_names,
-                                           zero_division=1, output_dict=True)
+            validation_dataframe = self._data._valid_df
+            if self.is_multilabel_problem:
+                predictions = [x[2] for x in self.predict(validation_dataframe[self._data._text_cols].tolist())]
+                labels = [[int(getattr(item, column)) for column in self._data._label_cols] for idx, item in
+                          validation_dataframe.iterrows()]
+                target_names = self._data._label_cols
+                output_dict = classification_report(labels, predictions, target_names=target_names,
+                                               zero_division=1, output_dict=True)
+            else:
+                predictions = [x[1] for x in self.predict(validation_dataframe[self._data._text_cols].tolist())]
+                labels = [x[0] for x in validation_dataframe[self._data._label_cols].values]
+                target_names = self.learn.model._config.label2id.keys()
+                output_dict = classification_report(labels, predictions, target_names=target_names,
+                                               zero_division=1, output_dict=True)
 
-        return self._create_dataframe_from_dict(output_dict)
+            return self._create_dataframe_from_dict(output_dict)
 
     @staticmethod
     def _create_dataframe_from_dict(out_dict):

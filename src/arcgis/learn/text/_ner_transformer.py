@@ -576,19 +576,25 @@ class _TransformerEntityRecognizer(ArcGISModel):
         return metrics
 
     def _get_metric(self, metric_type):
-        self._check_requisites()
-        if hasattr(self.learn, 'recorder'):
-            metrics_names = self.learn.recorder.metrics_names
-            metrics_values = self.learn.recorder.metrics
-            if metric_type in self.learn.recorder.metrics_names:
-                index = metrics_names.index(metric_type)
-                return round(metrics_values[-1][index].item(), 2)
+        try:
+            self._check_requisites()
+        except Exception as e:
+            metrics = self._data.emd.get('Metrics')
+            if metrics: return json.loads(metrics).get(metric_type)
+            else: self.logger.error("Metric not found in the loaded model")
+        else:
+            if hasattr(self.learn, 'recorder'):
+                metrics_names = self.learn.recorder.metrics_names
+                metrics_values = self.learn.recorder.metrics
+                if metric_type in self.learn.recorder.metrics_names:
+                    index = metrics_names.index(metric_type)
+                    return round(metrics_values[-1][index].item(), 2)
+                else:
+                    metrics = self._calculate_model_metrics(metric_type)
+                    return metrics[metric_type]
             else:
                 metrics = self._calculate_model_metrics(metric_type)
                 return metrics[metric_type]
-        else:
-            metrics = self._calculate_model_metrics(metric_type)
-            return metrics[metric_type]
 
     def precision_score(self):
         return self._get_metric("precision_score")
@@ -599,24 +605,34 @@ class _TransformerEntityRecognizer(ArcGISModel):
     def f1_score(self):
         return self._get_metric("f1_score")
 
-    def metrics_per_label(self, show_progress=True, column_mappings=None):
-        self._check_requisites()
-        if column_mappings is None:
-            column_mappings = {'precision': 'Precision_score', 'recall': 'Recall_score', 'f1-score': 'F1_score'}
-        databunch = self._data.get_databunch()
-        predictions, labels = TransformerForEntityRecognition.\
-            get_active_predictions_labels(databunch.valid_dl, self.learn, show_progress=show_progress)
-        target_names = databunch.train_ds.label2id
-        output = classification_report(labels, predictions, target_names=target_names, zero_division=0, output_dict=True)
-        output.pop("accuracy", None)
-        output.pop("macro avg", None)
-        output.pop("weighted avg", None)
-        df = pd.DataFrame(output)
-        df.drop("support", inplace=True)
+    def metrics_per_label(self, show_progress=True):
+        try:
+            self._check_requisites()
+        except Exception as e:
+            metrics = self._data.emd.get('Metrics')
+            if metrics:
+                per_label_metrics = json.loads(metrics).get("metrics_per_label", {})
+                return self._create_dataframe_from_dict(per_label_metrics)
+            else: self.logger.error("Metric not found in the loaded model")
+        else:
+            databunch = self._data.get_databunch()
+            predictions, labels = TransformerForEntityRecognition.\
+                get_active_predictions_labels(databunch.valid_dl, self.learn, show_progress=show_progress)
+            target_names = databunch.train_ds.label2id
+            output = classification_report(labels, predictions, target_names=target_names, zero_division=0, output_dict=True)
+            return self._create_dataframe_from_dict(output)
+
+    @staticmethod
+    def _create_dataframe_from_dict(out_dict):
+        out_dict.pop("accuracy", None)
+        out_dict.pop("macro avg", None)
+        out_dict.pop("weighted avg", None)
+        df = pd.DataFrame(out_dict)
+        df.drop("support", inplace=True, errors="ignore")
         dataframe = df.T.round(2)
+        column_mappings = {'precision': 'Precision_score', 'recall': 'Recall_score', 'f1-score': 'F1_score'}
         dataframe.rename(columns=column_mappings, inplace=True)
         return dataframe
-        # return predictions, labels, dataframe
 
     def plot_losses(self, show=True):
         """

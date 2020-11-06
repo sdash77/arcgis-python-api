@@ -490,6 +490,10 @@ def _get_gpu_device_id(max_memory=0.8):
 
 def _get_device_id():
     import arcgis
+    from ..models._arcgis_model import _device_check
+    move_to_cpu = _device_check()
+    if move_to_cpu: arcgis.env._processorType = "CPU"
+
     if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
         device = _get_gpu_device_id()
     elif getattr(arcgis.env, "_processorType", "") == "CPU":

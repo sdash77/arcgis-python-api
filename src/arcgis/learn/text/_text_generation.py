@@ -1,15 +1,10 @@
-import warnings
-import logging
 import traceback
 from .._data import _raise_fastai_import_error
-logger = logging.getLogger()
-warnings.filterwarnings("ignore", module="transformer")
-
 HAS_TRANSFORMER = True
 
 try:
     import torch
-    from transformers import pipeline
+    from transformers import pipeline, logging
     from .._utils.common import _get_device_id
     from fastprogress.fastprogress import progress_bar
     from transformers.modeling_auto import MODEL_FOR_CAUSAL_LM_MAPPING
@@ -47,6 +42,8 @@ class TextGenerator:
         if not HAS_TRANSFORMER:
             _raise_fastai_import_error(import_exception=transformer_exception)
 
+        logger = logging.get_logger()
+        logger.setLevel(logging.ERROR)
         self._device = _get_device_id()
         self._task = "text-generation"
         try:
@@ -55,9 +52,6 @@ class TextGenerator:
             error_message = (f"Model - `{backbone}` cannot be used for {self._task} task.\n"
                              f"Model type should be one of {EXPECTED_MODEL_TYPES}.")
             raise Exception(error_message)
-
-        from IPython.display import clear_output
-        clear_output()
 
     def generate_text(self, text_or_list, **kwargs):
         """
