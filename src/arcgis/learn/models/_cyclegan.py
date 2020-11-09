@@ -3,6 +3,8 @@ import json
 import traceback
 from .._data import _raise_fastai_import_error
 from ._arcgis_model import ArcGISModel
+import logging
+logger = logging.getLogger()
 try:
     from ._cyclegan_utils import CycleGanLoss, CycleGANTrainer, optim, compute_fid_metric
     from ._cyclegan_utils import  CycleGAN as CycleGAN_model
@@ -31,6 +33,12 @@ class CycleGAN(ArcGISModel):
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
+    ---------------------   -------------------------------------------
+    gen_blocks              Optional integer. Number of ResNet blocks to use 
+                            in generator.
+    ---------------------   -------------------------------------------
+    lsgan                   Optional boolean. If True, it will use Mean Squared Error
+                            else it will use Binary Cross Entropy.
     =====================   ===========================================
                                              
     :returns: `CycleGAN` Object
@@ -112,10 +120,7 @@ class CycleGAN(ArcGISModel):
         
     @property
     def _model_metrics(self):
-        if self._data._is_multispectral:
-            fid_a, fid_b = None, None
-        else:
-            fid_a, fid_b = self.compute_metrics()
+        fid_a, fid_b = self.compute_metrics()
         return {'FID_A': f'{fid_a}', 'FID_B': f'{fid_b}'}
 
     def _get_emd_params(self, save_inference_file):
@@ -189,7 +194,11 @@ class CycleGAN(ArcGISModel):
         """
         Computes Frechet Inception Distance (FID) on validation set.
         """
-        fid_a, fid_b = compute_fid_metric(self, self._data)
-        return fid_a, fid_b
+        if self._data._is_multispectral:
+            logger.error("FID metric not supported for multispectral imagery type")
+            return(None, None)
+        else:
+            fid_a, fid_b = compute_fid_metric(self, self._data)
+            return fid_a, fid_b
 
         
