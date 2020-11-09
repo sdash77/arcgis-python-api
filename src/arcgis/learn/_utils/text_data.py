@@ -406,7 +406,7 @@ class TextDataObject:
         if not HAS_FASTAI:
             return
         dl_tfms=None
-        if self._model_type in ['t5', 'bart', 'mbart']:
+        if self._model_type in ['t5', 'bart', 'marian']:
             dl_tfms=shift_tfm
         data = SequenceToSequenceTextList.from_df(self._train_df,cols=self._text_cols, processor=transformer_processor)\
                         .split_by_rand_pct(valid_pct=self.val_split_pct)\
