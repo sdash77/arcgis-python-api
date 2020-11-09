@@ -687,8 +687,8 @@ class ArcGISModel(object):
             # del iter_dl
             callbacks.append(LearnerTensorboardWriter(learn=self.learn, base_dir=log_path, name=training_id))
             training_id = type(self).__name__ + "_" + training_id
-            self.learn.callback_fns.append(
-                partial(ArcGISTBCallback, base_dir=log_path, name=training_id, arcgis_model=self))
+            callbacks.append(
+                partial(ArcGISTBCallback, base_dir=log_path, name=training_id, arcgis_model=self)(learn=self.learn))
             hostname = socket.gethostname()
             print("Monitor training using Tensorboard using the following command: 'tensorboard --host={} --logdir=\"{}\"'".format(hostname, abs_path))
         # Send out a warning if tensorboardX is not installed
