@@ -376,8 +376,9 @@ class FeatureClassifier(ArcGISModel):
 
             # Get predictions
             predictions = []
+            learn_temp = copy.copy(self.learn)
             for i in range(0, x_batch.shape[0], self._data.batch_size):
-                batch_preds = self.learn.pred_batch(batch=(x_batch[i:i+self._data.batch_size], y_batch[i:i+self._data.batch_size]))
+                batch_preds = learn_temp.pred_batch(batch=(x_batch[i:i+self._data.batch_size], y_batch[i:i+self._data.batch_size]))
                 predictions.append(batch_preds)
             predictions = torch.cat(predictions)
             one_hot_preds = (predictions >= score_thresh)
