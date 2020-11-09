@@ -1,5 +1,5 @@
 import traceback
-
+HAS_DEPS = True
 try:
     from pandas import DataFrame
     import cv2
@@ -17,7 +17,7 @@ try:
     from IPython.display import clear_output
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
-    print(import_exception)
+    HAS_DEPS = False
 
 
 def generate_kernel(k_size, k_type):
@@ -1344,8 +1344,10 @@ def generate_search_template(search_image, process_folder, x1, y1, x2, y2):
         transformed_img: transformed image of the search region
     """
     all_images = os.listdir(os.path.join(process_folder))
+    display_img = search_image
     image = search_image
-    image = image[y1:y2, x1:x2]
+    image = np.zeros(search_image.shape, np.uint8)
+    image[y1:y2, x1:x2] = search_image[y1:y2, x1:x2]
 
     if image.ndim != 2:
         image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -1369,7 +1371,7 @@ def generate_search_template(search_image, process_folder, x1, y1, x2, y2):
         path = os.path.join(process_folder, image_path, "search_region")
         if not os.path.isdir(path):
             os.mkdir(path)
-        cv2.imwrite(os.path.join(path, "search_region_rgb.jpg"), image)
+        cv2.imwrite(os.path.join(path, "search_region_rgb.jpg"), display_img)
         cv2.imwrite(os.path.join(path, "search_region_template.jpg"), transformed_img)
 
     return transformed_img
@@ -1486,10 +1488,15 @@ class ScannedMapDigitizer:
     process_path = None
     all_images_path = []
     extent_data = {}
-    wkid = 4326
 
     def __init__(self, input_folder, output_folder):
-        self.initialize_variables(input_folder, output_folder)
+        if not HAS_DEPS:
+            print("**Environment fails**")
+            raise Exception(
+                f"""{import_exception} \n\nThis module requires opencv, pandas,
+                                        numpy and matplotlib as its dependencies.""")
+        else:
+            self.initialize_variables(input_folder, output_folder)
 
     @classmethod
     def get_search_region_extent(cls):
@@ -1900,7 +1907,7 @@ class ScannedMapDigitizer:
         process_folder = cls.process_path
 
         all_images = cls.all_images_path
-        extent = cls.extent_data
+        extent = cls.get_search_region_extent()
 
         for idx, image_path in enumerate(all_images):
             image = cv2.imread(os.path.join(process_folder, image_path, "input.jpg"))
@@ -2039,7 +2046,7 @@ class ScannedMapDigitizer:
 
         """
         process_folder = cls.process_path
-        extent = cls.extent_data
+        extent = cls.get_search_region_extent()
 
         all_images = cls.all_images_path
         all_combined = {}
@@ -2122,5 +2129,3 @@ class ScannedMapDigitizer:
                 os.mkdir(os.path.join(combined_folder, "combined_region_" + str(key)))
             combine_shapefiles(os.path.join(combined_folder, "combined_region_" + str(key)),
                                "combined_region", val, extent)
-
-
