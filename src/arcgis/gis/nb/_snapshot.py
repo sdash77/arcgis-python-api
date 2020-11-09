@@ -4,10 +4,95 @@ from collections import namedtuple
 from arcgis.gis import GIS, Item
 from arcgis._impl.common._mixins import PropertyMap
 
+class SnapShot(object):
+    """
+    A single snapshot instance for a Notebook item.
+    """
+    _sm = None
+    _item = None
+    def __init__(self, item:Item, sm:"SnapshotManager", properties:dict):
+        self._item = item
+        self._sm = sm
+        self.properties = properties
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return f"<SnapShot {self.properties['properties']['name']}>"
+    #----------------------------------------------------------------------
+    def download(self):
+        """
+        Retrieves a snap shot locally on disk.
+
+        :return: string (path of saved file)
+
+
+        """
+        params = {
+            "item" : self._item,
+            "snapshot" : self.properties['resourceKey'],
+        }
+        return self._sm._download(**params)
+    #----------------------------------------------------------------------
+    def convert(self, title):
+        """
+        Converts a Snapshot to a new notebook.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        title                  Required String. The name of the new notebook.
+        ==================     ====================================================================
+
+        :returns: Item
+        """
+        return self._sm._covert(
+            item=self._item,
+            snapshot=self.properties['resourceKey'],
+            title=title)
+    #----------------------------------------------------------------------
+    def restore(self, preserve=True, description=None):
+        """
+        Rolls back the notebook to a previous snapshot state
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        preserve               Optional Bool. If true, the result is preserved as a snapshot. The
+                               default is false.
+        ------------------     --------------------------------------------------------------------
+        description            Optional String. Text describing the restoration point.
+        ==================     ====================================================================
+
+        :return: dict
+        """
+        return self._sm._restore(item=self._item,
+                                 snapshot=self.properties['resourceKey'],
+                                 preserve=preserve,
+                                 description=description)
+    #----------------------------------------------------------------------
+    def delete(self):
+        """
+        Deletes a snapshot associated with the notebook item
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item                   Required Item. The 'Notebook' typed item to remove snapshots from.
+        ------------------     --------------------------------------------------------------------
+        snapshot               Required String. The name of the snapshot.
+        ==================     ====================================================================
+
+        :return: bool
+
+        """
+        res = self._sm._delete(item=self._item,
+                               snapshot=self.properties['resourceKey'])
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
 ###########################################################################
 class SnapshotManager(object):
     """
-    Allows for management and creation of save points for Notebooks.
+    Allows for management and creation of snapshots (save points) for ArcGIS Notebooks.
     """
     _gis = None
     _url = None
@@ -25,7 +110,7 @@ class SnapshotManager(object):
             self._properties = PropertyMap(res)
         return self._properties
     #----------------------------------------------------------------------
-    def convert(self, item, snapshot, title):
+    def _convert(self, item, snapshot, title):
         """
         Converts a Snapshot to a new notebook.
 
@@ -57,7 +142,7 @@ class SnapshotManager(object):
         else:
             raise ValueError("`item` must be a Notebook")
     #----------------------------------------------------------------------
-    def download(self, item, snapshot):
+    def _download(self, item, snapshot):
         """
         Retrieves a snap shot locally on disk.
 
@@ -144,13 +229,13 @@ class SnapshotManager(object):
             res = self._gis._con.post(url, params)
             if 'status' in res and res['status'] == 'success' and len(res['snapshots']) > 0:
                 snaptuple = namedtuple("SnapshotInfo", res['snapshots'][0])
-                return [snaptuple(**snap) for snap in res['snapshots']]
+                return [SnapShot(item=item, sm=self, properties=snap) for snap in res['snapshots']]
             else:
                 return []
         else:
             raise ValueError("`item` must be a Notebook")
     #----------------------------------------------------------------------
-    def restore(self, item, snapshot, preserve=True, description=None):
+    def _restore(self, item, snapshot, preserve=True, description=None):
         """
         Rolls back the notebook to a previous snapshot state
 
@@ -182,7 +267,7 @@ class SnapshotManager(object):
         else:
             raise ValueError("`item` must be a Notebook")
     #----------------------------------------------------------------------
-    def delete(self, item, snapshot):
+    def _delete(self, item, snapshot):
         """
         Deletes a snapshot associated with the notebook item
 
