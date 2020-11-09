@@ -32,9 +32,9 @@ class SnapShot(object):
         }
         return self._sm._download(**params)
     #----------------------------------------------------------------------
-    def convert(self, title):
+    def save_as_item(self, title):
         """
-        Converts a Snapshot to a new notebook.
+        Converts a Snapshot to a new notebook `Item`.
 
         ==================     ====================================================================
         **Argument**           **Description**
