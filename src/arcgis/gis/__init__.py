@@ -1317,7 +1317,6 @@ class GroupMigrationManager(object):
 
             params['async'] = json.dumps(True)
             res = self._gis._con.post(url, params)
-
             executor =  concurrent.futures.ThreadPoolExecutor(1)
             futureobj = executor.submit(self._status, **{"job_id" : res['jobId'], "key": res['key']})
             executor.shutdown(False)
@@ -6555,9 +6554,7 @@ class Group(dict):
     @property
     def migration(self):
         """provides to to migrate content of a `Group` to a new Organaization or Portal"""
-        isinstance(self._gis, GIS)
-
-        if self._gis.version >= [7,3] and \
+        if self._gis.version > [7,3] and \
            self._gis._portal.is_arcgisonline == False:
             self._migrate = GroupMigrationManager(group=self)
         return self._migrate
