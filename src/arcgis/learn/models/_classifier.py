@@ -553,7 +553,7 @@ class FeatureClassifier(ArcGISModel):
                 ]
             )
         
-        dataframe = pandas.DataFrame(data, columns=['Image_Name', prediction_field, confidence_field, 'X', 'Y'])
+        dataframe = pandas.DataFrame(data, columns=['image_name', prediction_field, confidence_field, 'X', 'Y'])
         spatial_dataframe = dataframe.spatial.from_xy(df=dataframe, sr=4326, x_column='X', y_column='Y')
 
         feature_collection = gis_user.content.import_data(spatial_dataframe, title=feature_layer_name)
@@ -565,7 +565,7 @@ class FeatureClassifier(ArcGISModel):
         object_field = feature_layer.properties['objectIdField']
 
         for image_name, image_path in images.items():
-            object_id = df[object_field].where(df['Image_Name'] == image_name).values[0]  #assuming image_name is unique
+            object_id = df.loc[df['image_name'] == image_name, object_field].values[0]  #assuming image_name is unique
             if np.isnan(object_id):
                 continue #skipping those values which are not present.
             feature_layer.attachments.add(
