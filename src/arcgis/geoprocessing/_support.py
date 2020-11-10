@@ -319,7 +319,7 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
 
     # ---------------------in---------------------#
     for param_name, param_value in params.items():
-        #print(param_name + " = " + str(param_value))
+        print(param_name + " = " + str(param_value))
         if param_name in param_db:
             py_type, gp_param_name = param_db[param_name]
             if param_value is None:
@@ -343,6 +343,8 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
                     elif  _is_geoenabled(param_value):
                         gp_params[gp_param_name] = json.loads(json.dumps(param_value.spatial.__feature_set__,
                                                                          default=_date_handler))
+                    elif isinstance(param_value, arcgis.gis.Layer):
+                        gp_params[gp_param_name] = _layer_input_gp(param_value)
                     elif type(param_value) == str:
 
                         try:
