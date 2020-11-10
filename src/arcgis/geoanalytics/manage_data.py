@@ -144,11 +144,19 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False, p
     import inspect
     params = {
         'f': 'json',
-        'input_layer' : layers,
+        'input_layers' : layers,
         'python_script' : code,
         'user_variables' : parameters,
         'context' : context
     }
+    for idx, lyr in enumerate(params['input_layers']):
+
+        if hasattr(lyr, '_lyr_dict'):
+            params['input_layers'][idx] = lyr._lyr_dict
+        elif hasattr(lyr, '_lyr_json'):
+            params['input_layers'][idx] = lyr._lyr_json
+        else:
+            params['input_layers'][idx] = lyr
 
     if inspect.isfunction(code):
         if param_as_input == True:
