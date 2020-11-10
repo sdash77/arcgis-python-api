@@ -280,7 +280,7 @@ def forest(input_layer,
         "sample_size" : sample_size,
         "minimum_leaf_size" : min_leaf_size,
         "prediction_type" : prediction_type,
-        "features_to_predict" : features_to_predict,
+        "features_to_predict" : features_to_predict or "",
         "percentage_for_validation" : validation,
         "create_variable_importance_table" : importance_tbl,
         "explanatory_variable_matching" : exp_var_matching,
@@ -690,7 +690,7 @@ def glr(input_layer,
         "dependent_variable" : var_dependent,
         "explanatory_variables" : var_explanatory,
         "regression_family" : regression_family,
-        "features_to_predict" : features_to_predict,
+        "features_to_predict" : features_to_predict or "",
         "generate_coefficient_table" : gen_coeff_table,
         "explanatory_variable_matching" : exp_var_matching,
         "dependent_mapping" : dep_mapping,
@@ -753,9 +753,8 @@ def glr(input_layer,
     ## strip out unsupported inputs
     ##
     params = inspect_function_inputs(tbx.generalized_linear_regression, **params)
-
+    params['future'] = True
     try:
-        params['future'] = True
         gpjob = tbx.generalized_linear_regression(**params)
         if future:
             return GAJob(gpjob=gpjob, return_service=output_service)

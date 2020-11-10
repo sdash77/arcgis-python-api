@@ -1604,7 +1604,7 @@ def summarize_within(summarized_layer,
     tbx = _import_toolbox(url, gis=gis)
 
     params = {
-        "summary_polygons" : summary_polygons,
+        "summary_polygons" : summary_polygons  or "",
         "bin_type" : bin_type,
         "bin_size" : bin_size,
         "bin_size_unit" : bin_size_unit,
