@@ -317,8 +317,12 @@ class PSPNet(nn.Module):
         x = self.backbone(x)
         features = self.hook.stored
 
-        x = self.ppm(x)
-        x = self.final(x)
+        if self.vgg:
+            x = self.ppm(features[-1])
+            x = self.final(x)
+        else:
+            x = self.ppm(x)
+            x = self.final(x)
 
         if self.pointrend:
             
