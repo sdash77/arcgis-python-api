@@ -367,7 +367,8 @@ class ImageryLayer(Layer):
                 gis = _arcgis.env.active_gis if gis is None else gis
                 if gis is not None:
                     if gis._con._product == "AGOL":
-                        ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
+                        ra_url = gis.properties.helperServices.get("rasterAnalytics", {})\
+                                                              .get("url", "")
                         url = ra_url.replace("rasteranalysis", "rasterutils").replace("RasterAnalysisTools", "RasterRendering").replace("GPServer", "ImageServer")
                     else:
                         image_hosting_server_url = None
