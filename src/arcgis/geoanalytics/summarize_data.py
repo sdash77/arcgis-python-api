@@ -343,6 +343,16 @@ def build_multivariable_grid(input_layers,
     """
 
     input_layers = [_prevent_bds_item(input_layer) for input_layer in input_layers]
+    flayers = []
+    for il in input_layers:
+        if hasattr(il, "_lyr_dict"):
+            flayers.append(il._lyr_dict)
+        elif hasattr(il, "_lyr_json"):
+            flayers.append(il._lyr_json)
+        else:
+            flayers.append(il)
+
+
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _import_toolbox(url, gis=gis)
@@ -350,7 +360,7 @@ def build_multivariable_grid(input_layers,
         "bin_type" : bin_type,
         "bin_size" : bin_size,
         "bin_size_unit" : bin_unit,
-        "input_layers" : input_layers,
+        "input_layers" : flayers,
         "variable_calculations" : variable_calculations,
         "output_name" : output_name,
         "context" : context,
