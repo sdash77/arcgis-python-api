@@ -285,7 +285,6 @@ def pixel_classify_superres_image(model, tiles, device):
 
 def pixel_classify_cyclegan_image(model, tiles, device, direction, model_info):
     tile_height, tile_width = tiles.shape[2], tiles.shape[3]
-    num_channel = model_info.get("n_channel", None)
     if model_info.get('IsMultispectral', False):
         if direction == 'BtoA':
             norm_stats = model_info.get("NormalizationStats_b", None)
@@ -293,51 +292,20 @@ def pixel_classify_cyclegan_image(model, tiles, device, direction, model_info):
             norm_stats = model_info.get("NormalizationStats", None)
         img_scaled = scale_batch(tiles, model_info, norm_stats)
         img_normed = -1 + 2*img_scaled
-        if img_normed.shape[1] < num_channel:
-            cont = []
-            for j in range(img_normed.shape[0]):
-                tile = img_normed[j,:,:,:]
-                last_tile = np.expand_dims(tile[tile.shape[0]-1,:,:], 0)
-                res = abs(num_channel - tile.shape[0])
-                for i in range(res):
-                    tile = np.concatenate((tile, last_tile), axis=0)
-                cont.append(tile)
-            img_normed = np.stack(cont, axis = 0)
     else:
         img_normed = -1 + 2*tiles
     cyclegan_predictions = cyclegan_image(model, img_normed, device, direction)
     cyclegan_predictions = cyclegan_predictions/2 + 0.5
     return cyclegan_predictions
 
-def pixel_classify_pix2pix_image(model, tiles, device, model_info):
+def pixel_classify_pix2pix_image(model, tiles, device):
     tile_height, tile_width = tiles.shape[2], tiles.shape[3]
-    
-    num_chanel = model_info.get("n_channel", None)
 
-    if model_info.get('IsMultispectral', False):
-        norm_stats = model_info.get("NormalizationStats", None)
-        img_scaled = scale_batch(tiles, model_info, norm_stats)
-        img_normed = -1 + 2*img_scaled
-        if img_normed.shape[1] < num_chanel:
-            cont = []
-            for j in range(img_normed.shape[0]):
-                tile = img_normed[j,:,:,:]
-                last_tile = np.expand_dims(tile[tile.shape[0]-1,:,:], 0)
-                res = abs(num_chanel - tile.shape[0])
-                for i in range(res):
-                    tile = np.concatenate((tile, last_tile), axis=0)
-                cont.append(tile)
-            img_normed = np.stack(cont, axis = 0)
-    else:
-        img_normed = norm(tiles.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
-
+    img_normed = norm(tiles.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
     pix2pix_predictions = pix2pix_image(model, img_normed, device)
-    if model_info.get('IsMultispectral', False):
-        pix2pix_predictions = pix2pix_predictions/2 + 0.5
-    else:
-        pix2pix_predictions = (pix2pix_predictions * torch.tensor(imagenet_stats[1]).view(1, -1, 1, 1).to(pix2pix_predictions)) + torch.tensor(imagenet_stats[0]).view(1, -1, 1, 1).to(pix2pix_predictions)
-        pix2pix_predictions = pix2pix_predictions.clamp(0, 1)
-    
+    pix2pix_predictions = (pix2pix_predictions * torch.tensor(imagenet_stats[1]).view(1, -1, 1, 1).to(pix2pix_predictions)) + torch.tensor(imagenet_stats[0]).view(1, -1, 1, 1).to(pix2pix_predictions)
+    pix2pix_predictions = pix2pix_predictions.clamp(0, 1)
+
     return pix2pix_predictions
 
 def variable_tile_size_check(json_info, parameters):

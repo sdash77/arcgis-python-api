@@ -45,7 +45,6 @@ class SuperResolution(ArcGISModel):
     """
     def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
         super().__init__(data, backbone, **kwargs)
-        self._check_dataset_support(data)
         feat_loss = create_loss(self._device.type)
         data.c = 3
         self.learn = unet_learner(data, arch=self._backbone, wd=1e-3, loss_func=feat_loss, callback_fns=LossMetrics, blur=True, norm_type=NormType.Weight)
@@ -220,15 +219,6 @@ class SuperResolution(ArcGISModel):
         pred_img = self.learn.predict(img)[0]
         self.learn.data = temp_databunch
         return pred_img
-
-    @property
-    def  supported_datasets(self):
-        """ Supported dataset types for this model. """
-        return SuperResolution._supported_datasets()
-
-    @staticmethod
-    def _supported_datasets():
-        return ['Export_Tiles', 'superres'] 
 
 
 

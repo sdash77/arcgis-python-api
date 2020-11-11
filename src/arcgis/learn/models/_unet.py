@@ -276,7 +276,6 @@ class UnetClassifier(ArcGISModel):
                 
             data.emd_path = emd_path
             data.emd = emd
-            data._is_empty = True
 
         data.resize_to = resize_to        
 
@@ -339,14 +338,7 @@ class UnetClassifier(ArcGISModel):
         self.learn.show_results(rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs)
 
     def accuracy(self):
-        try:
-            return self.learn.validate()[1].tolist()
-        except Exception as e:
-            accuracy = self._data.emd.get('accuracy')
-            if accuracy:
-                return accuracy
-            else:
-                logger.error("Metric not found in the loaded model")
+        return self.learn.validate()[1].tolist()     
 
     def _get_model_metrics(self, **kwargs):
         checkpoint = kwargs.get('checkpoint', True)
@@ -381,7 +373,6 @@ class UnetClassifier(ArcGISModel):
         
         :returns: `dict` if mean is False otherwise `float`
         """
-        self._check_requisites()
         num_classes = torch.arange(self._data.c)
         miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress, self._ignore_mapped_class)
         if mean:
@@ -478,11 +469,5 @@ class UnetClassifier(ArcGISModel):
 
         Returns per class precision, recall and f1 scores 
         """
-        try:
-            self._check_requisites()
-            ## Calling imported function `per_class_metrics`
-            return per_class_metrics(self, ignore_classes)
-        except:
-            import pandas as pd
-            return pd.read_json(self._data.emd['per_class_metrics'])        
-        
+        ## Calling imported function `per_class_metrics`        
+        return per_class_metrics(self, ignore_classes)

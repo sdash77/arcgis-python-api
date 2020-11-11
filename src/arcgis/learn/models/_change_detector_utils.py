@@ -376,19 +376,13 @@ class DR(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, fc, backbone, BatchNorm):
+    def __init__(self, fc, BatchNorm):
         super(Decoder, self).__init__()
         self.fc = fc
-        if backbone in ['resnet18', 'resnet34']:
-            self.dr2 = DR(64, 96)
-            self.dr3 = DR(128, 96)
-            self.dr4 = DR(256, 96)
-            self.dr5 = DR(512, 96)
-        else:
-            self.dr2 = DR(256, 96)
-            self.dr3 = DR(512, 96)
-            self.dr4 = DR(1024, 96)
-            self.dr5 = DR(2048, 96)
+        self.dr2 = DR(64, 96)
+        self.dr3 = DR(128, 96)
+        self.dr4 = DR(256, 96)
+        self.dr5 = DR(512, 96)
         self.last_conv = nn.Sequential(nn.Conv2d(384, 256, kernel_size=3, stride=1, padding=1, bias=False),
                                        BatchNorm(256),
                                        nn.ReLU(),
@@ -429,7 +423,7 @@ class Decoder(nn.Module):
 
 
 def build_decoder(fc, backbone, BatchNorm):
-    return Decoder(fc, backbone, BatchNorm)
+    return Decoder(fc, BatchNorm)
 
 
 from ._arcgis_model import _change_tail

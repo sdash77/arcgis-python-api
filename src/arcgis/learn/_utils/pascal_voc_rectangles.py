@@ -231,20 +231,7 @@ def show_results_multispectral(self, nrows=5, alpha=1, **kwargs): # parameters a
         if self._backend == 'pytorch':
             if getattr(self, "_is_model_extension", False):
                 xb = self.model_conf.transform_input_multispectral(x_batch[i:i+self._data.batch_size], **transform_kwargs)
-                try:
-                    _pred_ext = self.learn.model.eval()(xb)
-                except Exception as e:
-
-                    if getattr(self, "_is_fasterrcnn", False):
-                        _pred_ext = []
-                        for _ in range(self._data.batch_size):
-                            res={}
-                            res['boxes'] = torch.empty(0,4)
-                            res['scores'] = torch.tensor([])
-                            res['labels'] = torch.tensor([])
-                            _pred_ext.append(res)
-                    else:
-                        raise e
+                _pred_ext = self.learn.model.eval()(xb)
                 analyzed_pred_ext = self._analyze_pred(_pred_ext, 
                                                     thresh=thresh, 
                                                     nms_overlap=nms_overlap, 

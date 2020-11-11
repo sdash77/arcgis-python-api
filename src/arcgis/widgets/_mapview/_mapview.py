@@ -1358,7 +1358,7 @@ class MapView(widgets.DOMWidget):
             output_layers.append(arg)
         elif _is_iterable(arg):
             # If it's any iterable not previously checked, attempt to infer
-            if hasattr(arg, 'layers'):
+            if 'layers' in arg:
                 for layer in arg.layers:
                     output_layers.append(layer)
             else:
@@ -1388,13 +1388,10 @@ class MapView(widgets.DOMWidget):
         if self._is_hashable(item):
             return str(hash(item))
         else:
-            from arcgis.raster import Raster
             if isinstance(item, dict):
                 return str(hash(frozenset(item)))
             elif is_numpy_array(item):
                 return get_hash_numpy_array(item)
-            elif isinstance(item, Raster):
-                return str(hash(item.path))
             else:
                 raise Exception("Cannot hash item {}".format(item))
 

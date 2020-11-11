@@ -67,7 +67,6 @@ class _SpacyEntityRecognizer(ArcGISModel):
                 if (ent not in self.ner.labels):
                     self.model.entity.add_label(ent)
         else:
-            self._is_empty = True
             self.train_ds = None
             self.val_ds = None
             self.path = '.'
@@ -87,7 +86,6 @@ class _SpacyEntityRecognizer(ArcGISModel):
         Runs the Learning Rate Finder, and displays the graph of it's output.
         Helps in choosing the optimum learning rate for training the model.
         """
-        self._check_requisites()
 
         start_lr = 1e-6
         end_lr = 10
@@ -147,7 +145,6 @@ class _SpacyEntityRecognizer(ArcGISModel):
         checkpoint              Not implemented for this model.
         =====================   ===========================================
         """
-        self._check_requisites()
         if lr is None:  # searching for the optimal learning rate when no learning rate is provided
             print('Finding optimum learning rate')
             lr = self.lr_find(allow_plot=False)
@@ -668,10 +665,9 @@ class _SpacyEntityRecognizer(ArcGISModel):
 
         :returns: matplotlib.figure.Figure
         '''
-        self._check_requisites()
 
         if not len(self.recorder.losses):  # return none if the recorder is empty
-            raise Exception("Model needs to be fitted, before saving.")
+            return None
         import numpy as np
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(1, 1)
@@ -687,10 +683,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
             return fig
         else:
             plt.show()
-    
-    def _check_requisites(self):
-        if getattr(self, '_is_empty', False):
-            raise Exception("Can't call this function without data.")
+
 
 class Recorder():
     def __init__(self):

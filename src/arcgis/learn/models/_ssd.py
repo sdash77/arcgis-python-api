@@ -32,7 +32,7 @@ try:
     from ._ssd_utils import compute_class_AP, SSDHeadv2, kmeans, avg_iou
     from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
-    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback, _resnet_family, _vgg_family, _densenet_family, _change_tail
+    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback, _resnet_family, _vgg_family, _densenet_family
     from ._unet_utils import is_no_color
     from torch.nn import Module as NnModule
     import PIL
@@ -143,7 +143,7 @@ class SingleShotDetector(ArcGISModel):
                 raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
             backbone_name = self._backbone.__name__[:3]
 
-            if self._backbone.__name__ == 'mobilenet_v2':
+            if self._backbone == models.mobilenet_v2:
                 backbone_cut = -1
                 backbone_split = _mobilenet_split
 
@@ -189,10 +189,8 @@ class SingleShotDetector(ArcGISModel):
                     grids = list(set(grids))
                 
                 self._create_anchors(grids, zooms, ratios)
-                if hasattr(self, '_orig_backbone'):
-                    feature_sizes = model_sizes(create_body(self._orig_backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
-                else:
-                    feature_sizes = model_sizes(create_body(self._backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
+
+                feature_sizes = model_sizes(create_body(self._backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
                 num_features = feature_sizes[-1][-1]
                 num_channels = feature_sizes[-1][1] 
 
@@ -208,10 +206,6 @@ class SingleShotDetector(ArcGISModel):
             if hasattr(self, '_backbone_ms'):
                 self._orig_backbone = self._backbone
                 self._backbone = self._backbone_ms
-
-            if hasattr(self, '_orig_backbone') and 'densenet' in self._orig_backbone.__name__:
-                backbone_cut = cnn_config(self._orig_backbone)['cut']
-                backbone_split = cnn_config(self._orig_backbone)['split']
 
             self.learn = cnn_learner(data=data, base_arch=self._backbone, cut=backbone_cut, split_on=backbone_split, custom_head=ssd_head)
             self._arcgis_init_callback() # make first conv weights learnable
@@ -719,7 +713,8 @@ class SingleShotDetector(ArcGISModel):
 
         for chip in chips:
             if self._data._is_multispectral:
-                t = torch.tensor(np.rollaxis(chip['chip'], -1, 0).astype(np.float32), dtype=torch.float32)[None]
+                im = PIL.Image.fromarray(chip['chip'])
+                t = pil2tensor(im, dtype=np.float32)[None]
                 scaled_t = self._data._min_max_scaler(t)[0]
                 frame = Image(scaled_t[self._data._extract_bands])
             else:
@@ -786,18 +781,12 @@ class SingleShotDetector(ArcGISModel):
 
         if visualize:
             if self._data._is_multispectral:
-                t = torch.tensor(np.rollaxis(orig_frame, -1, 0).astype(np.float32), dtype=torch.float32)[None]
-                # im = PIL.Image.fromarray(orig_frame)
-                # t = pil2tensor(im, dtype=np.float32)[None]
+                im = PIL.Image.fromarray(orig_frame)
+                t = pil2tensor(im, dtype=np.float32)[None]
                 scaled_t = self._data._min_max_scaler(t)[0]
                 orig_frame = (scaled_t*255).round().numpy().astype(np.uint8)[self._data._symbology_rgb_bands]
                 orig_frame = np.rollaxis(orig_frame, 0, 3)
-                a = np.zeros(orig_frame.shape, dtype=np.uint8)
-                a[:] = orig_frame[:]
-                if len(labels) > 0:
-                    image = _draw_predictions(a, predictions, labels)
-                else:
-                    image = orig_frame
+                image = _draw_predictions(orig_frame, predictions, labels).get().astype(np.uint8)
             else:
                 image = _draw_predictions(orig_frame, predictions, labels)
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)

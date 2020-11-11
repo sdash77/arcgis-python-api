@@ -9,9 +9,15 @@ import logging as _logging
 import datetime as _datetime
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
-from arcgis.geoprocessing._support import _execute_gp_tool
-from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob, _prevent_bds_item
 
+from ._util import (_id_generator,
+                    _feature_input,
+                    _set_context,
+                    _create_output_service,
+                    GAJob,
+                    _prevent_bds_item)
+from arcgis.geoprocessing import import_toolbox as _import_toolbox
+from arcgis._impl.common._utils import inspect_function_inputs
 _log = _logging.getLogger(__name__)
 
 _use_async = True
@@ -136,7 +142,21 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False, p
     if layers is None:
         layers = []
     import inspect
-    params = {'f': 'json'}
+    params = {
+        'f': 'json',
+        'input_layers' : layers,
+        'python_script' : code,
+        'user_variables' : parameters,
+        'context' : context
+    }
+    for idx, lyr in enumerate(params['input_layers']):
+
+        if hasattr(lyr, '_lyr_dict'):
+            params['input_layers'][idx] = lyr._lyr_dict
+        elif hasattr(lyr, '_lyr_json'):
+            params['input_layers'][idx] = lyr._lyr_json
+        else:
+            params['input_layers'][idx] = lyr
 
     if inspect.isfunction(code):
         if param_as_input == True:
@@ -156,35 +176,22 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False, p
     tool_name = "RunPythonScript"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
-    if parameters and gis.version >= [8, 2]:
-        params['parameters'] = parameters
+    tbx = _import_toolbox(url, gis=gis)
+
     if context is not None:
         params["context"] = context
     else:
         _set_context(params)
-    if gis.version < [8, 2]:
-        if 'parameters' in params:
-            params.pop('parameters', None)
-        param_db = {
-            "layers": (_FeatureSet, "inputLayers"),
-            "code" : (str, "pythonScript"),
-            "context": (str, "context"),
-        }
-    else:
-        param_db = {
-            "layers": (_FeatureSet, "inputLayers"),
-            "code" : (str, "pythonScript"),
-            "parameters" : (dict, "userVariables"),
-            "context": (str, "context"),
-        }
+
+    params = inspect_function_inputs(tbx.run_python_script, **params)
+    params['future'] = True
 
     try:
+        gpjob = tbx.run_python_script(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, [], _use_async, url, True, return_messages=False, future=future)
             return GAJob(gpjob=gpjob, return_service=None)
-        res, msg = _execute_gp_tool(gis, tool_name, params, param_db, [], _use_async, url, True, return_messages=True, future=future)
-        msg = msg['messages']
-        return msg
+        gpjob.result()
+        return gpjob.messages
     except:
         raise
 
@@ -293,17 +300,20 @@ def dissolve_boundaries(input_layer,
                                                   multipart=True,
                                                   output_name="Soil_Suitability_dissolved")
     """
-    kwargs = locals()
+
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "DissolveBoundaries"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
+    tbx = _import_toolbox(url, gis=gis)
     params = {
-        "f" : "json",
+        "input_layer": input_layer,
+        "multipart": multipart,
+        "summary_fields": summary_fields,
+        "dissolve_fields" : dissolve_fields,
+        "output_name": output_name,
+        "context": context
     }
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
 
     if output_name is None:
         output_service_name = 'Dissolve_Bounds_' + _id_generator()
@@ -330,25 +340,13 @@ def dissolve_boundaries(input_layer,
     else:
         _set_context(params)
 
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "multipart": (bool, "multipart"),
-        "summary_fields": (list, "summaryFields"),
-        "dissolve_fields" : (list, "dissolveFields"),
-        "output_name": (str, "OutputName"),
-        "context": (str, "context"),
-        "output": (_FeatureSet, "output"),
-    }
-
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
-
+    params = inspect_function_inputs(tbx.dissolve_boundaries, **params)
+    params['future'] = True
     try:
+        gpjob = tbx.dissolve_boundaries(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()
@@ -455,19 +453,21 @@ def merge_layers(input_layer,
                                        merge_attributes=[{"mergeLayerField" : "State_Code", "mergeType" : "Match", "mergeValue" : "statecode"}],
                                        output_name="IL_WI_Census_Blocks")
     """
-    kwargs = locals()
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "MergeLayers"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
+    tbx = _import_toolbox(url, gis=gis)
     params = {
-        "f" : "json",
+        "input_layer": input_layer,
+        "merge_layer": merge_layer,
+        "merge_attributes" : merge_attributes,
+        "output_name": output_name,
+        "context": context,
     }
-    for key, value in kwargs.items():
-
-        if value is not None:
-            params[key] = value
-        elif key == 'merge_attributes' and value is None:
+    for key in list(params.keys()):
+        if key == 'merge_attributes' and \
+           params[key] is None:
             params[key] = []
     if output_name is None:
         output_service_name = 'Merge_Layers_' + _id_generator()
@@ -494,22 +494,13 @@ def merge_layers(input_layer,
     else:
         _set_context(params)
 
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "merge_layer": (_FeatureSet, "mergeLayer"),
-        "merge_attributes" : (list, "mergingAttributes"),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "output": (_FeatureSet, "output"),
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
+    params = inspect_function_inputs(tbx.merge_layers, **params)
+    params['future'] = True
     try:
+        gpjob = tbx.merge_layers(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()
@@ -572,17 +563,19 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None
                                  context={"extent":{'xmin': -77.50941999999998,'ymin': 38.389560000000074,'xmax': -76.50941999999998,'ymax': 39.389560000000074,"spatialReference":{"wkid":102100,"latestWkid":3857}}})
 
     """
-    kwargs = locals()
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "ClipLayer"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
+    tbx = _import_toolbox(url, gis=gis)
     params = {
-        "f" : "json",
+        "input_layer": input_layer,
+        "clip_layer": clip_layer,
+        "output_type" : "Input",
+        "output_name": output_name,
+        "context": context,
     }
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
+
     if output_name is None:
         output_service_name = 'Clip_Layers_' + _id_generator()
         output_name = output_service_name.replace(' ', '_')
@@ -604,22 +597,13 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None
     else:
         _set_context(params)
 
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "clip_layer": (_FeatureSet, "clipLayer"),
-        "outputType" : (str, 'outputType'),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "output": (_FeatureSet, "output"),
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
+    params = inspect_function_inputs(tbx.clip_layer, **params)
+    params['future'] = True
     try:
+        gpjob = tbx.clip_layer(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()
@@ -746,15 +730,17 @@ def overlay_data(input_layer,
     tool_name = "OverlayLayers"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
+    tbx = _import_toolbox(url, gis=gis)
     params = {
         "f" : "json",
-        "outputType" : "Input",
-        'tolerance' : 0,
-        'snapToInput' : 'false'
+        "input_layer": input_layer,
+        "overlay_layer": overlay_layer,
+        "overlay_type" : overlay_type,
+        "output_name": output_name,
+        "include_overlaps" : include_overlaps,
+        "context": context,
+        "future" : future
     }
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
 
     if output_name is None:
         output_service_name = 'Overlay_Layers_' + _id_generator()
@@ -780,25 +766,14 @@ def overlay_data(input_layer,
     else:
         _set_context(params)
 
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "overlay_layer": (_FeatureSet, "overlayLayer"),
-        "outputType" : (str, 'outputType'),
-        "overlay_type" : (str, "overlayType"),
-        "output_name": (str, "OutputName"),
-        "context": (str, "context"),
-        'tolerance' : (int, 'tolerance'),
-        "output": (_FeatureSet, "output"),
-        'snapToInput' : (str, 'snapToInput')
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
+    params = inspect_function_inputs(tbx.overlay_layers, **params)
+    params['future'] = True
+
     try:
+        gpjob = tbx.overlay_layers(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()
@@ -857,32 +832,25 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
     tool_name = "AppendData"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
+    tbx = _import_toolbox(url, gis=gis)
     params = {
-        "f" : "json"
+        "input_layer": input_layer,
+        "append_layer": append_layer,
+        "field_mapping" : field_mapping
     }
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
 
     _set_context(params)
 
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "append_layer": (_FeatureSet, "appendLayer"),
-        "field_mapping" : (str, "fieldMapping"),
-        "context": (str, "context")
-    }
-    return_values = [
-    ]
+    params = inspect_function_inputs(tbx.append_data, **params)
+    params['future'] = True
     try:
+        gpjob = tbx.append_data(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=None)
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return True
     except:
         raise
-
     return False
 
 
@@ -981,12 +949,20 @@ def calculate_fields(input_layer,
     tool_name = "CalculateField"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
+    tbx = _import_toolbox(url, gis=gis)
     params = {
-        "f" : "json"
+        "input_layer": input_layer,
+        "field_name" : field_name,
+        "data_type" : data_type,
+        "expression" : expression,
+        "track_aware" : track_aware,
+        "track_fields" : track_fields,
+        "time_boundary_split" : time_boundary_split,
+        "time_boundary_split_unit" : time_split_unit,
+        "time_boundary_reference" : time_reference,
+        "output_name": output_name,
+        "context": context
     }
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
 
     if output_name is None:
         output_service_name = 'Calculate_Fields_' + _id_generator()
@@ -1013,28 +989,13 @@ def calculate_fields(input_layer,
     else:
         _set_context(params)
 
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "field_name" : (str, "fieldName"),
-        "data_type" : (str, "dataType"),
-        "expression" : (str, "expression"),
-        "track_aware" : (bool, "trackAware"),
-        "track_fields" : (str, "trackFields"),
-        "time_boundary_split" : (int, "timeBoundarySplit"),
-        "time_split_unit" : (str, "timeBoundarySplitUnit"),
-        "time_reference" : (_datetime.datetime, "timeBoundaryReference"),
-        "output_name": (str, "outputName"),
-        "output": (_FeatureSet, "output"),
-        "context": (str, "context")
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
+    params = inspect_function_inputs(tbx.calculate_field, **params)
+    params['future'] = True
     try:
+        gpjob = tbx.calculate_field(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()
@@ -1095,15 +1056,16 @@ def copy_to_data_store(
             copy_result = copy_to_data_store(input_layer=earthquakes,
                                              output_name="copy earthquakes data")
     """
-    kwargs = locals()
     input_layer = _prevent_bds_item(input_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
+    tbx = _import_toolbox(url, gis=gis)
+    params = {
+        "input_layer": input_layer,
+        "output_name": output_name,
+        "context": context
+    }
 
-    params = {}
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
 
     if output_name is None:
         output_service_name = 'Data Store Copy_' + _id_generator()
@@ -1129,22 +1091,10 @@ def copy_to_data_store(
             "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
             "itemProperties": {"itemId" : output_service.itemid}})
 
-    #_set_context(params)
-
-
-
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "output": (_FeatureSet, "Output Layer"),
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output Layer", "type": _FeatureSet},
-    ]
+    params = inspect_function_inputs(tbx.copy_to_data_store, **params)
+    params['future'] = True
     try:
-
-        gpjob = _execute_gp_tool(gis, "CopyToDataStore", params, param_db, return_values, _use_async, url, True, future=True)
+        gpjob = tbx.copy_to_data_store(**params)
         gajob =  GAJob(gpjob=gpjob, return_service=output_service)
         if future:
             return gajob

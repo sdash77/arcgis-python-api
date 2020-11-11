@@ -156,6 +156,8 @@ class ChangeDetector(ArcGISModel):
         _emd_template["ModelParameters"]["attention_type"] = self.SA_type
         # chip size
         _emd_template["DataAttributes"]["chip_size"] = self._data.chip_size
+        # Model Type
+        _emd_template["ModelType"] = "ImageCaptioning"
         _emd_template["DataAttributes"]["_is_multispectral"] = self._data._is_multispectral
         if self._data._is_multispectral:
             _emd_template["DataAttributes"]["_imagery_type"] = self._data._imagery_type
@@ -178,7 +180,6 @@ class ChangeDetector(ArcGISModel):
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         # object classifier config can be used.
         _emd_template["ModelConfiguration"] = "change_detection"
-        # Model Type
         _emd_template["ModelType"] = "ImageClassification"
         # Inference function of object classifier.
         if save_inference_file:

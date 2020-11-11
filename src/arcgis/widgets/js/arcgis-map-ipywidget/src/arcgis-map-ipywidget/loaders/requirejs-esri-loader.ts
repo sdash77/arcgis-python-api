@@ -170,11 +170,19 @@ function requireModules(modules: string[]): Promise<any[]> {
           reject("esriLoader.setRequireJSConfig() has not been called: " + 
                  "You MUST call this function before using esriLoader");
       } else {
-          window["activeRequireFunction"](["require"], function(require){
-            require(modules, (...args) => {
-            // Resolve with the parameters from dojo require as an array.
-            resolve(args);
-           },
+          window["activeRequireFunction"](
+            ["require", "esri/assets", "esri/core/urlUtils", "esri/request"], 
+            function(require, assets, urlUtils, request) {
+              /* TODO: remove this workaround once main JS API patches this issue 
+              (maybe at 4.18, talk to Rene R). See geosaurus/issues/4774 */
+              assets.fetchAsset = function(path, options) {
+                var name = assets.getAssetUrl(path).replace("/esri/esri/", "/esri/");
+                return request(name, options);
+              }
+              require(modules, (...args) => {
+                  // Resolve with the parameters from dojo require as an array.
+                  resolve(args);
+               },
                reject);
             });
         }
@@ -222,4 +230,3 @@ export default {
   // TODO: export getCss too?
   utils
 };
-

@@ -2,9 +2,12 @@ import traceback
 from .._data import _raise_fastai_import_error
 HAS_TRANSFORMER = True
 
+import logging
+logger = logging.getLogger()
+
 try:
     import torch
-    from transformers import pipeline, logging
+    from transformers import pipeline
     from .._utils.common import _get_device_id
     from fastprogress.fastprogress import progress_bar
     from transformers.modeling_auto import MODEL_FOR_QUESTION_ANSWERING_MAPPING
@@ -42,8 +45,6 @@ class QuestionAnswering:
         if not HAS_TRANSFORMER:
             _raise_fastai_import_error(import_exception=transformer_exception)
 
-        logger = logging.get_logger()
-        logger.setLevel(logging.ERROR)
         self._device = _get_device_id()
         self._task = "question-answering"
         try:
@@ -52,6 +53,9 @@ class QuestionAnswering:
             error_message = (f"Model - `{backbone}` cannot be used for {self._task} task.\n"
                              f"Model type should be one of {EXPECTED_MODEL_TYPES}.")
             raise Exception(error_message)
+
+        from IPython.display import clear_output
+        clear_output()
 
     def get_answer(self, text_or_list, context, **kwargs):
         """

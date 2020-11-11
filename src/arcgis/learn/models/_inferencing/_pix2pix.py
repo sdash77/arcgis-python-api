@@ -181,7 +181,7 @@ class ChildImageClassifier:
                                     batch_height=self.rectangle_height,
                                     batch_width=self.rectangle_width)
         
-        pix2pix_prediction = util.pixel_classify_pix2pix_image(self.model, batch, self.device, model_info=self.json_info)
+        pix2pix_prediction = util.pixel_classify_pix2pix_image(self.model, batch, self.device)
         pix2pix_prediction = batch_to_tile(pix2pix_prediction.unsqueeze(dim=1).detach().cpu().numpy(), batch_height, batch_width)
         
         return pix2pix_prediction

@@ -55,10 +55,10 @@ except:
 
 
 def _get_model_from_path(pretrained_path):
+
     learn = load_learner(
         os.path.dirname(pretrained_path),
-        os.path.basename(pretrained_path).split('.')[0] + "_exported.pth",
-        no_check=True
+        os.path.basename(pretrained_path).split('.')[0] + "_exported.pth"
     )
 
     return learn
@@ -121,8 +121,6 @@ class TimeSeriesModel(ArcGISModel):
 
         self.learn.layer_groups = split_model_idx(self.learn.model, [1])
         self._model_arch = model_arch.lower()
-        if kwargs.get('pretrained_path'):
-            del kwargs['pretrained_path']
         self._kwargs = kwargs
         self._seq_len = seq_len
 
@@ -802,15 +800,14 @@ class TimeSeriesModel(ArcGISModel):
             validation_index_seq = None
 
         import matplotlib.pyplot as plt
-        n_items = rows
+        n_items = rows ** 2
         if n_items > len(targets_inversed):
             n_items = len(targets_inversed)
 
-        rows = int(n_items)
+        rows = int(math.sqrt(n_items))
 
         fig, axs = plt.subplots(rows, 2, figsize=(10, 10))
         fig.suptitle('Ground truth vs Predictions\n\n', fontsize=16)
-
         for i in range(rows):
             for seq_plot in sequence_inversed[i]:
                 if self._data._index_seq is not None:

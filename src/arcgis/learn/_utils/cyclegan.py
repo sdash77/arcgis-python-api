@@ -91,18 +91,6 @@ class ImageTupleListMS(ArcGISImageList):
         img1 = super().get(i)
         fn = self.itemsB[random.randint(0, len(self.itemsB)-1)]
         img2 = ArcGISMSImage.open(fn)
-        if img1.shape[0] < img2.shape[0]:
-            cont = []
-            last_tile = np.expand_dims(img1.data[img1.shape[0]-1,:,:], 0)
-            res = abs(img2.shape[0] - img1.shape[0])
-            for i in range(res):
-                img1 = ArcGISMSImage(torch.tensor(np.concatenate((img1.data, last_tile), axis=0)))
-        if img2.shape[0] < img1.shape[0]:
-            cont = []
-            last_tile = np.expand_dims(img2.data[img2.shape[0]-1,:,:], 0)
-            res = abs(img1.shape[0] - img2.shape[0])
-            for i in range(res):
-                img2 = ArcGISMSImage(torch.tensor(np.concatenate((img2.data, last_tile), axis=0)))
         global _batch_stats_a
         global _batch_stats_b
         img1_scaled = _tensor_scaler_tfm(img1.data, min_values=_batch_stats_a['band_min_values'], max_values=_batch_stats_a['band_max_values'], mode='minmax')
@@ -364,16 +352,6 @@ def calculate_activation_statistics(batch_size, data_len, batch_list):
 def _tensor_scaler_tfm(tensor_batch, min_values, max_values, mode='minmax'):
     from .._data import _tensor_scaler
     x = tensor_batch
-    if x.shape[0] > min_values.shape[0]:
-        res = x.shape[0] - min_values.shape[0]
-        last_val = torch.tensor([min_values[min_values.shape[0]-1]])
-        for i in range(res):
-            min_values = torch.tensor(np.concatenate((min_values, last_val), axis=0))
-    if x.shape[0] > max_values.shape[0]:
-        res = x.shape[0] - max_values.shape[0]
-        last_val = torch.tensor([max_values[max_values.shape[0]-1]])
-        for i in range(res):
-            max_values = torch.tensor(np.concatenate((max_values, last_val), axis=0))
     max_values = max_values.view(-1, 1, 1).to(x.device)
     min_values = min_values.view(-1, 1, 1).to(x.device)
     x = _tensor_scaler(x, min_values, max_values, mode, create_view=False)

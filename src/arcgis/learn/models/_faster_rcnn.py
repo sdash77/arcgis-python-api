@@ -358,10 +358,6 @@ class FasterRCNN(ModelExtension):
         return idx
 
     @property
-    def _is_fasterrcnn(self):
-        return True
-
-    @property
     def supported_backbones(self):
         """ Supported torchvision backbones for this model. """
         return FasterRCNN._supported_backbones()

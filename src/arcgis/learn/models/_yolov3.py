@@ -160,11 +160,11 @@ class YOLOv3(ArcGISModel):
             return {'accuracy': {'IoU': 0.50, 'AP': 0.558}}
         return {'accuracy': self.average_precision_score(show_progress=True)}
 
-    def _analyze_pred(self, pred, thresh=0.1, nms_overlap=0.1, ret_scores=True, device=None):
+    def _analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ret_scores=True, device=None):
         """        """
         return postprocess(pred, chip_size=self.learn.data.chip_size, conf_thre=thresh, nms_thre=nms_overlap)
     
-    def show_results(self, rows=5, thresh=0.1, nms_overlap=0.1):
+    def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
         """
         Displays the results of a trained model on a part of the validation set.
 
@@ -175,9 +175,7 @@ class YOLOv3(ArcGISModel):
                                 to be displayed.
         ---------------------   -------------------------------------------
         thresh                  Optional float. The probabilty above which
-                                a detection will be considered valid. 
-                                Defaults to 0.1. To be modified according 
-                                to the dataset and training.
+                                a detection will be considered valid.
         ---------------------   -------------------------------------------
         nms_overlap             Optional float. The intersection over union
                                 threshold with other predicted bounding 
@@ -194,7 +192,7 @@ class YOLOv3(ArcGISModel):
         self.learn.predicting = True
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self)
     
-    def _show_results_multispectral(self, rows=5, thresh=0.1, nms_overlap=0.1, alpha=1, **kwargs):
+    def _show_results_multispectral(self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs):
         return_fig = kwargs.get('return_fig', False)
         self.learn.predicting = True
         fig,ax = show_results_multispectral(
@@ -207,7 +205,7 @@ class YOLOv3(ArcGISModel):
         )
         self.learn.predicting = False # toggling the flag here because show_results_multispectral doesn't invoke callbacks
 
-    def predict(self, image_path, threshold=0.1, nms_overlap=0.1, return_scores=True, visualize=False, resize=False):
+    def predict(self, image_path, threshold=0.5, nms_overlap=0.1, return_scores=True, visualize=False, resize=False):
         """
         Predicts and displays the results of a trained model on a single image.
 
@@ -218,9 +216,7 @@ class YOLOv3(ArcGISModel):
                                 predictions on.
         ---------------------   -------------------------------------------
         thresh                  Optional float. The probabilty above which
-                                a detection will be considered valid. 
-                                Defaults to 0.1. To be modified according 
-                                to the dataset and training.
+                                a detection will be considered valid.
         ---------------------   -------------------------------------------
         nms_overlap             Optional float. The intersection over union
                                 threshold with other predicted bounding 
@@ -371,7 +367,7 @@ class YOLOv3(ArcGISModel):
         self,
         input_video_path,
         metadata_file,
-        threshold=0.1,
+        threshold=0.5,
         nms_overlap=0.1,
         track=False,
         visualize=False,
@@ -405,9 +401,7 @@ class YOLOv3(ArcGISModel):
                                 the predictions will be saved in VMTI format.
         ---------------------   -------------------------------------------
         threshold               Optional float. The probability above which
-                                a detection will be considered. Defaults to
-                                0.1. To be modified according to the dataset
-                                and training.
+                                a detection will be considered.
         ---------------------   -------------------------------------------
         nms_overlap             Optional float. The intersection over union
                                 threshold with other predicted bounding
@@ -475,7 +469,7 @@ class YOLOv3(ArcGISModel):
             resize
         )
 
-    def average_precision_score(self, detect_thresh=0.1, iou_thresh=0.1, mean=False, show_progress=True):
+    def average_precision_score(self, detect_thresh=0.5, iou_thresh=0.1, mean=False, show_progress=True):
         """
         Computes average precision on the validation set for each class.
 
@@ -484,8 +478,7 @@ class YOLOv3(ArcGISModel):
         ---------------------   -------------------------------------------
         detect_thresh           Optional float. The probabilty above which
                                 a detection will be considered for computing
-                                average precision. Defaults to 0.1. To be 
-                                modified according to the dataset and training.
+                                average precision.
         ---------------------   -------------------------------------------
         iou_thresh              Optional float. The intersection over union
                                 threshold with the ground truth labels, above

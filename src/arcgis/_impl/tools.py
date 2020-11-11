@@ -3094,7 +3094,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
             from arcgis.features._credits import _estimate_credits
             return _estimate_credits(task=task,
                                      parameters=params)
-        params = locals()
+        params = {
+            "target_layer" : target_layer,
+            "join_layer" : join_layer,
+            "spatial_relationship" : spatial_relationship,
+            "spatial_relationship_distance" : spatial_relationship_distance,
+            "spatial_relationship_distance_units" : spatial_relationship_distance_units,
+            "attribute_relationship" : attribute_relationship,
+            "join_operation" : join_operation,
+            "summary_fields" : summary_fields,
+            "output_name" : output_name,
+            "context" : context,
+            "records_to_match" : records_to_match,
+            "future" : future,
+            "join_type" : join_type
+        }
         params = _inspect_function_inputs(self._tbx.join_features, **params)
         params['future'] = True
         gpjob = self._tbx.join_features(**params)
