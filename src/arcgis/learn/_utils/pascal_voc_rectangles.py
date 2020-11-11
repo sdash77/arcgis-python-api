@@ -237,7 +237,7 @@ def show_results_multispectral(self, nrows=5, alpha=1, **kwargs): # parameters a
 
                     if getattr(self, "_is_fasterrcnn", False):
                         _pred_ext = []
-                        for _ in range(xb.shape[0]):
+                        for _ in range(self._data.batch_size):
                             res={}
                             res['boxes'] = torch.empty(0,4)
                             res['scores'] = torch.tensor([])
