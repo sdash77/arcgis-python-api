@@ -315,7 +315,7 @@ def create_buffers(input_layer,
                                     dissolve_option='All',
                                     dissolve_fields='Date')
     """
-    kwargs = locals()
+
     input_layer = _prevent_bds_item(input_layer)
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -326,7 +326,21 @@ def create_buffers(input_layer,
        len(input_layer.properties.layers) > 0:
         input_layer = _FeatureSet.from_dict(
             featureset_dict=input_layer._lazy_properties.layers[0].featureSet)
-
+    kwargs = {
+        "input_layer" : input_layer,
+        "distance" : distance,
+        "distance_unit" : distance_unit,
+        "field" : field,
+        "method" : method,
+        "dissolve_option" : dissolve_option,
+        "dissolve_fields" : dissolve_fields,
+        "summary_fields" : summary_fields,
+        "multipart" : multipart,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "future" : True
+    }
     params = {}
     for key, value in kwargs.items():
         if key != 'field':
@@ -363,42 +377,17 @@ def create_buffers(input_layer,
     else:
         _set_context(params )
 
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "distance": (float, "distance"),
-        "distance_unit": (str, "distanceUnit"),
-        "field": (str, "field"),
-        "method": (str, "method"),
-        "dissolve_option": (str, "dissolveOption"),
-        "dissolve_fields": (str, "dissolveFields"),
-        "summary_fields": (str, "summaryFields"),
-        "multipart": (bool, "multipart"),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "output": (_FeatureSet, "Output Features"),
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
+    tbx = import_toolbox(url_or_item=url, gis=gis)
+    params = inspect_function_inputs(tbx.create_buffers, **params)
+    params['future'] = True
 
     try:
+        gpjob = tbx.create_buffers(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, "CreateBuffers", params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, "CreateBuffers", params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()
         raise
 
-create_buffers.__annotations__ = {
-    'distance': float,
-    'distance_unit': str,
-    'field': str,
-    'method': str,
-    'dissolve_option': str,
-    'dissolve_fields': str,
-    'summary_fields': str,
-    'multipart': bool,
-    'output_name': str,
-    'context': str}

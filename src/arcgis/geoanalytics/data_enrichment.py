@@ -6,8 +6,8 @@ These tools are used for data enrichment using geoanalytics
 import json as _json
 import logging as _logging
 import arcgis as _arcgis
-from arcgis.features import FeatureSet as _FeatureSet
-from arcgis.geoprocessing._support import _execute_gp_tool
+from arcgis._impl.common._utils import inspect_function_inputs
+from arcgis.geoprocessing import import_toolbox as _import_toolbox
 from arcgis.geoanalytics._util import (_id_generator,
                                        _feature_input,
                                        _set_context,
@@ -157,17 +157,36 @@ def calculate_motion_statistics(input_layer,
     :returns: result_layer : Output Features as feature layer item.
 
     """
-    kwargs = locals()
+
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "CalculateMotionStatistics"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
+    tbx = _import_toolbox(url, gis=gis)
+
     params = {
-        "f" : "json",
+        "input_layer": input_layer,
+        "track_fields": track_fields,
+        "track_history_window" : track_history_window,
+        "motion_statistics" : motion_statistics,
+        "idle_distance_tolerance" : idle_tol_dist,
+        "idle_distance_tolerance_unit" : idle_tol_unit,
+        "idle_time_tolerance" : idle_time_tol,
+        "idle_time_tolerance_unit" : idle_time_tol_unit,
+        "time_boundary_split" : time_boundary_split,
+        "time_boundary_split_unit": split_unit,
+        "time_boundary_reference" : time_bound_ref,
+        "distance_method" : dist_method,
+        "distance_unit" : distance_unit,
+        "duration_unit" : duration_unit,
+        "speed_unit" : speed_unit,
+        "acceleration_unit" : accel_unit,
+        "elevation_unit" : elev_unit,
+        "output_name": output_name,
+        "context": context,
+        'future' : future
     }
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
+
 
     if output_name is None:
         output_service_name = 'Calculate_Motion_Stats_' + _id_generator()
@@ -193,38 +212,17 @@ def calculate_motion_statistics(input_layer,
     else:
         _set_context(params)
 
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "track_fields": (str, "trackFields"),
-        "track_history_window" : (int, "trackHistoryWindow"),
-        "motion_statistics" : (str, "motionStatistics"),
-        "idle_tol_dist" : (str,"idleDistanceTolerance"),
-        "idle_tol_unit" : (str, "idleDistanceToleranceUnit"),
-        "idle_time_tol" : (float, "idleTimeTolerance"),
-        "idle_time_tol_unit" : (str, "idleTimeToleranceUnit"),
-        "time_boundary_split" : (int, "timeBoundarySplit"),
-        "split_unit": (str, "timeBoundarySplitUnit"),
-        "time_bound_ref" : (int, "timeBoundaryReference"),
-        "dist_method" : (str, "distanceMethod"),
-        "distance_unit" : (str, "distanceUnit"),
-        "duration_unit" : (str, "durationUnit"),
-        "speed_unit" : (str, "speedUnit"),
-        "accel_unit" : (str, "accelerationUnit"),
-        "elev_unit" : (str, "elevationUnit"),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "output": (_FeatureSet, "output"),
-    }
 
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
-
+    for key in list(params.keys()):
+        if params[key] is None:
+            del params[key]
+    param_db = inspect_function_inputs(tbx.calculate_motion_statistics, **params)
+    param_db['future'] = True
     try:
+        gpjob = tbx.calculate_motion_statistics(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()
@@ -300,17 +298,35 @@ def enrich_from_grid(input_layer,
 
 
     """
-    kwargs = locals()
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "EnrichFromMultiVariableGrid"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
+    tbx = _import_toolbox(url, gis=gis)
+
+
     params = {
-        "f" : "json",
+        "input_features": input_layer,
+        "grid_layer" : grid_layer,
+        "enrich_attributes" : enrichment_attributes,
+        "output_name": output_name,
+        "context": context,
+        "future" : future,
+        "gis" : gis
     }
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
+    for key in list(params.keys()):
+        if params[key] is None:
+            del params[key]
+    if isinstance(params['grid_layer'], _arcgis.gis.Item) and \
+       'layers' in params['grid_layer'] and \
+       len(params['grid_layer'].layers) > 0:
+        params['grid_layer'] = params['grid_layer'].layers[0]._lyr_dict
+    elif isinstance(params['grid_layer'], _arcgis.gis.Layer):
+        params['grid_layer'] = params['grid_layer']._lyr_dict
+
+    params = inspect_function_inputs(tbx.enrich_from_multi_variable_grid, **params)
+    params['future'] = True
+
 
     if output_name is None:
         output_service_name = 'Enrich_Grid_' + _id_generator()
@@ -336,24 +352,11 @@ def enrich_from_grid(input_layer,
     else:
         _set_context(params)
 
-    param_db = {
-        "input_layer": (_FeatureSet, "inputFeatures"),
-        "grid_layer" : (_FeatureSet, "gridLayer"),
-        "enrichment_attributes" : (str, "enrichAttributes"),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "output": (_FeatureSet, "output"),
-    }
-
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
-
     try:
+        gpjob = tbx.enrich_from_multi_variable_grid(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()

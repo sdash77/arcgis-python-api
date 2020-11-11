@@ -9,7 +9,8 @@ import logging as _logging
 import arcgis as _arcgis
 from arcgis import env as _env
 from arcgis.features import FeatureSet as _FeatureSet
-from arcgis.geoprocessing._support import _execute_gp_tool
+from arcgis.geoprocessing import import_toolbox as _import_toolbox
+from arcgis._impl.common._utils import inspect_function_inputs
 from ._util import (_id_generator,
                     _feature_input,
                     _set_context,
@@ -134,17 +135,13 @@ def geocode_locations(input_layer,
     from arcgis.features.layer import Layer
     from arcgis.gis import Item
     from arcgis.geocoding._functions import Geocoder
-    kwargs = locals()
+
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "GeocodeLocations"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
-    params = {
-        "f" : "json"
-    }
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
+    tbx = _import_toolbox(url, gis=gis)
+
     if output_name is None:
         output_service_name = 'Geocoding_Results_' + _id_generator()
         output_service_name = output_service_name.replace(' ', '_')
@@ -170,6 +167,24 @@ def geocode_locations(input_layer,
     else:
         raise ValueError("Invalid input_layer input. Please pass an Item, " + \
                          "Big DataStore Layer or Big DataStore URL to geocode.")
+
+    params = {
+        "input_layer" : input_layer,
+        "geocode_service_url" : geocode_service_url,
+        "geocode_parameters" : geocode_parameters,
+    #    "source_country" : source_country,
+        "category" : category,
+        "include_attributes" : include_attributes,
+        "locator_parameters" : locator_parameters,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "future" : future
+    }
+    for key in list(params.keys()):
+        value = params[key]
+        if value is None:
+            del params[key]
 
     if geocode_service is None:
         for service in gis.properties.helperServices.geocode:
@@ -217,28 +232,12 @@ def geocode_locations(input_layer,
         params['output_name'] = output_name
         output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "geocode_service_url": (str, "geocodeServiceURL"),
-        "geocode_parameters": (str, "geocodeParameters"),
-        "country": (str, "sourceCountry"),
-        "category": (str, "category"),
-        "include_attributes" : (bool, "includeAttributes"),
-        "locator_parameters" : (str, "locatorParameters"),
-        "output_name": (str, "outputName"),
-        "output": (_FeatureSet, "output"),
-        "context": (str, "context")
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
+
     try:
+        gpjob = tbx.geocode_locations(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        res = _execute_gp_tool(gis, tool_name, params, param_db,
-                               return_values, _use_async, url, True,
-                               future=future)
+        res = gpjob.result()
         return output_service
     except:
         output_service.delete()
@@ -379,16 +378,27 @@ def detect_incidents(input_layer,
                                                         start_condition_expression="Mean($track.field["speed"].window(-5, 0)) < 10",
                                                         output_name="Slow_Plow_Incidents")
     """
-    kwargs = locals()
     tool_name = "DetectIncidents"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
+    tbx = _import_toolbox(url, gis=gis)
     params = {
-        "f" : "json"
+        "input_layer": input_layer,
+        "track_fields": track_fields,
+        "start_condition_expression": start_condition_expression,
+        "end_condition_expression": end_condition_expression,
+        "output_mode": output_mode,
+        "time_boundary_split" : time_boundary_split,
+        "time_boundary_split_unit" : time_split_unit,
+        "time_boundary_reference" : time_reference,
+        "output_name": output_name,
+        "context": context,
+        'future' : future
     }
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
+    for key in list(params.keys()):
+        value = params[key]
+        if value is None:
+            del params[key]
 
     if output_name is None:
         output_service_name = 'Detect_Incidents_' + _id_generator()
@@ -413,27 +423,14 @@ def detect_incidents(input_layer,
     else:
         _set_context(params)
 
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "track_fields": (str, "trackFields"),
-        "start_condition_expression": (str, "startConditionExpression"),
-        "end_condition_expression": (str, "endConditionExpression"),
-        "output_mode": (str, "outputMode"),
-        "time_boundary_split" : (int, "timeBoundarySplit"),
-        "time_split_unit" : (str, "timeBoundarySplitUnit"),
-        "time_reference" : (datetime.datetime, "timeBoundaryReference"),
-        "output_name": (str, "outputName"),
-        "output": (_FeatureSet, "output"),
-        "context": (str, "context")
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
+    params = inspect_function_inputs(tbx.detect_incidents, **params)
+
     try:
+        params['future'] = True
+        gpjob = tbx.detect_incidents(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()
@@ -831,15 +828,23 @@ def find_similar_locations(input_layer,
                                                              number_of_results=50,
                                                              output_name="similar_locations")
     """
-    kwargs = locals()
 
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
-
-    params = {}
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
+    tbx = _import_toolbox(url, gis=gis)
+    params = {
+        "input_layer": input_layer,
+        "search_layer": search_layer,
+        "analysis_fields": analysis_fields,
+        "most_or_least_similar": most_or_least_similar,
+        "match_method": match_method,
+        "number_of_results": number_of_results,
+        "append_fields": append_fields,
+        "output_name": output_name,
+        "context": context,
+        "return_tuple": return_tuple,
+        "process_info": ""#process_info
+    }
 
     if output_name is None:
         output_service_name = 'Similar Locations_' + _id_generator()
@@ -868,30 +873,14 @@ def find_similar_locations(input_layer,
     else:
         _set_context(params)
 
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "search_layer": (_FeatureSet, "searchLayer"),
-        "analysis_fields": (str, "analysisFields"),
-        "most_or_least_similar": (str, "mostOrLeastSimilar"),
-        "match_method": (str, "matchMethod"),
-        "number_of_results": (int, "numberOfResults"),
-        "append_fields": (str, "appendFields"),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "return_tuple": (bool, "returnTuple"),
-        "output": (_FeatureSet, "Output Features"),
-        "process_info": (list, "processInfo")
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-        {"name": "process_info", "display_name": "Process Information", "type": list}
-    ]
+    params = inspect_function_inputs(tbx.find_similar_locations, **params)
+    params['future'] = True
     try:
-        if future:
-            gpjob = _execute_gp_tool(gis, "FindSimilarLocations", params, param_db, return_values, _use_async, url, True, future=future)
-            return GAJob(gpjob=gpjob, return_service=output_service)
-        res = _execute_gp_tool(gis, "FindSimilarLocations", params, param_db, return_values, _use_async, url, True, future=future)
 
+        gpjob = tbx.find_similar_locations(**params)
+        if future:
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        res = gpjob.result()
         if return_tuple:
             return res
         else:
