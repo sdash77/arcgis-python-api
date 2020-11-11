@@ -1329,8 +1329,10 @@ def export_point_dataset(data_path,
                            be a totally new directory.      
     ------------------     ------------------------------------------------------
     block_size             Optional float. Size of the h5 block file.
-                           The unit of this parameter is same as, that of the
-                           dataset's coordinate system. Default: 50.0 Units          
+                           The unit of this parameter is the same as that of the
+                           dataset's coordinate system. Default: 50.0 Units.
+                           The default value is based on the assumption that 
+                           dataset's coordinate system is in metric units. 
     ------------------     ------------------------------------------------------
     max_points             Optional integer. Maximum number of points to be 
                            included in each h5 block file.

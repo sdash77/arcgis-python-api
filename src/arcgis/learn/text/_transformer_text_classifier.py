@@ -86,7 +86,7 @@ class TransformerForTextClassification(ArcGISTransformer):
             return backbone_models_map[architecture.lower()]
         else:
             return f"Error, wrong architecture name - {architecture} supplied. " \
-                   f"PLease choose from {cls._supported_backbones}"
+                   f"Please choose from {cls._supported_backbones}"
 
     def save(self, model_path):
         """

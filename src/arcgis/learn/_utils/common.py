@@ -99,22 +99,19 @@ class ArcGISMSImage(Image):
     def show(self, ax=None, rgb_bands=None, show_axis=False, title=None):
         if rgb_bands is None:
             rgb_bands = getattr(self, 'rgb_bands', [0, 1, 2])
+        if ax is None:
+            ax = plt.subplot(1, 1, 1)
         symbology_data = self.data[rgb_bands]
         im_shape = symbology_data.shape
         min_vals = symbology_data.view(im_shape[0], -1).min(dim=1)[0]
         max_vals = symbology_data.view(im_shape[0], -1).max(dim=1)[0]
         strechted_data = ( symbology_data - min_vals.view(im_shape[0], 1, 1) ) / ( max_vals.view(im_shape[0], 1, 1) - min_vals.view(im_shape[0], 1, 1) + .001 )
         data_to_plot = strechted_data.permute(1, 2, 0)
-        if not show_axis:ax.axis('off')
-        if ax is not None:
-            ax.imshow(data_to_plot)
-            if title is not None:
-                ax.set_title(title)
-        else:
-            plt.imshow(data_to_plot)
-            if title:
-                plt.title(title)
-
+        if not show_axis:
+            ax.axis('off')
+        ax.imshow(data_to_plot)
+        if title is not None:
+            ax.set_title(title)
 
     def print_method(self):
         return self.show()
@@ -493,6 +490,10 @@ def _get_gpu_device_id(max_memory=0.8):
 
 def _get_device_id():
     import arcgis
+    from ..models._arcgis_model import _device_check
+    move_to_cpu = _device_check()
+    if move_to_cpu: arcgis.env._processorType = "CPU"
+
     if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
         device = _get_gpu_device_id()
     elif getattr(arcgis.env, "_processorType", "") == "CPU":

@@ -3,6 +3,8 @@ import tempfile
 import warnings
 import sys
 import math
+import os
+from pathlib import Path
 
 import arcgis
 from arcgis.features import FeatureLayer
@@ -122,6 +124,7 @@ class TabularDataObject(object):
         else:
             tabular_data._is_classification = True
 
+        tabular_data.path = Path(os.getcwd())
         return tabular_data
 
     @staticmethod

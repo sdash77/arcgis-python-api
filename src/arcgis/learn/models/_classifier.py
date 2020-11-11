@@ -40,6 +40,7 @@ try:
     from torch.nn import Module as NnModule
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path, image_batch_stretcher
     from matplotlib import pyplot as plt
+    import copy
     HAS_FASTAI = True
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -96,7 +97,8 @@ class FeatureClassifier(ArcGISModel):
                             The default is set to False.
     ---------------------   -------------------------------------------
     oversample              Optional boolean. If set to True, it oversamples unbalanced
-                            classes of the dataset during training.
+                            classes of the dataset during training. Not supported with
+                            MultiLabel dataset.
     ---------------------   -------------------------------------------
     backend                 Optional string. Controls the backend framework to be used
                             for this model, which is 'pytorch' by default.
@@ -138,6 +140,8 @@ class FeatureClassifier(ArcGISModel):
             self._code = feature_classifier_prf
 
             if getattr(data, '_dataset_type', "Labeled_Tiles") == 'MultiLabeled_Tiles':
+                # ToDo: allow option to change `thresh` parameter by user
+                accuracy_multi.__name__ = "accuracy"
                 metrics = [accuracy_multi, MultiLabelFbeta()]
             else:
                 metrics = accuracy
@@ -203,7 +207,8 @@ class FeatureClassifier(ArcGISModel):
             **kwargs
         )
         if return_fig:
-            return fig
+            fig1,axs=fig
+            return fig1
 
     def predict(self, img_path):
         """
@@ -371,8 +376,9 @@ class FeatureClassifier(ArcGISModel):
 
             # Get predictions
             predictions = []
+            learn_temp = copy.copy(self.learn)
             for i in range(0, x_batch.shape[0], self._data.batch_size):
-                batch_preds = self.learn.pred_batch(batch=(x_batch[i:i+self._data.batch_size], y_batch[i:i+self._data.batch_size]))
+                batch_preds = learn_temp.pred_batch(batch=(x_batch[i:i+self._data.batch_size], y_batch[i:i+self._data.batch_size]))
                 predictions.append(batch_preds)
             predictions = torch.cat(predictions)
             one_hot_preds = (predictions >= score_thresh)
@@ -416,7 +422,8 @@ class FeatureClassifier(ArcGISModel):
         # For single label classification
         else:
             self._check_requisites()
-            interp = ClassificationInterpretation.from_learner(self.learn)
+            learn_temp = copy.copy(self.learn)
+            interp = ClassificationInterpretation.from_learner(learn_temp)
             interp.plot_confusion_matrix()
 
     def plot_hard_examples(self, num_examples):
@@ -431,11 +438,27 @@ class FeatureClassifier(ArcGISModel):
         =====================   ===========================================
         """
         self._check_requisites()
-        interp = ClassificationInterpretation.from_learner(self.learn)
+        # handling bug in fastai.
+        if num_examples == 1:
+            num_examples = 2
+        learn_temp = copy.copy(self.learn)
+        interp = ClassificationInterpretation.from_learner(learn_temp)
         heatmap = True
         if self._backend == 'tensorflow':
             heatmap = False
-        interp.plot_top_losses(num_examples, figsize=(15,15), heatmap=heatmap)
+        if self._data._dataset_type == 'MultiLabeled_Tiles':
+            interp.plot_multi_top_losses(num_examples, figsize=(5,5))
+            return
+        fig = interp.plot_top_losses(num_examples, figsize=(15,15), heatmap=heatmap, return_fig=True)
+        # fastai way of calculating num nrows and ncols
+        cols = math.ceil(math.sqrt(num_examples))
+        rows = math.ceil(num_examples/cols)
+        axes = fig.axes
+        # get number of empty axes from behind.
+        num_empty_ax = rows * cols - num_examples
+        # delete those from back.
+        for k in range(num_empty_ax):
+            fig.delaxes(axes[-(k+1)])
 
     @staticmethod
     def _convert_to_degrees(value, reference):
@@ -531,7 +554,7 @@ class FeatureClassifier(ArcGISModel):
                 ]
             )
         
-        dataframe = pandas.DataFrame(data, columns=['Image_Name', prediction_field, confidence_field, 'X', 'Y'])
+        dataframe = pandas.DataFrame(data, columns=['image_name', prediction_field, confidence_field, 'X', 'Y'])
         spatial_dataframe = dataframe.spatial.from_xy(df=dataframe, sr=4326, x_column='X', y_column='Y')
 
         feature_collection = gis_user.content.import_data(spatial_dataframe, title=feature_layer_name)
@@ -543,7 +566,7 @@ class FeatureClassifier(ArcGISModel):
         object_field = feature_layer.properties['objectIdField']
 
         for image_name, image_path in images.items():
-            object_id = df[object_field].where(df['Image_Name'] == image_name).values[0]  #assuming image_name is unique
+            object_id = df.loc[df['image_name'] == image_name, object_field].values[0]  #assuming image_name is unique
             if np.isnan(object_id):
                 continue #skipping those values which are not present.
             feature_layer.attachments.add(
@@ -1452,7 +1475,7 @@ if HAS_FASTAI:
 
         def on_train_begin(self, **kwargs):
             ds,dl = self.data.train_ds,self.data.train_dl
-            self.labels = ds.y.items
+            self.labels = ds.y.items.astype(int)
             assert np.issubdtype(self.labels.dtype, np.integer), "Can only oversample integer values"
             _,self.label_counts = np.unique(self.labels,return_counts=True)
             if self.weights is None: self.weights = torch.DoubleTensor((1/self.label_counts)[self.labels])
