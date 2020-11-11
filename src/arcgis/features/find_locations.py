@@ -277,8 +277,8 @@ def find_existing_locations(
         expressions = []
     kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_existing_locations, 
-                                     **kwargs)    
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_existing_locations,
+                                     **kwargs)
     return gis._tools.featureanalysis.find_existing_locations(**params)
 #--------------------------------------------------------------------------
 def derive_new_locations(
@@ -531,8 +531,8 @@ def derive_new_locations(
 
     kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.derive_new_locations, 
-                                     **kwargs)    
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.derive_new_locations,
+                                     **kwargs)
 
     return gis._tools.featureanalysis.derive_new_locations(**params)
 #--------------------------------------------------------------------------
@@ -625,7 +625,7 @@ def find_similar_locations(
     future                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =======================  ===========================================================================================
 
-    :returns: result_layer : feature layer Item if ``output_name`` is specified, else Python dictionary with the following keys:
+    :returns: result_layer : Python dictionary with the following keys:
 
         "similar_result_layer" : layer (FeatureCollection)
 
@@ -641,8 +641,8 @@ def find_similar_locations(
     """
     kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_similar_locations, 
-                                     **kwargs)    
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_similar_locations,
+                                     **kwargs)
 
     return gis._tools.featureanalysis.find_similar_locations(**params)
 #--------------------------------------------------------------------------
@@ -698,9 +698,9 @@ def find_centroids(input_layer,
     if gis._portal.is_arcgisonline == False and gis.version < [7,3]:
         raise Exception("find_centroids is only available on ArcGIS Online and ArcGIS Enterprise 10.8.0+")
     kwargs = locals()
-    params_tool = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_centroids, 
-                                          **kwargs)        
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis.find_centroids, **kwargs)        
+    params_tool = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_centroids,
+                                          **kwargs)
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis.find_centroids, **kwargs)
     if 'context' not in params_tool and 'context' in params:
         del params['context']
     return gis._tools.featureanalysis.find_centroids(**params)
@@ -931,8 +931,8 @@ def choose_best_facilities(goal='Allocate',
     """
     kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.choose_best_facilities, 
-                                     **kwargs)        
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.choose_best_facilities,
+                                     **kwargs)
 
     if isinstance(travel_mode, str):
         route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
@@ -1072,8 +1072,8 @@ def create_viewshed(
     """
     kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.create_viewshed, 
-                                     **kwargs)        
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.create_viewshed,
+                                     **kwargs)
     return gis._tools.featureanalysis.create_viewshed(**params)
 #--------------------------------------------------------------------------
 def create_watersheds(
@@ -1171,8 +1171,8 @@ def create_watersheds(
     """
     kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.create_watersheds, 
-                                     **kwargs)      
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.create_watersheds,
+                                     **kwargs)
 
     return gis._tools.featureanalysis.create_watersheds(**params)
 #--------------------------------------------------------------------------
@@ -1276,7 +1276,7 @@ def trace_downstream(
     """
     kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.trace_downstream, 
-                                     **kwargs)  
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.trace_downstream,
+                                     **kwargs)
 
     return gis._tools.featureanalysis.trace_downstream(**params)
