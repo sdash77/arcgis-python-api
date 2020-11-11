@@ -5639,25 +5639,19 @@ def analyze_changes_using_ccdc(input_multidimensional_raster=None,
     ------------------------------------     --------------------------------------------------------------------
     input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
                                              Portal Item can be passed.
-
-                                             The input multidimensional raster must have at least 12 slices, spanning at least 1 year.
     ------------------------------------     --------------------------------------------------------------------
     bands_for_detecting_change               Optional List. The band IDs to use for change detection.
                                              If no band IDs are provided, all the bands from the input raster dataset will be used.
-                                             Each element in the list should be within the range 1 to n where n is the 
-                                             number of bands of the input raster.
 
                                              Example:
-                                                  [1,2,3,4,6]
+                                                  [0,1,2,3,4,6]
     ------------------------------------     --------------------------------------------------------------------
     bands_for_temporal_masking               Optional List. The band IDs of the green band and the SWIR band, to be used to 
                                              mask for cloud, cloud shadow and snow. If band IDs are not provided, no 
                                              masking will occur.
-                                             Each element in the list should be within the range 1 to n where n is 
-                                             the number of bands of the input raster.
 
                                              Example:
-                                                [1,2]
+                                                [0,1,2]
     ------------------------------------     --------------------------------------------------------------------
     chi_squared_threshold                    Optional Float. The chi-square change probability threshold. If an 
                                              observation has a calculated change probability that is above this 

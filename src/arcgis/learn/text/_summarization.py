@@ -1,10 +1,12 @@
+import warnings
 import traceback
 from .._data import _raise_fastai_import_error
 HAS_TRANSFORMER = True
 
+warnings.filterwarnings("ignore", module="pipeline")
 try:
     import torch
-    from transformers import pipeline, logging
+    from transformers import pipeline
     from .._utils.common import _get_device_id
     from fastprogress.fastprogress import progress_bar
     from transformers.modeling_auto import MODEL_FOR_SEQ_TO_SEQ_CAUSAL_LM_MAPPING
@@ -41,8 +43,6 @@ class TextSummarizer:
         if not HAS_TRANSFORMER:
             _raise_fastai_import_error(import_exception=transformer_exception)
 
-        logger = logging.get_logger()
-        logger.setLevel(logging.ERROR)
         self._device = _get_device_id()
         self._task = "summarization"
         try:
@@ -51,6 +51,8 @@ class TextSummarizer:
             error_message = (f"Model - `{backbone}` cannot be used for {self._task} task.\n"
                              f"Model type should be one of {EXPECTED_MODEL_TYPES}.")
             raise Exception(error_message)
+        from IPython.display import clear_output
+        clear_output()
 
     def summarize(self, text_or_list, **kwargs):
         """

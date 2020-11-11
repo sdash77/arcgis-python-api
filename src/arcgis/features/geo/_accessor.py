@@ -1188,30 +1188,8 @@ class GeoAccessor(object):
                             columns=columns,
                             use_threads=use_threads)
     #----------------------------------------------------------------------
-    def set_geometry(self, col, sr=None, inplace=True):
-        """Assigns the geometry column by name or by list
-
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        col                    Required string, Pandas Series, GeoArray, list or tuple. If a string, this
-                               is the name of the column containing the geometry. If a Pandas Series
-                               GeoArray, list or tuple, it is an iterable of Geometry objects.
-        ------------------     --------------------------------------------------------------------
-        sr                     Optional integer or spatial reference of the geometries described in
-                               the first parameter. If the geometry objects already have the spatial
-                               reference defined, this is not necessary. If the spatial reference for
-                               the geometry objects is NOT define, it will default to WGS84 (wkid 4326).
-        ------------------     --------------------------------------------------------------------
-        inplace                Optional bool. Whether or not to modify the dataframe in place, or return
-                               a new dataframe. If True, nothing is returned and the dataframe is modified
-                               in place. If False, a new dataframe is returned with the geometry set.
-                               Defaults to True.
-        ==================     ====================================================================
-
-        :return:
-            Spatially Enabled DataFrame or None
-        """
+    def set_geometry(self, col, sr=None):
+        """Assigns the Geometry Column by Name or by List"""
         from ._array import GeoArray
 
         if isinstance(col, str) and  \
@@ -1252,9 +1230,6 @@ class GeoAccessor(object):
         else:
             raise ValueError(
                 "Column {name} is not valid. Please ensure it is of type Geometry".format(name=col))
-
-        if not inplace:
-            return self._data.copy()
     #----------------------------------------------------------------------
     @property
     def name(self):

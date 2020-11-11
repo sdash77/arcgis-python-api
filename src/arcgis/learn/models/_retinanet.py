@@ -110,14 +110,13 @@ class RetinaNet(ArcGISModel):
 
         # Initialize the model, loss function and the Learner object        
         self._model = RetinaNetModel(self._encoder, n_classes=data.c-1, final_bias=-4, chip_size=self._chip_size, n_anchors=self._n_anchors, n_bands=n_bands)
-        self._loss_f = RetinaNetFocalLoss(sizes=self._model.sizes, scales=self.scales, ratios=self.ratios, device=self._device)
+        self._loss_f = RetinaNetFocalLoss(sizes=self._model.sizes, scales=self.scales, ratios=self.ratios)
         self.learn = Learner(data, self._model, loss_func=self._loss_f)
         self.learn.split([self._model.encoder[6], self._model.c5top5])
         self.learn.freeze()
         if pretrained_path is not None:
             self.load(str(pretrained_path))
         self._arcgis_init_callback() # make first conv weights learnable
-        self.learn.model = self.learn.model.to(self._device)
 
     def __str__(self):
         return self.__repr__()

@@ -4,7 +4,7 @@ HAS_TRANSFORMER = True
 
 try:
     import torch
-    from transformers import pipeline, logging
+    from transformers import pipeline
     from .._utils.common import _get_device_id
     from fastprogress.fastprogress import progress_bar
     from transformers.modeling_auto import MODEL_FOR_MASKED_LM_MAPPING
@@ -41,8 +41,6 @@ class FillMask:
         if not HAS_TRANSFORMER:
             _raise_fastai_import_error(import_exception=transformer_exception)
 
-        logger = logging.get_logger()
-        logger.setLevel(logging.ERROR)
         self._device = _get_device_id()
         self._task = "fill-mask"
         try:
@@ -51,6 +49,8 @@ class FillMask:
             error_message = (f"Model - `{backbone}` cannot be used for {self._task} task.\n"
                              f"Model type should be one of {EXPECTED_MODEL_TYPES}.")
             raise Exception(error_message)
+        from IPython.display import clear_output
+        clear_output()
 
     def predict_token(self, text_or_list, num_suggestions=5):
         """

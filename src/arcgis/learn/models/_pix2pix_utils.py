@@ -141,8 +141,8 @@ class pix2pix(nn.Module):
     def __init__(self, ch_in:int, ch_out:int):
         super().__init__()
         
-        self.D = Discriminator(ch_in)
-        self.G = GeneratorUNet(ch_in, ch_out)
+        self.D = Discriminator()
+        self.G = GeneratorUNet()
         self.arcgis_results = False
         
     def forward(self, real_A, real_B):

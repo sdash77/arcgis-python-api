@@ -46,9 +46,12 @@ def IC_show_results(self, nrows=5, **kwargs):
     statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
     stretch_type = kwargs.get('stretch_type', 'minmax') # Accepted Values `minmax`, `percentclip`
 
+    title_font_size = 16
+    _top = 1 - (math.sqrt(title_font_size)/math.sqrt(100*nrows*imsize))
+    top = kwargs.get('top', _top)
+
     # Get Batch
-    n_items = min(nrows, len(data_loader.x))
-    nbatches = math.ceil(n_items/self._data.batch_size)
+    nbatches = math.ceil(nrows/self._data.batch_size)
     x_batch, y_batch = get_nbatches(data_loader, nbatches)
     x_batch = torch.cat(x_batch)
     y_batch = torch.cat(y_batch)
@@ -127,15 +130,12 @@ def IC_show_results(self, nrows=5, **kwargs):
     
     # Plotting Ground Truth and Prediction side by side
     ncols = 2
-    title_font_size = 16
-    _top = 1 - (math.sqrt(title_font_size)/math.sqrt(100*n_items*imsize))
-    top = kwargs.get('top', _top)
-    fig, axs = plt.subplots(nrows=n_items, ncols=ncols, figsize=(ncols*imsize, n_items*imsize))
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
     fig.suptitle('Ground truth/Predictions', fontsize=title_font_size, weight='bold')
     plt.subplots_adjust(top=top)
     idx=0
-    for r in range(n_items):
-        if n_items==1:
+    for r in range(nrows):
+        if nrows==1:
             ax_i = axs
         else:
             ax_i  = axs[r]

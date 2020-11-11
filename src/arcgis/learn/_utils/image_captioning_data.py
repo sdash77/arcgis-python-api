@@ -20,8 +20,7 @@ try:
     from fastai.vision.transform import crop
     from fastai.data_block import DataBunch
     from .pointcloud_data import get_device
-    from .._utils.common import get_nbatches, get_top_padding
-    import matplotlib.patheffects as PathEffects
+    from .._utils.common import get_nbatches
     import torch
     HAS_FASTAI = True
 except ImportError:
@@ -670,9 +669,8 @@ def show_image_and_text(ax, image, text, show_coords):
     if isinstance(image, fastai.vision.image.Image):
         image = image.px
     ax.imshow(image2np(image))
-    # ax.title.set_text('\n'.join(wrap(text, 40)))
+    # ax.title.set_text(text)
     ax.set_title('\n'.join(wrap(text, 40)), y=-0.15, pad=0.1)
-    ax.title.set_path_effects([PathEffects.withStroke(linewidth=3, foreground='w')])
     if not show_coords:
         ax.axis('off')
 
@@ -703,13 +701,7 @@ def show_results(self, rows, **kwargs):
     beam_width = kwargs.get('beam_width', 3)
     max_len = kwargs.get('max_len', 15)
     fig, ax = plt.subplots(rows, 2, figsize=figsize, squeeze=False)
-    top = get_top_padding(
-            title_font_size=16,
-            nrows=rows,
-            imsize=5
-            )    
-    plt.subplots_adjust(top=top)
-    fig.suptitle('Image Before / Image After / Ground Truth / Prediction', fontsize=16)
+
     nbatches = (rows // self._data.valid_dl.batch_size) + 1
     dls = get_nbatches(self._data.valid_dl, nbatches)
     images, captions = [], []

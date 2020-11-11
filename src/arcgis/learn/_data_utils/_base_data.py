@@ -37,10 +37,10 @@ PIXEL_SPACE = "PIXEL_SPACE"
 
 class ArcgisData(object):
     def __init__(
-            self, path: Union[str, Path], class_mapping: Dict, chip_size: int = 256,
-            val_split_pct: float = 0.1, batch_size: Union[int, Tuple[int]] = 64,
-            transforms: List = [], seed: int = 42, dataset_type=None,
-            resize_to: int = None, **kwargs
+        self, path: Union[str, Path], class_mapping: Dict, chip_size: int = 256,
+        val_split_pct: float = 0.1, batch_size: Union[int, Tuple[int]] = 64,
+        transforms: List = [],  seed: int = 42, dataset_type=None,
+        resize_to: int = None, **kwargs
     ):
         """
         Base class for all data object used by Arcgis learn/training modules.
@@ -195,13 +195,8 @@ class ArcgisData(object):
             else {"num_workers": min(self.data_num_workers, self.batch_size)}
         )
 
-        force_cpu = arcgis.learn.models._arcgis_model._device_check()
-
-        if hasattr(arcgis, "env") and force_cpu == 1:
-            arcgis.env._processorType = "CPU"
-
-        # if getattr(arcgis.env, "_processorType", "") == "CPU":
-        #    self.databunch_kwargs["device"] = torch.device('cpu')
+        if hasattr(arcgis, "env") and getattr(arcgis.env, "_processorType", "") == "CPU":
+            self.databunch_kwargs["device"] = torch.device("cpu")
 
         if ARCGIS_ENABLE_TF_BACKEND:
             self.databunch_kwargs["device"] = torch.device("cpu")
@@ -225,13 +220,17 @@ class ArcgisData(object):
         data.downsample_factor = self.downsample_factor
         # data._norm_pct = norm_pct
         data._image_space_used = self._image_space_used
-        # if self.imagery_is_multispectral:
+        #if self.imagery_is_multispectral:
         #    data = self.set_multispectral_data_attributes(data)
-        # if not self.imagery_is_multispectral:
+        #if not self.imagery_is_multispectral:
         #    data._imagery_type = self.imagery_type
         #    data.train_ds.x._imagery_type = data._imagery_type
         #    data.valid_ds.x._imagery_type = data._imagery_type
         return data
+
+
+
+
 
     def _get_emd(self):
         """
@@ -280,9 +279,8 @@ class ArcgisData(object):
                 (self.path / (map_first_line.split()[0]).replace("\\", os.sep))
             ).size[-1]
 
-        extension_label = map_first_line.split()[1].split(".")[-1].lower()
-        extension_img = map_first_line.split()[0].split(".")[-1].lower()
-        return img_size, [extension_img, extension_label]
+        extension = map_first_line.split()[1].split(".")[-1].lower()
+        return img_size, extension
 
     def _get_imagery_type(self):
         """
@@ -290,7 +288,7 @@ class ArcgisData(object):
         """
         input_imagery_type = self.kwargs.get("imagery_type", "ASSUMED_RGB")
         input_imagery_type = (input_imagery_type.upper()
-                              if input_imagery_type in ['ms', 'rgb'] else input_imagery_type)
+                              if input_imagery_type in ['ms','rgb'] else input_imagery_type)
         # Multispectral support from EMD Not Implemented Yet
         # And it will give imagery type from kwargs = "imagery_type"
         _imagery_type = self.emd.get("imagery_type", input_imagery_type)
@@ -336,9 +334,9 @@ class ArcgisData(object):
         3. esri_accumulated_stats.json
         """
         return (
-                Path.joinpath(path, ESRI_MODEL_DEFINITION).exists()
-                and Path.joinpath(path, ESRI_MAP).exists()
-                and Path.joinpath(path, ESRI_STATS).exists()
+            Path.joinpath(path, ESRI_MODEL_DEFINITION).exists()
+            and Path.joinpath(path, ESRI_MAP).exists()
+            and Path.joinpath(path, ESRI_STATS).exists()
         )
 
     @staticmethod

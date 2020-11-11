@@ -146,19 +146,18 @@ class ModelExtension(ArcGISModel):
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         if self._data.dataset_type == 'Classified_Tiles':
-            _emd_template["ModelType"] = "ImageClassification"
             if save_inference_file:
                 _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
             else:
                 _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
             _emd_template['IsEdgeDetection'] = getattr(self, "_is_edge_detection", False)
         else:
-            _emd_template["ModelType"] = "ObjectDetection"
             if save_inference_file:
                 _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
             else:
                 _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
         _emd_template["ModelConfiguration"] = "_model_extension_inferencing"
+        _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template['Classes'] = []
         _emd_template['ModelConfigurationFile'] = "ModelConfiguration.py"
@@ -381,21 +380,7 @@ class ModelExtension(ArcGISModel):
         xb,yb = self.learn.data.one_batch(ds_type, detach=False, denorm=False)
         self.learn.model.eval()
         transform_kwargs, kwargs = split_kwargs_by_func(kwargs, self.model_conf.transform_input)
-        try:
-            preds = self.learn.model(self.model_conf.transform_input(xb, **transform_kwargs))
-        except Exception as e:
-
-            if getattr(self, "_is_fasterrcnn", False):
-                preds = []
-                for _ in range(xb.shape[0]):
-                    res={}
-                    res['boxes'] = torch.empty(0,4)
-                    res['scores'] = torch.tensor([])
-                    res['labels'] = torch.tensor([])
-                    preds.append(res)
-            else:
-                raise e
-
+        preds = self.learn.model(self.model_conf.transform_input(xb, **transform_kwargs))
         x,y = to_cpu(xb),to_cpu(yb)
         norm = getattr(self.learn.data,'norm',False)
         if norm:
@@ -419,20 +404,7 @@ class ModelExtension(ArcGISModel):
         batch = self.learn.data.one_item(item)
         transform_kwargs, kwargs = split_kwargs_by_func(kwargs, self.model_conf.transform_input)
         self.learn.model.eval()
-        try:
-            pred = self.learn.model(self.model_conf.transform_input(batch[0], **transform_kwargs))
-        except Exception as e:
-
-            if getattr(self, "_is_fasterrcnn", False):
-                pred = []
-                for _ in range(batch[0].shape[0]):
-                    res={}
-                    res['boxes'] = torch.empty(0,4)
-                    res['scores'] = torch.tensor([])
-                    res['labels'] = torch.tensor([])
-                    pred.append(res)
-            else:
-                raise e
+        pred = self.learn.model(self.model_conf.transform_input(batch[0], **transform_kwargs))
         ds = self.learn.data.single_ds
         analyze_kwargs,kwargs = split_kwargs_by_func(kwargs, ds.y.analyze_pred)
         pred = ds.y.analyze_pred(pred, **analyze_kwargs)

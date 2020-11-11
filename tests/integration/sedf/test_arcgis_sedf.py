@@ -232,15 +232,6 @@ if HAS_ARCPY:
             df.spatial.set_geometry("SHAPE")
             self.assertTrue(_is_geoenabled(df))
         #----------------------------------------------------------------------
-        def test_df_geom_to_sdf_inplace(self):
-            """test initialization and returning dataframe from set_geometry method"""
-            from arcgis.geometry import Geometry, Polygon
-            df = pd.DataFrame(data=self._attributes, columns=self._col)
-            geoms = [Geometry(g) for g in self.geom_ptgeoms]
-            df['SHAPE'] = geoms
-            new_df = df.spatial.set_geometry("SHAPE", inplace=False)
-            self.assertTrue(_is_geoenabled(new_df))
-        #----------------------------------------------------------------------
         def test_spatial_propeties(self):
             """tests the properties off of the 'spatial' namespace"""
             from arcgis.geometry import Geometry, Polygon

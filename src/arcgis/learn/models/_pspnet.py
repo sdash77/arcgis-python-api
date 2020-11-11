@@ -99,9 +99,14 @@ class PSPNetClassifier(ArcGISModel):
                             values on which model will not incur loss.
                             Default: []
     ---------------------   -------------------------------------------
-    keep_dilation           Optional boolean. When PointRend architecture is used,
-                            keep_dilation=True can potentially improves accuracy
-                            at the cost of memory consumption. Default: False                                                                              
+    keep_dilation           Optional boolean if PointRend architecture will
+                            be used. If True, it will use stride 8 output 
+                            otherwise it will be stride 16 output from the 
+                            backbone network. Default: False. Since it makes 
+                            PointRend fast and less memory consumable without
+                            PointRend stride 8 output used by segmentation head 
+                            if you use keep_dilation=True PointRend accuracies 
+                            could be improved.                                                                              
     =====================   ===========================================    
 
     :returns: `PSPNetClassifier` Object
@@ -118,9 +123,6 @@ class PSPNetClassifier(ArcGISModel):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
         super().__init__(data, backbone, **kwargs)
-
-        if pointrend:
-            use_unet = False
 
         self._ignore_classes = kwargs.get('ignore_classes', [])
         if self._ignore_classes != [] and len(data.classes) <= 3:
@@ -344,15 +346,7 @@ class PSPNetClassifier(ArcGISModel):
         if input is not None or target is not None:
             accuracy(input, target)
         else:
-            try:
-                return self.learn.validate()[1].tolist()
-            except Exception as e:
-                accuracy = self._data.emd.get('accuracy')
-                if accuracy:
-                    return accuracy
-                else:
-                    logger.error("Metric not found in the loaded model")
-
+            return self.learn.validate()[-1].tolist()
 
         
     def _get_emd_params(self, save_inference_file):
@@ -444,7 +438,6 @@ class PSPNetClassifier(ArcGISModel):
         
         :returns: `dict` if mean is False otherwise `float`
         """
-        self._check_requisites()
         num_classes = torch.arange(self._data.c)
         miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress, self._ignore_mapped_class)
         if mean:
@@ -473,10 +466,5 @@ class PSPNetClassifier(ArcGISModel):
 
         Returns per class precision, recall and f1 scores 
         """
-        try:
-            self._check_requisites()
-            ## Calling imported function `per_class_metrics`
-            return per_class_metrics(self, ignore_classes)
-        except:
-            import pandas as pd
-            return pd.read_json(self._data.emd['per_class_metrics'])
+        ## Calling imported function `per_class_metrics`        
+        return per_class_metrics(self, ignore_classes)
