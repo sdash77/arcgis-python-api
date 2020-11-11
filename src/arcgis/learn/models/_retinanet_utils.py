@@ -244,13 +244,13 @@ def encode_class(idxs, n_classes):
 
 class RetinaNetFocalLoss(nn.Module):
     
-    def __init__(self, sizes, scales, ratios, gamma=2., alpha=0.25,  pad_idx=0,  reg_loss=F.smooth_l1_loss):
+    def __init__(self, sizes, scales, ratios, device, gamma=2., alpha=0.25,  pad_idx=0,  reg_loss=F.smooth_l1_loss):
         super().__init__()
         self.gamma, self.alpha, self.pad_idx, self.reg_loss = gamma, alpha, pad_idx, reg_loss
         self.sizes = sizes
         self.scales = scales
         self.ratios = ratios
-        self._device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        self._device = device
         self._create_anchors(self.sizes, self._device)
         
     def _change_anchors(self, sizes) -> bool:

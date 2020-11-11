@@ -3,14 +3,16 @@ import json
 import traceback
 from .._data import _raise_fastai_import_error
 from ._arcgis_model import ArcGISModel
+import logging
+logger = logging.getLogger()
 try:
     from ._cyclegan_utils import CycleGanLoss, CycleGANTrainer, optim, compute_fid_metric
     from ._cyclegan_utils import  CycleGAN as CycleGAN_model
     from .._utils.cyclegan import ImageTuple, ImageTupleList, ImageTupleListMS
-    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path, ArcGISMSImage
     from torchvision import transforms
     from pathlib import Path
-    from fastai.vision import DatasetType, Learner, partial, open_image
+    from fastai.vision import DatasetType, Learner, partial, open_image, Image
     import torch
 
     HAS_FASTAI = True
@@ -31,6 +33,12 @@ class CycleGAN(ArcGISModel):
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
+    ---------------------   -------------------------------------------
+    gen_blocks              Optional integer. Number of ResNet blocks to use 
+                            in generator.
+    ---------------------   -------------------------------------------
+    lsgan                   Optional boolean. If True, it will use Mean Squared Error
+                            else it will use Binary Cross Entropy.
     =====================   ===========================================
                                              
     :returns: `CycleGAN` Object
@@ -112,10 +120,7 @@ class CycleGAN(ArcGISModel):
         
     @property
     def _model_metrics(self):
-        if self._data._is_multispectral:
-            fid_a, fid_b = None, None
-        else:
-            fid_a, fid_b = self.compute_metrics()
+        fid_a, fid_b = self.compute_metrics()
         return {'FID_A': f'{fid_a}', 'FID_B': f'{fid_b}'}
 
     def _get_emd_params(self, save_inference_file):
@@ -168,9 +173,20 @@ class CycleGAN(ArcGISModel):
         =====================   ===========================================
 
         """
+        import numpy as np
         self.learn.model.arcgis_results = True
         img_path = Path(img_path)
-        raw_img = open_image(img_path)
+        n_band = self._data.n_channel
+        if self._data._is_multispectral:
+            raw_img = ArcGISMSImage.open(img_path)
+            if n_band > raw_img.shape[0]:
+                cont = []
+                last_tile = np.expand_dims(raw_img.data[raw_img.shape[0]-1,:,:], 0)
+                res = abs(n_band - raw_img.shape[0])
+                for i in range(res):
+                    raw_img = Image(torch.tensor(np.concatenate((raw_img.data, last_tile), axis=0)))
+        else:
+            raw_img = open_image(img_path)
         raw_img_tuple = ImageTuple(raw_img, raw_img)
         pred_tuple = self.learn.predict(raw_img_tuple)
         if convert_to == 'A' or convert_to == 'a':
@@ -186,7 +202,11 @@ class CycleGAN(ArcGISModel):
         """
         Computes Frechet Inception Distance (FID) on validation set.
         """
-        fid_a, fid_b = compute_fid_metric(self, self._data)
-        return fid_a, fid_b
+        if self._data._is_multispectral:
+            logger.error("FID metric not supported for multispectral imagery type")
+            return(None, None)
+        else:
+            fid_a, fid_b = compute_fid_metric(self, self._data)
+            return fid_a, fid_b
 
         

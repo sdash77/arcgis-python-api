@@ -4,10 +4,10 @@ HAS_TRANSFORMER = True
 
 try:
     import torch
-    from transformers import pipeline
+    from transformers import pipeline, logging
     from .._utils.common import _get_device_id
     from fastprogress.fastprogress import progress_bar
-    from transformers import AutoTokenizer, AutoModelWithLMHead
+    from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 except Exception as e:
     transformer_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_TRANSFORMER = False
@@ -42,15 +42,17 @@ class TextTranslator:
         if not HAS_TRANSFORMER:
             _raise_fastai_import_error(import_exception=transformer_exception)
 
+        logger = logging.get_logger()
+        logger.setLevel(logging.ERROR)
         self._source_lang = source_language
         self._target_lang = target_language
 
-        self._device = _get_device_id()
+        self._device_id = _get_device_id()
+        self._device = torch.device("cpu" if self._device_id < 0 else "cuda:{}".format(self._device_id))
         self._task = f"translation_{self._source_lang}_to_{self._target_lang}"
         self._tokenizer = AutoTokenizer.from_pretrained(f"Helsinki-NLP/opus-mt-{source_language}-{target_language}")
-        self.model = AutoModelWithLMHead.from_pretrained(f"Helsinki-NLP/opus-mt-{source_language}-{target_language}")
-        from IPython.display import clear_output
-        clear_output()
+        self.model = AutoModelForSeq2SeqLM.from_pretrained(f"Helsinki-NLP/opus-mt-{source_language}-{target_language}")
+        self.model.to(self._device)
 
     def translate(self, text_or_list, **kwargs):
         """
@@ -106,10 +108,11 @@ class TextTranslator:
         num_return_sequences = kwargs.get("num_return_sequences", 1)
         if not isinstance(text_or_list, (list, tuple)): text_or_list = [text_or_list]
         for i in progress_bar(range(len(text_or_list))):
-            inputs = self._tokenizer.encode(f"{text_or_list[i]} {self._tokenizer.eos_token}", return_tensors="pt")
+            inputs = self._tokenizer.encode(f"{text_or_list[i]} {self._tokenizer.eos_token}", return_tensors="pt").\
+                to(self._device)
             outputs = self.model.generate(inputs, **kwargs)
             result = self._tokenizer.batch_decode(outputs, skip_special_tokens=True)
-            result = [{"translation_text": x} for x in result]
+            result = [{"translated_text": x} for x in result]
             if num_return_sequences == 1: result = result[0]
             results.append(result)
         return results

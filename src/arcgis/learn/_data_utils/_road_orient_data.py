@@ -181,13 +181,13 @@ class RoadOrientation():
         self.multi_scale = kwargs.get("multi_scale", default_road_params['multi_scale'])
 
         self.files = []
-        search_dir = os.path.join(self.base.img_root, "*.{}".format(self.base.extension))
+        search_dir = os.path.join(self.base.img_root, "*.{}".format(self.base.extension[0]))
         for image_file in glob.glob(search_dir):
             image_file = Path(image_file)
             image_name = image_file.stem
             file_pair = {
-                "image": os.path.join(self.base.img_root, f"{image_name}.{self.base.extension}"),
-                "label": os.path.join(self.base.gt_root, f"{image_name}.{self.base.extension}"),
+                "image": os.path.join(self.base.img_root, f"{image_name}.{self.base.extension[0]}"),
+                "label": os.path.join(self.base.gt_root, f"{image_name}.{self.base.extension[1]}"),
             }
             self.files.append(file_pair)
 

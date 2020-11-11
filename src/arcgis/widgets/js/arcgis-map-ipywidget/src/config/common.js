@@ -1,4 +1,4 @@
-var CdnUrl = "//js.arcgis.com/4.17/";
+var CdnUrl = "//js.arcgis.com/4.15/";
 
 var CdnMainCssUrl = "https:" + CdnUrl + "esri/css/main.css";
 

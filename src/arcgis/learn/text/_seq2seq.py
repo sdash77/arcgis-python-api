@@ -357,17 +357,23 @@ class SequenceToSequence(ArcGISModel):
 
         :returns: a dictionary containing the metrics for classification model.
         """
-        self._check_requisites()
-        if hasattr(self.learn, 'recorder'):
-            metrics_names = self.learn.recorder.metrics_names
-            metrics_values = self.learn.recorder.metrics
-            if len(metrics_names) > 0 and len(metrics_values) > 0:
-                metrics = {x: round(float(metrics_values[-1][i]), 4) for i, x in enumerate(metrics_names)}
+        try:
+            self._check_requisites()
+        except Exception as e:
+            acc, bleu = self._data.emd.get('seq2seq_acc'), self._data.emd.get('bleu')
+            if acc or bleu: return {'seq2seq_acc': acc, 'bleu': bleu}
+            else: self.logger.error("Metric not found in the loaded model")
+        else:
+            if hasattr(self.learn, 'recorder'):
+                metrics_names = self.learn.recorder.metrics_names
+                metrics_values = self.learn.recorder.metrics
+                if len(metrics_names) > 0 and len(metrics_values) > 0:
+                    metrics = {x: round(float(metrics_values[-1][i]), 4) for i, x in enumerate(metrics_names)}
+                else:
+                    metrics = self._calculate_model_metrics()
             else:
                 metrics = self._calculate_model_metrics()
-        else:
-            metrics = self._calculate_model_metrics()
-        return metrics
+            return metrics
 
     def _calculate_model_metrics(self):
 

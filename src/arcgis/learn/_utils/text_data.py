@@ -406,7 +406,7 @@ class TextDataObject:
         if not HAS_FASTAI:
             return
         dl_tfms=None
-        if self._model_type in ['t5', 'bart', 'mbart']:
+        if self._model_type in ['t5', 'bart', 'marian']:
             dl_tfms=shift_tfm
         data = SequenceToSequenceTextList.from_df(self._train_df,cols=self._text_cols, processor=transformer_processor)\
                         .split_by_rand_pct(valid_pct=self.val_split_pct)\
@@ -521,6 +521,8 @@ class TextDataObject:
             self._databunch = text_list.label_const(0, label_cls=MultiCategoryList, classes=classes).databunch()
         else:
             self._databunch = text_list.label_const(0, label_cls=CategoryList, classes=classes).databunch()
+
+        self._is_empty = False
 
     def create_empty_seq2seq_data(self, text_cols, label_cols):
         self._text_cols = text_cols

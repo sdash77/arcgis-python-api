@@ -7,6 +7,7 @@ try:
     from fastai.vision.data import ImageList, ImageImageList
     from torch.utils.tensorboard import SummaryWriter
     from fastai.callbacks.tensorboard import *
+    from fastai.core import split_kwargs_by_func
     from PIL import Image
     from torchvision.transforms import ToTensor
 except:
@@ -22,7 +23,10 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
         self._current_run = name + str(self._current_epoch)
         super(ArcGISTBCallback, self).__init__(learn, base_dir, self._current_run)
 
-    # ef on_epoch_end_figure():
+    def on_train_begin(self, **kwargs: Any):
+        pass
+    # Override the on_train_begin method of the parent class as it causes graph related errors and warnings.#5244
+
     def on_epoch_end(self, last_metrics: MetricsList, iteration: int, **kwargs) -> None:
         self._current_epoch = self._current_epoch + 1
         self._current_run = self._name + '-Epoch-' + str(self._current_epoch)
@@ -54,6 +58,10 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
         elif (type(self._arcgis_model).__name__) == 'FasterRCNN':
             fig1 = self._show_results_modified(2, return_fig=True)
         elif (type(self._arcgis_model).__name__) == 'CycleGAN':
+            self._arcgis_model.learn.model.arcgis_results = True
+            fig1 = self.show_results(rows=rows)
+            self._arcgis_model.learn.model.arcgis_results = False
+        elif (type(self._arcgis_model).__name__) == 'Pix2Pix':
             self._arcgis_model.learn.model.arcgis_results = True
             fig1 = self.show_results(rows=rows)
             self._arcgis_model.learn.model.arcgis_results = False
@@ -113,7 +121,8 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
             fig1 = self.img_img_show_xyzs(xs, ys, zs)
         elif (type(self._arcgis_model).__name__) == 'CycleGAN':
             fig1 = self.img_tuple_show_xyzs(xs, ys, zs)
-
+        elif (type(self._arcgis_model).__name__) == 'Pix2Pix':
+            fig1 = self.img_tuple_show_xyzs(xs, ys, zs)
         return fig1
 
     def show_xyzs(self, xs, ys, zs, imgsize: int = 4, figsize: Optional[Tuple[int, int]] = None, **kwargs):
@@ -217,7 +226,22 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
         if self._arcgis_model.learn.dl(ds_type).batch_size < n_items: n_items = self._arcgis_model.learn.dl(
             ds_type).batch_size
         self._arcgis_model.learn.model.eval()
-        preds = self._arcgis_model.learn.model(self._arcgis_model.model_conf.transform_input(xb))
+        transform_kwargs, kwargs = split_kwargs_by_func(kwargs, self._arcgis_model.model_conf.transform_input)
+        try:
+            preds = self._arcgis_model.learn.model(self._arcgis_model.model_conf.transform_input(xb, transform_kwargs))
+        except Exception as e:
+
+            if getattr(self._arcgis_model, "_is_fasterrcnn", False):
+                preds = []
+                for _ in range(xb.shape[0]):
+                    res={}
+                    res['boxes'] = torch.empty(0,4)
+                    res['scores'] = torch.tensor([])
+                    res['labels'] = torch.tensor([])
+                    preds.append(res)
+            else:
+                raise e
+
         x, y = to_cpu(xb), to_cpu(yb)
         norm = getattr(self._arcgis_model.learn.data, 'norm', False)
         if norm:
