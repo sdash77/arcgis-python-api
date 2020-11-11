@@ -308,7 +308,7 @@ def enrich_from_grid(input_layer,
     params = {
         "input_features": input_layer,
         "grid_layer" : grid_layer,
-        "enrichment_attributes" : enrichment_attributes,
+        "enrich_attributes" : enrichment_attributes,
         "output_name": output_name,
         "context": context,
         "future" : future,
@@ -317,6 +317,13 @@ def enrich_from_grid(input_layer,
     for key in list(params.keys()):
         if params[key] is None:
             del params[key]
+    if isinstance(params['grid_layer'], _arcgis.gis.Item) and \
+       'layers' in params['grid_layer'] and \
+       len(params['grid_layer'].layers) > 0:
+        params['grid_layer'] = params['grid_layer'].layers[0]._lyr_dict
+    elif isinstance(params['grid_layer'], _arcgis.gis.Layer):
+        params['grid_layer'] = params['grid_layer']._lyr_dict
+
     params = inspect_function_inputs(tbx.enrich_from_multi_variable_grid, **params)
     params['future'] = True
 
