@@ -441,7 +441,8 @@ class FeatureClassifier(ArcGISModel):
         # handling bug in fastai.
         if num_examples == 1:
             num_examples = 2
-        interp = ClassificationInterpretation.from_learner(self.learn)
+        learn_temp = copy.copy(self.learn)
+        interp = ClassificationInterpretation.from_learner(learn_temp)
         heatmap = True
         if self._backend == 'tensorflow':
             heatmap = False
