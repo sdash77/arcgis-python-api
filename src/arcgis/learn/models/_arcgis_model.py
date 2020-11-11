@@ -526,8 +526,16 @@ class ArcGISModel(object):
         Helps in choosing the optimum learning rate for training the model.
         """
         self._check_requisites()
+        try:
+            metrics = self.learn.metrics
+            self.learn.metrics = []
+            self.learn.lr_find()
+        except Exception as e:
+            # if some error comes in lr_find
+            raise e
+        finally:
+            self.learn.metrics = metrics
 
-        self.learn.lr_find()
         from IPython.display import clear_output
         clear_output()
         lr, index = self._find_lr()

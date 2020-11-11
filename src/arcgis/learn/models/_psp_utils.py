@@ -34,7 +34,7 @@ import torch
 from torchvision import models
 
 import math
-from fastai.callbacks.hooks import hook_outputs
+from fastai.callbacks.hooks import hook_outputs, hook_output
 from fastai.vision.learner import create_body
 from fastai.callbacks.hooks import model_sizes
 from fastai.vision import flatten_model
