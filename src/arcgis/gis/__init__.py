@@ -6682,6 +6682,59 @@ class Group(dict):
                 users.append(u.username)
 
         return self._portal.remove_group_users(users, self.groupid)
+    #----------------------------------------------------------------------
+    def update_users_roles(self, managers:list=None, users:list=None) -> list:
+        """
+        Updates a set of users to either Group's Managers or Members
+
+        ================  ========================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------
+        managers          Required List.  A comma-separated array of User objects to upgrade to a group manager role.
+        ----------------  --------------------------------------------------------
+        users             Required List.  A comma-separated array of User objects to make group member roles.
+        ================  ========================================================
+
+        :returns: List[dict]
+
+        """
+        params = {
+           "admins" : managers or [],
+           "users" : users or [],
+           "f" : "json"
+        }
+        if managers is None and users is None:
+            return {
+                "results": []
+            }
+        if isinstance(params['admins'], (list, tuple)):
+            managers = params['admins']
+            for idx, a in enumerate(managers):
+                if isinstance(a, str):
+                    managers[idx] = a
+                elif isinstance(a, User):
+                    managers[idx] = a.username
+                else:
+                    raise ValueError("'admins' must be a list of strings or User objects")
+            params['admins'] = ",".join(managers)
+        else:
+            raise ValueError("'admins' must be a list of strings or User objects")
+
+        if isinstance(params['users'], (list, tuple)):
+            users = params['users']
+            for idx, a in enumerate(users):
+                if isinstance(a, str):
+                    users[idx] = a
+                elif isinstance(a, User):
+                    users[idx] = a.username
+                else:
+                    raise ValueError("'admins' must be a list of strings or User objects")
+            params['users'] = ",".join(users)
+        else:
+            raise ValueError("'admins' must be a list of strings or User objects")
+
+        url = 'community/groups/' + self.groupid + '/updateUsers'
+        return self._portal.con.post(url, params)
 
     def invite_users(self, usernames, role='group_member', expiration=10080):
         """

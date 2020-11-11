@@ -34,7 +34,7 @@ import torch
 from torchvision import models
 
 import math
-from fastai.callbacks.hooks import hook_outputs
+from fastai.callbacks.hooks import hook_outputs, hook_output
 from fastai.vision.learner import create_body
 from fastai.callbacks.hooks import model_sizes
 from fastai.vision import flatten_model
@@ -317,8 +317,12 @@ class PSPNet(nn.Module):
         x = self.backbone(x)
         features = self.hook.stored
 
-        x = self.ppm(x)
-        x = self.final(x)
+        if self.vgg:
+            x = self.ppm(features[-1])
+            x = self.final(x)
+        else:
+            x = self.ppm(x)
+            x = self.final(x)
 
         if self.pointrend:
             

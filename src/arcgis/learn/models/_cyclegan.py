@@ -12,7 +12,7 @@ try:
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path, ArcGISMSImage
     from torchvision import transforms
     from pathlib import Path
-    from fastai.vision import DatasetType, Learner, partial, open_image
+    from fastai.vision import DatasetType, Learner, partial, open_image, Image
     import torch
 
     HAS_FASTAI = True
@@ -173,10 +173,18 @@ class CycleGAN(ArcGISModel):
         =====================   ===========================================
 
         """
+        import numpy as np
         self.learn.model.arcgis_results = True
         img_path = Path(img_path)
+        n_band = self._data.n_channel
         if self._data._is_multispectral:
             raw_img = ArcGISMSImage.open(img_path)
+            if n_band > raw_img.shape[0]:
+                cont = []
+                last_tile = np.expand_dims(raw_img.data[raw_img.shape[0]-1,:,:], 0)
+                res = abs(n_band - raw_img.shape[0])
+                for i in range(res):
+                    raw_img = Image(torch.tensor(np.concatenate((raw_img.data, last_tile), axis=0)))
         else:
             raw_img = open_image(img_path)
         raw_img_tuple = ImageTuple(raw_img, raw_img)

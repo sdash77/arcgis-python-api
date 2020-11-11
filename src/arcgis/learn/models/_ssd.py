@@ -792,7 +792,12 @@ class SingleShotDetector(ArcGISModel):
                 scaled_t = self._data._min_max_scaler(t)[0]
                 orig_frame = (scaled_t*255).round().numpy().astype(np.uint8)[self._data._symbology_rgb_bands]
                 orig_frame = np.rollaxis(orig_frame, 0, 3)
-                image = _draw_predictions(orig_frame, predictions, labels).get().astype(np.uint8)
+                a = np.zeros(orig_frame.shape, dtype=np.uint8)
+                a[:] = orig_frame[:]
+                if len(labels) > 0:
+                    image = _draw_predictions(a, predictions, labels)
+                else:
+                    image = orig_frame
             else:
                 image = _draw_predictions(orig_frame, predictions, labels)
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)

@@ -1903,7 +1903,8 @@ class FeatureLayer(Layer):
                append_fields=None,
                rollback=False,
                skip_inserts=None,
-               upsert_matching_field=None
+               upsert_matching_field=None,
+               upload_id=None
                ):
         """
         Only available in ArcGIS Online
@@ -1970,6 +1971,11 @@ class FeatureLayer(Layer):
                                    upsert_matching_field will be used even if you specify
                                    use_globalids = True.
                                    Example: upsert_matching_field="MyfieldWithUniqueIndex"
+        ------------------------   --------------------------------------------------------------------
+        upload_id                  Optional string. The itemID field from an 
+                                   :func:`~FeatureLayerCollection.upload` response, corresponding with 
+                                   the `appendUploadId` REST API argument. This argument should not be
+                                   used along side the `item_id` argument.
         ========================   ====================================================================
 
 
@@ -1977,7 +1983,6 @@ class FeatureLayer(Layer):
 
         """
         import copy
-        upload_id = None
         if ((hasattr(self._gis, '_portal') and self._gis._portal.is_logged_in == False) or \
            (hasattr(self._gis, 'is_logged_in') and self._gis.is_logged_in == False)):
             raise Exception("Authentication required to perform append.")
@@ -4195,8 +4200,8 @@ class FeatureLayerCollection(_GISResource):
     def upload(self, path, description=None):
         """
         Uploads a new item to the server. Once the operation is completed
-        successfully, the JSON structure of the uploaded item is returned.
-
+        successfully, the following is returned as a 2 element tuple: 
+        the success Boolean, and the JSON structure of the uploaded item
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -4206,7 +4211,7 @@ class FeatureLayerCollection(_GISResource):
         description         Optional string. Descriptive text for the uploaded item.
         ===============     ====================================================================
 
-        :returns: boolean
+        :returns: A tuple of (Boolean, dict)
 
         """
         if (os.path.getsize(path) >> 20) <= 9:

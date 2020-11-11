@@ -23,7 +23,10 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
         self._current_run = name + str(self._current_epoch)
         super(ArcGISTBCallback, self).__init__(learn, base_dir, self._current_run)
 
-    # ef on_epoch_end_figure():
+    def on_train_begin(self, **kwargs: Any):
+        pass
+    # Override the on_train_begin method of the parent class as it causes graph related errors and warnings.#5244
+
     def on_epoch_end(self, last_metrics: MetricsList, iteration: int, **kwargs) -> None:
         self._current_epoch = self._current_epoch + 1
         self._current_run = self._name + '-Epoch-' + str(self._current_epoch)
