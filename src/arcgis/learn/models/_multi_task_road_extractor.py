@@ -37,6 +37,7 @@ try:
         get_multispectral_data_params_from_emd ,_get_emd_path
     )
     from arcgis.learn._utils.segmentation_loss_functions import dice
+    from arcgis.learn.models._arcgis_model import _device_check
     from .._data_utils._pixel_classifier_data import ClassifiedTilesData
     from .._data_utils._road_orient_data import RoadOrientation
 except Exception as e:
@@ -63,7 +64,10 @@ def safe_json(data):
 
 class MultiTaskRoadExtractor(ArcGISModel):
     """
-    Creates a Multi-Task Learning model for binary segmentation.
+    Creates a Multi-Task Learning model for binary segmentation. Supports 8 bit
+    RGB imagery and offers experimental support for 16 bit RGB imagery.
+    Does not support Multispectral imagery yet.
+    Implementation based on https://doi.org/10.1109/CVPR.2019.01063 .
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -166,6 +170,11 @@ class MultiTaskRoadExtractor(ArcGISModel):
                 kwargs['orient_bin_size'] = bin_size #To ensure the data is consistent across multiple runs
 
             self._orient_data=self._get_road_orient_data(data,**kwargs)
+            if len(data.classes) > 2:
+                raise Exception(
+                    "Found multi-labels in the data, This is a binary segmentation model and hence please export the data with binary labels."
+                    # noqa
+                )
             self._data.classes = self._orient_data.classes
             class_key = self._orient_data.classes[0] if isinstance(self._orient_data.classes[0], int) else \
             self._orient_data.classes[1]
@@ -304,6 +313,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
             metrics=[pixel_accuracy, road_iou, dice_coeff],
             **learner_kwargs,
         )
+        self.learn.model = self.learn.model.to(self._device)
         if pretrained_path is not None:
             super().load(str(pretrained_path))
         self._arcgis_init_callback()  # make first conv weights learnable
@@ -459,6 +469,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
         class_mapping = {i["Value"]: i["Name"] for i in emd["Classes"]}
 
         if data is None:
+            force_cpu = _device_check()
             data = _EmptyData(
                 path=emd_path.parent.parent,
                 loss_func=None,
