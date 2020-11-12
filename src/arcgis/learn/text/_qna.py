@@ -1,4 +1,6 @@
 import traceback
+import warnings
+warnings.filterwarnings("ignore", module='transformers')
 from .._data import _raise_fastai_import_error
 HAS_TRANSFORMER = True
 

@@ -67,9 +67,23 @@ class EntityRecognizer:
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
+    verbose                 Optional string. Default set to `error`. The
+                            log level you want to set. It means the amount
+                            of information you want to display while training
+                            or calling the various methods of this class.
+                            Allowed values are - `debug`, `info`, `warning`,
+                            `error` and `critical`. Applicable only for models
+                            with HuggingFace transformer backbones.
+    ---------------------   -------------------------------------------
+    seq_len                 Optional Integer. Default set to 512. Maximum
+                            sequence length (at sub-word level after tokenization)
+                            of the training data to be considered for training
+                            the model. Applicable only for models with
+                            HuggingFace transformer backbones.
+    ---------------------   -------------------------------------------
     mixed_precision         Optional Bool. Default set to False. If set
                             True, then mixed precision training is used
-                            to train the model. Applicable only for model
+                            to train the model. Applicable only for models
                             with HuggingFace transformer backbones.
     ---------------------   -------------------------------------------
     pretrained_path         Optional String. Path where pre-trained model
@@ -150,7 +164,7 @@ class EntityRecognizer:
         """
         self._model.unfreeze()
 
-    def fit(self, epochs=20, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, tensorboard=False, **kwargs):
+    def fit(self, epochs=20, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
         """
         Train the model for the specified number of epochs and using the
         specified learning rates
@@ -185,19 +199,11 @@ class EntityRecognizer:
                                 based on validation loss will be saved during
                                 training.
                                 **Note - Not applicable for models with spaCy backbone
-        ---------------------   -------------------------------------------
-        tensorboard             Optional boolean. Parameter to write the training log.
-                                If set to 'True' the log will be saved at
-                                <dataset-path>/training_log which can be visualized in
-                                tensorboard. Required tensorboardx version=1.7 (Experimental support).
-
-                                The default value is 'False'.
-                                **Note - Not applicable for models with spaCy backbone
         =====================   ===========================================
         """
 
         self._model.fit(epochs=epochs, lr=lr, one_cycle=one_cycle, early_stopping=early_stopping,
-                        checkpoint=checkpoint, tensorboard=tensorboard, **kwargs)
+                        checkpoint=checkpoint, **kwargs)
         self.entities = self._model.entities
 
     def save(self, name_or_path, **kwargs):
@@ -230,6 +236,8 @@ class EntityRecognizer:
         kwargs                  Optional Parameters:
                                 Boolean `overwrite` if True, it will overwrite
                                 the item on ArcGIS Online/Enterprise, default False.
+                                Boolean `zip_files` if True, it will create the Deep
+                                Learning Package (DLPK) file while saving the model.
         =====================   ===========================================
         """
 

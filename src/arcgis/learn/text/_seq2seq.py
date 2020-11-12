@@ -62,12 +62,25 @@ class SequenceToSequence(ArcGISModel):
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
+    verbose                 Optional string. Default set to `error`. The
+                            log level you want to set. It means the amount
+                            of information you want to display while training
+                            or calling the various methods of this class.
+                            Allowed values are - `debug`, `info`, `warning`,
+                            `error` and `critical`.
+    ---------------------   -------------------------------------------
+    seq_len                 Optional Integer. Default set to 512. Maximum
+                            sequence length (at sub-word level after tokenization)
+                            of the training data to be considered for training
+                            the model.
+    ---------------------   -------------------------------------------
     mixed_precision         Optional Bool. Default set to False. If set
                             True, then mixed precision training is used
                             to train the model
     ---------------------   -------------------------------------------
-    pretrained_path         Optional String. Path where pre-trained model is
-                            saved.
+    pretrained_path         Optional String. Path where pre-trained model
+                            is saved. Accepts a Deep Learning Package
+                            (DLPK) or Esri Model Definition(EMD) file.
     =====================   ===========================================
 
     :returns: `SequenceToSequence` model object for sequence_translation task.
@@ -288,6 +301,8 @@ class SequenceToSequence(ArcGISModel):
         kwargs                  Optional Parameters:
                                 Boolean `overwrite` if True, it will overwrite
                                 the item on ArcGIS Online/Enterprise, default False.
+                                Boolean `zip_files` if True, it will create the Deep
+                                Learning Package (DLPK) file while saving the model.
         =====================   ===========================================
 
         :returns: the qualified path at which the model is saved

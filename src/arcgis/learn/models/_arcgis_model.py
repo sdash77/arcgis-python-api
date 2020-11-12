@@ -641,6 +641,7 @@ class ArcGISModel(object):
                                 tensorboard. Required tensorboardx version=2.1
 
                                 The default value is 'False'.
+                                **Note - Not applicable for Text Models
         =====================   ===========================================
         """
         self._check_requisites()

@@ -73,6 +73,18 @@ class TextClassifier(ArcGISModel):
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
+    verbose                 Optional string. Default set to `error`. The
+                            log level you want to set. It means the amount
+                            of information you want to display while training
+                            or calling the various methods of this class.
+                            Allowed values are - `debug`, `info`, `warning`,
+                            `error` and `critical`.
+    ---------------------   -------------------------------------------
+    seq_len                 Optional Integer. Default set to 512. Maximum
+                            sequence length (at sub-word level after tokenization)
+                            of the training data to be considered for training
+                            the model.
+    ---------------------   -------------------------------------------
     thresh                  Optional Float. This parameter is used to set
                             the threshold value to pick labels in case of
                             multi-label text classification problem. Default
@@ -317,6 +329,8 @@ class TextClassifier(ArcGISModel):
         kwargs                  Optional Parameters:
                                 Boolean `overwrite` if True, it will overwrite
                                 the item on ArcGIS Online/Enterprise, default False.
+                                Boolean `zip_files` if True, it will create the Deep
+                                Learning Package (DLPK) file while saving the model.
         =====================   ===========================================
 
         :returns: the qualified path at which the model is saved

@@ -797,6 +797,9 @@ def prepare_data(path,
                             exported by ArcGIS Pro / Enterprise which includes
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
                             'superres', 'CycleGAN' and 'Pix2Pix'.
+                            This parameter is also mandatory while preparing data
+                            for 'EntityRecognizer' model. Accepted data format
+                            for this model are - ['ner_json','BIO', 'LBIOU']
     ---------------------   -------------------------------------------
     resize_to               Optional integer. Resize the image to given size
                             for "PASCAL_VOC_rectangles" and "superres".
