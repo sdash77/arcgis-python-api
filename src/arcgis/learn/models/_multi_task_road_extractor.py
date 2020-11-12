@@ -313,6 +313,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
             metrics=[pixel_accuracy, road_iou, dice_coeff],
             **learner_kwargs,
         )
+        self.learn.path = self._data.path
         self.learn.model = self.learn.model.to(self._device)
         if pretrained_path is not None:
             super().load(str(pretrained_path))
@@ -366,6 +367,15 @@ class MultiTaskRoadExtractor(ArcGISModel):
     @staticmethod
     def _supported_backbones():
         return [*_resnet_family]
+
+    @property
+    def supported_datasets(self):
+        """ Supported dataset types for this model. """
+        return MultiTaskRoadExtractor._supported_datasets()
+
+    @staticmethod
+    def _supported_datasets():
+        return ['Classified_Tiles']
 
     def fit(self, epoch=10, lr=None, **kwargs):
         save_callback_params = {
@@ -517,24 +527,10 @@ class MultiTaskRoadExtractor(ArcGISModel):
             "mIoU": "{}".format(mean_iou),
         }
 
-    def load(self, name_or_path):
-        """
-        Loads a saved model for inferencing or fine tuning from the disk.
-
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        name_or_path            Required string. Required string. Path to
-                                a compatible Deep Learning Package (DLPK) or
-                                Esri Model Definition(EMD) file.
-        =====================   ===========================================
-        """
-        model = self.from_model(name_or_path)
-
     def _get_model_metrics(self, **kwargs):
         checkpoint = kwargs.get("checkpoint", True)
         if not hasattr(self.learn, "recorder"):
-            return 0.0
+            return 0.0, 0.0
 
         try:
             model_accuracy = self.learn.recorder.metrics[-1][0]
