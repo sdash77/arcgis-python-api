@@ -447,7 +447,12 @@ class FeatureClassifier(ArcGISModel):
         if self._backend == 'tensorflow':
             heatmap = False
         if self._data._dataset_type == 'MultiLabeled_Tiles':
-            interp.plot_multi_top_losses(num_examples, figsize=(5,5))
+            try:
+                interp.plot_multi_top_losses(num_examples, figsize=(5,5))
+            except IndexError:
+                from IPython.display import clear_output
+                clear_output(wait=True)
+                print("No mismatches found.")
             return
         fig = interp.plot_top_losses(num_examples, figsize=(15,15), heatmap=heatmap, return_fig=True)
         # fastai way of calculating num nrows and ncols
