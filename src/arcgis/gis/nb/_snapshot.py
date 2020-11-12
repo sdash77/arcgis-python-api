@@ -56,8 +56,7 @@ class SnapShot(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        preserve               Optional Bool. If true, the result is preserved as a snapshot. The
-                               default is false.
+        preserve               Optional Bool. If True, the current notebook version is preserved as a snapshot.
         ------------------     --------------------------------------------------------------------
         description            Optional String. Text describing the restoration point.
         ==================     ====================================================================
