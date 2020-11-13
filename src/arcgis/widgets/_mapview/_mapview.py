@@ -968,9 +968,15 @@ class MapView(widgets.DOMWidget):
             self._auth_mode = "anonymous"
 
         # Set the properties that aren't dependent on auth mode
-        self._portal_url = self.gis.url
+        self._portal_url = self._get_portal_url()
         self._portal_sharing_rest_url = self.gis._public_rest_url
         self._username = str(gis._username)
+
+    def _get_portal_url(self):
+        try:
+            return self.gis._portal.resturl.split("sharing")[0]
+        except Exception as e:
+            return self.gis.url
 
     def _setup_js_cdn(self):
         if _js_cdn_override_global != "":
