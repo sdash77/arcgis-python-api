@@ -212,7 +212,7 @@ class FeatureClassifier(ArcGISModel):
 
     def predict(self, img_path):
         """
-        Runs prediction on an Image.
+        Runs prediction on an Image. Works with RGB images only.
         
         =====================   ===========================================
         **Argument**            **Description**
@@ -489,11 +489,13 @@ class FeatureClassifier(ArcGISModel):
     def predict_folder_and_create_layer(self, folder, feature_layer_name, gis=None, prediction_field='predict', confidence_field='confidence'):
         """
         Predicts on images present in the given folder and creates a feature layer.
+        The images stored in the folder contain GPS information as part of EXIF metadata.
+        Works with RGB images only.
         
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        folder                  Required String. Folder to inference on.
+        folder                  Required String. Folder containing images to inference on.
         ---------------------   -------------------------------------------
         feature_layer_name      Required String. The name of the feature layer used to publish.   
         ---------------------   -------------------------------------------
@@ -747,6 +749,7 @@ class FeatureClassifier(ArcGISModel):
 
         """
         Classifies the exported images and updates the feature layer with the prediction results in the ``output_label_field``.
+        Works with RGB images only.
 
         ====================================     ====================================================================
         **Argument**                             **Description**

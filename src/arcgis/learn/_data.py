@@ -768,7 +768,7 @@ def prepare_data(path,
     ---------------------   -------------------------------------------
     batch_size              Optional integer. Batch size for mini batch gradient
                             descent (Reduce it if getting CUDA Out of Memory
-                            Errors).
+                            Errors). Batch size is required to be greater than 1.
     ---------------------   -------------------------------------------
     transforms              Optional tuple. Fast.ai transforms for data
                             augmentation of training and validation datasets
@@ -796,13 +796,13 @@ def prepare_data(path,
                             This parameter is mandatory for data which are not
                             exported by ArcGIS Pro / Enterprise which includes
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
-                            'superres', 'CycleGAN' and 'Pix2Pix'.
+                            'CycleGAN' and 'Pix2Pix'.
                             This parameter is also mandatory while preparing data
                             for 'EntityRecognizer' model. Accepted data format
-                            for this model are - ['ner_json','BIO', 'LBIOU']
+                            for this model are - ['ner_json','BIO', 'LBIOU'].
     ---------------------   -------------------------------------------
-    resize_to               Optional integer. Resize the image to given size
-                            for "PASCAL_VOC_rectangles" and "superres".
+    resize_to               Optional integer. Resize the images to a given size.
+                            Works only for "PASCAL_VOC_rectangles" and "superres".
                             First resizes the image to the given size and
                             then crops images of size equal to chip_size.
                             Note: Keep chip_size < resize_to

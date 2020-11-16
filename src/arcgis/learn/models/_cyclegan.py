@@ -209,4 +209,4 @@ class CycleGAN(ArcGISModel):
             fid_a, fid_b = compute_fid_metric(self, self._data)
             return fid_a, fid_b
 
-        
+

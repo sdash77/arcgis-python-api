@@ -541,21 +541,34 @@ def export_training_data(input_raster,
                                                   Technological Institute (KITTI) Object Detection Evaluation dataset. The KITTI dataset is a vision benchmark suite.
                                                   This is the default.The label files are plain text files. All values, both numerical or strings, are separated by
                                                   spaces, and each row corresponds to one object.
+                                                  This format can be used with FasterRCNN, RetinaNet, SingleShotDetector and YOLOv3 models.
 
                                                 - ``PASCAL_VOC_rectangles``: The metadata follows the same format as the Pattern Analysis, Statistical Modeling and
                                                   Computational Learning, Visual Object Classes (PASCAL_VOC) dataset. The PASCAL VOC dataset is a standardized
                                                   image data set for object class recognition.The label files are XML files and contain information about image name,
                                                   class value, and bounding box(es).
+                                                  This format can be used with FasterRCNN, RetinaNet, SingleShotDetector and YOLOv3 models.
 
                                                 - ``Classified_Tiles``: This option will output one classified image chip per input image chip.
                                                   No other meta data for each image chip. Only the statistics output has more information on the
                                                   classes such as class names, class values, and output statistics.
+                                                  This format can be used with BDCNEdgeDetector, DeepLab, HEDEdgeDetector, MultiTaskRoadExtractor, PSPNetClassifier and UnetClassifier models.
 
                                                 - ``RCNN_Masks``: This option will output image chips that have a mask on the areas where the sample exists.
                                                   The model generates bounding boxes and segmentation masks for each instance of an object in the image.
-                                                  It's based on Feature Pyramid Network (FPN) and a ResNet101 backbone.
+                                                  This format can be used with MaskRCNN model.
 
                                                 - ``Labeled_Tiles``: This option will label each output tile with a specific class.
+                                                  This format is used for image classification.
+                                                  This format can be used with FeatureClassifier model.
+
+                                                - ``Multi-labeled Tiles``: Each output tile will be labeled with one or more classes.
+                                                  For example, a tile may be labeled agriculture and also cloudy. This format is used for object classification.
+                                                  This format can be used with FeatureClassifier model.
+
+                                                - ``Export Tiles``: The output will be image chips with no label.
+                                                  This format is used for image enhancement techniques such as Super Resolution and Change Detection.
+                                                  This format can be used with ChangeDetector, CycleGAN, Pix2Pix and SuperResolution models.
     ------------------------------------     --------------------------------------------------------------------
     classvalue_field                         Optional string. Specifies the field which contains the class values. If no field is specified,
                                              the system will look for a 'value' or 'classvalue' field. If this feature does

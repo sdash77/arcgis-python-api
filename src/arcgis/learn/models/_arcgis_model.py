@@ -1262,12 +1262,12 @@ class ArcGISModel(object):
 
     def load(self, name_or_path):
         """
-        Loads a saved model for inferencing or fine tuning from the disk.
+        Loads a compatible saved model for inferencing or fine tuning from the disk.
 
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        name_or_path            Required string. Required string. Path to
+        name_or_path            Required string. Name or Path to
                                 Deep Learning Package (DLPK) or
                                 Esri Model Definition(EMD) file.
         =====================   ===========================================
