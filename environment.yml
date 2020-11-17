@@ -10,7 +10,7 @@ dependencies:
 - ujson >=3
 - numpy>=1.16.2
 - pip
-- python=3.6
+- python
 - setuptools
 - widgetsnbextension >=3
 - keyring
