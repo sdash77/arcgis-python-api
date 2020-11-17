@@ -10847,6 +10847,81 @@ class Item(dict):
                                                                            self.id)
         return self._portal.con.post(url, params)
     #----------------------------------------------------------------------
+    def copy_item(self,
+                  *,
+                  title=None,
+                  tags=None,
+                  folder=None,
+                  include_resources=False,
+                  include_private=False):
+        """
+        The copy item operation creates a new item that is a copy of the original item on the server side.
+
+        Copy operation is allowed for the following:
+
+           - Original item being copied is owned by the user invoking the copy operation.
+           - User is an administrator.
+           - User has itemControl update capability.
+
+        The new item created by the copy operation will have system generated itemID.
+
+        Hosted services are copied as reference only. Reserved keywords, ratings, views, comments and listing properties are reset for the new item.
+
+        Sharing access of the original item is not preserved. Sharing access of new item is set to private.
+
+        Relationships and dependencies of the original item are not maintained in the new item.
+
+        **This method is only available on ArcGIS Online**
+
+        =======================    =============================================================
+        **Argument**               **Description**
+        -----------------------    -------------------------------------------------------------
+        title                      Optional string. The title of the destination item. If not specified, title of the original item is used.
+        -----------------------    -------------------------------------------------------------
+        tags                       Optional String. New set of tags (comma separated) of the destination item.
+        -----------------------    -------------------------------------------------------------
+        folder	                   Optional String. Folder Id of the destination item. If the folder Id is not specified, then the item remains in the same folder.
+
+                                   If the administrator invokes a copy of an item belonging to another user, and does not specify the folder Id, the item gets created in the root folder of the administrator.
+        -----------------------    -------------------------------------------------------------
+        include_resources	   Optional boolean. If true, the file resources of the original
+                                   item will be copied over to the new item. Private file resources
+                                   will not be copied over. If false, the file resources of the
+                                   original item will not be copied over to the new item. The
+                                   default is false.
+
+        -----------------------    -------------------------------------------------------------
+        include_private            If true, and if `include_resources` is set to true as well, then
+                                   the private resources of the original item will be copied over to
+                                   the new item. If false, the private file resources of the original
+                                   item will not be copied over to the new item. The default is false.
+        =======================    =============================================================
+
+
+
+        :returns: Item
+        """
+
+        if self._portal.is_arcgisonline:
+            url = "%s/sharing/rest/content/users/%s/items/%s/copy" % (self._portal.url,
+                                                                      self._user_id,
+                                                                      self.id)
+            params = {
+                "f" : "json",
+                'title' : title,
+                'tags' : tags,
+                "includeResources" : include_resources,
+                "copyPrivateResources" : include_private
+            }
+            res = self._portal.con.post(url, params)
+            if 'itemId' in res:
+                return self._gis.content.get(res['itemId'])
+            elif "id" in res:
+                return self._gis.content.get(res['id'])
+            else:
+                return res
+        return
+    #----------------------------------------------------------------------
     def copy(self, title=None, tags=None, snippet=None, description=None, layers=None):
         """
         Copy allows for the creation of an item that is derived from the current item.
