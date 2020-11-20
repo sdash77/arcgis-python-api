@@ -5972,7 +5972,7 @@ class CategorySchemaManager(object):
         if self._url.lower().find("/portals/") == -1:
             # If this SchemaManager is attached to a GroupManager
             group = os.path.basename(self._url)
-            url = f"{self._gis_portal.resturl}content/groups/{group}/updateCategories"
+            url = f"{self._gis._portal.resturl}content/groups/{group}/updateCategories"
         else:
             # else this SchemaManager is attached to a ContentManager
             url = "{base}content/updateItems".format(base=self._gis._portal.resturl)
