@@ -999,21 +999,7 @@ def find_businesses(type_filters=None,
 
     returns: DataFrame (Spatial or Pandas), FeatureSet, or dictionary on error.
     """
-    if gis is None:
-        gis = env.active_gis
-    ge = _GeoEnrichment(gis=gis)
-    return ge.select_businesses(type_filters=type_filters,
-                                 feature_limit=feature_limit,
-                                feature_offset=feature_offset,
-                                exact_match=exact_match,
-                                search_string=search_string,
-                                spatial_filter=spatial_filter,
-                                simple_search=simple_search,
-                                dataset_id=dataset_id,
-                                full_error_message=full_error_message,
-                                out_sr=out_sr,
-                                return_geometry=return_geometry,
-                                as_featureset=as_featureset)
+    raise NotImplementedError("This method is deprecated.")
 #----------------------------------------------------------------------
 def standard_geography_query(source_country=None,
                              country_dataset=None,
