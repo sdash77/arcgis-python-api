@@ -930,6 +930,10 @@ def _find_report(country, gis=None):
 #:return: Pandas' DataFrame """ if gis is None: gis = env.active_gis ge =\
 #_GeoEnrichment(gis=gis) return ge.report_metadata(country=country)\
 #----------------------------------------------------------------------
+@deprecated(deprecated_in="1.4.1",
+            removed_in="1.5.0",
+            current_version=__version__,
+            details="Method was removed due to changes in the GeoEnrichment API")
 def find_businesses(type_filters=None,
                       feature_limit=1000,
                       feature_offset=0,
@@ -944,10 +948,7 @@ def find_businesses(type_filters=None,
                       as_featureset=False,
                       gis=None):
     """
-    **DEPRECATED METHOD. DO NOT USE. RAISES AN EXCEPTION**
-    
-    .. deprecated:: Deprecated since version 1.4.1 and was removed in 1.5.0. Method will be removed due to changes in the GeoEnrichment API
-
+    **DEPRECATED METHOD DO NOT USE**
     
     The find_businesses method returns business points matching a given search criteria.
     Business points can be selected using any combination of three search criteria: search
