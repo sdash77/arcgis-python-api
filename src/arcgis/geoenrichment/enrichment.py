@@ -1001,7 +1001,7 @@ def find_businesses(type_filters=None,
 
     returns: DataFrame (Spatial or Pandas), FeatureSet, or dictionary on error.
     """
-    raise NotImplementedError("This method is deprecated.")
+    raise Exception("This method is deprecated.")
 #----------------------------------------------------------------------
 def standard_geography_query(source_country=None,
                              country_dataset=None,
