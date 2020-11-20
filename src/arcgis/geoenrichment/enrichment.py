@@ -948,6 +948,8 @@ def find_businesses(type_filters=None,
                       as_featureset=False,
                       gis=None):
     """
+    **DEPRECATED METHOD DO NOT USE**
+    
     The find_businesses method returns business points matching a given search criteria.
     Business points can be selected using any combination of three search criteria: search
     string, spatial filter and business type. A business point will be selected if it matches
