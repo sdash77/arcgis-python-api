@@ -5964,7 +5964,10 @@ class CategorySchemaManager(object):
 
 
         :returns: A `dict` of `item_id` : `status`, with `status` being
-        whether the content categories were successfully added
+        whether the content categories were successfully added. If the `status` is
+        unsuccessfully updated, a message will provide information to help you debug
+        the issue.
+
 
         """
         params = {'f' : 'json',
@@ -5979,10 +5982,11 @@ class CategorySchemaManager(object):
         response = self._gis._con.post(url, params)
         output = {}
         if 'results' in response:
-            for res in response['results']:
-                if 'success' in res and 'itemId' in res:
-                    output[res['itemId']] = res['success']
-        return output
+            return response['results']
+            #for res in response['results']:
+                #if 'success' in res and 'itemId' in res:
+                    #output[res['itemId']] = res['success']
+        return response
 
 class ResourceManager(object):
     """
