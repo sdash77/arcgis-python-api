@@ -37,7 +37,7 @@ class FormCollection:
             # get forms from webmap, get individual form from FormCollection, modify form
             form_collection = wm.forms
             form_info_2 = form_collection[0]
-            form_info = form_collection.get_form(title="Manhole Inspection")
+            form_info = form_collection.get(title="Manhole Inspection")
             form_info.clear()
             form_info.add_field_element(field_name="inspector", label="Inspector", description="This is the inspector")
             form_info.add_group_element(label="Group 1",initial_state="collapsed")
@@ -48,7 +48,7 @@ class FormCollection:
             from arcgis.mapping.forms import FormCollection
             wm = arcgis.mapping.WebMap(item)
             form_collection = FormCollection(wm)
-            form_info_1 = form_collection.get_form(item_id="232323232323232323")
+            form_info_1 = form_collection.get(item_id="232323232323232323")
             form_info_1.title = "New Form"
 
     """
@@ -78,7 +78,7 @@ class FormCollection:
             self._index += 1
             return self.forms[self._index - 1]
 
-    def get_form(self, item_id=None, title=None, layer_id=None):
+    def get(self, item_id=None, title=None, layer_id=None):
         """
             Returns the form for the first layer with a matching item_id, title, or layer_id in the webmap's
             operational layers. Pass one of the three parameters into the method to return the form.
