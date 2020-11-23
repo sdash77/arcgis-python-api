@@ -5975,7 +5975,11 @@ class CategorySchemaManager(object):
         }
         if self._url.lower().find("/portals/") == -1:
             # If this SchemaManager is attached to a GroupManager
-            params['items'] = json.dumps({key : value['categories'] for key, value in items.items()})
+            cats = []
+            for val in items:
+                for key in val.keys():
+                    cats.append({key : val[key]['categories']})
+            params['items'] = json.dumps(cats)
             group = os.path.basename(self._url)
             url = f"{self._gis._portal.resturl}content/groups/{group}/updateCategories"
         else:
