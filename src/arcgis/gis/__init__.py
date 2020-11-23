@@ -5964,24 +5964,36 @@ class CategorySchemaManager(object):
 
 
         :returns: A `dict` of `item_id` : `status`, with `status` being
-        whether the content categories were successfully added
+        whether the content categories were successfully added. If the `status` is
+        unsuccessfully updated, a message will provide information to help you debug
+        the issue.
+
 
         """
-        params = {'f' : 'json',
-                  'items' : json.dumps(items)}
+        params = {
+            'f' : 'json',
+        }
         if self._url.lower().find("/portals/") == -1:
             # If this SchemaManager is attached to a GroupManager
-            url = "{base}/updateCategories".format(base=self._url)
+            cats = []
+            for val in items:
+                for key in val.keys():
+                    cats.append({key : val[key]['categories']})
+            params['items'] = json.dumps(cats)
+            group = os.path.basename(self._url)
+            url = f"{self._gis._portal.resturl}content/groups/{group}/updateCategories"
         else:
             # else this SchemaManager is attached to a ContentManager
+            params['items'] = json.dumps(items)
             url = "{base}content/updateItems".format(base=self._gis._portal.resturl)
         response = self._gis._con.post(url, params)
         output = {}
         if 'results' in response:
-            for res in response['results']:
-                if 'success' in res and 'itemId' in res:
-                    output[res['itemId']] = res['success']
-        return output
+            return response['results']
+            #for res in response['results']:
+                #if 'success' in res and 'itemId' in res:
+                    #output[res['itemId']] = res['success']
+        return response
 
 class ResourceManager(object):
     """
