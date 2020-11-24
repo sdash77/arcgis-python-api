@@ -11238,7 +11238,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                     percentile_values=percentile_values,
                                                     process_as_multidimensional=process_as_multidimensional,
                                                     percentile_interpolation_type=percentile_interpolation_type,
-                                                    output_name=output_name,
+                                                    output_table_name=output_name,
                                                     context=context,
                                                     gis=self._gis,
                                                     future=True)
