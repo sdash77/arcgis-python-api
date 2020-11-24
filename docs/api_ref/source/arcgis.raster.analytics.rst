@@ -179,3 +179,7 @@ sample
 merge_multidimensional_rasters
 ------------------------------
 .. autofunction:: arcgis.raster.analytics.merge_multidimensional_rasters
+
+zonal_statistics_as_table
+-------------------------
+.. autofunction:: arcgis.raster.analytics.zonal_statistics_as_table
