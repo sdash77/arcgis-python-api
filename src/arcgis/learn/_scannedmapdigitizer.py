@@ -1525,7 +1525,7 @@ class ScannedMapDigitizer:
         =====================   ============================================
         **Argument**            **Description**
         ---------------------   --------------------------------------------
-        extent                  Extent defines the extreme longitue/latitude
+        extent                  Extent defines the extreme longitude/latitude
                                 of the search region.
 
         =====================   ============================================
@@ -1714,7 +1714,7 @@ class ScannedMapDigitizer:
         ---------------------   --------------------------------------------------
         search_image            Path to the bigger image/shapefile.
         ---------------------   --------------------------------------------------
-        extent                  Extent defines the extreme longitue/latitude
+        extent                  Extent defines the extreme longitude/latitude
                                 of the search region.
         ---------------------   --------------------------------------------------
         image_height            Height of the search region.

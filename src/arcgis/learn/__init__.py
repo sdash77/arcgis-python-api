@@ -360,7 +360,7 @@ def classify_pixels(input_raster,
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_raster                             Required. raster layer that needs to be classified
+    input_raster                             Required. raster layer that needs to be classified.
     ------------------------------------     --------------------------------------------------------------------
     model                                    Required model object.
     ------------------------------------     --------------------------------------------------------------------
@@ -501,7 +501,7 @@ def export_training_data(input_raster,
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_raster                             Required. Raster layer that needs to be exported for training bla
+    input_raster                             Required. Raster layer that needs to be exported for training.
     ------------------------------------     --------------------------------------------------------------------
     input_class_data                         Labeled data, either a feature layer or image layer.
                                              Vector inputs should follow a training sample format as

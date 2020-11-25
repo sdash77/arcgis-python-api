@@ -221,7 +221,7 @@ class FeatureClassifier(ArcGISModel):
                                 predictions on.
         =====================   ===========================================
         
-        :returns: prediciton label and confidence        
+        :returns: prediction label and confidence        
         """
         
         img = open_image(img_path)
@@ -776,7 +776,7 @@ class FeatureClassifier(ArcGISModel):
         ====================================     ====================================================================
 
         :return:
-            Boolean : True/False if operation is sucessful
+            Boolean : True/False if operation is successful
 
         """
 
@@ -1281,7 +1281,7 @@ class FeatureClassifier(ArcGISModel):
         """
         Categorizes each feature by classifying its attachments or an image of its geographical area (using the provided Imagery Layer)
         and updates the feature layer with the prediction results in the ``output_label_field``.
-        Deprecated, Please use arcgis.learn.classify_objects() instead.
+        Deprecated, please use arcgis.learn.classify_objects() instead.
 
         ====================================     ====================================================================
         **Argument**                             **Description**

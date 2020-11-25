@@ -527,7 +527,7 @@ class ArcGISModel(object):
 
     def lr_find(self, allow_plot=True):
         """
-        Runs the Learning Rate Finder, and displays the graph of it's output.
+        Runs the Learning Rate Finder, and displays the graph of its output.
         Helps in choosing the optimum learning rate for training the model.
         """
         self._check_requisites()

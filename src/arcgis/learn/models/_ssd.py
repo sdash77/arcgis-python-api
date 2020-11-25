@@ -84,7 +84,7 @@ class SingleShotDetector(ArcGISModel):
                             creating the base of the `SingleShotDetector`, which
                             is `resnet34` by default.
     ---------------------   -------------------------------------------
-    dropout                 Optional float. Dropout propbability. Increase it to
+    dropout                 Optional float. Dropout probability. Increase it to
                             reduce overfitting.
     ---------------------   -------------------------------------------
     bias                    Optional float. Bias for SSD head.
@@ -819,7 +819,7 @@ class SingleShotDetector(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        detect_thresh           Optional float. The probabilty above which
+        detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
                                 average precision.
         ---------------------   -------------------------------------------

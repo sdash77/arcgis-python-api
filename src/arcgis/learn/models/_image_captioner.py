@@ -299,17 +299,14 @@ class ImageCaptioner(ArcGISModel):
 
     def load(self, name_or_path):
         """
-        Loads a saved model for inferencing or fine tuning from the specified
-        path or model name.
+        Loads a compatible saved model for inferencing or fine tuning from the disk.
 
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        name_or_path            Required string. Name of the model to load from
-                                the pre-defined location. If path is passed
-                                then it loads from the specified path with
-                                model name as directory name. Path to ".pth"
-                                file can also be passed
+        name_or_path            Required string. Name or Path to
+                                Deep Learning Package (DLPK) or
+                                Esri Model Definition(EMD) file.
         =====================   ===========================================
         """
         from fastai.text.transform import Vocab

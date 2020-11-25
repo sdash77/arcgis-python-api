@@ -61,7 +61,7 @@ class PSPNetClassifier(ArcGISModel):
     pretrained_path         Optional string. Path where pre-trained PSPNet model is
                             saved.
     ---------------------   -------------------------------------------
-    unet_aux_loss           Optional. Bool If True will use auxillary loss for PSUnet.
+    unet_aux_loss           Optional. Bool If True will use auxiliary loss for PSUnet.
                             Default set to False. This flag is applicable only when
                             use_unet is True.
     ---------------------   -------------------------------------------
@@ -88,7 +88,7 @@ class PSPNetClassifier(ArcGISModel):
     ---------------------   -------------------------------------------
     dice_loss_fraction      Optional float. 
                             Min_val=0, Max_val=1 
-                            If > 0 , model will use a combination of defaut or 
+                            If > 0 , model will use a combination of default or 
                             focal(if focal=True) loss with the specified fraction 
                             of dice loss.
                             E.g. 
@@ -438,7 +438,7 @@ class PSPNetClassifier(ArcGISModel):
                                 mean IOU, otherwise returns mean iou of all
                                 classes combined.   
         ---------------------   -------------------------------------------
-        show_progress           Optional bool. Displays the prgress bar if
+        show_progress           Optional bool. Displays the progress bar if
                                 True.                     
         =====================   ===========================================
         
