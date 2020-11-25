@@ -1,5 +1,6 @@
 __version__ = '1.9.0'
 
+from . import env
 from . import (features, geoanalytics, geocoding, geometry)
 from . import (geoprocessing, network, raster, realtime, schematics)
 import os

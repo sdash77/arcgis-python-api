@@ -332,9 +332,11 @@ def _device_check():
     if hasattr(arcgis, 'env') and getattr(arcgis.env, '_processorType', "") == "CPU":
         return True
 
+    if not torch.cuda.is_available():
+        warnings.warn("Cuda is not available")
+        return True
+
     move_to_cpu = False
-    if not hasattr(torch._C, '_cuda_isDriverSufficient'):
-        raise Exception("Torch not compiled with CUDA enabled")
 
     incorrect_binary_warn = """
     Found GPU%d %s which requires CUDA_VERSION >= %d for
@@ -369,24 +371,27 @@ def _device_check():
             warnings.warn(old_gpu_warn % (d, name, major, capability[1]))
             move_to_cpu = True
 
-    if not torch._C._cuda_isDriverSufficient():
-        move_to_cpu = True
-        if torch._C._cuda_getDriverVersion() == 0:
-            # found no NVIDIA driver on the system
-            warnings.warn("""
-            Found no GPU driver. CPU will be used for processing.
-            """)
-        else:
-            warnings.warn("""
-            The NVIDIA driver on your system is too old (found version {})
-            or your GPU architecture is very old and it's not supported.
-            Please update your GPU driver by downloading and installing
-            a new version from the URL: http://www.nvidia.com/Download/index.aspx
-            Alternatively, go to https://pytorch.org for more info
-            on how to install or build a PyTorch version that has been
-            compiled for your GPU architecture (Cuda compute capability)
-            or for your version of Cuda driver. It may continue to work on CPU.
-            """.format(str(torch._C._cuda_getDriverVersion())))
+    try:
+        if not torch._C._cuda_isDriverSufficient():
+            move_to_cpu = True
+            if torch._C._cuda_getDriverVersion() == 0:
+                # found no NVIDIA driver on the system
+                warnings.warn("""
+                Found no GPU driver. CPU will be used for processing.
+                """)
+            else:
+                warnings.warn("""
+                The NVIDIA driver on your system is too old (found version {})
+                or your GPU architecture is very old and it's not supported.
+                Please update your GPU driver by downloading and installing
+                a new version from the URL: http://www.nvidia.com/Download/index.aspx
+                Alternatively, go to https://pytorch.org for more info
+                on how to install or build a PyTorch version that has been
+                compiled for your GPU architecture (Cuda compute capability)
+                or for your version of Cuda driver. It may continue to work on CPU.
+                """.format(str(torch._C._cuda_getDriverVersion())))
+    except:
+        pass
 
     return move_to_cpu
 
