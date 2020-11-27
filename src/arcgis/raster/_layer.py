@@ -6530,6 +6530,11 @@ class _ImageServerRaster(ImageryLayer, Raster):
     def get_raster_bands(self, band_ids_or_names=None):
         if super().tiles_only:
             raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+        
+        if band_ids_or_names is None:
+            band_count = super().band_count
+            band_ids_or_names = [i+1 for i in range(band_count)]
+
         from arcgis.raster.functions import extract_band
         return_list=[]
         if isinstance(band_ids_or_names, list):
