@@ -6531,7 +6531,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
         if super().tiles_only:
             raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
         
-        if band_ids_or_names is None:
+        if band_ids_or_names is None or (isinstance(band_ids_or_names, list) and len(band_ids_or_names) == 0):
             band_count = super().band_count
             band_ids_or_names = [i+1 for i in range(band_count)]
 
