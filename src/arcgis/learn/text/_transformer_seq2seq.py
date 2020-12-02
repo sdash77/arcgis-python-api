@@ -127,7 +127,7 @@ class TransformerForSequenceToSequence(ArcGISTransformer):
         else:
             raise Exception(f"{cls._outfile} not present at {path}")
 
-    def forward(self, input_ids, decoder_input_ids, **kwargs):
+    def forward(self, input_ids, labels, **kwargs):
         """
         Return only the logits from the transfomer model
 
@@ -141,16 +141,13 @@ class TransformerForSequenceToSequence(ArcGISTransformer):
 
         :return: the logits from the transformer model
         """
-        if self.architecture in ['t5']:
-            logits = self._transformer(input_ids=input_ids, decoder_input_ids=decoder_input_ids)[0] # 0th position output is logits
-                                                                                                    # this will change in the later versions and
-                                                                                                    # logits can be fetched with output.Logits
-            return logits
-        elif self.architecture in ['bart','marian']: 
-            logits = self._transformer(input_ids=input_ids)[0] # 0th position output is logits
-                                                                                                    # this will change in the later versions and
-                                                                                                    # logits can be fetched with output.Logits
-            return logits
+        if self.architecture in ['t5','bart','marian']:
+            pad_id = self._tokenizer.pad_token_id
+            attention_mask = (input_ids!=pad_id).int()
+            output_dict = self._transformer(input_ids=input_ids, attention_mask=attention_mask, labels = labels, return_dict = True)
+            logits = output_dict.get('logits')  
+            loss = output_dict.get('loss')
+            return loss, logits
 
     def _load_transformer(self):
         """
