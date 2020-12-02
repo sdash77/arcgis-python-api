@@ -3274,7 +3274,8 @@ class UserManager(object):
     #----------------------------------------------------------------------
     @_lazy_property
     def roles(self):
-        """Helper object to manage custom roles for users"""
+        """Helper object to manage custom roles for users. Returns an instance
+        of the :class:`~arcgis.gis.RoleManager`"""
         return RoleManager(self._gis)
 
     #----------------------------------------------------------------------
@@ -3320,7 +3321,10 @@ class UserManager(object):
         return res
 
 class RoleManager(object):
-    """Helper class to manage custom :class:`roles <arcgis.gis.Role>` for users in a GIS."""
+    """Helper class to manage custom :class:`roles <arcgis.gis.Role>` for users in a GIS.
+
+       Users don't create this class directly. It is available as the :attr:`arcgis.gis.UserManager.roles`
+       property of the :class:`~arcgis.gis.UserManager`"""
 
     def __init__(self, gis):
         """Creates helper object to manage custom roles in the GIS"""
@@ -3387,8 +3391,10 @@ class RoleManager(object):
 
     def all(self, max_roles=1000):
         """
-        Provides the list of all non-default roles in the GIS. (The ``org_admin``, ``org_user``,
-        and ``org_publisher`` roles are not returned)
+        Provides a list containing the default ``Viewer`` and ``Data Editor`` roles, plus any
+        custom roles defined in the :class:`~arcgis.gis.GIS`. (The ``org_admin``, ``org_user``,
+        and ``org_publisher`` default roles are not returned. See `Default roles <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm#ESRI_SECTION2_CB9BF0951AC647529EBB7CB09B8B3EDA>`_
+        for detailed descriptions of each role.)
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -3397,7 +3403,35 @@ class RoleManager(object):
         ==================     ====================================================================
 
         :return:
-           The list of all non-default :class:`roles <arcgis.gis.Role>` in the GIS.
+           The list of all custom :class:`roles <arcgis.gis.Role>`, plus the default ``Viewer``
+           and ``Data Editor`` roles defined in the GIS.
+
+        .. code-block:: python
+           :emphasize-lines: 6
+
+            # Usage Example
+
+            >>> primary_default_roles = ['org_admin', 'org_publisher', 'org_user']
+
+            >>> role_mgr = gis.users.roles
+            >>> org_roles = role_mgr.all()
+
+            >>> for role in org_roles:
+                print(f"{role.name:25}{role.role_id}"
+
+                Viewer                   iAAAAAAAAAAAAAAA
+                Data Editor              iBBBBBBBBBBBBBBB
+                Analyzer                 8KqWobO1p1vDLZ2O
+                Sharing_analyst          ZllNulU2kqaFwsaH
+                Group_creator            uT3334C4LtnQ99Cj
+
+            >>> all_org_roles = primary_default_roles + [r.name for r in org_roles]
+            >>> print(all_org_roles)
+
+                ['org_admin', 'org_publisher', 'org_user', 'Viewer', 'Data Editor', 'Analyzer', 'Sharing_analyst', 'Group_creator']
+
+        See :attr:`~arcgis.gis.UserManager.create` method of :class:`~arcgis.gis.UserManager` for using
+        role information when creating users.
         """
         roles = self._portal.get_org_roles(max_roles)
         return [Role(self._gis, role['id'], role) for role in roles]
