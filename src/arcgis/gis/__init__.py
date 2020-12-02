@@ -11239,7 +11239,7 @@ class Item(dict):
         :return: dict
 
         """
-        if not self.type.lower() in ['application', 'api key']:
+        if self.type.lower() in ['application', 'api key']:
             return None
         if redirect_uris is None:
             redirect_uris = []
