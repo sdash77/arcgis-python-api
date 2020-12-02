@@ -9765,6 +9765,10 @@ class Item(dict):
                 params['name'] = os.path.basename(os.path.abspath(os.path.join(self.layers[0]._url, ".." + os.sep + "..")))
             else:
                 params['name'] = os.path.basename(os.path.dirname(self.layers[0].container._url))
+        if self.type == 'Vector Tile Service':
+            params['name'] = self.title.replace(' ', '_')
+        if self.type == 'Map Service':
+            params['name'] = self.title.replace(' ', '_')
         if date_range.lower() in ['24h', '1d']:
             params['period'] = '1h'
             params['startTime'] = int((end_date - timedelta(days=1)).timestamp() * 1000)
