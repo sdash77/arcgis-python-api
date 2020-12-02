@@ -8397,7 +8397,14 @@ class Item(dict):
                     layers.append(FeatureLayer(self.url, self._gis))
                 else:
                     svc = FeatureLayerCollection.fromitem(self)
-                    for lyr in svc.layers:
+                    data = self.get_data()
+                    for idx, lyr in enumerate(svc.layers):
+                        if 'layers' in data:
+                            if idx < len(data['layers']) and \
+                               'layerDefinition' in data['layers'][idx] and \
+                               'drawingInfo' in data['layers'][idx]['layerDefinition'] and \
+                               'renderer' in data['layers'][idx]['layerDefinition']['drawingInfo']:
+                                lyr.renderer = data['layers'][idx]['layerDefinition']['drawingInfo']['renderer']
                         layers.append(lyr)
                     for tbl in svc.tables:
                         tables.append(tbl)
