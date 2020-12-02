@@ -8737,13 +8737,11 @@ class Item(dict):
         if file_name is None:
             import re
             file_name = self.name or self.title
-            file_name = re.sub('[^a-zA-Z0-9 \n\.]', '', file_name)
+            file_name = re.sub('[^a-zA-Z0-9 \n\.]', '', file_name) or self.itemid
         if not save_path:
             save_path = self._workdir
         if data_path:
-            import re
-            name = self.name or self.title
-            name = re.sub('[^a-zA-Z0-9 \n\.]', '', name)
+            
             download_path = self._portal.con.get(path=data_path, file_name=file_name,
                                                  out_folder=save_path, try_json=False, force_bytes=False)
             if download_path == '':
