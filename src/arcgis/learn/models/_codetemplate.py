@@ -525,7 +525,12 @@ class ArcGISObjectClassifier:
                 'type': 'esriFieldTypeString',
                 'alias': 'Label'
             }
-        )         
+        )
+
+        if "MetaDataMode" in self.json_info and self.json_info["MetaDataMode"] == "MultiLabeled_Tiles":
+            for item in fields['fields']:
+                if item['name'] == 'Confidence':
+                    item['type'] = 'esriFieldTypeString'
 
         return json.dumps(fields)
 
@@ -557,7 +562,12 @@ class ArcGISObjectClassifier:
                 'type': 'esriFieldTypeString',
                 'alias': 'Label'
             }
-        )        
+        )
+
+        if "MetaDataMode" in self.json_info and self.json_info["MetaDataMode"] == "MultiLabeled_Tiles":
+            for item in features['fields']:
+                if item['name'] == 'Confidence':
+                    item['type'] = 'esriFieldTypeString'
 
         for i in range(len(polygon_list)):
 
@@ -574,7 +584,8 @@ class ArcGISObjectClassifier:
                 'attributes': {
                     'OID': i + 1,
                     'Confidence': str(scores[i]),
-                    'Label': labels[i]
+                    'Label': labels[i],
+                    'Classname': labels[i]
                 },
                 'geometry': {
                     'rings': rings
