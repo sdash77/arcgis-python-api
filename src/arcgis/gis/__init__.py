@@ -3322,9 +3322,19 @@ class UserManager(object):
 
 class RoleManager(object):
     """Helper class to manage custom :class:`roles <arcgis.gis.Role>` for users in a GIS.
+       Users don't create this class directly. It is available as the :attr:`~arcgis.gis.UserManager.roles`
+       property of the :class:`~arcgis.gis.UserManager`
 
-       Users don't create this class directly. It is available as the :attr:`arcgis.gis.UserManager.roles`
-       property of the :class:`~arcgis.gis.UserManager`"""
+       .. code-block:: python
+
+            # Usage Example
+
+            >>> role_mgr = gis.users.roles
+            >>> type(role_mgr)
+
+            <class 'arcgis.gis.RoleManager'>
+    """
+
 
     def __init__(self, gis):
         """Creates helper object to manage custom roles in the GIS"""
