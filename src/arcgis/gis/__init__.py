@@ -8146,11 +8146,13 @@ class User(dict):
             reassign_to = reassign_to.username
 
         for l in self._gis.admin.license.all():
-            entitle = l.user_entitlement(username=self.username)
-            if 'entitlements' in entitle:
+            entitle = l.check(user=self.username)
+            if len(entitle) > 0:
                 l.revoke(username=self.username,
-                         entitlements=entitle['entitlements'],
-                         suppress_email=True)
+                             entitlements="*",
+                             suppress_email=True)
+        for bundle in self._gis.admin.license.bundles:
+            bundle.revoke(users=self.username)
         return self._portal.delete_user(self._user_id, reassign_to)
 
     def reassign_to(self, target_username):
