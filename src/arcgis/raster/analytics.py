@@ -6494,10 +6494,6 @@ def zonal_statistics_as_table(input_zone_raster_or_features,
                                              Maximum. A value of 50 will produce essentially the same result as the Median statistic.
                                              This option is only available if the Statistics Type parameter is set to PERCENTILE or ALL.
     ------------------------------------     --------------------------------------------------------------------
-    percentile_value                         Optional int. The percentile to calculate when the  
-                                             statistics_type parameter is set to PERCENTILE.
-                                             This value can range from 0 to 100. The default is 90. 
-    ------------------------------------     --------------------------------------------------------------------
     process_as_multidimensional              Optional bool, Determines how the input rasters will be processed if they 
                                              are multidimensional.
                                              False - Statistics will be calculated from the current slice of a 
