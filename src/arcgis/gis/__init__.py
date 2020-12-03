@@ -8399,12 +8399,12 @@ class Item(dict):
                     svc = FeatureLayerCollection.fromitem(self)
                     data = self.get_data()
                     for idx, lyr in enumerate(svc.layers):
-                        if 'layers' in data:
-                            if idx < len(data['layers']) and \
-                               'layerDefinition' in data['layers'][idx] and \
-                               'drawingInfo' in data['layers'][idx]['layerDefinition'] and \
-                               'renderer' in data['layers'][idx]['layerDefinition']['drawingInfo']:
-                                lyr.renderer = data['layers'][idx]['layerDefinition']['drawingInfo']['renderer']
+                        if 'layers' in data and \
+                           idx < len(data['layers']) and \
+                           'layerDefinition' in data['layers'][idx] and \
+                           'drawingInfo' in data['layers'][idx]['layerDefinition'] and \
+                           'renderer' in data['layers'][idx]['layerDefinition']['drawingInfo']:
+                            lyr.renderer = data['layers'][idx]['layerDefinition']['drawingInfo']['renderer']
                         layers.append(lyr)
                     for tbl in svc.tables:
                         tables.append(tbl)
@@ -8748,7 +8748,7 @@ class Item(dict):
         if not save_path:
             save_path = self._workdir
         if data_path:
-            
+
             download_path = self._portal.con.get(path=data_path, file_name=file_name,
                                                  out_folder=save_path, try_json=False, force_bytes=False)
             if download_path == '':
