@@ -39,8 +39,8 @@ class FormCollection:
             form_info_2 = form_collection[0]
             form_info = form_collection.get(title="Manhole Inspection")
             form_info.clear()
-            form_info.add_field_element(field_name="inspector", label="Inspector", description="This is the inspector")
-            form_info.add_group_element(label="Group 1",initial_state="collapsed")
+            form_info.add_field(field_name="inspector", label="Inspector", description="This is the inspector")
+            form_info.add_group(label="Group 1",initial_state="collapsed")
             form_info.update()
 
             # USAGE EXAMPLE 2: Create Form Collection
@@ -170,18 +170,18 @@ class FormInfo:
                 # get element, add element
                 new_element = FormFieldElement(label="Inspector Name", field_name="inspectornm",
                                               editable=True)
-                form_info.add_element(element=new_element)
-                same_element = form_info.get_element(label="Inspector Name")
+                form_info.add(element=new_element)
+                same_element = form_info.get(label="Inspector Name")
 
                 # add group, add second group, add to group
-                form_info.add_group_element(label="Inspector Group",description="This is a group for inspectors")
+                form_info.add_group(label="Inspector Group",description="This is a group for inspectors")
                 new_group = FormGroupElement(label="Group 1", description="New Group")
-                group = form_info.add_element(element=new_group)
-                group.add_field_element(field_name="inspection_date", label="Inspection Date")
+                group = form_info.add(element=new_group)
+                group.add_field(field_name="inspection_date", label="Inspection Date")
 
                 # move element, delete element
-                form_info.move_element(element=new_group, index=0)
-                form_info.delete_element(element=new_group)
+                form_info.move(element=new_group, index=0)
+                form_info.delete(element=new_group)
 
                 # save form into backend
                 form_info.update()
@@ -233,7 +233,7 @@ class FormInfo:
         self._title = None
         self._description = None
 
-    def get_element(self, label=None):
+    def get(self, label=None):
         """
           Returns a matching FormElement given a label
 
@@ -334,11 +334,11 @@ class FormInfo:
         for field in fields:
             try:
                 element = FormFieldElement(label=field.get("alias"), editable=field.get("editable"), field_name=field.get("name"))
-                self.add_element(element=element)
+                self.add(element=element)
             except Exception:
                 continue
 
-    def add_element(self, element=None, index=None):
+    def add(self, element=None, index=None):
         """
           Adds a single :class:`~arcgis.mapping.forms.FormElement` to the form. You can add to the form either by instantiating your
           own :class:`~arcgis.mapping.forms.FormFieldElement` or :class:`~arcgis.mapping.forms.FormGroupElement` and passing it into the element parameter here,
@@ -370,8 +370,8 @@ class FormInfo:
         self._form_elements.insert(index, element)
         return element
 
-    def add_field_element(self, field_name, label, description=None, visibility_expression=None,
-                          domain=None, editable=None, hint=None, input_type=None, required_expression=None, **kwargs):
+    def add_field(self, field_name, label, description=None, visibility_expression=None,
+                  domain=None, editable=None, hint=None, input_type=None, required_expression=None, **kwargs):
         """
             Adds a single field :class:`~arcgis.mapping.forms.FormElement` element to the end of the form.
 
@@ -417,9 +417,9 @@ class FormInfo:
 
         element = FormFieldElement(form=self, field_name=field_name, label=label, description=description, visibility_expression=visibility_expression,
                                    domain=domain, editable=editable, hint=hint, input_type=input_type, required_expression=required_expression, **kwargs)
-        return self.add_element(element)
+        return self.add(element)
 
-    def add_group_element(self, label, description=None, visibility_expression=None, initial_state=None, **kwargs):
+    def add_group(self, label, description=None, visibility_expression=None, initial_state=None, **kwargs):
         """
           Adds a single :class:`~arcgis.mapping.forms.GroupElement` to the form
 
@@ -440,12 +440,12 @@ class FormInfo:
           :return: The element that was added - :class:`arcgis.mapping.forms.FormGroupElement`
         """
         group_el = FormGroupElement(label=label, description=description, visibility_expression=visibility_expression, initial_state=initial_state, **kwargs)
-        return self.add_element(group_el)
+        return self.add(group_el)
 
-    def delete_element(self, element=None, label=None):
+    def delete(self, element=None, label=None):
         """
           Deletes element from the form. You can use either the element param
-          with a form element you get using `FormInfo.get_element()` or you can pass the label of the
+          with a form element you get using `FormInfo.get()` or you can pass the label of the
           form element you'd like to move into the label param.
 
           ==================     ====================================================================
@@ -465,16 +465,16 @@ class FormInfo:
         """
         self._validate_input(element=element, field=label)
         if label:
-            element = self.get_element(label=label)
+            element = self.get(label=label)
         try:
             return self._form_elements.remove(element)
         except Exception:
             return False
 
-    def move_element(self, element=None, label=None, destination=None, index=None):
+    def move(self, element=None, label=None, destination=None, index=None):
         """
           Moves a form element in the form to a new location. You can use either the element param
-          with a form element you get using `FormInfo.get_element()` or you can pass the label of the
+          with a form element you get using `FormInfo.get()` or you can pass the label of the
           form element you'd like to move into the label param.
 
           ==================     ====================================================================
@@ -501,11 +501,11 @@ class FormInfo:
             raise ValueError("Please provide an index to this function")
         self._validate_input(element=element, field=label)
         if label:
-            element = self.get_element(label=label)
-        self.delete_element(element)
+            element = self.get(label=label)
+        self.delete(element)
         if destination is None:
             destination = self
-        return destination.add_element(element, index=index)
+        return destination.add(element, index=index)
 
     def _get_matching_field(self, field_name):
         """Get the feature layer field given a popup field."""
@@ -539,7 +539,7 @@ class FormInfo:
 
     @staticmethod
     def _validate_input(element=None, field=None):
-        """Validate the inputs provided to add_element are valid."""
+        """Validate the inputs provided to add are valid."""
         if element and field:
             raise ValueError("Please use either element or field, not both")
         if element and not isinstance(element, FormElement):
@@ -799,12 +799,12 @@ class FormFieldElement(FormElement):
             form_info = form_collection.get_form(title="Manhole Inspection")
 
             # edit element properties
-            form_element = form_info.get_element(label="Inspector Name")
+            form_element = form_info.get(label="Inspector Name")
             form_element.label = "Inspector Name(s)"
             form_element.description = "The inspector(s) who completed this manhole inspection")
 
             # set visibility expression
-            el = form_info.add_field_element(field_name="jake_only", label="jake_only")
+            el = form_info.add_field(field_name="jake_only", label="jake_only")
             expression_info = FormExpressionInfo(name="expr0",title="New Expression",expression="$feature.inspector == 'Jake'")
             el.visibility_expression = expression_info
         """
@@ -953,21 +953,21 @@ class FormGroupElement(FormElement):
             form_info = form_collection.get_form(title="Manhole Inspection")
 
             # edit group properties, access elements within group
-            group_element = form_info.get_element(label="Group 1")
-            grouped_form_element = group_element.get_element(label="Inspector Name")
+            group_element = form_info.get(label="Group 1")
+            grouped_form_element = group_element.get(label="Inspector Name")
             grouped_form_element.label = "Inspector Name(s)
             group_element.label = "Inspector Information"
             group_element.initial_state = "collapsed"
 
             # add group, add to group, delete from group, delete group
             new_group = FormGroupElement(form_info, label="Group 2", initial_state="expanded")
-            group = form_info.add_element(element=new_group)
-            grouped_element = group.add_field_element(field_name="inspection_date", label="Inspection Date")
-            group.add_field_element(field_name="inspection_city", label="Inspection City")
+            group = form_info.add(element=new_group)
+            grouped_element = group.add_field(field_name="inspection_date", label="Inspection Date")
+            group.add_field(field_name="inspection_city", label="Inspection City")
             grouped_element.label = "Inspection Date"
-            group.move_element(grouped_element, index=1)
-            group.delete_element(grouped_element)
-            form_info.delete_element(group)
+            group.move(grouped_element, index=1)
+            group.delete(grouped_element)
+            form_info.delete(group)
 
     """
 
@@ -1000,7 +1000,7 @@ class FormGroupElement(FormElement):
             raise ValueError("Value can either be collapsed or expanded")
         self._initial_state = value
 
-    def add_element(self, element=None, index=None):
+    def add(self, element=None, index=None):
         """
           Adds a single form element to the group. You can add to the group either by instantiating
           a FormFieldElement and passing it into the element parameter here,
@@ -1029,8 +1029,8 @@ class FormGroupElement(FormElement):
         self._form_elements.insert(index, element)
         return element
 
-    def add_field_element(self, field_name, label, description=None, visibility_expression=None,
-                          domain=None, editable=None, hint=None, input_type=None, required_expression=None, **kwargs):
+    def add_field(self, field_name, label, description=None, visibility_expression=None,
+                  domain=None, editable=None, hint=None, input_type=None, required_expression=None, **kwargs):
         """
             Adds a single field :class:`~arcgis.mapping.forms.FormElement` element to the end of the group.
 
@@ -1075,12 +1075,12 @@ class FormGroupElement(FormElement):
         """
         element = FormFieldElement(form=self, field_name=field_name, label=label, description=description, visibility_expression=visibility_expression,
                                    domain=domain, editable=editable, hint=hint, input_type=input_type, required_expression=required_expression, **kwargs)
-        return self.add_element(element)
+        return self.add(element)
 
-    def delete_element(self, element=None, label=None):
+    def delete(self, element=None, label=None):
         """
           Deletes form element from the group. You can use either the element param
-          with a form element you get using `FormInfo.get_element()` or you can pass the label of the
+          with a form element you get using `FormInfo.get()` or you can pass the label of the
           form element you'd like to move into the label param.
 
           ==================     ====================================================================
@@ -1096,16 +1096,16 @@ class FormGroupElement(FormElement):
           :return: The deleted element - :class:`arcgis.mapping.forms.FormFieldElement` or or `False`
         """
         if label:
-            element = self.get_element(label=label)
+            element = self.get(label=label)
         try:
             return self._form_elements.remove(element)
         except Exception:
             return False
 
-    def move_element(self, element=None, label=None, destination=None, index=None):
+    def move(self, element=None, label=None, destination=None, index=None):
         """
           Moves a form element in the group to a new location. You can use either the element param
-          with a form element you get using FormGroupElement.get_element() or you can pass the label
+          with a form element you get using FormGroupElement.get() or you can pass the label
           of the form element you'd like to move into the label param.
 
           ==================     ====================================================================
@@ -1131,13 +1131,13 @@ class FormGroupElement(FormElement):
         if index is None:
             raise ValueError("Please provide an index")
         if label:
-            element = self.get_element(label=label)
-        self.delete_element(element)
+            element = self.get(label=label)
+        self.delete(element)
         if destination is None:
             destination = self
-        return destination.add_element(element, index=index)
+        return destination.add(element, index=index)
 
-    def get_element(self, label=None):
+    def get(self, label=None):
         """
           Returns a matching FormFieldElement in the group given a label
 

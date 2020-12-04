@@ -154,7 +154,7 @@ class Test_Forms(unittest.TestCase):
         try:
             form = self.forms.get(title="Shelters")
             self.assertEqual(form.exists(), False)
-            form.add_field_element(label="facilityid", field_name="facilityid")
+            form.add_field(label="facilityid", field_name="facilityid")
             self.assertEqual(form.exists(), True)
 
         except AssertionError as assertErrorException:
@@ -170,7 +170,7 @@ class Test_Forms(unittest.TestCase):
     def test_form_info_clear_all(self):
         try:
             form = self.forms.get(title="Shelters")
-            form.add_field_element(label="facilityid", field_name="facilityid")
+            form.add_field(label="facilityid", field_name="facilityid")
             self.assertEqual(len(form.elements), 1)
             form.clear()
             self.assertEqual(len(form.elements), 0)
@@ -186,21 +186,21 @@ class Test_Forms(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
-    def test_form_info_get_element(self):
+    def test_form_info_get(self):
         try:
             form = self.forms.get(title="Shelters")
-            el = form.add_field_element(label="facilityid", field_name="facilityid")
+            el = form.add_field(label="facilityid", field_name="facilityid")
             el.label = "Facility ID"
-            got_el = form.get_element(label="Facility ID")
+            got_el = form.get(label="Facility ID")
             self.assertIsInstance(got_el, FormFieldElement)
 
             group = FormGroupElement(label="Group 1")
-            group = form.add_element(group)
-            el = group.add_field_element(label="Facility Name", field_name="facname")
-            got_el = form.get_element(el.label)
+            group = form.add(group)
+            el = group.add_field(label="Facility Name", field_name="facname")
+            got_el = form.get(el.label)
             self.assertIsInstance(got_el, FormFieldElement)
 
-            got_el = form.get_element(label="blah")
+            got_el = form.get(label="blah")
             self.assertEqual(got_el, None)
 
         except AssertionError as assertErrorException:
@@ -213,18 +213,18 @@ class Test_Forms(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
-    def test_add_element(self):
+    def test_add(self):
         try:
             form = self.forms.get(title="Shelters")
             form_element = FormFieldElement(label="Facility Name", field_name="facname")
-            form.add_element(form_element)
+            form.add(form_element)
             self.assertEqual(len(form.elements), 1)
 
             group_element = FormGroupElement(label="Group 1")
-            form.add_element(group_element)
+            form.add(group_element)
             self.assertEqual(len(form.elements), 2)
 
-            form.add_group_element(label="Group 2")
+            form.add_group(label="Group 2")
             self.assertEqual(len(form.elements), 3)
 
         except AssertionError as assertErrorException:
@@ -237,12 +237,12 @@ class Test_Forms(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
-    def test_add_group_element(self):
+    def test_add_group(self):
         try:
             form = self.forms.get(title="Shelters")
-            form.add_group_element(label="Group 4", description="Hi")
-            assert form.get_element(label="Group 4")
-            assert form.get_element(label="Group 4").description == "Hi"
+            form.add_group(label="Group 4", description="Hi")
+            assert form.get(label="Group 4")
+            assert form.get(label="Group 4").description == "Hi"
 
         except AssertionError as assertErrorException:
             raise assertErrorException
@@ -254,16 +254,16 @@ class Test_Forms(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
-    def test_delete_element(self):
+    def test_delete(self):
         try:
             form = self.forms.get(title="Shelters")
-            form.add_field_element(label="facilityid", field_name="facilityid")
+            form.add_field(label="facilityid", field_name="facilityid")
             form_element = FormFieldElement(label="Facility Name", field_name="facname")
-            form.add_element(form_element)
+            form.add(form_element)
             self.assertEqual(len(form.elements), 2)
 
-            form.delete_element(form_element)
-            form.delete_element(label="facilityid")
+            form.delete(form_element)
+            form.delete(label="facilityid")
             self.assertEqual(len(form.elements), 0)
 
         except AssertionError as assertErrorException:
@@ -276,23 +276,23 @@ class Test_Forms(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
-    def test_move_element(self):
+    def test_move(self):
         try:
             form = self.forms.get(title="Shelters")
             form_element = FormFieldElement(label="Facility Name", field_name="facname")
-            form.add_element(form_element)
-            el = form.add_field_element(label="facilityid", field_name="facilityid")
+            form.add(form_element)
+            el = form.add_field(label="facilityid", field_name="facilityid")
             self.assertEqual(form.elements[1], el)
 
-            form.move_element(element=el, index=0)
+            form.move(element=el, index=0)
             self.assertEqual(form.elements[0], el)
 
-            group = form.add_group_element(label="Group 1")
-            form.move_element(element=el, destination=group, index=0)
+            group = form.add_group(label="Group 1")
+            form.move(element=el, destination=group, index=0)
             self.assertEqual(len(form.elements), 2)
             self.assertEqual(len(group.elements), 1)
             self.assertEqual(group.elements[0], el)
-            group.move_element(element=el, destination=form, index=0)
+            group.move(element=el, destination=form, index=0)
             self.assertEqual(len(form.elements), 3)
             self.assertEqual(len(group.elements), 0)
 
@@ -311,7 +311,7 @@ class Test_Forms(unittest.TestCase):
             form = self.forms.get(title="Shelters")
             form_element = FormFieldElement(label="Facility Name", field_name="facname", description="test", editable=True, hint="the name",
                                             input_type="text-box")
-            form.add_element(form_element)
+            form.add(form_element)
             self.assertEqual(form.elements[0].label, "Facility Name")
             self.assertEqual(form.elements[0].field_name, "facname")
             self.assertEqual(form.elements[0].description, "test")
@@ -334,7 +334,7 @@ class Test_Forms(unittest.TestCase):
         try:
             form = self.forms.get(title="Shelters")
             group_element = FormGroupElement(label="Group 1", description="test", initial_state="collapsed")
-            group = form.add_element(group_element)
+            group = form.add(group_element)
             self.assertEqual(group.label, "Group 1")
             self.assertEqual(group.description, "test")
             self.assertEqual(group.initial_state, "collapsed")
@@ -342,15 +342,15 @@ class Test_Forms(unittest.TestCase):
                 group.initial_state = "blah"
             group.initial_state = "expanded"
 
-            el = group.add_field_element(label="facilityid", field_name="facilityid")
+            el = group.add_field(label="facilityid", field_name="facilityid")
             self.assertEqual(len(group.elements), 1)
-            got_el = group.get_element(el.label)
+            got_el = group.get(el.label)
             self.assertIsInstance(got_el, FormFieldElement)
-            not_found_el = group.get_element(label="blah")
+            not_found_el = group.get(label="blah")
             self.assertEqual(not_found_el, None)
-            group.delete_element(el)
+            group.delete(el)
             self.assertEqual(len(group.elements), 0)
-            not_deleted_el = group.delete_element(label="blah")
+            not_deleted_el = group.delete(label="blah")
             self.assertEqual(not_deleted_el, False)
 
         except AssertionError as assertErrorException:
@@ -376,7 +376,7 @@ class Test_Forms(unittest.TestCase):
             self.assertEqual(expression.return_type, "boolean")
             expression_2 = FormExpressionInfo(title="New Expression 3", name="expr1", expression="test")
             el = FormFieldElement(label="test", field_name="facname", visibility_expression=expression, required_expression=expression_2)
-            form.add_element(el)
+            form.add(el)
             self.assertEqual(len(form.expressions), 0)
             print(form)
             self.assertEqual(len(form.expressions), 2)
@@ -395,10 +395,10 @@ class Test_Forms(unittest.TestCase):
         try:
             form = self.forms.get(title="Shelters")
             group_element = FormGroupElement(label="Group 1", description="test", initial_state="collapsed")
-            group = form.add_element(group_element)
+            group = form.add(group_element)
             expression = FormExpressionInfo(title="New Expression", name="expr0", expression="test")
             el = FormFieldElement(label="test", field_name="facname", visibility_expression=expression)
-            group.add_element(el)
+            group.add(el)
             form.update()
 
             new_wm = WebMap(self.wm_item)
@@ -417,11 +417,11 @@ class Test_Forms(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
-    def test_forms_validate_add_element(self):
+    def test_forms_validate_add(self):
         try:
             form = self.forms.get(title="Shelters")
             with self.assertRaises(ValueError):
-                form.add_field_element(field_name="blah", label="blah")
+                form.add_field(field_name="blah", label="blah")
 
         except AssertionError as assertErrorException:
             raise assertErrorException
@@ -443,8 +443,8 @@ class Test_Forms(unittest.TestCase):
             with self.assertRaises(ValueError):
                 FormInfo(layer_data="blah", parent="blah")
             form = self.forms.get(title="Shelters")
-            self.assertEqual(form.get_element(label="blah"), None)
-            self.assertEqual(form.delete_element(label="blah"), False)
+            self.assertEqual(form.get(label="blah"), None)
+            self.assertEqual(form.delete(label="blah"), False)
             with self.assertRaises(ValueError):
                 form._validate_input(element="blah", field="blah")
             with self.assertRaises(ValueError):
