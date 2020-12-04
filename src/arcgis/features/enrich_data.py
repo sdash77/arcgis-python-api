@@ -103,12 +103,27 @@ def enrich_layer(input_layer,
 
     """
 
-    
-    kwargs = locals()
+
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.enrich_layer, 
-                                     **kwargs)    
-    
+    kwargs = {
+        "input_layer" : input_layer,
+        "data_collections" : data_collections,
+        "analysis_variables" : analysis_variables,
+        "country" : country,
+        "buffer_type" : buffer_type,
+        "distance" : distance,
+        "units" : units,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "return_boundaries" : return_boundaries,
+        "future" : future
+    }
+
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.enrich_layer,
+                                     **kwargs)
+
     if isinstance(buffer_type, str):
         if buffer_type != 'StraightLine':
             route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)

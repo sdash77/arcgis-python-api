@@ -15,7 +15,8 @@ import logging as _logging
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.features import Table as _Table
-from arcgis.geoprocessing._support import _execute_gp_tool
+from arcgis.geoprocessing import import_toolbox as _import_toolbox
+from arcgis._impl.common._utils import inspect_function_inputs
 from arcgis.geoprocessing import DataFile
 from ._util import (_id_generator,
                     _feature_input,
@@ -27,7 +28,125 @@ from ._util import (_id_generator,
 _log = _logging.getLogger(__name__)
 
 _use_async = True
+#--------------------------------------------------------------------------
+def summarize_center_and_dispersion(input_layer,
+                                    summary_type,
+                                    ellipse_size=None,
+                                    weight_field=None,
+                                    group_fields=None,
+                                    output_name=None,
+                                    gis=None,
+                                    context=None,
+                                    future=False):
+    """
+    The `summarize_center_and_dispersion` task finds central features and directional
+    distributions. It can be used to answer questions such as the following:
 
+         + Where is the center?
+         + Which feature is the most accessible from all other features?
+         + How dispersed, compact, or integrated are the features?
+         + Are there directional trends?
+
+    For an example, suppose you have used the GeoAnalytics tool Find Point
+    Clusters to identify groups of power outages across an entire year. The
+    result will be time enabled point representing cluster locations of power
+    outages. However, you are interested in identifying the center of the
+    power outages for visualization. To do this, you use Summarize Center And
+    Dispersion a group by field of the outage cluster ids.
+
+    ===================================================================    =============================================================================
+    **Argument**                                                                                    **Description**
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    input_layer                                                            Required Layer. A layer that will be used in analysis.
+                                                                           See :ref:`Feature Input<gaxFeatureInput>`.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    summary_type                                                           Required String. The method with which to summarize the `input_layer`.
+                                                                           Values: CentralFeature, MeanCenter, MedianCenter, or Ellipse.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    ellipse_size                                                           Optional Integer. The number representing the number of standard deviations
+                                                                           represented in the output ellipse layer. The default ellipse size is 1. Valid
+                                                                           choices are 1, 2, or 3 standard deviations. This option is only used if
+                                                                           Ellipse is chosen from the `summary_type` parameter.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    weight_field                                                           Optional String. A numeric field in the input_layer to be used to weight
+                                                                           locations according to their relative importance.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    group_fields                                                           Optional String. One or more fields used to group features for summarization.
+                                                                           The `group_fields` can be of integer, date, or string type.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    output_name                                                            Optional string. The task will create a feature service of the results. You define the name of the service.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    gis                                                                    Optional GIS. The GIS object where the analysis will take place.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    context                                                                Optional string. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+
+                                                                           #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                           #. Processing spatial reference (``processSR``) The features will be projected into this coordinate system for analysis.
+                                                                           #. Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                                           #. Data store (``dataStore``) Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    future                                                                 optional Boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
+    ===================================================================    =============================================================================
+
+
+
+    """
+
+    input_layer = _prevent_bds_item(input_layer)
+    tool_name = "SummarizeCenterAndDispersion"
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
+
+    params = {
+        "input_layer" : input_layer,
+        "summary_type" : summary_type,
+        "ellipse_size" : ellipse_size,
+        "weight_field" : weight_field,
+        "group_fields" : group_fields,
+        "output_name" : group_fields,
+        "gis" : gis,
+        "context" : context,
+        "future" : future
+    }
+
+    if output_name is None:
+        output_service_name = 'Sum_Cntr_and_Disp_' + _id_generator()
+        output_name = output_service_name.replace(' ', '_')
+    else:
+        output_service_name = output_name.replace(' ', '_')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Summarize Center And Dispersion', output_datastore=output_datastore)
+
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_service_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
+
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
+
+
+    try:
+        tbx = _import_toolbox(url_or_item=url, gis=gis)
+        params = inspect_function_inputs(tbx.summarize_center_and_dispersion, **params)
+        params['future'] = True
+        gpjob = tbx.summarize_center_and_dispersion(**params)
+        if future:
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        gpjob.result()
+        return output_service
+    except:
+        output_service.delete()
+        raise
+#--------------------------------------------------------------------------
 def build_multivariable_grid(input_layers,
                              variable_calculations,
                              bin_size,
@@ -183,7 +302,7 @@ def build_multivariable_grid(input_layers,
                                                                            #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                                                            #. Processing spatial reference (``processSR``) The features will be projected into this coordinate system for analysis.
                                                                            #. Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                                           #. Data store (``dataStore``) Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                                           #. Data store (``dataStore``) Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     future                                                                 optional Boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
     ===================================================================    =============================================================================
@@ -222,17 +341,38 @@ def build_multivariable_grid(input_layers,
                                             bin_type='Square',
                                             output_name="multi_variable_grid")
     """
-    kwargs = locals()
+
     input_layers = [_prevent_bds_item(input_layer) for input_layer in input_layers]
+    flayers = []
+    for il in input_layers:
+        if hasattr(il, "_lyr_dict"):
+            flayers.append(il._lyr_dict)
+        elif hasattr(il, "_lyr_json"):
+            flayers.append(il._lyr_json)
+        else:
+            flayers.append(il)
+
+
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
-
-    params = {}
-    for key, value in kwargs.items():
+    tbx = _import_toolbox(url, gis=gis)
+    params = {
+        "bin_type" : bin_type,
+        "bin_size" : bin_size,
+        "bin_size_unit" : bin_unit,
+        "input_layers" : flayers,
+        "variable_calculations" : variable_calculations,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "future" : future
+    }
+    for key in list(params.keys()):
+        value = params[key]
         if key == 'variable_calculations':
             params[key] = _json.dumps(value)
-        elif value is not None:
-            params[key] = value
+        elif value is None:
+            del params[key]
 
     if output_name is None:
         output_service_name = 'Build Multi Variable Grid_' + _id_generator()
@@ -259,32 +399,19 @@ def build_multivariable_grid(input_layers,
     else:
         _set_context(params)
 
-    param_db = {
-        "input_layers": (_FeatureSet, "inputLayers"),
-        "variable_calculations" : (str, "variableCalculations"),
-        "bin_type": (str, "binType"),
-        "bin_size": (float, "binSize"),
-        "bin_unit": (str, "binSizeUnit"),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "output": (_FeatureSet, "Output Features"),
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
+    params = inspect_function_inputs(tbx.build_multi_variable_grid, **params)
+    params['future'] = True
 
     try:
+        gpjob = tbx.build_multi_variable_grid(**params)
         if future:
-
-            gpjob = _execute_gp_tool(gis, "BuildMultiVariableGrid", params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, "BuildMultiVariableGrid", params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()
         raise
-
-
+#--------------------------------------------------------------------------
 def aggregate_points(point_layer,
                      bin_type=None,
                      bin_size=None,
@@ -424,7 +551,7 @@ def aggregate_points(point_layer,
                                                               *  Extent (``extent``) - a bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                                               * Processing spatial reference (``processSR``) The features will be projected into this coordinate system for analysis.
                                                               * Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                              * Data store (``dataStore``) Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                              * Data store (``dataStore``) Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     -------------------------------------------------     ------------------------------------------------------------------------
     future                                                optional Boolean. If True, a GPJob is returned instead of
                                                           results. The GPJob can be queried on the status of the execution.
@@ -444,16 +571,32 @@ def aggregate_points(point_layer,
                                           summary_fields=[{"statisticType": "Count", "onStatisticField": "Day"}],
                                           output_name='testaggregatepoints01')
     """
-
-    kwargs = locals()
     point_layer = _prevent_bds_item(point_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
+    tbx = _import_toolbox(url, gis=gis)
+    params = {
+        "point_layer" : point_layer,
+        "bin_type" : bin_type,
+        "bin_size" : bin_size,
+        "bin_size_unit" : bin_size_unit,
+        "polygon_layer" : polygon_layer,
+        "time_step_interval" : time_step_interval,
+        "time_step_interval_unit" : time_step_interval_unit,
+        "time_step_repeat_interval" : time_step_repeat_interval,
+        "time_step_repeat_interval_unit" : time_step_repeat_interval_unit,
+        "time_step_reference" : time_step_reference,
+        "summary_fields" : summary_fields,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "future" : future
+    }
+    for key in list(params.keys()):
+        value = params[key]
+        if value is None:
+            del params[key]
 
-    params = {}
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
     if context is not None:
         params["context"] = context
     if output_name is None:
@@ -485,38 +628,18 @@ def aggregate_points(point_layer,
     else:
         _set_context(params)
 
-
-
-    param_db = {
-        "point_layer": (_FeatureSet, "pointLayer"),
-        "bin_type": (str, "binType"),
-        "bin_size": (float, "binSize"),
-        "bin_size_unit": (str, "binSizeUnit"),
-        "polygon_layer": (_FeatureSet, "polygonLayer"),
-        "time_step_interval": (int, "timeStepInterval"),
-        "time_step_interval_unit": (str, "timeStepIntervalUnit"),
-        "time_step_repeat_interval": (int, "timeStepRepeatInterval"),
-        "time_step_repeat_interval_unit": (str, "timeStepRepeatIntervalUnit"),
-        "time_step_reference": (_datetime, "timeStepReference"),
-        "summary_fields": (str, "summaryFields"),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "output": (_FeatureSet, "Output Features"),
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
-
+    params = inspect_function_inputs(tbx.aggregate_points, **params)
+    params['future'] = True
     try:
+        gpjob = tbx.aggregate_points(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, "AggregatePoints", params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, "AggregatePoints", params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()
         raise
-
+#--------------------------------------------------------------------------
 def describe_dataset(input_layer,
                      extent_output=False,
                      sample_size=None,
@@ -572,7 +695,7 @@ def describe_dataset(input_layer,
                       #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                       #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                       #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                      #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                      #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     ----------------  ---------------------------------------------------------------
     future            Optional boolean. If True, a GPJob is returned instead of
                       results. The GPJob can be queried on the status of the execution.
@@ -601,17 +724,24 @@ def describe_dataset(input_layer,
                                     sample_size=2000,
                                     output_name="describe dataset")
     """
-    kwargs = locals()
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "DescribeDataset"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
+    tbx = _import_toolbox(url, gis=gis)
     params = {
-        "f" : "json",
+        "input_layer" : input_layer,
+        "sample_size" : sample_size,
+        "extent_output" : extent_output,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "future" : future
     }
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
+    for key in list(params.keys()):
+        value = params[key]
+        if value is None:
+            del params[key]
 
     if output_name is None:
         output_service_name = 'Describe_Dataset_' + _id_generator()
@@ -638,43 +768,24 @@ def describe_dataset(input_layer,
     else:
         _set_context(params)
 
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "extent_output" : (bool, "extentOutput"),
-        "sample_size" : (int, "sampleSize"),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "return_tuple": (bool, "returnTuple"),
-        "output_json": (dict, "outputJSON"),
-        "output": (_Table, "output"),
-        "extent_layer": (_FeatureSet, "extentLayer"),
-        "sample_layer": (_FeatureSet, "sampleLayer"),
-        "process_info": (list, "processInfo"),
-    }
 
-    return_values = [
-        {"name": "output_json", "display_name": "Output Dictionary", "type": dict},
-        {"name": "output", "display_name": "Output Features", "type": _Table},
-        {"name": "extent_layer", "display_name": "Eextent Layer", "type": _FeatureSet},
-        {"name": "sample_layer", "display_name": "Sample Layer", "type": _FeatureSet},
-        {"name": "process_info", "display_name": "process_info", "type": list},
-    ]
+    params = inspect_function_inputs(tbx.describe_dataset, **params)
+    params['future'] = True
+
 
     try:
+        gpjob = tbx.describe_dataset(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        res = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
-
         if return_tuple:
-            return res
+            return gpjob.result()
         else:
+            gpjob.result()
             return output_service
     except:
         output_service.delete()
         raise
-
-
+#--------------------------------------------------------------------------
 def join_features(target_layer,
                   join_layer,
                   join_operation="JoinOneToOne",
@@ -834,7 +945,7 @@ def join_features(target_layer,
                                                                                                                 #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                                                                                                 #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                                                                                                                 #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                                                                                #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                                                                                #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
     future                                                                                                      Optional boolean. If 'True', a GPJob is returned instead of
                                                                                                                 results. The GPJob can be queried on the status of the execution.
@@ -859,16 +970,35 @@ def join_features(target_layer,
                                    temporal_near_distance_unit="Minutes",
                                    output_name="LightningOutages")
     """
-    kwargs = locals()
+
     target_layer = _prevent_bds_item(target_layer)
     join_layer = _prevent_bds_item(join_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
-
-    params = {}
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
+    tbx = _import_toolbox(url, gis=gis)
+    params = {
+        "target_layer" : target_layer,
+        "join_layer" : join_layer,
+        "join_operation" : join_operation,
+        "join_fields" : join_fields,
+        "summary_fields" : summary_fields,
+        "spatial_relationship" : spatial_relationship,
+        "spatial_near_distance" : spatial_near_distance,
+        "spatial_near_distance_unit" : spatial_near_distance_unit,
+        "temporal_relationship" : temporal_relationship,
+        "temporal_near_distance" : temporal_near_distance,
+        "temporal_near_distance_unit" : temporal_near_distance_unit,
+        "attribute_relationship" : attribute_relationship,
+        "join_condition" : join_condition,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "future" : future
+    }
+    for key in list(params.keys()):
+        value = params[key]
+        if value is None:
+            del params[key]
 
     if output_name is None:
         output_service_name = 'Join Features Analysis_' + _id_generator()
@@ -895,40 +1025,19 @@ def join_features(target_layer,
     else:
         _set_context(params)
 
-    param_db = {
-        "target_layer": (_FeatureSet, "targetLayer"),
-        "join_layer": (_FeatureSet, "joinLayer"),
-        "join_operation": (str, "joinOperation"),
-        "join_fields": (str, "joinFields"),
-        "summary_fields": (str, "summaryFields"),
-        "spatial_relationship": (str, "spatialRelationship"),
-        "spatial_near_distance": (float, "spatialNearDistance"),
-        "spatial_near_distance_unit": (str, "spatialNearDistanceUnit"),
-        "temporal_relationship": (str, "temporalRelationship"),
-        "temporal_near_distance": (int, "temporalNearDistance"),
-        "temporal_near_distance_unit": (str, "temporalNearDistanceUnit"),
-        "attribute_relationship": (str, "attributeRelationship"),
-        "join_condition": (str, "joinCondition"),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "output": (_FeatureSet, "Output Features"),
-    }
-
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-
-    ]
+    params = inspect_function_inputs(tbx.join_features, **params)
+    params['future'] = True
 
     try:
+        gpjob = tbx.join_features(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, "JoinFeatures", params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, "JoinFeatures", params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()
         raise
-
+#--------------------------------------------------------------------------
 def reconstruct_tracks(input_layer,
                        track_fields,
                        method="Planar",
@@ -1064,7 +1173,7 @@ def reconstruct_tracks(input_layer,
                                                                                             #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                                                                             #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                                                                                             #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                                                            #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                                                            #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------------------------------------------------------------------  ---------------------------------------------------------------
     future                                                                                  Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
 
@@ -1088,15 +1197,33 @@ def reconstruct_tracks(input_layer,
                                         time_boundary_split_unit='Days',
                                         output_name='reconstruct hurricane tracks')
     """
-    kwargs = locals()
+
     input_layer = _prevent_bds_item(input_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
-
-    params = {}
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
+    tbx = _import_toolbox(url, gis=gis)
+    params = {
+        "input_layer" : input_layer,
+        "track_fields" : track_fields,
+        "method" : method,
+        "buffer_field" : buffer_field,
+        "summary_fields" : summary_fields,
+        "time_split" : time_split,
+        "time_split_unit" : time_split_unit,
+        "distance_split" : distance_split,
+        "distance_split_unit" : distance_split_unit,
+        "time_boundary_split" : time_boundary_split,
+        "time_boundary_split_unit" : time_boundary_split_unit,
+        "time_boundary_reference" : time_boundary_reference,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "future" : future
+    }
+    for key in list(params.keys()):
+        value= params[key]
+        if value is None:
+            del params[key]
 
     if output_name is None:
         output_service_name = 'Reconstructed Tracks_' + _id_generator()
@@ -1125,36 +1252,20 @@ def reconstruct_tracks(input_layer,
 
     if isinstance(summary_fields, list):
         summary_fields = _json.dumps(summary_fields)
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "track_fields": (str, "trackFields"),
-        "method": (str, "method"),
-        "buffer_field": (str, "bufferField"),
-        "summary_fields": (str, "summaryFields"),
-        "time_boundary_split" : (int, "timeBoundarySplit"),
-        "time_boundary_split_unit" : (str, "timeBoundarySplitUnit"),
-        "time_boundary_reference" : (datetime.datetime, "timeBoundaryReference"),
-        "time_split" : (int, "timeSplit"),
-        "time_split_unit" : (int, "timeSplitUnit"),
-        "distance_split": (int, "distanceSplit"),
-        "distance_split_unit": (str, "distanceSplitUnit"),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "output": (_FeatureSet, "Output Features"),
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
+        params['summary_fields'] = summary_fields
+
+    params = inspect_function_inputs(tbx.reconstruct_tracks, **params)
+    params['future'] = True
     try:
+        gpjob = tbx.reconstruct_tracks(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, "ReconstructTracks", params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, "ReconstructTracks", params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()
         raise
-
+#--------------------------------------------------------------------------
 def summarize_attributes(input_layer,
                          fields=None,
                          summary_fields=None,
@@ -1212,7 +1323,7 @@ def summarize_attributes(input_layer,
                                                                                  there is one setting:
 
                                                                                  #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                                                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
     future                                                                       Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
 
@@ -1256,16 +1367,29 @@ def summarize_attributes(input_layer,
                                                      summary_fields=[{"statisticType" : "Sum", "onStatisticField" : "PropertyDamage"}],
                                                      output_name="summarized_storms")
     """
-    kwargs = locals()
 
     input_layer = _prevent_bds_item(input_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
-
-    params = {}
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
+    tbx = _import_toolbox(url, gis=gis)
+    params = {
+        "input_layer" : input_layer,
+        "fields" : fields,
+        "summary_fields" : summary_fields,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "future" : future,
+        "time_step_interval" : time_step_interval,
+        "time_step_interval_unit" : time_step_interval_unit,
+        "time_step_repeat_interval" : time_step_repeat_interval,
+        "time_step_repeat_interval_unit" : time_step_repeat_interval_unit,
+        "time_step_reference" : time_step_reference
+    }
+    for key in list(params.keys()):
+        value = params[key]
+        if value is None:
+            del params[key]
 
     if output_name is None:
         output_service_name = 'Summarize Attributes_' + _id_generator()
@@ -1294,44 +1418,21 @@ def summarize_attributes(input_layer,
 
     if isinstance(summary_fields, list):
         summary_fields = _json.dumps(summary_fields)
-
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "fields": (str, "fields"),
-        "summary_fields": (str, "summaryFields"),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "output": (_FeatureSet, "Output Features"),
-    }
-    if gis and gis.version > [8, 2]:
-        param_db["time_step_interval"] = (int, "timeStepInterval")
-        param_db["time_step_interval_unit"] = (str, "timeStepIntervalUnit")
-        param_db["time_step_repeat_interval"] = (int, "timeStepRepeatInterval")
-        param_db["time_step_repeat_interval_unit"] = (str, "timeStepRepeatIntervalUnit")
-        param_db["time_step_reference"] = (_datetime, "timeStepReference")
-
-    else:
-        for rk in ["time_step_interval", "time_step_interval_unit",
-                   "time_step_repeat_interval", "time_step_repeat_interval_unit",
-                   "time_step_reference"]:
-            if rk in params:
-                params.pop(rk, None)
+        params['summary_fields'] = summary_fields
 
 
-
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
+    params = inspect_function_inputs(tbx.summarize_attributes, **params)
+    params['future'] = True
     try:
+        gpjob = tbx.summarize_attributes(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, "SummarizeAttributes", params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, "SummarizeAttributes", params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()
         raise
-
+#--------------------------------------------------------------------------
 def summarize_within(summarized_layer,
                      summary_polygons=None,
                      bin_type=None,
@@ -1489,7 +1590,7 @@ def summarize_within(summarized_layer,
                                                                                  #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                                                                  #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                                                                                  #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
     gis                                                                          Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
@@ -1507,16 +1608,33 @@ def summarize_within(summarized_layer,
                                                        weighted_summary_fields=[{"statisticType" : "Average","onStatisticField" : "Slope"}],
                                                        output_name="summary_of_bike_lanes")
     """
-    kwargs = locals()
-
     summarized_layer = _prevent_bds_item(summarized_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
+    tbx = _import_toolbox(url, gis=gis)
 
-    params = {}
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
+    params = {
+        "summary_polygons" : summary_polygons  or "",
+        "bin_type" : bin_type,
+        "bin_size" : bin_size,
+        "bin_size_unit" : bin_size_unit,
+        "summarized_layer" : summarized_layer,
+        "standard_summary_fields" : standard_summary_fields,
+        "weighted_summary_fields" : weighted_summary_fields,
+        "sum_shape" : sum_shape,
+        "shape_units" : shape_units,
+        "group_by_field" : group_by_field,
+        "minority_majority" : minority_majority,
+        "percent_shape" : percent_shape,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "future" : future
+    }
+    for key in list(params.keys()):
+        value = params[key]
+        if value is None:
+            del params[key]
 
     if output_name is None:
         output_service_name = 'Summarize Within_' + _id_generator()
@@ -1542,32 +1660,13 @@ def summarize_within(summarized_layer,
     else:
         _set_context(params)
 
-    param_db = {
-        "summary_polygons": (_FeatureSet, "summaryPolygons"),
-        "bin_type": (str, "binType"),
-        "bin_size": (float, "binSize"),
-        "bin_size_unit": (str, "binSizeUnit"),
-        "summarized_layer": (_FeatureSet, "summarizedLayer"),
-        "standard_summary_fields": (str, "standardSummaryFields"),
-        "weighted_summary_fields": (str, "weightedSummaryFields"),
-        "sum_shape": (bool, "sumShape"),
-        "shape_units": (str, "shapeUnits"),
-        "group_by_field": (str, "groupByField"),
-        "minority_majority" : (bool, "minorityMajority"),
-        "percent_shape" : (bool, "percentShape"),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "output": (_FeatureSet, "Output Features"),
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
-
+    params = inspect_function_inputs(tbx.summarize_within, **params)
+    params['future'] = True
     try:
+        gpjob = tbx.summarize_within(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, "SummarizeWithin", params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, "SummarizeWithin", params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()

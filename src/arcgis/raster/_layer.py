@@ -14,6 +14,7 @@ import logging
 import arcgis as _arcgis
 import base64
 from collections import defaultdict
+from ._RasterInfo import RasterInfo
 try:
     import numpy as np
 except:
@@ -355,32 +356,39 @@ class ImageryLayer(Layer):
             url = url.decode("UTF-8")
             import ast
             url = ast.literal_eval(url)
-        if '/fileShares/' in url or '/rasterStores/' in url or '/cloudStores/' in url or isinstance(url,dict) or '/vsi' in url or isinstance(url, bytes):
-            self._gis = _arcgis.env.active_gis if gis is None else gis
-            self._datastore_raster = True
-            self._uri = url
-            if isinstance(url,dict):
-                encoded_dict = str(self._uri).encode('utf-8')
-                self._uri = base64.b64encode(encoded_dict)
-            gis = _arcgis.env.active_gis if gis is None else gis
-
-            image_hosting_server_url = None
-            raster_analytics_server_url = None
-            hosting_server_url = None
-            for ds in gis._datastores:
-                if ('serverFunction' in ds._server.keys()) and 'ImageHosting' in ds._server['serverFunction']:
-                    image_hosting_server_url = ds._server['url']
-                    break
-                elif ('serverFunction' in ds._server.keys()) and 'RasterAnalytics' in ds._server['serverFunction']:
-                    raster_analytics_server_url = ds._server['url']
-                elif ('serverFunction' in ds._server.keys()) and ds._server['serverFunction'] == '':
-                    hosting_server_url = ds._server['url']
-            if image_hosting_server_url:
-                url = image_hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
-            elif raster_analytics_server_url:
-                url = raster_analytics_server_url + "/rest/services/System/RasterRendering/ImageServer"
-            elif hosting_server_url:
-                url = hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
+        if isinstance(url, str) or isinstance(url, dict) or isinstance(url, bytes):
+            if '/fileShares/' in url or '/rasterStores/' in url or '/cloudStores/' in url or isinstance(url,dict) or '/vsi' in url or isinstance(url, bytes) or "ImageServer" not in url:
+                self._gis = _arcgis.env.active_gis if gis is None else gis
+                self._datastore_raster = True
+                self._uri = url
+                if isinstance(url,dict):
+                    encoded_dict = str(self._uri).encode('utf-8')
+                    self._uri = base64.b64encode(encoded_dict)
+                gis = _arcgis.env.active_gis if gis is None else gis
+                if gis is not None:
+                    if gis._con._product == "AGOL":
+                        ra_url = gis.properties.helperServices.get("rasterAnalytics", {})\
+                                                              .get("url", "")
+                        url = ra_url.replace("rasteranalysis", "rasterutils").replace("RasterAnalysisTools", "RasterRendering").replace("GPServer", "ImageServer")
+                    else:
+                        image_hosting_server_url = None
+                        raster_analytics_server_url = None
+                        hosting_server_url = None
+                
+                        for ds in gis._datastores:
+                            if ('serverFunction' in ds._server.keys()) and 'ImageHosting' in ds._server['serverFunction']:
+                                image_hosting_server_url = ds._server['url']
+                                break
+                            elif ('serverFunction' in ds._server.keys()) and 'RasterAnalytics' in ds._server['serverFunction']:
+                                raster_analytics_server_url = ds._server['url']
+                            elif ('serverFunction' in ds._server.keys()) and ds._server['serverFunction'] == '':
+                                hosting_server_url = ds._server['url']
+                        if image_hosting_server_url:
+                            url = image_hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
+                        elif raster_analytics_server_url:
+                            url = raster_analytics_server_url + "/rest/services/System/RasterRendering/ImageServer"
+                        elif hosting_server_url:
+                            url = hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
 
         super(ImageryLayer, self).__init__(url, gis)
         self._spatial_filter = None
@@ -624,6 +632,8 @@ class ImageryLayer(Layer):
         Returns information about the ImageryLayer such as 
         bandCount, extent , pixelSizeX, pixelSizeY, pixelType
         """
+        if self._raster_info !={}:
+            return self._raster_info
         if "extent" in self.properties:
             self._raster_info.update({"extent":dict(self.properties.extent)})
 
@@ -638,6 +648,19 @@ class ImageryLayer(Layer):
 
         if "pixelSizeY" in self.properties:
             self._raster_info.update({"pixelSizeY":self.properties.pixelSizeY})
+
+        if "compressionType" in self.properties:
+            self._raster_info.update({"compressionType":self.properties.compressionType})
+
+        if "blockHeight" in self.properties:
+            self._raster_info.update({"blockHeight":self.properties.blockHeight})
+
+        if "blockWidth" in self.properties:
+            self._raster_info.update({"blockWidth":self.properties.blockWidth})
+
+        if "noDataValues" in self.properties:
+            self._raster_info.update({"noDataValues":self.properties.noDataValues})
+
         return self._raster_info
 
     @extent.setter
@@ -693,14 +716,19 @@ class ImageryLayer(Layer):
         Common data sources for multidimensional image services are mosaic
         datasets created from netCDF, GRIB, and HDF data.
         """
-        if "hasMultidimensions" in self.properties and \
-           self.properties['hasMultidimensions'] == True:
+        if ("hasMultidimensions" in self.properties and \
+           self.properties['hasMultidimensions'] == True) or self._datastore_raster:
             url = "%s/multiDimensionalInfo" % self._url
             params = {'f':'json'}
+            if self._fn is not None:
+                params['renderingRule'] = self._fn
+
             if self._datastore_raster:
                 params["Raster"]=self._uri
-            return self._con.get(path=url, params=params)
-        return None
+                if isinstance(self._uri, bytes):
+                    del params['renderingRule']
+                    params['Raster']=self._uri
+            return self._con.post(path=url, params=params)
     #----------------------------------------------------------------------
     def project(self,
                 geometries,
@@ -3587,6 +3615,11 @@ class ImageryLayer(Layer):
         ------------------------------------     --------------------------------------------------------------------
         future                                   Optional boolean. If True, the result will be a GPJob object and
                                                  results will be returned asynchronously. Keyword only parameter.
+        ------------------------------------     --------------------------------------------------------------------
+        tiles_only                               On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                                 To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                                 Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
         ====================================     ====================================================================
 
         :return: output_raster - Image layer item
@@ -4562,6 +4595,30 @@ class ImageryLayer(Layer):
         from arcgis.raster.functions import boolean_or
         return boolean_or([other, self])
 
+    def __ne__(self, other):
+        from arcgis.raster.functions import not_equal
+        return not_equal([self, other])
+
+    def __eq__(self, other):
+        from arcgis.raster.functions import equal_to
+        return equal_to([self, other])
+
+    def __gt__(self, other):
+        from arcgis.raster.functions import greater_than
+        return greater_than([self, other])
+
+    def __ge__(self, other):
+        from arcgis.raster.functions import greater_than_equal
+        return greater_than_equal([self, other])
+
+    def __lt__(self, other):
+        from arcgis.raster.functions import less_than
+        return less_than([self, other])
+
+    def __le__(self, other):
+        from arcgis.raster.functions import less_than_equal
+        return less_than_equal([self, other])
+
         # Raster.Raster.__pos__ = unaryPos         # +v
 # Raster.Raster.__abs__ = Functions.Abs    # abs(v)
 #
@@ -4756,6 +4813,8 @@ class Raster():
              engine = _get_engine(engine)
              self._engine=engine
         else:
+            if isinstance(path, RasterInfo):
+                engine=_ArcpyRaster
             if isinstance(path, str):
                 if "https://" not in path and "http://" not in path and  '/fileShares/' not in path and '/rasterStores/' not in path and '/cloudStores/' not in path and not isinstance(path,dict) and '/vsi' not in path: #local raster case
                     if engine is None:
@@ -4827,11 +4886,20 @@ class Raster():
         on a MapView, vmin and vmax define the data range that the colormap covers.
         This property is the lower end of that range.
         """
+        if self._vmin is None:
+            self._vmin = self._attempt_infer_vmin()
         return self._vmin
 
     @vmin.setter
     def vmin(self, value):
         self._vmin = value
+
+    def _attempt_infer_vmin(self):
+        # only tested against _ArcpyRaster engines..
+        try:
+            return self._engine_obj._raster.minimum
+        except Exception:
+            return None
 
     _vmax = None
     @property
@@ -4840,11 +4908,20 @@ class Raster():
         on a MapView, vmin and vmax define the data range that the colormap covers.
         This property is the upper end of that range.
         """ 
+        if self._vmax is None:
+            self._vmax = self._attempt_infer_vmax()
         return self._vmax
 
     @vmax.setter
     def vmax(self, value):
         self._vmax = value
+
+    def _attempt_infer_vmax(self):
+        # only tested against _ArcpyRaster engines..
+        try:
+            return self._engine_obj._raster.maximum
+        except Exception:
+            return None
 
     _opacity = 1
     @property
@@ -5037,6 +5114,14 @@ class Raster():
         Return the attribute table as a dictionary if the table exists
         """
         return self._engine_obj.RAT
+
+    @property
+    def raster_info(self):
+        """
+        Returns information about the ImageryLayer such as 
+        bandCount, extent , pixelSizeX, pixelSizeY, pixelType
+        """
+        return self._engine_obj.raster_info
 
     def get_raster_bands(self, band_ids_or_names=None):
         """
@@ -5878,6 +5963,24 @@ class Raster():
     def __ror__(self, other):
         return self._engine_obj.__ror__(other)
 
+    def __ne__(self, other):
+        return self._engine_obj.__ne__(other)
+
+    def __eq__(self, other):
+        return self._engine_obj.__eq__(other)
+
+    def __gt__(self, other):
+        return self._engine_obj.__gt__(other)
+
+    def __ge__(self, other):
+        return self._engine_obj.__ge__(other)
+
+    def __lt__(self, other):
+        return self._engine_obj.__lt__(other)
+
+    def __le__(self, other):
+        return self._engine_obj.__le__(other)
+
         # bbox_sr = None
         # if not isinstance(bbox, arcpy.arcobjects.Extent):
         #     bbox_list = []
@@ -6077,10 +6180,18 @@ class _ImageServerRaster(ImageryLayer, Raster):
         self._do_not_hydrate=False
         self._created_from_collection=False
         self._mdinfo=None
+        self._extent=None
         
     @property
     def extent(self):
-        return super().extent
+        if self._extent is None:
+            return super().extent
+        else:
+            return self._extent
+
+    @extent.setter
+    def extent(self, value):
+        self._extent = value
 
     @property
     def pixel_type(self):
@@ -6407,6 +6518,14 @@ class _ImageServerRaster(ImageryLayer, Raster):
     @property
     def RAT(self):
         return super().attribute_table()
+
+    @property
+    def raster_info(self):
+        """
+        Returns information about the ImageryLayer such as 
+        bandCount, extent , pixelSizeX, pixelSizeY, pixelType
+        """
+        return super().raster_info
 
     def get_raster_bands(self, band_ids_or_names=None):
         if super().tiles_only:
@@ -6927,20 +7046,36 @@ class _ArcpyRaster(Raster,ImageryLayer):
         self._is_multidimensional = is_multidimensional
         self._engine=_ArcpyRaster
         import arcpy
-        if isinstance(path, str):
-            if ("https://"  in path or "http://"  in path): #To provide access to secured service
-                if self._token is not None:
-                    self._raster = arcpy.ia.Raster(path+"?token="+self._token, is_multidimensional)
+        if isinstance(path, RasterInfo):
+            ri = arcpy.RasterInfo()
+            rinfo = path.to_dict()
+            if "geodataXform" not in rinfo.keys():
+                if ("extent" in rinfo.keys()) and "spatialReference" in rinfo["extent"].keys():
+                    if ("wkid" in rinfo["extent"]["spatialReference"].keys()) and rinfo["extent"]["spatialReference"]["wkid"] is not None:
+                        rinfo.update({"geodataXform":{"spatialReference": rinfo["extent"]["spatialReference"],
+                                                                  "type":"IdentityXform"}})
+                    else:
+                        rinfo.update({"geodataXform":{"type":"IdentityXform"}})
+            ri.fromJSONString(json.dumps(rinfo))
+            self._raster = arcpy.ia.Raster(ri, is_multidimensional)            
+            self._uri=str(self._raster)
+            self._path=str(self._raster)
+        else:
+            if isinstance(path, str):
+                if ("https://"  in path or "http://"  in path): #To provide access to secured service
+                    if self._token is not None:
+                        self._raster = arcpy.ia.Raster(path+"?token="+self._token, is_multidimensional)
+                    else:
+                        self._raster = arcpy.ia.Raster(path, is_multidimensional)
                 else:
                     self._raster = arcpy.ia.Raster(path, is_multidimensional)
             else:
-                self._raster = arcpy.ia.Raster(path, is_multidimensional)
-        else:
-            self._raster = path
+                self._raster = path
+
+            self._uri=str(path)
+            self._path=str(path)
         self._datastore_raster=True
         self._do_not_hydrate=False
-        self._uri=path
-        self._path = path
 
     @property
     def _lyr_dict(self):
@@ -7121,6 +7256,49 @@ class _ArcpyRaster(Raster,ImageryLayer):
     def RAT(self):
         return self._raster.RAT
 
+    @property
+    def raster_info(self):
+        """
+        Returns information about the ImageryLayer such as 
+        bandCount, extent , pixelSizeX, pixelSizeY, pixelType
+        """
+        if self._raster_info !={}:
+            return self._raster_info
+        try:
+            ras_info =  self._raster.getRasterInfo()
+            ras_info_dict = json.loads(ras_info.toJSONString())
+            self._raster_info = ras_info_dict
+        except:
+            #if getRasterInfo fails, get the info from the properties
+            if self.extent is not None:
+                self._raster_info.update({"extent":dict(self.extent)})
+
+            if self.band_count is not None:
+                self._raster_info.update({"bandCount":self.band_count})
+
+            if self.pixel_type is not None:
+                self._raster_info.update({"pixelType":self.pixel_type})
+
+            if self.mean_cell_width is not None:
+                self._raster_info.update({"pixelSizeX":self.mean_cell_width})
+
+            if self.mean_cell_height is not None:
+                self._raster_info.update({"pixelSizeY":self.mean_cell_height})
+
+            if self.compression_type is not None:
+                self._raster_info.update({"compressionType":self.compression_type})
+
+            if self.block_size is not None:
+                self._raster_info.update({"blockHeight":self.block_size[1]})
+
+            if self.block_size is not None:
+                self._raster_info.update({"blockWidth":self.block_size[0]})
+
+            if self.no_data_values is not None:
+                self._raster_info.update({"noDataValues":self.no_data_values})
+
+        return self._raster_info
+
     def get_raster_bands(self, band_ids_or_names=None):
         raster_bands = self._raster.getRasterBands(band_ids_or_names)
         if isinstance(raster_bands, list):
@@ -7247,7 +7425,7 @@ class _ArcpyRaster(Raster,ImageryLayer):
                 build_transpose = "NO_TRANSPOSE"
         else:
             build_transpose = "NO_TRANSPOSE"
-        result = arcpy.GenerateRasterFromRasterFunction_management(json.dumps(self._fnra), output_name) 
+        result = arcpy.GenerateRasterFromRasterFunction_management(json.dumps(self._fnra), output_name, process_as_multidimensional=process_as_multidimensional) 
         uri = result.getOutput(0)
         if uri and process_as_multidimensional == "ALL_SLICES" and build_transpose == "TRANSPOSE":
             arcpy.management.BuildMultidimensionalTranspose(uri)
@@ -7419,6 +7597,10 @@ class _ArcpyRaster(Raster,ImageryLayer):
 
         # convert extent and spatial reference
         extent, spatial_reference = None, None
+        if isinstance(bbox_sr, dict):
+            if "wkid" in bbox_sr.keys():
+                if bbox_sr["wkid"] is None:
+                    bbox_sr=None
         if bbox_sr is not None and not isinstance(bbox_sr, _arcgis.geometry.SpatialReference):
             bbox_sr = _arcgis.geometry.SpatialReference(bbox_sr)
             bbox_sr = bbox_sr.as_arcpy
@@ -7610,6 +7792,30 @@ class _ArcpyRaster(Raster,ImageryLayer):
         from arcgis.raster.functions import boolean_or
         return boolean_or([other, self])
 
+    def __ne__(self, other):
+        from arcgis.raster.functions import not_equal
+        return not_equal([self, other])
+
+    def __eq__(self, other):
+        from arcgis.raster.functions import equal_to
+        return equal_to([self, other])
+
+    def __gt__(self, other):
+        from arcgis.raster.functions import greater_than
+        return greater_than([self, other])
+
+    def __ge__(self, other):
+        from arcgis.raster.functions import greater_than_equal
+        return greater_than_equal([self, other])
+
+    def __lt__(self, other):
+        from arcgis.raster.functions import less_than
+        return less_than([self, other])
+
+    def __le__(self, other):
+        from arcgis.raster.functions import less_than_equal
+        return less_than_equal([self, other])
+
 def _get_raster_collection_engine(engine):
 
     """
@@ -7706,7 +7912,10 @@ class RasterCollection():
             elif isinstance(rasters,list):
                 for ele in rasters:
                     if isinstance(ele, Raster):
-                        continue
+                        if isinstance(ele._engine_obj, _ArcpyRaster):
+                            local_class=False
+                        else:
+                            continue
                     elif isinstance(ele, str):
                         if '/fileShares/' in ele or '/rasterStores/' in ele or '/cloudStores/' in ele or '/vsi' in ele:
                             continue
@@ -8351,6 +8560,14 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
                     self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
             else:
                 self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
+        if isinstance(rasters,list):
+            arcpy_rasters_list=[]
+            for ele in rasters:
+                if ((isinstance(ele,  Raster)) and isinstance(ele._engine_obj, _ArcpyRaster)):
+                    arcpy_rasters_list.append(ele._engine_obj._raster)
+
+            if arcpy_rasters_list !=[]:
+                rasters = arcpy_rasters_list                
         self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
         self._df=self._as_df()
 
@@ -8547,12 +8764,12 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         data = {}
         value_rasters=[]
         value_geometries=[]
-        for field in self.fields:
+        for index, field in enumerate(self.fields):
             try:
                 value = self.get_field_values(field)
                 if field=="Raster":
                     for ele in value:
-                        value_rasters.append(Raster(ele))
+                        value_rasters.append(Raster(self._raster_collection[index]['Raster']))
                     data[field] = value_rasters
                 elif field=="Shape":
                     for ele in value:

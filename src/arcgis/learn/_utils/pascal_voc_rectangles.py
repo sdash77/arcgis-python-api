@@ -5,7 +5,7 @@ import torch
 from fastai.vision.data import ObjectCategoryList, ObjectItemList
 from fastai.vision.image import ImageBBox
 from fastai.core import split_kwargs_by_func
-from .common import ArcGISMSImage, get_nbatches, denorm_x
+from .common import ArcGISMSImage, get_nbatches, denorm_x, dynamic_range_adjustment, image_batch_stretcher
 from matplotlib import pyplot as plt
 from matplotlib import patheffects
 
@@ -87,6 +87,7 @@ def show_batch_pascal_voc_rectangles(self, rows=3, alpha=1, **kwargs): # paramet
     nodata = kwargs.get('nodata', 0)
     imsize = kwargs.get('imsize', 5)
     statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
+    stretch_type = kwargs.get('stretch_type', 'minmax') # Accepted Values `minmax`, `percentclip`
     label_font_size = kwargs.get('label_font_size', 16)
 
     e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
@@ -116,13 +117,11 @@ def show_batch_pascal_voc_rectangles(self, rows=3, alpha=1, **kwargs): # paramet
         y_classes.extend(yb[1])
     #return y_bboxes, y_classes, x_batch
 
-    # Extract RGB Bands
-    symbology_x_batch = x_batch[:, symbology_bands]
-    if statistics_type == 'DRA':
-        shp = symbology_x_batch.shape
-        min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
-        max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
-        symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+    # Extract N Items and RGB Bands
+    symbology_x_batch = x_batch[:(nrows*ncols), symbology_bands]
+    if stretch_type is not None:
+        symbology_x_batch = image_batch_stretcher(symbology_x_batch, stretch_type, statistics_type)
+        # symbology_x_batch = dynamic_range_adjustment(symbology_x_batch)
 
     # Channel first to channel last and clamp float values to range 0 - 1 for plotting
     symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
@@ -161,9 +160,13 @@ def show_batch_pascal_voc_rectangles(self, rows=3, alpha=1, **kwargs): # paramet
                 for i, bbox in enumerate(bboxes):
                     xs = bbox[[1, 1, 3, 3, 1]]
                     ys = bbox[[0, 2, 2, 0, 0]]
-                    color = self._multispectral_color_array[classes[i]]
+                    color = self._multispectral_color_array[classes[i]].tolist()
                     axi.plot(xs.cpu().numpy(), ys.cpu().numpy(), color=color, linewidth=2)
-                    axi.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self.classes[classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=.5, foreground='gray')])
+                    class_value = classes[i].item()
+                    lbl = self.classes[class_value]
+                    if lbl.strip()=='':
+                        lbl=str(class_value)
+                    axi.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), lbl, size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=.5, foreground='gray')])
                 axi.axis('off')
             else:
                 axi.axis('off')
@@ -206,6 +209,7 @@ def show_results_multispectral(self, nrows=5, alpha=1, **kwargs): # parameters a
     top = kwargs.get('top', _top)
 
     statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
+    stretch_type = kwargs.get('stretch_type', 'minmax') # Accepted Values `minmax`, `percentclip`
     label_font_size = kwargs.get('label_font_size', 16)
     
     # Get Batch
@@ -227,7 +231,20 @@ def show_results_multispectral(self, nrows=5, alpha=1, **kwargs): # parameters a
         if self._backend == 'pytorch':
             if getattr(self, "_is_model_extension", False):
                 xb = self.model_conf.transform_input_multispectral(x_batch[i:i+self._data.batch_size], **transform_kwargs)
-                _pred_ext = self.learn.model.eval()(xb)
+                try:
+                    _pred_ext = self.learn.model.eval()(xb)
+                except Exception as e:
+
+                    if getattr(self, "_is_fasterrcnn", False):
+                        _pred_ext = []
+                        for _ in range(self._data.batch_size):
+                            res={}
+                            res['boxes'] = torch.empty(0,4)
+                            res['scores'] = torch.tensor([])
+                            res['labels'] = torch.tensor([])
+                            _pred_ext.append(res)
+                    else:
+                        raise e
                 analyzed_pred_ext = self._analyze_pred(_pred_ext, 
                                                     thresh=thresh, 
                                                     nms_overlap=nms_overlap, 
@@ -280,12 +297,9 @@ def show_results_multispectral(self, nrows=5, alpha=1, **kwargs): # parameters a
         x_batch = (self._data._scaled_std_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._data._scaled_mean_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch)
 
         # Extract RGB Bands
-        symbology_x_batch = x_batch[:, symbology_bands]
-        if statistics_type == 'DRA':
-            shp = symbology_x_batch.shape
-            min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
-            max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
-            symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+        symbology_x_batch = x_batch[:(nrows*ncols), symbology_bands]
+        if stretch_type is not None:
+            symbology_x_batch = image_batch_stretcher(symbology_x_batch, stretch_type, statistics_type)
     else:
         # normalization stats
         symbology_x_batch = denorm_x(x_batch)
@@ -326,9 +340,13 @@ def show_results_multispectral(self, nrows=5, alpha=1, **kwargs): # parameters a
         for i, bbox in enumerate(gt_bboxes):
             xs = bbox[[1, 1, 3, 3, 1]]
             ys = bbox[[0, 2, 2, 0, 0]]
-            color = self._data._multispectral_color_array[gt_classes[i]]
+            color = self._data._multispectral_color_array[gt_classes[i]].tolist()
             ax_ground_truth.plot(xs.cpu().numpy(), ys.cpu().numpy(), color=color, linewidth=2, path_effects=[patheffects.Stroke(linewidth=3, foreground='black'), patheffects.Normal()])
-            ax_ground_truth.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[gt_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=1, foreground='black'), patheffects.Normal()])
+            class_value = gt_classes[i].item()
+            lbl = self._data.classes[class_value]
+            if lbl.strip() == '':
+                lbl = str(class_value)
+            ax_ground_truth.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), lbl, size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=1, foreground='black'), patheffects.Normal()])
 
         # Plot Predictions
         ax_prediction  = ax_i[1]
@@ -353,9 +371,13 @@ def show_results_multispectral(self, nrows=5, alpha=1, **kwargs): # parameters a
                 for i, bbox in enumerate(predicted_bboxes):
                     xs = bbox[[1, 1, 3, 3, 1]]
                     ys = bbox[[0, 2, 2, 0, 0]]
-                    color = self._data._multispectral_color_array[predicted_classes[i]]
+                    color = self._data._multispectral_color_array[predicted_classes[i]].tolist()
                     ax_prediction.plot(xs.detach().cpu().numpy(), ys.detach().cpu().numpy(), color=color, linewidth=2, path_effects=[patheffects.Stroke(linewidth=3, foreground='black'), patheffects.Normal()])
-                    ax_prediction.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[predicted_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=1, foreground='black'), patheffects.Normal()])
+                    class_value = predicted_classes[i].item()
+                    lblp = self._data.classes[class_value]
+                    if lblp.strip() == '':
+                        lblp = str(class_value)
+                    ax_prediction.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), lblp, size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=1, foreground='black'), patheffects.Normal()])
             
         idx+=1
-        return fig,axs
+    return fig,axs

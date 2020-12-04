@@ -170,6 +170,11 @@ class LocalRasterOverlayManager:
         import matplotlib.pyplot as plt
         img_path = os.path.join(self._get_image_overlays_dir(), filename)
         num_bands = self._get_num_bands(img_data)
+        kwargs = {}
+        if vmin:
+            kwargs["vmin"] = vmin
+        if vmax:
+            kwargs["vmax"] = vmax
         if not cmap:
             if num_bands != 1 and num_bands != 3 and num_bands != 4:
                 raise Exception(f"This raster has {num_bands} bands -- Number "\
@@ -177,15 +182,16 @@ class LocalRasterOverlayManager:
                     f"Consider choosing a subset of bands, or make sure the "\
                     f"shape of the data is valid. (Shape: {img_data.shape}).")
             if num_bands == 1:
-                plt.imsave(img_path, img_data, cmap = self._DEFAULT_CMAP)
-            else:
-                plt.imsave(img_path, img_data)
+                kwargs["cmap"] = self._DEFAULT_CMAP
         else:
             if num_bands != 1:
                 raise Exception(f"To use a cmap, the input raster "\
                                 f"must have only 1 band, not {num_bands}")
-            plt.imsave(img_path, img_data,
-                       cmap = cmap, vmin = vmin, vmax = vmax)
+            else:
+                kwargs["cmap"] = cmap
+
+        plt.imsave(img_path, img_data, **kwargs)
+
         return img_path
 
     def _get_num_bands(self, img_data):

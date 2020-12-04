@@ -10,10 +10,180 @@ import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet, FeatureCollection
 from arcgis.geoprocessing._support import _execute_gp_tool
 from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob, _prevent_bds_item
+from arcgis._impl.common._utils import inspect_function_inputs
+from arcgis.geoprocessing import import_toolbox
 
 _log = _logging.getLogger(__name__)
 
 _use_async = True
+
+def trace_proximity_events(input_points,
+                           spatial_search_distance,
+                           spatial_search_distance_unit,
+                           temporal_search_distance,
+                           temporal_search_distance_unit,
+                           entity_id_field=None,
+                           entities_of_interest_ids=None,
+                           entities_of_interest_layer=None,
+                           distance_method="Planar",
+                           include_tracks_layer=False,
+                           max_trace_depth=None,
+                           attribute_match_criteria=None,
+                           output_name=None,
+                           context=None,
+                           gis=None,
+                           future=False):
+    """
+    The Trace Proximity Events task analyzes time-enabled point features representing moving entities.
+    The task will follow entities of interest in space (location) and time to see which other entities
+    the entities of interest have interacted with. The trace will continue from entity to entity to a
+    configurable maximum degrees of separation from the original entity of interest.
+
+
+    ===================================================================    =============================================================================
+    **Argument**                                                                                    **Description**
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    input_points                                                           Required Layer. A layer that will be used in analysis.
+                                                                           See :ref:`Feature Input<gaxFeatureInput>`.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    spatial_search_distance                                                Required Float. The maximum distance between two points to be considered in
+                                                                           proximity. Features closer together in space and that also meet
+                                                                           `temporal_search_distance` criteria are considered in proximity of each other.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    spatial_search_distance_unit                                           Required String. The unit of of measure for `spatial_search_distance`.
+                                                                           Values: Meters | Kilometers | Feet | Miles | NauticalMiles | Yards
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    temporal_search_distance                                               Required Float. The maximum duration between two points that are considered
+                                                                           in proximity. Features closer together in time and that also meet the
+                                                                           `spatial_search_distance` criteria are considered in proximity of each other.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    temporal_search_distance_unit                                          Required String. The unit of `temporal_search_distance`.
+                                                                           Values: Milliseconds | Seconds | Minutes | Hours | Days | Weeks| Months | Years
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    entity_id_field                                                        Optional String. The field used to identify distinct entities.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    entities_of_interest_ids                                               Optional List. JSON used to specify one or more entities that you are
+                                                                           interested in tracing from. You can optionally include a time to start tracing
+                                                                           from. If you do not specify a time, January 1, 1970, at 12:00 a.m. will be used.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    entities_of_interest_layer                                             Optional Layer. A feature class used to specify one or more entities that you
+                                                                           are interested in tracing from.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    distance_method                                                        Required String. The distance type that will be used for the `spatial_search_distance`.
+                                                                           The default is `Planar`.  Allowed values: `Planar` or `Geodesic`.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    include_tracks_layer                                                   Optional Boolean. Determines whether or not an additional layer will be
+                                                                           created containing the first trace event in tracks and all subsequent
+                                                                           features. The default is `False`.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    max_trace_depth                                                        Optional Integer. The maximum degrees of separation between an entity of
+                                                                           interest and an entity further down the trace.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    attribute_match_criteria                                               Optional String. One or more attributes used to constrain the proximity
+                                                                           events. Entities will only be considered near when the `spatial_search_distance`
+                                                                           and `temporal_search_distance` criteria are met and the two entities have
+                                                                           equal values of the attributes specified.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    output_name                                                            Optional string. The task will create a feature service of the results. You define the name of the service.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    gis                                                                    Optional GIS. The GIS object where the analysis will take place.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    context                                                                Optional string. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+
+                                                                           #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                           #. Processing spatial reference (``processSR``) The features will be projected into this coordinate system for analysis.
+                                                                           #. Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                                           #. Data store (``dataStore``) Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    future                                                                 optional Boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
+    ===================================================================    =============================================================================
+
+    :returns: Item when Future=False or GAJob when Future=True
+
+    """
+    input_points = _prevent_bds_item(input_points)
+
+    if isinstance(input_points, FeatureCollection) and \
+       'layers' in input_points.properties and \
+       len(input_points.properties.layers) > 0:
+        input_points = _FeatureSet.from_dict(
+            featureset_dict=input_points._lazy_properties.layers[0].featureSet)
+    if isinstance(entities_of_interest_layer, FeatureCollection ) and \
+       'layers' in entities_of_interest_layer.properties and \
+       len(entities_of_interest_layer.layers) > 0:
+        entities_of_interest_layer = _FeatureSet.from_dict(
+            featureset_dict=entities_of_interest_layer._lazy_properties.layers[0].featureSet)
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
+    tbx = import_toolbox(url_or_item=url, gis=gis)
+
+    if output_name is None:
+        output_service_name = 'TraceProximityEvents_' + _id_generator()
+        output_name = output_service_name.replace(' ', '_')
+    else:
+        output_service_name = output_name.replace(' ', '_')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Trace Proximity Events',
+                                            output_datastore=output_datastore)
+
+    params = {
+        "input_points" : input_points,
+        "entity_id_field" : entity_id_field,
+        "entities_of_interest_ids" : entities_of_interest_ids,
+        "entities_of_interest_layer" : entities_of_interest_layer or "",
+        'distance_method' : distance_method or "Planar",
+        "spatial_search_distance" : spatial_search_distance,
+        "spatial_search_distance_unit" : spatial_search_distance_unit,
+        "temporal_search_distance": temporal_search_distance,
+        "temporal_search_distance_unit" : temporal_search_distance_unit,
+        "include_tracks_layer" :include_tracks_layer,
+        "max_trace_depth" : max_trace_depth,
+        "attribute_match_criteria" :attribute_match_criteria,
+        "output_name" : output_name,
+        "context":context,
+        "gis" : gis,
+        "future": True,
+    }
+
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
+
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params )
+
+    kwargs = {}
+    for key, value in params.items():
+        if key != 'field':
+            if value is not None:
+                kwargs[key] = value
+        elif key == 'field' and value:
+            kwargs[key] = value
+    params = inspect_function_inputs(tbx.trace_proximity_events, **kwargs)
+    params['future'] = True
+
+    try:
+        gpjob = tbx.trace_proximity_events(**params)
+        if future:
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        gpjob.result()
+        return output_service
+    except:
+        output_service.delete()
+        raise
+
+
+    return
 
 def create_buffers(input_layer,
                    distance=1,
@@ -126,7 +296,7 @@ def create_buffers(input_layer,
                                                         #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                                         #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                                                         #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                        #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                        #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     ------------------------------------------------    ---------------------------------------------------------
     future                                              Optional boolean. If 'True', the value is returned as a GPJob.
 
@@ -145,7 +315,7 @@ def create_buffers(input_layer,
                                     dissolve_option='All',
                                     dissolve_fields='Date')
     """
-    kwargs = locals()
+
     input_layer = _prevent_bds_item(input_layer)
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -156,7 +326,21 @@ def create_buffers(input_layer,
        len(input_layer.properties.layers) > 0:
         input_layer = _FeatureSet.from_dict(
             featureset_dict=input_layer._lazy_properties.layers[0].featureSet)
-
+    kwargs = {
+        "input_layer" : input_layer,
+        "distance" : distance,
+        "distance_unit" : distance_unit,
+        "field" : field,
+        "method" : method,
+        "dissolve_option" : dissolve_option,
+        "dissolve_fields" : dissolve_fields,
+        "summary_fields" : summary_fields,
+        "multipart" : multipart,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "future" : True
+    }
     params = {}
     for key, value in kwargs.items():
         if key != 'field':
@@ -164,10 +348,10 @@ def create_buffers(input_layer,
                 params[key] = value
         elif key == 'field' and value:
             params[key] = value
-        else:
-            params['distance'] = None
-            params['distance_unit'] = None
-
+    if distance is None:
+        params['distance'] = None
+    if distance_unit is None:
+        params['distance_unit'] = None
     if output_name is None:
         output_service_name = 'Create Buffers Analysis_' + _id_generator()
         output_name = output_service_name.replace(' ', '_')
@@ -191,44 +375,19 @@ def create_buffers(input_layer,
     if context is not None:
         params["context"] = context
     else:
-        _set_context(params)
+        _set_context(params )
 
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "distance": (float, "distance"),
-        "distance_unit": (str, "distanceUnit"),
-        "field": (str, "field"),
-        "method": (str, "method"),
-        "dissolve_option": (str, "dissolveOption"),
-        "dissolve_fields": (str, "dissolveFields"),
-        "summary_fields": (str, "summaryFields"),
-        "multipart": (bool, "multipart"),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "output": (_FeatureSet, "Output Features"),
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
+    tbx = import_toolbox(url_or_item=url, gis=gis)
+    params = inspect_function_inputs(tbx.create_buffers, **params)
+    params['future'] = True
 
     try:
+        gpjob = tbx.create_buffers(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, "CreateBuffers", params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, "CreateBuffers", params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()
         raise
 
-create_buffers.__annotations__ = {
-    'distance': float,
-    'distance_unit': str,
-    'field': str,
-    'method': str,
-    'dissolve_option': str,
-    'dissolve_fields': str,
-    'summary_fields': str,
-    'multipart': bool,
-    'output_name': str,
-    'context': str}

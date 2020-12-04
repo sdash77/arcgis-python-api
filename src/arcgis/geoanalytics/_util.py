@@ -86,7 +86,6 @@ def _set_context(params):
         params["context"] = json.dumps(context)
 
 
-
 def _create_output_service(gis, output_name, output_service_name='Analysis feature service', task='GeoAnalytics', output_datastore=None):
     ok = gis.content.is_service_name_available(output_name, 'Feature Service')
     if not ok:
@@ -95,7 +94,10 @@ def _create_output_service(gis, output_name, output_service_name='Analysis featu
         if arcgis.env.output_datastore is not None:
             output_datastore = arcgis.env.output_datastore
         else:
-            output_datastore = "spatiotemporal"
+            if gis.properties.isPortal:
+                output_datastore = "spatiotemporal"
+            else:
+                output_datastore = "relational"
     if str(output_datastore).lower().find("/bigdatafileshares/") > -1:
         return None
     createParameters = {

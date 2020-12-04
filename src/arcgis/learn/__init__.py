@@ -1,18 +1,23 @@
 "Functions for calling the Deep Learning Tools."
 from . import _utils
+from ._utils.env import LAMBDA_TEXT_CLASSIFICATION
 from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, \
      _analysis_job_status, _layer_input
 import json as _json
 import arcgis as _arcgis
 from arcgis.raster._layer import ImageryLayer as _ImageryLayer
 from arcgis.raster._util import _set_context, _id_generator
+from ._scannedmapdigitizer import ScannedMapDigitizer
 
-from .models import SingleShotDetector, UnetClassifier, FeatureClassifier, RetinaNet, \
-      PSPNetClassifier, EntityRecognizer, MaskRCNN, DeepLab, PointCNN, ModelExtension, \
+if not LAMBDA_TEXT_CLASSIFICATION:
+    from .models import SingleShotDetector, UnetClassifier, FeatureClassifier, RetinaNet, \
+      PSPNetClassifier, MaskRCNN, DeepLab, PointCNN, ModelExtension, \
       FasterRCNN, SuperResolution, FullyConnectedNetwork, MLModel, YOLOv3, HEDEdgeDetector, \
-      BDCNEdgeDetector, ImageCaptioner
+      BDCNEdgeDetector, ImageCaptioner, TimeSeriesModel, CycleGAN, MultiTaskRoadExtractor, \
+      ChangeDetector, Pix2Pix
 
-from ._utils.pointcloud_data import Transform3d
+    from .text import EntityRecognizer
+    from ._utils.pointcloud_data import Transform3d
 from ._data import prepare_data, prepare_tabulardata, prepare_textdata
 from ._process_df import process_df, add_datepart
 
@@ -355,7 +360,7 @@ def classify_pixels(input_raster,
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_raster                             Required. raster layer that needs to be classified
+    input_raster                             Required. raster layer that needs to be classified.
     ------------------------------------     --------------------------------------------------------------------
     model                                    Required model object.
     ------------------------------------     --------------------------------------------------------------------
@@ -400,6 +405,12 @@ def classify_pixels(input_raster,
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -490,7 +501,7 @@ def export_training_data(input_raster,
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_raster                             Required. Raster layer that needs to be exported for training bla
+    input_raster                             Required. Raster layer that needs to be exported for training.
     ------------------------------------     --------------------------------------------------------------------
     input_class_data                         Labeled data, either a feature layer or image layer.
                                              Vector inputs should follow a training sample format as
@@ -530,21 +541,34 @@ def export_training_data(input_raster,
                                                   Technological Institute (KITTI) Object Detection Evaluation dataset. The KITTI dataset is a vision benchmark suite.
                                                   This is the default.The label files are plain text files. All values, both numerical or strings, are separated by
                                                   spaces, and each row corresponds to one object.
+                                                  This format can be used with FasterRCNN, RetinaNet, SingleShotDetector and YOLOv3 models.
 
                                                 - ``PASCAL_VOC_rectangles``: The metadata follows the same format as the Pattern Analysis, Statistical Modeling and
                                                   Computational Learning, Visual Object Classes (PASCAL_VOC) dataset. The PASCAL VOC dataset is a standardized
                                                   image data set for object class recognition.The label files are XML files and contain information about image name,
                                                   class value, and bounding box(es).
+                                                  This format can be used with FasterRCNN, RetinaNet, SingleShotDetector and YOLOv3 models.
 
                                                 - ``Classified_Tiles``: This option will output one classified image chip per input image chip.
                                                   No other meta data for each image chip. Only the statistics output has more information on the
                                                   classes such as class names, class values, and output statistics.
+                                                  This format can be used with BDCNEdgeDetector, DeepLab, HEDEdgeDetector, MultiTaskRoadExtractor, PSPNetClassifier and UnetClassifier models.
 
                                                 - ``RCNN_Masks``: This option will output image chips that have a mask on the areas where the sample exists.
                                                   The model generates bounding boxes and segmentation masks for each instance of an object in the image.
-                                                  It's based on Feature Pyramid Network (FPN) and a ResNet101 backbone.
+                                                  This format can be used with MaskRCNN model.
 
                                                 - ``Labeled_Tiles``: This option will label each output tile with a specific class.
+                                                  This format is used for image classification.
+                                                  This format can be used with FeatureClassifier model.
+
+                                                - ``Multi-labeled Tiles``: Each output tile will be labeled with one or more classes.
+                                                  For example, a tile may be labeled agriculture and also cloudy. This format is used for object classification.
+                                                  This format can be used with FeatureClassifier model.
+
+                                                - ``Export Tiles``: The output will be image chips with no label.
+                                                  This format is used for image enhancement techniques such as Super Resolution and Change Detection.
+                                                  This format can be used with ChangeDetector, CycleGAN, Pix2Pix and SuperResolution models.
     ------------------------------------     --------------------------------------------------------------------
     classvalue_field                         Optional string. Specifies the field which contains the class values. If no field is specified,
                                              the system will look for a 'value' or 'classvalue' field. If this feature does
@@ -644,6 +668,10 @@ def export_training_data(input_raster,
     #task = "ExportTrainingDataforDeepLearning"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+
+    if gis._con._product == "AGOL":
+        raise RuntimeError("ArcGIS Online does not support export_training_data function.")
+
     return gis._tools.rasteranalysis.export_training_data_for_deep_learning(input_raster=input_raster,
                                                                             input_class_data=input_class_data,
                                                                             chip_format=chip_format,
@@ -757,6 +785,8 @@ def list_models(*,
     #task = "ListDeepLearningModels"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if gis._con._product == "AGOL":
+        raise RuntimeError("ArcGIS Online does not support list_models function.")
     return gis._tools.rasteranalysis.list_deep_learning_models(future=future,
                                                                **kwargs)
     """
@@ -879,6 +909,139 @@ def classify_objects(input_raster,
                                                                           future=future,
                                                                           **kwargs)
 
+def compute_accuracy_for_object_detection(detected_features, 
+                                          ground_truth_features, 
+                                          detected_class_value_field=None, 
+                                          ground_truth_class_value_field=None, 
+                                          min_iou=None, 
+                                          mask_features=None,
+                                          out_accuracy_table_name=None, 
+                                          out_accuracy_report_name=None, 
+                                          context=None,
+                                          *,
+                                          gis=None,
+                                          future=False,
+                                          **kwargs):
+
+    """
+    Function can be used to calculate the accuracy of a deep learning model by comparing the detected objects from 
+    the detect_objects function to ground truth data. 
+    Function available in ArcGIS Image Server 10.9 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    detected_features                        Required. The input polygon feature layer containing the objects 
+                                             detected from the detect_objects function.
+    ------------------------------------     --------------------------------------------------------------------
+    ground_truth_features                    Required. The polygon feature layer containing ground truth data.  
+    ------------------------------------     --------------------------------------------------------------------
+    detected_class_value_field               Optional dictionary. The field in the detected objects feature class 
+                                             that contains the class names or class values. 
+
+                                             If a field name is not specified, a Classvalue or Value field will 
+                                             be used. If these fields do not exist, all records will be 
+                                             identified as belonging to one class. 
+
+                                             The class values or class names must match those in the ground truth feature class exactly.
+
+                                             Syntax: A string describing the detected class value field. 
+
+                                             Example: "class"
+    ------------------------------------     --------------------------------------------------------------------
+    ground_truth_class_value_field           The field in the ground truth feature class that contains the class 
+                                             names or class values. 
+
+                                             If a field name is not specified, a Classvalue or Value field will 
+                                             be used. If these fields do not exist, all records will be 
+                                             identified as belonging to one class. 
+
+                                             The class values or class names must match those in the detected objects feature class exactly.
+
+                                             Example: "class"
+    ------------------------------------     --------------------------------------------------------------------
+    min_iou                                  The Intersection over Union (IoU) ratio to use as a threshold to 
+                                             evaluate the accuracy of the object-detection model. The numerator 
+                                             is the area of overlap between the predicted bounding box and 
+                                             the ground truth bounding box. The denominator is the area of 
+                                             union or the area encompassed by both bounding boxes. 
+
+                                             min_IoU value should be in the range 0 to 1. [0,1] 
+                                             Example:
+                                                0.5
+    ------------------------------------     --------------------------------------------------------------------
+    mask_features                            Optional feature layer. A polygon feature service layer that delineates 
+                                             the area where accuracy will be computed. Only the image area that 
+                                             falls completely within the polygons will be assessed for accuracy. 
+    ------------------------------------     --------------------------------------------------------------------
+    out_accuracy_table_name                  Optional. Name of the output accuracy table item to be created.
+                                             If not provided, a random name is generated by the method and used as 
+                                             the output name.
+    ------------------------------------     --------------------------------------------------------------------
+    out_accuracy_report_name                 Optional. Accuracy report can either be added as an item to the portal.
+                                             or can be written to a datastore.
+                                             To add as an item, specify the name of the output report item (pdf item) 
+                                             to be created.
+                                             Example: 
+
+                                                "accuracyReport"
+
+                                             In order to write accuracy report to datastore, specify the datastore path as value to uri key.
+                                             
+                                             Example - 
+                                                "/fileShares/yourFileShareFolderName/accuracyReport"
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Optional dictionary. Context contains additional settings that affect task execution.
+                                             Dictionary can contain value for following keys:
+
+                                             - cellSize - Set the output raster cell size, or resolution
+
+                                             - extent - Sets the processing extent used by the function
+
+                                             - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
+
+                                             - processorType - Sets the processor type. "CPU" or "GPU"
+
+                                             Eg: {"processorType" : "CPU"}
+
+                                             Setting context parameter will override the values set using arcgis.env 
+                                             variable for this particular function.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ====================================     ====================================================================
+
+    :return:
+        The output accuracy table item or/and accuracy report item (or datastore path to accuracy report)
+
+    .. code-block:: python
+
+        # Usage Example: This example generates an accuracy table for a specified minimum IoU value.
+
+        compute_accuracy_op = compute_accuracy_for_object_detection(detected_features=detected_features, 
+                                                                    ground_truth_features=ground_truth_features, 
+                                                                    detected_class_value_field="ClassValue", 
+                                                                    ground_truth_class_value_field="Class", 
+                                                                    min_iou=0.5, 
+                                                                    mask_features=None,
+                                                                    out_accuracy_table_name="accuracy_table", 
+                                                                    out_accuracy_report_name="accuracy_report", 
+                                                                    gis=gis)
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.compute_accuracyfor_object_detection(detected_features=detected_features, 
+                                                                          ground_truth_features=ground_truth_features, 
+                                                                          detected_class_value_field=detected_class_value_field, 
+                                                                          ground_truth_class_value_field=ground_truth_class_value_field, 
+                                                                          min_iou=min_iou, 
+                                                                          mask_features=mask_features,
+                                                                          out_accuracy_table_name=out_accuracy_table_name, 
+                                                                          out_accuracy_report_name=out_accuracy_report_name, 
+                                                                          context=context,
+                                                                          future=future,
+                                                                          **kwargs)
+
 class Model:
     def __init__(self, model = None):
         self._model_package = False
@@ -990,6 +1153,9 @@ class Model:
         #task = "InstallDeepLearningModel"
 
         gis = _arcgis.env.active_gis if gis is None else gis
+
+        if gis._con._product == "AGOL":
+            raise RuntimeError("ArcGIS Online does not support install method on a Model Object. The Model object can be directly used with deep learning functions without installation.")
         return gis._tools.rasteranalysis.install_deep_learning_model(model_package=self._model,
                                                                      future=future,
                                                                      **kwargs)
@@ -1113,6 +1279,8 @@ class Model:
         #task = "UninstallDeepLearningModel"
 
         gis = _arcgis.env.active_gis if gis is None else gis
+        if gis._con._product == "AGOL":
+            raise RuntimeError("ArcGIS Online does not support uninstall method on a Model Object.")
 
         if self._model is None:
             raise RuntimeError('model_package cannot be None')
@@ -1174,8 +1342,10 @@ def export_point_dataset(data_path,
                            be a totally new directory.      
     ------------------     ------------------------------------------------------
     block_size             Optional float. Size of the h5 block file.
-                           The unit of this parameter is same as, that of the
-                           dataset's coordinate system. Default: 50.0 Units          
+                           The unit of this parameter is the same as that of the
+                           dataset's coordinate system. Default: 50.0 Units.
+                           The default value is based on the assumption that 
+                           dataset's coordinate system is in metric units. 
     ------------------     ------------------------------------------------------
     max_points             Optional integer. Maximum number of points to be 
                            included in each h5 block file.

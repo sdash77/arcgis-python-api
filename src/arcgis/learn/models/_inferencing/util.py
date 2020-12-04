@@ -15,11 +15,18 @@ std  = 255* np.array(imagenet_stats[1], dtype=np.float32)
 norm = lambda x: (x-mean)/ std
 denorm = lambda x: x * std + mean
 
-def scale_batch(image_batch, model_info, normalization_stats=None):
+def scale_batch(image_batch, model_info, normalization_stats=None, break_extract_bands=False):
     if normalization_stats is None:
         normalization_stats = model_info.get("NormalizationStats", None)
-    band_min_values = np.array(normalization_stats["band_min_values"])[model_info['ExtractBands']].reshape(1, -1, 1, 1)
-    band_max_values = np.array(normalization_stats["band_max_values"])[model_info['ExtractBands']].reshape(1, -1, 1, 1)
+    if break_extract_bands:
+        # Only for change detection
+        # if subset of extract bands are specified fix this.
+        n_bands = len(model_info['ExtractBands']) // 2
+        band_min_values = np.array(normalization_stats["band_min_values"])[model_info['ExtractBands'][:n_bands]].reshape(1, -1, 1, 1)
+        band_max_values = np.array(normalization_stats["band_max_values"])[model_info['ExtractBands'][:n_bands]].reshape(1, -1, 1, 1)
+    else:
+        band_min_values = np.array(normalization_stats["band_min_values"])[model_info['ExtractBands']].reshape(1, -1, 1, 1)
+        band_max_values = np.array(normalization_stats["band_max_values"])[model_info['ExtractBands']].reshape(1, -1, 1, 1)
     img_scaled = ( image_batch - band_min_values ) / ( band_max_values - band_min_values)
     return img_scaled
 
@@ -229,6 +236,21 @@ def superres_image(model, images, device):
     output = model(normed_batch_tensor)
     return output
 
+def cyclegan_image(model, images, device, direction):
+    model = model.to(device)
+    normed_batch_tensor = tensor(images).to(device).float()
+    if direction == 'BtoA':
+        output = model.G_A(normed_batch_tensor)
+    else:
+        output = model.G_B(normed_batch_tensor)
+    return output
+
+def pix2pix_image(model, images, device):
+    model = model.to(device)
+    normed_batch_tensor = tensor(images).to(device).float()
+    output = model.G(normed_batch_tensor)
+    return output 
+    
 def remap(tensor, idx2pixel):
     modified_tensor = torch.zeros_like(tensor)
     for id, pixel in idx2pixel.items():
@@ -260,4 +282,105 @@ def pixel_classify_superres_image(model, tiles, device):
     superres_predictions = (superres_predictions * torch.tensor(imagenet_stats[1]).view(1, -1, 1, 1).to(superres_predictions)) + torch.tensor(imagenet_stats[0]).view(1, -1, 1, 1).to(superres_predictions)
     superres_predictions = superres_predictions.clamp(0, 1)
     return superres_predictions
+
+def pixel_classify_cyclegan_image(model, tiles, device, direction, model_info):
+    tile_height, tile_width = tiles.shape[2], tiles.shape[3]
+    num_channel = model_info.get("n_channel", None)
+    if model_info.get('IsMultispectral', False):
+        if direction == 'BtoA':
+            norm_stats = model_info.get("NormalizationStats_b", None)
+        else:
+            norm_stats = model_info.get("NormalizationStats", None)
+        img_scaled = scale_batch(tiles, model_info, norm_stats)
+        img_normed = -1 + 2*img_scaled
+        if img_normed.shape[1] < num_channel:
+            cont = []
+            for j in range(img_normed.shape[0]):
+                tile = img_normed[j,:,:,:]
+                last_tile = np.expand_dims(tile[tile.shape[0]-1,:,:], 0)
+                res = abs(num_channel - tile.shape[0])
+                for i in range(res):
+                    tile = np.concatenate((tile, last_tile), axis=0)
+                cont.append(tile)
+            img_normed = np.stack(cont, axis = 0)
+    else:
+        img_normed = -1 + 2*tiles
+    cyclegan_predictions = cyclegan_image(model, img_normed, device, direction)
+    cyclegan_predictions = cyclegan_predictions/2 + 0.5
+    return cyclegan_predictions
+
+def pixel_classify_pix2pix_image(model, tiles, device, model_info):
+    tile_height, tile_width = tiles.shape[2], tiles.shape[3]
     
+    num_chanel = model_info.get("n_channel", None)
+
+    if model_info.get('IsMultispectral', False):
+        norm_stats = model_info.get("NormalizationStats", None)
+        img_scaled = scale_batch(tiles, model_info, norm_stats)
+        img_normed = -1 + 2*img_scaled
+        if img_normed.shape[1] < num_chanel:
+            cont = []
+            for j in range(img_normed.shape[0]):
+                tile = img_normed[j,:,:,:]
+                last_tile = np.expand_dims(tile[tile.shape[0]-1,:,:], 0)
+                res = abs(num_chanel - tile.shape[0])
+                for i in range(res):
+                    tile = np.concatenate((tile, last_tile), axis=0)
+                cont.append(tile)
+            img_normed = np.stack(cont, axis = 0)
+    else:
+        img_normed = norm(tiles.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
+
+    pix2pix_predictions = pix2pix_image(model, img_normed, device)
+    if model_info.get('IsMultispectral', False):
+        pix2pix_predictions = pix2pix_predictions/2 + 0.5
+    else:
+        pix2pix_predictions = (pix2pix_predictions * torch.tensor(imagenet_stats[1]).view(1, -1, 1, 1).to(pix2pix_predictions)) + torch.tensor(imagenet_stats[0]).view(1, -1, 1, 1).to(pix2pix_predictions)
+        pix2pix_predictions = pix2pix_predictions.clamp(0, 1)
+    
+    return pix2pix_predictions
+
+def variable_tile_size_check(json_info, parameters):
+    if json_info.get("SupportsVariableTileSize", False):
+        parameters.extend(
+            [
+                {
+                    'name': 'tile_size',
+                    'dataType': 'numeric',
+                    'value': int(json_info['ImageHeight']),
+                    'required': False,
+                    'displayName': 'Tile Size',
+                    'description': 'Tile size used for inferencing'
+                }
+            ]
+        )
+    return parameters
+
+def detect_change(model,
+                  batch,
+                  device,
+                  model_info):
+    mean = 255 * np.array([0.5] * (len(model_info['ExtractBands']) // 2), dtype=np.float32)
+    std = 255 * np.array([0.5] * (len(model_info['ExtractBands']) // 2), dtype=np.float32)
+
+    norm = lambda x: (x-mean) / std
+    B, C, H, W = batch.shape
+    batch_before = batch[:, :C//2]
+    batch_after = batch[:, C//2:]
+    
+    if "NormalizationStats" in model_info:
+        batch_before = scale_batch(batch_before, model_info, break_extract_bands=True)
+        batch_after = scale_batch(batch_after, model_info, break_extract_bands=True)        
+
+    batch_before = norm(batch_before.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
+    batch_after = norm(batch_after.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
+    batch_before = torch.tensor(batch_before, device=device).float()
+    batch_after = torch.tensor(batch_after, device=device).float()
+    from ..._utils.change_detection_data import post_process
+    with torch.no_grad():
+        predictions = post_process(model(batch_before, batch_after))
+    # find the non zero class of the two classes.
+    change_class = [c['Value'] for c in model_info['Classes'] if c['Value'] != 0][0]
+    predictions[predictions != 0] = change_class
+    return predictions[:, 0]
+

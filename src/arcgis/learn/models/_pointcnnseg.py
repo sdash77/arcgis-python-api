@@ -25,7 +25,7 @@ class PointCNN(ArcGISModel):
 
     """
     Model architecture from https://arxiv.org/abs/1801.07791.
-    Creates a Point Cloud Segmentation/ Point Classification model. 
+    Creates a Point Cloud classification model. 
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -33,8 +33,8 @@ class PointCNN(ArcGISModel):
     data                    Required fastai Databunch. Returned data object from
                             `prepare_data` function.
     ---------------------   -------------------------------------------
-    pretrained_path         Optional string. Path where pre-trained PointCNN model is
-                            saved.                            
+    pretrained_path         Optional String. Path where pre-trained model
+                            is saved. 
     =====================   ===========================================
 
     **kwargs**
@@ -56,16 +56,16 @@ class PointCNN(ArcGISModel):
                             Length of `out_channels`, `P`, `K`, `D` should be same.
                             The length denotes the number of layers in encoder.
                               Parameter Explanation
-                                - 'out_channels': Number of channels in each layer multiplied by `m`,
+                                - 'out_channels': Number of channels produced by each layer,
                                 - 'P': Number of points in each layer,
                                 - 'K': Number of K-nearest neighbor in each layer,
                                 - 'D': Dilation in each layer,
-                                - 'm': Multiplier which is multiplied by each out_channel.
+                                - 'm': Multiplier which is multiplied by each element of out_channel.
     ---------------------   -------------------------------------------
     dropout                 Optional float. This parameter will control overfitting.                          
                             The range of this parameter is [0,1).
     ---------------------   -------------------------------------------
-    sample_point_num        Optional integer. The number of points that the models
+    sample_point_num        Optional integer. The number of points that the model
                             will actually process.     
     =====================   ===========================================
 
@@ -96,13 +96,14 @@ class PointCNN(ArcGISModel):
     def from_model(cls, emd_path, data=None):
         
         """
-        Creates a PointCNN model from an Esri Model Definition (EMD) file.
+        Creates an PointCNN model object from a Deep Learning Package(DLPK)
+        or Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from `prepare_data` function or None for
@@ -171,9 +172,9 @@ class PointCNN(ArcGISModel):
         epochs                  Required integer. Number of cycles of training
                                 on the data. Increase it if underfitting.
         ---------------------   -------------------------------------------
-        lr                      Optional float or slice of floats. Learning rate
-                                to be used for training the model. If ``lr=None``, 
-                                an optimal learning rate is automatically deduced 
+        lr                      Optional float. Learning rate to be used
+                                for training the model. If ``lr=None``, an
+                                optimal learning rate is automatically deduced
                                 for training the model.
         ---------------------   -------------------------------------------
         one_cycle               Optional boolean. Parameter to select 1cycle
@@ -189,12 +190,13 @@ class PointCNN(ArcGISModel):
                                 based on validation loss will be saved during 
                                 training.
         ---------------------   -------------------------------------------
-        tensorboard             Optional boolean. Parameter to write the training log. 
-                                If set to 'True' the log will be saved at 
+        tensorboard             Optional boolean. Parameter to write the training log.
+                                If set to 'True' the log will be saved at
                                 <dataset-path>/training_log which can be visualized in
-                                tensorboard. Required tensorboardx version=1.7 
-                                (Experimental support).        
+                                tensorboard. Required tensorboardx version=2.1
+
                                 The default value is 'False'.
+                                **Note - Not applicable for Text Models
         =====================   ===========================================
 
         **kwargs**
@@ -220,6 +222,9 @@ class PointCNN(ArcGISModel):
         if lr is None:
             print('Finding optimum learning rate.')
             lr = self.lr_find(allow_plot=False)
+
+        if isinstance(lr, slice):
+            lr = lr.stop
         
         super().fit(epochs, lr, one_cycle, early_stopping, checkpoint, tensorboard, **kwargs)
         
@@ -239,7 +244,15 @@ class PointCNN(ArcGISModel):
 
         return float(model_accuracy)
 
-    def _get_emd_params(self):
+    def unfreeze(self):
+        """
+        Unfreezes the earlier layers of the model for
+        fine-tuning. Not implemented for PointCNN as
+        none of the layers are frozen by default.
+        """
+        self.learn.unfreeze()        
+
+    def _get_emd_params(self, save_inference_file):
         import random
         _emd_template = {"DataAttributes" : {}, "ModelParameters" : {}}
         _emd_template["Framework"] = "N/A"
@@ -290,11 +303,8 @@ class PointCNN(ArcGISModel):
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         color_mapping           Optional dictionary. Mapping from class value
-                                to RGB values. Default value
-                                Example: {0:[220,220,220],
-                                            1:[255,0,0],
-                                            2:[0,255,0],
-                                            3:[0,0,255]}          
+                                to RGB values. Default value example:
+                                {0:[220,220,220], 2:[255,0,0], 6:[0,255,0]}.
         ---------------------   -------------------------------------------
         mask_class              Optional list of integers. Array containing
                                 class values to mask. Use this parameter to 
@@ -332,6 +342,8 @@ class PointCNN(ArcGISModel):
         """
         Predicts and writes the resulting las file on the disk.
         The block size which was used for training will be used for prediction.
+        Coordinate system for the inferencing data & trained model's training
+        data should be the same.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -343,8 +355,9 @@ class PointCNN(ArcGISModel):
                                 the resulting las files. Defaults to `results` folder
                                 in input path.  
         ---------------------   -------------------------------------------
-        print_metrics           Optional boolean. If True, print metrics such as precision,
-                                recall and f1_score. Defaults to False.
+        print_metrics           Optional boolean. If True, precision, recall and
+                                f1_score are also calculated and reported.
+                                Defaults to False.
         =====================   ===========================================                                
 
         **kwargs**
@@ -356,7 +369,7 @@ class PointCNN(ArcGISModel):
                                 class values to user defined values. Please query 
                                 `pointcnn._data.classes` to get the class values
                                 on which the model is trained on.
-                                Default is {} 
+                                Default is {}.
         ---------------------   -------------------------------------------
         selective_classify      Optional list of integers. If passed, predict_las 
                                 will selectively classify only those points 
@@ -368,6 +381,18 @@ class PointCNN(ArcGISModel):
                                 on. If `remap_classes` is specified, the new 
                                 mapped values will be used for classification. 
                                 Default value is [].
+        ---------------------   -------------------------------------------
+        preserve_classes        Optional list of integers. A list of classes
+                                from the input data, that should be preserved 
+                                in the predicted output.
+                                If a point in the input data belongs to any 
+                                of the classes mentioned in this list, its 
+                                class-code won't be updated with the model's 
+                                predicted class. 
+                                Example: If preserve_classes=[2,6]. The 
+                                class-code of a point won't be updated with 
+                                the predicted class, if it's 2 or 6. 
+                                Default: [].
         =====================   ===========================================
         
         :returns: Path where files are dumped.
@@ -387,6 +412,8 @@ class PointCNN(ArcGISModel):
         """
         Predicts and writes the resulting las file on the disk. 
         The block size which was used for training will be used for prediction.
+        Coordinate system for the inferencing data & trained model's training
+        data should be the same.
 
         =====================   ===========================================
         **Argument**            **Description**

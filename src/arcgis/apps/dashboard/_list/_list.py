@@ -5,37 +5,33 @@ from .._utils._basewidget import NoDataProperties
 
 
 class List(_BaseWidget):
+    """
+    Creates a dashboard List widget.
 
-    def __init__(self, item, name, layer=0, title=None, description=None):
-        """
-        Creates a dashboard List widget.
+    =========================   ===========================================
+    **Argument**                **Description**
+    -------------------------   -------------------------------------------
+    item                        Required Item object. Item from which the
+                                Indicator is constructed. Item object can
+                                be a Feature Layer or a MapWidget.
+    -------------------------   -------------------------------------------
+    name                        Optional string. Name of the List widget.
+    -------------------------   -------------------------------------------
+    layer                       Optional integer. Layer number when item is
+                                a mapwidget.
+    -------------------------   -------------------------------------------
+    title                       Optional string. Title or Caption for the
+                                widget.
+    -------------------------   -------------------------------------------
+    description                 Optional string. Description for the widget.
+    =========================   ===========================================
+    """
+    def __init__(self, item, name='List', layer=0, title=None, description=None):
+        super().__init__(name, title, description)
 
-        =========================   ===========================================
-        **Argument**                **Description**
-        -------------------------   -------------------------------------------
-        item                        Required Item object. Item from which the
-                                    Indicator is constructed. Item object can 
-                                    be a Feature Layer or a MapWidget.
-        -------------------------   -------------------------------------------
-        name                        Optional string. Name of the List widget.
-        -------------------------   -------------------------------------------
-        layer                       Optional integer. Layer number when item is
-                                    a mapwidget.
-        -------------------------   -------------------------------------------
-        title                       Optional string. Title or Caption for the
-                                    widget.
-        -------------------------   -------------------------------------------
-        description                 Optional string. Description for the widget.
-        =========================   ===========================================
-        """
-        super().__init__(title, description)
-        # General Block
-        if not name:
-            raise Exception("Please specify a name")
         if item.type not in ['Feature Service', 'mapWidget']:
             raise Exception("Please specify an item")
 
-        self.name = name
         self.item = item
         self.type = "listWidget"
         self.layer = layer
@@ -54,6 +50,7 @@ class List(_BaseWidget):
         # List Block
         self._list_text = None
         self._list_icon = "symbol"
+        self._events = Events._create_events()
 
     @classmethod
     def _from_json(cls, widget_json):
@@ -66,7 +63,14 @@ class List(_BaseWidget):
         lists = List(item, name, title, description)
 
         return lists
-    
+
+    @property
+    def events(self):
+        """
+        :return: list of events attached to the widget.
+        """
+        return self._events
+
     @property
     def max_features(self):
         """
@@ -219,6 +223,8 @@ class List(_BaseWidget):
             "separatorColor":self._seperator_color,
             "selectionColor":self._selection_color,
             "selectionTextColor":self._selection_text_color,
+            "events": [],
+            "selectionMode": "multi",
             "datasets":[
                 {
                     "type":"serviceDataset",
@@ -234,24 +240,138 @@ class List(_BaseWidget):
                     "name":"main"
                 }
             ],
-            "id":self.id,
+            "id":self._id,
             "name":self.name,
             "showLastUpdate":self.show_last_update,
             "noDataVerticalAlignment":self._nodata.alignment,
             "showCaptionWhenNoData":self._nodata.show_title,
             "showDescriptionWhenNoData":self._nodata.show_description
         }
+        if self.events.enable:
+            json_data["events"].append({"type":self.events.type, "actions":self.events.synced_widgets})
+            json_data["selectionMode"] = self.events.selection_mode
+
         return json_data
 
 
+class Events(object):
 
+    @classmethod
+    def _create_events(cls, enable=False):
+        events = Events()
 
+        events._enable = False
+        events._selection_mode = "single"
+        events._type = "selectionChanged"
+        events._actions = []
 
-        
+        events.enable = enable
 
+        return events
 
+    @property
+    def selection_mode(self):
+        """
+        :return: Selection mode of events.
+        """
+        return self._selection_mode
 
+    @selection_mode.setter
+    def selection_mode(self, value):
+        """
+        Set Selection mode of events.
+        """
+        if value in ["single", "multi"]:
+            self._selection_mode = value
+        else:
+            raise Exception("Please specify selection_mode from 'single' and 'multi'")
+    
+    @property
+    def enable(self):
+        """
+        :return: if events are enabled or not.
+        """
+        return self._enable
 
+    @enable.setter
+    def enable(self, value):
+        """
+        Set if events are enabled or not.
+        """
+        self._enable = bool(value)
 
+    @property
+    def type(self):
+        """
+        :return: type of trigger for event.
+        """
+        return self._type
 
+    @property
+    def synced_widgets(self):
+        """
+        :return: List of synced widgets.
+        """
+        return self._actions
+
+    def sync_map(self, action_type, widget):
+        """
+        Synchronize a mapWidget with List for triggered events.
+
+        =========================   ===========================================
+        **Argument**                **Description**
+        -------------------------   -------------------------------------------
+        action_type                 Required string. Actions can be one of 
+                                    "zoom", "flash", "show_popup", "pan".
+        -------------------------   -------------------------------------------
+        widget                      Required MapWidget item. Name of the map
+                                    widget.
+        =========================   ===========================================
+        """
+        if self.enable == False:
+            raise Exception("Please enable events")
+        else:
+            if widget.type == "mapWidget":
+                if action_type in ["zoom", "flash", "show_popup", "pan"]:
+                    self._actions.append({"type": action_type, "targetId": widget._id})
+                elif action_type == "filter":
+                    if self._targetid is not None:
+                        self._actions.append({"type":action_type, "by":"whereClause", "targetId":self._targetid})
+                    else:
+                        raise Exception("This operation is not suitable for given dataSource.")
+                else:
+                    raise Exception("Please select action_type from 'zoom', 'flash', 'show_popup' and 'pan'")
+            else:
+                raise Exception("Please select a map widget")
+
+    def sync_widget(self, widgets):
+        """
+        Synchronize non-mapWidget type widgets with List for triggered events.
+
+        =========================   ===========================================
+        **Argument**                **Description**
+        -------------------------   -------------------------------------------
+        widget                      Required widget item or list of widget items
+                                    .Name of the widgets to be synced.
+        =========================   ===========================================
+        """
+        if self.enable == False:
+            raise Exception("Please enable events")
+
+        else:
+            if isinstance(widgets, list):
+                for widget in widgets:
+                    if widget.type == "mapWidget":
+                        raise Exception("Use sync_map method to add actions for map widgets") ##duplicate or erase
+                    else:
+                        action_type = "filter"
+                        widget_id = str(widget._id)+'#main'
+                        self._actions.append({"type":action_type, "by":"whereClause", "targetId":widget_id})
+            else:
+                if widgets.type == "mapWidget":
+                    raise Exception("Use sync_map method to add actions for map widgets") ##duplicate or erase
+                else:
+                    action_type = "filter"
+                    widget_id = str(widgets._id)+'#main'
+                    self._actions.append({"type":action_type, "by":"whereClause", "targetId":widget_id})
 

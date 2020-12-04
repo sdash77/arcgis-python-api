@@ -2,39 +2,32 @@ import uuid
 import arcgis
 from .._utils._basewidget import _BaseWidget, NoDataProperties
 
-class RichText(object):
 
-    def __init__(self, html_text, name, title='', description=''):
-        """
-        Creates a dashboard Rich Text widget.
+class RichText(_BaseWidget):
+    """
+    Creates a dashboard Rich Text widget.
 
-        =========================   ===========================================
-        **Argument**                **Description**
-        -------------------------   -------------------------------------------
-        html_text                   Required HTML text. This text will be
-                                    displayed in Rich Text format.
-        =========================   ===========================================
-        """
+    =========================   ===========================================
+    **Argument**                **Description**
+    -------------------------   -------------------------------------------
+    html_text                   Required HTML text. This text will be
+                                displayed in Rich Text format.
+    -------------------------   -------------------------------------------
+    name                        Optional String. Name of the widget.
+    -------------------------   -------------------------------------------
+    title                       Optional string. Title of the widget.
+    -------------------------   -------------------------------------------
+    description                 Optional string. Description of the widget.
+    =========================   ===========================================
+    """
+    def __init__(self, html_text, name='RichText', title='', description=''):
+        super().__init__(name, title, description)
 
-
-        self.name = name
         self._type = "richTextWidget"
-        self._title = ""
-        self._description = ""
-        self._type = "richTextWidget"
-
         self._text = ""
 
         self.text = html_text
-        self.title = title
-        self.description = description
-
         self._nodata = NoDataProperties._nodata_init()
-    
-    def _repr_html_(self):
-        from arcgis.apps.dashboard import Dashboard
-        url = Dashboard._publish_random(self)
-        return f"""<iframe src={url} width=900 height=300>"""
     
     @classmethod
     def _from_json(cls, widget_json):
@@ -43,7 +36,7 @@ class RichText(object):
         title = widget_json["caption"]
         description = widget_json["description"]
         rtxt = RichText(txt, name, title, description)
-        rtxt.id = widget_json["id"]
+        rtxt._id = widget_json["id"]
         rtxt.no_data.alignment = widget_json["noDataVerticalAlignment"]
         rtxt.no_data.show_title =  widget_json["showCaptionWhenNoData"]
         rtxt.no_data.show_description = widget_json["showDescriptionWhenNoData"]
@@ -56,34 +49,6 @@ class RichText(object):
         :return: widget type.
         """
         return self._type
-
-    @property
-    def title(self):
-        """
-        :return: widget title.
-        """
-        return self._title
-
-    @title.setter
-    def title(self, value):
-        """
-        Set widget title.
-        """
-        self._title = value
-
-    @property
-    def description(self):
-        """
-        :return: widget description.
-        """
-        return self._description
-
-    @description.setter
-    def description(self, value):
-        """
-        Set widget description.
-        """
-        self._description = value
 
     @property
     def text(self):
@@ -110,7 +75,7 @@ class RichText(object):
         json_data = {
             "type": "richTextWidget",
             "text": self.text,
-            "id": self.id,
+            "id": self._id,
             "name": self.name,
             "showLastUpdate": True,
             "noDataVerticalAlignment": self._nodata.alignment,

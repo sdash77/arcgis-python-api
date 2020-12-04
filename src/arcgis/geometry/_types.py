@@ -765,12 +765,6 @@ class Geometry(BaseGeometry):
         if HASARCPY and \
            isinstance(self.as_arcpy, arcpy.Geometry):
             return getattr(self.as_arcpy, "JSON", None)
-        elif HASSHAPELY:
-            try:
-                return json.dumps(self.as_shapely.__geo_interface__)
-            except:
-                return json.dumps(self)
-
         return json.dumps(self)
     #----------------------------------------------------------------------
     @classmethod

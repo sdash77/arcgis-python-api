@@ -1,8 +1,13 @@
-__version__ = '1.8.3'
+__version__ = '1.9.0'
 
+from . import env
 from . import (features, geoanalytics, geocoding, geometry)
 from . import (geoprocessing, network, raster, realtime, schematics)
-from . import (mapping, apps, learn)
+import os
+if os.environ.get('DISABLE_ARCGIS_LEARN', None) is '1':
+    from . import (mapping, apps)
+else:
+    from . import (mapping, apps, learn)
 
 from arcgis.gis import GIS
 from .features.analysis import *

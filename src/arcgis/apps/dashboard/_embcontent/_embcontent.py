@@ -3,73 +3,75 @@ import arcgis
 from .._utils._basewidget import _BaseWidget
 from .._utils._basewidget import NoDataProperties
 
+
 class EmbeddedContent(_BaseWidget):
+    """
+    Creates a dashboard Embedded Content Widget.
 
-    def __init__(self, url, name, title="", description="", content_type="document", refresh_interval=0, item=None, max_features_displayed=50):
-        """
-        Creates a dashboard Embedded Content Widget.
-
-        =========================   ===========================================
-        **Argument**                **Description**
-        -------------------------   -------------------------------------------
-        url                         Required string. Url of the embedded content.
-        -------------------------   -------------------------------------------
-        name                        Optional string. Name of the widget.
-        -------------------------   -------------------------------------------
-        title                       Optional string. Title of the widget.
-        -------------------------   -------------------------------------------
-        description                 Optional string. Description of the widget.
-        -------------------------   -------------------------------------------
-        content_type                Optional string. Type of the content.
-                                    Choose from "document", "image", "video".
-        -------------------------   -------------------------------------------
-        refresh_interval            Optional integer. Interval to refresh in
-                                    minutes.
-        -------------------------   -------------------------------------------
-        item                        Optional Portal Item. To show content from
-                                    portal.
-        -------------------------   -------------------------------------------
-        max_features_displayed      Optional integer. Maximum number of features
-                                    to display.
-        =========================   ===========================================
-        """
-        super().__init__(title, description)
+    =========================   ===========================================
+    **Argument**                **Description**
+    -------------------------   -------------------------------------------
+    url                         Required string. Url of the embedded content
+                                or field name if item is not None.
+    -------------------------   -------------------------------------------
+    name                        Optional string. Name of the widget.
+    -------------------------   -------------------------------------------
+    title                       Optional string. Title of the widget.
+    -------------------------   -------------------------------------------
+    description                 Optional string. Description of the widget.
+    -------------------------   -------------------------------------------
+    content_type                Optional string. Type of the content.
+                                Choose from "document", "image", "video".
+    -------------------------   -------------------------------------------
+    refresh_interval            Optional integer. Interval to refresh in
+                                minutes. It is only applicable for
+                                content_type = 'image'
+    -------------------------   -------------------------------------------
+    item                        Optional Portal Item. To show content from
+                                portal.
+    -------------------------   -------------------------------------------
+    layer                       Optional integer. Layer number when item is
+                                a mapwidget.
+    =========================   ===========================================
+    """
+    def __init__(self, url, name='EmbeddedContent', title="", description="", content_type="document", refresh_interval=0, item=None, layer=0):
+        super().__init__(name, title, description)
 
         data_type = "features"
 
         if item is None:
             data_type = "static"
-        if not name:
-            raise Exception("Please specify a name")
+            self._url = url
+        else:
+            self._url = "{" + url + "}"
 
-        self._item = item
-        self.name = name
+        self.item = item
+        self.layer = layer
         self.type = "embeddedContentWidget"
 
         self._data_type = data_type
-        self._url = url
 
         if content_type not in ["document", "image", "video"]:
             raise Exception("Invalid content type.")
 
         self._content_type = content_type
-        self._max_features_displayed = max_features_displayed
+        self._max_features_displayed = 50
         self._refresh_interval = refresh_interval
 
         self._no_data = NoDataProperties._nodata_init()
     
     @classmethod
     def _from_json(cls, widget_json):
-        from arcgis.apps.dashboard import Gauge
+        from arcgis.apps.dashboard import EmbeddedContent
         gis = arcgis.env.active_gis
         itemid = widget_json["datasets"]["datasource"]["itemid"]
         name = widget_json["name"]
         item = gis.content.get(itemid)
         title = widget_json["caption"]
         description = widget_json["description"]
-        gauge = Gauge(item, name, title, description)
+        emb = EmbeddedContent(name, title, description, item)
 
-        return gauge
+        return emb
 
     @property
     def url(self):
@@ -151,7 +153,7 @@ class EmbeddedContent(_BaseWidget):
                 "controlsList": "nodownload"
             },
             "datasets": [],
-            "id": self.id,
+            "id": self._id,
             "name": self.name,
             "caption": self._title,
             "description": self.description,
@@ -170,14 +172,14 @@ class EmbeddedContent(_BaseWidget):
         if self._text_color:
             json_data['textColor'] = self._text_color
 
-        if self._item:
+        if self.item:
             json_data['datasets'] = [
                 {
                     "type": "serviceDataset",
                     "dataSource": {
                         "type": "featureServiceDataSource",
-                        "itemId": self._item.itemid,
-                        "layerId": 0,
+                        "itemId": self.item.itemid,
+                        "layerId": self.layer,
                         "table": True
                     },
                     "outFields": ["*"],

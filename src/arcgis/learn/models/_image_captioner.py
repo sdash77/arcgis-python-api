@@ -3,11 +3,14 @@ import json
 from ._arcgis_model import ArcGISModel, _EmptyData
 import traceback
 from .._utils.env import raise_fastai_import_error
+import logging
+logger = logging.getLogger()
 
 try:
     from ._image_captioning_utils import (image_captioner_learner,
                                           predict_image, get_bleu)
     from .._utils.image_captioning_data import show_results
+    from ._arcgis_model import _resnet_family
     from .._utils.common import _get_emd_path
     HAS_FASTAI = True
 except ImportError:
@@ -74,7 +77,7 @@ class ImageCaptioner(ArcGISModel):
                                       message="",
                                       installation_steps=' ')
 
-        super().__init__(data, backbone)
+        super().__init__(data, backbone, **kwargs)
 
         self.decoder_params = kwargs.get('decoder_params', {})
         self.learn = image_captioner_learner(self._data,
@@ -95,8 +98,8 @@ class ImageCaptioner(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Optional fastai Databunch. Returned
                                 data object from `prepare_data` function or
@@ -132,7 +135,7 @@ class ImageCaptioner(ArcGISModel):
 
         return cls(data,
                    **model_params,
-                   pretrained_path=str(model_file.parent))
+                   pretrained_path=str(model_file))
 
     def __str__(self):
         return self.__repr__()
@@ -141,12 +144,29 @@ class ImageCaptioner(ArcGISModel):
         return '<%s>' % (type(self).__name__)
 
     @property
+    def supported_backbones(self):
+        """ Supported torchvision backbones for this model. """
+        return ImageCaptioner._supported_backbones()
+
+    @staticmethod
+    def _supported_backbones():
+        return [*_resnet_family]
+
+    @property
+    def supported_datasets(self):
+        """ Supported dataset types for this model. """
+        return ImageCaptioner._supported_datasets()
+
+    @staticmethod
+    def _supported_datasets():
+        return ['ImageCaptioning']
+
+    @property
     def _model_metrics(self):
-        return {'BLEU': self._get_model_metrics()}
+        return {'Metrics': json.dumps(self._get_model_metrics())}
 
     def _get_model_metrics(self, **kwargs):
-        bleu = self.bleu_score(**kwargs)
-        return float(bleu['BLEU'])
+        return self.bleu_score(**kwargs)
 
     def bleu_score(self, **kwargs):
         """
@@ -165,9 +185,16 @@ class ImageCaptioner(ArcGISModel):
         =====================   ===========================================
 
         """
+        if isinstance(self._data, _EmptyData):
+            scores = self._data.emd.get('Metrics')
+            if scores is None:
+                logger.error("Metric not found in the loaded model")
+                return
+            else:
+                return json.loads(scores)
         return get_bleu(self, self._data, *kwargs)
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         _emd_template = {"DataAttributes": {}, "ModelParameters": {}}
         # arcgis.learn.models._inferencing
         _emd_template["Framework"] = None
@@ -210,6 +237,7 @@ class ImageCaptioner(ArcGISModel):
         =====================   ===========================================
 
         """
+        self._check_requisites()
         return_fig = kwargs.get('return_fig', False)
         fig=show_results(self, rows=rows, **kwargs)
         if return_fig:
@@ -271,17 +299,14 @@ class ImageCaptioner(ArcGISModel):
 
     def load(self, name_or_path):
         """
-        Loads a saved model for inferencing or fine tuning from the specified
-        path or model name.
+        Loads a compatible saved model for inferencing or fine tuning from the disk.
 
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        name_or_path            Required string. Name of the model to load from
-                                the pre-defined location. If path is passed
-                                then it loads from the specified path with
-                                model name as directory name. Path to ".pth"
-                                file can also be passed
+        name_or_path            Required string. Name or Path to
+                                Deep Learning Package (DLPK) or
+                                Esri Model Definition(EMD) file.
         =====================   ===========================================
         """
         from fastai.text.transform import Vocab

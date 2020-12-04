@@ -1,21 +1,20 @@
 import uuid
 import arcgis
 
+
 class SidePanel(object):
+    """
+    Creates a dashboard Side Panel widget.
 
+    =========================   ===========================================
+    **Argument**                **Description**
+    -------------------------   -------------------------------------------
+    title                       Optional string. Title of the header.
+    -------------------------   -------------------------------------------
+    description                 Optional string. Description of the widget.
+    =========================   ===========================================
+    """
     def __init__(self, title=None, description=None):
-        """
-        Creates a dashboard header widget.
-
-        =========================   ===========================================
-        **Argument**                **Description**
-        -------------------------   -------------------------------------------
-        title                       Optional string. Title of the header.
-        -------------------------   -------------------------------------------
-        description                 Optional string. Description of the widget.
-        =========================   ===========================================
-        """
-
         # Side Panel starts here
 
         self._title = title

@@ -53,7 +53,7 @@ except Exception:
 
 class ModelExtension(ArcGISModel):
     """
-    Creates a ``ModelExtension`` object, object detection model to train a model from your own source.
+    Creates a ModelExtension object, to train the model for object detection, semantic segmentation, and edge detection.
 
     =====================   ============================================================
     **Argument**            **Description**
@@ -77,7 +77,10 @@ class ModelExtension(ArcGISModel):
                                 * ``loss(self, model_output, *model_target)``: to return loss value of the model, and 
 
                                 * ``post_process(self, pred, nms_overlap, thres, chip_size, device)``: to post-process
-                                  the output of the model.
+                                  the output of the object-detection model.
+
+                                * ``post_process(self, pred, thres)``: to post-process the output of the segmentation model.
+                                  
     ---------------------   ------------------------------------------------------------
     backbone                Optional function. If custom model requires any backbone.
     ---------------------   ------------------------------------------------------------
@@ -90,7 +93,7 @@ class ModelExtension(ArcGISModel):
 
     def __init__(self, data, model_conf, backbone=None, pretrained_path=None, **kwargs):
 
-        super().__init__(data, backbone)
+        super().__init__(data, backbone, **kwargs)
         self.model_conf = model_conf()
         self.model_conf_class  = model_conf
         self._backend = 'pytorch'
@@ -138,17 +141,24 @@ class ModelExtension(ArcGISModel):
     def _analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ret_scores=True, device=None):
         return self.model_conf.post_process(pred, nms_overlap, thresh, self.learn.data.chip_size, device)
        
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         import random
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         if self._data.dataset_type == 'Classified_Tiles':
-            _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+            _emd_template["ModelType"] = "ImageClassification"
+            if save_inference_file:
+                _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+            else:
+                _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
             _emd_template['IsEdgeDetection'] = getattr(self, "_is_edge_detection", False)
         else:
-            _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+            _emd_template["ModelType"] = "ObjectDetection"
+            if save_inference_file:
+                _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+            else:
+                _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
         _emd_template["ModelConfiguration"] = "_model_extension_inferencing"
-        _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template['Classes'] = []
         _emd_template['ModelConfigurationFile'] = "ModelConfiguration.py"
@@ -179,8 +189,8 @@ class ModelExtension(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from ``prepare_data`` function or None for
@@ -371,7 +381,21 @@ class ModelExtension(ArcGISModel):
         xb,yb = self.learn.data.one_batch(ds_type, detach=False, denorm=False)
         self.learn.model.eval()
         transform_kwargs, kwargs = split_kwargs_by_func(kwargs, self.model_conf.transform_input)
-        preds = self.learn.model(self.model_conf.transform_input(xb, **transform_kwargs))
+        try:
+            preds = self.learn.model(self.model_conf.transform_input(xb, **transform_kwargs))
+        except Exception as e:
+
+            if getattr(self, "_is_fasterrcnn", False):
+                preds = []
+                for _ in range(xb.shape[0]):
+                    res={}
+                    res['boxes'] = torch.empty(0,4)
+                    res['scores'] = torch.tensor([])
+                    res['labels'] = torch.tensor([])
+                    preds.append(res)
+            else:
+                raise e
+
         x,y = to_cpu(xb),to_cpu(yb)
         norm = getattr(self.learn.data,'norm',False)
         if norm:
@@ -395,7 +419,20 @@ class ModelExtension(ArcGISModel):
         batch = self.learn.data.one_item(item)
         transform_kwargs, kwargs = split_kwargs_by_func(kwargs, self.model_conf.transform_input)
         self.learn.model.eval()
-        pred = self.learn.model(self.model_conf.transform_input(batch[0], **transform_kwargs))
+        try:
+            pred = self.learn.model(self.model_conf.transform_input(batch[0], **transform_kwargs))
+        except Exception as e:
+
+            if getattr(self, "_is_fasterrcnn", False):
+                pred = []
+                for _ in range(batch[0].shape[0]):
+                    res={}
+                    res['boxes'] = torch.empty(0,4)
+                    res['scores'] = torch.tensor([])
+                    res['labels'] = torch.tensor([])
+                    pred.append(res)
+            else:
+                raise e
         ds = self.learn.data.single_ds
         analyze_kwargs,kwargs = split_kwargs_by_func(kwargs, ds.y.analyze_pred)
         pred = ds.y.analyze_pred(pred, **analyze_kwargs)
@@ -415,7 +452,7 @@ class ModelExtension(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        detect_thresh           Optional float. The probabilty above which
+        detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
                                 average precision.
         ---------------------   -------------------------------------------
@@ -454,7 +491,7 @@ class ModelExtension(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        thresh                  Optional float. The probabilty above which
+        thresh                  Optional float. The probability above which
                                 a detection will be considered edge pixel.
         ---------------------   -------------------------------------------
         buffer                  Optional int. pixels in neighborhood to
@@ -466,7 +503,6 @@ class ModelExtension(ArcGISModel):
         self._check_requisites()
         acc = accuracies(self, self._data.valid_dl, detect_thresh=thresh, buffer=buffer, show_progress=show_progress)
         return acc
-
 
     def _predict(
         self,

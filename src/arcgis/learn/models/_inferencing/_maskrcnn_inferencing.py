@@ -4,7 +4,7 @@ try:
     import torch
     import torch.nn as nn
     import math
-    from .util import scale_batch
+    from .util import scale_batch, variable_tile_size_check
     HAS_TORCH = True
 except Exception as e:
     HAS_TORCH = False
@@ -162,14 +162,6 @@ class ChildInstanceDetector:
         required_parameters.extend(
             [
                 {
-                    'name': 'image_size',
-                    'dataType': 'numeric',
-                    'value': int(self.json_info['ImageHeight']),
-                    'required': False,
-                    'displayName': 'Image Size',
-                    'description': 'Image size used for inferencing'
-                },
-                {
                     'name': 'padding',
                     'dataType': 'numeric',
                     'value': int(self.json_info['ImageHeight'])//4,
@@ -204,10 +196,11 @@ class ChildInstanceDetector:
                 }            
             ]
         )
+        required_parameters = variable_tile_size_check(self.json_info, required_parameters)
         return required_parameters
 
     def getConfiguration(self, **scalars):
-        self.tytx = int(scalars.get('image_size', self.json_info['ImageHeight']))
+        self.tytx = int(scalars.get('tile_size', self.json_info['ImageHeight']))
         self.mask_rcnn = MaskRCNN.from_model(emd_path=self.model_emd, chip_size=self.tytx)
         self.model = self.mask_rcnn.learn.model.to(self.device)
         self.model.eval()

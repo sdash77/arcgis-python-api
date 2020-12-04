@@ -10,6 +10,8 @@ try:
     HASARCPY = True
 except ImportError:
     HASARCPY = False
+except:
+    HASARCPY = False
 
 import sys
 if sys.platform == 'win32':
@@ -35,7 +37,7 @@ from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 
-__version__ = "1.8.3"
+__version__ = "1.9.0"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 
@@ -89,9 +91,11 @@ class Connection(object):
         token_url
         AUTH keys = HOME, BUILTIN, PRO, ANON, PKI, HANDLER, UNKNOWN (Internal)
         custom_auth = Requests authencation handler
+        trust_env = T/F if to ignore netrc files
         """
         from arcgis.gis import GIS
         self._all_ssl = kwargs.pop("all_ssl", True)
+        self.trust_env = kwargs.pop("trust_env", None)
         if baseurl:
             while baseurl.endswith("/"):
                 baseurl = baseurl[:-1]
@@ -241,6 +245,7 @@ class Connection(object):
         self._session = Session()
         self._session.verify = self._verify_cert
         self._session.stream = True
+        self._session.trust_env = self.trust_env
         self._session.headers.update(self._header)
         self._session.proxies = proxies
         if self._referer is None and\
@@ -630,6 +635,7 @@ class Connection(object):
                 self._session.headers.update({token_header: "Bearer %s" % token})
             elif token_as_header and token_header and self.token: # as X-Esri-Auth header with generated token
                 self._session.headers.update({token_header: "Bearer %s" % self.token})
+
         if try_json:
             params['f'] = 'json'
         if files:
@@ -1183,7 +1189,8 @@ class Connection(object):
             client = BackendApplicationClient(client_id=self._client_id)
             oauth = OAuth2Session(client=client)
             res = oauth.fetch_token(
-                token_url=self._token_url,
+                #method="GET",
+                token_url=tu,
                 client_id=self._client_id,
                 client_secret=self._client_secret,
                 include_client_id=True,

@@ -74,7 +74,7 @@ class UnetClassifier(ArcGISModel):
     ---------------------   -------------------------------------------
     dice_loss_fraction      Optional float. 
                             Min_val=0, Max_val=1 
-                            If > 0 , model will use a combination of defaut or 
+                            If > 0 , model will use a combination of default or 
                             focal(if focal=True) loss with the specified fraction 
                             of dice loss.
                             E.g. 
@@ -96,7 +96,11 @@ class UnetClassifier(ArcGISModel):
             super().__init__(data, None)
             self._intialize_tensorflow(data, backbone, pretrained_path, kwargs)
         else:
-            super().__init__(data, backbone)
+            super().__init__(data, backbone, **kwargs)
+
+            self._check_dataset_support(self._data)
+            if not (self._check_backbone_support(getattr(self, '_backbone', backbone))):
+                raise Exception(f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
             self._ignore_classes = kwargs.get('ignore_classes', [])
             if self._ignore_classes != [] and len(data.classes) <= 3:
@@ -123,15 +127,6 @@ class UnetClassifier(ArcGISModel):
 
             backbone_cut = None
             backbone_split = None
-
-            _backbone = self._backbone
-            if hasattr(self, '_orig_backbone'):
-                _backbone = self._orig_backbone
-
-            if not (self._check_backbone_support(_backbone)):
-                raise Exception(f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
-
-            self._check_dataset_support(self._data)
 
             if hasattr(self, '_orig_backbone'):
                 _backbone_meta = cnn_config(self._orig_backbone)
@@ -219,8 +214,8 @@ class UnetClassifier(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from `prepare_data` function or None for
@@ -281,6 +276,7 @@ class UnetClassifier(ArcGISModel):
                 
             data.emd_path = emd_path
             data.emd = emd
+            data._is_empty = True
 
         data.resize_to = resize_to        
 
@@ -290,15 +286,19 @@ class UnetClassifier(ArcGISModel):
     def _model_metrics(self):
         return {'accuracy': '{0:1.4e}'.format(self._get_model_metrics())}
         
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         import random
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_unet"
         _emd_template["ModelType"] = "ImageClassification"
-        _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+        else:
+            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
+        _emd_template["SupportsVariableTileSize"] = True
 
         _emd_template['Classes'] = []
         class_data = {}
@@ -318,13 +318,14 @@ class UnetClassifier(ArcGISModel):
 
     def _show_results_multispectral(self, rows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
         return_fig = kwargs.get('return_fig', False)
-        fig,ax = show_results_multispectral(
+        ret_val = show_results_multispectral(
             self, 
             nrows=rows, 
             alpha=alpha, 
             **kwargs
         )
         if return_fig:
+            fig, ax = ret_val
             return fig
 
     def show_results(self, rows=5, **kwargs):
@@ -338,7 +339,14 @@ class UnetClassifier(ArcGISModel):
         self.learn.show_results(rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs)
 
     def accuracy(self):
-        return self.learn.validate()[-1].tolist()     
+        try:
+            return self.learn.validate()[1].tolist()
+        except Exception as e:
+            accuracy = self._data.emd.get('accuracy')
+            if accuracy:
+                return accuracy
+            else:
+                logger.error("Metric not found in the loaded model")
 
     def _get_model_metrics(self, **kwargs):
         checkpoint = kwargs.get('checkpoint', True)
@@ -367,15 +375,17 @@ class UnetClassifier(ArcGISModel):
                                 mean IOU, otherwise returns mean iou of all
                                 classes combined.   
         ---------------------   -------------------------------------------
-        show_progress           Optional bool. Displays the prgress bar if
+        show_progress           Optional bool. Displays the progress bar if
                                 True.                     
         =====================   ===========================================
         
         :returns: `dict` if mean is False otherwise `float`
         """
+        self._check_requisites()
         num_classes = torch.arange(self._data.c)
         miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress, self._ignore_mapped_class)
         if mean:
+            miou = [miou[i] for i in range(len(miou)) if i not in self._ignore_mapped_class]
             return np.mean(miou)
         if self._ignore_mapped_class == []:
             return dict(zip(['0'] + self._data.classes[1:], miou))
@@ -455,6 +465,7 @@ class UnetClassifier(ArcGISModel):
     def per_class_metrics(self, ignore_classes=[]):
         """
         Computer per class precision, recall and f1-score on validation set.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -463,8 +474,15 @@ class UnetClassifier(ArcGISModel):
         ignore_classes          Optional list. It will contain the list of class
                                 values on which model will not incur loss.
                                 Default: []    
-        -------------------------------------------------------------------
+        =====================   ===========================================
+
         Returns per class precision, recall and f1 scores 
         """
-        ## Calling imported function `per_class_metrics`        
-        return per_class_metrics(self, ignore_classes)
+        try:
+            self._check_requisites()
+            ## Calling imported function `per_class_metrics`
+            return per_class_metrics(self, ignore_classes)
+        except:
+            import pandas as pd
+            return pd.read_json(self._data.emd['per_class_metrics'])        
+        

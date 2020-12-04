@@ -9,7 +9,7 @@ try:
     from fastai.callbacks import hook_outputs
     from fastai.torch_core import requires_grad, children
     from fastprogress.fastprogress import progress_bar
-    from .._utils.metrics_superres import psnr, ssim
+    from .._utils.superres import psnr, ssim
     HAS_FASTAI = True
 except Exception as e:
     #import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))

@@ -178,5 +178,3 @@ union_dimension = None
 # Raster functions in arcgis.raster.functions module that honor the Match Multidimensional Variable environment will generate a multidimensional raster only 
 # if the input multidimensional rasters share at least one variable with the same name.
 match_variables = None
-
-

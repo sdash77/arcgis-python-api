@@ -143,6 +143,13 @@ def export_notebooks(root_path, output_root_path, embed_try_it_live=False,
                         link["href"] = rel_url
                         log_func("HREF Replaced {} with {}".format(full_url,
                                                                    rel_url))
+                    # Do a best-guess for all <a href="foo.ipynb"> -> html
+                    if ".ipynb" in link["href"] and "/" not in link["href"]:
+                        new_href = str(link["href"]).replace("_", "-")
+                        new_href = "../" + new_href.replace(".ipynb", "/")
+                        new_href = new_href.lower()
+                        log_func(f"HREF {link['href']} changed to {new_href}")
+                        link["href"] = new_href
            #endregion
 
             #region inject try-it-live link

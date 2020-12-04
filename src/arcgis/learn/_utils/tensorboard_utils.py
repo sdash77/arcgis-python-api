@@ -7,6 +7,7 @@ try:
     from fastai.vision.data import ImageList, ImageImageList
     from torch.utils.tensorboard import SummaryWriter
     from fastai.callbacks.tensorboard import *
+    from fastai.core import split_kwargs_by_func
     from PIL import Image
     from torchvision.transforms import ToTensor
 except:
@@ -22,7 +23,10 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
         self._current_run = name + str(self._current_epoch)
         super(ArcGISTBCallback, self).__init__(learn, base_dir, self._current_run)
 
-    # ef on_epoch_end_figure():
+    def on_train_begin(self, **kwargs: Any):
+        pass
+    # Override the on_train_begin method of the parent class as it causes graph related errors and warnings.#5244
+
     def on_epoch_end(self, last_metrics: MetricsList, iteration: int, **kwargs) -> None:
         self._current_epoch = self._current_epoch + 1
         self._current_run = self._name + '-Epoch-' + str(self._current_epoch)
@@ -41,7 +45,7 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
         nms_overlap = 0.1
         obj_det_models = ['FeatureClassifier', 'SingleShotDetector', 'RetinaNet']
         img_to_img_models = ['UnetClassifier', 'SuperResolution', 'PSPNetClassifier', 'DeepLab']
-        other_models = ['ImageCaptioner', 'PointCNN', 'MaskRCNN']
+        other_models = ['ImageCaptioner', 'PointCNN', 'MaskRCNN','MultiTaskRoadExtractor']
         text_models = ['TextClassifier']
         if (type(self._arcgis_model).__name__) in obj_det_models:
             fig1 = self.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self._arcgis_model)
@@ -53,6 +57,14 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
         # txt= self._arcgis_model.show_results(return_text=True)
         elif (type(self._arcgis_model).__name__) == 'FasterRCNN':
             fig1 = self._show_results_modified(2, return_fig=True)
+        elif (type(self._arcgis_model).__name__) == 'CycleGAN':
+            self._arcgis_model.learn.model.arcgis_results = True
+            fig1 = self.show_results(rows=rows)
+            self._arcgis_model.learn.model.arcgis_results = False
+        elif (type(self._arcgis_model).__name__) == 'Pix2Pix':
+            self._arcgis_model.learn.model.arcgis_results = True
+            fig1 = self.show_results(rows=rows)
+            self._arcgis_model.learn.model.arcgis_results = False
         else:
             return
 
@@ -107,6 +119,10 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
                 fig1 = self.segment_show_xyzs(xs, ys, zs)
         elif (type(self._arcgis_model).__name__) == 'SuperResolution':
             fig1 = self.img_img_show_xyzs(xs, ys, zs)
+        elif (type(self._arcgis_model).__name__) == 'CycleGAN':
+            fig1 = self.img_tuple_show_xyzs(xs, ys, zs)
+        elif (type(self._arcgis_model).__name__) == 'Pix2Pix':
+            fig1 = self.img_tuple_show_xyzs(xs, ys, zs)
         return fig1
 
     def show_xyzs(self, xs, ys, zs, imgsize: int = 4, figsize: Optional[Tuple[int, int]] = None, **kwargs):
@@ -183,6 +199,17 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
             z.show(ax=axs[i, 1], **kwargs)
         return fig
 
+    def img_tuple_show_xyzs(self, xs, ys, zs, figsize:Tuple[int,int]=None, **kwargs):
+        """Show `xs` (inputs), `ys` (targets) and `zs` (predictions) on a figure of `figsize`.
+        `kwargs` are passed to the show method."""
+        figsize = ifnone(figsize, (12,3*len(xs)))
+        fig,axs = plt.subplots(len(xs), 2, figsize=figsize)
+        fig.suptitle('Ground truth / Predictions', weight='bold', size=14)
+        for i,(x,z) in enumerate(zip(xs,zs)):
+            x.to_one().show(ax=axs[i,0], **kwargs)
+            z.to_one_pred().show(ax=axs[i,1], **kwargs)
+        return fig
+
     def _show_results_modified(self, rows=5, **kwargs):
 
         if rows > len(self._arcgis_model._data.valid_ds):
@@ -199,7 +226,22 @@ class ArcGISTBCallback(LearnerTensorboardWriter, Learner, ImageImageList, ArcGIS
         if self._arcgis_model.learn.dl(ds_type).batch_size < n_items: n_items = self._arcgis_model.learn.dl(
             ds_type).batch_size
         self._arcgis_model.learn.model.eval()
-        preds = self._arcgis_model.learn.model(self._arcgis_model.model_conf.transform_input(xb))
+        transform_kwargs, kwargs = split_kwargs_by_func(kwargs, self._arcgis_model.model_conf.transform_input)
+        try:
+            preds = self._arcgis_model.learn.model(self._arcgis_model.model_conf.transform_input(xb, transform_kwargs))
+        except Exception as e:
+
+            if getattr(self._arcgis_model, "_is_fasterrcnn", False):
+                preds = []
+                for _ in range(xb.shape[0]):
+                    res={}
+                    res['boxes'] = torch.empty(0,4)
+                    res['scores'] = torch.tensor([])
+                    res['labels'] = torch.tensor([])
+                    preds.append(res)
+            else:
+                raise e
+
         x, y = to_cpu(xb), to_cpu(yb)
         norm = getattr(self._arcgis_model.learn.data, 'norm', False)
         if norm:

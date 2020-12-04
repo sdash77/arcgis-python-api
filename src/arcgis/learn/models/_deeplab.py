@@ -47,7 +47,7 @@ class _DeepLabOverride(DeepLabV3):
     class to override the DeepLabV3 class such that after forwrd pass we can 
     take output as a tuple instead of dictionary in parent class.
     '''
-    def __init__(self, chip_size, num_class, backbone, classifier, aux_classifier=None, pointrend=False):
+    def __init__(self, chip_size, num_class, backbone, classifier, aux_classifier=None, pointrend=False, keep_dilation=False):
         super().__init__(backbone, classifier, aux_classifier)
         self.pointrend = pointrend
 
@@ -57,29 +57,34 @@ class _DeepLabOverride(DeepLabV3):
             return_layers['layer2'] = 'res2'
             return_layers['layer1'] = 'res1'
             self.backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
-            remove_dilation = list(self.backbone.children())[-2]
-            change_dilation = list(self.backbone.children())[-1]
-            for n, m in remove_dilation.named_modules():
-                if n == '0.conv2':
-                    m.dilation, m.padding, m.stride = (1, 1), (1, 1), (2, 2)
-                elif 'conv2' in n:
-                    m.dilation, m.padding, m.stride = (1, 1), (1, 1), (1, 1)
-                elif '0.downsample.0' in n:
-                    m.stride = (2, 2)
+            subdivision_steps = 3
+            stride = 8
+            if not keep_dilation:
+                subdivision_steps = 4
+                stride = 16
+                remove_dilation = list(self.backbone.children())[-2]
+                change_dilation = list(self.backbone.children())[-1]
+                for n, m in remove_dilation.named_modules():
+                    if n == '0.conv2':
+                        m.dilation, m.padding, m.stride = (1, 1), (1, 1), (2, 2)
+                    elif 'conv2' in n:
+                        m.dilation, m.padding, m.stride = (1, 1), (1, 1), (1, 1)
+                    elif '0.downsample.0' in n:
+                        m.stride = (2, 2)
 
-            for n, m in change_dilation.named_modules():
-                if '0.conv2' in n:
-                    m.dilation, m.padding, m.stride = (1, 1), (1, 1), (1, 1)
-                elif 'conv2' in n:
-                    m.dilation, m.padding, m.stride = (2, 2), (2, 2), (1, 1)
-                elif '0.downsample.0' in n:
-                    m.stride = (1, 1)
+                for n, m in change_dilation.named_modules():
+                    if '0.conv2' in n:
+                        m.dilation, m.padding, m.stride = (1, 1), (1, 1), (1, 1)
+                    elif 'conv2' in n:
+                        m.dilation, m.padding, m.stride = (2, 2), (2, 2), (1, 1)
+                    elif '0.downsample.0' in n:
+                        m.stride = (1, 1)
 
             self.pointrend_head = PointRendSemSegHead(num_class,
-                                                      768,
-                                                      train_num_points=(chip_size/16)**2,
-                                                      subdivision_num_points=(chip_size/8)**2,
-                                                      subdivision_steps=4)#backbone_features_channel 256+512=768
+                                                      256,
+                                                      train_num_points=(chip_size/stride)**2,
+                                                      subdivision_num_points=(chip_size/(stride/2))**2,
+                                                      subdivision_steps=subdivision_steps)#backbone_features_channel 256
 
     def forward(self, x):
 
@@ -103,7 +108,7 @@ class _DeepLabOverride(DeepLabV3):
         result = OrderedDict()
         x = features["out"]
         x = self.classifier(x)
-        result["pointrend"] = self.pointrend_head(x, [features["res1"], features["res2"]])
+        result["pointrend"] = self.pointrend_head(x, [features["res1"]])
         result["out"] = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
 
         if self.aux_classifier is not None:
@@ -113,12 +118,19 @@ class _DeepLabOverride(DeepLabV3):
 
         return result
 
-def _create_deeplab(chip_size, num_class, pretrained=True, pointrend=True, **kwargs):
+def _create_deeplab(chip_size, num_class, pretrained=True, pointrend=True, keep_dilation=False, **kwargs):
     '''
     Create default torchvision pretrained model with resnet101.
     '''
     model = models.segmentation.deeplabv3_resnet101(pretrained=True, progress=True, **kwargs)
-    model = _DeepLabOverride(chip_size, num_class, model.backbone, model.classifier, model.aux_classifier, pointrend)
+    model = _DeepLabOverride(chip_size,
+                             num_class,
+                             model.backbone,
+                             model.classifier,
+                             model.aux_classifier,
+                             pointrend,
+                             keep_dilation
+                            )
     model.classifier = DeepLabHead(2048, num_class)
     model.aux_classifier = FCNHead(1024, num_class)
 
@@ -126,7 +138,9 @@ def _create_deeplab(chip_size, num_class, pretrained=True, pointrend=True, **kwa
 
 class DeepLab(ArcGISModel):
     """
-    Creates a ``DeepLab`` Semantic segmentation object
+    Model architecture from https://arxiv.org/abs/1706.05587.
+    Creates a ``DeepLab`` Image Segmentation/ Pixel Classification model,
+    based on https://github.com/pytorch/vision/tree/master/torchvision/models/segmentation.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -142,6 +156,11 @@ class DeepLab(ArcGISModel):
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
+    ---------------------   -------------------------------------------
+    pointrend               Optional boolean. If True, it will use PointRend
+                            architecture on top of the segmentation head.
+                            Default: False. PointRend architecture from
+                            https://arxiv.org/pdf/1912.08193.pdf.                        
     =====================   ===========================================
 
     **kwargs**
@@ -161,7 +180,7 @@ class DeepLab(ArcGISModel):
     ---------------------   -------------------------------------------
     dice_loss_fraction      Optional float. 
                             Min_val=0, Max_val=1 
-                            If > 0 , model will use a combination of defaut or 
+                            If > 0 , model will use a combination of default or 
                             focal(if focal=True) loss with the specified fraction 
                             of dice loss.
                             E.g. 
@@ -170,7 +189,11 @@ class DeepLab(ArcGISModel):
     ---------------------   -------------------------------------------
     ignore_classes          Optional list. It will contain the list of class
                             values on which model will not incur loss.
-                            Default: []                                                       
+                            Default: []
+    ---------------------   -------------------------------------------
+    keep_dilation           Optional boolean. When PointRend architecture is used,
+                            keep_dilation=True can potentially improves accuracy
+                            at the cost of memory consumption. Default: False                     
     =====================   ===========================================     
 
     :returns: ``DeepLab`` Object
@@ -178,11 +201,16 @@ class DeepLab(ArcGISModel):
     def __init__(self, data, backbone=None, pretrained_path=None, pointrend=False, *args, **kwargs):
         # Set default backbone to be 'resnet101'
         if backbone is None:
-            backbone = models.resnet101          
+            backbone = models.resnet101
 
-        super().__init__(data, backbone)
+        self._check_dataset_support(data)
+        if not (self._check_backbone_support(backbone)):
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+
+        super().__init__(data, backbone, **kwargs)
 
         self._pointrend = pointrend
+
         self._ignore_classes = kwargs.get('ignore_classes', [])
         if self._ignore_classes != [] and len(data.classes) <= 3:
             raise Exception(f"`ignore_classes` parameter can only be used when the dataset has more than 2 classes.")
@@ -203,23 +231,15 @@ class DeepLab(ArcGISModel):
         self.focal_loss = kwargs.get('focal_loss', False)
         self.dice_loss_fraction = kwargs.get('dice_loss_fraction', False)
         self.weighted_dice = kwargs.get('weighted_dice', False)
+        self.keep_dilation = kwargs.get('keep_dilation', False)
         
-        _backbone = self._backbone
-        if hasattr(self, '_orig_backbone'):
-            _backbone = self._orig_backbone
-    
-        if not self._check_backbone_support(_backbone):
-            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
-
-        self._check_dataset_support(self._data)
-
         self._code = image_classifier_prf
         if self._backbone.__name__ is 'resnet101':
-            model = _create_deeplab(data.chip_size, data.c, pointrend=self._pointrend)
+            model = _create_deeplab(data.chip_size, data.c, pointrend=self._pointrend, keep_dilation=self.keep_dilation)
             if self._is_multispectral:
                 model = _change_tail(model, data)
         else:
-            model = Deeplab(data.c, self._backbone, data.chip_size, self._pointrend)
+            model = Deeplab(data.c, self._backbone, data.chip_size, self._pointrend, keep_dilation=self.keep_dilation)
 
         if not _isnotebook() and os.name=='posix':
             _set_ddp_multigpu(self)
@@ -295,8 +315,8 @@ class DeepLab(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from ``prepare_data`` function or None for
@@ -336,14 +356,18 @@ class DeepLab(ArcGISModel):
         else:
             return cls(data, **model_params, pretrained_path=str(model_file))
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         import random
         _emd_template = {"ModelParameters" : {}}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_deeplab_infrencing"
-        _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+        else:
+            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
         _emd_template["ModelType"] = "ImageClassification"
         _emd_template["ModelParameters"]["pointrend"] = self._pointrend
+        _emd_template["ModelParameters"]["keep_dilation"] = self.keep_dilation
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
         _emd_template['Classes'] = []
@@ -360,7 +384,14 @@ class DeepLab(ArcGISModel):
         return _emd_template
 
     def accuracy(self):
-        return self.learn.validate()[-1].tolist()
+        try:
+            return self.learn.validate()[1].tolist()
+        except Exception as e:
+            accuracy = self._data.emd.get('accuracy')
+            if accuracy:
+                return accuracy
+            else:
+                logger.error("Metric not found in the loaded model")
 
     @property
     def _model_metrics(self):
@@ -437,13 +468,14 @@ class DeepLab(ArcGISModel):
 
     def _show_results_multispectral(self, rows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
         return_fig = kwargs.get('return_fig', False)
-        fig,ax = show_results_multispectral(
+        ret_val = show_results_multispectral(
             self, 
             nrows=rows, 
             alpha=alpha, 
             **kwargs
         )
         if return_fig:
+            fig, ax = ret_val
             return fig
 
     def mIOU(self, mean=False, show_progress=True):
@@ -458,15 +490,18 @@ class DeepLab(ArcGISModel):
                                 mean IOU, otherwise returns mean iou of all
                                 classes combined.
         ---------------------   -------------------------------------------
-        show_progress           Optional bool. Displays the prgress bar if
+        show_progress           Optional bool. Displays the progress bar if
                                 True.                                         
         =====================   ===========================================
         
         :returns: `dict` if mean is False otherwise `float`
         """
+        self._check_requisites()
         num_classes = torch.arange(self._data.c)
         miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress, self._ignore_mapped_class)
+
         if mean:
+            miou = [miou[i] for i in range(len(miou)) if i not in self._ignore_mapped_class]
             return np.mean(miou)
         if self._ignore_mapped_class == []:
             return dict(zip(['0'] + self._data.classes[1:], miou))
@@ -478,6 +513,7 @@ class DeepLab(ArcGISModel):
     def per_class_metrics(self, ignore_classes=[]):
         """
         Computer per class precision, recall and f1-score on validation set.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -486,8 +522,14 @@ class DeepLab(ArcGISModel):
         ignore_classes          Optional list. It will contain the list of class
                                 values on which model will not incur loss.
                                 Default: []    
-        -------------------------------------------------------------------
+        =====================   ===========================================
+
         Returns per class precision, recall and f1 scores 
-        """
-        ## Calling imported function `per_class_metrics`        
-        return per_class_metrics(self, ignore_classes)
+        """        
+        try:
+            self._check_requisites()
+            ## Calling imported function `per_class_metrics`
+            return per_class_metrics(self, ignore_classes)
+        except:
+            import pandas as pd
+            return pd.read_json(self._data.emd['per_class_metrics'])

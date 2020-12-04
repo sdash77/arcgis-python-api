@@ -8,25 +8,26 @@ import tempfile
 from pathlib import Path
 HAS_FASTAI = False
 try:
-    from .env import raise_fastai_import_error
-    from fastai.vision.data import ImageList
-    from fastai.vision import Image, imagenet_stats, pil2tensor, get_files
+    from .env import raise_fastai_import_error, HAS_GDAL, gdal_import_exception, GDAL_INSTALL_MESSAGE, LAMBDA_TEXT_CLASSIFICATION
+    if not LAMBDA_TEXT_CLASSIFICATION:
+        from fastai.vision.data import ImageList
+        from fastai.vision import Image, imagenet_stats, pil2tensor
+        import PIL
+    elif LAMBDA_TEXT_CLASSIFICATION:
+        missing_classes = ['Image', 'ImageList']
+        for missing_class in missing_classes: 
+            exec(f'{missing_class} = object')
+    from fastai.data_block import get_files
     import torch
     import numpy as np
-    import PIL
     from matplotlib import pyplot as plt
     HAS_FASTAI = True
 except Exception:
     import_exception = traceback.format_exc()
     pass
 
-GDAL_INSTALL_MESSAGE = f"""
-\nPlease install gdal using the following command
-\nconda install gdal=2.3.3
-""".strip()
 
-
-def read_image(path):
+def read_image(path, resize_to: int=None):
     """
     path: file path of image on disk.
 
@@ -37,21 +38,47 @@ def read_image(path):
         raise Exception(f"The image path {path} could not be found on disk, please verify your training data.")
 
     gdal_error = None
-    skimage_error = None
     try:
-        from osgeo import gdal
-        arr = gdal.Open(path).ReadAsArray()
-        if len(arr.shape) > 2:
-            arr = np.rollaxis(arr, 0, 3)
-        return arr
+        if not HAS_GDAL:
+            gdal_error = f"""{gdal_import_exception} \n\n{GDAL_INSTALL_MESSAGE}"""
+        else:
+            from osgeo import gdal
+            ds = gdal.Open(path)
+            if resize_to is None:
+                arr = ds.ReadAsArray()
+            else:
+                gdal_dtype = ds.GetRasterBand(1).DataType
+                transform = ds.GetGeoTransform()
+                dx = transform[1]
+                dy = transform[-1]
+                #
+                dx_new = (ds.RasterXSize / resize_to) * dx
+                dy_new = (ds.RasterYSize / resize_to) * dy
+                #
+                ds_new = gdal.Warp(
+                    '',
+                    path,
+                    dstSRS=ds.GetProjection(),
+                    format='VRT',
+                    outputType=gdal_dtype,
+                    xRes=dx_new,
+                    yRes=dy_new
+                )
+                arr = ds_new.ReadAsArray()
+            if len(arr.shape) > 2:
+                arr = np.rollaxis(arr, 0, 3)
+            return arr
     except Exception as _gdal_error:
         gdal_error = str(_gdal_error)
 
-    try:
-        from skimage.io import imread
-        return imread(path)
-    except Exception as _skimage_error:
-        skimage_error = str(_skimage_error)
+    # Attach gdal error
+    message = f"""
+       Tried opening image using gdal and encountered the following error
+       \n\n{gdal_error}
+       """
+
+    if resize_to is not None:
+        raise Exception(f"`resize_to` parameter is only supported using gdal. \n"+message)
 
     try:
         from skimage.io import imread
@@ -59,19 +86,6 @@ def read_image(path):
     except Exception as _pillow_error:
         pillow_error = str(_pillow_error)
 
-    # Attach gdal error
-    message = f"""
-       Tried opening image using gdal and encountered the following error
-       \n\n{gdal_error}
-       """
-    if (gdal_error) == ModuleNotFoundError:
-        message += GDAL_INSTALL_MESSAGE
-    # Attach skimage error
-    message += f"""
-       \n===================================================================
-       \n\nTried opening image using skimage and encountered the following error
-       \n\n{skimage_error}
-       """
     # Attach pillow error
     message += f"""
        \n===================================================================
@@ -82,19 +96,22 @@ def read_image(path):
 
 class ArcGISMSImage(Image):
 
-    def show(self, ax=None, rgb_bands=None):
+    def show(self, ax=None, rgb_bands=None, show_axis=False, title=None):
         if rgb_bands is None:
             rgb_bands = getattr(self, 'rgb_bands', [0, 1, 2])
+        if ax is None:
+            ax = plt.subplot(1, 1, 1)
         symbology_data = self.data[rgb_bands]
         im_shape = symbology_data.shape
         min_vals = symbology_data.view(im_shape[0], -1).min(dim=1)[0]
         max_vals = symbology_data.view(im_shape[0], -1).max(dim=1)[0]
         strechted_data = ( symbology_data - min_vals.view(im_shape[0], 1, 1) ) / ( max_vals.view(im_shape[0], 1, 1) - min_vals.view(im_shape[0], 1, 1) + .001 )
         data_to_plot = strechted_data.permute(1, 2, 0)
-        if ax is not None:
-            return ax.imshow(data_to_plot)
-        else:
-            return plt.imshow(data_to_plot)
+        if not show_axis:
+            ax.axis('off')
+        ax.imshow(data_to_plot)
+        if title is not None:
+            ax.set_title(title)
 
     def print_method(self):
         return self.show()
@@ -335,11 +352,70 @@ def predict_batch(self, imagetensor_batch):
 
 ## Image Stretching Functions start ##
 
+def get_band_percent_minmax(values, min_clip, max_clip):
+    return values[round(values.shape[0] * min_clip)], values[values.shape[0] - round(values.shape[0] * max_clip)]
+
+def get_percent_minmax(imagetensor_batch, min_clip=0.0025, max_clip=0.005):
+    shp = imagetensor_batch.shape
+    _imagetensor_batch = imagetensor_batch.transpose(1, 0).reshape(shp[1], -1)
+    min_vals = []
+    max_vals = []
+    for i in range(shp[1]):
+        v = get_band_percent_minmax(_imagetensor_batch[i].unique(), min_clip, max_clip)
+        min_vals.append(v[0])
+        max_vals.append(v[1])
+    return \
+        torch.tensor(
+            min_vals,
+            dtype=imagetensor_batch.dtype,
+            device=imagetensor_batch.device
+        ),\
+        torch.tensor(
+            max_vals,
+            dtype=imagetensor_batch.dtype,
+            device=imagetensor_batch.device
+        )
+
+def image_batch_stretcher(imagetensor_batch, stretch_type='minmax', statistics_type=None):
+    shp = imagetensor_batch.shape
+    if statistics_type == 'DRA':
+        if stretch_type == 'minmax':
+            min_vals = imagetensor_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
+            max_vals = imagetensor_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
+        elif stretch_type == 'percentclip':
+            min_vals = []
+            max_vals = []
+            for idx in range(shp[0]):
+                v = get_percent_minmax(imagetensor_batch[idx:idx+1])
+                min_vals.append(v[0])
+                max_vals.append(v[1])
+            min_vals = torch.stack(min_vals)
+            max_vals = torch.stack(max_vals)
+        else:
+            raise NotImplementedError
+        min_vals = min_vals.view(shp[0], shp[1], 1, 1)
+        max_vals = max_vals.view(shp[0], shp[1], 1, 1)
+    else:
+        if stretch_type == 'minmax':
+            min_vals = imagetensor_batch.transpose(1, 0).reshape(shp[1], -1).min(dim=1)[0]
+            max_vals = imagetensor_batch.transpose(1, 0).reshape(shp[1], -1).max(dim=1)[0]
+        elif stretch_type == 'percentclip':
+            min_vals, max_vals = get_percent_minmax(imagetensor_batch)
+        else:
+            raise NotImplementedError
+        min_vals = min_vals.view(1, shp[1], 1, 1)
+        max_vals = max_vals.view(1, shp[1], 1, 1)
+    #
+    imagetensor_batch = ( imagetensor_batch - min_vals ) / ( max_vals - min_vals + .001 )
+    imagetensor_batch = imagetensor_batch.clamp(0, 1)
+    return imagetensor_batch
+
 def dynamic_range_adjustment(imagetensor_batch):
     shp = imagetensor_batch.shape
     min_vals = imagetensor_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
     max_vals = imagetensor_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
-    imagetensor_batch = imagetensor_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+    imagetensor_batch = ( imagetensor_batch - min_vals.view(shp[0], shp[1], 1, 1) ) / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+    imagetensor_batch = imagetensor_batch.clamp(0, 1)
     return imagetensor_batch
 
 ## Image Stretching Functions end ##
@@ -365,11 +441,13 @@ def load_model(emd_path, data=None):
 
     return model_obj
 
+
 def _temp_dlpk(dlpk_path):
     with ZipFile(dlpk_path, 'r') as zip_obj:
         temp_dir = tempfile.TemporaryDirectory().name
         zip_obj.extractall(temp_dir)
     return temp_dir
+
 
 def _get_emd_path(emd_path):
     emd_path = Path(emd_path)
@@ -384,3 +462,43 @@ def _get_emd_path(emd_path):
         #return cls.from_model(list_files[0])
         emd_path = list_files[0]
     return emd_path
+
+
+def _get_gpu_device_id(max_memory=0.8):
+    '''
+    select available device based on the memory utilization status of the device
+    :param max_memory: the maximum memory utilization ratio that is considered available
+    :return: GPU id that is available, -1 means no GPU is available/uses CPU, if GPUtil package is not installed, will
+    return 0
+    '''
+    try:
+        import GPUtil
+    except ModuleNotFoundError:
+        return 0
+
+    GPUs = GPUtil.getGPUs()
+    freeMemory, available = 0, 0
+    for GPU in GPUs:
+        if GPU.memoryUtil > max_memory:
+            continue
+        if GPU.memoryFree >= freeMemory:
+            freeMemory = GPU.memoryFree
+            available = GPU.id
+
+    return available
+
+
+def _get_device_id():
+    import arcgis
+    from ..models._arcgis_model import _device_check
+    move_to_cpu = _device_check()
+    if move_to_cpu: arcgis.env._processorType = "CPU"
+
+    if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
+        device = _get_gpu_device_id()
+    elif getattr(arcgis.env, "_processorType", "") == "CPU":
+        device = -1
+    else:
+        device = _get_gpu_device_id() if torch.cuda.is_available() else -1
+
+    return device

@@ -8,6 +8,7 @@ try:
     import torch
     from fastai.torch_core import split_model_idx
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
+    from ._arcgis_model import _resnet_family, _vgg_family
 
     HAS_FASTAI = True
 
@@ -110,6 +111,11 @@ class BDCNEdgeDetector(ModelExtension):
     """
     def __init__(self, data, backbone='vgg19', pretrained_path=None):
 
+        self._check_dataset_support(data)
+        backbone_name = backbone if type(backbone) is str else backbone.__name__
+        if backbone_name not in self.supported_backbones:
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+
         super().__init__(data, CustomBDCN, backbone, pretrained_path)
         self._freeze()
 
@@ -145,6 +151,24 @@ class BDCNEdgeDetector(ModelExtension):
     def _is_edge_detection(self):
         return True
 
+    @property
+    def supported_backbones(self):
+        """ Supported torchvision backbones for this model. """
+        return BDCNEdgeDetector._supported_backbones()
+
+    @staticmethod
+    def _supported_backbones():
+        return [*_resnet_family, *_vgg_family]
+
+    @property
+    def  supported_datasets(self):
+        """ Supported dataset types for this model. """
+        return BDCNEdgeDetector._supported_datasets()
+
+    @staticmethod
+    def _supported_datasets():
+        return ['Classified_Tiles']
+
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
@@ -153,8 +177,8 @@ class BDCNEdgeDetector(ModelExtension):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from ``prepare_data`` function or None for
@@ -196,3 +220,27 @@ class BDCNEdgeDetector(ModelExtension):
             data.dataset_type = emd['DatasetType']
         
         return cls(data, backbone, pretrained_path=str(model_file))
+
+    def compute_precision_recall(self, thresh=0.5, buffer=3, show_progress=True):
+
+        """
+        Computes precision, recall and f1 score on validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        thresh                  Optional float. The probability on which
+                                the detection will be considered edge pixel.
+        ---------------------   -------------------------------------------
+        buffer                  Optional int. pixels in neighborhood to
+                                consider true detection.
+        =====================   ===========================================
+
+        :returns: `dict` 
+        """
+
+    def show_results(self, rows=5, thresh=0.5, thinning=True,**kwargs):
+
+        """
+        Displays the results of a trained model on a part of the validation set.
+        """

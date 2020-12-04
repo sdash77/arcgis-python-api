@@ -27,6 +27,7 @@ from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, 
 from .utility import _raster_input_rft, _get_raster_ra_rft, _input_rft, _find_object_ref, \
                      _python_variable_name
 from arcgis.features.layer import FeatureLayer as _FeatureLayer
+from .._RasterInfo import RasterInfo
 import logging
 _LOGGER = logging.getLogger(__name__)
 from datetime import datetime
@@ -166,9 +167,9 @@ def _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2=None, varia
         try:            
             import arcpy, json
             arcpylyr=arcpy.ia.Apply(layer._uri,json.dumps(function_chain_ra))
-            newlyr = Raster(str(arcpylyr), is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
-        except:
-            pass
+            newlyr = Raster(arcpylyr, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        except Exception as err:
+            _LOGGER.warning(err)
 
     #newlyr.properties = layer.properties
     newlyr._engine_obj._fn = function_chain
@@ -180,6 +181,7 @@ def _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2=None, varia
     newlyr._engine_obj._filtered = layer._filtered
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
+    newlyr._engine_obj.extent = layer.extent
 
     if layer._do_not_hydrate:
         newlyr._engine_obj.token = layer.token
@@ -194,10 +196,12 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
         newlyr = Raster(layer._url, is_multidimensional= layer._is_multidimensional, engine= layer._engine,  gis=layer._gis)
 
     if layer._engine==_ArcpyRaster:
-        import arcpy, json
-        arcpylyr=arcpy.ia.Apply(layer._uri,json.dumps(function_chain_ra))
-        newlyr = Raster(str(arcpylyr), is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
-
+        try:
+            import arcpy, json
+            arcpylyr=arcpy.ia.Apply(layer._uri,json.dumps(function_chain_ra))
+            newlyr = Raster(arcpylyr, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        except Exception as err:
+            _LOGGER.warning(err)
 
     #newlyr.properties = layer.properties
     newlyr._engine_obj._fn = function_chain
@@ -209,6 +213,7 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
     newlyr._engine_obj._filtered = layer._filtered
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
+    newlyr._engine_obj.extent = layer.extent
 
     if layer._do_not_hydrate:
         newlyr._engine_obj.token = layer.token
@@ -537,7 +542,13 @@ def band_arithmetic(raster, band_indexes=None, astype=None, method=0):
                    20 = IronOxide,
                    21 = FerrousMinerals,
                    22 = ClayMinerals,
-                   23 = WNDWI
+                   23 = WNDWI,
+                   24 = BAI,
+                   25 = NBR,
+                   26 = NDBI,
+                   27 = NDMI,
+                   28 = NDSI,
+                   29 = MNDWI
 
     :return: band_arithmetic applied to the input raster
     """
@@ -896,6 +907,94 @@ def wndwi(raster, band_indexes="2 5 6 0.5", astype=None):
     """
     return band_arithmetic(raster, band_indexes, astype, 23)
 
+def bai(raster, band_indexes="3 4", astype=None):
+    """
+    The Burn Area Index (BAI) uses the reflectance values in the red and NIR portion of the spectrum to identify
+    the areas of the terrain affected by fire.
+
+    BAI = 1/((0.1 -RED)^2 + (0.06 - NIR)^2)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Red NIR", e.g., "3 4" or [3,4]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 24)
+
+def nbr(raster, band_indexes="7 5", astype=None):
+    """
+    The Normalized Burn Ratio Index (NBRI) uses the NIR and SWIR bands to emphasize burned areas,
+    while mitigating illumination and atmospheric effects. Your images should be corrected to reflectance values
+    before using this index.
+
+    NBR = (NIR - SWIR) / (NIR+ SWIR)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "SWIR NIR", e.g., "7 5" or [7,5]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 25)
+
+def ndbi(raster, band_indexes="6 5", astype=None):
+    """
+    The Normalized Difference Built-up Index (NDBI) uses the NIR and SWIR bands to emphasize  man-made built-up areas.
+    It is ratio based to mitigate the effects of terrain illumination differences as well as atmospheric effects.
+
+    NDBI = (SWIR - NIR) / (SWIR + NIR)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "SWIR NIR", e.g., "6 5" or [6,5]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 26)
+
+def ndmi(raster, band_indexes="5 6", astype=None):
+    """
+    The Normalized Difference Moisture Index (NDMI) is sensitive to the moisture levels in vegetation.
+    It is used to monitor droughts as well as monitor fuel levels in fire-prone areas. It uses NIR and SWIR bands to
+    create a ratio designed to mitigate illumination and atmospheric effects.
+
+    NDMI = (NIR - SWIR1)/(NIR + SWIR1)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR SWIR1", e.g., "5 6" or [5,6]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 27)
+
+def ndsi(raster, band_indexes="4 6", astype=None):
+    """
+    The Normalized Difference Snow Index (NDSI) is designed to use MODIS (band 4 and band 6) and
+    Landsat TM (band 2 and band 5) for identification of snow cover while ignoring cloud cover. Since it is ratio based,
+    it also mitigates atmospheric effects.
+
+    NDSI = (Green - SWIR) / (Green + SWIR)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Green SWIR", e.g., "4 6" or [4,6]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 28)
+
+def mndwi(raster, band_indexes="3 6", astype=None):
+    """
+    The Modified Normalized Difference Water Index (MNDWI) uses green and SWIR bands for the enhancement 
+    of open water features. It also diminishes built-up area features that are often correlated with open
+    water in other indices.
+
+    MNDWI = (Green - SWIR) / (Green + SWIR)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Green SWIR", e.g., "3 6" or [3,6]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 29)
+
 def expression(raster, expression="(B3 - B1 / B3 + B1)", astype=None):
     """
     Use a single-line algebraic formula to create a single-band output. The supported operators are -, +, /, *, and unary -.
@@ -1025,12 +1124,14 @@ def colormap(raster, colormap_name=None, colormap=None, colorramp=None, astype=N
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def composite_band(rasters, astype=None):
+def composite_band(rasters, astype=None, cellsize_type='MaxOf'):
     """
     Combines multiple images to form a multiband image.
 
     :param rasters: input rasters
     :param astype: output pixel type
+    :param cellsize_type: The cell size used to create the output raster.
+                          one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
     :return: the multiband image
     """
     layer, raster, raster_ra = _raster_input(rasters)
@@ -1045,6 +1146,20 @@ def composite_band(rasters, astype=None):
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
+
+    cellsize_types = {
+        "firstof" : 0,
+        "minof" : 1,
+        "maxof" : 2,
+        "meanof" : 3,
+        "lastof" : 4
+    }      
+
+    if cellsize_type is not None:
+        if isinstance(cellsize_type, str):
+            template_dict["rasterFunctionArguments"]['CellsizeType'] = cellsize_types[cellsize_type.lower()]
+        elif isinstance(cellsize_type,int):
+            template_dict["rasterFunctionArguments"]['CellsizeType'] = cellsize_type
 
     return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
 
@@ -1275,29 +1390,39 @@ def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, 
 
 
 def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_factor=None, z_offset=None, constant_z=None,
-              correct_geoid=None, astype=None):
+              correct_geoid=None, astype=None, tolerance=None, dem= None):
     """
     The geometric function transforms the image (for example, orthorectification) based on a sensor definition and a
     terrain model.This function was added at 10.1.The arguments for the geometric function are as follows:
 
-    :param raster: input raster
+    :param raster: The input raster.
     :param geodata_transforms: Please refer to the Geodata Transformations documentation for more details.
-    :param append_geodata_xform: boolean
-    :param z_factor: double
-    :param z_offset: double
-    :param constant_z: double
-    :param correct_geoid: boolean
-    :param astype: output pixel type
-    :return: the output raster
+    :param append_geodata_xform: Optional boolean. Indicates whether the geodata transformation is appended to the existing one from the input raster.
+    :param z_factor: Optional double. Satellite rational polynomial coefficients (RPCs) are scaled for 
+                     elevation datasets with vertical units in meters. If your elevation uses other 
+                     vertical units, enter a Z Factor to rescale to meters. For example, if your 
+                     elevation units are in feet, you would use a value of 0.3048 to convert your 
+                     elevation units from feet to meters.
+    :param z_offset: Optional double. The base value to be added to the elevation value in the DEM. 
+                     This could be used to offset elevation values that do not start at sea level.
+    :param constant_z: Optional double. Specify a constant elevation to use for the Geometric function.
+    :param correct_geoid: Optional boolean. Set it to True to apply the geoid (EGM96) correction to the z-values, 
+                          unless your DEM is already referenced to ellipsoidal heights.
+    :param tolerance: Optional double. Specify the maximum tolerable error in the geometric function, given in number of pixels.
+    :param dem: Optional Raster. Specify the DEM to use for the Geometric function
 
     """
 
-    layer, raster, raster_ra = _raster_input(raster)
+    layer1, raster_1, raster_ra1 = _raster_input(raster)
+
+    layer2=None
+    if dem is not None:
+        layer2, raster_2, raster_ra2 = _raster_input(raster, dem)
 
     template_dict = {
         "rasterFunction": "Geometric",
         "rasterFunctionArguments": {
-            "Raster": raster
+            "Raster": raster_1
         },
         "variableName": "Raster"
     }
@@ -1317,8 +1442,13 @@ def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_fact
         template_dict["rasterFunctionArguments"]["ConstantZ"] = constant_z
     if correct_geoid is not None:
         template_dict["rasterFunctionArguments"]["CorrectGeoid"] = correct_geoid
+    if tolerance is not None:
+        template_dict["rasterFunctionArguments"]["Tolerance"] = tolerance
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    if dem is not None:
+        template_dict["rasterFunctionArguments"]["DEM"] = raster_2
+        return _clone_layer(layer1, template_dict, raster_ra1, raster_ra2)
+    return _clone_layer(layer1, template_dict, raster_ra1)
 
 
 def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_power=None, psz_factor=None,
@@ -2974,11 +3104,14 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
     :param kernel_rows: int (e.g. 3)
     :param stat_type: int or string.
                       There are four types of focal statistical functions:
-                      1=Min, 2=Max, 3=Mean, 4=StandardDeviation
+                      1=Min, 2=Max, 3=Mean, 4=StandardDeviation, 5=Median, 6=Majority, 7=Minority
                       -Min-Calculates the minimum value of the pixels within the neighborhood
                       -Max-Calculates the maximum value of the pixels within the neighborhood
                       -Mean-Calculates the average value of the pixels within the neighborhood. This is the default.
                       -StandardDeviation-Calculates the standard deviation value of the pixels within the neighborhood
+                      -Median-Calculates the median value of pixels within the neighborhood.
+                      -Majority-Calculates the majority value, or the value that occurs most frequently, of the pixels within the neighborhood.
+                      -Minority-Calculates the minority value, or the value that occurs least frequently, of the pixels within the neighborhood.
     :param columns: int (e.g. 3). The number of pixel rows to use in your focal neighborhood dimension.
     :param rows: int (e.g. 3). The number of pixel columns to use in your focal neighborhood dimension.
     :param fill_no_data_only: bool
@@ -2988,7 +3121,7 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
     .. note::
         The focal_statistics() function is different from the focal_stats() function in the following aspects:
 
-        The focal_statistics() function supports  Minimum, Maximum, Mean, and Standard Deviation.
+        The focal_statistics() function supports  Minimum, Maximum, Mean, and Standard Deviation, Median, Majority, Minority.  
         The focal_stats() function supports Mean, Majority, Maximum, Median, Minimum, Minority, Range, Standard deviation, Sum, and Variety.
 
         The focal_statistics() function supports only Rectangle.
@@ -3004,7 +3137,7 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
 
     layer, raster, raster_ra = _raster_input(raster)
 
-    statistics_types = ["Min", "Max", "Mean", "StandardDeviation"]
+    statistics_types = ["Min", "Max", "Mean", "StandardDeviation", "Median", "Majority", "Minority"]
 
     template_dict = {
         "rasterFunction": "Statistics",
@@ -4381,7 +4514,7 @@ def constant_raster(constant, raster_info, gis=None):
     Creates a virtual raster with a single pixel value.
 
     :param constant: Required list. The value of the constant to be added to the virtual raster.
-    :param raster_info: Required Raster info dictionary or ImageryLayer object to set the properties of the output raster.
+    :param raster_info: Required Raster info dictionary or arcgis.raster.RasterInfo object or ImageryLayer object to set the properties of the output raster.
                         if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
 
                         Example for RasterInfo dict - 
@@ -4424,6 +4557,8 @@ def constant_raster(constant, raster_info, gis=None):
         layer_raster_info = {}
         if isinstance(raster_info, ImageryLayer):
             layer_raster_info = copy.deepcopy(raster_info.raster_info)
+        elif isinstance(raster_info, RasterInfo):
+            layer_raster_info = copy.deepcopy(raster_info.to_dict())
         else:
             layer_raster_info = copy.deepcopy(raster_info)
         if "pixelType" in layer_raster_info.keys():
@@ -4450,7 +4585,7 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
     """
     Creates a virtual raster with random values for each cell.
 
-    :param raster_info: Required Raster info dictionary or ImageryLayer object to set the properties of the output raster.
+    :param raster_info: Required Raster info dictionary or arcgis.raster.RasterInfo object or ImageryLayer object to set the properties of the output raster.
                         if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
 
                         Example for RasterInfo dict - 
@@ -4588,6 +4723,8 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
         layer_raster_info = {}
         if isinstance(raster_info, ImageryLayer):
             layer_raster_info = copy.deepcopy(raster_info.raster_info)
+        elif isinstance(raster_info, RasterInfo):
+            layer_raster_info = copy.deepcopy(raster_info.to_dict())
         else:
             layer_raster_info = copy.deepcopy(raster_info)
         if "pixelType" in layer_raster_info.keys():
@@ -6540,7 +6677,10 @@ class RFT:
         task_url, job_info, job_id = _analysis_job(gptool, task, params)
         job_info = _analysis_job_status(gptool, task_url, job_info)
         job_values = _analysis_job_results(gptool, task_url, job_info)
-        result = gptool._con.post(job_values["outputRasterFunction"]["url"],{},token=gptool._token)
+        if gis._con._product == "AGOL":
+            result = gptool._con.get(job_values["outputRasterFunction"]["url"],{},token=gptool._token)
+        else:
+            result = gptool._con.post(job_values["outputRasterFunction"]["url"],{},token=gptool._token)
         return result
 
     def _apply_argument(self, input_dict,arg_dict):

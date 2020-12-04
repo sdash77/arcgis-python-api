@@ -126,9 +126,29 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                 typedLayer.id = noTypeLayer._hashFromPython;
                 resolve(typedLayer);}
             else if (noTypeLayer.type == "GeoJSON"){
-                var typedLayer = new GeoJSONLayer({url: noTypeLayer.url});
+                if(Object.keys(noTypeLayer.data).length !== 0){
+                    var blob = new Blob([JSON.stringify(noTypeLayer.data)],
+                                        {type: "application/json"});
+                    url = URL.createObjectURL(blob);}
+                else{
+                    url = noTypeLayer.url;}
+                var typedLayer = new GeoJSONLayer({url: url});
                 typedLayer.id = noTypeLayer._hashFromPython;
-                resolve(typedLayer);}
+                if("renderer" in noTypeLayer){
+                    console.log("Using custom renderer for GeoJSON layer " + 
+                                typedLayer.id);
+                    inferRenderer(noTypeLayer.renderer.type,
+                                  noTypeLayer.renderer).then((renderer) => {
+                        typedLayer.renderer = renderer;
+                        resolve(typedLayer);
+                    }).catch((err) => {
+                        console.warn("Could not infer renderer for " + 
+                                     typedLayer.id);
+                        console.warn(err);
+                        resolve(typedLayer);
+                    });
+                } else {
+                    resolve(typedLayer);}}
             else if (noTypeLayer.type == "CSV"){
                 inferRenderer(noTypeLayer.layerDefinition.drawingInfo.renderer.type,
                     noTypeLayer.layerDefinition.drawingInfo.renderer).then((renderer) => {

@@ -160,7 +160,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         """
 
         #Dashboard items.
-        self.id = str(uuid4())
+        self._id = str(uuid4())
         self.type = "mapWidget"
 
         self._pop_ups = False
@@ -245,6 +245,9 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     @property
     def events(self):
+        """
+        :return: list of events attached to the widget.
+        """
         return self._events
 
     def _ipython_display_(self, *args, **kwargs):
@@ -679,31 +682,33 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         return True
 
-    def _process_extent(self):
+    def _process_extent(self, extent=None):
         """
         internal method to transform extent to a string of xmin, ymin, xmax, ymax
         If extent is not in wgs84, it projects
         :return:
         """
-        if isinstance(self._extent, PropertyMap):
-            self._extent = dict(self._extent)
-        if isinstance(self._extent, list):
+        if extent is None:
+            extent = self._extent
+        if isinstance(extent, PropertyMap):
+            extent = dict(extent)
+        if isinstance(extent, list):
             #passed from Item's extent flatten the extent. Item's extent is always in 4326, no need to project
-            extent_list = [element for sublist in self._extent for element in sublist]
+            extent_list = [element for sublist in extent for element in sublist]
 
             #convert to string
             return ','.join(str(e) for e in extent_list)
-        elif isinstance(self._extent, dict):
+        elif isinstance(extent, dict):
             #passed from MapView.extent
-            if 'spatialReference' in self._extent:
-                if 'latestWkid' in self._extent['spatialReference']:
-                    if self._extent['spatialReference']['latestWkid'] != 4326:
+            if 'spatialReference' in extent:
+                if 'latestWkid' in extent['spatialReference']:
+                    if extent['spatialReference']['latestWkid'] != 4326:
                         #use geometry service to project
-                        input_geom = [{'x':self._extent['xmin'], 'y':self._extent['ymin']},
-                                      {'x':self._extent['xmax'], 'y':self._extent['ymax']}]
+                        input_geom = [{'x':extent['xmin'], 'y':extent['ymin']},
+                                      {'x':extent['xmax'], 'y':extent['ymax']}]
 
                         result = arcgis.geometry.project(input_geom,
-                                                         in_sr=self._extent['spatialReference']['latestWkid'],
+                                                         in_sr=extent['spatialReference']['latestWkid'],
                                                          out_sr=4326)
 
                         #process and return the result
@@ -714,13 +719,13 @@ class WebMap(HasTraits, collections.OrderedDict):
                             return ','.join(str(i) for i in e)
 
             #case when there is no spatialReference. Then simply extract the extent
-            if 'xmin' in self._extent:
-                e = self._extent
+            if 'xmin' in extent:
+                e = extent
                 e= [e['xmin'], e['ymin'],e['xmax'],e['ymax']]
                 return ','.join(str(i) for i in e)
 
         #if I don't know how to process the extent.
-        return self._extent
+        return extent
 
     def _contains_nans(self, result):
         """a bool of if projection output `result` contains any NaNs"""
@@ -766,6 +771,8 @@ class WebMap(HasTraits, collections.OrderedDict):
         -----------------  ---------------------------------------------------------------------
         description        Optional string. Description of the item.
         -----------------  ---------------------------------------------------------------------
+        extent             Optional dict, string, or array. The extent of the item.
+        -----------------  ---------------------------------------------------------------------
         title              Optional string. Name label of the item.
         -----------------  ---------------------------------------------------------------------
         tags               Optional string. Tags listed as comma-separated values, or a list of strings.
@@ -809,7 +816,8 @@ class WebMap(HasTraits, collections.OrderedDict):
             # save the web map
             webmap_item_properties = {'title':'Ebola incidents and facilities',
                          'snippet':'Map created using Python API showing locations of Ebola treatment centers',
-                         'tags':['automation', 'ebola', 'world health', 'python']}
+                         'tags':['automation', 'ebola', 'world health', 'python'],
+                         'extent': {'xmin': -122.68, 'ymin': 45.53, 'xmax': -122.45, 'ymax': 45.6, 'spatialReference': {'wkid': 4326}}}
 
             new_wm_item = wm.save(webmap_item_properties, thumbnail='./webmap_thumbnail.png')
 
@@ -820,7 +828,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         """
 
         item_properties['type'] = 'Web Map'
-        item_properties['extent'] = self._process_extent()
+        item_properties['extent'] = self._process_extent(item_properties.get('extent', None))
         item_properties['text'] = json.dumps(self._webmapdict, default=_date_handler)
         if 'typeKeywords' not in item_properties:
             item_properties['typeKeywords'] = self._eval_map_viewer_keywords()
@@ -1563,7 +1571,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             "showPopup": self.pop_ups,
             "scalebarStyle": self.scale_bar,
             "layers": [{"type": "featureLayerDataSource", "layerId": layer['id']} for layer in self.layers],
-            "id": self.id,
+            "id": self._id,
             "name": self.item.title,
             "caption": self.item.name,
             "showLastUpdate": True,
@@ -2998,7 +3006,7 @@ class VectorTileLayer(Layer):
     def styles(self):
         url = "{url}/styles".format(url=self._url)
         params = {"f": "json"}
-        return self._con.get(path=url, params=params, token=self._token)
+        return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
     def tile_fonts(self, fontstack, stack_range):
@@ -3010,7 +3018,7 @@ class VectorTileLayer(Layer):
             stack_range=stack_range)
         params = {}
         return self._con.get(path=url,
-                             params=params, force_bytes=True, token=self._token)
+                             params=params, force_bytes=True)
 
     # ----------------------------------------------------------------------
     def vector_tile(self, level, row, column):
@@ -3023,7 +3031,7 @@ class VectorTileLayer(Layer):
                                                              column=column)
         params = {}
         return self._con.get(path=url,
-                             params=params, try_json=False, force_bytes=True, token=self._token)
+                             params=params, try_json=False, force_bytes=True)
 
     # ----------------------------------------------------------------------
     def tile_sprite(self, out_format="sprite.json"):
@@ -3033,7 +3041,7 @@ class VectorTileLayer(Layer):
         url = "{url}/resources/sprites/{f}".format(url=self._url,
                                                    f=out_format)
         return self._con.get(path=url,
-                             params={}, token=self._token)
+                             params={})
 
     # ----------------------------------------------------------------------
     @property
@@ -3042,7 +3050,7 @@ class VectorTileLayer(Layer):
         url = "{url}/resources/info".format(url=self._url)
         params = {"f": "json"}
         return self._con.get(path=url,
-                             params=params, token=self._token)
+                             params=params)
 
 
 ###########################################################################
@@ -3344,8 +3352,8 @@ class MapImageLayer(Layer):
         else:
             lyr_dict =  { 'type' : type(self).__name__, 'url' : url }
 
-        if self._token is not None:
-            lyr_dict['serviceToken'] = self._token
+        if self._token is not None :
+            lyr_dict['serviceToken'] = self._token or self._con.token
 
         if self.filter is not None:
             lyr_dict['filter'] = self.filter
@@ -3357,7 +3365,8 @@ class MapImageLayer(Layer):
     def _lyr_json(self):
         url = self.url
         if self._token is not None:  # causing geoanalytics Invalid URL error
-            url += '?token=' + self._token
+            token = self._token or self._con.token
+            url += '?token=' + token
 
         if "lods" in self.properties:
             lyr_dict =  { 'type' : 'ArcGISTiledMapServiceLayer', 'url' : url }
@@ -3386,7 +3395,7 @@ class MapImageLayer(Layer):
                 tables.append(lyr)
         # fsurl = self.url + '/layers'
         # params = { "f" : "json" }
-        # allayers = self._con.post(fsurl, params, token=self._token)
+        # allayers = self._con.post(fsurl, params)
 
         # for layer in allayers['layers']:
         #    layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis))
@@ -3493,7 +3502,7 @@ class MapImageLayer(Layer):
         url = "{url}/kml/mapImage.kmz".format(url=self._url)
         return self._con.get(url, {"f": 'json'},
                              file_name="mapImage.kmz",
-                             out_folder=tempfile.gettempdir(), token=self._token)
+                             out_folder=tempfile.gettempdir())
 
     # ----------------------------------------------------------------------
     @property
@@ -3501,7 +3510,7 @@ class MapImageLayer(Layer):
         """returns the service's item's infomation"""
         url = "{url}/info/iteminfo".format(url=self._url)
         params = {"f": "json"}
-        return self._con.get(url, params, token=self._token)
+        return self._con.get(url, params)
 
     #----------------------------------------------------------------------
     @property
@@ -3526,7 +3535,7 @@ class MapImageLayer(Layer):
         """returns the service's XML metadata file"""
         url = "{url}/info/metadata".format(url=self._url)
         params = {"f": "json"}
-        return self._con.get(url, params, token=self._token)
+        return self._con.get(url, params)
 
     # ----------------------------------------------------------------------
     def thumbnail(self, out_path=None):
@@ -3540,7 +3549,7 @@ class MapImageLayer(Layer):
         return self._con.get(url,
                              params,
                              out_folder=out_path,
-                             file_name="thumbnail.png", token=self._token)
+                             file_name="thumbnail.png")
 
     # ----------------------------------------------------------------------
     def identify(self,
@@ -3763,7 +3772,7 @@ class MapImageLayer(Layer):
         if layer_parameters:
             params['layerParameterValues'] = layer_parameters
         identifyURL = "{url}/identify".format(url=self._url)
-        return self._con.post(identifyURL, params, token=self._token)
+        return self._con.post(identifyURL, params)
 
     # ----------------------------------------------------------------------
     def find(self,
@@ -3928,7 +3937,7 @@ class MapImageLayer(Layer):
                 params[k] = v
         res = self._con.post(path=url,
                              postdata=params,
-                             token=self._token)
+                             )
         return res
 
     # ----------------------------------------------------------------------
@@ -3972,7 +3981,7 @@ class MapImageLayer(Layer):
         }
         return self._con.get(kmlURL, params,
                              out_folder=save_location,
-                             token=self._token)
+                             )
     # ----------------------------------------------------------------------
     def export_map(self,
                    bbox,
@@ -4148,23 +4157,22 @@ class MapImageLayer(Layer):
         if len(kwargs) > 0:
             for k,v in kwargs.items():
                 params[k] = v
-        #return self._con.get(exportURL, params, token=self._token)
+        #return self._con.get(exportURL, params)
 
         if f == "json":
-            return self._con.post(url, params, token=self._token)
+            return self._con.post(url, params)
         elif f == "image":
             if save_folder is not None and save_file is not None:
                 return self._con.post(url, params,
                                       out_folder=save_folder, try_json=False,
-                                      file_name=save_file, token=self._token)
+                                      file_name=save_file)
             else:
                 return self._con.post(url, params,
-                                      try_json=False, force_bytes=True,
-                                      token=self._token)
+                                      try_json=False, force_bytes=True)
         elif f == "kmz":
             return self._con.post(url, params,
                                   out_folder=save_folder,
-                                  file_name=save_file, token=self._token)
+                                  file_name=save_file)
         else:
             print('Unsupported output format')
 
@@ -4252,22 +4260,22 @@ class MapImageLayer(Layer):
         if not area_of_interest is None:
             params['areaOfInterest'] = area_of_interest
         if asynchronous == True:
-            return self._con.get(url, params, token=self._token)
+            return self._con.get(url, params)
         else:
-            exportJob = self._con.get(url, params, token=self._token)
+            exportJob = self._con.get(url, params)
 
             job_id = exportJob['jobId']
             path = "%s/jobs/%s" % (url, exportJob['jobId'])
 
             params = {"f": "json"}
-            job_response = self._con.post(path, params, token=self._token)
+            job_response = self._con.post(path, params)
 
             if "status" in job_response:
                 status = job_response.get("status")
                 while not status == "esriJobSucceeded":
                     time.sleep(5)
 
-                    job_response = self._con.post(path, params, token=self._token)
+                    job_response = self._con.post(path, params)
                     status = job_response.get("status")
                     if status in ['esriJobFailed',
                                   'esriJobCancelling',
@@ -4397,22 +4405,22 @@ class MapImageLayer(Layer):
             params["areaOfInterest"] = area_of_interest
 
         if asynchronous == True:
-            return self._con.get(path=url, params=params, token=self._token)
+            return self._con.get(path=url, params=params)
         else:
-            exportJob = self._con.get(path=url, params=params, token=self._token)
+            exportJob = self._con.get(path=url, params=params)
 
             job_id = exportJob['jobId']
             path = "%s/jobs/%s" % (url, exportJob['jobId'])
 
             params = {"f": "json"}
-            job_response = self._con.post(path, params, token=self._token)
+            job_response = self._con.post(path, params)
 
             if "status" in job_response:
                 status = job_response.get("status")
                 while not status == 'esriJobSucceeded':
                     time.sleep(5)
 
-                    job_response = self._con.post(path, params, token=self._token)
+                    job_response = self._con.post(path, params)
                     status = job_response.get("status")
                     if status in ['esriJobFailed',
                                   'esriJobCancelling',
@@ -4431,7 +4439,7 @@ class MapImageLayer(Layer):
                     params = {
                         "f": "json"
                     }
-                    gpRes = self._con.get(path=value, params=params, token=self._token)
+                    gpRes = self._con.get(path=value, params=params)
                     if tile_package == True:
                         files = []
                         for f in gpRes['files']:
@@ -4440,7 +4448,7 @@ class MapImageLayer(Layer):
                             files.append(
                                 self._con.get(dlURL, params,
                                               out_folder=tempfile.gettempdir(),
-                                              file_name=name), token=self._token)
+                                              file_name=name))
                         return files
                     else:
                         return gpRes['folders']

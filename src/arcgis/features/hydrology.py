@@ -7,6 +7,8 @@ import logging as _logging
 import arcgis
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.features import FeatureSet
+from .._impl.common._utils import inspect_function_inputs
+from arcgis.geoprocessing import import_toolbox as _import_toolbox
 
 _log = _logging.getLogger(__name__)
 
@@ -102,19 +104,6 @@ def trace_downstream(input_points, point_id_field=None, source_database='Finest'
                                 source_database='Finest',
                                 generalize=False)
     """
-    kwargs = locals()
-
-    param_db = {
-        "input_points": (FeatureSet, "InputPoints"),
-        "point_id_field": (str, 'PointIDField'),
-        "source_database": (str, 'SourceDatabase'),
-        "generalize": (str, 'Generalize'),
-        "output_trace_line": (FeatureSet, "Output Trace Line"),
-    }
-
-    return_values = [
-        {"name": "output_trace_line", "display_name": "Output Trace Line", "type": FeatureSet},
-    ]
 
     # use helper function to evaluate the input points and convert them, if necessary, to a FeatureSet
     input_fs = _evaluate_spatial_input(input_points)
@@ -136,9 +125,21 @@ def trace_downstream(input_points, point_id_field=None, source_database='Finest'
         gis = arcgis.env.active_gis
 
     url = gis.properties.helperServices.hydrology.url
-
-    return _execute_gp_tool(gis, "TraceDownstream", kwargs, param_db, return_values, True, url, future=future)
-
+    tbx = _import_toolbox(url, gis=gis)
+    kwargs = {
+        "input_points" : input_fs,
+        "point_id_field" : point_id_field,
+        "source_database" : source_database,
+        "generalize" : generalize,
+        "gis" : gis,
+        "future" : future
+    }
+    kwargs = inspect_function_inputs(tbx.trace_downstream, **kwargs)
+    kwargs['future'] = True
+    gpjob = tbx.trace_downstream(**kwargs)
+    if future:
+        return gpjob
+    return gpjob.result()
 
 def watershed(input_points, point_id_field=None, snap_distance=10, snap_distance_units='Meters',
               source_database='Finest', generalize=False, gis=None, return_snapped_points=True,
@@ -220,25 +221,6 @@ def watershed(input_points, point_id_field=None, snap_distance=10, snap_distance
                                         generalize=False)
     """
 
-    kwargs = locals()
-
-    param_db = {
-        "input_points": (FeatureSet, "InputPoints"),
-        "point_id_field": (str, 'PointIDField'),
-        "snap_distance": (int, 'SnapDistance'),
-        "snap_distance_units": (int, 'SnapDistanceUnits'),
-        "source_database": (str, 'SourceDatabase'),
-        "generalize": (str, 'Generalize'),
-        "return_snapped_points": (str, 'ReturnSnappedPoints'),
-        "watershed_area": (FeatureSet, "WatershedArea"),
-        "snapped_points": (FeatureSet, "SnappedPoints")
-    }
-
-    return_values = [
-        {"name": "watershed_area", "display_name": "Watershed Area", "type": FeatureSet},
-        {"name": "snapped_points", "display_name": "Snapped Points", "type": FeatureSet}
-    ]
-
     # use helper function to evaluate the input points and convert them, if necessary, to a FeatureSet
     input_fs = _evaluate_spatial_input(input_points)
 
@@ -256,5 +238,21 @@ def watershed(input_points, point_id_field=None, snap_distance=10, snap_distance
         gis = arcgis.env.active_gis
 
     url = gis.properties.helperServices.hydrology.url
-
-    return _execute_gp_tool(gis, "Watershed", kwargs, param_db, return_values, True, url, future=future)
+    tbx = _import_toolbox(url, gis=gis)
+    kwargs = {
+        "input_points" : input_fs,
+        "point_id_field" : point_id_field,
+        "snap_distance" : snap_distance,
+        "snap_distance_units" : snap_distance_units,
+        "source_database" : source_database,
+        "generalize" : generalize,
+        "gis" : gis,
+        "return_snapped_points" : return_snapped_points,
+        "future" : future
+    }
+    kwargs['future'] = True
+    kwargs = inspect_function_inputs(tbx.watershed, **kwargs)
+    gpjob = tbx.watershed(**kwargs)
+    if future:
+        return gpjob
+    return gpjob.result()
