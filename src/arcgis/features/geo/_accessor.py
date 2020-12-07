@@ -2748,9 +2748,13 @@ class GeoAccessor(object):
             if sr and \
                'wkid' in sr:
                 wkid = sr['wkid']
+            elif sr and \
+                'latestWkid' in sr:
+                wkid = sr['latestWkid']                  
             if sr and \
                'wkt' in sr:
                 wkt = sr['wkt']
+                  
             if isinstance(ref, (dict, SpatialReference)) and \
                sr is None:
                 self._data[self.name] = self._data[self.name].geom.project_as(ref)
