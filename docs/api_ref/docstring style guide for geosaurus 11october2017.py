@@ -265,7 +265,7 @@ def create_tile_service(self,
                       Example: 80000.0
     ----------------  ---------------------------------------------------------------
     cache_info        Optional dictionary. If not none, administrator provides the
-                      tile cache info for the service. The default is the AGOL scheme.
+                      tile cache info for the service. The default is the ArcGIS Online scheme.
     ----------------  ---------------------------------------------------------------
     build_cache       Optional boolean. Default is False; if True, the cache will be
                       built at publishing time.  This will increase the time it takes

@@ -5,7 +5,7 @@ from arcgis.gis import GIS
 
 class WebhookManager(object):
     """
-    Creates and manages ArcGIS Portal WebHooks.  Webhooks allow you to be
+    Creates and manages ArcGIS Enterprise webhooks.  Webhooks allow you to be
     automatically notified when events associated with items, groups, and
     users occur. Once a webhook has been triggered, an HTTP request is
     made to a user-defined URL to provide information regarding the event.
@@ -78,7 +78,7 @@ class WebhookManager(object):
         """
         There are several advanced parameters that can be used to configure
         the connection behavior of your webhook. These parameters will be
-        applied to all of the configured webhooks in your Portal. Use the
+        applied to all of the configured webhooks in your Enterprise portal. Use the
         Update operation to modify any of the parameters.
 
 

@@ -3587,7 +3587,7 @@ class ImageryLayer(Layer):
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        output_name                              optional string. If not provided, an Imagery Layer item is created
+        output_name                              Optional string. If not provided, an Imagery Layer item is created
                                                  by the method and used as the output.
                                                  You can pass in the name of the output Imagery Layer that should be
                                                  created by this method to be used as the output for the tool.
@@ -3595,7 +3595,7 @@ class ImageryLayer(Layer):
                                                  Image Layer Item from your GIS to use that instead.
                                                  A RuntimeError is raised if a layer by that name already exists
         ------------------------------------     --------------------------------------------------------------------
-        for_viz                                  optional boolean. If True, a new Item is created that uses the
+        for_viz                                  Optional boolean. If True, a new Item is created that uses the
                                                  applied raster functions for visualization at display resolution
                                                  using on-the-fly image processing.
                                                  If for_viz is False, distributed raster analysis is used for
@@ -3610,16 +3610,16 @@ class ImageryLayer(Layer):
                                                  multidimensional raster. Valid only if process_as_multidimensional
                                                  is set to True
         ------------------------------------     --------------------------------------------------------------------
-        gis                                      optional arcgis.gis.GIS object. The GIS to be used for saving the
+        gis                                      Optional arcgis.gis.GIS object. The GIS to be used for saving the
                                                  output. Keyword only parameter.
         ------------------------------------     --------------------------------------------------------------------
         future                                   Optional boolean. If True, the result will be a GPJob object and
                                                  results will be returned asynchronously. Keyword only parameter.
         ------------------------------------     --------------------------------------------------------------------
-        tiles_only                               On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                                 To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+        tiles_only                               In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                                 To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
 
-                                                 Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                                 Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
         ====================================     ====================================================================
 
         :return: output_raster - Image layer item
