@@ -365,7 +365,7 @@ class Portal(object):
         CSV files that contain location fields, (ie.address fields or X, Y fields) are spatially enabled during the process of publishing.
         Shapefiles and file geodatabases should be packaged as *.zip files.
         Tiled map services can be created from service definition (*.sd) files, tile packages, and existing feature services.
-        Service definitions are authored in ArcGIS for Desktop and contain both the cartographic definition for a map as well as its packaged data together with the definition of the geo-service to be created.
+        Service definitions are authored in ArcGIS Pro or ArcGIS Desktop and contain both the cartographic definition for a map as well as its packaged data together with the definition of the geo-service to be created.
         Use the Analyze operation to generate the default publishing parameters for CSVs.
         See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Publish_Item/02r300000080000000/
         """

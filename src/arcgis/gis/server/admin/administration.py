@@ -17,24 +17,27 @@ from ..._impl._con import Connection
 ########################################################################
 class Server(BaseServer):
     """
-    An ArcGIS Enterprise Server site used for hosting GIS Web services. This class is not
-    created by users directly to access server instances in an Enterprise configuration. Use the
+    An ArcGIS Server site used for hosting GIS web services.
+    
+    This class can be directly instantied when working with stand-alone (unfederated) ArcGIS Server sites. 
+    
+    This class is not directly created when working with federated ArcGIS Server sites, instead use the
     :class:`ServerManager` :func:`~ServerManager.list` or :func:`~ServerManager.get` methods.
 
     .. code-block:: python
 
-        # Usage Example 1: Get a GIS server federated with Enterprise
+        # Usage Example 1: Get an object for an ArcGIS Server site federated with an ArcGIS Enterprise portal
 
         gis = GIS(profile="your_ent_admin_profile")
 
         hosting_server = gis.servers.get(role="HOSTING_SERVER")
 
 
-    For stand alone servers, directly create a :class:`Server` instance.
+    For stand-alone ArcGIS Server sites, directly create a :class:`Server` instance.
 
     .. code-block:: python
 
-        # Usage Example 2: Get a stand alone server that has Web Adaptor installed
+        # Usage Example 2: Get a stand-alone ArcGIS Server site that has Web Adaptor installed
 
         server_base_url = "https://example.site.com"
 
@@ -48,7 +51,7 @@ class Server(BaseServer):
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string. The URL to the ArcGIS Server administration
-                           end point for the ArcGIS Server Site.
+                           end point for the ArcGIS Server site.
 
                            Example: https://gis.mysite.com/arcgis/admin
 
@@ -59,9 +62,9 @@ class Server(BaseServer):
                            Web Context URL, is recommended as generally the SSL Certificate binding for
                            the web server uses this hostname.
     ------------------     --------------------------------------------------------------------
-    gis                    Optional string. The GIS object representing the Portal which thi
-                           Server is federated with. The GIS object should be logged in with a username
-                           in the publisher or administrator Role in order to administer the Server
+    gis                    Optional string. The GIS object representing the ArcGIS Enterprise portal which this
+                           ArcGIS Server site is federated with. The GIS object should be logged in with a username
+                           in the publisher or administrator Role in order to administer the server.
     ==================     ====================================================================
 
     =====================     ====================================================================
@@ -71,20 +74,19 @@ class Server(BaseServer):
                               Example: https://mysite.com/arcgis
     ---------------------     --------------------------------------------------------------------
     tokenurl                  Optional string. Used when a site is federated or when the token
-                              URL differs from the site's baseurl.  If a site is federated, the
-                              token URL will return as the Portal token and ArcGIS Server users
+                              URL differs from the site's base url.  If a site is federated, the
+                              token URL will return as the portal token and ArcGIS Server users
                               will not validate correctly.
     ---------------------     --------------------------------------------------------------------
-    username                  Optional string. The login username for BUILT-IN GIS Server security.
+    username                  Optional string. The login username when using built-in ArcGIS Server security.
     ---------------------     --------------------------------------------------------------------
-    password                  Optional string. A secret word or phrase that must be used to gain
-                              access to the account above.
+    password                  Optional string. The password for the specified username.
     ---------------------     --------------------------------------------------------------------
     key_file                  Optional string. The path to a PKI key file used to authenticate the
                               user to the Web Server in front of the ArcGIS Server site.
     ---------------------     --------------------------------------------------------------------
     cert_file                 Optional string. The path to PKI cert file used to authenticate the
-                              user to the Web Server in front of the ArcGIS Server site.
+                              user to the web server in front of the ArcGIS Server site.
     ---------------------     --------------------------------------------------------------------
     proxy_host                Optional string. The web address to the proxy host if the environment
                               where the Python API is running requires a proxy host for access to the
@@ -103,7 +105,7 @@ class Server(BaseServer):
                               of HTTP. The default is False.
     ---------------------     --------------------------------------------------------------------
     portal_connection         Optional string. This is used when a site is federated. It is the
-                              ArcGIS Online or Portal GIS object used.
+                              ArcGIS Enterprise portal GIS object representing the portal managing the site.
     ---------------------     --------------------------------------------------------------------
     initialize                Optional boolean. If True, the object will attempt to reach out to
                               the URL resource and populate at creation time. The default is False.
@@ -237,7 +239,7 @@ class Server(BaseServer):
         ----------------------     --------------------------------------------------------------------
         connection
         ----------------------     --------------------------------------------------------------------
-        url                        Required string. URI string to the site.
+        url                        Required string. URL for the site.
         ----------------------     --------------------------------------------------------------------
         username                   Required string. The name of the administrative account to be used by
                                    the site. This can be changed at a later stage.
@@ -274,10 +276,9 @@ class Server(BaseServer):
                                   token URL will return as the Portal token and ArcGIS Server users
                                   will not validate correctly.
         ---------------------     --------------------------------------------------------------------
-        username                  Optional string. The login username for BUILT-IN security.
+        username                  Optional string. The login username when using built-in ArcGIS Server security.
         ---------------------     --------------------------------------------------------------------
-        password                  Optional string. A secret word or phrase that must be used to gain
-                                  access to the account above.
+        password                  Optional string. The password for the specified username.
         ---------------------     --------------------------------------------------------------------
         key_file                  Optional string. The path to PKI key file.
         ---------------------     --------------------------------------------------------------------
@@ -296,7 +297,7 @@ class Server(BaseServer):
                                   of HTTP. The default is False.
         ---------------------     --------------------------------------------------------------------
         portal_connection         Optional string. This is used when a site is federated. It is the
-                                  ArcGIS Online or Portal GIS object used.
+                                  ArcGIS Enterprise portal GIS object representing the portal managing the site.
         ---------------------     --------------------------------------------------------------------
         initialize                Optional boolean. If True, the object will attempt to reach out to
                                   the URL resource and populate at creation time. The default is False.
@@ -530,7 +531,7 @@ class Server(BaseServer):
     def datastores(self):
         """
         Gets the information about the data holdings of the server.
-        Data items are used by ArcGIS for Desktop and other clients
+        Data items are used by ArcGIS Pro, ArcGIS Desktop, and other clients
         to validate data paths referenced by GIS services.
         You can register new data items with the server by using the
         Register Data Item operation. Use the Find Data Items operation to
@@ -691,7 +692,7 @@ class Server(BaseServer):
         services available on a particular server. A service represents a
         local GIS resource whose functionality has been made available on
         the server to a wider audience. For example, an ArcGIS Server
-        administrator can publish an ArcMap document (.mxd) as a map
+        administrator can publish a Pro map or ArcMap map document (.mxd) as a map
         service. Developers and clients can display the map service and
         query its contents.
 
@@ -871,10 +872,9 @@ class SiteManager(object):
                                   token URL will return as the Portal token and ArcGIS Server users
                                   will not validate correctly.
         ---------------------     --------------------------------------------------------------------
-        username                  Optional string. The login username for BUILT-IN security.
+        username                  Optional string. The login username when using built-in ArcGIS Server security.
         ---------------------     --------------------------------------------------------------------
-        password                  Optional string. A secret word or phrase that must be used to gain
-                                  access to the account above.
+        password                  Optional string. The password for the specified username.
         ---------------------     --------------------------------------------------------------------
         key_file                  Optional string. The path to PKI key file.
         ---------------------     --------------------------------------------------------------------
@@ -893,7 +893,7 @@ class SiteManager(object):
                                   of HTTP. The default is False.
         ---------------------     --------------------------------------------------------------------
         portal_connection         Optional string. This is used when a site is federated. It is the
-                                  ArcGIS Online or Portal GIS object used.
+                                  ArcGIS Enterprise portal GIS object representing the portal managing the site.
         ---------------------     --------------------------------------------------------------------
         initialize                Optional boolean. If True, the object will attempt to reach out to
                                   the URL resource and populate at creation time. The default is False.

@@ -10154,7 +10154,7 @@ class Item(dict):
 
         Scene services can be created from scene layer package (*.spk, *.slpk) files.
 
-        Service definitions are authored in ArcGIS for Desktop and contain both the cartographic definition for a map
+        Service definitions are authored in ArcGIS Pro or ArcGIS Desktop and contain both the cartographic definition for a map
         as well as its packaged data together with the definition of the geo-service to be created.
 
         .. note::
