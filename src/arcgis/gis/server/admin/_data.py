@@ -263,7 +263,7 @@ class DataStoreManager(BaseServer):
         name                   Required string. The name of the new data item.
         ------------------     --------------------------------------------------------------------
         item                   Required string. The dictionary representing the data item.
-                               See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000001s9000000
+                               See https://developers.arcgis.com/rest/enterprise-administration/server/dataitem.htm
         ==================     ====================================================================
 
 
@@ -549,7 +549,7 @@ class DataStoreManager(BaseServer):
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         type_id                Required string. The datastore type ID of interest.
-                               See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Relational_Data_Store_Types/02r300000303000000/
+                               See https://developers.arcgis.com/rest/enterprise-administration/server/relational-data-store-types.htm
         ==================     ====================================================================
 
 
@@ -635,7 +635,7 @@ class DataStoreManager(BaseServer):
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required string. The JSON representing the data item.
-                               See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000001s9000000
+                               See https://developers.arcgis.com/rest/enterprise-administration/server/dataitem.htm
         ==================     ====================================================================
 
         :return:

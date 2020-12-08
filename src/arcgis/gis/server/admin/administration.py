@@ -258,7 +258,7 @@ class Server(BaseServer):
                                    site will create a cluster called 'default' with the first available
                                    port numbers starting from 4004.
         ----------------------     --------------------------------------------------------------------
-        logsSettings               Optional string. Optional log settings, see http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Log_Settings/02r3000001t6000000/ .
+        logsSettings               Optional string. Optional log settings, see https://developers.arcgis.com/rest/enterprise-administration/server/logssettings.htm .
         ----------------------     --------------------------------------------------------------------
         runAsync                   Optional boolean. A flag to indicate if the operation needs to be run
                                    asynchronously.
@@ -269,7 +269,7 @@ class Server(BaseServer):
         **Optional Argument**     **Description**
         ---------------------     --------------------------------------------------------------------
         baseurl                   Optional string. The root URL to a site.
-                                  Example: https://mysite.com/arcgis
+                                  Example: https://mysite.example.com/arcgis
         ---------------------     --------------------------------------------------------------------
         tokenurl                  Optional string. Used when a site is federated or when the token
                                   URL differs from the site's baseurl.  If a site is federated, the
@@ -854,7 +854,7 @@ class SiteManager(object):
                                    site will create a cluster called 'default' with the first available
                                    port numbers starting from 4004.
         ----------------------     --------------------------------------------------------------------
-        logsSettings               Optional string. Optional log settings, see http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Log_Settings/02r3000001t6000000/ .
+        logsSettings               Optional string. Optional log settings, see https://developers.arcgis.com/rest/enterprise-administration/server/logssettings.htm .
         ----------------------     --------------------------------------------------------------------
         runAsync                   Optional boolean. A flag to indicate if the operation needs to be run
                                    asynchronously.
@@ -865,7 +865,7 @@ class SiteManager(object):
         **Optional Argument**     **Description**
         ---------------------     --------------------------------------------------------------------
         baseurl                   Optional string. The root URL to a site.
-                                  Example: https://mysite.com/arcgis
+                                  Example: https://mysite.example.com/arcgis
         ---------------------     --------------------------------------------------------------------
         tokenurl                  Optional string. Used when a site is federated or when the token
                                   URL differs from the site's baseurl.  If a site is federated, the

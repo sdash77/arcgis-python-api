@@ -2047,7 +2047,7 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         muldidef              optional array. Multidimensional definition used for querying 
                               dimensional slices of the input image service.
-                              See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
+                              See https://developers.arcgis.com/documentation/common-data-types/multidimensional-definition.htm
         -----------------     --------------------------------------------------------------------
 
         .. code-block:: python
@@ -2683,7 +2683,7 @@ class ImageryLayer(Layer):
         rendering_rule      optional dictionary. Specifies the rendering rule for how the
                             requested image should be rendered.
                             See the raster function objects for the JSON syntax and examples.
-                            http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Raster_function_objects/02r3000000rv000000/
+                            https://developers.arcgis.com/documentation/common-data-types/raster-function-objects.htm
         ---------------     --------------------------------------------------------------------
         variable            Optional String. This parameter can be used to request a 
                             colormap for each variable for an image service that has 
@@ -2755,12 +2755,12 @@ class ImageryLayer(Layer):
                             (as advertised in the root resource: defaultMosaicMethod,
                             mosaicOperator, sortField, sortValue).
                             See Mosaic rule objects help for more information:
-                            http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000s4000000
+                            https://developers.arcgis.com/documentation/common-data-types/mosaic-rules.htm
         ---------------     --------------------------------------------------------------------
         rendering_rule      optional dictionary. Specifies the rendering rule for how the
                             requested image should be rendered.
                             See the raster function objects for the JSON syntax and examples.
-                            http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Raster_function_objects/02r3000000rv000000/
+                            https://developers.arcgis.com/documentation/common-data-types/raster-function-objects.htm
         ---------------     --------------------------------------------------------------------
         pixel_size          optional list or dictionary. The pixel level being used (or the
                             resolution being looked at). If pixel size is not specified, then
@@ -2827,7 +2827,7 @@ class ImageryLayer(Layer):
                               (as advertised in the root resource: defaultMosaicMethod,
                               mosaicOperator, sortField, sortValue).
                               See Mosaic rule objects help for more information:
-                              http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000s4000000
+                              https://developers.arcgis.com/documentation/common-data-types/mosaic-rules.htm
         -----------------     --------------------------------------------------------------------
         rendering_rule        Specifies the rendering rule for how the requested image should be
                               processed. The response is updated Layer info that reflects a
@@ -3144,7 +3144,7 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         muldidef              optional array. multidemensional definition used for filtering by
                               variable/dimensions.
-                              See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
+                              See https://developers.arcgis.com/documentation/common-data-types/multidimensional-definition.htm
         -----------------     --------------------------------------------------------------------
         op                    optional string, first,last,min,max,mean,blend,sum mosaic operation
                               to resolve overlap pixel values: from first or last raster, use the
@@ -3154,7 +3154,7 @@ class ImageryLayer(Layer):
         =================     ====================================================================
 
         :return: a mosaic rule defined in the format at
-            http://resources.arcgis.com/en/help/arcgis-rest-api/#/Mosaic_rule_objects/02r3000000s4000000/
+            https://developers.arcgis.com/documentation/common-data-types/mosaic-rules.htm
         Also see http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/understanding-the-mosaicking-rules-for-a-mosaic-dataset.htm#ESRI_SECTION1_ABDC9F3F6F724A4F8079051565DC59E
         """
         if self.tiles_only:
@@ -6112,7 +6112,7 @@ class Raster():
         -----------------     --------------------------------------------------------------------
         muldidef              optional array. multidemensional definition used for filtering by
                               variable/dimensions.
-                              See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
+                              See https://developers.arcgis.com/documentation/common-data-types/multidimensional-definition.htm
         -----------------     --------------------------------------------------------------------
         op                    optional string, first,last,min,max,mean,blend,sum mosaic operation
                               to resolve overlap pixel values: from first or last raster, use the
@@ -6121,7 +6121,7 @@ class Raster():
         item_rendering_rule   optional item rendering rule, applied on items before mosaicking.
         =================     ====================================================================
         :return: a mosaic rule defined in the format at
-            http://resources.arcgis.com/en/help/arcgis-rest-api/#/Mosaic_rule_objects/02r3000000s4000000/
+            https://developers.arcgis.com/documentation/common-data-types/mosaic-rules.htm
         Also see http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/understanding-the-mosaicking-rules-for-a-mosaic-dataset.htm#ESRI_SECTION1_ABDC9F3F6F724A4F8079051565DC59E
         """
         if self._datastore_raster:

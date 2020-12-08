@@ -1880,7 +1880,7 @@ class DatastoreManager(object):
         ---------------     --------------------------------------------------------------------
         name                Required string. The name of the item to be added on the server.
         ---------------     --------------------------------------------------------------------
-        item                Required dictionary. The dictionary representing the data item.  See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000001s9000000
+        item                Required dictionary. The dictionary representing the data item.  See https://developers.arcgis.com/rest/enterprise-administration/server/dataitem.htm
         ===============     ====================================================================
 
 
@@ -3351,7 +3351,7 @@ class RoleManager(object):
         ------------------     --------------------------------------------------------------------
         privileges             Optional string. An array of strings with predefined permissions within
                                each privilege.  For supported privileges see
-                               http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Privileges/02r3000002wq000000/
+                               https://developers.arcgis.com/rest/users-groups-and-items/privileges.htm
         ==================     ====================================================================
 
 
@@ -4780,7 +4780,7 @@ class ContentManager(object):
         query             Required string. A query string.  See notes above.
         ----------------  --------------------------------------------------------------------------
         item_type         Optional string. Set type of item to search.
-                          http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+                          https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm
         ----------------  --------------------------------------------------------------------------
         sort_field        Optional string. Valid values can be title, uploaded, type, owner, modified,
                           avgRating, numRatings, numComments, and numViews.
@@ -8826,7 +8826,7 @@ class Item(dict):
                              'Excel', 'geoPackage', or 'Vector Tile Package'.
         ---------------     --------------------------------------------------------------------
         parameters          Optional string. A JSON object describing the layers to be exported
-                            and the export parameters for each layer.  See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Export_Item/02r30000008s000000/
+                            and the export parameters for each layer.  See https://developers.arcgis.com/rest/users-groups-and-items/export-item.htm
                             for guidance.
         ---------------     --------------------------------------------------------------------
         wait                Optional boolean. Default is True, which forces a wait for the
@@ -9703,7 +9703,7 @@ class Item(dict):
         =================  =====================================================================
 
 
-        URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+        URL 1: https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -10165,7 +10165,7 @@ class Item(dict):
         **Argument**           **Description**
         -------------------    ---------------------------------------------------------------
         publish_parameters     Optional dictionary. containing publish instructions and customizations.
-                               Cannot be combined with overwrite.  See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Publish_Item/02r300000080000000/ for details.
+                               Cannot be combined with overwrite.  See https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm for details.
         -------------------    ---------------------------------------------------------------
         address_fields         Optional dictionary. containing mapping of df columns to address fields,
                                eg: { "CountryCode" : "Country"} or { "Address" : "Address" }
@@ -10202,7 +10202,7 @@ class Item(dict):
         :return:
             An arcgis.gis.Item object corresponding to the published web layer.
 
-        For publish_parameters, see http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Publish_Item/02r300000080000000/
+        For publish_parameters, see https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm
         """
 
         import time

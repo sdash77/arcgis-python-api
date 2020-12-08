@@ -270,7 +270,7 @@ class Security(BasePortalAdmin):
         mechanism and group store, it must be configured to use an
         enterprise identity store such as Windows Active Directory or LDAP.
 
-        See: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Update_Identity_Store/02r300000249000000/
+        See: https://developers.arcgis.com/rest/enterprise-administration/portal/update-identity-store.htm
 
         ===========================     ====================================================================
         **Argument**                    **Description**
