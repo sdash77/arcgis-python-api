@@ -2258,7 +2258,7 @@ class Geometry(BaseGeometry):
             try:
                 if [int(i) for i in pyproj.__version__.split(".") if i.isdigit()][0] == 2:
                     from pyproj import Transformer
-                    project = Transformer.from_crs(in_srid, out_srid).transform
+                    project = Transformer.from_crs(in_srid, out_srid, always_xy=True).transform
                 else:
                     project = partial(
                         pyproj.transform,
