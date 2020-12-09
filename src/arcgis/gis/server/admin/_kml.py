@@ -42,7 +42,7 @@ class KML(BaseServer):
     def create_KMZ(self, kmz_as_json):
         """
            Creates a KMZ file from json.
-           See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Create_Kmz/02r3000001tm000000/
+           See https://developers.arcgis.com/rest/enterprise-administration/server/createkmz.htm
            for more information.
         """
         url = self._url + "/createKmz"

@@ -1869,7 +1869,7 @@ class FeatureLayer(Layer):
     def get_html_popup(self, oid):
         """
         The htmlPopup resource provides details about the HTML pop-up
-        authored by the user using ArcGIS for Desktop.
+        authored by the user using ArcGIS Pro or ArcGIS Desktop.
 
         ===============     ====================================================================
         **Argument**        **Description**

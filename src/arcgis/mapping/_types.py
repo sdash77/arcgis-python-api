@@ -4292,8 +4292,8 @@ class MapImageLayer(Layer):
         is Map Service Job. This job response contains a reference to the
         Map Service Result resource, which returns a URL to the resulting
         tile package (.tpk) or a cache raster dataset.
-        exportTiles can be enabled in a service by using ArcGIS for Desktop
-        or the ArcGIS Server Administrator Directory. In ArcGIS for Desktop
+        exportTiles can be enabled in a service by using ArcGIS Desktop
+        or the ArcGIS Server Administrator Directory. In ArcGIS Desktop
         make an admin or publisher connection to the server, go to service
         properties, and enable Allow Clients to Export Cache Tiles in the
         advanced caching page of the Service Editor. You can also specify
@@ -4302,7 +4302,7 @@ class MapImageLayer(Layer):
         using the Administrator Directory, edit the service, and set the
         properties exportTilesAllowed=true and maxExportTilesCount=100000.
 
-        At 10.2.2 and later versions, exportTiles is supported as an
+        In ArcGIS Server 10.2.2 and later versions, exportTiles is supported as an
         operation of the Map Server. The use of the
         http://Map Service/exportTiles/submitJob operation is deprecated.
         You can provide arguments to the exportTiles operation as defined

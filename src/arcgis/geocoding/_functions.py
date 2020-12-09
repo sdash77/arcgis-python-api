@@ -102,7 +102,7 @@ class Geocoder(_GISResource):
                                  a user will search for places and addresses only
                                  within the current map extent.
         --------------------     ----------------------------------------------------
-        location                 optionl [x,y], Defines an origin point location that
+        location                 optional [x,y], Defines an origin point location that
                                  is used with the distance parameter to sort
                                  geocoding candidates based upon their proximity to
                                  the location.
@@ -1012,7 +1012,7 @@ def geocode(address,
                              a user will search for places and addresses only
                              within the current map extent.
     --------------------     ----------------------------------------------------
-    location                 Optionl [x,y], Defines an origin point location that
+    location                 Optional [x,y], Defines an origin point location that
                              is used with the distance parameter to sort
                              geocoding candidates based upon their proximity to
                              the location.

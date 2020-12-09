@@ -2802,7 +2802,7 @@ class GeoAccessor(object):
         drawing_info           Optional dictionary. This is the rendering information for a
                                Feature Collection.  Rendering information is a dictionary with
                                the symbology, labelling and other properties defined.  See:
-                               http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Renderer_objects/02r30000019t000000/
+                               https://developers.arcgis.com/documentation/common-data-types/renderer-objects.htm
         ---------------------  ---------------------------------------------------------------
         extent                 Optional dictionary.  If desired, a custom extent can be
                                provided to set where the map starts up when showing the data.

@@ -305,7 +305,7 @@ class Portal(object):
         ================  ============================================================================
 
 
-        URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+        URL 1: https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm
 
         :return:
              The item id of the uploaded item if successful, None if unsuccessful.
@@ -365,9 +365,9 @@ class Portal(object):
         CSV files that contain location fields, (ie.address fields or X, Y fields) are spatially enabled during the process of publishing.
         Shapefiles and file geodatabases should be packaged as *.zip files.
         Tiled map services can be created from service definition (*.sd) files, tile packages, and existing feature services.
-        Service definitions are authored in ArcGIS for Desktop and contain both the cartographic definition for a map as well as its packaged data together with the definition of the geo-service to be created.
+        Service definitions are authored in ArcGIS Pro or ArcGIS Desktop and contain both the cartographic definition for a map as well as its packaged data together with the definition of the geo-service to be created.
         Use the Analyze operation to generate the default publishing parameters for CSVs.
-        See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Publish_Item/02r300000080000000/
+        See https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm
         """
         # Postdata is a dictionary object whose keys and values will be sent via an HTTP Post.
         postdata = self._postdata()
@@ -2219,7 +2219,7 @@ class Portal(object):
         ================  ============================================================================
 
 
-        URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+        URL 1: https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm
 
         :return:
              a boolean, that indicates success.
