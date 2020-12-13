@@ -5696,8 +5696,16 @@ class _RasterAnalysisTools(BaseAnalytics):
             url = input_param["url"]
             if "/RasterRendering/" in url:
                 url = input_layer._uri
-                input_param = {"uri":url}
+                if "renderingRule" in input_param.keys():
+                    input_param.update({"function": input_param["renderingRule"]})
+                    input_param.pop("renderingRule", None)
+                input_param.update({"uri":url})
+                input_param.pop("url", None)
+                input_param.pop("type", None)
+                input_param.pop("uses_gbl", None)
+                input_param.pop("raster", None)
                 return input_param
+
         if "ImageServer" in url or "MapServer" in url:
             if "serviceToken" in input_param:
                 url = url+"?token="+ input_param["serviceToken"]

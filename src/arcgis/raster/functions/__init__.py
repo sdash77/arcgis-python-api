@@ -174,6 +174,11 @@ def _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2=None, varia
     #newlyr.properties = layer.properties
     newlyr._engine_obj._fn = function_chain
     newlyr._engine_obj._fnra = function_chain_ra
+
+    if (hasattr(layer, '_datastore_raster')) and layer._datastore_raster:
+        if not isinstance(layer._uri, dict) and not isinstance(layer._uri,bytes):
+            newlyr._engine_obj._fn  = function_chain_ra
+
     newlyr._engine_obj._where_clause = layer._where_clause
     newlyr._engine_obj._spatial_filter = layer._spatial_filter
     newlyr._engine_obj._temporal_filter = layer._temporal_filter
@@ -206,6 +211,11 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
     #newlyr.properties = layer.properties
     newlyr._engine_obj._fn = function_chain
     newlyr._engine_obj._fnra = function_chain_ra
+
+    if (hasattr(layer, '_datastore_raster')) and layer._datastore_raster:
+        if not isinstance(layer._uri, dict) and not isinstance(layer._uri,bytes):
+            newlyr._engine_obj._fn  = function_chain_ra
+
     newlyr._engine_obj._where_clause = layer._where_clause
     newlyr._engine_obj._spatial_filter = layer._spatial_filter
     newlyr._engine_obj._temporal_filter = layer._temporal_filter
