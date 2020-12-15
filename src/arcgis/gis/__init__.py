@@ -352,7 +352,8 @@ class GIS(object):
                                            client_id=self._client_id,
                                            expiration=self._expiration,
                                            referer=self._referer,
-                                           custom_auth=custom_auth)            
+                                           custom_auth=custom_auth,
+                                           trust_env=kwargs.get("trust_env", None))
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
                 self._portal.con._referer = ""
@@ -443,8 +444,8 @@ class GIS(object):
                 if self.properties.isPortal and self._portal.is_kubernetes:
                     from arcgis.gis.kubernetes._admin.qadmin import KubernetesAdmin
                     url = self._portal.url + "/admin"
-                    self.admin = KubernetesAdmin(url=url, gis=self)                
-                if self.properties.isPortal == True:
+                    self.admin = KubernetesAdmin(url=url, gis=self)
+                elif self.properties.isPortal == True and self._portal.is_kubernetes == False:
                     from arcgis.gis.admin.portaladmin import PortalAdminManager
                     self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
                                                     gis=self)
@@ -2496,7 +2497,7 @@ class UserManager(object):
     def _createPre64(self, username, password, firstname, lastname, email, description=None, role='org_user',
                      provider='arcgis', idp_username=None, level=2, thumbnail=None):
         """
-        This operation is used to pre-create built-in or enterprise accounts within ArcGIS Enterprise 
+        This operation is used to pre-create built-in or enterprise accounts within ArcGIS Enterprise
         or built-in users in an ArcGIS Online organization account. Only an administrator
         can call this method.
 

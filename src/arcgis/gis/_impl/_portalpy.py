@@ -1367,7 +1367,11 @@ class Portal(object):
     def is_org(self):
         """ Returns true if this portal is an organization. """
         return bool(self._properties.get('id'))
-
+    @property
+    def is_kubernetes(self):
+        """ Returns true if this portal is kubernetes. """
+        return "portalDeploymentType" in self._properties and \
+               self._properties["portalDeploymentType"] == 'ArcGISEnterpriseOnKubernetes'
 
     def leave_group(self, group_id):
         """ Removes the logged in user from the specified group.
