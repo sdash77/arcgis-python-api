@@ -2385,30 +2385,31 @@ class UserManager(object):
                provider='arcgis', idp_username=None, level=2, thumbnail=None, user_type=None, credits=-1,
                groups=None):
         """
-        This operation is used to pre-create built-in or enterprise accounts within the Enterprise portal,
+        This operation is used to pre-create built-in or enterprise accounts within the portal,
         or built-in users in an ArcGIS Online organization account. Only an administrator
         can call this method.
 
         To create a viewer account, choose role='org_viewer' and level='viewer'
 
         .. note:
-            When ArcGIS Enterprise is connected to an enterprise identity store users sign
-            into the Enterprise portal using their enterprise credentials. By default, new installations
-            of ArcGIS Enterprise do not allow accounts from an enterprise identity store to be registered
-            automatically. Only users with accounts that have been pre-created can sign in.
-            You can optionally configure the Enterprise portal to register enterprise accounts the
-            first time the user connects to the website.
+            When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
+            into portal using their enterprise credentials. By default, new installations of Portal for
+            ArcGIS do not allow accounts from an enterprise identity store to be registered to the portal
+            automatically. Only users with accounts that have been pre-created can sign in to the portal.
+            Alternatively, you can configure the portal to register enterprise accounts the first time
+            the user connects to the website.
 
         ================  ===============================================================================
         **Argument**      **Description**
         ----------------  -------------------------------------------------------------------------------
-        username          Required string. The username must be unique and 6-24 characters long.
+        username          Required string. The user name, which must be unique in the Portal, and
+                          6-24 characters long.
         ----------------  -------------------------------------------------------------------------------
         password          Required string. The password for the user.  It must be at least 8 characters.
-                          This is a required parameter if
+                          This is a required parameter only if
                           the provider is arcgis; otherwise, the password parameter is ignored.
                           If creating an account in an ArcGIS Online org, it can be set as None to let
-                          the user set their password by clicking on a link that is emailed to them.
+                          the user set their password by clicking on a link that is emailed to him/her.
         ----------------  -------------------------------------------------------------------------------
         firstname         Required string. The first name for the user
         ----------------  -------------------------------------------------------------------------------
@@ -2454,19 +2455,19 @@ class UserManager(object):
         idp_username      Optional string. The name of the user as stored by the enterprise user store.
                           This parameter is only required if the provider parameter is enterprise.
         ----------------  -------------------------------------------------------------------------------
-        level             Optional string. The account level. (ArcGIS Enterprise prior to version 10.7)
+        level             Optional string. The account level. (Pre 10.7 Portal)
                           See http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm
         ----------------  -------------------------------------------------------------------------------
         user_type         Required string. The account user type. This can be creator or viewer.  The
                           type effects what applications a user can use and what actions they can do in
-                          the organization. (ArcGIS Enterprise 10.7+ and ArcGIS Online)
+                          the organization. (10.7+)
                           See http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm
         ----------------  -------------------------------------------------------------------------------
         credits           Optional Float. The number of credits to assign a user.  The default is None,
-                          which means unlimited. (ArcGIS Online only)
+                          which means unlimited. (10.7+)
         ----------------  -------------------------------------------------------------------------------
         groups            Optional List. An array of Group objects to provide access to for a given
-                          user. (ArcGIS Enterprise 10.7+ and ArcGIS Online)
+                          user. (10.7+)
         ================  ===============================================================================
 
         :return:
@@ -2497,30 +2498,31 @@ class UserManager(object):
     def _createPre64(self, username, password, firstname, lastname, email, description=None, role='org_user',
                      provider='arcgis', idp_username=None, level=2, thumbnail=None):
         """
-        This operation is used to pre-create built-in or enterprise accounts within ArcGIS Enterprise
+        This operation is used to pre-create built-in or enterprise accounts within the portal,
         or built-in users in an ArcGIS Online organization account. Only an administrator
         can call this method.
 
         To create a viewer account, choose role='org_viewer' and level=1
 
         .. note:
-            When ArcGIS Enterprise is connected to an enterprise identity store, enterprise users sign
-            into the Enterprise portal using their enterprise credentials. By default, new installations
-            of ArcGIS Enterprise  do not allow accounts from an enterprise identity store to be registered
-            to the automatically. Only users with accounts that have been pre-created can sign in.
-            You can optionally configure the Enterprise portal to register enterprise accounts the
-            first time the user connects to the website.
+            When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
+            into portal using their enterprise credentials. By default, new installations of Portal for
+            ArcGIS do not allow accounts from an enterprise identity store to be registered to the portal
+            automatically. Only users with accounts that have been pre-created can sign in to the portal.
+            Alternatively, you can configure the portal to register enterprise accounts the first time
+            the user connects to the website.
 
         ================  ===============================================================================
         **Argument**      **Description**
         ----------------  -------------------------------------------------------------------------------
-        username          Required string. The username must be unique and 6-24 characters long.
+        username          Required string. The user name, which must be unique in the Portal, and
+                          6-24 characters long.
         ----------------  -------------------------------------------------------------------------------
         password          Required string. The password for the user.  It must be at least 8 characters.
                           This is a required parameter only if
                           the provider is arcgis; otherwise, the password parameter is ignored.
                           If creating an account in an ArcGIS Online org, it can be set as None to let
-                          the user set their password by clicking on a link that is emailed to them.
+                          the user set their password by clicking on a link that is emailed to him/her.
         ----------------  -------------------------------------------------------------------------------
         firstname         Required string. The first name for the user
         ----------------  -------------------------------------------------------------------------------
@@ -2629,12 +2631,12 @@ class UserManager(object):
         To create a viewer account, choose role='org_viewer' and level='viewer'
 
         .. note:
-            When ArcGIS Enterprise is connected to an enterprise identity store, enterprise users sign
-            into the Enterprise portal using their enterprise credentials. By default, new installations
-            of ArcGIS Enterprise  do not allow accounts from an enterprise identity store to be registered
-            to the automatically. Only users with accounts that have been pre-created can sign in.
-            You can optionally configure the Enterprise portal to register enterprise accounts the
-            first time the user connects to the website.
+            When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
+            into portal using their enterprise credentials. By default, new installations of Portal for
+            ArcGIS do not allow accounts from an enterprise identity store to be registered to the portal
+            automatically. Only users with accounts that have been pre-created can sign in to the portal.
+            Alternatively, you can configure the portal to register enterprise accounts the first time
+            the user connects to the website.
 
         ================  ===============================================================================
         **Argument**      **Description**
@@ -2736,7 +2738,7 @@ class UserManager(object):
         elif role.lower() in role_lookup:
             role = role_lookup[role.lower()]
 
-        if self._gis._portal.is_arcgisonline:
+        if self._gis._portal.is_arcgisonline or self._gis._portal.is_kubernetes:
             email_text = '''<html><body><p>''' + self._gis.properties.user.fullName + \
                 ''' has invited you to join an ArcGIS Online Organization, ''' + self._gis.properties.name + \
                 '''</p>
@@ -2752,11 +2754,10 @@ class UserManager(object):
                 self._gis.properties['defaultUserCreditAssignment'] != -1:
                 credits = self._gis.properties['defaultUserCreditAssignment']
             if not groups and \
-               self.user_settings and \
                'groups' in self.user_settings and \
                self.user_settings['groups']:
-                groups = [g for g in self.user_settings['groups']]
-
+                groups = [self._gis.groups.get(g)
+                          for g in self.user_settings['groups']]
             params = {
                 'f': 'json',
                 'invitationList': {'invitations': [
@@ -2829,7 +2830,6 @@ class UserManager(object):
                 if not ret:
                     _log.error('Unable to update the thumbnail for  ' + username)
             return user
-
     #----------------------------------------------------------------------
     def invite(self,
                email, role='org_user',
