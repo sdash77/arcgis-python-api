@@ -341,6 +341,18 @@ class GIS(object):
                                            custom_auth=custom_auth, #token=self._utoken,
                                            client_secret=client_secret,
                                            trust_env=kwargs.get("trust_env", None))
+            if self._portal.is_kubernetes:
+                from .kubernetes._sharing import QbertnetesPy
+                self._portal = QbertnetesPy(self._url, self._username,
+                                           self._password, self._key_file,
+                                           self._cert_file,
+                                           proxy_host=self._proxy_host,
+                                           proxy_port=self._proxy_port,
+                                           verify_cert=self._verify_cert,
+                                           client_id=self._client_id,
+                                           expiration=self._expiration,
+                                           referer=self._referer,
+                                           custom_auth=custom_auth)            
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
                 self._portal.con._referer = ""
@@ -428,6 +440,10 @@ class GIS(object):
                     import warnings
                     warnings.warn("You are logged on as %s with an administrator role, proceed with caution." % \
                                   self.users.me.username)
+                if self.properties.isPortal and self._portal.is_kubernetes:
+                    from arcgis.gis.kubernetes._admin.qadmin import KubernetesAdmin
+                    url = self._portal.url + "/admin"
+                    self.admin = KubernetesAdmin(url=url, gis=self)                
                 if self.properties.isPortal == True:
                     from arcgis.gis.admin.portaladmin import PortalAdminManager
                     self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
