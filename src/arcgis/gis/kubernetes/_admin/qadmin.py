@@ -227,5 +227,5 @@ class KubernetesAdmin(_BaseKube):
     def organizations(self):
         """Provides access to the Organizations settings"""
         from ._organizations import KubeOrganizations
-        url = f"{self._url}/org"
+        url = f"{self._url}/orgs"
         return KubeOrganizations(url=url, gis=self._gis)
