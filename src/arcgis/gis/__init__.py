@@ -810,6 +810,22 @@ class GIS(object):
         return self._product_version
     #----------------------------------------------------------------------
     @property
+    def servers(self) -> dict:
+        """
+        Returns the servers registered with ArcGIS Entperise.  For ArcGIS
+        Online, the return value is `None`.
+
+        :returns: dict
+        """
+        if self._portal.is_arcgisonline:
+            return None
+        elif self._portal.is_kubernetes or self._portal.is_arcgisonline == False:
+
+            url = self._portal.resturl + f"portals/{self.properties['id']}/servers"
+            params = {'f' : 'json'}
+        return self._con.get(url, params)
+    #----------------------------------------------------------------------
+    @property
     def org_settings(self):
         """
         The portal settings resource is used to return a view of the
