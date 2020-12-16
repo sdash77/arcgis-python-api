@@ -11,36 +11,29 @@ class KubeOrgSecurity(object):
         pass
     def groups(self):
         pass
-class KubeOrgLicense():
-    """"""
-    ...
+
 class KubeOrgFederation():
     """"""
     ...
+###########################################################################
 class KubeOrganization():
-    """A Single Kubernetes Organization"""
+    """A single organization within your deployment, allowing you to manage
+    and update it's licensing and security information, as well as manage
+    it's federated servers.
+    """
+    _con = None
+    _gis = None
+    _url = None
+    _properties = None
     _security = None
     _federation = None
     _license = None
-
-    def __init__(self, url, gis=None, initialize=True, **kwargs):
+    #----------------------------------------------------------------------
+    def __init__(self, url, gis:"GIS", initialize:bool=True, **kwargs):
         """class initializer"""
-        if gis is None and 'connection' in kwargs:
-            connection = kwargs['connection']
-            gis = kwargs.pop('connection', None)
+        self._gis = gis
         self._url = url
-
-        #gis = kwargs.pop('gis', None)
-        if not gis is None and \
-           isinstance(gis, GIS):
-            gis = gis._portal.con
-
-        if isinstance(gis, Connection):
-            self._con = gis
-        elif hasattr(gis, '_con'):
-            self._gis = gis._con
-        else:
-            raise ValueError("gis must be of type Connection or GIS")
+        self._con = gis._con
         if initialize:
             self._init(gis)
     #----------------------------------------------------------------------
@@ -84,73 +77,229 @@ class KubeOrganization():
         """gets/sets the service url"""
         return self._url
     #----------------------------------------------------------------------
-    @url.setter
-    def url(self, value):
-        """gets/sets the service url"""
-        self._url = value
-        self.refresh()
-    #----------------------------------------------------------------------
     def _refresh(self):
         """reloads all the properties of a given service"""
         self._init()
-
-
+    #----------------------------------------------------------------------
     @property
     def security(self):
         if self._security is None:
             self._security = KubeOrgSecurity(url=f"{self._url}/security",
                                              gis=self._gis, initialize=False)
-        pass
-
+        return self._security
+    #----------------------------------------------------------------------
     @property
-    def license(self):
-        pass
+    def license(self) -> "KubeOrgLicense":
+        """
+        The Licenses resource returns high-level licensing details.
 
+        :return: KubeOrgLicense
+        """
+        if self._license is None:
+            url = url=f"{self._url}/license"
+            self._license = KubeOrgLicense(url, self._gis)
+        return self._license
+    #----------------------------------------------------------------------
     @property
     def federation(self):
-        pass
+        """
+        Returns
+        """
+        if self._federation is None:
+            url = self._url + "/federation"
 
+            self._federation = KubeOrgFederation(url, self._gis)
+        pass
+###########################################################################
+class KubeOrgFederations():
+    """
+    Provides access to the federation of ArcGIS Server and the ability to
+    federate them with the organization.
+    """
+    _con = None
+    _gis = None
+    _url = None
+    _properties = None
+    #----------------------------------------------------------------------
+    def __init__(self,
+                 url:str,
+                 gis:"GIS"
+                 ) -> "KuberOrgFederations":
+        self._url = url
+        self._gis = gis
+        self._con = gis._con
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    @property
+    def properties(self) -> dict:
+        """
+        returns the properties for the Kubernetes License Organization
+
+        :return: dict
+        """
+        if self._properties is None:
+            self._properties = self._con.get(self._url, {'f' : 'json'})
+        return self._properties
+
+
+###########################################################################
+class KubeOrgLicense():
+    """
+    The Licenses resource returns high-level licensing details, such as the
+    total number of registered members that can be added, the current
+    number of members in the organization, the Enterprise portal version,
+    and license manager information. This API endpoint also provides access
+    to various operations that allow you to manage your portal licenses for
+    your organization.
+
+    """
+    _con = None
+    _gis = None
+    _url = None
+    _properties = None
+    # ---------------------------------------------------------------------
+    def __init__(self, url:str, gis:"GIS") -> "KubeOrgLicense":
+        """
+        initializer
+        """
+        self._url = url
+        self._gis = gis
+        self._con = gis._con
+        self._properties = None
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    @property
+    def properties(self) -> dict:
+        """
+        returns the properties for the Kubernetes License Organization
+
+        :return: dict
+        """
+        if self._properties is None:
+            self._properties = self._con.get(self._url, {'f' : 'json'})
+        return self._properties
+    #----------------------------------------------------------------------
+    def update_license_manager(self, config:dict) -> bool:
+        """
+        This operation allows you to change the license server connection
+        information for your portal, as well as register a backup license
+        manager for high availability. After changing the license manager
+        properties, Portal for ArcGIS automatically restarts to register
+        changes and set up connections with the backup license manager.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        config                          Required Dict. The JSON representation of the license server
+                                        connection information.
+        ===========================     ====================================================================
+
+        :return: Boolean
+
+        """
+
+        url = self._url + "/updateLicenseManager"
+        params = {
+            "f" : "json",
+            "licenseManagerInfo" : json.dumps(config)
+        }
+        res = self._con.post(url, params)
+        if "status" in res:
+            return res["status"] == "success"
+        return res
+    #----------------------------------------------------------------------
+    def import_license(self, license_file:str):
+        """
+        Applies a new license file to a specific organization, which contains the portal's user type and add-on licenses.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        license_file                    Required String. The kubernetes license file.
+        ===========================     ====================================================================
+
+        :return: Boolean
+
+        """
+        url = self._url + "/importLicense"
+        file = {'file' : file}
+        res = self._con.post(url, params, files=file)
+        if "status" in res:
+            return res["status"] == "success"
+        return res
+    #----------------------------------------------------------------------
+    def validate(self, file, list_ut=False):
+        """
+        The `validate` operation is used to validate an input license file.
+        Only valid license files can be imported into the Enterprise
+        portal. If the provided file is valid, the operation will return
+        user type, app bundle, and app information from the license file.
+        If the file is invalid, the operation will fail and return an error
+        message.
+
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        file                            Required String. The kubernetes license file.
+        ---------------------------     --------------------------------------------------------------------
+        list_ut                         Optional Boolean. Returns a list of user types that are compatible
+                                        with the Administrator role. This identifies the user type(s) that
+                                        can be assigned to the Initial Administrator Account when creating
+                                        a portal.
+        ===========================     ====================================================================
+
+        :returns: Dict
+
+        """
+        file = {'file' : file}
+        params = {'f' : "json",
+                  'listAdministratorUserTypes' : list_ut}
+        url = "%s/validateLicense" % self._url
+        res = self._con.post(url, params, files=file)
+        return res
+###########################################################################
 class KubeOrganizations():
     """
+    Allows for the management of organizations within the ArcGIS Enterprise
+    on Kubernetes deployment.
     """
-    _url = None
-    _gis = None
-    _properties = None
-
     _con = None
+    _gis = None
     _url = None
-    _json_dict = None
-    _json = None
     _properties = None
-    def __init__(self, url, gis=None, initialize=True, **kwargs):
-        """class initializer"""
-        if gis is None and 'connection' in kwargs:
-            connection = kwargs['connection']
-            gis = kwargs.pop('connection', None)
+    #----------------------------------------------------------------------
+    def __init__(self,
+                url:str,
+                gis:"GIS",
+                initialize:bool=True
+                ) -> "KuberOrganizations":
+        """
+        Kubernetes Organization
+        """
         self._url = url
+        self._gis = gis
+        self._con = gis._con
 
-        #gis = kwargs.pop('gis', None)
-        if not gis is None and \
-           isinstance(gis, GIS):
-            gis = gis._portal.con
-
-        if isinstance(gis, Connection):
-            self._con = gis
-        elif hasattr(gis, '_con'):
-            self._gis = gis._con
-        else:
-            raise ValueError("gis must be of type Connection or GIS")
         if initialize:
             self._init(gis)
     #----------------------------------------------------------------------
     def _init(self, connection=None):
         """loads the properties into the class"""
-        if connection is None:
-            connection = self._con
+
         params = {"f":"json"}
         try:
-            result = connection.get(path=self._url,
-                                    params=params)
+            result = self._con.get(self._url, {'f' :'json'})
             if isinstance(result, dict):
                 self._json_dict = result
                 self._properties = PropertyMap(result)
@@ -183,22 +332,10 @@ class KubeOrganizations():
         """gets/sets the service url"""
         return self._url
     #----------------------------------------------------------------------
-    @url.setter
-    def url(self, value):
-        """gets/sets the service url"""
-        self._url = value
-        self.refresh()
-    #----------------------------------------------------------------------
-    def __iter__(self):
-        """creates iterable for classes properties"""
-        for k,v in self._json_dict.items():
-            yield k,v
-    #----------------------------------------------------------------------
     def _refresh(self):
         """reloads all the properties of a given service"""
         self._init()
-
-
+    #----------------------------------------------------------------------
     @property
     def orgs(self) -> tuple:
         """

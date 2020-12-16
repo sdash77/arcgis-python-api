@@ -43,6 +43,7 @@ class KubernetesAdmin(_BaseKube):
     _idp = None
     _license = None
     _metadata = None
+    _organizations = None
     _category_schema = None
     #----------------------------------------------------------------------
     def __init__(self, url, gis):
@@ -226,6 +227,8 @@ class KubernetesAdmin(_BaseKube):
     @property
     def organizations(self):
         """Provides access to the Organizations settings"""
-        from ._organizations import KubeOrganizations
-        url = f"{self._url}/orgs"
-        return KubeOrganizations(url=url, gis=self._gis)
+        if self._organizations is None:
+            from ._organizations import KubeOrganizations
+            url = f"{self._url}/orgs"
+            self._organizations = KubeOrganizations(url=url, gis=self._gis)
+        return self._organizations
