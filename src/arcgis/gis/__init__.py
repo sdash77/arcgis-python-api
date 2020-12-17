@@ -4415,6 +4415,9 @@ class ContentManager(object):
 
         elif str(file_type).lower() in ['excel', 'csv']:
             params['fileType'] = file_type
+        elif str(file_type).lower() in ['filegeodatabase', 'shapefile']:
+            params['fileType'] = file_type
+            params['analyzeParameters']['enableGlobalGeocoding'] = False
         if source_country:
             params['analyzeParameters']['sourceCountry'] = source_country
         if country_hint:
