@@ -4173,6 +4173,16 @@ class ContentManager(object):
         ===============     ====================================================================
 
 
+        *Optional Input Parameters for the `add` method*
+
+        ========================     ====================================================================
+        **Optional Argument**        **Description**
+        ------------------------     --------------------------------------------------------------------
+        upload_size                  Optional float.  The default value is 1e7 bytes or ~10 MBs.  This the
+                                     minimum default value for the size of the file when uploading by parts.
+        ========================     ====================================================================
+
+
         *Key:Value Dictionary Options for Argument item_properties*
 
 
@@ -4319,11 +4329,16 @@ class ContentManager(object):
                                            thumbnail, metadata,
                                            owner_name, folder)
             # check the status and commit the final result
+            if kwargs.get("upload_size", 0) >= 1e7:
+                upload_size = kwargs.get("upload_size")
+            else:
+                upload_size = 1e7
+
             status = self._add_by_part(
                 file_path=data,
                 itemid=itemid,
                 item_properties=item_properties,
-                size=1e7,
+                size=upload_size,
                 owner=owner_name,
                 folder=folder)
 
@@ -4448,6 +4463,9 @@ class ContentManager(object):
 
         elif str(file_type).lower() in ['excel', 'csv']:
             params['fileType'] = file_type
+        elif str(file_type).lower() in ['filegeodatabase', 'shapefile']:
+            params['fileType'] = file_type
+            params['analyzeParameters']['enableGlobalGeocoding'] = False
         if source_country:
             params['analyzeParameters']['sourceCountry'] = source_country
         if country_hint:

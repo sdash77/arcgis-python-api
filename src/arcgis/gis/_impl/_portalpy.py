@@ -2095,23 +2095,23 @@ class Portal(object):
 
         properties = dict()
         postdata = self._postdata()
-        if title:
+        if not title is None:
             properties['title'] = title
-        if tags:
+        if not tags is None:
             properties['tags'] = tags
-        if description:
+        if not description is None:
             properties['description'] = description
-        if snippet:
+        if not snippet is None:
             properties['snippet'] = snippet
-        if access:
+        if not access is None:
             properties['access'] = access
-        if sort_field:
+        if not sort_field is None:
             properties['sortField'] = sort_field
-        if sort_order:
+        if not sort_order is None:
             properties['sortOrder'] = sort_order
-        if is_view_only:
+        if not is_view_only is None:
             properties['isViewOnly'] = is_view_only
-        if max_file_size:
+        if not max_file_size is None:
             properties['MAX_FILE_SIZE'] = max_file_size
         elif max_file_size is None:
             properties['MAX_FILE_SIZE'] = 1024000
@@ -2130,7 +2130,7 @@ class Portal(object):
         if display_settings:
             properties['displaySettings'] = display_settings
         postdata.update(properties)
-        if True:
+        if clear_empty_fields == True:
             postdata['clearEmptyFields'] = True
         files = []
         if thumbnail:
