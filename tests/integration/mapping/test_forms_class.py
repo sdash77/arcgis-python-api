@@ -237,6 +237,29 @@ class Test_Forms(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_add_at_index(self):
+        try:
+            form = self.forms.get(title="Shelters")
+            form_element = FormFieldElement(label="Facility Name", field_name="facname")
+            form.add(form_element)
+            group_element = FormGroupElement(label="Group 1")
+            form.add_group(label="Group 2", index=0)
+            form.add(group_element, index=1)
+            self.assertEqual(form.elements[0].label, "Group 2")
+            self.assertEqual(form.elements[1], group_element)
+            self.assertEqual(form.elements[2], form_element)
+
+
+        except AssertionError as assertErrorException:
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_add_group(self):
         try:
             form = self.forms.get(title="Shelters")
@@ -406,6 +429,48 @@ class Test_Forms(unittest.TestCase):
             self.assertEqual(1, len(new_wm.layers[0]["formInfo"]["formElements"]))
             self.assertEqual(1, len(new_wm.layers[0]["formInfo"]["formElements"][0]["formElements"]))
             self.assertEqual(1, len(new_wm.layers[0]["formInfo"]["expressionInfos"]))
+
+        except AssertionError as assertErrorException:
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_element_attribute_clear(self):
+        try:
+            form = self.forms.get(title="Shelters")
+            form_element = FormFieldElement(label="Facility Name", field_name="facname", description="test", editable=True, hint="the name",
+                                            input_type="text-box")
+            form.add(form_element)
+            form_element.description = None
+            form_element.hint = None
+            self.assertEqual(form_element.description, None)
+            self.assertEqual(form_element.hint, None)
+
+        except AssertionError as assertErrorException:
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_form_expression_clear(self):
+        try:
+            form = self.forms.get(title="Shelters")
+            group_element = FormGroupElement(label="Group 1", description="test", initial_state="collapsed")
+            group = form.add(group_element)
+            expression = FormExpressionInfo(title="New Expression", name="expr0", expression="test")
+            el = FormFieldElement(label="test", field_name="facname", visibility_expression=expression)
+            group.add(el)
+            el.visibility_expression = None
+            self.assertEqual(el.visibility_expression, None)
 
         except AssertionError as assertErrorException:
             raise assertErrorException

@@ -270,7 +270,7 @@ class FormInfo:
 
     @title.setter
     def title(self, value):
-        self._title = str(value)
+        self._title = value
 
     @property
     def description(self):
@@ -279,7 +279,7 @@ class FormInfo:
 
     @description.setter
     def description(self, value):
-        self._description = str(value)
+        self._description = value
 
     @property
     def elements(self):
@@ -371,7 +371,7 @@ class FormInfo:
         return element
 
     def add_field(self, field_name, label, description=None, visibility_expression=None,
-                  domain=None, editable=None, hint=None, input_type=None, required_expression=None, **kwargs):
+                  domain=None, editable=None, hint=None, input_type=None, required_expression=None, index=None, **kwargs):
         """
             Adds a single field :class:`~arcgis.mapping.forms.FormElement` element to the end of the form.
 
@@ -411,15 +411,19 @@ class FormInfo:
             required_expression        Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
                                        The conditional visibility Arcade expression determining the
                                        requiredness of the form element during data collection
+            ----------------------     --------------------------------------------------------------------
+            index                      Optional :class:`int`.
+                                       The index where you'd like the element in the form. If not provided,
+                                       this function will add the new element to the end of the form.
             ======================     ====================================================================
 
         """
 
         element = FormFieldElement(form=self, field_name=field_name, label=label, description=description, visibility_expression=visibility_expression,
                                    domain=domain, editable=editable, hint=hint, input_type=input_type, required_expression=required_expression, **kwargs)
-        return self.add(element)
+        return self.add(element, index=index)
 
-    def add_group(self, label, description=None, visibility_expression=None, initial_state=None, **kwargs):
+    def add_group(self, label, description=None, visibility_expression=None, initial_state=None, index=None, **kwargs):
         """
           Adds a single :class:`~arcgis.mapping.forms.GroupElement` to the form
 
@@ -435,12 +439,16 @@ class FormInfo:
                                      visibility of the form element during data collection
           ----------------------     --------------------------------------------------------------------
           initial_state              Optional :class:`str`. The initial state of the group
+          ----------------------     --------------------------------------------------------------------
+          index                      Optional :class:`int`.
+                                     The index where you'd like the element in the form. If not provided,
+                                     this function will add the new element to the end of the form.
           ======================     ====================================================================
 
           :return: The element that was added - :class:`arcgis.mapping.forms.FormGroupElement`
         """
         group_el = FormGroupElement(label=label, description=description, visibility_expression=visibility_expression, initial_state=initial_state, **kwargs)
-        return self.add(group_el)
+        return self.add(group_el, index=index)
 
     def delete(self, element=None, label=None):
         """
@@ -564,7 +572,7 @@ class FormInfo:
             for form_el in self._form_elements:
                 if form_el.element_type == "group":
                     if element.field_name in [el.field_name for el in form_el._form_elements]:
-                        raise ValueError("Field already exists in a group, cannot add to group")
+                        raise ValueError("Field already exists in a group, cannot add to form")
                 else:
                     if element.field_name == form_el.field_name:
                         raise ValueError("Field already exists in the form, cannot add to the form")
@@ -696,7 +704,7 @@ class FormElement:
 
     @label.setter
     def label(self, value):
-        self._label = str(value)
+        self._label = value
 
     @property
     def element_type(self):
@@ -717,7 +725,7 @@ class FormElement:
 
     @visibility_expression.setter
     def visibility_expression(self, value):
-        if isinstance(value, FormExpressionInfo):
+        if isinstance(value, FormExpressionInfo) or value is None:
             self._visibility_expression = value
         else:
             raise ValueError("Please pass a FormExpressionInfo object")
@@ -870,7 +878,7 @@ class FormFieldElement(FormElement):
 
     @hint.setter
     def hint(self, value):
-        self._hint = str(value)
+        self._hint = value
 
     @property
     def input_type(self):
@@ -890,7 +898,7 @@ class FormFieldElement(FormElement):
 
     @required_expression.setter
     def required_expression(self, value):
-        if isinstance(value, FormExpressionInfo):
+        if isinstance(value, FormExpressionInfo) or value is None:
             self._required_expression = value
         else:
             raise ValueError("Please pass a FormExpressionInfo object")
@@ -1030,7 +1038,7 @@ class FormGroupElement(FormElement):
         return element
 
     def add_field(self, field_name, label, description=None, visibility_expression=None,
-                  domain=None, editable=None, hint=None, input_type=None, required_expression=None, **kwargs):
+                  domain=None, editable=None, hint=None, input_type=None, required_expression=None, index=None, **kwargs):
         """
             Adds a single field :class:`~arcgis.mapping.forms.FormElement` element to the end of the group.
 
@@ -1070,12 +1078,16 @@ class FormGroupElement(FormElement):
             required_expression        Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
                                        The conditional visibility Arcade expression determining the
                                        requiredness of the form element during data collection
+            ----------------------     --------------------------------------------------------------------
+            index                      Optional :class:`int`.
+                                       The index where you'd like the element in the form. If not provided,
+                                       this function will add the new element to the end of the form.
             ======================     ====================================================================
 
         """
         element = FormFieldElement(form=self, field_name=field_name, label=label, description=description, visibility_expression=visibility_expression,
                                    domain=domain, editable=editable, hint=hint, input_type=input_type, required_expression=required_expression, **kwargs)
-        return self.add(element)
+        return self.add(element, index=index)
 
     def delete(self, element=None, label=None):
         """
