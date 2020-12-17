@@ -3492,7 +3492,7 @@ class FeatureLayerCollection(_GISResource):
                 elif  status.lower() == 'failed':
                     return None
                 else:
-                    time.sleep(1)
+                    time.sleep(.5)
         return res
 
     def query(self,
