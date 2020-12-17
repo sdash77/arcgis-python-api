@@ -283,11 +283,15 @@ class Test_Forms(unittest.TestCase):
             form.add_field(label="facilityid", field_name="facilityid")
             form_element = FormFieldElement(label="Facility Name", field_name="facname")
             form.add(form_element)
-            self.assertEqual(len(form.elements), 2)
+            form.add_group(label="Group 1")
+            self.assertEqual(len(form.elements), 3)
 
             form.delete(form_element)
-            form.delete(label="facilityid")
+            el = form.delete(label="facilityid")
+            group_el = form.delete(label="Group 1")
             self.assertEqual(len(form.elements), 0)
+            self.assertIsInstance(el, FormFieldElement)
+            self.assertIsInstance(group_el, FormGroupElement)
 
         except AssertionError as assertErrorException:
             raise assertErrorException

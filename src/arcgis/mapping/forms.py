@@ -475,7 +475,8 @@ class FormInfo:
         if label:
             element = self.get(label=label)
         try:
-            return self._form_elements.remove(element)
+            self._form_elements.remove(element)
+            return element
         except Exception:
             return False
 
@@ -1110,7 +1111,8 @@ class FormGroupElement(FormElement):
         if label:
             element = self.get(label=label)
         try:
-            return self._form_elements.remove(element)
+            self._form_elements.remove(element)
+            return element
         except Exception:
             return False
 
