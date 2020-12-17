@@ -2480,7 +2480,7 @@ class UserManager(object):
     def _createPre64(self, username, password, firstname, lastname, email, description=None, role='org_user',
                      provider='arcgis', idp_username=None, level=2, thumbnail=None):
         """
-        This operation is used to pre-create built-in or enterprise accounts within ArcGIS Enterprise 
+        This operation is used to pre-create built-in or enterprise accounts within ArcGIS Enterprise
         or built-in users in an ArcGIS Online organization account. Only an administrator
         can call this method.
 
@@ -4140,6 +4140,16 @@ class ContentManager(object):
         ===============     ====================================================================
 
 
+        *Optional Input Parameters for the `add` method*
+
+        ========================     ====================================================================
+        **Optional Argument**        **Description**
+        ------------------------     --------------------------------------------------------------------
+        upload_size                  Optional float.  The default value is 1e7 bytes or ~10 MBs.  This the
+                                     minimum default value for the size of the file when uploading by parts.
+        ========================     ====================================================================
+
+
         *Key:Value Dictionary Options for Argument item_properties*
 
 
@@ -4286,11 +4296,16 @@ class ContentManager(object):
                                            thumbnail, metadata,
                                            owner_name, folder)
             # check the status and commit the final result
+            if kwargs.get("upload_size", 0) >= 1e7:
+                upload_size = kwargs.get("upload_size")
+            else:
+                upload_size = 1e7
+
             status = self._add_by_part(
                 file_path=data,
                 itemid=itemid,
                 item_properties=item_properties,
-                size=1e7,
+                size=upload_size,
                 owner=owner_name,
                 folder=folder)
 
