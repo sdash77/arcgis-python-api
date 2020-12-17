@@ -7,14 +7,35 @@ from arcgis._impl.common._mixins import PropertyMap
 
 class KubeOrgSecurity(object):
     """"""
-    def users(self):
-        pass
-    def groups(self):
-        pass
+    _con = None
+    _gis = None
+    _url = None
+    _properties = None
+    #----------------------------------------------------------------------
+    def __init__(self,
+                 url:str,
+                 gis:"GIS"
+                 ) -> "KubeOrgSecurity":
+        self._url = url
+        self._gis = gis
+        self._con = gis._con
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s at %s>' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    @property
+    def properties(self) -> dict:
+        """
+        returns the properties for the Organization
 
-class KubeOrgFederation():
-    """"""
-    ...
+        :return: dict
+        """
+        if self._properties is None:
+            self._properties = self._con.get(self._url, {'f' : 'json'})
+        return self._properties
 ###########################################################################
 class KubeOrganization():
     """A single organization within your deployment, allowing you to manage
@@ -101,15 +122,16 @@ class KubeOrganization():
         return self._license
     #----------------------------------------------------------------------
     @property
-    def federation(self):
+    def federation(self) -> KubeOrgFederations:
         """
-        Returns
+        Returns manager to work with server federation.
+
+        :returns: KubeOrgFederations
         """
         if self._federation is None:
             url = self._url + "/federation"
-
-            self._federation = KubeOrgFederation(url, self._gis)
-        pass
+            self._federation = KubeOrgFederations(url, self._gis)
+        return self._federation
 ###########################################################################
 class KubeOrgFederations():
     """

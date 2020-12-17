@@ -160,7 +160,11 @@ class Connection(object):
             self._auth = "BUILTIN"
         elif baseurl.lower() == 'pro':
             self._auth = "PRO"
-            self._baseurl = arcpy.GetActivePortalURL()
+            portal_url = arcpy.GetActivePortalURL()
+            if portal_url.lower().find("/sharing/rest") == -1:
+                self._baseurl = arcpy.GetActivePortalURL() + "/sharing/rest"
+            else:
+                self._baseurl = arcpy.GetActivePortalURL()
         elif self._cert_file or\
              (self._cert_file and self._key_file):
             self._auth = "PKI"
