@@ -2025,6 +2025,7 @@ class FeatureLayer(Layer):
         res = self._con.post(path=url,
                              postdata=params)
         if 'statusUrl' in res:
+            time.sleep(1)
             surl = res['statusUrl']
             sres = self._con.get(path=surl, params={'f' : 'json'})
             while sres['status'].lower() != "completed":
