@@ -2387,7 +2387,6 @@ class _WebMapDefinition(_TextItemDefinition):
                             break
 
                 for vector_tile in vector_tile_layers:
-                    print(vector_tile)
                     if 'itemId' in vector_tile and vector_tile['itemId'] is not None and vector_tile['itemId'] in self._clone_mapping['Item IDs']:
 
                         new_id = self._clone_mapping['Item IDs'][vector_tile['itemId']]
