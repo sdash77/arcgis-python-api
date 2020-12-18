@@ -4094,7 +4094,8 @@ class ContentManager(object):
         return False
     #----------------------------------------------------------------------
     def add(self, item_properties, data=None, thumbnail=None,
-            metadata=None, owner=None, folder=None, item_id=None):
+            metadata=None, owner=None, folder=None, item_id=None,
+            **kwargs):
         """ Adds content to the GIS by creating an item.
 
         .. note::
