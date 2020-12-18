@@ -20,6 +20,8 @@ from arcgis.geometry import SpatialReference, Polygon
 from arcgis.gis import Layer, _GISResource, Item
 from arcgis.mapping._basemap_definitions import basemap_dict
 from arcgis.mapping._scenelyrs import SceneLayer
+from arcgis.mapping.forms import FormCollection
+from arcgis._impl.common._utils import _lazy_property
 try:
     from traitlets import HasTraits, observe
     from arcgis.widgets._mapview._traitlets_extension import ObservableDict
@@ -1001,6 +1003,20 @@ class WebMap(HasTraits, collections.OrderedDict):
         else:
             return False
 
+    @_lazy_property
+    def forms(self):
+        """
+        The smart forms corresponding to each layer and table in the webmap
+        :return: an instance of :class:`arcgis.mapping.forms.FormCollection`
+        .. code-block:: python
+            wm = WebMap()
+            wm.add_layer(table)
+            forms = wm.forms
+            form = forms.get(title="Manhole Inspection")
+            form.title = "Manhole Inspection Form"
+            form.update()
+        """
+        return FormCollection(parent=self)
 
     @property
     def tables(self):
