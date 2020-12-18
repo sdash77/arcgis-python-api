@@ -169,7 +169,7 @@ class CycleGAN(ArcGISModel):
                                 from type 'B' or 'B' if we want to generate 
                                 image of type 'B' from type 'A' where A and
                                 B are the domain specifications that were 
-                                used while trianing.
+                                used while training.
         =====================   ===========================================
 
         """

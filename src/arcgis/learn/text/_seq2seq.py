@@ -209,13 +209,14 @@ class SequenceToSequence(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None, **kwargs):
         """
-        Loads the transformer model from an Esri Model Definition (EMD) file.
+        Creates an SequenceToSequence model object from a Deep Learning
+        Package(DLPK) or Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Optional fastai Databunch. Returned data
                                 object from `prepare_textdata` function or None for

@@ -45,7 +45,7 @@ def _overlay_difference(df1, df2):
         new = reduce(lambda x, y: x.difference(y).buffer(0),
                      [geom] + list(df2[df2.spatial.name].iloc[neighbours]))
         new_g.append(new)
-    differences = pd.Series(GeoArray(values=new_g, copy=True), index=df1.index)
+    differences = pd.Series(GeoArray(values=new_g), index=df1.index)
     q = differences.isnull()
     geom_diff = differences[~q].copy()
     dfdiff = df1[~q].copy()

@@ -1702,7 +1702,7 @@ class ItemInformationManager(BaseServer):
 
         Resources
 
-           + clientName - Machine where ArcGIS for Desktop was used to
+           + clientName - Machine where ArcGIS Pro or ArcGIS Desktop was used to
                           publish the service.
            + onPremisePath - Path, relative to the 'clientName'
                              machine, where the source resource (.mxd,

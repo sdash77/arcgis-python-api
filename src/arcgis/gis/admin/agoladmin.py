@@ -188,7 +188,7 @@ class AGOLAdminManager(object):
     @property
     def usage_reports(self):
         """
-        provides access to the usage reports of the AGOL organization
+        provides access to the usage reports of the ArcGIS Online organization
         """
         if self._ur is None:
             from ._usage import AGOLUsageReports

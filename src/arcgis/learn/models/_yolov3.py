@@ -174,7 +174,7 @@ class YOLOv3(ArcGISModel):
         rows                    Optional int. Number of rows of results
                                 to be displayed.
         ---------------------   -------------------------------------------
-        thresh                  Optional float. The probabilty above which
+        thresh                  Optional float. The probability above which
                                 a detection will be considered valid. 
                                 Defaults to 0.1. To be modified according 
                                 to the dataset and training.
@@ -217,7 +217,7 @@ class YOLOv3(ArcGISModel):
         image_path              Required. Path to the image file to make the
                                 predictions on.
         ---------------------   -------------------------------------------
-        thresh                  Optional float. The probabilty above which
+        thresh                  Optional float. The probability above which
                                 a detection will be considered valid. 
                                 Defaults to 0.1. To be modified according 
                                 to the dataset and training.
@@ -482,7 +482,7 @@ class YOLOv3(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        detect_thresh           Optional float. The probabilty above which
+        detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
                                 average precision. Defaults to 0.1. To be 
                                 modified according to the dataset and training.

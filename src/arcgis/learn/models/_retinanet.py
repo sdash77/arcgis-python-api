@@ -254,7 +254,7 @@ class RetinaNet(ArcGISModel):
         rows                    Optional int. Number of rows of results
                                 to be displayed.
         ---------------------   -------------------------------------------
-        thresh                  Optional float. The probabilty above which
+        thresh                  Optional float. The probability above which
                                 a detection will be considered valid.
         ---------------------   -------------------------------------------
         nms_overlap             Optional float. The intersection over union
@@ -402,7 +402,7 @@ class RetinaNet(ArcGISModel):
         image_path              Required. Path to the image file to make the
                                 predictions on.
         ---------------------   -------------------------------------------
-        thresh                  Optional float. The probabilty above which
+        thresh                  Optional float. The probability above which
                                 a detection will be considered valid.
         ---------------------   -------------------------------------------
         nms_overlap             Optional float. The intersection over union
@@ -549,7 +549,7 @@ class RetinaNet(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        detect_thresh           Optional float. The probabilty above which
+        detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
                                 average precision.
         ---------------------   -------------------------------------------

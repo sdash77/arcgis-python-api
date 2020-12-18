@@ -2047,7 +2047,7 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         muldidef              optional array. Multidimensional definition used for querying 
                               dimensional slices of the input image service.
-                              See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
+                              See https://developers.arcgis.com/documentation/common-data-types/multidimensional-definition.htm
         -----------------     --------------------------------------------------------------------
 
         .. code-block:: python
@@ -2683,7 +2683,7 @@ class ImageryLayer(Layer):
         rendering_rule      optional dictionary. Specifies the rendering rule for how the
                             requested image should be rendered.
                             See the raster function objects for the JSON syntax and examples.
-                            http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Raster_function_objects/02r3000000rv000000/
+                            https://developers.arcgis.com/documentation/common-data-types/raster-function-objects.htm
         ---------------     --------------------------------------------------------------------
         variable            Optional String. This parameter can be used to request a 
                             colormap for each variable for an image service that has 
@@ -2755,12 +2755,12 @@ class ImageryLayer(Layer):
                             (as advertised in the root resource: defaultMosaicMethod,
                             mosaicOperator, sortField, sortValue).
                             See Mosaic rule objects help for more information:
-                            http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000s4000000
+                            https://developers.arcgis.com/documentation/common-data-types/mosaic-rules.htm
         ---------------     --------------------------------------------------------------------
         rendering_rule      optional dictionary. Specifies the rendering rule for how the
                             requested image should be rendered.
                             See the raster function objects for the JSON syntax and examples.
-                            http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Raster_function_objects/02r3000000rv000000/
+                            https://developers.arcgis.com/documentation/common-data-types/raster-function-objects.htm
         ---------------     --------------------------------------------------------------------
         pixel_size          optional list or dictionary. The pixel level being used (or the
                             resolution being looked at). If pixel size is not specified, then
@@ -2827,7 +2827,7 @@ class ImageryLayer(Layer):
                               (as advertised in the root resource: defaultMosaicMethod,
                               mosaicOperator, sortField, sortValue).
                               See Mosaic rule objects help for more information:
-                              http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000s4000000
+                              https://developers.arcgis.com/documentation/common-data-types/mosaic-rules.htm
         -----------------     --------------------------------------------------------------------
         rendering_rule        Specifies the rendering rule for how the requested image should be
                               processed. The response is updated Layer info that reflects a
@@ -3144,7 +3144,7 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         muldidef              optional array. multidemensional definition used for filtering by
                               variable/dimensions.
-                              See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
+                              See https://developers.arcgis.com/documentation/common-data-types/multidimensional-definition.htm
         -----------------     --------------------------------------------------------------------
         op                    optional string, first,last,min,max,mean,blend,sum mosaic operation
                               to resolve overlap pixel values: from first or last raster, use the
@@ -3154,7 +3154,7 @@ class ImageryLayer(Layer):
         =================     ====================================================================
 
         :return: a mosaic rule defined in the format at
-            http://resources.arcgis.com/en/help/arcgis-rest-api/#/Mosaic_rule_objects/02r3000000s4000000/
+            https://developers.arcgis.com/documentation/common-data-types/mosaic-rules.htm
         Also see http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/understanding-the-mosaicking-rules-for-a-mosaic-dataset.htm#ESRI_SECTION1_ABDC9F3F6F724A4F8079051565DC59E
         """
         if self.tiles_only:
@@ -3587,7 +3587,7 @@ class ImageryLayer(Layer):
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        output_name                              optional string. If not provided, an Imagery Layer item is created
+        output_name                              Optional string. If not provided, an Imagery Layer item is created
                                                  by the method and used as the output.
                                                  You can pass in the name of the output Imagery Layer that should be
                                                  created by this method to be used as the output for the tool.
@@ -3595,7 +3595,7 @@ class ImageryLayer(Layer):
                                                  Image Layer Item from your GIS to use that instead.
                                                  A RuntimeError is raised if a layer by that name already exists
         ------------------------------------     --------------------------------------------------------------------
-        for_viz                                  optional boolean. If True, a new Item is created that uses the
+        for_viz                                  Optional boolean. If True, a new Item is created that uses the
                                                  applied raster functions for visualization at display resolution
                                                  using on-the-fly image processing.
                                                  If for_viz is False, distributed raster analysis is used for
@@ -3610,16 +3610,16 @@ class ImageryLayer(Layer):
                                                  multidimensional raster. Valid only if process_as_multidimensional
                                                  is set to True
         ------------------------------------     --------------------------------------------------------------------
-        gis                                      optional arcgis.gis.GIS object. The GIS to be used for saving the
+        gis                                      Optional arcgis.gis.GIS object. The GIS to be used for saving the
                                                  output. Keyword only parameter.
         ------------------------------------     --------------------------------------------------------------------
         future                                   Optional boolean. If True, the result will be a GPJob object and
                                                  results will be returned asynchronously. Keyword only parameter.
         ------------------------------------     --------------------------------------------------------------------
-        tiles_only                               On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                                 To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+        tiles_only                               In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                                 To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
 
-                                                 Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                                 Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
         ====================================     ====================================================================
 
         :return: output_raster - Image layer item
@@ -6112,7 +6112,7 @@ class Raster():
         -----------------     --------------------------------------------------------------------
         muldidef              optional array. multidemensional definition used for filtering by
                               variable/dimensions.
-                              See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
+                              See https://developers.arcgis.com/documentation/common-data-types/multidimensional-definition.htm
         -----------------     --------------------------------------------------------------------
         op                    optional string, first,last,min,max,mean,blend,sum mosaic operation
                               to resolve overlap pixel values: from first or last raster, use the
@@ -6121,7 +6121,7 @@ class Raster():
         item_rendering_rule   optional item rendering rule, applied on items before mosaicking.
         =================     ====================================================================
         :return: a mosaic rule defined in the format at
-            http://resources.arcgis.com/en/help/arcgis-rest-api/#/Mosaic_rule_objects/02r3000000s4000000/
+            https://developers.arcgis.com/documentation/common-data-types/mosaic-rules.htm
         Also see http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/understanding-the-mosaicking-rules-for-a-mosaic-dataset.htm#ESRI_SECTION1_ABDC9F3F6F724A4F8079051565DC59E
         """
         if self._datastore_raster:

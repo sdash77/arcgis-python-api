@@ -438,14 +438,14 @@ class MaskRCNN(ArcGISModel):
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         mode                    Required arguments within ['bbox', 'mask', 'bbox_mask'].
-                                    * ``bbox`` - For visualizing only boundig boxes.
+                                    * ``bbox`` - For visualizing only bounding boxes.
                                     * ``mask`` - For visualizing only mask
                                     * ``bbox_mask`` - For visualizing both mask and bounding boxes.
         ---------------------   -------------------------------------------
-        mask_threshold          Optional float. The probabilty above which
+        mask_threshold          Optional float. The probability above which
                                 a pixel will be considered mask.
         ---------------------   -------------------------------------------
-        box_threshold           Optional float. The pobabilty above which
+        box_threshold           Optional float. The probability above which
                                 a detection will be considered valid.
         ---------------------   -------------------------------------------
         nrows                   Optional int. Number of rows of results
@@ -588,7 +588,7 @@ class MaskRCNN(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        detect_thresh           Optional float. The probabilty above which
+        detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
                                 average precision.
         ---------------------   -------------------------------------------                        

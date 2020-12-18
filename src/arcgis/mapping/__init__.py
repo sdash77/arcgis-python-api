@@ -7,6 +7,7 @@ MapImageLayer, SceneLayer and VectorTileLayer.
 
 from ._types import WebMap, WebScene, MapImageLayer, MapImageLayerManager, VectorTileLayer, OfflineMapAreaManager, PackagingJob
 from ._types import SceneLayer
+from .forms import FormFieldElement, FormExpressionInfo, FormGroupElement, FormInfo, FormElement, FormCollection
 from arcgis.mapping._scenelyrs import Object3DLayer, IntegratedMeshLayer, Point3DLayer
 from arcgis.mapping._scenelyrs import PointCloudLayer, BuildingLayer
 from arcgis.mapping._msl import (MapServiceLayer,

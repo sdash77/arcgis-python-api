@@ -265,7 +265,7 @@ def create_tile_service(self,
                       Example: 80000.0
     ----------------  ---------------------------------------------------------------
     cache_info        Optional dictionary. If not none, administrator provides the
-                      tile cache info for the service. The default is the AGOL scheme.
+                      tile cache info for the service. The default is the ArcGIS Online scheme.
     ----------------  ---------------------------------------------------------------
     build_cache       Optional boolean. Default is False; if True, the cache will be
                       built at publishing time.  This will increase the time it takes
@@ -390,7 +390,7 @@ def create_tile_service(self,
         query             Required string. A query string.  See notes above.
         ----------------  --------------------------------------------------------------------------
         item_type         Optional string. Set type of item to search.
-                          http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+                          https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm
         ----------------  --------------------------------------------------------------------------
         sort_field        Optional string. Valid values can be title, uploaded, type, owner, modified,
                           avgRating, numRatings, numComments, and numViews.

@@ -135,20 +135,20 @@ class TimeSeriesModel(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a FullyConnectedNetwork Object from an Esri Model Definition (EMD) file.
+        Creates a TimeSeriesModel Object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from `prepare_tabulardata` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `FullyConnectedNetwork` Object
+        :returns: `TimeSeriesModel` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)

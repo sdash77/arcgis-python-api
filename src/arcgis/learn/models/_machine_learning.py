@@ -61,7 +61,7 @@ def raise_data_exception():
 
 class MLModel(object):
     """
-    Creates a machine learning model based on it's implementation from scikit-learn.
+    Creates a machine learning model based on its implementation from scikit-learn.
     For supervised learning:
     Refer https://scikit-learn.org/stable/supervised_learning.html#supervised-learning
     For unsupervised learning:

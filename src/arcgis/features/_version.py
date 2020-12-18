@@ -137,11 +137,11 @@ class VersionManager(object):
     def locks(self):
         """
         For the specified feature service, return the versions which are locked.
-        
+
         :return: List of locked versions
-        
+
         """
-        try:    
+        try:
             return [v for v in self.all if v.properties.isLocked]
         except:
             return []
@@ -296,12 +296,12 @@ class Version(object):
         if self._validation is None:
             from arcgis.mapping import MapImageLayer
             ms = MapImageLayer(url=os.path.dirname(self._flc.url) + "/MapServer", gis=self._gis)
-            if 'validationserver' in ms.properties.supportedExtensions.lower():    
+            if 'validationserver' in ms.properties.supportedExtensions.lower():
                 from arcgis.features._validation import ValidationManager
                 url = os.path.dirname(self._flc.url) + "/ValidationServer"
                 self._validation = ValidationManager(url=url, version=self, gis=self._gis)
         return self._validation
-        
+
     #----------------------------------------------------------------------
     @property
     def parcel_fabric(self):
@@ -364,11 +364,15 @@ class Version(object):
 
 
         """
-        if self.properties.isBeingEdited and \
+        if "isBeingEdited" in self.properties and \
+           self.properties.isBeingEdited and \
+           "isBeingRed" in self.properties and \
            self.properties.isBeingRead:
             self._mode = 'edit'
             return 'edit'
-        elif self.properties.isBeingEdited == False and \
+        elif "isBeingEdited" in self.properties and \
+             self.properties.isBeingEdited == False and \
+             "isBeingRed" in self.properties and \
              self.properties.isBeingRead:
             self._mode = 'read'
             return 'read'
@@ -397,23 +401,27 @@ class Version(object):
         value = str(value).lower()
         if value != str(self.mode).lower():
             if value == 'edit':
-                if self.properties.isBeingRead == False:
+                if 'isBeingRead' in self.properties and \
+                   self.properties.isBeingRead == False:
                     self._mode = None
                     self.start_reading()
                     self._properties = None
                 if self.start_editing():
                     self._mode = 'edit'
             elif value == 'read':
-                if self.properties.isBeingEdited:
+                if 'isBeingEdited' in self.properties and \
+                   self.properties.isBeingEdited:
                     self.stop_editing(save=self.save_edits)
                     self._properties = None
                 if self.start_reading():
                     self._mode = value
             elif value in [None, 'none']:
-                if self.properties.isBeingEdited:
+                if 'isBeingEdited' in self.properties and \
+                   self.properties.isBeingEdited:
                     self.stop_editing(save=self.save_edits)
                     self._properties = None
-                if self.properties.isBeingRead:
+                if 'isBeingRead' in self.properties and \
+                   self.properties.isBeingRead:
                     self._properties = None
                     self.stop_reading()
                     self._properties = None
@@ -469,8 +477,10 @@ class Version(object):
 
         :returns: boolean
         """
-        if self.properties.isBeingEdited == False:
-            if self.properties.isBeingRead == False:
+        if 'isBeingEdited' in self.properties and \
+           self.properties.isBeingEdited == False:
+            if 'isBeingRead' in self.properties and \
+               self.properties.isBeingRead == False:
                 self.start_reading()
                 self._properties = None
             params = {
@@ -484,7 +494,8 @@ class Version(object):
                 self._properties = None
             self._properties = None
             return res['success']
-        elif self.properties.isBeingEdited:
+        elif 'isBeingEdited' in self.properties and \
+             self.properties.isBeingEdited:
             return True
         return False
     #----------------------------------------------------------------------
@@ -504,7 +515,8 @@ class Version(object):
 
         """
         self._properties = None
-        if self.properties.isBeingEdited:
+        if 'isBeingEdited' in self.properties and \
+           self.properties.isBeingEdited:
             self._mode = None
             if save is None:
                 save = self.save_edits
@@ -519,7 +531,8 @@ class Version(object):
                 self._mode = 'read'
             self._properties = None
             return res['success']
-        elif self.properties.isBeingEdited == False:
+        elif 'isBeingEdited' in self.properties and \
+             self.properties.isBeingEdited == False:
             return True
         return False
     #----------------------------------------------------------------------
@@ -533,9 +546,12 @@ class Version(object):
 
         """
         self._properties = None
-        if self.properties.isBeingRead:
+        if 'isBeingRead' in self.properties and \
+           self.properties.isBeingRead:
             return True
-        elif self.properties.isBeingRead == False:
+        elif ('isBeingRead' in self.properties and \
+             self.properties.isBeingRead == False) or \
+             'isBeingRead' not in self.properties:
             params = {
             'f' : 'json',
             'sessionID' : self._guid
@@ -644,47 +660,47 @@ class Version(object):
     #----------------------------------------------------------------------
     def restore(self, rows):
         """
-        The `restore` method allows users to restore rows from a common 
-        ancestor version.  This method is intended to be used when a 
+        The `restore` method allows users to restore rows from a common
+        ancestor version.  This method is intended to be used when a
         `DeleteUpdate` conflicts are identified during the last reconcile.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         rows                   Required List.  An array of the rows to be restored
-        
-                               **Syntax**
-                               
-                               [ 
 
-                                    { 
-                                 
-                                       "layerId": <layerId>,                                 
-                                       "objectIds":[<objectId>] 
-                                 
-                                    } 
+                               **Syntax**
+
+                               [
+
+                                    {
+
+                                       "layerId": <layerId>,
+                                       "objectIds":[<objectId>]
+
+                                    }
                                ]
-                               
-                               
-                               
+
+
+
         ==================     ====================================================================
-        
+
         :returns: Boolean, String where the Boolean is the Success and the String is the Moment
-        
+
         """
         url = "%s/restoreRows" % self._url
         params = {
             'f' : "json",
             'sessionID' : self._guid,
             'rows' : rows
-        }        
-        
+        }
+
         res = self._con.post(url, params)
-        
+
         if 'success' in res:
             return res['success'], res.get("moment", "")
-        return res        
-        
+        return res
+
     #----------------------------------------------------------------------
     def alter(self,
               owner=None,
@@ -750,7 +766,7 @@ class Version(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        result_type         Required String.  Determines the type of results to return. 
+        result_type         Required String.  Determines the type of results to return.
                             The default result type is `objectIds`.
 
                             Values : `objectIds` or `features`
