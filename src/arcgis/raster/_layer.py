@@ -3831,7 +3831,7 @@ class ImageryLayer(Layer):
                 if slice_string.startswith("$"):
                     if "url" in kwargs.keys():
                         return _raster_slicestring(kwargs["url"])
-                elif '/fileShares/' in slice_string or '/rasterStores/' in slice_string or '/cloudStores/' in slice_string or '/vsi' in url:
+                elif '/fileShares/' in slice_string or '/rasterStores/' in slice_string or '/cloudStores/' in slice_string or '/vsi' in slice_string:
                     slice_string=slice_string.rsplit('/',1)[1]
                 subString = slice_string
             return subString
@@ -4453,6 +4453,9 @@ class ImageryLayer(Layer):
             return data
 
     def _repr_jpeg_(self):
+        if self._uses_gbl_function:
+            return self._repr_svg_()
+
         if self.tiles_only:
             fig = self.render_tilesonly_layer()
             try:
