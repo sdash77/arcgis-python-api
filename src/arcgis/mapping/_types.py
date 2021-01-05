@@ -997,11 +997,20 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     def _is_exportable(self, layer):
         # check SRs are equivalent and exportTilesAllowed is set to true or AGOl-hosted esri basemaps
-        if (layer.properties['spatialReference']['wkid'] == self._webmapdict['spatialReference']['wkid']) \
+        if (self._get_layer_wkid(layer) == self._webmapdict['spatialReference']['wkid']) \
                 and (layer.properties['exportTilesAllowed'] or "services.arcgisonline.com" in layer.url or "server.arcgisonline.com" in layer.url):
             return True
         else:
             return False
+
+    def _get_layer_wkid(self, layer):
+        # spatialReference can either be set at the root level or within initialExtent
+        if "spatialReference" in layer.properties:
+            return layer.properties['spatialReference']['wkid']
+        elif "initialExtent" in layer.properties:
+            return layer.properties['initialExtent']['spatialReference']['wkid']
+        else:
+            raise ValueError("No wkid found")
 
     @_lazy_property
     def forms(self):
