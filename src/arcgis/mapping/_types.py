@@ -20,6 +20,8 @@ from arcgis.geometry import SpatialReference, Polygon
 from arcgis.gis import Layer, _GISResource, Item
 from arcgis.mapping._basemap_definitions import basemap_dict
 from arcgis.mapping._scenelyrs import SceneLayer
+from arcgis.mapping.forms import FormCollection
+from arcgis._impl.common._utils import _lazy_property
 try:
     from traitlets import HasTraits, observe
     from arcgis.widgets._mapview._traitlets_extension import ObservableDict
@@ -1009,6 +1011,21 @@ class WebMap(HasTraits, collections.OrderedDict):
             return layer.properties['initialExtent']['spatialReference']['wkid']
         else:
             raise ValueError("No wkid found")
+
+    @_lazy_property
+    def forms(self):
+        """
+        The smart forms corresponding to each layer and table in the webmap
+        :return: an instance of :class:`arcgis.mapping.forms.FormCollection`
+        .. code-block:: python
+            wm = WebMap()
+            wm.add_layer(table)
+            forms = wm.forms
+            form = forms.get(title="Manhole Inspection")
+            form.title = "Manhole Inspection Form"
+            form.update()
+        """
+        return FormCollection(parent=self)
 
     @property
     def tables(self):
@@ -4300,8 +4317,8 @@ class MapImageLayer(Layer):
         is Map Service Job. This job response contains a reference to the
         Map Service Result resource, which returns a URL to the resulting
         tile package (.tpk) or a cache raster dataset.
-        exportTiles can be enabled in a service by using ArcGIS for Desktop
-        or the ArcGIS Server Administrator Directory. In ArcGIS for Desktop
+        exportTiles can be enabled in a service by using ArcGIS Desktop
+        or the ArcGIS Server Administrator Directory. In ArcGIS Desktop
         make an admin or publisher connection to the server, go to service
         properties, and enable Allow Clients to Export Cache Tiles in the
         advanced caching page of the Service Editor. You can also specify
@@ -4310,7 +4327,7 @@ class MapImageLayer(Layer):
         using the Administrator Directory, edit the service, and set the
         properties exportTilesAllowed=true and maxExportTilesCount=100000.
 
-        At 10.2.2 and later versions, exportTiles is supported as an
+        In ArcGIS Server 10.2.2 and later versions, exportTiles is supported as an
         operation of the Map Server. The use of the
         http://Map Service/exportTiles/submitJob operation is deprecated.
         You can provide arguments to the exportTiles operation as defined

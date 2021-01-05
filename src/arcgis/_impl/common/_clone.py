@@ -2361,10 +2361,14 @@ class _WebMapDefinition(_TextItemDefinition):
                 layers = []
                 feature_collections = []
                 map_service_layers = []
+                vector_tile_layers = []
                 if 'operationalLayers' in webmap_json:
                     layers += [layer for layer in webmap_json['operationalLayers'] if 'layerType' in layer and layer['layerType'] == "ArcGISFeatureLayer" and 'url' in layer and layer['url'] is not None]
                     feature_collections += [layer for layer in webmap_json['operationalLayers'] if 'layerType' in layer and layer['layerType'] == "ArcGISFeatureLayer" and 'type' in layer and layer['type'] == "Feature Collection"]
                     map_service_layers += [layer for layer in webmap_json['operationalLayers'] if 'layerType' in layer and layer['layerType'] in ["ArcGISMapServiceLayer", "ArcGISTiledMapServiceLayer"] and 'url' in layer and layer['url'] is not None]
+                    vector_tile_layers.extend(
+                        [layer for layer in webmap_json['operationalLayers'] if 'layerType' in layer and layer['layerType'] in ["VectorTileLayer"] and 'styleUrl' in layer and layer['styleUrl'] is not None]
+                    )
                 if 'tables' in webmap_json:
                     layers += [table for table in webmap_json['tables'] if 'url' in table]
 
@@ -2381,6 +2385,23 @@ class _WebMapDefinition(_TextItemDefinition):
                             if layer_id in new_service['relationship_field_mapping']:
                                 _update_layer_related_fields(layer, new_service['relationship_field_mapping'][layer_id])
                             break
+
+                for vector_tile in vector_tile_layers:
+                    if 'itemId' in vector_tile and vector_tile['itemId'] is not None and vector_tile['itemId'] in self._clone_mapping['Item IDs']:
+
+                        new_id = self._clone_mapping['Item IDs'][vector_tile['itemId']]
+                        portal_url = "http://www.arcgis.com/"
+                        if self.target.properties.isPortal:
+                            portal_url = _get_org_url(self.target)
+                        if self.target.properties.isPortal:
+                            portal_url = _get_org_url(self.target)
+                            root_json = "{0}sharing/rest/content/items/{1}/resources/styles/root.json".format(portal_url, new_id)
+                        else:
+                            new_item = self.target.content.get(new_id)
+                            root_json = f"https://tiles.arcgis.com/tiles/{self.target.properties.id}/arcgis/rest/services/{new_item.layers[0].properties.name}/VectorTileServer/resources/styles/root.json"
+                        vector_tile['styleUrl'] = root_json
+                        vector_tile['itemId'] = new_id
+
 
                 for feature_collection in feature_collections:
                     if 'itemId' in feature_collection and feature_collection['itemId'] is not None and feature_collection['itemId'] in self._clone_mapping['Item IDs']:

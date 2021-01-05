@@ -1869,7 +1869,7 @@ class FeatureLayer(Layer):
     def get_html_popup(self, oid):
         """
         The htmlPopup resource provides details about the HTML pop-up
-        authored by the user using ArcGIS for Desktop.
+        authored by the user using ArcGIS Pro or ArcGIS Desktop.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2025,6 +2025,7 @@ class FeatureLayer(Layer):
         res = self._con.post(path=url,
                              postdata=params)
         if 'statusUrl' in res:
+            time.sleep(1)
             surl = res['statusUrl']
             sres = self._con.get(path=surl, params={'f' : 'json'})
             while sres['status'].lower() != "completed":
@@ -3491,7 +3492,7 @@ class FeatureLayerCollection(_GISResource):
                 elif  status.lower() == 'failed':
                     return None
                 else:
-                    time.sleep(1)
+                    time.sleep(.5)
         return res
 
     def query(self,

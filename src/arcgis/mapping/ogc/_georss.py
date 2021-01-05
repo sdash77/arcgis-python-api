@@ -19,17 +19,17 @@ class GeoRSSLayer(BaseOGC):
     ===============     ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
-    url                 Required string. The web address of the GeoRSS sevice.
+    url                 Required string. The URL of the GeoRSS sevice.
     ---------------     --------------------------------------------------------------------
     copyright           Optional String. Describes limitations and usage of the data.
     ---------------     --------------------------------------------------------------------
-    line_symbol         Optionl Dict. The symbol for the polyline data in the GeoRSS.
+    line_symbol         Optional Dict. The symbol for the polyline data in the GeoRSS.
     ---------------     --------------------------------------------------------------------
     opacity             Optional Float.  This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
     ---------------     --------------------------------------------------------------------
-    point_symbol        Optionl Dict. The symbol for the point data in the GeoRSS.
+    point_symbol        Optional Dict. The symbol for the point data in the GeoRSS.
     ---------------     --------------------------------------------------------------------
-    polygon_symbol      Optionl Dict. The symbol for the polygon data in the GeoRSS.
+    polygon_symbol      Optional Dict. The symbol for the polygon data in the GeoRSS.
     ---------------     --------------------------------------------------------------------
     title               Optional String. The title of the layer used to identify it in places such as the Legend and LayerList widgets.
     ---------------     --------------------------------------------------------------------

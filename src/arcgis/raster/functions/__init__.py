@@ -1095,7 +1095,7 @@ def colormap(raster, colormap_name=None, colormap=None, colorramp=None, astype=N
     :param colorramp: Can be a string specifiying color ramp name like <Black To White|Yellow To Red|Slope|more..>
                       or a color ramp object. 
                       For more information about colorramp object, see color ramp object at
-                      http://resources.arcgis.com/en/help/arcgis-rest-api/#/Color_ramp_objects/02r3000001m0000000/)
+                      https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
     :param astype: output pixel type
     :return: the colorized raster
     """
@@ -1521,7 +1521,7 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
     The arguments for the local function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param operation: int see reference at http://resources.arcgis.com/en/help/arcobjects-net/componenthelp/index.html#//004000000149000000
+    :param operation: int see reference at https://desktop.arcgis.com/en/arcobjects/latest/net/webframe.htm#esriGeoAnalysisFunctionEnum.htm
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param astype: output pixel type
@@ -2999,7 +2999,7 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
     :param colorramp: string, specifying color ramp name like <Black To White|Yellow To Red|Slope|more..>
                       or a color ramp object. 
                       For more information about colorramp object, see color ramp object at
-                      http://resources.arcgis.com/en/help/arcgis-rest-api/#/Color_ramp_objects/02r3000001m0000000/)
+                      https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
     :param hillshade_type: new at 10.8.1. int, 0 = traditional, 1 = multi - directional; default is 0
     :return: the output raster
 

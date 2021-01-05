@@ -341,10 +341,9 @@ class UX(object):
         return self._gis.update_properties({'description': description})
     #----------------------------------------------------------------------
     @property
-    def featured_content(self):
+    def featured_content(self) -> dict:
         """
-        Returns the featured content group information.  The information
-        can then be set using the 'set_featured_content()'.
+        Gets/Sets the featured content group information.
 
           :return: dictionary
 
@@ -378,15 +377,22 @@ class UX(object):
         if content is None:
             content = {'homePageFeaturedContent': "",
                         'homePageFeaturedContentCount': 12,
-                       'clearEmptyFields':True}
+                        'featuredItemsGroupQuery' : "",
+                        'featuredGroupsId' : "",
+                        'clearEmptyFields':True}
         elif 'group' in content and \
            isinstance(content['group'], Group):
-            content['homePageFeaturedContent'] = content['group'].groupid
+            gid = content['group'].groupid
+            content['homePageFeaturedContent'] = gid
+            content['featuredGroupsId'] = f"id:{gid}"
+            content['featuredItemsGroupQuery'] = f"id:{gid}"
         elif isinstance(content, dict) and \
              'group' in content and \
              isinstance(content['group'], str):
             c = {}
             c['homePageFeaturedContent'] = content['group']
+            c['featuredItemsGroupQuery'] = f"id:{content['group']}"
+            c['featuredGroupsId'] = f"id:{content['group']}"
             if 'count' in content:
                 c['homePageFeaturedContentCount'] = content['count']
             else:
@@ -396,7 +402,13 @@ class UX(object):
             c = {}
             c['homePageFeaturedContent'] = content
             c['homePageFeaturedContentCount'] = 12
+            c['featuredItemsGroupQuery'] = f"id:{content}"
+            c['featuredGroupsId'] = f"id:{content}"
             content = c
+        if not 'featuredItemsGroupQuery' in self._gis.properties:
+            content.pop('featuredItemsGroupQuery', None)
+        if not 'featuredGroupsId' in self._gis.properties:
+            content.pop('featuredGroupsId', None)
         self._gis.update_properties(content)
     #----------------------------------------------------------------------
     def set_background(self, background_file=None, is_built_in=True):
