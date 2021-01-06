@@ -928,7 +928,7 @@ def prepare_data(path,
         with open(stats_file) as f:
             stats = json.load(f)
             dataset_type = stats['MetaDataMode']
-    
+
     if dataset_type not in ["Imagenet", "superres", "Export_Tiles"] and has_esri_files:
         with open(stats_file) as f:
             stats = json.load(f)
@@ -1605,6 +1605,8 @@ def prepare_data(path,
         with open(stats_file) as f:
             stats = json.load(f)
             data._dataset_type = stats['MetaDataMode']
+    else:
+        data._dataset_type = dataset_type
     
     if dataset_type == "superres" or dataset_type == "Export_Tiles":
         data._dataset_type = "SuperResolution"
