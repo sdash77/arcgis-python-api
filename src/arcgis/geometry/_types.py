@@ -2256,11 +2256,15 @@ class Geometry(BaseGeometry):
             out_srid = 'epsg:{}'.format(out_srid)
 
             try:
-                project = partial(
-                    pyproj.transform,
-                    pyproj.Proj(init=in_srid),
-                    pyproj.Proj(init=out_srid)
-                )
+                if [int(i) for i in pyproj.__version__.split(".") if i.isdigit()][0] == 2:
+                    from pyproj import Transformer
+                    project = Transformer.from_crs(in_srid, out_srid, always_xy=True).transform
+                else:
+                    project = partial(
+                        pyproj.transform,
+                        pyproj.Proj(init=in_srid),
+                        pyproj.Proj(init=out_srid)
+                    )
             except RuntimeError as e:
                 raise ValueError("pyproj projection from {0} to {1} not currently supported".format(in_srid,out_srid))
 

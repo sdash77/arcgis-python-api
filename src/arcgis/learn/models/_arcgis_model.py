@@ -668,7 +668,7 @@ class ArcGISModel(object):
                     else metric.__qualname__
                     for metric in self.learn.metrics
                 ]
-        ):
+        ) and not getattr(self, "_is_edge_detection", False):
             self.learn.metrics.extend([dice])
         if arcgis.env.verbose:
             logger.info('Fitting the model.')

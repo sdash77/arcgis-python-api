@@ -305,7 +305,7 @@ class Portal(object):
         ================  ============================================================================
 
 
-        URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+        URL 1: https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm
 
         :return:
              The item id of the uploaded item if successful, None if unsuccessful.
@@ -365,9 +365,9 @@ class Portal(object):
         CSV files that contain location fields, (ie.address fields or X, Y fields) are spatially enabled during the process of publishing.
         Shapefiles and file geodatabases should be packaged as *.zip files.
         Tiled map services can be created from service definition (*.sd) files, tile packages, and existing feature services.
-        Service definitions are authored in ArcGIS for Desktop and contain both the cartographic definition for a map as well as its packaged data together with the definition of the geo-service to be created.
+        Service definitions are authored in ArcGIS Pro or ArcGIS Desktop and contain both the cartographic definition for a map as well as its packaged data together with the definition of the geo-service to be created.
         Use the Analyze operation to generate the default publishing parameters for CSVs.
-        See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Publish_Item/02r300000080000000/
+        See https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm
         """
         # Postdata is a dictionary object whose keys and values will be sent via an HTTP Post.
         postdata = self._postdata()
@@ -2091,23 +2091,23 @@ class Portal(object):
 
         properties = dict()
         postdata = self._postdata()
-        if title:
+        if not title is None:
             properties['title'] = title
-        if tags:
+        if not tags is None:
             properties['tags'] = tags
-        if description:
+        if not description is None:
             properties['description'] = description
-        if snippet:
+        if not snippet is None:
             properties['snippet'] = snippet
-        if access:
+        if not access is None:
             properties['access'] = access
-        if sort_field:
+        if not sort_field is None:
             properties['sortField'] = sort_field
-        if sort_order:
+        if not sort_order is None:
             properties['sortOrder'] = sort_order
-        if is_view_only:
+        if not is_view_only is None:
             properties['isViewOnly'] = is_view_only
-        if max_file_size:
+        if not max_file_size is None:
             properties['MAX_FILE_SIZE'] = max_file_size
         elif max_file_size is None:
             properties['MAX_FILE_SIZE'] = 1024000
@@ -2126,7 +2126,7 @@ class Portal(object):
         if display_settings:
             properties['displaySettings'] = display_settings
         postdata.update(properties)
-        if True:
+        if clear_empty_fields == True:
             postdata['clearEmptyFields'] = True
         files = []
         if thumbnail:
@@ -2219,7 +2219,7 @@ class Portal(object):
         ================  ============================================================================
 
 
-        URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+        URL 1: https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm
 
         :return:
              a boolean, that indicates success.

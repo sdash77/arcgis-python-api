@@ -1,5 +1,5 @@
 """
-A collection of classes for administering an ArcGIS Enterprise server.
+A collection of classes for administering ArcGIS Server sites.
 """
 from .catalog import ServicesDirectory
 from ._service import Service

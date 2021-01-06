@@ -2534,8 +2534,7 @@ class GeoAccessor(object):
     def __feature_set__(self):
         """returns a dictionary representation of an Esri FeatureSet"""
         import arcgis
-        cols_norm = [col for col in self._data.columns]
-        cols_lower = [col.lower() for col in self._data.columns]
+
 
         fields = []
         features = []
@@ -2560,41 +2559,47 @@ class GeoAccessor(object):
             "features" : []
         }
         # Ensure all number values are 0 so errors do not occur.
-        for c in self._data.select_dtypes(include='number').columns.tolist():
-            self._data[c].fillna(0, inplace=True)
-
+        df = self._data.where(pd.notnull(self._data), None)
+        cols_norm = [col for col in df.columns]
+        cols_lower = [col.lower() for col in df.columns]
+        old_series = None
         if 'objectid' in cols_lower:
             fs['objectIdFieldName'] = cols_norm[cols_lower.index('objectid')]
             fs['displayFieldName'] = cols_norm[cols_lower.index('objectid')]
-            if self._data[fs['objectIdFieldName']].is_unique == False:
-                old_series = self._data[fs['objectIdFieldName']].copy()
-                self._data[fs['objectIdFieldName']] = list(range(1, self._data.shape[0] + 1))
-                res = self.__feature_set__
-                self._data[fs['objectIdFieldName']] = old_series
-                return res
+            if df[fs['objectIdFieldName']].is_unique == False:
+                old_series = df[fs['objectIdFieldName']].copy()
+                df[fs['objectIdFieldName']] = list(range(1, df.shape[0] + 1))
+                #res = self.__feature_set__
+                #df[fs['objectIdFieldName']] = old_series
+                #return res
         elif 'fid' in cols_lower:
             fs['objectIdFieldName'] = cols_norm[cols_lower.index('fid')]
             fs['displayFieldName'] = cols_norm[cols_lower.index('fid')]
-            if self._data[fs['objectIdFieldName']].is_unique == False:
-                old_series = self._data[fs['objectIdFieldName']].copy()
-                self._data[fs['objectIdFieldName']] = list(range(1, self._data.shape[0] + 1))
-                res = self.__feature_set__
-                self._data[fs['objectIdFieldName']] = old_series
-                return res
+            if df[fs['objectIdFieldName']].is_unique == False:
+                old_series = df[fs['objectIdFieldName']].copy()
+                df[fs['objectIdFieldName']] = list(range(1, df.shape[0] + 1))
+                #res = self.__feature_set__
+                #df[fs['objectIdFieldName']] = old_series
+                #return res
         elif 'oid' in cols_lower:
             fs['objectIdFieldName'] = cols_norm[cols_lower.index('oid')]
             fs['displayFieldName'] = cols_norm[cols_lower.index('oid')]
-            if self._data[fs['objectIdFieldName']].is_unique == False:
-                old_series = self._data[fs['objectIdFieldName']].copy()
-                self._data[fs['objectIdFieldName']] = list(range(1, self._data.shape[0] + 1))
-                res = self.__feature_set__
-                self._data[fs['objectIdFieldName']] = old_series
-                return res
+            if df[fs['objectIdFieldName']].is_unique == False:
+                old_series = df[fs['objectIdFieldName']].copy()
+                df[fs['objectIdFieldName']] = list(range(1, df.shape[0] + 1))
+                #res = self.__feature_set__
+                #df[fs['objectIdFieldName']] = old_series
+                #return res
         else:
-            self._data['OBJECTID'] = list(range(1, self._data.shape[0] + 1))
-            res = self.__feature_set__
-            del self._data['OBJECTID']
-            return res
+            fs['objectIdFieldName'] = "OBJECTID"
+            fs['displayFieldName'] = "OBJECTID"
+
+            df['OBJECTID'] = list(range(1, df.shape[0] + 1))
+            cols_norm = [col for col in df.columns]
+            cols_lower = [col.lower() for col in df.columns]
+            #res = self.__feature_set__
+            #del df['OBJECTID']
+            #return res
         if 'objectIdFieldName' in fs:
             fields.append({
                 "name" : fs['objectIdFieldName'],
@@ -2616,12 +2621,12 @@ class GeoAccessor(object):
             cols_norm.pop(cols_norm.index(self.name))
         for col in cols_norm:
             try:
-                idx = self._data[col].first_valid_index()
-                col_val = self._data[col].loc[idx]
+                idx = df[col].first_valid_index()
+                col_val = df[col].loc[idx]
             except:
                 col_val = ""
             if isinstance(col_val, (str, np.str)):
-                l = self._data[col].str.len().max()
+                l = df[col].str.len().max()
                 if str(l) == 'nan':
                     l = 255
 
@@ -2668,7 +2673,7 @@ class GeoAccessor(object):
                     "alias" : col
                 })
         fs['fields'] = fields
-        for row in self._data.to_dict('records'):
+        for row in df.to_dict('records'):
             geom = {}
             if self.name in row:
                 geom = row[self.name]
@@ -2701,6 +2706,8 @@ class GeoAccessor(object):
             del row
             del geom
         fs['features'] = features
+        #if old_series:
+
         return fs
     #----------------------------------------------------------------------
     def _check_geometry_engine(self):
@@ -2741,9 +2748,13 @@ class GeoAccessor(object):
             if sr and \
                'wkid' in sr:
                 wkid = sr['wkid']
+            elif sr and \
+                'latestWkid' in sr:
+                wkid = sr['latestWkid']                  
             if sr and \
                'wkt' in sr:
                 wkt = sr['wkt']
+                  
             if isinstance(ref, (dict, SpatialReference)) and \
                sr is None:
                 self._data[self.name] = self._data[self.name].geom.project_as(ref)
@@ -2791,7 +2802,7 @@ class GeoAccessor(object):
         drawing_info           Optional dictionary. This is the rendering information for a
                                Feature Collection.  Rendering information is a dictionary with
                                the symbology, labelling and other properties defined.  See:
-                               http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Renderer_objects/02r30000019t000000/
+                               https://developers.arcgis.com/documentation/common-data-types/renderer-objects.htm
         ---------------------  ---------------------------------------------------------------
         extent                 Optional dictionary.  If desired, a custom extent can be
                                provided to set where the map starts up when showing the data.

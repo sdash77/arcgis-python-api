@@ -141,7 +141,8 @@ class FeatureLayer(Layer):
             self._renderer = None
         elif not isinstance(value, InsensitiveDict):
             raise ValueError("Invalid renderer type.")
-        self._refresh = value
+        else:
+            self._renderer = value
 
     @classmethod
     def fromitem(cls, item, layer_id=0):
@@ -1868,7 +1869,7 @@ class FeatureLayer(Layer):
     def get_html_popup(self, oid):
         """
         The htmlPopup resource provides details about the HTML pop-up
-        authored by the user using ArcGIS for Desktop.
+        authored by the user using ArcGIS Pro or ArcGIS Desktop.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1972,8 +1973,8 @@ class FeatureLayer(Layer):
                                    use_globalids = True.
                                    Example: upsert_matching_field="MyfieldWithUniqueIndex"
         ------------------------   --------------------------------------------------------------------
-        upload_id                  Optional string. The itemID field from an 
-                                   :func:`~FeatureLayerCollection.upload` response, corresponding with 
+        upload_id                  Optional string. The itemID field from an
+                                   :func:`~FeatureLayerCollection.upload` response, corresponding with
                                    the `appendUploadId` REST API argument. This argument should not be
                                    used along side the `item_id` argument.
         ========================   ====================================================================
@@ -2024,6 +2025,7 @@ class FeatureLayer(Layer):
         res = self._con.post(path=url,
                              postdata=params)
         if 'statusUrl' in res:
+            time.sleep(1)
             surl = res['statusUrl']
             sres = self._con.get(path=surl, params={'f' : 'json'})
             while sres['status'].lower() != "completed":
@@ -2706,7 +2708,7 @@ class FeatureLayer(Layer):
         if 'SHAPE' in featureset_dict:
             df.spatial.set_geometry('SHAPE')
         if len(dfields) > 0:
-            
+
             for fld in [fld for fld in dfields if fld in df.columns]:
                 try:
                     df[fld] = pd.to_datetime(df[fld]/1000,
@@ -2714,9 +2716,9 @@ class FeatureLayer(Layer):
                                              errors='coerce',
                                              unit='s')
                 except:
-                    
+
                     df[fld] = pd.to_datetime(df[fld], errors='coerce',
-                                             infer_datetime_format=True)            
+                                             infer_datetime_format=True)
         return df
 
 
@@ -3490,7 +3492,7 @@ class FeatureLayerCollection(_GISResource):
                 elif  status.lower() == 'failed':
                     return None
                 else:
-                    time.sleep(1)
+                    time.sleep(.5)
         return res
 
     def query(self,
@@ -4200,7 +4202,7 @@ class FeatureLayerCollection(_GISResource):
     def upload(self, path, description=None):
         """
         Uploads a new item to the server. Once the operation is completed
-        successfully, the following is returned as a 2 element tuple: 
+        successfully, the following is returned as a 2 element tuple:
         the success Boolean, and the JSON structure of the uploaded item
 
         ===============     ====================================================================

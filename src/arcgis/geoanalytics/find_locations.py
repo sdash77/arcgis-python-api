@@ -351,7 +351,7 @@ def detect_incidents(input_layer,
     gis                          optional GIS, the GIS on which this tool runs. If not
                                  specified, the active GIS is used.
     --------------------------   ---------------------------------------------------------------
-    context                      Optionl dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+    context                      Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
                                  #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                  #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.

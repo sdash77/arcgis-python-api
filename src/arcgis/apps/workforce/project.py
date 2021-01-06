@@ -97,6 +97,22 @@ class Project:
     def __repr__(self):
         return "<Project {}>".format(self.title)
 
+    @staticmethod
+    def _delete_item_with_related_views(item):
+        """
+        Recursively fetches all related feature service items and then will delete any child services before deleting the parent service(s).
+        :param item: An item
+        """
+        try:
+            # Related Items API might not exist for older Enterprise versions
+            related_items = item.related_items("Service2Service", "forward")
+        except Exception:
+            related_items = []
+        for v in related_items:
+            Project._delete_item_with_related_views(v)
+        item.protect(False)
+        item.delete()
+
     def delete(self):
         """
             Deletes the project, group, folder, layers, and webmaps.
@@ -104,8 +120,7 @@ class Project:
         """
         title = self.title
         owner = self._item.owner
-        self.assignments_item.protect(False)
-        self.assignments_item.delete()
+        self._delete_item_with_related_views(self.assignments_item)
         if self._supports_tracks:
             self.tracks_item.protect(False)
             self.tracks_item.delete()
