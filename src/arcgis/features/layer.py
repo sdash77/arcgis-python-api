@@ -56,6 +56,12 @@ class FeatureLayer(Layer):
         self._time_filter = None
 
     @property
+    def _token(self):
+        if self._con.token:
+            return self._con.token
+        return None
+
+    @property
     def time_filter(self):
         """
         Starting at Enterprise 10.7.1+, instead of querying time-enabled map
