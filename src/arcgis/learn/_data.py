@@ -32,7 +32,7 @@ try:
     from ._utils.classified_tiles import show_batch_classified_tiles
     from ._utils.labeled_tiles import show_batch_labeled_tiles
     from ._utils.rcnn_masks import show_batch_rcnn_masks
-    from ._utils.pascal_voc_rectangles import ObjectMSItemList, show_batch_pascal_voc_rectangles
+    from ._utils.pascal_voc_rectangles import ObjectMSItemList, show_batch_pascal_voc_rectangles, show_batch_object_detection
     from ._utils.pointcloud_data import pointcloud_prepare_data
     from ._utils.superres import ImageImageListSR
     from fastai.tabular import TabularDataBunch
@@ -1580,6 +1580,8 @@ def prepare_data(path,
         data.train_ds.x._div = 255.
         data.valid_ds.x._div = 255.
 
+    if dataset_type in ['PASCAL_VOC_rectangles', 'KITTI_rectangles']:
+        data.show_batch = types.MethodType(show_batch_object_detection, data)
     # Imagery type used while opening image chips
     data._imagery_type = imagery_type
     data.train_ds.x._imagery_type = data._imagery_type

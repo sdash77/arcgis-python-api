@@ -4,10 +4,12 @@ import numpy as np
 import torch
 from fastai.vision.data import ObjectCategoryList, ObjectItemList
 from fastai.vision.image import ImageBBox
-from fastai.core import split_kwargs_by_func
+from fastai.core import split_kwargs_by_func, has_arg
 from .common import ArcGISMSImage, get_nbatches, denorm_x, dynamic_range_adjustment, image_batch_stretcher
 from matplotlib import pyplot as plt
 from matplotlib import patheffects
+from fastai.basic_data import DatasetType
+from fastai.torch_core import grab_idx
 
 
 class ObjectDetectionCategoryList(ObjectCategoryList):
@@ -62,6 +64,18 @@ class ObjectMSItemList(ObjectItemList):
     def open(self, fn):
         return ArcGISMSImage.open_gdal(fn)
 
+
+def show_batch_object_detection(self, rows=5, ds_type=DatasetType.Train, reverse=False, **kwargs):
+    "Show a batch of data in `ds_type` on a few `rows`."
+    x,y = self.one_batch(ds_type, True, True)
+    if reverse: x,y = x.flip(0), (y[0].flip(0), y[1].flip(0))
+    n_items = rows **2 if self.train_ds.x._square_show else rows
+    if self.dl(ds_type).batch_size < n_items: n_items = self.dl(ds_type).batch_size
+    xs = [self.train_ds.x.reconstruct(grab_idx(x, i)) for i in range(n_items)]
+    if has_arg(self.train_ds.y.reconstruct, 'x'):
+        ys = [self.train_ds.y.reconstruct(grab_idx(y, i), x=x) for i,x in enumerate(xs)]
+    else : ys = [self.train_ds.y.reconstruct(grab_idx(y, i)) for i in range(n_items)]
+    self.train_ds.x.show_xys(xs, ys, **kwargs)
 
 def show_batch_pascal_voc_rectangles(self, rows=3, alpha=1, **kwargs): # parameters adjusted in kwargs
     nrows = rows
