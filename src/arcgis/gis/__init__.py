@@ -8914,7 +8914,7 @@ class Item(dict):
         try:
             res = self._portal.con.post(data_path, params)
         except Exception as e:
-            if e.args[0].find("You do note have permissions") == -1:
+            if e.args[0].find("You do not have permissions") > -1:
                 data_path = 'content/users/%s/export' % self._gis.users.me.username
                 res = self._portal.con.post(data_path, params)
             else:
