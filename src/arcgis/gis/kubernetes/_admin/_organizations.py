@@ -4,9 +4,11 @@ from urllib.request import HTTPError
 from arcgis.gis._impl._con import Connection
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
-
+###########################################################################
 class KubeOrgSecurity(object):
-    """"""
+    """
+    Allows the for the management of the security of the settings.
+    """
     _con = None
     _gis = None
     _url = None
@@ -38,7 +40,8 @@ class KubeOrgSecurity(object):
         return self._properties
 ###########################################################################
 class KubeOrganization():
-    """A single organization within your deployment, allowing you to manage
+    """
+    A single organization within your deployment, allowing you to manage
     and update it's licensing and security information, as well as manage
     it's federated servers.
     """
@@ -50,21 +53,19 @@ class KubeOrganization():
     _federation = None
     _license = None
     #----------------------------------------------------------------------
-    def __init__(self, url, gis:"GIS", initialize:bool=True, **kwargs):
+    def __init__(self, url, gis:"GIS", **kwargs):
         """class initializer"""
         self._gis = gis
         self._url = url
         self._con = gis._con
-        if initialize:
-            self._init(gis)
+        self._properties = None
+        self._json_dict = None
     #----------------------------------------------------------------------
-    def _init(self, connection=None):
+    def _init(self):
         """loads the properties into the class"""
-        if connection is None:
-            connection = self._con
         params = {"f":"json"}
         try:
-            result = connection.get(path=self._url,
+            result = self._con.get(path=self._url,
                                     params=params)
             if isinstance(result, dict):
                 self._json_dict = result
@@ -106,7 +107,7 @@ class KubeOrganization():
     def security(self):
         if self._security is None:
             self._security = KubeOrgSecurity(url=f"{self._url}/security",
-                                             gis=self._gis, initialize=False)
+                                             gis=self._gis)
         return self._security
     #----------------------------------------------------------------------
     @property
@@ -122,7 +123,7 @@ class KubeOrganization():
         return self._license
     #----------------------------------------------------------------------
     @property
-    def federation(self) -> KubeOrgFederations:
+    def federation(self) -> "KubeOrgFederations":
         """
         Returns manager to work with server federation.
 
