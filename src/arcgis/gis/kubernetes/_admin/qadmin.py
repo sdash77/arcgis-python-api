@@ -236,6 +236,7 @@ class KubernetesAdmin(_BaseKube):
     #----------------------------------------------------------------------
     @property
     def services(self):
+        """Provides access to managing the services on the site"""
         if self._services is None:
             from ._services import ServicesManager
             url = f"{self._url}/services"
