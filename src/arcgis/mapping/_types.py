@@ -375,9 +375,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                     isinstance(layer, arcgis.features.FeatureCollection) or \
                     isinstance(layer, arcgis.features.FeatureSet)):
                     # Can be either a FeatureLayer or a table: figure it out
-                    if isinstance(layer, arcgis.features.Table):
-                        layer_type = 'Table'
-                    else:
+                    if not isinstance(layer, arcgis.features.Table):
                         layer_type = 'ArcGISFeatureLayer'
                 elif isinstance(layer, arcgis.raster.ImageryLayer):
                     layer_type='ArcGISImageServiceLayer'

@@ -1,10 +1,9 @@
 import pytest
 from unittest.mock import patch
 
-from utils.mocks import MockMapView, MockWebMap, MockGIS, MockFeatureLayer, PlaceholderItem
-from utils.mocks.placeholders.placeholder_featurecollection import PlaceholderFeatureLayerCollection
-from utils.mocks.placeholders.placeholder_featurelayer import PlaceholderFeatureLayer
-from utils.mocks.placeholders.placeholder_table import PlaceholderTable
+from utils.mocks import MockMapView, MockWebMap, MockGIS, MockFeatureLayer,\
+    PlaceholderItem, PlaceholderFeatureLayer, PlaceholderFeatureLayerCollection, \
+    PlaceholderTable
 
 @patch("arcgis.widgets.MapView", MockMapView)
 def test_add_item_map_service():
