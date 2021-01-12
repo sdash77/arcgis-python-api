@@ -1,7 +1,7 @@
 ########################################################################
 class CreditManager(object):
     """
-    Manages an AGOL Site's Credits for users and sites
+    Manages an ArcGIS Online organization's credits for users and sites
 
     **Example Usage**
 
@@ -42,14 +42,14 @@ class CreditManager(object):
     #----------------------------------------------------------------------
     def enable(self):
         """
-        enables credit allocation on AGOL
+        enables credit allocation on ArcGIS Online
         """
         return self._gis.update_properties(
             {"creditAssignments" : 'enabled'})
     #----------------------------------------------------------------------
     def disable(self):
         """
-        disables credit allocation on AGOL
+        disables credit allocation on ArcGIS Online
         """
         return self._gis.update_properties(
             {"creditAssignments" : 'disabled'})
@@ -57,14 +57,14 @@ class CreditManager(object):
     @property
     def default_limit(self):
         """
-        Gets/Sets the default credit allocation for AGOL
+        Gets/Sets the default credit allocation for ArcGIS Online
         """
         return self._gis.properties.defaultUserCreditAssignment
     #----------------------------------------------------------------------
     @default_limit.setter
     def default_limit(self, value):
         """
-        Gets/Sets the default credit allocation for AGOL
+        Gets/Sets the default credit allocation for ArcGIS Online
         """
         params = {"defaultUserCreditAssignment" : value}
         self._gis.update_properties(params)

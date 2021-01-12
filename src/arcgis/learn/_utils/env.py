@@ -5,9 +5,26 @@ import traceback
 
 HAS_BACKEND_SET = False
 ARCGIS_ENABLE_TF_BACKEND = os.environ.get('ARCGIS_ENABLE_TF_BACKEND') is '1'
+LAMBDA_TEXT_CLASSIFICATION = os.environ.get('LAMBDA_TEXT_CLASSIFICATION') is '1'
 
 HAS_TENSORFLOW = False
 tf_import_exception = None
+
+
+
+class FakeImport():
+    def __getattr__(self, attr):
+        return self
+    def __call__(self, *args, **kwargs):
+        return self
+
+if LAMBDA_TEXT_CLASSIFICATION:
+    default_module = FakeImport()
+    missing_modules = ['scipy','scipy.stats', 'spacy','spacy.symbols','spacy.blank', 'matplotlib',\
+        'matplotlib.pyplot', 'matplotlib.patches', 'matplotlib.cm', 'scipy.special', 'PIL']
+    for module_name in missing_modules: 
+        sys.modules[module_name] = default_module
+
 try:
     if ARCGIS_ENABLE_TF_BACKEND:
         import tensorflow as tf
@@ -50,7 +67,7 @@ def tf_set_gpu_memory_growth():
 def raise_tensorflow_import_error():
     if ARCGIS_ENABLE_TF_BACKEND:
         message = """
-        Could not find tensorflow, Please install tensorflow using the following command 
+        Could not find tensorflow, Please install tensorflow using the following command
         \nconda install -c esri tensorflow-gpu=2.1.0
         """
         ex = Exception(message)
@@ -68,7 +85,7 @@ def raise_tensorflow_import_error():
 def tf_sample_op():
     a = tf.keras.layers.Conv2D(1, (3, 3))
     a = a(tf.zeros((1, 3, 20, 20))).numpy()
-    
+
 
 ## Fastai Imports #######
 
@@ -78,7 +95,7 @@ fastai_import_exception = None
 def do_fastai_imports():
     global HAS_FASTAI
     global fastai_import_exception
-    
+
     try:
         import fastai
         import torch
@@ -89,10 +106,16 @@ def do_fastai_imports():
         fastai_import_exception = traceback.format_exc()
         pass
 
+    try:
+        from .patches import precondition
+    except:
+        pass
+
+
 def fastai_installation_command():
     installation_steps = "Install them using 'conda install -c esri arcgis=1.8.1 pillow scikit-image'\n'conda install -c fastai -c pytorch fastai pytorch=1.4.0 torchvision=0.5.0 tensorflow-gpu=2.1.0'\n'conda install gdal=2.3.3'"
-            
-    return installation_steps 
+
+    return installation_steps
 
 def raise_fastai_import_error(import_exception=fastai_import_exception, installation_steps=None, message=None):
     if installation_steps is None:
@@ -101,3 +124,21 @@ def raise_fastai_import_error(import_exception=fastai_import_exception, installa
         message = "This module requires fastai, PyTorch, torchvision and scikit-image as its dependencies."
     raise Exception(f"""{import_exception} \n\n{message}\n{installation_steps}""")
 
+
+HAS_GDAL = False
+gdal_import_exception = None
+GDAL_INSTALL_MESSAGE = f"""
+\nPlease install gdal using the following command
+\nconda install gdal=2.3.3
+""".strip()
+
+try:
+    from osgeo import gdal
+    HAS_GDAL = True
+except Exception as e:
+    gdal_import_exception = traceback.format_exc()
+    pass
+
+def raise_gdal_import_error(import_exception=gdal_import_exception):
+    message = "gdal is required to work with multispectral datasets."
+    raise Exception(f"""{import_exception} \n\n{message}\n{GDAL_INSTALL_MESSAGE}""")

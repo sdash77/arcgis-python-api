@@ -171,4 +171,10 @@ mask = None
 #Tasks that honor the parallel_processing_factor environment will divide and perform operations across multiple processes.
 parallel_processing_factor = None
 
+#Raster functions in arcgis.raster.functions module that honor the Union Dimension environment will generate a multidimensional raster that includes all the 
+#dimensions from the input multidimensional rasters.
+union_dimension = None
 
+# Raster functions in arcgis.raster.functions module that honor the Match Multidimensional Variable environment will generate a multidimensional raster only 
+# if the input multidimensional rasters share at least one variable with the same name.
+match_variables = None

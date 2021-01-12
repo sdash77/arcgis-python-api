@@ -7,7 +7,7 @@ import uuid
 from pathlib import Path
 import shutil
 import datetime
-
+import ujson as _ujson
 import numpy as np
 import pandas as pd
 
@@ -136,7 +136,7 @@ def _from_xy(df, x_column, y_column, sr=None):
     def _xy_to_geometry(x,y,sr):
         """converts x/y coordinates to Point object"""
         return Point({'spatialReference' : sr, 'x' : x, 'y': y})
-    
+
     if sr is None:
         sr = SpatialReference({'wkid' : 4326})
     if not isinstance(sr, SpatialReference):
@@ -149,7 +149,7 @@ def _from_xy(df, x_column, y_column, sr=None):
     geoms = []
     v_func = np.vectorize(_xy_to_geometry, otypes='O')
     ags_geom = np.empty(len(df), dtype="O")
-    ags_geom[:] = v_func(df[x_column].values, df[y_column].values, sr)    
+    ags_geom[:] = v_func(df[x_column].values, df[y_column].values, sr)
     df['SHAPE'] = GeoArray(ags_geom)
     df.spatial.name
     return df
@@ -176,7 +176,7 @@ def read_feather(path, spatial_column="SHAPE", columns=None, use_threads: bool =
         By file-like object, we refer to objects with a ``read()`` method,
         such as a file handler (e.g. via builtin ``open`` function)
         or ``StringIO``.
-    spatial_column : str, Name of the geospatial column. The default is `SHAPE`. 
+    spatial_column : str, Name of the geospatial column. The default is `SHAPE`.
        .. versionadded:: v1.8.2 of ArcGIS API for Python
     columns : sequence, default None
         If not provided, all columns are read.
@@ -245,7 +245,7 @@ def from_table(filename, **kwargs):
     """
     filename = _ensure_path_string(filename)
 
-    if HASARCPY:
+    if HASARCPY and not filename.lower().endswith('.dbf'):
         where = kwargs.pop("where", None)
         fields = kwargs.pop('fields', "*")
         skip_nulls = kwargs.pop('skip_nulls', True)
@@ -255,6 +255,18 @@ def from_table(filename, **kwargs):
                                                  where_clause=where,
                                                  skip_nulls=skip_nulls,
                                                  null_value=null_value))
+    elif HASARCPY and filename.lower().endswith('.dbf'):
+        scur = arcpy.da.SearchCursor(in_table=filename,
+                                     field_names=fields, where_clause=where)
+        array = scur._as_array()
+        del scur
+        return pd.DataFrame(data=array)
+    elif filename.lower().endswith('.dbf'):
+        import shapefile
+        with open(filename, "rb") as f:
+            reader = shapefile.Reader(dbf=f)
+            return pd.DataFrame(
+                [record.as_dict() for record in reader.iterRecords()])
     elif filename.lower().find('.csv') > -1:
         return pd.read_csv(filename)
 
@@ -280,7 +292,7 @@ def to_table(geo, location, overwrite=True):
     fc_name = os.path.basename(location)
     df = geo._data
     if location.lower().find('.csv') > -1:
-        geo._df.to_csv(location)
+        geo._data.to_csv(location)
         return location
     elif HASARCPY:
         columns = df.columns.tolist()
@@ -401,7 +413,7 @@ def from_featureclass(filename, **kwargs):
             }
             area_field = getattr(desc, 'areaFieldName', None)
             length_field = getattr(desc, 'lengthFieldName', None)
-            
+
         if spatial_filter:
             _sf_lu = {
                 "esriSpatialRelIntersects" : "INTERSECT",
@@ -420,8 +432,8 @@ def from_featureclass(filename, **kwargs):
             geom = geom.as_arcpy
             flname = "a" + uuid.uuid4().hex[:6]
             filename = arcpy.management.MakeFeatureLayer(filename, out_layer=flname, where_clause=where_clause)[0]
-            arcpy.management.SelectLayerByLocation(filename, overlap_type=relto, select_features=geom)[0] 
-        
+            arcpy.management.SelectLayerByLocation(filename, overlap_type=relto, select_features=geom)[0]
+
         shape_name = desc['shapeType']
         if fields is None:
             fields = [fld.name for fld in desc['fields'] \
@@ -458,6 +470,7 @@ def from_featureclass(filename, **kwargs):
             df = pd.DataFrame([],
                               columns=df_fields)
         q = df.SHAPE.notnull()
+        none_q = ~df.SHAPE.notnull()
         gt = desc['shapeType'].lower()
         geoms = {
             "point" : _types.Point,
@@ -467,11 +480,13 @@ def from_featureclass(filename, **kwargs):
             "envelope" : _types.Envelope,
             "geometry" : _types.Geometry
         }
+        import json
         df.SHAPE = (
            df.SHAPE[q]
-           .apply(pd.io.json.loads)
+           .apply(_ujson.loads)
            .apply(geoms[gt])
         )
+        df.loc[none_q, "SHAPE"] = None
         df.spatial.set_geometry("SHAPE")
         df.spatial._meta.source = filename
         return df
@@ -653,17 +668,17 @@ def to_featureclass(geo,
         }
         sr = geo._data[geo._name][idx].spatial_reference.as_arcpy
         null_geom = null_geom[gt.lower()]
-        
+
         if has_m == True:
             has_m = "ENABLED"
         else:
             has_m = None
-        
+
         if has_z == True:
             has_z = "ENABLED"
         else:
             has_z = None
-            
+
         fc = arcpy.CreateFeatureclass_management(out_location,
                                                  spatial_reference=sr,
                                                  geometry_type=gt,

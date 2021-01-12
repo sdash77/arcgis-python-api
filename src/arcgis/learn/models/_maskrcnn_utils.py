@@ -91,7 +91,7 @@ class ArcGISSegmentationLabelList(ImageList):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning) # EXIF warning from TiffPlugin
             if len(fn) != 0:
-                img_shape = io.imread(fn[0]).shape
+                img_shape = ArcGISMSImage.read_image(fn[0]).shape
             else:
                 labeled_mask = torch.zeros((len(self.class_mapping), self.chip_size, self.chip_size))
                 return ArcGISImageSegment(labeled_mask, cmap=self.cmap, norm=self.mplnorm)
@@ -106,7 +106,7 @@ class ArcGISSegmentationLabelList(ImageList):
                 else:
                     lbl_name = len(self.class_mapping) + 2
                 if lbl_name == j+1:                    
-                    img = io.imread(fn[k])
+                    img = ArcGISMSImage.read_image(fn[k])
                     k = k + 1
                     if len(img.shape)==3:
                         img = img.transpose(2,0,1)
@@ -131,6 +131,10 @@ class ArcGISSegmentationLabelList(ImageList):
 class ArcGISInstanceSegmentationItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."
     _label_cls, _square_show_res = ArcGISSegmentationLabelList, False
+    _div = None
+    _imagery_type = None
+    def open(self, fn):
+        return ArcGISMSImage.open(fn, div=self._div, imagery_type=self._imagery_type)
 
 class ArcGISInstanceSegmentationMSItemList(ArcGISInstanceSegmentationItemList):
     "`ItemList` suitable for segmentation tasks."

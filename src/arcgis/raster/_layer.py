@@ -14,6 +14,7 @@ import logging
 import arcgis as _arcgis
 import base64
 from collections import defaultdict
+from ._RasterInfo import RasterInfo
 try:
     import numpy as np
 except:
@@ -355,32 +356,39 @@ class ImageryLayer(Layer):
             url = url.decode("UTF-8")
             import ast
             url = ast.literal_eval(url)
-        if '/fileShares/' in url or '/rasterStores/' in url or '/cloudStores/' in url or isinstance(url,dict) or '/vsi' in url or isinstance(url, bytes):
-            self._gis = _arcgis.env.active_gis if gis is None else gis
-            self._datastore_raster = True
-            self._uri = url
-            if isinstance(url,dict):
-                encoded_dict = str(self._uri).encode('utf-8')
-                self._uri = base64.b64encode(encoded_dict)
-            gis = _arcgis.env.active_gis if gis is None else gis
-
-            image_hosting_server_url = None
-            raster_analytics_server_url = None
-            hosting_server_url = None
-            for ds in gis._datastores:
-                if ('serverFunction' in ds._server.keys()) and 'ImageHosting' in ds._server['serverFunction']:
-                    image_hosting_server_url = ds._server['url']
-                    break
-                elif ('serverFunction' in ds._server.keys()) and 'RasterAnalytics' in ds._server['serverFunction']:
-                    raster_analytics_server_url = ds._server['url']
-                elif ('serverFunction' in ds._server.keys()) and ds._server['serverFunction'] == '':
-                    hosting_server_url = ds._server['url']
-            if image_hosting_server_url:
-                url = image_hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
-            elif raster_analytics_server_url:
-                url = raster_analytics_server_url + "/rest/services/System/RasterRendering/ImageServer"
-            elif hosting_server_url:
-                url = hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
+        if isinstance(url, str) or isinstance(url, dict) or isinstance(url, bytes):
+            if '/fileShares/' in url or '/rasterStores/' in url or '/cloudStores/' in url or isinstance(url,dict) or '/vsi' in url or isinstance(url, bytes) or "ImageServer" not in url:
+                self._gis = _arcgis.env.active_gis if gis is None else gis
+                self._datastore_raster = True
+                self._uri = url
+                if isinstance(url,dict):
+                    encoded_dict = str(self._uri).encode('utf-8')
+                    self._uri = base64.b64encode(encoded_dict)
+                gis = _arcgis.env.active_gis if gis is None else gis
+                if gis is not None:
+                    if gis._con._product == "AGOL":
+                        ra_url = gis.properties.helperServices.get("rasterAnalytics", {})\
+                                                              .get("url", "")
+                        url = ra_url.replace("rasteranalysis", "rasterutils").replace("RasterAnalysisTools", "RasterRendering").replace("GPServer", "ImageServer")
+                    else:
+                        image_hosting_server_url = None
+                        raster_analytics_server_url = None
+                        hosting_server_url = None
+                
+                        for ds in gis._datastores:
+                            if ('serverFunction' in ds._server.keys()) and 'ImageHosting' in ds._server['serverFunction']:
+                                image_hosting_server_url = ds._server['url']
+                                break
+                            elif ('serverFunction' in ds._server.keys()) and 'RasterAnalytics' in ds._server['serverFunction']:
+                                raster_analytics_server_url = ds._server['url']
+                            elif ('serverFunction' in ds._server.keys()) and ds._server['serverFunction'] == '':
+                                hosting_server_url = ds._server['url']
+                        if image_hosting_server_url:
+                            url = image_hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
+                        elif raster_analytics_server_url:
+                            url = raster_analytics_server_url + "/rest/services/System/RasterRendering/ImageServer"
+                        elif hosting_server_url:
+                            url = hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
 
         super(ImageryLayer, self).__init__(url, gis)
         self._spatial_filter = None
@@ -394,6 +402,7 @@ class ImageryLayer(Layer):
         self._uses_gbl_function = False
         self._other_outputs = {}
         self._raster_info = {}
+        self._tiles_only = None
 
     @property
     def rasters(self):
@@ -566,29 +575,42 @@ class ImageryLayer(Layer):
         return band_count
 
     @property
+    def tiles_only(self):
+        """returns True if the layer is a Tiled Imagery Layer"""
+        if self._tiles_only != None:
+            return self._tiles_only
+        else:
+            self._tiles_only = False
+            if "TilesOnly" in self.properties.capabilities:
+                self._tiles_only = True
+            return self._tiles_only
+
+    @property
     def histograms(self):
         """
         Returns the histograms of each band in the imagery layer as a list of dictionaries corresponding to each band.
         If not histograms is found, returns None. In this case, call the compute_histograms()
-        :return:
+
+        :Syntax:
+
             my_hist = imagery_layer.histograms()
 
-            Structure of the return value:
-            [
-             { #band 1
-              "size":256,
-              "min":560,
-              "max":24568,
-              counts: [10,99,56,42200,125,....] #length of this list corresponds 'size'
-             }
-             { #band 3
-              "size":256, #number of bins
-              "min":8000,
-              "max":15668,
-              counts: [45,9,690,86580,857,....] #length of this list corresponds 'size'
-             }
-             ....
-            ]
+        :return:
+            | #Structure of the return value for a two band imagery layer
+            | [ 
+            |  {#band 1
+            |  "size":256,
+            |  "min":560,
+            |  "max":24568,
+            |  "counts": [10,99,56,42200,125,....] #length of this list corresponds ‘size’
+            |  },
+            |  {#band 2
+            |  "size":256,
+            |  "min":8000,
+            |  "max":15668,
+            |  "counts": [45,9,690,86580,857,....] #length of this list corresponds ‘size’
+            |  }
+            | ]
 
         """
         if self.properties.hasHistograms:
@@ -610,6 +632,8 @@ class ImageryLayer(Layer):
         Returns information about the ImageryLayer such as 
         bandCount, extent , pixelSizeX, pixelSizeY, pixelType
         """
+        if self._raster_info !={}:
+            return self._raster_info
         if "extent" in self.properties:
             self._raster_info.update({"extent":dict(self.properties.extent)})
 
@@ -624,6 +648,19 @@ class ImageryLayer(Layer):
 
         if "pixelSizeY" in self.properties:
             self._raster_info.update({"pixelSizeY":self.properties.pixelSizeY})
+
+        if "compressionType" in self.properties:
+            self._raster_info.update({"compressionType":self.properties.compressionType})
+
+        if "blockHeight" in self.properties:
+            self._raster_info.update({"blockHeight":self.properties.blockHeight})
+
+        if "blockWidth" in self.properties:
+            self._raster_info.update({"blockWidth":self.properties.blockWidth})
+
+        if "noDataValues" in self.properties:
+            self._raster_info.update({"noDataValues":self.properties.noDataValues})
+
         return self._raster_info
 
     @extent.setter
@@ -679,14 +716,19 @@ class ImageryLayer(Layer):
         Common data sources for multidimensional image services are mosaic
         datasets created from netCDF, GRIB, and HDF data.
         """
-        if "hasMultidimensions" in self.properties and \
-           self.properties['hasMultidimensions'] == True:
+        if ("hasMultidimensions" in self.properties and \
+           self.properties['hasMultidimensions'] == True) or self._datastore_raster:
             url = "%s/multiDimensionalInfo" % self._url
             params = {'f':'json'}
+            if self._fn is not None:
+                params['renderingRule'] = self._fn
+
             if self._datastore_raster:
                 params["Raster"]=self._uri
-            return self._con.get(path=url, params=params)
-        return None
+                if isinstance(self._uri, bytes):
+                    del params['renderingRule']
+                    params['Raster']=self._uri
+            return self._con.post(path=url, params=params)
     #----------------------------------------------------------------------
     def project(self,
                 geometries,
@@ -726,6 +768,9 @@ class ImageryLayer(Layer):
 
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         url = "%s/project" % self._url
         params = {'f': 'json',
                   'inSR' : in_sr,
@@ -832,6 +877,9 @@ class ImageryLayer(Layer):
         :returns: dictionary
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         url = "%s/identify" % self._url
         params = {
             'f' : 'json',
@@ -1002,6 +1050,9 @@ class ImageryLayer(Layer):
 
         :returns: dictionary
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         if linear_unit is not None:
             linear_unit = "esri%s" % linear_unit
         if angular_unit is not None:
@@ -1077,6 +1128,9 @@ class ImageryLayer(Layer):
 
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         if self._datastore_raster:
             raise RuntimeError("This operation cannot be performed on a datastore raster")
         if clear_filters:
@@ -1142,6 +1196,9 @@ class ImageryLayer(Layer):
         :return: ImageryLayer with filtered images meeting the filter criteria
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         if self._datastore_raster:
             raise RuntimeError("This operation cannot be performed on a datastore raster")
         newlyr = self._clone_layer()
@@ -1368,6 +1425,8 @@ class ImageryLayer(Layer):
         :returns: dict or string
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
 
         import datetime
         no_data_interpretation = "esri%s" % no_data_interpretation
@@ -1518,7 +1577,6 @@ class ImageryLayer(Layer):
             if isinstance(self._uri, bytes):
                 del params['renderingRule']
                 params["Raster"]=self._uri
-
         if f == "json":
             return self._con.post(url, params, token=self._token)
         elif f == "image":
@@ -1682,6 +1740,10 @@ class ImageryLayer(Layer):
             attribute.update(feature['attributes'])
             attribute['SHAPE'] = Geometry(feature['geometry'])
             return attribute
+
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         if self._datastore_raster:
             raise RuntimeError("This operation cannot be performed on a datastore raster")
 
@@ -1844,6 +1906,9 @@ class ImageryLayer(Layer):
                               Example: out_format='TIFF'
         =================     ====================================================================
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         if self._datastore_raster:
             raise RuntimeError("This operation cannot be performed on a datastore raster")
 
@@ -1883,6 +1948,9 @@ class ImageryLayer(Layer):
 
         :returns: list of files downloaded
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         if self._datastore_raster:
             raise RuntimeError("This operation cannot be performed on a datastore raster")
 
@@ -1956,6 +2024,9 @@ class ImageryLayer(Layer):
 
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         url = "%s/computePixelLocation" % self._url
         params = {'f': 'json',
                   'rasterId':raster_id,
@@ -1976,7 +2047,7 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         muldidef              optional array. Multidimensional definition used for querying 
                               dimensional slices of the input image service.
-                              See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
+                              See https://developers.arcgis.com/documentation/common-data-types/multidimensional-definition.htm
         -----------------     --------------------------------------------------------------------
 
         .. code-block:: python
@@ -2003,6 +2074,95 @@ class ImageryLayer(Layer):
 
         return self._con.post(path=url,
                               postdata=params)
+
+
+    def statistics(self,variable=None):
+        """
+        Returns statistics of the raster.
+
+        Operation available in ArcGIS Image Server 10.8.1 and higher.
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        variable              Optional string. For an image service that has multidimensional 
+                              information, this parameter can be used to request statistics for 
+                              each variable. If not specified, it will return statistics for the 
+                              whole image service. Eligible variable names can be queried from 
+                              multidimensional_info property of the Imagery Layer object.
+        -----------------     --------------------------------------------------------------------
+
+        .. code-block:: python
+
+            # Usage Example 1: This example returns the statistics of an Imagery Layer object. 
+            lyr_input.statistics()
+
+        :returns: dictionary containing the statistics.
+
+
+        """
+        url = self._url + "/statistics"
+
+        params={'f': 'json'}
+
+        if variable is not None:
+            params['variable'] = variable
+
+        if self._datastore_raster:
+            params["Raster"]=self._uri
+
+        return self._con.post(path=url,
+                              postdata=params, token=self._token)
+
+    def get_histograms(self, variable=None):
+        """
+        Returns the histograms of each band in the imagery layer as a list of dictionaries corresponding to each band.
+        get_histograms
+        get_histograms() can return histogram for each variable if used with multidimensional ImageryLayer 
+        object by specifing value for variable parameter.
+
+        If histogram is not found, returns None. In this case, call the compute_histograms().
+        (get_histograms() is an enhanced version of the histograms property on the ImageryLayer class
+        with additional variable parameter.)
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        variable              Optional string. For an image service that has multidimensional 
+                              information, this parameter can be used to request histograms for 
+                              each variable. It will return histograms for the whole ImageryLayer
+                              if not specified.
+                              This parameter is available from 10.8.1
+        -----------------     --------------------------------------------------------------------
+
+        :return:
+            my_hist = imagery_layer.histograms(variable="water_temp")
+
+            Structure of the return value:
+            [
+             {
+              "size":256,
+              "min":560,
+              "max":24568,
+              counts: [10,99,56,42200,125,....] #length of this list corresponds 'size'
+             }
+            ]
+
+        """
+        if self.properties.hasHistograms:
+            #proceed
+            url = self._url + "/histograms"
+            params={'f':'json'}
+            if variable is not None:
+                params['variable'] = variable
+            if self._datastore_raster:
+                params["Raster"] =self._uri
+            hist_return = self._con.post(url, params, token=self._token)
+
+            #process this into a dict
+            return hist_return['histograms']
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     def _add_rasters(self,
@@ -2372,6 +2532,9 @@ class ImageryLayer(Layer):
                                                                             time=[start,end])
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         import datetime
         url = "%s/computeStatisticsHistograms" % self._url
         from arcgis.geometry import Polygon
@@ -2428,6 +2591,8 @@ class ImageryLayer(Layer):
 
         :returns: dictionary
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
 
         if self._datastore_raster:
             raise RuntimeError("This operation cannot be performed on a datastore raster")
@@ -2471,6 +2636,9 @@ class ImageryLayer(Layer):
 
         :returns: legend as a dictionary by default, or as an HTML table if as_html is True
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         url = "%s/legend" % self._url
         params = {'f' : 'json'}
         if band_ids is not None:
@@ -2501,19 +2669,46 @@ class ImageryLayer(Layer):
             return legend
 
     # ----------------------------------------------------------------------
-    def colormap(self):
+    def colormap(self,
+                 rendering_rule=None,
+                 variable=None):
         """
         The colormap method returns RGB color representation of pixel
         values. This method is supported if the hasColormap property of
         the layer is true.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        rendering_rule      optional dictionary. Specifies the rendering rule for how the
+                            requested image should be rendered.
+                            See the raster function objects for the JSON syntax and examples.
+                            https://developers.arcgis.com/documentation/common-data-types/raster-function-objects.htm
+        ---------------     --------------------------------------------------------------------
+        variable            Optional String. This parameter can be used to request a 
+                            colormap for each variable for an image service that has 
+                            multidimensional information. It will return a colormap 
+                            for the whole image service if not specified. Eligible variable names 
+                            can be queried from multidimensional_info property of the Imagery Layer object.
+                            This parameter is available from 10.8.1
+        ===============     ====================================================================
+
+        :returns: dictionary
         """
         if self.properties.hasColormap:
             url = self._url + "/colormap"
             params = {
                 "f": "json"
             }
+            if rendering_rule is not None:
+                params["renderingRule"]=rendering_rule
+            if variable is not None:
+                params["variable"]=variable
             if self._datastore_raster:
                 params["Raster"]=self._uri
+                if isinstance(self._uri, bytes):
+                    if "renderingRule" in params.keys():
+                        del params['renderingRule']
             return self._con.get(url, params, token=self._token)
         else:
             return None
@@ -2560,12 +2755,12 @@ class ImageryLayer(Layer):
                             (as advertised in the root resource: defaultMosaicMethod,
                             mosaicOperator, sortField, sortValue).
                             See Mosaic rule objects help for more information:
-                            http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000s4000000
+                            https://developers.arcgis.com/documentation/common-data-types/mosaic-rules.htm
         ---------------     --------------------------------------------------------------------
         rendering_rule      optional dictionary. Specifies the rendering rule for how the
                             requested image should be rendered.
                             See the raster function objects for the JSON syntax and examples.
-                            http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Raster_function_objects/02r3000000rv000000/
+                            https://developers.arcgis.com/documentation/common-data-types/raster-function-objects.htm
         ---------------     --------------------------------------------------------------------
         pixel_size          optional list or dictionary. The pixel level being used (or the
                             resolution being looked at). If pixel size is not specified, then
@@ -2585,6 +2780,9 @@ class ImageryLayer(Layer):
 
         :returns: dictionary
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         url = self._url + "/computeClassStatistics"
 
         params = {
@@ -2629,7 +2827,7 @@ class ImageryLayer(Layer):
                               (as advertised in the root resource: defaultMosaicMethod,
                               mosaicOperator, sortField, sortValue).
                               See Mosaic rule objects help for more information:
-                              http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000s4000000
+                              https://developers.arcgis.com/documentation/common-data-types/mosaic-rules.htm
         -----------------     --------------------------------------------------------------------
         rendering_rule        Specifies the rendering rule for how the requested image should be
                               processed. The response is updated Layer info that reflects a
@@ -2692,6 +2890,9 @@ class ImageryLayer(Layer):
                                                             time=[start, end])
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         import datetime
         url = self._url + "/computeHistograms"
         params = {
@@ -2810,6 +3011,8 @@ class ImageryLayer(Layer):
         =======================  =======================================================================
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
 
         if not isinstance(geometry, Geometry):
             geometry = Geometry(geometry)
@@ -2941,7 +3144,7 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         muldidef              optional array. multidemensional definition used for filtering by
                               variable/dimensions.
-                              See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
+                              See https://developers.arcgis.com/documentation/common-data-types/multidimensional-definition.htm
         -----------------     --------------------------------------------------------------------
         op                    optional string, first,last,min,max,mean,blend,sum mosaic operation
                               to resolve overlap pixel values: from first or last raster, use the
@@ -2951,9 +3154,12 @@ class ImageryLayer(Layer):
         =================     ====================================================================
 
         :return: a mosaic rule defined in the format at
-            http://resources.arcgis.com/en/help/arcgis-rest-api/#/Mosaic_rule_objects/02r3000000s4000000/
+            https://developers.arcgis.com/documentation/common-data-types/mosaic-rules.htm
         Also see http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/understanding-the-mosaicking-rules-for-a-mosaic-dataset.htm#ESRI_SECTION1_ABDC9F3F6F724A4F8079051565DC59E
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+
         if self._datastore_raster:
             raise RuntimeError("This operation cannot be performed on a datastore raster")
         mosaic_rule = {
@@ -3012,6 +3218,8 @@ class ImageryLayer(Layer):
 
         :return: dictionary showing whether the specified rendering rule and/or mosaic rule is valid
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
 
         url = self._url + "/validate"
 
@@ -3070,6 +3278,8 @@ class ImageryLayer(Layer):
         :returns: dictionary showing volume values for each geometry in the input geometries array
 
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
 
         if self.properties.serviceDataType == "esriImageServiceDataTypeElevation":
             url = "%s/calculateVolume" % self._url
@@ -3141,6 +3351,8 @@ class ImageryLayer(Layer):
 
         :return: dictionary showing whether the specified rendering rule and/or mosaic rule is valid
         """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
 
         url = self._url + "/queryBoundary"
 
@@ -3211,6 +3423,8 @@ class ImageryLayer(Layer):
 
         :returns: A dict representing the md info
          """
+        if self.tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
 
         url = self._url + "/computeMultidimensionalInfo"
 
@@ -3373,7 +3587,7 @@ class ImageryLayer(Layer):
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        output_name                              optional string. If not provided, an Imagery Layer item is created
+        output_name                              Optional string. If not provided, an Imagery Layer item is created
                                                  by the method and used as the output.
                                                  You can pass in the name of the output Imagery Layer that should be
                                                  created by this method to be used as the output for the tool.
@@ -3381,7 +3595,7 @@ class ImageryLayer(Layer):
                                                  Image Layer Item from your GIS to use that instead.
                                                  A RuntimeError is raised if a layer by that name already exists
         ------------------------------------     --------------------------------------------------------------------
-        for_viz                                  optional boolean. If True, a new Item is created that uses the
+        for_viz                                  Optional boolean. If True, a new Item is created that uses the
                                                  applied raster functions for visualization at display resolution
                                                  using on-the-fly image processing.
                                                  If for_viz is False, distributed raster analysis is used for
@@ -3396,11 +3610,16 @@ class ImageryLayer(Layer):
                                                  multidimensional raster. Valid only if process_as_multidimensional
                                                  is set to True
         ------------------------------------     --------------------------------------------------------------------
-        gis                                      optional arcgis.gis.GIS object. The GIS to be used for saving the
+        gis                                      Optional arcgis.gis.GIS object. The GIS to be used for saving the
                                                  output. Keyword only parameter.
         ------------------------------------     --------------------------------------------------------------------
         future                                   Optional boolean. If True, the result will be a GPJob object and
                                                  results will be returned asynchronously. Keyword only parameter.
+        ------------------------------------     --------------------------------------------------------------------
+        tiles_only                               In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                                 To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                                 Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
         ====================================     ====================================================================
 
         :return: output_raster - Image layer item
@@ -4115,13 +4334,142 @@ class ImageryLayer(Layer):
         return temporal_profile(self, points=points, time_field=time_field, variables=variables,  bands=bands, time_extent=time_extent, dimension=dimension, dimension_values=dimension_values, 
                      show_values=show_values, trend_type=trend_type, trend_order=trend_order, plot_properties=plot_properties)
 
+    def render_tilesonly_layer(self, level=None, slice_id=None):
+        '''
+        Render tiles only Imagery Layer at a given level.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        level                                    Optional integer. Level to be used for rendering.
+                                                 Default value is 0.
+        ------------------------------------     --------------------------------------------------------------------
+        slice_id                                 Optional l integer. Renders the given slice of a multidimensional raster.
+                                                 To get the slice index use slices method on the ImageryLayer object.
+        ====================================     ====================================================================
+
+        :return:
+            None
+        '''
+        if self.tiles_only:
+            dataSourceExtent = self.extent
+            tinfo = self.properties.tileInfo
+            origin = tinfo["origin"]
+            tw = tinfo["cols"]
+            th = tinfo["rows"]
+            if "lods" in tinfo.keys():
+                if (len(tinfo["lods"]) >= 1):
+                    if level is None:
+                        level = 0
+                    resolution = {"x":tinfo["lods"][level]["resolution"], "y":tinfo["lods"][level]["resolution"]}
+                    #level = tinfo["lods"][resolution]["level"]
+            import math
+            colStart = math.floor((dataSourceExtent["xmin"] - origin["x"]) / resolution["x"] / tw)
+            colEnd = math.ceil((dataSourceExtent["xmax"] - origin["x"] - resolution["x"]) / resolution["x"] / tw)
+            rowStart = math.floor((origin["y"] - dataSourceExtent["ymax"]) / resolution["y"] / th)
+            rowEnd = math.ceil((origin["y"] - dataSourceExtent["ymin"] - resolution["y"]) / resolution["y"]/ th)
+            from matplotlib import pyplot as plt
+            img = []
+            numarray = None
+            numpylist = []
+            for i in range(rowStart, rowEnd):
+                for j in range(colStart, colEnd):
+                    num = self._read_tilesonly_layer(level,i,j,slice_id, as_numpy = True)
+                    if numarray is None:
+                        numarray = num
+                    else:
+                        numarray = np.concatenate((numarray, num), axis=1)
+                numpylist.append(numarray)
+                numarray = None
+                    #img.append(((lyr.tiles.image_tile(2,i,j, as_numpy = True))))
+
+            for index,ele in enumerate(numpylist):
+                if index == 0:
+                    numarray = ele                    
+                else:
+                    #imgnew = plt.imshow(ele)
+                    numarray = np.concatenate((numarray,ele), axis=0)
+            num_bands = self.band_count
+            if num_bands == 1:
+                imgnew = plt.imshow(numarray, cmap = 'Greys_r')
+            else:
+                imgnew = plt.imshow(numarray, cmap = 'Greys_r')
+            plt.axis('off')
+            imgnew.axes.get_xaxis().set_visible(False)
+            imgnew.axes.get_yaxis().set_visible(False)
+            plt.close(imgnew.figure)
+            return imgnew.figure
+    def _read_tilesonly_layer(self, level, row, column, slice_id = None, as_numpy=False):
+        import tempfile, uuid
+        fname = "%s.jpg" % uuid.uuid4().hex
+        out_folder = tempfile.gettempdir()
+        params = {}
+
+        if slice_id is not None:
+            params['sliceId'] = slice_id
+        url = "%s/tile/%s/%s/%s" % (self._url, level, row, column)
+        if self.tiles_only:
+            res =  self._con.get(path=url,
+                             params=params,
+                             try_json=False,
+                             force_bytes=True)
+
+            try:
+                import lerc
+            except:
+                _LOGGER.warning("lerc needs to be installed, to render Tiled Imagery Layer")
+            if not isinstance(res, bytes):
+                raise RuntimeError(res)
+            result, data, valid_mask = lerc.decode(res)
+            data, valid_mask = np.broadcast_arrays(data, valid_mask)
+            data.setflags(write=True)
+            valid_mask = (valid_mask == False)
+            if data.dtype == 'uint8':
+                data[valid_mask]=255
+            elif data.dtype == 'float32':
+                data[valid_mask]=np.nan
+            if result != 0:
+                raise RuntimeError('decoding bytes from imagery service failed.')
+            # transpose
+            if self.properties.hasMultidimensions:
+                if len(data) == 2:
+                    data = np.expand_dims(np.expand_dims(data, axis=2), axis=0)
+                elif  len(data) == 3:                    
+                    if len(self.slices) == 1:
+                        data = np.expand_dims(np.transpose(data, [1, 2, 0]), axis=0)
+                    else:
+                        data = np.expand_dims(np.transpose(data, [2, 0, 1]), axis=3)
+                elif len(data) == 4:
+                    data = np.transpose(data, [3, 1, 2, 0])
+                else:
+                    return data
+            else:
+                if data.shape[0]>3 and len(data.shape)==3:
+                    data = data[0:3] #Extract first 3 bands
+                if len(data) == 2:
+                    data = np.expand_dims(data, axis=2)
+                elif len(data) == 3:
+                    data = np.transpose(data, axes=[1, 2, 0])
+            return data
 
     def _repr_jpeg_(self):
-        bbox_sr = None
-        if 'spatialReference' in self.extent:
-            bbox_sr = self.extent['spatialReference']
-        if not self._uses_gbl_function:
-            return self.export_image(bbox=self._extent, bbox_sr=bbox_sr, size=[1200, 450], export_format='jpeg', f='image')
+        if self.tiles_only:
+            fig = self.render_tilesonly_layer()
+            try:
+                from IPython.core.pylabtools import print_figure
+                data = print_figure(fig, 'jpeg')
+                from matplotlib import pyplot as plt
+                plt.close(fig)
+                return data
+            except:
+                pass
+
+        else:    
+            bbox_sr = None
+            if 'spatialReference' in self.extent:
+                bbox_sr = self.extent['spatialReference']
+            if not self._uses_gbl_function:
+                return self.export_image(bbox=self._extent, bbox_sr=bbox_sr, size=[1200, 450], export_format='jpeg', f='image')
 
     def _repr_svg_(self):
         if self._uses_gbl_function:
@@ -4246,6 +4594,30 @@ class ImageryLayer(Layer):
     def __ror__(self, other):
         from arcgis.raster.functions import boolean_or
         return boolean_or([other, self])
+
+    def __ne__(self, other):
+        from arcgis.raster.functions import not_equal
+        return not_equal([self, other])
+
+    def __eq__(self, other):
+        from arcgis.raster.functions import equal_to
+        return equal_to([self, other])
+
+    def __gt__(self, other):
+        from arcgis.raster.functions import greater_than
+        return greater_than([self, other])
+
+    def __ge__(self, other):
+        from arcgis.raster.functions import greater_than_equal
+        return greater_than_equal([self, other])
+
+    def __lt__(self, other):
+        from arcgis.raster.functions import less_than
+        return less_than([self, other])
+
+    def __le__(self, other):
+        from arcgis.raster.functions import less_than_equal
+        return less_than_equal([self, other])
 
         # Raster.Raster.__pos__ = unaryPos         # +v
 # Raster.Raster.__abs__ = Functions.Abs    # abs(v)
@@ -4441,6 +4813,8 @@ class Raster():
              engine = _get_engine(engine)
              self._engine=engine
         else:
+            if isinstance(path, RasterInfo):
+                engine=_ArcpyRaster
             if isinstance(path, str):
                 if "https://" not in path and "http://" not in path and  '/fileShares/' not in path and '/rasterStores/' not in path and '/cloudStores/' not in path and not isinstance(path,dict) and '/vsi' not in path: #local raster case
                     if engine is None:
@@ -4512,11 +4886,20 @@ class Raster():
         on a MapView, vmin and vmax define the data range that the colormap covers.
         This property is the lower end of that range.
         """
+        if self._vmin is None:
+            self._vmin = self._attempt_infer_vmin()
         return self._vmin
 
     @vmin.setter
     def vmin(self, value):
         self._vmin = value
+
+    def _attempt_infer_vmin(self):
+        # only tested against _ArcpyRaster engines..
+        try:
+            return self._engine_obj._raster.minimum
+        except Exception:
+            return None
 
     _vmax = None
     @property
@@ -4525,11 +4908,20 @@ class Raster():
         on a MapView, vmin and vmax define the data range that the colormap covers.
         This property is the upper end of that range.
         """ 
+        if self._vmax is None:
+            self._vmax = self._attempt_infer_vmax()
         return self._vmax
 
     @vmax.setter
     def vmax(self, value):
         self._vmax = value
+
+    def _attempt_infer_vmax(self):
+        # only tested against _ArcpyRaster engines..
+        try:
+            return self._engine_obj._raster.maximum
+        except Exception:
+            return None
 
     _opacity = 1
     @property
@@ -4715,6 +5107,21 @@ class Raster():
         """returns whether the raster cell values are writable or not using the [row, column] notation. 
         When this property is True, they are not writable. Otherwise, they are writable. """
         return self._engine_obj.read_only
+
+    @property
+    def RAT(self):
+        """
+        Return the attribute table as a dictionary if the table exists
+        """
+        return self._engine_obj.RAT
+
+    @property
+    def raster_info(self):
+        """
+        Returns information about the ImageryLayer such as 
+        bandCount, extent , pixelSizeX, pixelSizeY, pixelType
+        """
+        return self._engine_obj.raster_info
 
     def get_raster_bands(self, band_ids_or_names=None):
         """
@@ -4963,34 +5370,286 @@ class Raster():
         """
         return self._engine_obj.add_dimension(variable, new_dimension_name, dimension_value, dimension_attributes)
 
-    #def append_slices(md_raster=None):
-    #    """
-    #    Returns a list of the dimension names that the variable contains.
+    def get_colormap(self, variable_name=None):
+        """
+        Returns the color map of the raster. If the raster is multidimensional, returns the color map of a variable.
 
-    #    =================     ====================================================================
-    #    **Arguments**         **Description**
-    #    -----------------     --------------------------------------------------------------------
-    #    variable_name         required string. the name of the variable
-    #    =================     ====================================================================
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        variable_name                            Optional string. The variable name of the multidimensional raster. 
+                                                 If a variable is not specified and the raster is multidimensional, 
+                                                 the color map of the first variable will be returned.
+        ====================================     ====================================================================
 
-    #    :returns: list. The dimension names that the given variable contains
-    #    """
-    #    return self._engine_obj.append_slices(md_raster)
+        :returns (dict): The colormap of the raster or the given variable.
+        """
 
-    #def set_variable_attributes(self, variable_name, variable_attributes):
-    #    """
-    #    Returns a list of the dimension names that the variable contains.
+        return self._engine_obj.get_colormap(variable_name)
 
-    #    =================     ====================================================================
-    #    **Arguments**         **Description**
-    #    -----------------     --------------------------------------------------------------------
-    #    variable_name         required string. the name of the variable
-    #    =================     ====================================================================
+    def set_colormap(self, color_map, variable_name=None):
 
-    #    :returns: list. The dimension names that the given variable contains
-    #    """
-    #    return self._engine_obj.set_variable_attributes(variable_name, variable_attributes)
+        """
+        Sets the color map for the raster. If the raster is multidimensional, it sets the color map for a variable.
 
+        (Operation is not supported on image services)
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        color_map                                Optional (string, dict): The color map to apply to the raster. This 
+                                                 can be a string indicating the name of the color map or color ramp 
+                                                 to use, for example, NDVI or Yellow To Red, respectively. This can 
+                                                 also be a Python dictionary with a custom color map or color ramp 
+                                                 object.
+
+                                                 For example:
+
+                                                 customized colormap object, e.g., {'values': [0, 1, 2, 3, 4, 5, 6], 'colors': ['#000000', '#DCFFDF', '#B8FFBE', '#85FF90', '#50FF60','#00AB10', '#006B0A']}
+
+                                                 colorramp name, e.g., "Yellow To Red"
+
+                                                 colormap name, e.g., "NDVI"
+
+                                                 customized colorramp object, e.g., {"type": "algorithmic", "fromColor": [115, 76, 0, 255],"toColor": [255, 25, 86, 255], "algorithm": "esriHSVAlgorithm"}
+        ------------------------------------     --------------------------------------------------------------------
+        variable_name                            Optional string. The variable name of the multidimensional raster dataset. 
+                                                 If a variable is not specified and the raster is multidimensional, the color 
+                                                 map of the first variable will be set.
+        ====================================     ====================================================================
+
+        :returns: None
+        """
+        return self._engine_obj.set_colormap(color_map, variable_name)
+
+    def get_statistics(self, variable_name=None):
+        """
+        Returns the statistics of the raster. If the raster is multidimensional, returns the statistics of a variable.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        variable_name                            Optional string. The variable name of the multidimensional raster dataset. 
+                                                 If a variable is not specified and the raster is multidimensional, 
+                                                 the statistics of the first variable will be returned.
+        ====================================     ====================================================================
+
+        :returns (dict): The statistics of the raster or the given variable.
+        """
+
+        return self._engine_obj.get_statistics(variable_name)
+
+    def set_statistics(self, statistics_obj, variable_name=None):
+        """
+        Sets the statistics for the raster. If the raster is multiband, it sets the statistics for each band. 
+        If the raster is multidimensional, it sets the statistics for a variable.
+
+        (Operation is not supported on image services)
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        color_map                                Optional list of statistics objects. A list of Python dictionaries containing statistics and corresponding 
+                                                 values to set. For example, [{'min': 10, 'max': 20}] sets the minimum 
+                                                 and maximum pixel values. 
+
+                                                 If the raster is multiband, the statistics for each band will be set with 
+                                                 each dictionary in the list. The first band will use the statistics in the 
+                                                 first dictionary. The second band will use the statistics in the second 
+                                                 dictionary, and so on.
+
+                                                 min - The minimum pixel value
+                                                 max - The maximum pixel value
+                                                 mean - The mean pixel value
+                                                 median - The median pixel value
+                                                 standardDeviation - The standard deviation of the pixel values
+                                                 count - The total number of pixels
+                                                 skipX - The horizontal skip factor
+                                                 skipY - The vertical skip factor
+
+                                                 For example: 
+
+                                                 [{'min': val, 'max': val, 'mean': val, 'standardDeviation': val, 
+                                                 'median': val, 'mode': val, 'count': val}, ...]
+        ------------------------------------     --------------------------------------------------------------------
+        variable_name                            Optional string. The variable name of the multidimensional raster. 
+                                                 If a variable is not specified and the raster is multidimensional, 
+                                                 the statistics of the first variable will be set.
+        ====================================     ====================================================================
+
+        :returns: None
+        """
+
+        return self._engine_obj.set_statistics(statistics_obj, variable_name)
+
+    def get_histograms(self, variable_name=None):
+        """
+        Returns the histograms of the raster. If the raster is multidimensional, it returns the histogram of a variable. 
+        If the raster is multiband, it returns the histogram of each band.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        variable_name                            Optional string. The variable name of the multidimensional raster dataset. 
+                                                 If a variable is not specified and the raster is multidimensional, 
+                                                 the histogram of the first variable will be returned.
+        ====================================     ====================================================================
+
+        :returns (list of dict): The histogram values of the raster or variable.
+        """
+
+        return self._engine_obj.get_histograms(variable_name)
+
+    def set_histograms(self, histogram_obj, variable_name=None):
+        """
+        Set the histogram for the raster or a given variable if the raster is multidimensional.
+
+        (Operation is not supported on image services)
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        histogram_obj                            Optional list of histogram objects(dict),
+
+                                                 If the raster is multiband, the histogram for each band will be set 
+                                                 with each dictionary in the list. The first band will use the histogram 
+                                                 in the first dictionary. The second band will use the histogram in 
+                                                 the second dictionary, and so on.
+
+                                                 size - The number of bins in the histogram
+
+                                                 min - The minimum pixel value
+
+                                                 max - The maximum pixel value
+
+                                                 counts - A list containing the number of pixels in each bin, in the order of bins
+
+                                                 For example:
+
+                                                 [{'size': number_of_bins, 'min': min_val, 'max': max_val, 'counts': [pixel_count_at_each_bin, ...]}, ...]
+        ------------------------------------     --------------------------------------------------------------------
+        variable_name                            Optional string. The variable name of the multidimensional raster dataset. 
+                                                 If a variable is not specified and the raster is multidimensional, 
+                                                 the histogram will be set for the first variable.
+        ====================================     ====================================================================
+
+        :returns: None
+        """
+
+        return self._engine_obj.set_histograms(histogram_obj, variable_name)
+
+    def append_slices(self, md_raster=None):
+        """
+        Appends the slices from another multidimensional raster.
+
+        (Operation is not supported on image services)
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        md_raster             Required multidimensional raster. The multidimensional raster containing 
+                              the slices to be appended. 
+
+                              This raster must have the same variables, with the same dimension names, 
+                              as the target raster. The cell sizes, extents, and spatial reference 
+                              systems must also match. 
+
+                              The slices in this raster must be for dimension values that follow 
+                              the dimension values of the slices in the target raster.
+
+                              If a variable has two dimensions, slices will be appended along 
+                              one dimension. The other dimension must have the same number of 
+                              slices as the dimension in the target raster. 
+                              
+                              For example, if a salinity variable contains slices over time and 
+                              depth dimensions, time slices can be appended to another salinity 
+                              multidimensional raster but only if the same number of depth slices 
+                              exist in both rasters. 
+        =================     ====================================================================
+
+        :returns (string): A string containing the variable names and the associated dimensions in the multidimensional raster. 
+                           For example, if the resulting raster has 10 time slices with precipitation data, it will return 'prcp(StdTime=10)'.
+
+        """
+        return self._engine_obj.append_slices(md_raster)
+
+    def set_variable_attributes(self, variable_name, variable_attributes):
+        """
+        Sets the attribute information of a variable in a multidimensional raster (for example, description, unit, and so on).
+
+        (Operation is not supported on image services)
+
+        ====================================     ====================================================================
+        **Arguments**                            **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        variable_name                            Required string. The variable name of the multidimensional raster dataset.
+        ------------------------------------     --------------------------------------------------------------------
+        variable_attributes                      Required dict that contains attribute information to replace the current 
+                                                 attribute information of the variable.
+
+                                                 For example:
+
+                                                 {'Description': 'Daily total precipitation', 'Unit': 'mm/day'}.
+        ====================================     ====================================================================
+
+        :returns (dict): The attribute information of the variable.
+
+        """
+        return self._engine_obj.set_variable_attributes(variable_name, variable_attributes)
+
+    def summarize(self,
+                  geometry,
+                  pixel_size=None
+                  ):
+        """
+        The result of this operation contains statistics of a Raster for a given geometry.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        geometry              Required Polygon or Extent. A geometry that defines the geometry
+                              within which the histogram is computed. The geometry can be an
+                              envelope or a polygon
+        -----------------     --------------------------------------------------------------------
+        pixel_size            optional string or dict. The pixel level being used (or the
+                              resolution being looked at). If pixel size is not specified, then
+                              pixel_size will default to the base resolution of the dataset. The
+                              raster at the specified pixel size in the mosaic dataset will be
+                              used for histogram calculation.
+
+                              Syntax:
+                                - dictionary structure: pixel_size={point}
+                                - Point simple syntax: pixel_size='<x>,<y>'
+                              Examples:
+                                - pixel_size={"x": 0.18, "y": 0.18}
+                                - pixel_size='0.18,0.18'
+        =================     ====================================================================
+
+        :returns: dictionary. (Dictionary at each index represents the statistics of the corresponding band.)
+                  [{
+                      "min": 0,
+                      "max": 9,
+                      "mean": 3.271703916996627,
+                      "standardDeviation": 1.961013669880657,
+                      "median": 4,
+                      "mode": 4,
+                      "skipX": 1,
+                      "skipY": 1,
+                      "count": 2004546
+                    }]
+
+
+        .. code-block:: python
+
+            # Usage Example 1: Summarize a raster at an area.
+
+            stats = raster.summarize(geometry=geom_obj)
+            mean_of_first_band = stats[0]["mean"]
+
+        """
+        return self._engine_obj.summarize(geometry=geometry,
+                                          pixel_size=pixel_size
+                                          )
 
     @property
     def _lyr_json(self):
@@ -5304,6 +5963,24 @@ class Raster():
     def __ror__(self, other):
         return self._engine_obj.__ror__(other)
 
+    def __ne__(self, other):
+        return self._engine_obj.__ne__(other)
+
+    def __eq__(self, other):
+        return self._engine_obj.__eq__(other)
+
+    def __gt__(self, other):
+        return self._engine_obj.__gt__(other)
+
+    def __ge__(self, other):
+        return self._engine_obj.__ge__(other)
+
+    def __lt__(self, other):
+        return self._engine_obj.__lt__(other)
+
+    def __le__(self, other):
+        return self._engine_obj.__le__(other)
+
         # bbox_sr = None
         # if not isinstance(bbox, arcpy.arcobjects.Extent):
         #     bbox_list = []
@@ -5435,7 +6112,7 @@ class Raster():
         -----------------     --------------------------------------------------------------------
         muldidef              optional array. multidemensional definition used for filtering by
                               variable/dimensions.
-                              See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
+                              See https://developers.arcgis.com/documentation/common-data-types/multidimensional-definition.htm
         -----------------     --------------------------------------------------------------------
         op                    optional string, first,last,min,max,mean,blend,sum mosaic operation
                               to resolve overlap pixel values: from first or last raster, use the
@@ -5444,7 +6121,7 @@ class Raster():
         item_rendering_rule   optional item rendering rule, applied on items before mosaicking.
         =================     ====================================================================
         :return: a mosaic rule defined in the format at
-            http://resources.arcgis.com/en/help/arcgis-rest-api/#/Mosaic_rule_objects/02r3000000s4000000/
+            https://developers.arcgis.com/documentation/common-data-types/mosaic-rules.htm
         Also see http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/understanding-the-mosaicking-rules-for-a-mosaic-dataset.htm#ESRI_SECTION1_ABDC9F3F6F724A4F8079051565DC59E
         """
         if self._datastore_raster:
@@ -5503,10 +6180,18 @@ class _ImageServerRaster(ImageryLayer, Raster):
         self._do_not_hydrate=False
         self._created_from_collection=False
         self._mdinfo=None
+        self._extent=None
         
     @property
     def extent(self):
-        return super().extent
+        if self._extent is None:
+            return super().extent
+        else:
+            return self._extent
+
+    @extent.setter
+    def extent(self, value):
+        self._extent = value
 
     @property
     def pixel_type(self):
@@ -5553,7 +6238,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     @property
     def name(self):
-        return super().properties.contents.name
+        return super().properties.name
 
 
     @property
@@ -5830,7 +6515,21 @@ class _ImageServerRaster(ImageryLayer, Raster):
     def read_only(self):
         return True
 
+    @property
+    def RAT(self):
+        return super().attribute_table()
+
+    @property
+    def raster_info(self):
+        """
+        Returns information about the ImageryLayer such as 
+        bandCount, extent , pixelSizeX, pixelSizeY, pixelType
+        """
+        return super().raster_info
+
     def get_raster_bands(self, band_ids_or_names=None):
+        if super().tiles_only:
+            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
         from arcgis.raster.functions import extract_band
         return_list=[]
         if isinstance(band_ids_or_names, list):
@@ -5944,11 +6643,11 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
 
     def rename_variable(self, current_variable_name, new_variable_name):
-        raise RuntimeError('Not available on image service')
+        raise RuntimeError('Operation is not supported on image services')
 
 
     def set_property(self, property_name, property_value):
-        raise RuntimeError('Not available on image service')
+        raise RuntimeError('Operation is not supported on image services')
 
 
     def get_property(self, property_name):
@@ -6071,10 +6770,45 @@ class _ImageServerRaster(ImageryLayer, Raster):
     def add_dimension(self, variable, new_dimension_name, dimension_value, dimension_attributes=None):
         raise RuntimeError('Operation is not supported on image services')
 
-    def append_slices(md_raster=None):
+    def append_slices(self, md_raster=None):
         raise RuntimeError('Operation is not supported on image services')
 
     def set_variable_attributes(self, variable_name, variable_attributes):
+        raise RuntimeError('Operation is not supported on image services')
+
+    def get_colormap(self, variable_name=None):
+        colormap = super().colormap(variable_name)
+        if (isinstance(colormap,dict)) and "colormap" in colormap.keys():
+            return {"values":colormap['colormap']}
+        else:
+            return colormap
+
+    def summarize(self, geometry=None,
+                  pixel_size=None
+                  ):
+        stats_histograms =  super().compute_stats_and_histograms(geometry=geometry,
+                        rendering_rule=self._fn,
+                        pixel_size=pixel_size
+                        )
+        return stats_histograms["statistics"]
+
+    def set_colormap(self, color_map, variable_name=None):
+        raise RuntimeError('Operation is not supported on image services')
+
+    def get_statistics(self, variable_name=None):
+        statistics = super().statistics(variable_name)
+        if (isinstance(statistics,dict)) and "statistics" in statistics.keys():
+            return statistics["statistics"]
+        else:
+            return statistics
+
+    def set_statistics(self, statistics_obj, variable_name=None):
+        raise RuntimeError('Operation is not supported on image services')
+
+    def get_histograms(self, variable_name=None):
+        return super().get_histograms(variable_name)
+
+    def set_histograms(self, histogram_obj, variable_name=None):
         raise RuntimeError('Operation is not supported on image services')
 
 
@@ -6106,13 +6840,24 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
 
     def _repr_png_(self):
-        bbox_sr = None
-        if 'spatialReference' in self.extent:
-            bbox_sr = self.extent['spatialReference']
+        if super().tiles_only:
+            fig = super().render_tilesonly_layer()
+            try:
+                from IPython.core.pylabtools import print_figure
+                data = print_figure(fig, 'png')
+                from matplotlib import pyplot as plt
+                plt.close(fig)
+                return data
+            except:
+                pass
+        else: 
+            bbox_sr = None
+            if 'spatialReference' in self.extent:
+                bbox_sr = self.extent['spatialReference']
       
-        if not self._uses_gbl_function:
-            return super().export_image(bbox=self._extent, bbox_sr=bbox_sr, size=[1200, 450],
-                                        export_format='png32', f='image')
+            if not self._uses_gbl_function:
+                return super().export_image(bbox=self._extent, bbox_sr=bbox_sr, size=[1200, 450],
+                                            export_format='png32', f='image')
 
     def _repr_jpeg_(self):
         return None
@@ -6301,20 +7046,36 @@ class _ArcpyRaster(Raster,ImageryLayer):
         self._is_multidimensional = is_multidimensional
         self._engine=_ArcpyRaster
         import arcpy
-        if isinstance(path, str):
-            if ("https://"  in path or "http://"  in path): #To provide access to secured service
-                if self._token is not None:
-                    self._raster = arcpy.ia.Raster(path+"?token="+self._token, is_multidimensional)
+        if isinstance(path, RasterInfo):
+            ri = arcpy.RasterInfo()
+            rinfo = path.to_dict()
+            if "geodataXform" not in rinfo.keys():
+                if ("extent" in rinfo.keys()) and "spatialReference" in rinfo["extent"].keys():
+                    if ("wkid" in rinfo["extent"]["spatialReference"].keys()) and rinfo["extent"]["spatialReference"]["wkid"] is not None:
+                        rinfo.update({"geodataXform":{"spatialReference": rinfo["extent"]["spatialReference"],
+                                                                  "type":"IdentityXform"}})
+                    else:
+                        rinfo.update({"geodataXform":{"type":"IdentityXform"}})
+            ri.fromJSONString(json.dumps(rinfo))
+            self._raster = arcpy.ia.Raster(ri, is_multidimensional)            
+            self._uri=str(self._raster)
+            self._path=str(self._raster)
+        else:
+            if isinstance(path, str):
+                if ("https://"  in path or "http://"  in path): #To provide access to secured service
+                    if self._token is not None:
+                        self._raster = arcpy.ia.Raster(path+"?token="+self._token, is_multidimensional)
+                    else:
+                        self._raster = arcpy.ia.Raster(path, is_multidimensional)
                 else:
                     self._raster = arcpy.ia.Raster(path, is_multidimensional)
             else:
-                self._raster = arcpy.ia.Raster(path, is_multidimensional)
-        else:
-            self._raster = path
+                self._raster = path
+
+            self._uri=str(path)
+            self._path=str(path)
         self._datastore_raster=True
         self._do_not_hydrate=False
-        self._uri=path
-        self._path = path
 
     @property
     def _lyr_dict(self):
@@ -6491,6 +7252,53 @@ class _ArcpyRaster(Raster,ImageryLayer):
     def read_only(self):
         return self._raster.readOnly
 
+    @property
+    def RAT(self):
+        return self._raster.RAT
+
+    @property
+    def raster_info(self):
+        """
+        Returns information about the ImageryLayer such as 
+        bandCount, extent , pixelSizeX, pixelSizeY, pixelType
+        """
+        if self._raster_info !={}:
+            return self._raster_info
+        try:
+            ras_info =  self._raster.getRasterInfo()
+            ras_info_dict = json.loads(ras_info.toJSONString())
+            self._raster_info = ras_info_dict
+        except:
+            #if getRasterInfo fails, get the info from the properties
+            if self.extent is not None:
+                self._raster_info.update({"extent":dict(self.extent)})
+
+            if self.band_count is not None:
+                self._raster_info.update({"bandCount":self.band_count})
+
+            if self.pixel_type is not None:
+                self._raster_info.update({"pixelType":self.pixel_type})
+
+            if self.mean_cell_width is not None:
+                self._raster_info.update({"pixelSizeX":self.mean_cell_width})
+
+            if self.mean_cell_height is not None:
+                self._raster_info.update({"pixelSizeY":self.mean_cell_height})
+
+            if self.compression_type is not None:
+                self._raster_info.update({"compressionType":self.compression_type})
+
+            if self.block_size is not None:
+                self._raster_info.update({"blockHeight":self.block_size[1]})
+
+            if self.block_size is not None:
+                self._raster_info.update({"blockWidth":self.block_size[0]})
+
+            if self.no_data_values is not None:
+                self._raster_info.update({"noDataValues":self.no_data_values})
+
+        return self._raster_info
+
     def get_raster_bands(self, band_ids_or_names=None):
         raster_bands = self._raster.getRasterBands(band_ids_or_names)
         if isinstance(raster_bands, list):
@@ -6617,7 +7425,7 @@ class _ArcpyRaster(Raster,ImageryLayer):
                 build_transpose = "NO_TRANSPOSE"
         else:
             build_transpose = "NO_TRANSPOSE"
-        result = arcpy.GenerateRasterFromRasterFunction_management(json.dumps(self._fnra), output_name) 
+        result = arcpy.GenerateRasterFromRasterFunction_management(json.dumps(self._fnra), output_name, process_as_multidimensional=process_as_multidimensional) 
         uri = result.getOutput(0)
         if uri and process_as_multidimensional == "ALL_SLICES" and build_transpose == "TRANSPOSE":
             arcpy.management.BuildMultidimensionalTranspose(uri)
@@ -6789,6 +7597,10 @@ class _ArcpyRaster(Raster,ImageryLayer):
 
         # convert extent and spatial reference
         extent, spatial_reference = None, None
+        if isinstance(bbox_sr, dict):
+            if "wkid" in bbox_sr.keys():
+                if bbox_sr["wkid"] is None:
+                    bbox_sr=None
         if bbox_sr is not None and not isinstance(bbox_sr, _arcgis.geometry.SpatialReference):
             bbox_sr = _arcgis.geometry.SpatialReference(bbox_sr)
             bbox_sr = bbox_sr.as_arcpy
@@ -6818,12 +7630,51 @@ class _ArcpyRaster(Raster,ImageryLayer):
         return self._raster.exportImage(width, height, format=export_format, extent=extent,
                                         spatial_reference=spatial_reference, mosaic_rule=mosaic_rule)
 
-    def append_slices(md_raster=None):
-        return self._raster.appendSlices(md_raster)
+    def append_slices(self, md_raster=None):
+        return self._raster.appendSlices(md_raster._engine_obj._raster)
 
     def set_variable_attributes(self, variable_name, variable_attributes):
         return self._raster.setVariableAttributes(variable_name,variable_attributes)
 
+    def get_colormap(self, variable_name=None):
+        if variable_name is None:
+            variable_name=""
+        cmap = self._raster.getColormap(variable_name)
+        if isinstance(cmap, dict):
+            if ("type" in cmap.keys()) and cmap['type'] == "RasterColormap":
+                del cmap['type']
+        return cmap
+
+    def set_colormap(self, color_map, variable_name=None):
+        if variable_name is None:
+            variable_name=""
+        return self._raster.setColormap(color_map, variable_name)
+
+    def get_statistics(self, variable_name=None):
+        if variable_name is None:
+            variable_name=""
+        return self._raster.getStatistics(variable_name)
+
+    def set_statistics(self, statistics_obj, variable_name=None):
+        if variable_name is None:
+            variable_name=""
+        return self._raster.setStatistics(statistics_obj, variable_name)
+
+    def get_histograms(self, variable_name=None):
+        if variable_name is None:
+            variable_name=""
+        return self._raster.getHistograms(variable_name)
+
+    def set_histograms(self, histogram_obj, variable_name=None):
+        if variable_name is None:
+            variable_name=""
+        return self._raster.setHistograms(histogram_obj, variable_name)
+
+    def summarize(self,
+                  geometry,
+                  pixel_size=None
+                  ):
+        raise RuntimeError('Operation is not supported on local rasters')
 
     def __sub__(self, other):
         from arcgis.raster.functions import minus
@@ -6941,6 +7792,30 @@ class _ArcpyRaster(Raster,ImageryLayer):
         from arcgis.raster.functions import boolean_or
         return boolean_or([other, self])
 
+    def __ne__(self, other):
+        from arcgis.raster.functions import not_equal
+        return not_equal([self, other])
+
+    def __eq__(self, other):
+        from arcgis.raster.functions import equal_to
+        return equal_to([self, other])
+
+    def __gt__(self, other):
+        from arcgis.raster.functions import greater_than
+        return greater_than([self, other])
+
+    def __ge__(self, other):
+        from arcgis.raster.functions import greater_than_equal
+        return greater_than_equal([self, other])
+
+    def __lt__(self, other):
+        from arcgis.raster.functions import less_than
+        return less_than([self, other])
+
+    def __le__(self, other):
+        from arcgis.raster.functions import less_than_equal
+        return less_than_equal([self, other])
+
 def _get_raster_collection_engine(engine):
 
     """
@@ -7037,7 +7912,10 @@ class RasterCollection():
             elif isinstance(rasters,list):
                 for ele in rasters:
                     if isinstance(ele, Raster):
-                        continue
+                        if isinstance(ele._engine_obj, _ArcpyRaster):
+                            local_class=False
+                        else:
+                            continue
                     elif isinstance(ele, str):
                         if '/fileShares/' in ele or '/rasterStores/' in ele or '/cloudStores/' in ele or '/vsi' in ele:
                             continue
@@ -7682,6 +8560,14 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
                     self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
             else:
                 self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
+        if isinstance(rasters,list):
+            arcpy_rasters_list=[]
+            for ele in rasters:
+                if ((isinstance(ele,  Raster)) and isinstance(ele._engine_obj, _ArcpyRaster)):
+                    arcpy_rasters_list.append(ele._engine_obj._raster)
+
+            if arcpy_rasters_list !=[]:
+                rasters = arcpy_rasters_list                
         self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
         self._df=self._as_df()
 
@@ -7788,8 +8674,11 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         """
         # validation
         newcollection = self._clone_raster_collection()
-        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByTime(self._raster_collection.filterByCalendarRange(calendar_field=calendar_field, start=start, end=end,time_field_name=time_field_name,date_time_format=date_time_format))
-        bnewcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj._as_df()
+        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByCalendarRange(calendar_field=calendar_field, start=start, end=end,
+                                                          time_field_name=time_field_name,
+                                                          date_time_format=date_time_format)
+        # newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByTime(self._raster_collection.filterByCalendarRange(calendar_field=calendar_field, start=start, end=end,time_field_name=time_field_name,date_time_format=date_time_format))
+        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj._as_df()
         return newcollection
     
     def filter_by_geometry(self, query_geometry_or_extent):
@@ -7875,12 +8764,12 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         data = {}
         value_rasters=[]
         value_geometries=[]
-        for field in self.fields:
+        for index, field in enumerate(self.fields):
             try:
                 value = self.get_field_values(field)
                 if field=="Raster":
                     for ele in value:
-                        value_rasters.append(Raster(ele))
+                        value_rasters.append(Raster(self._raster_collection[index]['Raster']))
                     data[field] = value_rasters
                 elif field=="Shape":
                     for ele in value:

@@ -297,7 +297,7 @@ def find_routes(stops,
                 gis=None,
                 future=False):
     """
-    
+
     ``find_routes`` determines the shortest paths to visit the input stops and
     returns the driving directions, information about the visited stops,
     and the route paths, including travel time and distance. The tool is
@@ -315,46 +315,46 @@ def find_routes(stops,
                                             or routes to visit. You can add up to 10,000 stops and assign up to 150 stops to a single
                                             route. (Assign stops to routes using the ``RouteName`` attribute). When specifying the stops,
                                             you can set properties for each one, such as its name or service time, by using
-                                            attributes. 
+                                            attributes.
                                             The stops can be specified with the following attributes:
-                                              * ``Name``: The name of the stop. This name is used when generating driving directions. 
-                                                It is common to pass the name of a business, person, or street address at the stop. 
-                                                If a value is not specified, an automatically generated name such as Location 1 or 
+                                              * ``Name``: The name of the stop. This name is used when generating driving directions.
+                                                It is common to pass the name of a business, person, or street address at the stop.
+                                                If a value is not specified, an automatically generated name such as Location 1 or
                                                 Location 2 is assigned to each stop.
-                                              * ``TimeWindowStart``: The earliest time the stop can be visited. Specify this attribute if you want to limit when 
-                                                a route can arrive at a stop; for instance, you may want to make deliveries to a restaurant between 
-                                                busy lunch and dinner hours (for example, sometime between 2:00 and 4:30 p.m.) to facilitate the work 
+                                              * ``TimeWindowStart``: The earliest time the stop can be visited. Specify this attribute if you want to limit when
+                                                a route can arrive at a stop; for instance, you may want to make deliveries to a restaurant between
+                                                busy lunch and dinner hours (for example, sometime between 2:00 and 4:30 p.m.) to facilitate the work
                                                 for you and the restaurant staff.
 
                                                 The value is specified as an integer that represents the number of milliseconds since epoch (January 1, 1970).
 
-                                                This value can be specified either in UTC or local time, depending on the value given for 
+                                                This value can be specified either in UTC or local time, depending on the value given for
                                                 the ``timeWindowsAreUTC`` parameter.
 
                                                 If you specify this attribute, you also need to specify the ``TimeWindowEnd`` attribute.
-                                              * ``TimeWindowEnd``: The latest time the stop can be visited. Together, the ``TimeWindowStart`` and ``TimeWindowEnd`` 
-                                                attributes make up the time window within which a route can visit the stop. As with ``TimeWindowStart``, 
-                                                the ``TimeWindowEnd`` value is specified as an integer that represents the number of milliseconds since 
-                                                epoch (January 1, 1970) and is interpreted as UTC or local time, depending on the value specified for 
+                                              * ``TimeWindowEnd``: The latest time the stop can be visited. Together, the ``TimeWindowStart`` and ``TimeWindowEnd``
+                                                attributes make up the time window within which a route can visit the stop. As with ``TimeWindowStart``,
+                                                the ``TimeWindowEnd`` value is specified as an integer that represents the number of milliseconds since
+                                                epoch (January 1, 1970) and is interpreted as UTC or local time, depending on the value specified for
                                                 the ``timeWindowsAreUTC`` parameter.
 
-                                                The time window specified using the ``TimeWindowStart`` and ``TimeWindowEnd`` attributes is not considered a hard 
-                                                constraint by the service. That is, the service doesn't fail if the stop cannot be visited during the time 
-                                                window; instead, the service tries to find a route that visits the stop during its time window, but if time 
-                                                window violations are inevitable, the service tries to find a solution that minimizes the time-window violation 
+                                                The time window specified using the ``TimeWindowStart`` and ``TimeWindowEnd`` attributes is not considered a hard
+                                                constraint by the service. That is, the service doesn't fail if the stop cannot be visited during the time
+                                                window; instead, the service tries to find a route that visits the stop during its time window, but if time
+                                                window violations are inevitable, the service tries to find a solution that minimizes the time-window violation
                                                 time for all stops in the problem.
 
-                                                If a route has to arrive early at the stop, a wait time is added to the total travel time of the route. 
-                                                Similarly, if the route arrives late at the stop, a violation time is added to the total travel time of 
-                                                the route. For example, If the time window on the stop is set as 10:00 AM to 11:00 AM and the earliest a 
+                                                If a route has to arrive early at the stop, a wait time is added to the total travel time of the route.
+                                                Similarly, if the route arrives late at the stop, a violation time is added to the total travel time of
+                                                the route. For example, If the time window on the stop is set as 10:00 AM to 11:00 AM and the earliest a
                                                 route can reach the stop is 11:25 AM, a violation of 25 minutes is added to the total travel time.
-                                              * ``RouteName``: The name of the route to which the stop belongs. Use this attribute to group stops into different 
-                                                routes and, therefore, solve multiple routes in a single request. For example, if you want to find two distinct 
-                                                routes - a route with 4 stops and another with 6 stops - set RouteName to Route1 for each of the four stops and Route2 
-                                                for each of the 6 stops. The service will produce two distinct routes and driving directions for each group of 
+                                              * ``RouteName``: The name of the route to which the stop belongs. Use this attribute to group stops into different
+                                                routes and, therefore, solve multiple routes in a single request. For example, if you want to find two distinct
+                                                routes - a route with 4 stops and another with 6 stops - set RouteName to Route1 for each of the four stops and Route2
+                                                for each of the 6 stops. The service will produce two distinct routes and driving directions for each group of
                                                 stops in a single request.
 
-                                                If ``RouteName`` is not specified for any stops, all stops belong to the same route. If ``RouteName`` is not 
+                                                If ``RouteName`` is not specified for any stops, all stops belong to the same route. If ``RouteName`` is not
                                                 specified for some stops, those stops are treated as unassigned and are not included in any route.
                                               * ``Sequence``: The output routes will visit the stops in the order you specify with this
                                                 attribute. Within a group of stops that have the same RouteName value, the sequence
@@ -364,107 +364,107 @@ def find_routes(stops,
                                                 are ignored so the tool can find the sequence that minimizes overall travel for each
                                                 route. (The settings for Preserve Ordering of Stops and Return to Start determine whether
                                                 the first or last sequence values for each route are ignored.)
-                                              * ``CurbApproach``: Specify the direction a vehicle may arrive at and depart from the stop. One of the 
-                                                integers listed in the Coded value column in the following table must be specified as a value of this 
-                                                attribute. The values in the Setting column are the descriptive names for the CurbApproach attribute 
+                                              * ``CurbApproach``: Specify the direction a vehicle may arrive at and depart from the stop. One of the
+                                                integers listed in the Coded value column in the following table must be specified as a value of this
+                                                attribute. The values in the Setting column are the descriptive names for the CurbApproach attribute
                                                 values that you may have come across when using ArcGIS Network Analyst extension extension software.
 
                                                 =========================  ===============================================================
                                                 **Setting**                **Description**
                                                 -------------------------  ---------------------------------------------------------------
                                                 Either side of vehicle     |either|
-                                                                           The vehicle can approach and depart the stop in either direction, 
-                                                                           so a U-turn is allowed at the stop. This is the default value. This setting 
-                                                                           can be chosen if it is possible and desirable for your vehicle to turn 
-                                                                           around at the stop. This decision may depend on the width of the road and 
-                                                                           the amount of traffic or whether the stop has a parking lot where vehicles 
+                                                                           The vehicle can approach and depart the stop in either direction,
+                                                                           so a U-turn is allowed at the stop. This is the default value. This setting
+                                                                           can be chosen if it is possible and desirable for your vehicle to turn
+                                                                           around at the stop. This decision may depend on the width of the road and
+                                                                           the amount of traffic or whether the stop has a parking lot where vehicles
                                                                            can pull in and turn around.
                                                 -------------------------  ---------------------------------------------------------------
                                                 right side of vehicle      |right|
-                                                                           When the vehicle approaches and departs the stop, the stop must be on the 
-                                                                           right side of the vehicle. A U-turn is prohibited. This is typically used 
+                                                                           When the vehicle approaches and departs the stop, the stop must be on the
+                                                                           right side of the vehicle. A U-turn is prohibited. This is typically used
                                                                            for vehicles like busses that must arrive with the bus stop on the right-hand side.
                                                 -------------------------  ---------------------------------------------------------------
-                                                left side of vehicle       |left| 
-                                                                           When the vehicle approaches and departs the stop, the stop must be on the left 
-                                                                           side of the vehicle. A U-turn is prohibited. This is typically used for vehicles 
+                                                left side of vehicle       |left|
+                                                                           When the vehicle approaches and departs the stop, the stop must be on the left
+                                                                           side of the vehicle. A U-turn is prohibited. This is typically used for vehicles
                                                                            like busses that must arrive with the bus stop on the left-hand side.
                                                 -------------------------  ---------------------------------------------------------------
                                                 No U-Turn                  |turn|
-                                                                           When the vehicle approaches the stop, the stop can be on either side of the vehicle; 
+                                                                           When the vehicle approaches the stop, the stop can be on either side of the vehicle;
                                                                            however, when it departs, the vehicle must continue in the same direction it arrived in. A U-turn is prohibited.
                                                 =========================  ===============================================================
-                                              
-                                                The ``CurbApproach`` property is designed to work with both kinds of national driving standards: right-hand 
-                                                traffic (United States) and left-hand traffic (United Kingdom). First, consider a stop on the left side of a vehicle. 
-                                                It is always on the left side regardless of whether the vehicle travels on the left or right half of the road. What 
-                                                may change with national driving standards is your decision to approach from the right or left side. For example, 
-                                                if you want to arrive at a stop and not have a lane of traffic between the vehicle and the stop, you would choose 
+
+                                                The ``CurbApproach`` property is designed to work with both kinds of national driving standards: right-hand
+                                                traffic (United States) and left-hand traffic (United Kingdom). First, consider a stop on the left side of a vehicle.
+                                                It is always on the left side regardless of whether the vehicle travels on the left or right half of the road. What
+                                                may change with national driving standards is your decision to approach from the right or left side. For example,
+                                                if you want to arrive at a stop and not have a lane of traffic between the vehicle and the stop, you would choose
                                                 Right side of vehicle in the United States but Left side of vehicle in the United Kingdom.
-                                              * ``Attr_TravelTime``: Specify the amount of time for cars, in minutes, that will be spent at the stop when 
-                                                the route visits it. This attribute can be used to model the time required to provide some kind of service 
-                                                while you are at the stop. It can also be used to specify some additional time required to reach the actual 
-                                                location on the street from where the route starts or time required to reach the actual destination location 
-                                                from the location on the street where the route ends. The value for this attribute is included in the total 
-                                                travel time for the route and is also displayed in driving directions as service time. A zero or null value 
+                                              * ``Attr_TravelTime``: Specify the amount of time for cars, in minutes, that will be spent at the stop when
+                                                the route visits it. This attribute can be used to model the time required to provide some kind of service
+                                                while you are at the stop. It can also be used to specify some additional time required to reach the actual
+                                                location on the street from where the route starts or time required to reach the actual destination location
+                                                from the location on the street where the route ends. The value for this attribute is included in the total
+                                                travel time for the route and is also displayed in driving directions as service time. A zero or null value
                                                 indicates that the stop requires no service time.
-                                                
-                                                For example, suppose you are finding the best route through three stops. Suppose it requires 2 minutes to 
-                                                walk to the street location from where the route starts, you need to spend 10 minutes at Stop 2, and it takes 5 
-                                                minutes to walk from the street location to the destination. The Attr_TravelTime attribute should be given 
-                                                values of 2, 10, and 5 for Stop 1, Stop 2, and Stop 3, respectively. If it takes 10 minutes to travel from Stop 
-                                                1 to Stop 2 and 10 minutes to travel from Stop 2 to Stop 3, the total travel time to reach Stop 3 is displayed 
+
+                                                For example, suppose you are finding the best route through three stops. Suppose it requires 2 minutes to
+                                                walk to the street location from where the route starts, you need to spend 10 minutes at Stop 2, and it takes 5
+                                                minutes to walk from the street location to the destination. The Attr_TravelTime attribute should be given
+                                                values of 2, 10, and 5 for Stop 1, Stop 2, and Stop 3, respectively. If it takes 10 minutes to travel from Stop
+                                                1 to Stop 2 and 10 minutes to travel from Stop 2 to Stop 3, the total travel time to reach Stop 3 is displayed
                                                 as 37 minutes (2 + 10 + 10 + 10 + 5), even though there is only 20 minutes of traveling to reach Stop 3.
-                                              * ``Attr_TruckTravelTime``: Specify the amount of time for trucks, in minutes, that will be added to the total 
+                                              * ``Attr_TruckTravelTime``: Specify the amount of time for trucks, in minutes, that will be added to the total
                                                 travel time of the route at the stop. The attribute value can be used to model the time spent at the stop.
-                                                
-                                                The value for this attribute is included in the total travel time for the route and is also displayed in 
-                                                driving directions as service time. A zero or null value indicates that the incident requires no service time. 
+
+                                                The value for this attribute is included in the total travel time for the route and is also displayed in
+                                                driving directions as service time. A zero or null value indicates that the incident requires no service time.
                                                 The default value is 0.
-                                              * ``Attr_WalkTime``: Specify the amount of time for pedestrians, in minutes, that will be added to the total 
+                                              * ``Attr_WalkTime``: Specify the amount of time for pedestrians, in minutes, that will be added to the total
                                                 travel time of the route at the stop. The attribute value can be used to model the time spent at the incident.
-                                                The value for this attribute is included in the total travel time for the route and is also displayed in 
-                                                driving directions as service time. A zero or null value indicates that the incident requires no service time. 
+                                                The value for this attribute is included in the total travel time for the route and is also displayed in
+                                                driving directions as service time. A zero or null value indicates that the incident requires no service time.
                                                 The default value is 0.
-                                              * ``Attr_Miles``: Specify the distance in miles that will be added when calculating total distance of the route. 
-                                                Generally the locations of the stops are not exactly on the streets but are set back somewhat from the road. 
-                                                The Attr_Miles attribute can be used to model the distance between the actual stop location and its location 
+                                              * ``Attr_Miles``: Specify the distance in miles that will be added when calculating total distance of the route.
+                                                Generally the locations of the stops are not exactly on the streets but are set back somewhat from the road.
+                                                The Attr_Miles attribute can be used to model the distance between the actual stop location and its location
                                                 on the street if it is important to include that distance in the total travel distance.
-                                              * ``Attr_Kilometers``: Specify the distance in kilometers that will be added when calculating total 
-                                                distance of the route. Generally the locations of the stops are not exactly on the streets but are set back 
-                                                somewhat from the road. The Attr_Kilometers attribute can be used to model the distance between the actual 
+                                              * ``Attr_Kilometers``: Specify the distance in kilometers that will be added when calculating total
+                                                distance of the route. Generally the locations of the stops are not exactly on the streets but are set back
+                                                somewhat from the road. The Attr_Kilometers attribute can be used to model the distance between the actual
                                                 stop location and its location on the street if it is important to include that distance in the total travel distance.
                                               * ``LocationType``: The stop type.
 
                                                 =================  ==============  ===============================================================
                                                 **Setting**        Coded value     **Description**
                                                 -----------------  --------------  ---------------------------------------------------------------
-                                                Stop               0               A location that the route should visit. This is the default.                     
+                                                Stop               0               A location that the route should visit. This is the default.
                                                 -----------------  --------------  ---------------------------------------------------------------
-                                                Waypoint           1               A location that the route should travel through without making 
-                                                                                   a stop. Waypoints can be used to force the route to take a specific 
-                                                                                   path (to go through the waypoint) without being considered an actual stop. 
+                                                Waypoint           1               A location that the route should travel through without making
+                                                                                   a stop. Waypoints can be used to force the route to take a specific
+                                                                                   path (to go through the waypoint) without being considered an actual stop.
                                                                                    Waypoints do not appear in driving directions.
                                                 -----------------  --------------  ---------------------------------------------------------------
                                                 Break              2               A location where the route stops for the driver to take a break.
                                                 =================  ==============  ===============================================================
-                                                
-                                              * ``Bearing``: Specify the direction the vehicle or person is moving in. Bearing is measured clockwise from 
-                                                true north and must be in degrees. Typically, values are between 0 and 360; however, negative values are 
+
+                                              * ``Bearing``: Specify the direction the vehicle or person is moving in. Bearing is measured clockwise from
+                                                true north and must be in degrees. Typically, values are between 0 and 360; however, negative values are
                                                 interpreted by subtracting them from 360 degrees.
 
-                                              * ``BearingTol``: Short for bearing tolerance, this field specifies the maximum acceptable difference between the 
-                                                heading of a vehicle and a tangent line from the point on a street where Network Analyst attempts to locate the 
-                                                vehicle. The bearing tolerance is used to determine whether the direction in which a vehicle is moving generally 
-                                                aligns with the underlying road. If they align within the given tolerance, the vehicle is located on that edge; 
+                                              * ``BearingTol``: Short for bearing tolerance, this field specifies the maximum acceptable difference between the
+                                                heading of a vehicle and a tangent line from the point on a street where Network Analyst attempts to locate the
+                                                vehicle. The bearing tolerance is used to determine whether the direction in which a vehicle is moving generally
+                                                aligns with the underlying road. If they align within the given tolerance, the vehicle is located on that edge;
                                                 if not, the next nearest eligible edge is evaluated.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    measurement_units                       Required string. Specify the units that should be used to measure and report the total travel time or travel 
-                                            distance for the output routes. The units you choose for this parameter determine whether the tool will measure 
-                                            distance or time to find the best routes. Choose a time unit to minimize travel time for your chosen travel 
-                                            mode (driving or walking time, for instance). To minimize travel distance for the given travel mode, choose a 
-                                            distance unit. Your choice also determines in which units the tool will report total time or distance in the results. 
-                                            
+    measurement_units                       Required string. Specify the units that should be used to measure and report the total travel time or travel
+                                            distance for the output routes. The units you choose for this parameter determine whether the tool will measure
+                                            distance or time to find the best routes. Choose a time unit to minimize travel time for your chosen travel
+                                            mode (driving or walking time, for instance). To minimize travel distance for the given travel mode, choose a
+                                            distance unit. Your choice also determines in which units the tool will report total time or distance in the results.
+
                                             Choice list:['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles', 'NauticalMiles', 'Seconds', 'Minutes', 'Hours', 'Days']
 
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
@@ -477,53 +477,53 @@ def find_routes(stops,
 
                                             Choice list:['Europe', 'Japan', 'Korea', 'MiddleEastAndAfrica', 'NorthAmerica', 'SouthAmerica', 'SouthAsia', 'Thailand']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    reorder_stops_to_find                   Optional boolean. Specify whether to visit the stops in the order you define or the order the tool determines will 
-                                            minimize overall travel. 
-                                            
-                                              * Checked (True) - The tool determines the sequence that will minimize overall travel 
-                                                distance or time. It can reorder stops and account for time windows at stops. Additional parameters allow you to 
+    reorder_stops_to_find                   Optional boolean. Specify whether to visit the stops in the order you define or the order the tool determines will
+                                            minimize overall travel.
+
+                                              * Checked (True) - The tool determines the sequence that will minimize overall travel
+                                                distance or time. It can reorder stops and account for time windows at stops. Additional parameters allow you to
                                                 preserve the first or last stops while allowing the tool to reorder the intermediary stops.
 
-                                              * Unchecked (False) - The stops are visited in the order you define. This is the default option. You can set the order 
-                                                of stops using a Sequence attribute in the input stops features or let the sequence be determined by the Object ID 
-                                                of the stops. Finding the optimal stop order and the best routes is commonly known as solving the traveling salesman 
+                                              * Unchecked (False) - The stops are visited in the order you define. This is the default option. You can set the order
+                                                of stops using a Sequence attribute in the input stops features or let the sequence be determined by the Object ID
+                                                of the stops. Finding the optimal stop order and the best routes is commonly known as solving the traveling salesman
                                                 problem (TSP).
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    preserve_terminal_stops                 Optional string. When Reorder Stops to Find Optimal Routes is checked (or True), you have options to preserve 
-                                            the starting or ending stops and the tool can reorder the rest. The first and last stops are determined by their 
+    preserve_terminal_stops                 Optional string. When Reorder Stops to Find Optimal Routes is checked (or True), you have options to preserve
+                                            the starting or ending stops and the tool can reorder the rest. The first and last stops are determined by their
                                             Sequence attribute values or, if the Sequence values are null, by their Object ID values.
-                                            
-                                            Preserve First - The tool won't reorder the first stop. Choose this option if you are starting from a known location, such as your home, 
-                                            headquarters, or current location.Preserve Last-The tool won't reorder the last stop. The output routes may start 
-                                            from any stop feature but must end at the predetermined last stop. Preserve First and Last-The tool won't reorder 
+
+                                            Preserve First - The tool won't reorder the first stop. Choose this option if you are starting from a known location, such as your home,
+                                            headquarters, or current location.Preserve Last-The tool won't reorder the last stop. The output routes may start
+                                            from any stop feature but must end at the predetermined last stop. Preserve First and Last-The tool won't reorder
                                             the first and last stops.
-                                            
-                                            Preserve None - The tool may reorder any stop, including the first and last stops. The 
-                                            route may start or end at any of the stop features.Preserve Terminal Stops is ignored when Reorder Stops to Find 
+
+                                            Preserve None - The tool may reorder any stop, including the first and last stops. The
+                                            route may start or end at any of the stop features.Preserve Terminal Stops is ignored when Reorder Stops to Find
                                             Optimal Routes is unchecked (or False).
-                                            
-                                            Choice list: ['Preserve First', 'Preserve Last', 'Preserve First and Last', 'Preserve None'] 
+
+                                            Choice list: ['Preserve First', 'Preserve Last', 'Preserve First and Last', 'Preserve None']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    return_to_start                         Optional boolean. Choose whether routes should start and end at the same location. With this option you can 
-                                            avoid duplicating the first stop feature and sequencing the duplicate stop at the end.The starting location of 
-                                            the route is the stop feature with the lowest value in the Sequence attribute. If the Sequence values are null, 
+    return_to_start                         Optional boolean. Choose whether routes should start and end at the same location. With this option you can
+                                            avoid duplicating the first stop feature and sequencing the duplicate stop at the end.The starting location of
+                                            the route is the stop feature with the lowest value in the Sequence attribute. If the Sequence values are null,
                                             it is the stop feature with the lowest Object ID value.
-                                            
-                                            Checked (True) - The route should start and end at the first 
-                                            stop feature. This is the default value. When Reorder Stops to Find Optimal Routes and Return to Start are both 
+
+                                            Checked (True) - The route should start and end at the first
+                                            stop feature. This is the default value. When Reorder Stops to Find Optimal Routes and Return to Start are both
                                             checked (or True), Preserve Terminal Stops must be set to Preserve First.
-                                            
+
                                             Unchecked (False) - The route won't start and end at the first stop feature.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    use_time_windows                        Optional boolean. Check this option (or set it to True) if any input stops have time windows that specify when 
-                                            the route should reach the stop. You can add time windows to input stops by entering time values in the 
+    use_time_windows                        Optional boolean. Check this option (or set it to True) if any input stops have time windows that specify when
+                                            the route should reach the stop. You can add time windows to input stops by entering time values in the
                                             ``TimeWindowStart`` and ``TimeWindowEnd`` attributes.
-                                            
+
                                             Checked (True) - The input stops have time windows and you want the tool to try to honor them.
 
-                                            Unchecked (False) - The input stops don't have time windows, or if they do, you don't want the tool to try to 
-                                            honor them. This is the default value.The tool will take slightly longer to run when Use Time Windows is checked 
-                                            (or True), even when none of the input stops have time windows, so it is recommended to uncheck this option 
+                                            Unchecked (False) - The input stops don't have time windows, or if they do, you don't want the tool to try to
+                                            honor them. This is the default value.The tool will take slightly longer to run when Use Time Windows is checked
+                                            (or True), even when none of the input stops have time windows, so it is recommended to uncheck this option
                                             (set to False) if possible.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     time_of_day                             Optional datetime. Specifies the time and date at which the routes should
@@ -533,56 +533,56 @@ def find_routes(stops,
                                             on traffic conditions. Specifying a time of day results in more accurate
                                             routes and estimations of travel times because the
                                             travel times account for the traffic conditions that are applicable
-                                            for that date and time.The Time Zone for Time of Day parameter specifies whether this time and date refer to 
-                                            UTC or the time zone in which the stop is located.The tool ignores this parameter when Measurement Units isn't 
+                                            for that date and time.The Time Zone for Time of Day parameter specifies whether this time and date refer to
+                                            UTC or the time zone in which the stop is located.The tool ignores this parameter when Measurement Units isn't
                                             set to a time-based unit.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    time_zone_for_time_of_day               Optional string. Specifies the time zone of the Time of Day parameter.Geographically Local-The Time of Day 
-                                            parameter refers to the time zone in which the first stop of a route is located. If you are generating many 
-                                            routes that start in multiple times zones, the start times are staggered in Coordinated Universal Time (UTC). 
-                                            For example, a Time of Day value of 10:00 a.m., 2 January, would mean a start time of 10:00 a.m. Eastern Standard 
-                                            Time (UTC-3:00) for routes beginning in the Eastern Time Zone and 10:00 a.m. Central Standard Time (UTC-4:00) for 
-                                            routes beginning in the Central Time Zone. The start times are offset by one hour in UTC. The arrive and depart 
-                                            times and dates recorded in the output Stops feature class will refer to the local time zone of the first stop 
-                                            for each route.UTC-The Time of Day parameter refers to Coordinated Universal Time (UTC). Choose this option if 
-                                            you want to generate a route for a specific time, such as now, but aren't certain in which time zone the first 
-                                            stop will be located. If you are generating many routes spanning multiple times zones, the start times in UTC are 
-                                            simultaneous. For example, a Time of Day value of 10:00 a.m., 2 January, would mean a start time of 5:00 a.m. 
-                                            Eastern Standard Time (UTC-5:00) for routes beginning in the Eastern Time Zone and 4:00 a.m. Central Standard 
-                                            Time (UTC-6:00) for routes beginning in the Central Time Zone. Both routes would start at 10:00 a.m. UTC. The 
+    time_zone_for_time_of_day               Optional string. Specifies the time zone of the Time of Day parameter.Geographically Local-The Time of Day
+                                            parameter refers to the time zone in which the first stop of a route is located. If you are generating many
+                                            routes that start in multiple times zones, the start times are staggered in Coordinated Universal Time (UTC).
+                                            For example, a Time of Day value of 10:00 a.m., 2 January, would mean a start time of 10:00 a.m. Eastern Standard
+                                            Time (UTC-3:00) for routes beginning in the Eastern Time Zone and 10:00 a.m. Central Standard Time (UTC-4:00) for
+                                            routes beginning in the Central Time Zone. The start times are offset by one hour in UTC. The arrive and depart
+                                            times and dates recorded in the output Stops feature class will refer to the local time zone of the first stop
+                                            for each route.UTC-The Time of Day parameter refers to Coordinated Universal Time (UTC). Choose this option if
+                                            you want to generate a route for a specific time, such as now, but aren't certain in which time zone the first
+                                            stop will be located. If you are generating many routes spanning multiple times zones, the start times in UTC are
+                                            simultaneous. For example, a Time of Day value of 10:00 a.m., 2 January, would mean a start time of 5:00 a.m.
+                                            Eastern Standard Time (UTC-5:00) for routes beginning in the Eastern Time Zone and 4:00 a.m. Central Standard
+                                            Time (UTC-6:00) for routes beginning in the Central Time Zone. Both routes would start at 10:00 a.m. UTC. The
                                             arrive and depart times and dates recorded in the output Stops feature class will refer to UTC.
-                                            
+
                                             Choice list: ['Geographically Local', 'UTC']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    uturn_at_junctions                      Optional string. Use this parameter to restrict or permit the service area to make U-turns at junctions. 
-                                            In order to understand the parameter values, consider for a moment the following terminology: a junction is 
-                                            a point where a street segment ends and potentially connects to one or more other segments; a pseudo-junction is 
-                                            a point where exactly two streets connect to one another; an intersection is a point where three or more streets 
-                                            connect; and a  dead-end is where one street segment ends without connecting to another. Given this information, 
+    uturn_at_junctions                      Optional string. Use this parameter to restrict or permit the service area to make U-turns at junctions.
+                                            In order to understand the parameter values, consider for a moment the following terminology: a junction is
+                                            a point where a street segment ends and potentially connects to one or more other segments; a pseudo-junction is
+                                            a point where exactly two streets connect to one another; an intersection is a point where three or more streets
+                                            connect; and a  dead-end is where one street segment ends without connecting to another. Given this information,
                                             the parameter can have the following values:
-                                            
+
                                             Choice list:['ALLOW_UTURNS', 'NO_UTURNS', 'ALLOW_DEAD_ENDS_ONLY', 'ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY']
 
                                             ========================================  ================================================
                                             **Parameter**                             **Description**
                                             ----------------------------------------  ------------------------------------------------
                                             ALLOW_UTURNS                              |ALLOW_UTURNS|
-                                                                                      U-turns are permitted everywhere. Allowing U-turns implies 
-                                                                                      that the vehicle can turn around at a junction or intersection 
+                                                                                      U-turns are permitted everywhere. Allowing U-turns implies
+                                                                                      that the vehicle can turn around at a junction or intersection
                                                                                       and double back on the same street.
                                             ----------------------------------------  ------------------------------------------------
                                             ALLOW_DEAD_ENDS_AND _INTERSECTIONS_ONLY   |ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY|
-                                                                                      U-turns are prohibited at 
-                                                                                      junctions where exactly two 
+                                                                                      U-turns are prohibited at
+                                                                                      junctions where exactly two
                                                                                       adjacent streets meet.
                                             ----------------------------------------  ------------------------------------------------
-                                            ALLOW_DEAD_ENDS_ONLY                      |ALLOW_DEAD_ENDS_ONLY| 
-                                                                                      U-turns are prohibited at all junctions and interesections 
+                                            ALLOW_DEAD_ENDS_ONLY                      |ALLOW_DEAD_ENDS_ONLY|
+                                                                                      U-turns are prohibited at all junctions and interesections
                                                                                         nd are permitted only at dead ends.
                                             ----------------------------------------  ------------------------------------------------
-                                            NO_UTURNS                                 U-turns are prohibited at all junctions, intersections, and dead-ends. 
-                                                                                      Note that even when this parameter value is chosen, a route can still 
-                                                                                      make U-turns at stops. If you wish to prohibit U-turns at a stop, you can set 
+                                            NO_UTURNS                                 U-turns are prohibited at all junctions, intersections, and dead-ends.
+                                                                                      Note that even when this parameter value is chosen, a route can still
+                                                                                      make U-turns at stops. If you wish to prohibit U-turns at a stop, you can set
                                                                                       its CurbApproach property to the appropriate value (3).
 
                                                                                       The default value for this parameter is 'ALLOW_UTURNS'.
@@ -596,9 +596,9 @@ def find_routes(stops,
 
                                             The tool imposes a limit of 250 points that can be added
                                             as barriers.
-                                            When specifying the point barriers, you can set properties for each one, 
-                                            such as its name or barrier type, by using attributes. The point barriers 
-                                            can be specified with the following attributes: 
+                                            When specifying the point barriers, you can set properties for each one,
+                                            such as its name or barrier type, by using attributes. The point barriers
+                                            can be specified with the following attributes:
 
                                               * ``Name``: The name of the barrier.
                                               * ``BarrierType``: Specifies whether the point barrier restricts travel
@@ -623,58 +623,58 @@ def find_routes(stops,
                                                 and only if the measurement units are distance based. The field value
                                                 must be greater than or equal to zero, and its units are the same as those specified in the
                                                 Measurement Units parameter.
-                                              * ``Additional_Cost``: Indicates how much cost is added when the barrier is traversed. 
-                                                This field is applicable only for added-cost barriers and only if the travel mode used 
+                                              * ``Additional_Cost``: Indicates how much cost is added when the barrier is traversed.
+                                                This field is applicable only for added-cost barriers and only if the travel mode used
                                                 for the analysis uses an impedance attribute that is neither time-based or distance-based.
-                                              * ``FullEdge``: Specify how the restriction point barriers are applied to the edge elements 
-                                                during the analysis. The field value is specified as one of the following integers (use the 
+                                              * ``FullEdge``: Specify how the restriction point barriers are applied to the edge elements
+                                                during the analysis. The field value is specified as one of the following integers (use the
                                                 numeric code, not the name in parentheses):
 
                                                 * 0 (False): Permits travel on the edge up to the barrier, but not through it. This is the default value.
                                                 * 1 (True): Restricts travel anywhere on the associated edge.
-                                              * ``CurbApproach``: Specifies the direction of traffic that is affected by the barrier. 
-                                                The field value is specified as one of the following integers (use the numeric code, 
+                                              * ``CurbApproach``: Specifies the direction of traffic that is affected by the barrier.
+                                                The field value is specified as one of the following integers (use the numeric code,
                                                 not the name in parentheses):
 
                                                   * 0 (Either side of vehicle): The barrier affects travel over the edge in both directions.
-                                                  * 1 (Right side of vehicle): Vehicles are only affected if the barrier is on their right 
-                                                    side during the approach. Vehicles that traverse the same edge but approach the barrier 
+                                                  * 1 (Right side of vehicle): Vehicles are only affected if the barrier is on their right
+                                                    side during the approach. Vehicles that traverse the same edge but approach the barrier
                                                     on their left side are not affected by the barrier.
-                                                  * 2 (Left side of vehicle): Vehicles are only affected if the barrier is on their left side 
-                                                    during the approach. Vehicles that traverse the same edge but approach the barrier on their 
+                                                  * 2 (Left side of vehicle): Vehicles are only affected if the barrier is on their left side
+                                                    during the approach. Vehicles that traverse the same edge but approach the barrier on their
                                                     right side are not affected by the barrier.
-                                                Since junctions are points and don't have a side, barriers on junctions affect all vehicles 
+                                                Since junctions are points and don't have a side, barriers on junctions affect all vehicles
                                                 regardless of the curb approach.
 
-                                                The ``CurbApproach`` property was designed to work with both kinds of national driving standards: 
-                                                right-hand traffic (United States) and left-hand traffic (United Kingdom). First, consider a 
-                                                facility on the left side of a vehicle. It is always on the left side regardless of whether 
-                                                the vehicle travels on the left or right half of the road. What may change with national driving 
-                                                standards is your decision to approach a facility from one of two directions, that is, so it 
-                                                ends up on the right or left side of the vehicle. For example, if you want to arrive at a facility 
-                                                and not have a lane of traffic between the vehicle and the facility, you would choose Right side of 
+                                                The ``CurbApproach`` property was designed to work with both kinds of national driving standards:
+                                                right-hand traffic (United States) and left-hand traffic (United Kingdom). First, consider a
+                                                facility on the left side of a vehicle. It is always on the left side regardless of whether
+                                                the vehicle travels on the left or right half of the road. What may change with national driving
+                                                standards is your decision to approach a facility from one of two directions, that is, so it
+                                                ends up on the right or left side of the vehicle. For example, if you want to arrive at a facility
+                                                and not have a lane of traffic between the vehicle and the facility, you would choose Right side of
                                                 vehicle (1) in the United States but Left side of vehicle (2) in the United Kingdom.
-                                              * ``Bearing``: The direction in which a point is moving. The units are degrees and are measured clockwise 
+                                              * ``Bearing``: The direction in which a point is moving. The units are degrees and are measured clockwise
                                                 from true north. This field is used in conjunction with the BearingTol field.
 
-                                                Bearing data is usually sent automatically from a mobile device equipped with a GPS receiver. 
+                                                Bearing data is usually sent automatically from a mobile device equipped with a GPS receiver.
                                                 Try to include bearing data if you are loading an input location that is moving, such as a pedestrian or a vehicle.
 
-                                                Using this field tends to prevent adding locations to the wrong edges, which can occur when a vehicle 
-                                                is near an intersection or an overpass for example. Bearing also helps the tool determine on which side 
+                                                Using this field tends to prevent adding locations to the wrong edges, which can occur when a vehicle
+                                                is near an intersection or an overpass for example. Bearing also helps the tool determine on which side
                                                 of the street the point is.
-                                              * ``BearingTol``: The bearing tolerance value creates a range of acceptable bearing values when locating moving 
-                                                points on an edge using the Bearing field. If the value from the Bearing field is within the range of acceptable 
-                                                values that are generated from the bearing tolerance on an edge, the point can be added as a network location 
+                                              * ``BearingTol``: The bearing tolerance value creates a range of acceptable bearing values when locating moving
+                                                points on an edge using the Bearing field. If the value from the Bearing field is within the range of acceptable
+                                                values that are generated from the bearing tolerance on an edge, the point can be added as a network location
                                                 there; otherwise, the closest point on the next-nearest edge is evaluated.
 
-                                                The units are in degrees, and the default value is 30. Values must be greater than 0 and less than 180. 
-                                                A value of 30 means that when ArcGIS Network Analyst extension attempts to add a network location on an edge, 
-                                                a range of acceptable bearing values is generated 15 degrees to either side of the edge (left and right) and 
+                                                The units are in degrees, and the default value is 30. Values must be greater than 0 and less than 180.
+                                                A value of 30 means that when ArcGIS Network Analyst extension attempts to add a network location on an edge,
+                                                a range of acceptable bearing values is generated 15 degrees to either side of the edge (left and right) and
                                                 in both digitized directions of the edge.
-                                              * ``NavLatency``: This field is only used in the solve process if Bearing and BearingTol also have values; 
-                                                however, entering a ``NavLatency`` value is optional, even when values are present in Bearing and BearingTol. 
-                                                ``NavLatency`` indicates how much time is expected to elapse from the moment GPS information is sent from a 
+                                              * ``NavLatency``: This field is only used in the solve process if Bearing and BearingTol also have values;
+                                                however, entering a ``NavLatency`` value is optional, even when values are present in Bearing and BearingTol.
+                                                ``NavLatency`` indicates how much time is expected to elapse from the moment GPS information is sent from a
                                                 moving vehicle to a server and the moment the processed route is received by the vehicle's navigation device.
 
                                                 The time units of ``NavLatency`` are the same as the units specified by the timeUnits property of the analysis object.
@@ -693,7 +693,7 @@ def find_routes(stops,
                                             the number of lines you can specify as line barriers, the combined
                                             number of streets intersected by all the lines cannot exceed
                                             500.
-                                            When specifying the line barriers, you can set a name property for each one by using the following attribute: 
+                                            When specifying the line barriers, you can set a name property for each one by using the following attribute:
                                               * ``Name``: The name of the barrier.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     polygon_barriers                        Optional FeatureSet. Specify polygons that either completely restrict travel or
@@ -705,9 +705,9 @@ def find_routes(stops,
                                             no limit on the number of polygons you can specify as the polygon
                                             barriers, the combined number of streets intersected by all the
                                             polygons should not exceed 2,000.
-                                            When specifying the polygon barriers, you can set properties for each one, 
-                                            such as its name or barrier type, by using attributes. 
-                                            The polygon barriers can be specified with the following attributes: 
+                                            When specifying the polygon barriers, you can set properties for each one,
+                                            such as its name or barrier type, by using attributes.
+                                            The polygon barriers can be specified with the following attributes:
                                               * ``Name``: The name of the barrier.
                                               * ``BarrierType``: Specifies whether the barrier restricts travel completely
                                                 or scales the time or distance for traveling through it. The field
@@ -739,14 +739,14 @@ def find_routes(stops,
                                                 applicable only for scaled-cost barriers and only if the measurement
                                                 units are distance based. The attribute value must be greater than
                                                 zero.
-                                              * ``ScaledCostFactor``: This is the factor by which the cost of the streets intersected by the barrier is multiplied. 
+                                              * ``ScaledCostFactor``: This is the factor by which the cost of the streets intersected by the barrier is multiplied.
                                                 The field value must be greater than zero.
 
-                                                This field is applicable only for scaled-cost barriers and only if the travel mode used for the analysis uses 
+                                                This field is applicable only for scaled-cost barriers and only if the travel mode used for the analysis uses
                                                 an impedance attribute that is neither time based nor distance based.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     use_hierarchy                           Optional boolean. Specify whether hierarchy should be used when finding the best routes.
-                                            
+
                                             Checked (True) - Use hierarchy when finding routes. When
                                             hierarchy is used, the tool prefers higher-order streets, such as
                                             freeways, to lower-order streets, such as local roads, and can be used
@@ -766,13 +766,13 @@ def find_routes(stops,
                                             greater than 50 miles, even if you have set this parameter to not use hierarchy.
                                             The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is the default value.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    restrictions                            Optional string. Specify which restrictions should be honored by the tool when finding the best routes.  The value you provide for this parameter 
+    restrictions                            Optional string. Specify which restrictions should be honored by the tool when finding the best routes.  The value you provide for this parameter
                                             is ignored unless Travel Mode is set to Custom, which is the default value. A restriction represents a driving
                                             preference or requirement. In most cases, restrictions cause roads
-                                            to be prohibited. For instance, using an Avoid Toll Roads restriction will result in a route that will include 
-                                            roads only when it is absolutely required to travel on toll roads in order to visit an incident or a facility. 
-                                            Height Restriction makes it possible to route around any clearances that are lower than the height of your vehicle. 
-                                            If you are carrying corrosive materials on your vehicle, using the Any Hazmat Prohibited restriction prevents hauling 
+                                            to be prohibited. For instance, using an Avoid Toll Roads restriction will result in a route that will include
+                                            roads only when it is absolutely required to travel on toll roads in order to visit an incident or a facility.
+                                            Height Restriction makes it possible to route around any clearances that are lower than the height of your vehicle.
+                                            If you are carrying corrosive materials on your vehicle, using the Any Hazmat Prohibited restriction prevents hauling
                                             the materials along roads where it is marked as illegal to do so.
 
                                             Below is a list of available restrictions and a short description.
@@ -785,24 +785,24 @@ def find_routes(stops,
                                             specified in the Attribute Parameter Values parameter for the
                                             restriction to be correctly used when finding traversable roads.
 
-                                            Some restrictions are supported only in certain countries; their availability is stated by region in the list below. 
-                                            Of the restrictions that have limited availability within a region, you can check whether the restriction is available 
-                                            in a particular country by looking at the table in the Country List section of the Data coverage for network analysis 
-                                            services web page. If a country has a value of  Yes in the Logistics Attribute column, the restriction with select 
-                                            availability in the region is supported in that country. If you specify restriction names that are not available in 
-                                            the country where your incidents are located, the service ignores the invalid restrictions. The service also ignores 
-                                            restrictions whose Restriction Usage parameter value is between 0 and 1 (see the Attribute Parameter Value parameter). 
+                                            Some restrictions are supported only in certain countries; their availability is stated by region in the list below.
+                                            Of the restrictions that have limited availability within a region, you can check whether the restriction is available
+                                            in a particular country by looking at the table in the Country List section of the Data coverage for network analysis
+                                            services web page. If a country has a value of  Yes in the Logistics Attribute column, the restriction with select
+                                            availability in the region is supported in that country. If you specify restriction names that are not available in
+                                            the country where your incidents are located, the service ignores the invalid restrictions. The service also ignores
+                                            restrictions whose Restriction Usage parameter value is between 0 and 1 (see the Attribute Parameter Value parameter).
                                             It prohibits all restrictions whose Restriction Usage parameter value is greater than 0.
-                                            
-                                            Choice list:['Any Hazmat Prohibited', 'Avoid Carpool Roads', 'Avoid Express Lanes', 'Avoid Ferries', 'Avoid Gates', 
-                                            'Avoid Limited Access Roads', 'Avoid Private Roads', 'Avoid Roads Unsuitable for Pedestrians', 'Avoid Stairways', 
-                                            'Avoid Toll Roads', 'Avoid Toll Roads for Trucks', 'Avoid Truck Restricted Roads', 'Avoid Unpaved Roads', 
-                                            'Axle Count Restriction', 'Driving a Bus', 'Driving a Delivery Vehicle', 'Driving a Taxi', 'Driving a Truck', 
-                                            'Driving an Automobile', 'Driving an Emergency Vehicle', 'Height Restriction', 
-                                            'Kingpin to Rear Axle Length Restriction', 'Length Restriction', 'Preferred for Pedestrians', 
-                                            'Riding a Motorcycle', 'Roads Under Construction Prohibited', 'Semi or Tractor with One or More Trailers Prohibited', 
-                                            'Single Axle Vehicles Prohibited', 'Tandem Axle Vehicles Prohibited', 'Through Traffic Prohibited', 
-                                            'Truck with Trailers Restriction', 'Use Preferred Hazmat Routes', 'Use Preferred Truck Routes', 'Walking', 
+
+                                            Choice list:['Any Hazmat Prohibited', 'Avoid Carpool Roads', 'Avoid Express Lanes', 'Avoid Ferries', 'Avoid Gates',
+                                            'Avoid Limited Access Roads', 'Avoid Private Roads', 'Avoid Roads Unsuitable for Pedestrians', 'Avoid Stairways',
+                                            'Avoid Toll Roads', 'Avoid Toll Roads for Trucks', 'Avoid Truck Restricted Roads', 'Avoid Unpaved Roads',
+                                            'Axle Count Restriction', 'Driving a Bus', 'Driving a Delivery Vehicle', 'Driving a Taxi', 'Driving a Truck',
+                                            'Driving an Automobile', 'Driving an Emergency Vehicle', 'Height Restriction',
+                                            'Kingpin to Rear Axle Length Restriction', 'Length Restriction', 'Preferred for Pedestrians',
+                                            'Riding a Motorcycle', 'Roads Under Construction Prohibited', 'Semi or Tractor with One or More Trailers Prohibited',
+                                            'Single Axle Vehicles Prohibited', 'Tandem Axle Vehicles Prohibited', 'Through Traffic Prohibited',
+                                            'Truck with Trailers Restriction', 'Use Preferred Hazmat Routes', 'Use Preferred Truck Routes', 'Walking',
                                             'Weight Restriction', 'Weight per Axle Restriction', 'Width Restriction']
 
                                             The service supports the restriction names listed in the following table:
@@ -824,7 +824,7 @@ def find_routes(stops,
                                                                                       as express lanes.
                                                                                       Availability: All countries
                                             ----------------------------------------  ------------------------------------------------
-                                            Avoid Ferries                             The results will avoid ferries. 
+                                            Avoid Ferries                             The results will avoid ferries.
                                                                                       Availability: All countries
                                             ----------------------------------------  ------------------------------------------------
                                             Avoid Gates                               The results will avoid roads where there are
@@ -919,7 +919,7 @@ def find_routes(stops,
                                                                                       include roads that are under construction.
                                                                                       Availability: All countries
                                             ----------------------------------------  ------------------------------------------------
-                                            Semi or Tractor with One                  The results will not include roads where semis or tractors with 
+                                            Semi or Tractor with One                  The results will not include roads where semis or tractors with
                                             or More Trailers Prohibited               one or more trailers are prohibited.
                                                                                       Availability: Select countries in North America and Europe
                                             ----------------------------------------  ------------------------------------------------
@@ -981,18 +981,18 @@ def find_routes(stops,
                                                                                       restriction parameter.
                                                                                       Availability: Select countries in North America and Europe
                                             ========================================  ================================================
-      
+
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    attribute_parameter_values              Optional FeatureSet.  Specify additional values required by some restrictions, such as the weight of a vehicle 
-                                            for Weight Restriction. You can also use the attribute parameter to specify whether any restriction prohibits, 
+    attribute_parameter_values              Optional FeatureSet.  Specify additional values required by some restrictions, such as the weight of a vehicle
+                                            for Weight Restriction. You can also use the attribute parameter to specify whether any restriction prohibits,
                                             avoids, or prefers travel on roads that use the restriction. If the restriction is
                                             meant to avoid or prefer roads, you can further specify the degree
                                             to which they are avoided or preferred using this
-                                            parameter. For example, you can choose to never use toll roads, avoid them as much as possible, or even highly 
+                                            parameter. For example, you can choose to never use toll roads, avoid them as much as possible, or even highly
                                             prefer them.
                                             The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is the default value.
                                             If you specify the Attribute Parameter Values parameter from a feature class, the field names on the feature class must match the fields as described below:
-                                            
+
                                               * ``AttributeName``: Lists the name of the restriction.
                                               * ``ParameterName``: Lists the name of the parameter associated with the restriction. A restriction can have one or more ParameterName field
                                                 values based on its intended use.
@@ -1057,11 +1057,11 @@ def find_routes(stops,
                                                 the value for Restriction Usage. The higher the preference, the
                                                 farther the tool will go out of its way to travel on the roads
                                                 associated with the restriction.
-                                            ========================================  =========================  ======================= 
+                                            ========================================  =========================  =======================
                                             **AttributeName**                             **ParameterName**      **ParameterValue**
                                             ----------------------------------------  -------------------------  -----------------------
                                             Any Hazmat Prohibited                     Restriction Usage          PROHIBITED
-                                            
+
                                             ----------------------------------------  -------------------------  -----------------------
                                             Avoid Carpool Roads                        Restriction Usage         PROHIBITED
                                             ----------------------------------------  -------------------------  -----------------------
@@ -1088,7 +1088,7 @@ def find_routes(stops,
                                             Avoid Unpaved Roads                       Restriction Usage          AVOID_HIGH
                                             ----------------------------------------  -------------------------  -----------------------
                                             Axle Count Restriction                    Number of Axles            0
-                                                                                  
+
                                                                                       Restriction Usage          PROHIBITED
                                             ----------------------------------------  -------------------------  -----------------------
                                             Driving a Bus                             Restriction Usage          PROHIBITED
@@ -1102,13 +1102,13 @@ def find_routes(stops,
                                             Driving an Emergency Vehicle              Restriction Usage          PROHIBITED
                                             ----------------------------------------  -------------------------  -----------------------
                                             Height Restriction                        Restriction Usage          PROHIBITED
-                                                                                 
+
                                                                                       Vehicle Height (meters)    0
                                             ----------------------------------------  -------------------------  -----------------------
-                                            Kingpin to Rear Axle                      Restriction Usage          PROHIBITED                                    
-                                            Length Restriction                     
+                                            Kingpin to Rear Axle                      Restriction Usage          PROHIBITED
+                                            Length Restriction
                                                                                       Vehicle Kingpin to Rear    0
-                                                                                      Axle Length (meters)    
+                                                                                      Axle Length (meters)
                                             ----------------------------------------  -------------------------  -----------------------
                                             Length Restriction                        Restriction Usage          PROHIBITED
 
@@ -1121,7 +1121,7 @@ def find_routes(stops,
                                             Roads Under Construction Prohibited       Restriction Usage          PROHIBITED
                                             ----------------------------------------  -------------------------  -----------------------
                                             Semi or Tractor with One                  Restriction Usage          PROHIBITED
-                                            or more trailers prohibited                 
+                                            or more trailers prohibited
                                             ----------------------------------------  -------------------------  -----------------------
                                             Single Axle Vehicles Prohibited           Restriction Usage          PROHIBITED
                                             ----------------------------------------  -------------------------  -----------------------
@@ -1143,7 +1143,7 @@ def find_routes(stops,
                                             WalkTime                                  Walking Speed (km/h)       5
                                             ----------------------------------------  -------------------------  -----------------------
                                             Weight Restriction                        Restriction Usage          PROHIBITED
-                                                                                      
+
                                                                                       Vehicle Weight             0
                                                                                       (kilograms)
                                             ----------------------------------------  -------------------------  -----------------------
@@ -1156,7 +1156,7 @@ def find_routes(stops,
 
                                                                                       Vehicle Width              0
                                                                                       (meters)
-                                            ========================================  =========================  =======================     
+                                            ========================================  =========================  =======================
 
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     route_shape                             Optional string. Specify the type of route features that are output by the
@@ -1186,12 +1186,12 @@ def find_routes(stops,
                                             facilities. This means that only the route shapes are different,
                                             not the underlying streets that are searched when finding the
                                             route.
-                                            
+
                                             Choice list: ['True Shape', 'Straight Line', 'None']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    route_line_simplif ication_tolerance    Optional LinearUnit. Specify by how much you want to simplify the geometry of the output lines for 
-                                            routes and directions. The value you provide for this parameter is ignored unless Travel Mode is set to 
-                                            Custom, which is the default value. The tool also ignores this parameter if the ``populate_route_lines`` parameter 
+    route_line_simplif ication_tolerance    Optional LinearUnit. Specify by how much you want to simplify the geometry of the output lines for
+                                            routes and directions. The value you provide for this parameter is ignored unless Travel Mode is set to
+                                            Custom, which is the default value. The tool also ignores this parameter if the ``populate_route_lines`` parameter
                                             is unchecked (False).
                                             Simplification maintains critical
                                             points on a route, such as turns at intersections, to define the
@@ -1202,13 +1202,13 @@ def find_routes(stops,
                                             the route geometry. This improves the tool execution
                                             time.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    populate_route_edges                    Optional boolean. Specify whether the tool should generate edges for each route. Route edges represent 
-                                            the individual street features or other similar features that are traversed by a route. The output Route 
-                                            Edges layer is commonly used to see which streets or paths are traveled on the most or least by the resultant 
-                                            routes. 
-                                            
-                                            Checked (True) - Generate route edges. The output Route Edges layer is populated with line features.   
-                                            
+    populate_route_edges                    Optional boolean. Specify whether the tool should generate edges for each route. Route edges represent
+                                            the individual street features or other similar features that are traversed by a route. The output Route
+                                            Edges layer is commonly used to see which streets or paths are traveled on the most or least by the resultant
+                                            routes.
+
+                                            Checked (True) - Generate route edges. The output Route Edges layer is populated with line features.
+
                                             Unchecked (False) - Don't generate route edges. The output Route Edges layer is returned, but it is empty.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     populate_directions                     Optional boolean. Specify whether the tool should generate driving directions for
@@ -1225,8 +1225,8 @@ def find_routes(stops,
     directions_language                     Optional string. Specify the language that should be used when generating
                                             driving directions.
                                             This parameter is used only when the populate_directions parameter is checked, or set to True.
-                                            The parameter value can be specified using one of the following two- or five-character language codes:  
-                                            ar-Arabic cs-Czech  de-German el-Greek  en-English  es-Spanish et-Estonian  fr-French  he-Hebrew  it-Italian  
+                                            The parameter value can be specified using one of the following two- or five-character language codes:
+                                            ar-Arabic cs-Czech  de-German el-Greek  en-English  es-Spanish et-Estonian  fr-French  he-Hebrew  it-Italian
                                             ja-Japanese  ko-Korean  lt-Lithuanian lv-Latvian  nl-Dutch  pl-Polish
                                             pt-BR-Brazilian Portuguese pt-PT-European Portuguese
                                             ru-Russian  sv-Swedish  th-Thai tr-Turkish
@@ -1251,7 +1251,7 @@ def find_routes(stops,
 
                                             ``NA Desktop``: Generates turn-by-turn directions suitable for printing.
                                             ``NA Navigation``: Generates turn-by-turn directions designed for an in-vehicle navigation device.
-                                            
+
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     travel_mode                             Optional string. Specify the mode of transportation to model in the analysis. Travel modes are managed in ArcGIS Online and can be configured by the administrator of your
                                             organization to better reflect your organization's workflows. You need to specify the name of a travel mode supported by your organization.
@@ -1267,56 +1267,56 @@ def find_routes(stops,
                                             Once you have identified the analysis settings, you should work with your organization's administrator and save these settings as part of new or existing travel mode so that
                                             everyone in your organization can rerun the analysis with the same settings.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    impedance                               Optional string. Specify the impedance, which is a value that represents the effort or cost of traveling 
+    impedance                               Optional string. Specify the impedance, which is a value that represents the effort or cost of traveling
                                             along road segments or on other parts of the transportation network.
-                                            Travel time is an impedance; a car taking one minute to travel a mile along an empty road is an example of impedance. 
-                                            Travel times can vary by travel mode-a pedestrian may take more than 20 minutes to walk the same mile-so it is important to 
-                                            choose the right impedance for the travel mode you are modeling. Choose from the following impedance values: Drive Time-Models 
-                                            travel times for a car. These travel times are static for each road and don't fluctuate with traffic. Truck Time-Models travel 
-                                            times for a truck.  These travel times are static for each road and don't fluctuate with traffic. Walk Time-Models travel 
-                                            times for a pedestrian. The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is 
+                                            Travel time is an impedance; a car taking one minute to travel a mile along an empty road is an example of impedance.
+                                            Travel times can vary by travel mode-a pedestrian may take more than 20 minutes to walk the same mile-so it is important to
+                                            choose the right impedance for the travel mode you are modeling. Choose from the following impedance values: Drive Time-Models
+                                            travel times for a car. These travel times are static for each road and don't fluctuate with traffic. Truck Time-Models travel
+                                            times for a truck.  These travel times are static for each road and don't fluctuate with traffic. Walk Time-Models travel
+                                            times for a pedestrian. The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is
                                             the default value.
-                                           
+
                                             Choice list:['Drive Time', 'Truck Time', 'Walk Time']
 
                                             The default value is 'Drive Time'.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     gis                                     Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    time_zone_usage_for _time_windows       Optional string. Specifies the time zone for the input date-time fields supported by the tool. This 
-                                            parameter specifies the time zone for the following fields: ``TimeWindowStart1``, ``TimeWindowEnd1``, ``TimeWindowStart2``, 
-                                            ``TimeWindowEnd2``, ``InboundArriveTime``, and ``OutboundDepartTime`` on orders. ``TimeWindowStart1``, ``TimeWindowEnd1``, 
-                                            ``TimeWindowStart2``, and ``TimeWindowEnd2`` on depots. ``EarliestStartTime`` and ``LatestStartTime`` on routes. 
-                                            ``TimeWindowStart`` and ``TimeWindowEnd`` on breaks. 
-                                            
+    time_zone_usage_for _time_windows       Optional string. Specifies the time zone for the input date-time fields supported by the tool. This
+                                            parameter specifies the time zone for the following fields: ``TimeWindowStart1``, ``TimeWindowEnd1``, ``TimeWindowStart2``,
+                                            ``TimeWindowEnd2``, ``InboundArriveTime``, and ``OutboundDepartTime`` on orders. ``TimeWindowStart1``, ``TimeWindowEnd1``,
+                                            ``TimeWindowStart2``, and ``TimeWindowEnd2`` on depots. ``EarliestStartTime`` and ``LatestStartTime`` on routes.
+                                            ``TimeWindowStart`` and ``TimeWindowEnd`` on breaks.
+
                                             Choice list:['UTC', 'GEO_LOCAL']
 
-                                            GEO_LOCAL: The date-time values associated with the orders 
-                                            or depots are in the time zone in which the orders and depots are located. For routes, the date-time 
-                                            values are based on the time zone in which the starting depot for the route is located. If a route does not have a starting depot, 
-                                            all orders and depots across all the routes must be in a single time zone. For breaks, the date-time values are based on the time 
-                                            zone of the routes. For example, if your depot is located in an area that follows eastern standard time and has the first time window 
-                                            values (specified as TimeWindowStart1 and TimeWindowEnd1) of 8 AM and 5 PM, the time window values will be treated as 8:00 a.m. and 5:00 p.m. 
-                                            eastern standard time. 
-                                            
-                                            UTC: The date-time values associated with the orders or depots are in the in coordinated universal time (UTC) and are not based on the time zone 
-                                            in which the orders or depots are located. For example, if your depot is located in an area that follows eastern standard time and has the first 
-                                            time window values (specified as TimeWindowStart1 and TimeWindowEnd1) of 8 AM and 5 PM, the time window values will be treated as 12:00 p.m. 
-                                            and 9:00 p.m. eastern standard time assuming the eastern standard time is obeying the daylight saving time. Specifying the date-time values 
-                                            in UTC is useful if you do not know the time zone in which the orders or depots are located or when you have orders and depots in multiple time 
-                                            zones, and you want all the date-time values to start simultaneously. The UTC option is applicable only when your network dataset 
-                                            defines a time zone attribute. Otherwise, all the date-time values are always treated as GEO_LOCAL.              
+                                            GEO_LOCAL: The date-time values associated with the orders
+                                            or depots are in the time zone in which the orders and depots are located. For routes, the date-time
+                                            values are based on the time zone in which the starting depot for the route is located. If a route does not have a starting depot,
+                                            all orders and depots across all the routes must be in a single time zone. For breaks, the date-time values are based on the time
+                                            zone of the routes. For example, if your depot is located in an area that follows eastern standard time and has the first time window
+                                            values (specified as TimeWindowStart1 and TimeWindowEnd1) of 8 AM and 5 PM, the time window values will be treated as 8:00 a.m. and 5:00 p.m.
+                                            eastern standard time.
+
+                                            UTC: The date-time values associated with the orders or depots are in the in coordinated universal time (UTC) and are not based on the time zone
+                                            in which the orders or depots are located. For example, if your depot is located in an area that follows eastern standard time and has the first
+                                            time window values (specified as TimeWindowStart1 and TimeWindowEnd1) of 8 AM and 5 PM, the time window values will be treated as 12:00 p.m.
+                                            and 9:00 p.m. eastern standard time assuming the eastern standard time is obeying the daylight saving time. Specifying the date-time values
+                                            in UTC is useful if you do not know the time zone in which the orders or depots are located or when you have orders and depots in multiple time
+                                            zones, and you want all the date-time values to start simultaneously. The UTC option is applicable only when your network dataset
+                                            defines a time zone attribute. Otherwise, all the date-time values are always treated as GEO_LOCAL.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    save_output_na_layer                    Optional bolean. Specify if the tool should save the analysis settings as a network analysis layer file. You cannot 
-                                            directly work with this file even when you open the file in an ArcGIS Desktop application like ArcMap. It is meant 
+    save_output_na_layer                    Optional bolean. Specify if the tool should save the analysis settings as a network analysis layer file. You cannot
+                                            directly work with this file even when you open the file in an ArcGIS Desktop application like ArcMap. It is meant
                                             to be sent to Esri Technical Support to diagnose the quality of results returned from the tool.
-                                            
-                                            Checked (True) - Save the network analysis layer file. The file is downloaded in a temporary directory on your machine. 
-                                            In ArcGIS Pro, the location of the downloaded file can be determined  by viewing the value for the Output Network Analysis 
-                                            Layer parameter in the entry corresponding to the tool execution in the Geoprocessing history of your Project. In ArcMap, 
-                                            the location of the file can be determined by accessing the Copy Location option in the shortcut menu on the Output Network 
-                                            Analysis Layer parameter in the entry corresponding to the tool execution in the Geoprocessing Results window.   
-                                            
+
+                                            Checked (True) - Save the network analysis layer file. The file is downloaded in a temporary directory on your machine.
+                                            In ArcGIS Pro, the location of the downloaded file can be determined  by viewing the value for the Output Network Analysis
+                                            Layer parameter in the entry corresponding to the tool execution in the Geoprocessing history of your Project. In ArcMap,
+                                            the location of the file can be determined by accessing the Copy Location option in the shortcut menu on the Output Network
+                                            Analysis Layer parameter in the entry corresponding to the tool execution in the Geoprocessing Results window.
+
                                             Unchecked (False)-Do not save the network analysis layer file. This is the default.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     overrides                               Optional string.  Specify additional settings that can influence the behavior of the solver when finding solutions for the network analysis problems.
@@ -1328,24 +1328,24 @@ def find_routes(stops,
                                             for each solver and their acceptable values can be obtained by
                                             contacting Esri Technical Support.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    save_route_data                         Optional boolean. Choose whether the output includes a zip file that contains a file geodatabase holding the inputs 
-                                            and outputs of the analysis in a format that can be used to share route layers with ArcGIS Online or Portal for 
+    save_route_data                         Optional boolean. Choose whether the output includes a zip file that contains a file geodatabase holding the inputs
+                                            and outputs of the analysis in a format that can be used to share route layers with ArcGIS Online or Portal for
                                             ArcGIS.
                                             True: Save the route data as a zip file. The file is downloaded in a temporary directory on your machine. In ArcGIS Pro, the location of the downloaded file can be determined by viewing the value for the Output Route Data parameter in the entry corresponding to the tool execution in the Geoprocessing history of your Project. In ArcMap, the location of the file can be determined by accessing the Copy Location option in the shortcut menu on the Output Route Data parameter in the entry corresponding to the tool execution in the Geoprocessing Results window.
-                                            False: Do not save the route data. This is the default.  
+                                            False: Do not save the route data. This is the default.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     time_impedance                          Optional string. Specify the time-based impedance, which is a value that represents the travel time along road segments or on other parts of the transportation network.If the impedance for the travel mode, as specified using the impedance parameter, is time-based, the value for time_impedance and impedance parameters should be identical. Otherwise the service will return an error.
-                                            
+
                                             Choice list:['Minutes', 'TravelTime', 'TimeAt1KPH', 'WalkTime', 'TruckMinutes', 'TruckTravelTime']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     distance_impedance                      Optional string. Specify the distance-based impedance, which is a value that represents the travel distance along road segments or on other parts of the transportation network.If the impedance for the travel mode, as specified using the impedance parameter, is distance-based, the value for distance_impedance and impedance parameters should be identical. Otherwise the service will return an error.
-                                            
+
                                             Choice list:['Miles', 'Kilometers']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     output_format                           Optional. Specify the format in which the output features are created.
 
                                             Choose from the following formats:
-                                            
+
                                               * Feature Set - The output features are returned as feature classes and tables. This is the default.
                                               * JSON File - The output features are returned as a compressed file containing the JSON representation of the outputs. When this option is specified, the output is a single file (with a .zip extension) that contains one or more JSON files (with a .json extension) for each of the outputs created by the service.
                                               * GeoJSON File - The output features are returned as a compressed file containing the GeoJSON representation of the outputs. When this option is specified, the output is a single file (with a .zip extension) that contains one or more GeoJSON files (with a .geojson extension) for each of the outputs created by the service.
@@ -1353,7 +1353,7 @@ def find_routes(stops,
     gis                                     Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     future                                  Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
-                                            
+
     ======================================  ==========================================================================================================================================
 
       : returns: the following as a named tuple:
@@ -1367,7 +1367,7 @@ def find_routes(stops,
         * output_route_data - Output Route Data as a DataFile
         * output_result_file - Output Result File as a DataFile
 
-      Click `FindRoutes`_ for additional help.    
+      Click `FindRoutes`_ for additional help.
     """
 
 
@@ -1398,42 +1398,46 @@ def find_routes(stops,
 
     if route_line_simplification_tolerance is None:
         route_line_simplification_tolerance = defaults['route_line_simplification_tolerance']
-
-
-    job = tbx.find_routes(stops=stops,
-                          measurement_units=measurement_units,
-                          analysis_region=analysis_region,
-                          reorder_stops_to_find_optimal_routes=reorder_stops_to_find_optimal_routes,
-                          preserve_terminal_stops=preserve_terminal_stops,
-                          return_to_start=return_to_start,
-                          use_time_windows=use_time_windows,
-                          time_of_day=time_of_day,
-                          time_zone_for_time_of_day=time_zone_for_time_of_day,
-                          uturn_at_junctions=uturn_at_junctions,
-                          point_barriers=point_barriers,
-                          line_barriers=line_barriers,
-                          polygon_barriers=polygon_barriers,
-                          use_hierarchy=use_hierarchy,
-                          restrictions=restrictions,
-                          attribute_parameter_values=attribute_parameter_values,
-                          route_shape=route_shape,
-                          route_line_simplification_tolerance=route_line_simplification_tolerance,
-                          populate_route_edges=populate_route_edges,
-                          populate_directions=populate_directions,
-                          directions_language=directions_language,
-                          directions_distance_units=directions_distance_units,
-                          directions_style_name=directions_style_name,
-                          travel_mode=travel_mode,
-                          impedance=impedance,
-                          time_zone_for_time_windows=time_zone_for_time_windows,
-                          save_output_network_analysis_layer=save_output_na_layer,
-                          overrides=overrides,
-                          save_route_data=save_route_data,
-                          time_impedance=time_impedance,
-                          distance_impedance=distance_impedance,
-                          output_format=output_format,
-                          gis=gis,
-                          future=True)
+    from arcgis._impl.common._utils import inspect_function_inputs
+    params = {
+        "stops" : stops,
+        "measurement_units" : measurement_units,
+        "analysis_region" : analysis_region,
+        "reorder_stops_to_find_optimal_routes" : reorder_stops_to_find_optimal_routes,
+        "preserve_terminal_stops" : preserve_terminal_stops,
+        "return_to_start" : return_to_start,
+        "use_time_windows" : use_time_windows,
+        "time_of_day" : time_of_day,
+        "time_zone_for_time_of_day" : time_zone_for_time_of_day,
+        "uturn_at_junctions" : uturn_at_junctions,
+        "point_barriers" : point_barriers,
+        "line_barriers" : line_barriers,
+        "polygon_barriers" : polygon_barriers,
+        "use_hierarchy" : use_hierarchy,
+        "restrictions" : restrictions,
+        "attribute_parameter_values" : attribute_parameter_values,
+        "route_shape" : route_shape,
+        "route_line_simplification_tolerance" : route_line_simplification_tolerance,
+        "populate_route_edges" : populate_route_edges,
+        "populate_directions" : populate_directions,
+        "directions_language" : directions_language,
+        "directions_distance_units" : directions_distance_units,
+        "directions_style_name" : directions_style_name,
+        "travel_mode" : travel_mode,
+        "impedance" : impedance,
+        "time_zone_for_time_windows" : time_zone_for_time_windows,
+        "save_output_network_analysis_layer" : save_output_na_layer,
+        "overrides" : overrides,
+        "save_route_data" : save_route_data,
+        "time_impedance" : time_impedance,
+        "distance_impedance" : distance_impedance,
+        "output_format" : output_format,
+        "gis" : gis,
+        "future" : True
+    }
+    params = inspect_function_inputs(tbx.find_routes, **params)
+    params['future'] = True
+    job = tbx.find_routes(**params)
     if future:
         return job
     res = job.result()

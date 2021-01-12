@@ -428,10 +428,19 @@ _log = _logging.getLogger(__name__)
     """
     try:
         execution_type = tbx.properties.executionType
-    except:
-        from arcgis.gis import GIS
-        return import_toolbox(url_or_item=url_or_item,
-                              gis=GIS(), verbose=verbose)
+    except Exception as e:
+        try:
+            if str(e).lower().find("token required") > -1:
+                raise
+            elif str(e).lower().find("User does not have permissions to access".lower()) > -1:
+                raise
+            else:
+                from arcgis.gis import GIS
+                tbx = import_toolbox(url_or_item=url_or_item,
+                                     gis=GIS(), verbose=verbose)
+            return tbx
+        except Exception as e:
+            raise
     use_async = True
     if execution_type == 'esriExecutionTypeSynchronous':
         use_async = False

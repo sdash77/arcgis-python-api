@@ -1,5 +1,8 @@
-"Functions for calling the Raster Analysis Tools. The RasterAnalysisTools service is used by ArcGIS Server to provide distributed raster analysis."
+"""
+Functions for calling the Raster Analysis Tools. The RasterAnalysisTools service is used by ArcGIS Server to provide distributed raster analysis.
 
+The Hosted Imagery & Raster Analysis capabilities are available in ArcGIS Online at 8.2 as an invite only Beta through an Early Adopter Program (EAP) 
+"""
 from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, \
                                           _analysis_job_status, _layer_input
 import json as _json
@@ -823,6 +826,12 @@ def generate_raster(raster_function,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -946,6 +955,12 @@ def convert_feature_to_raster(input_feature,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -970,6 +985,8 @@ def copy_raster(input_raster,
                 process_as_multidimensional=None,
                 build_transpose=None,
                 context=None,
+                raster_type_name=None,
+                raster_type_params = None,
                 *,
                 gis=None,
                 future=False,
@@ -979,13 +996,19 @@ def copy_raster(input_raster,
     .. image:: _static/images/ra_copy_raster/ra_copy_raster.png 
 
     The Copy Raster task takes single raster input and generates the output image using parallel processing.
-
     The input raster can be clipped, resampled, and reprojected based on the setting.
+
+    The function can also create hosted imagery layers in ArcGIS Enterprise and ArcGIS Online from local raster datasets by uploading the data to the server.
+    Multiple images are mosaicked into a single dataset to create one layer.
+    For this functionality to work in ArcGIS Online, Azure library packages for Python (version - azure-storage-blob-12.5.0)
+    needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    input_raster                         Required feature layer. The input feature layer to convert to a raster dataset.
+    input_raster                         Required raster layer or string. The input raster layer to be copied to.
+                                         Path to a local raster dataset can also be given to create hosted imagery 
+                                         layers on enterprise and AGOL.
     --------------------------------     --------------------------------------------------------------------
     output_cellsize                      Required dict. The cell size and unit for the output imagery layer.
                                          The available units are Feet, Miles, Meters, and Kilometers.
@@ -1022,6 +1045,18 @@ def copy_raster(input_raster,
                                                 
                                             Example: 
                                                 {"outSR": {spatial reference}}
+    ------------------                   --------------------------------------------------------------------
+    raster_type_name                     Required string. The name of the raster type to use for adding data to 
+                                         the mosaic dataset.
+
+                                         Choice list: ['Raster Dataset','UAV/UAS', 'Aerial', 'ScannedAerial', 'Landsat 7 EMT+', 'Landsat 8', 'Sentinel-2', 'ZY3-SASMAC', 'ZY3-CRESDA']
+    ------------------                   --------------------------------------------------------------------
+    raster_type_params                   Optional dict. Additional ``raster_type`` specific parameters.
+        
+                                         The process of add rasters to the mosaic datset can be
+                                         controlled by specifying additional raster type arguments.
+
+                                         The raster type parameters argument is a dictionary.
     --------------------------------     --------------------------------------------------------------------
     gis                                  Optional GIS object. If not specified, the currently active connection
                                          is used.
@@ -1035,10 +1070,37 @@ def copy_raster(input_raster,
 
                                          Example:
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    --------------------------------     --------------------------------------------------------------------
+    tiles_only                           Keyword only parameter. Optional boolean. 
+                                         In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                         To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                         Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ================================     ====================================================================
 
     :return:
     output_raster : Imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1: This example creates a tiled image layer in ArcGIS Online. (To create dynamic imagery layer set the tiles_only keyword argument to False)
+
+        copy_raster_op = copy_raster(input_raster="C:\\data\\input_raster.tif",
+                                     output_name="output_name",
+                                     raster_type_name="Raster Dataset",
+                                     gis=gis,
+                                     tiles_only=True)
+
+    .. code-block:: python
+
+        # Usage Example 2: This example creates a tiled image layer in AGOL from the datasets detected in the input folder. (To create dynamic imagery layer set the tiles_only keyword argument to False)
+
+        copy_raster_op = copy_raster(input_raster="C:\\data",
+                                     output_name="output_name",
+                                     raster_type_name="Raster Dataset",
+                                     gis=gis,
+                                     tiles_only=True)
+
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -1057,6 +1119,8 @@ def copy_raster(input_raster,
                                                  output_name=output_name,
                                                  context=context,
                                                  future=future,
+                                                 raster_type_name=raster_type_name,
+                                                 raster_type_params = raster_type_params,
                                                  **kwargs)
 
 
@@ -1069,6 +1133,7 @@ def summarize_raster_within(input_zone_layer,
                             context=None,
                             process_as_multidimensional=False,
                             percentile_value=90,
+                            percentile_interpolation_type="AUTO_DETECT",
                             *,
                             gis=None,
                             future=False,
@@ -1213,14 +1278,31 @@ def summarize_raster_within(input_zone_layer,
                                              
                                              False - Statistics will be calculated for all dimensions 
                                              (such as time or depth) of a multidimensional image service.
+                                             Parameter available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    percentile_value                         Optional int, The percentile to calculate. The default is 90, for the 90th percentile. 
+    percentile_value                         Optional Double, The percentile to calculate. The default is 90, for the 90th percentile. 
                                              The values can range from 0 to 100. The 0th percentile is essentially 
                                              equivalent to the Minimum statistic, and the 100th percentile is equivalent to Maximum. 
                                              A value of 50 will produce essentially the same result as the Median statistic.
                              
                                              This parameter is honoured only available if the statistics_type parameter is 
                                              set to Percentile.
+                                             Parameter available in ArcGIS Image Server 10.8.1 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    percentile_interpolation_type            Optional str. Determines the type of percentile interpolation type when the 
+                                             number of values from the input value raster to be calculated are even.
+                                                - AUTO_DETECT - If the input value raster has integer pixel type, the 
+                                                                NEAREST method is used. If the input value raster 
+                                                                has floating point pixel type, then the LINEAR 
+                                                                method is used. This is the default.
+                                                - NEAREST - Nearest value to the desired percentile. In this case, 
+                                                            the output pixel type is same as that of the input value 
+                                                            raster.
+                                                - LINEAR - Weighted average of two surrounding values from the 
+                                                           desired percentile. In this case, the output pixel 
+                                                           type is floating point.
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
@@ -1234,6 +1316,12 @@ def summarize_raster_within(input_zone_layer,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -1250,6 +1338,7 @@ def summarize_raster_within(input_zone_layer,
                                                              context=context,
                                                              process_as_multidimensional=process_as_multidimensional,
                                                              percentile_value=percentile_value,
+                                                             percentile_interpolation_type=percentile_interpolation_type,
                                                              future=future,
                                                              **kwargs)
 
@@ -1372,6 +1461,7 @@ def calculate_density(input_point_or_line_features,
                       output_cell_size=None,
                       output_name=None,
                       context=None,
+                      input_barriers=None,
                       *,
                       gis=None,
                       future=False,
@@ -1504,6 +1594,11 @@ def calculate_density(input_point_or_line_features,
                                                 Example:
                                                     {'resamplingMethod': "Nearest"} 
     ------------------------------------     --------------------------------------------------------------------
+    input_barriers                           Optional. The dataset that defines the barriers. The barriers can be 
+                                             a feature layer of polyline or polygon features. 
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -1516,6 +1611,12 @@ def calculate_density(input_point_or_line_features,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -1531,6 +1632,7 @@ def calculate_density(input_point_or_line_features,
                                                         output_cell_size=output_cell_size,
                                                         context=context,
                                                         future=future,
+                                                        input_barriers=input_barriers,
                                                         **kwargs)
 
 def create_viewshed(input_elevation_surface,
@@ -1743,6 +1845,12 @@ def create_viewshed(input_elevation_surface,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -1944,6 +2052,12 @@ def interpolate_points(input_point_features,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -2077,6 +2191,12 @@ def classify(input_raster,
 
                                          Example:
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    --------------------------------     --------------------------------------------------------------------
+    tiles_only                           Keyword only parameter. Optional boolean. 
+                                         In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                         To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                         Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ================================     ====================================================================
 
     :return:
@@ -2216,6 +2336,12 @@ def segment(input_raster, spectral_detail=15.5, spatial_detail=15, minimum_segme
 
                                          Example:
                                              {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    --------------------------------     --------------------------------------------------------------------
+    tiles_only                           Keyword only parameter. Optional boolean. 
+                                         In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                         To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                         Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ================================     ====================================================================
 
     :return:
@@ -2312,7 +2438,7 @@ def train_classifier(input_raster,
     ================================     ====================================================================
 
     :return:
-       output_raster : Imagery Layer item
+       Returns .ecs file in dictionary format
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -2345,6 +2471,11 @@ def create_image_collection(image_collection,
     Provides provision to use input rasters by reference 
     and to specify image collection properties through context parameter.
 
+    The function can also create hosted imagery layers in ArcGIS Enterprise and ArcGIS Online from local raster datasets by uploading the data to the server.
+    A collection can be created from multiple input rasters.
+    For this functionality to work on ArcGIS Online, Azure library packages for Python (version - azure-storage-blob-12.5.0)
+    needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install
+
     ==================                   ====================================================================
     **Argument**                         **Description**
     ------------------                   --------------------------------------------------------------------
@@ -2368,11 +2499,13 @@ def create_image_collection(image_collection,
                                          - An image service URL
                                          - Shared data path (this path must be accessible by the server)
                                          - Name of a folder on the portal
+                                         The function can create hosted imagery layers on enterprise and AGOL from 
+                                         local raster datasets by uploading the data to the server.
     ------------------                   --------------------------------------------------------------------
     raster_type_name                     Required string. The name of the raster type to use for adding data to 
                                          the image collection.
 
-                                         Choice list: ['UAV/UAS', 'Aerial', 'ScannedAerial', 'Landsat 7 EMT+', 'Landsat 8', 'Sentinel-2', 'ZY3-SASMAC', 'ZY3-CRESDA']
+                                         Choice list: ['Raster Dataset', 'UAV/UAS', 'Aerial', 'ScannedAerial', 'Landsat 7 EMT+', 'Landsat 8', 'Sentinel-2', 'ZY3-SASMAC', 'ZY3-CRESDA']
     ------------------                   --------------------------------------------------------------------
     raster_type_params                   Optional dict. Additional ``raster_type`` specific parameters.
         
@@ -2417,13 +2550,19 @@ def create_image_collection(image_collection,
 
                                          Example:
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------                   --------------------------------------------------------------------
+    tiles_only                           Keyword only parameter. Optional boolean. 
+                                         In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                         To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                         Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ==================                   ====================================================================
 
     :returns: The imagery layer item
 
     .. code-block:: python
 
-            # Usage Example: To create an image collection.
+            # Usage Example 1: To create an image collection.
             image_item_list = [<Item title:"YUN_0040.JPG" type:Image owner:admin>,
                                <Item title:"YUN_0041.JPG" type:Image owner:admin>,
                                <Item title:"YUN_0042.JPG" type:Image owner:admin>,
@@ -2444,6 +2583,16 @@ def create_image_collection(image_collection,
                                                       raster_type_name="UAV/UAS",
                                                       raster_type_params=params,
                                                       out_sr=32632)
+
+    .. code-block:: python
+
+        # Usage Example 2: This example creates a dynamic image layer in AGOL from the datasets detected in the input folder.
+
+        img_coll_result = create_image_collection(image_collection="imageCollection",
+                                                  input_rasters="C:\\data",
+                                                  raster_type_name="Raster Dataset",
+                                                  gis=gis,
+                                                  tiles_only=False)
 
     """
 
@@ -3493,6 +3642,12 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     .. code-block:: python
@@ -3530,6 +3685,7 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
 
 def build_multidimensional_transpose(input_multidimensional_raster,
                                      context=None,
+                                     delete_transpose=False,
                                      *,
                                      gis=None,
                                      future=False,
@@ -3562,6 +3718,16 @@ def build_multidimensional_transpose(input_multidimensional_raster,
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
+    delete_tranpose                          Optional boolean. Specifies whether to delete an existing transpose.
+
+                                                - True - The transpose, if it exists, will be deleted. 
+                                                         No new transpose will be built. 
+
+                                                - False - The transpose will be built. If there is an existing transpose, 
+                                                          it will be overwritten. This is the default. 
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS object. the GIS on which this tool runs. If not specified, 
                                              the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -3585,6 +3751,7 @@ def build_multidimensional_transpose(input_multidimensional_raster,
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.rasteranalysis.build_multidimensional_transpose(input_multidimensional_raster=input_multidimensional_raster,
                                                                       context=context,
+                                                                      delete_transpose=delete_transpose,
                                                                       future=future,
                                                                       **kwargs)
 
@@ -3832,6 +3999,12 @@ def aggregate_multidimensional_raster(input_multidimensional_raster,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -3921,6 +4094,7 @@ def generate_trend_raster(input_multidimensional_raster,
                           rmse=True, 
                           r2=False, 
                           slope_p_value=False,
+                          seasonal_period="DAYS",
                           *,
                           gis=None,
                           future=False,
@@ -3950,6 +4124,12 @@ def generate_trend_raster(input_multidimensional_raster,
                                              - POLYNOMIAL : Fits the pixel values for a variable along a second order polynomial trend line.
 
                                              - HARMONIC : Fits the pixel values for a variable along a harmonic trend line.
+
+                                             - MANN-KENDALL : Variable pixel values will be evaluated using the Mann-Kendall trend test. 
+                                                              Option available in ArcGIS Image Server 10.9 and higher.
+                                             
+                                             - SEASONAL-KENDALL : Variable pixel values will be evaluated using the Seasonal-Kendall trend test.
+                                                                  Option available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
     frequency                                Optional Integer. 
 
@@ -4032,15 +4212,20 @@ def generate_trend_raster(input_multidimensional_raster,
     ------------------------------------     --------------------------------------------------------------------
     rmse                                     Optional Boolean. Default value is True. Specifies whether the root 
                                              mean square error (RMSE) of the trend fit line will be calculated.
-                                             Available in ArcGIS Image Server 10.8.1 and higher.
+                                             Parameter available  in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     r2                                       Optional Boolean. Default value is False. Specifies whether the 
                                              R-squared goodness-of-fit statistic for the trend fit line will be calculated. 
-                                             Available in ArcGIS Image Server 10.8.1 and higher.
+                                             Parameter available  in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     slope_p_value                            Optional Boolean. Default value is False. Specifies whether the 
                                              p-value statistic for the slope coefficient of the trend line will be calculated. 
-                                             Available in ArcGIS Image Server 10.8.1 and higher.
+                                             Parameter available in ArcGIS Image Server 10.8.1 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    seasonal_period                          Optional String. Specifies the seasonal period. Default - "DAYS"
+                                             Possible Options - "DAYS", "MONTHS"
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
@@ -4054,6 +4239,12 @@ def generate_trend_raster(input_multidimensional_raster,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -4091,6 +4282,7 @@ def generate_trend_raster(input_multidimensional_raster,
                                                           rmse=rmse, 
                                                           r2=r2, 
                                                           slope_p_value=slope_p_value,
+                                                          seasonal_period=seasonal_period,
                                                           future=future,
                                                           **kwargs)
 
@@ -4229,6 +4421,12 @@ def predict_using_trend_raster(input_multidimensional_raster,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -4435,6 +4633,12 @@ def find_argument_statistics(input_raster,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -4584,6 +4788,12 @@ def linear_spectral_unmixing(input_raster,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -4802,6 +5012,12 @@ def subset_multidimensional_raster(input_multidimensional_raster,
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -5040,6 +5256,7 @@ def optimal_path_as_line(input_destination_data,
                          path_type="EACH_ZONE", 
                          output_feature_name=None, 
                          context=None, 
+                         create_network_paths='DESTINATIONS_TO_SOURCES',
                          *, 
                          gis=None, 
                          future=False, 
@@ -5107,11 +5324,31 @@ def optimal_path_as_line(input_destination_data,
                                              Alternatively, you can pass in the name of the output feature layer  that should be created by this method to be used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not specified, the currently active connection
+    context                                  Optional dict. Context contains additional settings that affect task execution.
+    ------------------------------------     --------------------------------------------------------------------
+    create_network_paths                     Optional string or boolean. Specifies whether complete, and possibly 
+                                             overlapping, paths from the destinations to the sources are calculated 
+                                             or if  nonoverlapping network paths are created.
+
+                                             `DESTINATIONS_TO_SOURCES` (False): Complete paths from the destinations 
+                                              to the sources are calculated, which can be overlapping.  This is default.
+
+                                             `NETWORK_PATHS` (True): Nonoverlapping network paths are calculated.
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Keyword only parameter. Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return: Output Feature Layer Item
@@ -5126,6 +5363,7 @@ def optimal_path_as_line(input_destination_data,
                                                           destination_field=destination_field, 
                                                           path_type=path_type, 
                                                           context=context,
+                                                          create_network_paths=create_network_paths,
                                                           future=future,
                                                           **kwargs)
 
@@ -5259,6 +5497,13 @@ def optimal_region_connections(input_region_data,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return: Returns the following as a named tuple - output_optimum_network_features, output_neighbor_network_features
@@ -5394,19 +5639,25 @@ def analyze_changes_using_ccdc(input_multidimensional_raster=None,
     ------------------------------------     --------------------------------------------------------------------
     input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
                                              Portal Item can be passed.
+
+                                             The input multidimensional raster must have at least 12 slices, spanning at least 1 year.
     ------------------------------------     --------------------------------------------------------------------
     bands_for_detecting_change               Optional List. The band IDs to use for change detection.
                                              If no band IDs are provided, all the bands from the input raster dataset will be used.
+                                             Each element in the list should be within the range 1 to n where n is the 
+                                             number of bands of the input raster.
 
                                              Example:
-                                                  [0,1,2,3,4,6]
+                                                  [1,2,3,4,6]
     ------------------------------------     --------------------------------------------------------------------
     bands_for_temporal_masking               Optional List. The band IDs of the green band and the SWIR band, to be used to 
                                              mask for cloud, cloud shadow and snow. If band IDs are not provided, no 
                                              masking will occur.
+                                             Each element in the list should be within the range 1 to n where n is 
+                                             the number of bands of the input raster.
 
                                              Example:
-                                                [0,1,2]
+                                                [1,2]
     ------------------------------------     --------------------------------------------------------------------
     chi_squared_threshold                    Optional Float. The chi-square change probability threshold. If an 
                                              observation has a calculated change probability that is above this 
@@ -5481,6 +5732,19 @@ def analyze_changes_using_ccdc(input_multidimensional_raster=None,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return: Imagery layer item
@@ -5625,6 +5889,19 @@ def detect_change_using_change_analysis_raster(input_change_analysis_raster=None
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return: Imagery layer item
@@ -5861,6 +6138,13 @@ def sample(input_rasters,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return: Feature Layer or Table object
@@ -5887,6 +6171,140 @@ def sample(input_rasters,
                                             future=future,
                                             **kwargs)
 
+
+def merge_multidimensional_rasters(input_multidimensional_rasters,
+                                   resolve_overlap_method='FIRST',
+                                   output_name=None, 
+                                   context=None,
+                                   *,
+                                   gis=None,
+                                   future=False,
+                                   **kwargs):
+
+    """
+    Function merges several multidimensional rasters spatially, or across variables and dimensions into one.  
+    Function available in ArcGIS Image Server 10.9 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_multidimensional_rasters           Required list of ImageryLayer object. List of input multidimensional rasters to be combined.
+    ------------------------------------     --------------------------------------------------------------------
+    resolve_overlap_method                   Optional string. Specifies the method used to handle overlapping pixels when merging rasters in the combined datasets. 
+
+                                               - FIRST - The pixel value in the overlapping areas will be the value from the first raster in the list of input rasters. This is the default.
+
+                                               - LAST - The pixel value in the overlapping areas will be the value from the last raster in the list of input rasters.
+
+                                               - MIN - The pixel value in the overlapping areas will be the minimum value of the overlapping pixels.
+
+                                               - MAX - The pixel value in the overlapping areas will be the maximum value of the overlapping pixels.
+
+                                               - MEAN - The pixel value in the overlapping areas will be the average of the overlapping pixels.
+
+                                               - SUM - The pixel value in the overlapping areas will be the total sum of the overlapping pixels.
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  context contains additional settings that affect task execution. 
+
+                                             context parameter overwrites values set through arcgis.env parameter
+                                         
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+                                            
+                                                Example: 
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6, 
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be 
+                                                projected into the output spatial reference.
+                                                
+                                                Example: 
+                                                    {"outSR": {spatial reference}}
+
+                                              - Snap Raster (snapRaster): The output raster will have its 
+                                                cells aligned with the specified snap raster.
+                                                        
+                                                Example: 
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                                specified by cell size.
+
+                                                Example:
+                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total 
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+
+                                              - Resampling Method (resamplingMethod): The output raster will be 
+                                                resampled to method specified.
+                                                The supported values are: Bilinear, Nearest, Cubic.
+
+                                                Example:
+                                                    {'resamplingMethod': "Nearest"} 
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ====================================     ====================================================================
+
+    :return:
+        The output imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1: Merge two multidimensional rasters with different variables..
+
+        merge_mdim_rasters_op = merge_multidimensional_rasters(input_multidimensional_rasters=[input_multidimensional_raster_var1, input_multidimensional_raster_var2],
+                                                               resolve_overlap_method="FIRST",
+                                                               gis=gis)
+
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.merge_multidimensional_rasters(input_multidimensional_rasters=input_multidimensional_rasters,
+                                                                    resolve_overlap_method=resolve_overlap_method,
+                                                                    output_name=output_name, 
+                                                                    context=context,
+                                                                    future=future,
+                                                                    **kwargs)
 
 #def transfer_files(input_files, 
 #                   output_datastore=None, 

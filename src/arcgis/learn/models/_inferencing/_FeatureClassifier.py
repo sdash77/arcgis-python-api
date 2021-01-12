@@ -1,15 +1,21 @@
 import os
 import sys
 import json
-from fastai.vision import *
 import arcgis
 from arcgis.learn import FeatureClassifier
 import arcpy
-import torch
 prf_root_dir = os.path.join(os.path.dirname(__file__), os.pardir)
 sys.path.append(prf_root_dir)
 import numpy as np
 from .util import normalize_batch
+
+try:
+    from fastai.vision import *
+    import torch
+    HAS_PYTORCH_FA = True
+
+except Exception as e:
+    HAS_PYTORCH_FA = False
 
 imagenet_stats = ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
@@ -25,6 +31,9 @@ def denorm(x, mean=imagenet_mean, std=imagenet_std):
 class ChildObjectDetector:
 
     def initialize(self, model, model_as_file):
+        if not HAS_PYTORCH_FA:
+            raise Exception('PyTorch (version 1.1.0 or above) and fast.ai (version 1.0.54 or above) libraries are not installed. Install PyTorch using "conda install pytorch=1.1.0 fastai=1.0.54".')
+
         if model_as_file:
             with open(model, 'r') as f:
                 self.emd = json.load(f)
@@ -44,6 +53,17 @@ class ChildObjectDetector:
         self.model.eval()
 
     def getParameterInfo(self, required_parameters):
+        if "MetaDataMode" in self.emd and self.emd["MetaDataMode"] == "MultiLabeled_Tiles":
+            required_parameters.append(
+                {
+                    'name': 'score_threshold',
+                    'dataType': 'numeric',
+                    'value': 0.5,
+                    'required': False,
+                    'displayName': 'Confidence Score Threshold [0.0, 1.0]',
+                    'description': 'Confidence score threshold value [0.0, 1.0]'
+                }
+            )
         return required_parameters
 
     def getConfiguration(self, **scalars):
@@ -54,6 +74,8 @@ class ChildObjectDetector:
             self.batch_size = int(scalars['batch_size'])
         else:
             self.batch_size = int(self.emd['BatchSize'])
+
+        self.thresh = float(scalars.get('score_threshold', 0.5))   # Default 0.5 threshold
 
         return {
             # CropSizeFixed is a boolean value parameter (1 or 0) in the emd file, representing whether the size of
@@ -89,27 +111,49 @@ class ChildObjectDetector:
 
         rings = []
         labels, confidences = [], []
-        
+
         # Normalize Image
         if "NormalizationStats" in self.emd:
             batch_images = normalize_batch(batch_images, self.emd)
         else:
+            # Transpose the image dimensions to [batch, height, width, bands],
+            # normalize and transpose back to [batch, bands, height, width]
             batch_images = norm(batch_images.transpose(0,2,3,1)).transpose(0, 3, 1, 2)
 
-        # Convert to torch tensor and transpose the dimensions to [batch, bands, height, width]
+        # Convert to torch tensor, set device and convert to float
         batch_images = torch.tensor(batch_images).to(self.device).float()
 
         # the second element in the passed tuple is hardcoded to make fastai's pred_batch work
-        predictions = self.cf.learn.pred_batch(batch=(batch_images, torch.tensor([40]).to(self.device))) 
-
-        # torch.max returns the max value and the index of the max as a tuple
-        confidences, class_idxs = torch.max(predictions, dim=1)
+        predictions = self.cf.learn.pred_batch(batch=(batch_images, torch.tensor([40]).to(self.device)))
+        # predictions: torch.tensor(B,C), where B is the batch size and C is the number of classes
 
         # Using emd to map the class
         class_map = [c['Name'] for c in self.emd["Classes"]]
-        labels = [class_map[c] for c in class_idxs]
+
+        # For Multi Label Classification
+        if "MetaDataMode" in self.emd and self.emd["MetaDataMode"] == "MultiLabeled_Tiles":
+            for pred in predictions:
+
+                # Select the class labels >= threshold and convert them to a comma separated string
+                class_idxs = np.where(pred >= self.thresh)[0]
+                lbls = [class_map[idx] for idx in class_idxs]
+                lbls_string = ";".join(lbls)
+                labels.append(lbls_string)
+
+                # Select all confidences and convert them to a comma separated string
+                scores = [str(p.item()) for p in pred]
+                # scores = [str(pred[idx].tolist()) for idx in class_idxs]
+                scores_string = ";".join(scores)
+                confidences.append(scores_string)
+
+        # For Single Label Classification
+        else:
+            # torch.max returns the max value and the index of the max as a tuple
+            confidences, class_idxs = torch.max(predictions, dim=1)
+            confidences = confidences.tolist()
+            labels = [class_map[c] for c in class_idxs]
 
         # Appending this ring for all the features in the batch
-        rings = [[[[0, 0], [0, width - 1], [height - 1, width - 1], [height - 1, 0]]] for i in range(self.batch_size)]
+        rings = [[[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]] for i in range(batch)]
 
-        return rings, confidences.tolist(), labels
+        return rings, confidences, labels

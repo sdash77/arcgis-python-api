@@ -16,8 +16,9 @@ import os
 import shutil
 import datetime as dt
 import dateutil.parser
+import tempfile
 
-import ipywidgets   
+import ipywidgets
 from ipywidgets import widgets
 from ipywidgets.embed import embed_minimal_html
 from traitlets import Unicode, Int, List, Bool, Dict, Tuple, Float, observe
@@ -134,8 +135,10 @@ def _get_extent_of_dataframe(sdf):
         }
     else:
         raise Exception('Could not add get extent of DataFrame it is not a spatially enabled DataFrame.')
-
-def _get_master_extent(list_of_extents, target_sr={'wkid': 102100, 'latestWkid': 3857}):
+default_sr = {'wkid': 102100, 'latestWkid': 3857}
+def _get_master_extent(list_of_extents, target_sr=None):
+    if target_sr is None:
+        target_sr = default_sr
     # Check if any extent is different from one another
     varying_spatial_reference = False
     for extent in list_of_extents:
@@ -181,11 +184,11 @@ def _reproject_extent(extents, target_sr={'wkid': 102100, 'latestWkid': 3857}):
             extents_to_reproject[in_sr_str]['extents'].extend(
                 [
                     {
-                        'x': extent['xmin'], 
+                        'x': extent['xmin'],
                         'y': extent['ymin']
                     },
                     {
-                        'x': extent['xmax'], 
+                        'x': extent['xmax'],
                         'y': extent['ymax']
                     }
                 ]
@@ -222,6 +225,16 @@ class MapView(widgets.DOMWidget):
     mode                   Whether to construct a '2D' map or '3D' map. See the `mode` property
                            for more information.
     ==================     ====================================================================
+
+    .. note::
+        Note: If the Jupyter Notebook server is running over http, you need to
+        configure your portal/organization to allow your host and port; or else
+        you will run into CORs issues.
+
+        This can be accomplished by signing into your portal/organization in a
+        browser, then navigating to:
+
+        `Organization` > `Settings` > `Security` > `Allow origins` > `Add` > http://localhost:8888 (replace with the host/port you are running on)
 
     """
 
@@ -337,7 +350,7 @@ class MapView(widgets.DOMWidget):
     def basemap(self):
         """What basemap you would like to apply to the widget (‘topo’,
         ‘national-geographic’, etc.). See `basemaps` for a full list
-        
+
         # Usage example: Set the widget basemap equal to an item
             from arcgis.mapping import WebMap
             widget = gis.map()
@@ -347,7 +360,7 @@ class MapView(widgets.DOMWidget):
             widget.basemap = image_layer_item
             widget.basemap = webmap2.basemap
             widget.basemap - 'national-geographic'
-        
+
         """
         return self._basemap
 
@@ -455,7 +468,7 @@ class MapView(widgets.DOMWidget):
                     "xmax": value[1][0],
                     "ymax": value[1][1]}
             elif len(value) == 0:
-                pass            
+                pass
             else:
                 raise Exception
         except Exception:
@@ -721,6 +734,9 @@ class MapView(widgets.DOMWidget):
         self._preview_image_display_handler = display(
             HTML(self._assemble_img_preview_html_str("")),
             display_id = "preview-" + str(self._uuid))
+        self._preview_html_embed_display_handler = display(
+            HTML(self._assemble_html_embed_html_str("")),
+            display_id = "preview-html-" + str(self._uuid))
 
     def _assemble_img_preview_html_str(self, img_src):
         """Helper function that creates an HTML string of the <img> tag
@@ -745,7 +761,7 @@ class MapView(widgets.DOMWidget):
 
     @observe('_cell_output_screenshot_callback_resp')
     def _cell_output_screenshot_update_callback(self, change):
-        """Called every time the front end takes a screenshot for a 
+        """Called every time the front end takes a screenshot for a
         cell output"""
         if self._cell_output_display_handler:
             img_data_uri_str = self._parse_js_resp(change['new'])
@@ -779,13 +795,27 @@ class MapView(widgets.DOMWidget):
                 encoded_body = base64.b64encode(resp.read())
                 return 'data:image/png;base64,{}'.format(encoded_body.decode())
 
+    def _assemble_html_embed_html_str(self, iframe_srcdoc_html,
+                                     class_id_root = "map-html-embed-preview-"):
+        """Helper function that creates an HTML string of the <iframe> tag
+        to add to the notebook with the correct <div> class to be hidden
+        """
+        iframe_html = f"<iframe height='{self.layout.height}' width='100%' "\
+                      f"srcdoc='{iframe_srcdoc_html}'>"\
+                      f"Your browser doesn't support map widget previews"\
+                      f"</iframe>"
+        iframe_html = iframe_html if iframe_srcdoc_html else ""
+        other_html = "<br><h4></h4>"
+        class_id = class_id_root + self._uuid
+        return f'<div class="{class_id}">{iframe_html}</div>'
+
     print_service_url = Unicode("").tag(sync=True)
     """
     .. note::
         Note: this property is obselete as of >v1.6 of the Python API, since
         the underlying JavaScript code ran during a `take_screenshot()` Python
         call has been has been changed to `MapView.takeScreenshot()` instead
-        of calling a Print Service URL. Any value you set to this property 
+        of calling a Print Service URL. Any value you set to this property
         will be ignored (2D screenshots will still be taken successfully).
     """
 
@@ -793,7 +823,7 @@ class MapView(widgets.DOMWidget):
 
     def take_screenshot(self, output_in_cell=True, set_as_preview=True,
                         file_path = ""):
-        """Takes a screenshot of the current widget view. Only works in a 
+        """Takes a screenshot of the current widget view. Only works in a
         Jupyter Notebook environment.
 
         ==================     ====================================================================
@@ -804,7 +834,7 @@ class MapView(widgets.DOMWidget):
         ------------------     --------------------------------------------------------------------
         set_as_preview         Optional bool, default `True`. Will set the screenshot as the static
                                image preview in the cell where the map widget is being displayed.
-                               Use this flag if you want the generated HTML previews of your 
+                               Use this flag if you want the generated HTML previews of your
                                notebook to have a map image visible.
         ------------------     --------------------------------------------------------------------
         file_path              Optional String, default `""`. To output the screenshot to a `.png`
@@ -815,17 +845,24 @@ class MapView(widgets.DOMWidget):
         In all notebook outputs, each image will be encoded to a base64
         data URI and wrapped in an HTML <img> tag, like
         `<img src="base64Str">`. This means that the data for the image lives
-        inside the notebook file itself, allowing for easy sharing of 
+        inside the notebook file itself, allowing for easy sharing of
         notebooks and generated HTML previews of notebooks.
 
         .. note::
             This function acts asyncronously, meaning that the Python function
-            will return right away, with the notebook outputs/files being 
-            written after an indeterminate amount of time. Avoid calling this 
-            function  multiple times in a row if the asyncronous portion of 
+            will return right away, with the notebook outputs/files being
+            written after an indeterminate amount of time. Avoid calling this
+            function  multiple times in a row if the asyncronous portion of
             the function hasn't finished yet.
 
+        .. note::
+            When this function is called with `set_as_preview = True`, the
+            static image preview will overwrite the embedded HTML element
+            preview from any previous `MapView.embed_html(set_as_preview=True)`
+            call
+
         """
+        self._clear_embed_html_preview()
         if not self.ready:
             log.warn("Cannot take screenshot if widget is not visible in "\
                      "notebook: Please try again when widget is visible.");
@@ -850,11 +887,69 @@ class MapView(widgets.DOMWidget):
               'output_in_cell' : output_in_cell,
               'file_path' : bool(file_path) }
 
+    def _clear_embed_html_preview(self):
+        self._preview_html_embed_display_handler.update(HTML(
+            self._assemble_html_embed_html_str("")))
+
+    def _clear_static_image_preview(self):
+        self._preview_image_display_handler.update(
+           HTML(self._assemble_img_preview_html_str("")))
+
+    def embed(self, output_in_cell=True, set_as_preview=True):
+        """Embeds the current state of the map into the underlying notebook
+        as an interactive HTML/JS/CSS element. This element will always display
+        this 'snapshot' state of the map, regardless of any future Python code ran.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        output_in_cell         Optional bool, default `True`. Will display the embedded HTML
+                               interactive map in the output area of the cell where this function
+                               is called.
+        ------------------     --------------------------------------------------------------------
+        set_as_preview         Optional bool, default `True`. Will display the embedded HTML
+                               interactive map in the cell where the map widget is being displayed.
+                               Use this flag if you want the generated HTML previews of your
+                               notebook to have an interactive map displayed.
+        ==================     ====================================================================
+
+        In all notebook outputs, each embedded HTML element will contain
+        the entire map state and all relevant HTML wrapped in an <iframe>
+        element. This means that the data for the embedded HTML element lives
+        inside the notebook file itself, allowing for easy sharing of
+        notebooks and generated HTML previews of notebooks.
+
+        .. note::
+            When this function is called with `set_as_preview = True`, the
+            embedded HTML preview element will overwrite the static image
+            preview from any previous `MapView.take_screenshot(set_as_preview=True)`
+            call
+
+        .. note::
+            Any embedded maps must only reference publicly available data. The
+            embedded map must also have access to the https://unpkg.com
+            to load the necessry JavaScript components on the page
+
+        """
+        self._clear_static_image_preview()
+        html_repr_path = os.path.join(tempfile.gettempdir(),
+                                      f".{self._uuid}.html")
+        self.export_to_html(html_repr_path)
+        with open(html_repr_path, "r") as f:
+            iframe_srcdoc_html = f.read()
+            if output_in_cell:
+                display(HTML(
+                    self._assemble_html_embed_html_str(iframe_srcdoc_html,
+                        class_id_root="map-html-embed-in-cell-")))
+            if set_as_preview:
+                self._preview_html_embed_display_handler.update(HTML(
+                    self._assemble_html_embed_html_str(iframe_srcdoc_html)))
+
     # End screenshot specific section
 
     def _setup_gis_properties(self, gis):
-        # This function is called during __init__, as well as during any 
-        # subsequent draw in a notebook. Priority of how the GIS properties 
+        # This function is called during __init__, as well as during any
+        # subsequent draw in a notebook. Priority of how the GIS properties
         # of the widget are set:
         # - Always use the gis object passed in as an arg in __init__
         # - Fallback to the active_gis if no arg passed in
@@ -873,9 +968,15 @@ class MapView(widgets.DOMWidget):
             self._auth_mode = "anonymous"
 
         # Set the properties that aren't dependent on auth mode
-        self._portal_url = self.gis.url
+        self._portal_url = self._get_portal_url()
         self._portal_sharing_rest_url = self.gis._public_rest_url
         self._username = str(gis._username)
+
+    def _get_portal_url(self):
+        try:
+            return self.gis._portal.resturl.split("sharing")[0]
+        except Exception as e:
+            return self.gis.url
 
     def _setup_js_cdn(self):
         if _js_cdn_override_global != "":
@@ -891,8 +992,8 @@ class MapView(widgets.DOMWidget):
                     getattr(self.gis, "_url", ""))
                     # use gis._url to get private url (disconn IWA edge case)
                 self._js_cdn_override = _portal_cdn
-                log.debug("Disconnected environment detected: " + 
-                    "using JS API CDN from {}. ".format(_portal_cdn) + 
+                log.debug("Disconnected environment detected: " +
+                    "using JS API CDN from {}. ".format(_portal_cdn) +
                     "Make sure you have a JSAPI4 compatible basemap " +
                     "set as the default basemap in your portal.")
 
@@ -961,11 +1062,11 @@ class MapView(widgets.DOMWidget):
         the  ArcGIS API for JavaScript CDN URL instead of the default
         http://js.arcgis.com/4.X/. This functionality is necessary in
         disconnected  environments if the portal you are connecting to doesn't
-        ship with the minimum necessary JavaScript API version. 
-        
+        ship with the minimum necessary JavaScript API version.
+
         You may not need to call this function to view the widget in
         disconnected environments: if your computer cannot reach js.arcgis.com,
-        and you have a GIS() connection to a portal, the widget will 
+        and you have a GIS() connection to a portal, the widget will
         automatically attempt to use that portal's JS API that it ships with.
         """
         global _js_cdn_override_global
@@ -985,13 +1086,13 @@ class MapView(widgets.DOMWidget):
         -------------------     ------------------------------------------------
         ``"jpg"`` (Default)     Write raster to a ``.JPG`` file. This results
                                 in a lossy image, but should draw quicker than
-                                a ``.PNG`` file. Requires the ``PIL`` image 
-                                processing package (distributed under the name 
+                                a ``.PNG`` file. Requires the ``PIL`` image
+                                processing package (distributed under the name
                                 of it's active fork, "Pillow")
         -------------------     ------------------------------------------------
         ``"png"``               Write raster to a ``.PNG`` file. This results
                                 in a lossless image, but it might take a longer
-                                time to draw than a ``.JPG`` file. 
+                                time to draw than a ``.JPG`` file.
         ===================     ================================================
         """
         return self._raster.file_format
@@ -1010,6 +1111,9 @@ class MapView(widgets.DOMWidget):
         item                   Required object. You can specify Item objects, Layer objects such as
                                FeatureLayer, ImageryLayer, MapImageLayer, FeatureSet,
                                FeatureCollection, ``arcgis.raster.Raster`` objects, etc.
+
+                               Item objects will have all of their layers individually
+                               added to the map widget.
         ------------------     --------------------------------------------------------------------
         options                Optional dict. Specify visualization options such as renderer info,
                                opacity, definition expressions. See example below
@@ -1018,19 +1122,19 @@ class MapView(widgets.DOMWidget):
         .. warning::
             Calling ``MapView.add_layer()`` on an ``arcgis.raster.Raster`` instance
             has the following limitations:
-            
+
             - Local raster overlays do not persist beyond the notebook session on
               published web maps/web scenes -- you would need to seperately publish
               these local rasters.
-            
-            - The entire raster image data is placed on the MapView's canvas with 
-              no performance optimizations. This means no pyramids, no dynamic 
-              downsampling, etc. Please be mindful of the size of the local raster 
+
+            - The entire raster image data is placed on the MapView's canvas with
+              no performance optimizations. This means no pyramids, no dynamic
+              downsampling, etc. Please be mindful of the size of the local raster
               and your computer's hardware limitations.
-            
-            - Pixel values and projections are not guaranteed to be accurate, 
-              especially when the local raster's Spatial Reference doesn't 
-              reproject accurately to Web Mercator (what the ``MapView`` 
+
+            - Pixel values and projections are not guaranteed to be accurate,
+              especially when the local raster's Spatial Reference doesn't
+              reproject accurately to Web Mercator (what the ``MapView``
               widget uses).
 
         .. code-block:: python
@@ -1196,7 +1300,7 @@ class MapView(widgets.DOMWidget):
         from arcgis.raster import Raster
 
         output_bool = True
-        if layers == None:
+        if layers is None:
             layers = self.layers
         else:
             layers = self._infer_layers(layers)
@@ -1247,7 +1351,9 @@ class MapView(widgets.DOMWidget):
 
         if isinstance(arg, Layer):
             output_layers.append(arg)
-        if isinstance(arg, BaseOGC):
+        elif isinstance(arg, ImageryLayer):
+            output_layers.append(arg)
+        elif isinstance(arg, BaseOGC):
             output_layers.append(arg)
         elif isinstance(arg, Item):
             for layer in arg.layers:
@@ -1260,7 +1366,7 @@ class MapView(widgets.DOMWidget):
             output_layers.append(arg)
         elif _is_iterable(arg):
             # If it's any iterable not previously checked, attempt to infer
-            if 'layers' in arg:
+            if hasattr(arg, 'layers'):
                 for layer in arg.layers:
                     output_layers.append(layer)
             else:
@@ -1290,12 +1396,20 @@ class MapView(widgets.DOMWidget):
         if self._is_hashable(item):
             return str(hash(item))
         else:
+            from arcgis.raster import Raster, ImageryLayer
             if isinstance(item, dict):
                 return str(hash(frozenset(item)))
             elif is_numpy_array(item):
                 return get_hash_numpy_array(item)
+            elif isinstance(item, Raster):
+                return str(hash(item.path))
+            elif isinstance(item, ImageryLayer):
+                return str(hash(item.url))
             else:
-                raise Exception("Cannot hash item {}".format(item))
+                try:
+                    return str(hash(item.url))
+                except Exception:
+                    raise Exception("Cannot hash item {}".format(item))
 
     def _is_hashable(self, item):
         try:
@@ -1535,7 +1649,7 @@ class MapView(widgets.DOMWidget):
                thumbnail=None, metadata=None):
         """
         Updates the WebMap/Web Scene item that was used to create the MapWidget
-        object. In addition, you can update other item properties, thumbnail 
+        object. In addition, you can update other item properties, thumbnail
         and metadata.
 
         .. note::
@@ -1953,7 +2067,7 @@ class MapView(widgets.DOMWidget):
         if content.get('event', '') == 'draw-end':
             self._draw_end_handlers(self, content.get('message', None))
 
-    def zoom_to_layer(self, item, options={}): 
+    def zoom_to_layer(self, item, options={}):
         """Snaps the map to the extent of provided item or items.
 
         ==================     ====================================================================
@@ -1961,37 +2075,41 @@ class MapView(widgets.DOMWidget):
         ------------------     --------------------------------------------------------------------
         item                   The item at which you want to zoom your map to.
                                This can be a single or a list of Items, layers, DataFrame, FeatureSet,
-                               FeatureCollection.                               
+                               FeatureCollection.
         ------------------     --------------------------------------------------------------------
         options                Optional set of arguments.
-                               
+
         ==================     ====================================================================
         """
         target_extent = _get_extent(item)
+        target_sr = getattr(self, 'extent', {}).get('spatialReference', default_sr)
         if isinstance(target_extent, list):
             target_extent = _flatten_list(target_extent)
             if len(target_extent) > 1:
-                target_extent = _get_master_extent(target_extent, self.extent['spatialReference'])
+                target_extent = _get_master_extent(target_extent, target_sr)
             else:
                 target_extent = target_extent[0]
-        if not (target_extent['spatialReference'] == self.extent['spatialReference']):
-            target_extent = _reproject_extent(target_extent, self.extent['spatialReference'])
-        self.extent = self.extent # Sometimes setting extent will not work for the same target extent if we do it multiple times, doing this fixes that issue.
-        self.extent = target_extent
+        if not (target_extent['spatialReference'] == target_sr):
+            target_extent = _reproject_extent(target_extent, target_sr)
+        if self.ready:
+            self.extent = self.extent # Sometimes setting extent will not work for the same target extent if we do it multiple times, doing this fixes that issue.
+            self.extent = target_extent
+        else:
+            self._extent = target_extent
 
     # Start time section
 
     time_slider = Bool(False).tag(sync=True)
     """If set to `True`, will display a time slider in the widget that will
-    allow you to visualize temporal data for an applicable layer added to 
+    allow you to visualize temporal data for an applicable layer added to
     the map. Default: `False`.
     """
 
     time_mode = Unicode("time-window").tag(sync=True)
-    """String used for defining if the temporal data will be displayed 
-    cumulatively up to a point in time, a single instant in time, or 
+    """String used for defining if the temporal data will be displayed
+    cumulatively up to a point in time, a single instant in time, or
     within a time range.
-    
+
     Possible values: "instant", "time-window", "cumulative-from-start",
     "cumulative-from-end". Default: "time-window"
 
@@ -2006,7 +2124,7 @@ class MapView(widgets.DOMWidget):
 
     @property
     def start_time(self):
-        """`datetime.datetime` property. If `time_mode` == `"time-window"`, 
+        """`datetime.datetime` property. If `time_mode` == `"time-window"`,
         represents the lower bound 'thumb' of the time slider. For all other
         `time_mode` values, represents the single thumb on the time slider."""
         date_as_iso = dateutil.parser.parse(self._readonly_start_time)
@@ -2026,7 +2144,7 @@ class MapView(widgets.DOMWidget):
 
     @property
     def end_time(self):
-        """`datetime.datetime` property. If `time_mode` == `"time-window"`, 
+        """`datetime.datetime` property. If `time_mode` == `"time-window"`,
         represents the upper bound 'thumb' of the time slider. For all other
         `time_mode` values, not used."""
 
@@ -2095,8 +2213,8 @@ class MapView(widgets.DOMWidget):
                                extent.
         ------------------     --------------------------------------------------------------------
         unit                   Optional string, default `"milliseconds"`. Temporal units. Possible
-                               values: `"milliseconds"`, `"seconds"`, `"minutes"`, `"hours"`, 
-                               `"days"`, `"weeks"`, `"months"`, `"years"`, `"decades"`, 
+                               values: `"milliseconds"`, `"seconds"`, `"minutes"`, `"hours"`,
+                               `"days"`, `"weeks"`, `"months"`, `"years"`, `"decades"`,
                                `"centuries"`
         ==================     ====================================================================
 
@@ -2141,7 +2259,7 @@ class MapView(widgets.DOMWidget):
     def sync_navigation(self, mapview):
         """Synchronizes the navigation from this `MapView` to another `MapView`
         instance so panning/zooming/navigating in one will update the other.
-    
+
         ==================     ===================================================================
         **Argument**           **Description**
         ------------------     -------------------------------------------------------------------
@@ -2232,7 +2350,7 @@ class MapView(widgets.DOMWidget):
         ==================     ===================================================================
         **Argument**           **Description**
         ------------------     -------------------------------------------------------------------
-        mapview                (Optional) Either a single `MapView` instance, or a list of 
+        mapview                (Optional) Either a single `MapView` instance, or a list of
                                `MapView` instances to unsynchronize. If not specified, will
                                unsynchronize all synced `MapView` instances
         ==================     ===================================================================

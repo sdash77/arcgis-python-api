@@ -1,4 +1,3 @@
-from math import log10
 import PIL
 try:
     import torch
@@ -10,6 +9,7 @@ try:
     from fastai.callbacks import hook_outputs
     from fastai.torch_core import requires_grad, children
     from fastprogress.fastprogress import progress_bar
+    from .._utils.superres import psnr, ssim
     HAS_FASTAI = True
 except Exception as e:
     #import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -24,8 +24,9 @@ def resize_one(fn, i, path_lr, size, path_hr, img_size):
     img = PIL.Image.open(fn)
     targ_sz = resize_to(img, size, use_min=True)
     img = img.resize(targ_sz, resample=PIL.Image.BILINEAR).convert('RGB')
-    img = img.resize((img_size,img_size), resample=PIL.Image.BILINEAR).convert('RGB')
-    img.save(dest, quality=60)
+    #img = img.resize((img_size,img_size), resample=PIL.Image.BILINEAR).convert('RGB')
+    dest = dest.with_suffix(".jpeg")
+    img.save(dest)
 
 
 def gram_matrix(x):
@@ -71,17 +72,16 @@ def create_loss(device_type='cuda'):
     feat_loss = FeatureLoss(vgg_m, blocks[2:5], [5,15,2])
     return feat_loss
 
-def compute_psnr(model, dl, show_progress):
+def compute_metrics(model, dl, show_progress):
     avg_psnr = 0
+    avg_ssim = 0
     model.learn.model.eval()
-    base_loss = F.l1_loss
     with torch.no_grad():
         for input, target in progress_bar(dl, display=False):
             prediction = model.learn.model(input)
-            mse = base_loss(prediction, target)
-            psnr = 10 * log10(1 / mse.item())
-            avg_psnr += psnr
-    return avg_psnr/len(dl)
+            avg_psnr += psnr(prediction, target)
+            avg_ssim += ssim(prediction, target)
+    return avg_psnr/len(dl), avg_ssim.item()/len(dl)
 
 def get_resize(y, z, max_size, f):
     if y*f <= max_size and z*f <= max_size:

@@ -588,7 +588,8 @@ def zonal_statistics(in_zone_data,
                      ignore_nodata=True,
                      statistics_type='MEAN',
                      process_as_multidimensional=None,
-                     percentile_value=90):
+                     percentile_value=90,
+                     percentile_interpolation_type='AUTO_DETECT'):
 
     """"
     Calculates statistics on values of a raster within the zones of another dataset.
@@ -653,13 +654,27 @@ def zonal_statistics(in_zone_data,
                             using the percentile_value parameter.
 
     :param process_as_multidimensional: Optional bool, Process as multidimensional if set to True. (If the input is multidimensional raster.)
-    :param percentile_value: Optional int, The percentile to calculate. The default is 90, for the 90th percentile. The 
+    :param percentile_value: Optional Double, The percentile to calculate. The default is 90, for the 90th percentile. The 
                              values can range from 0 to 100. The 0th percentile is essentially equivalent to the 
                              Minimum statistic, and the 100th percentile is equivalent to Maximum. 
                              A value of 50 will produce essentially the same result as the Median statistic.
                              
                              This parameter is honoured only available if the statistics_type parameter is 
                              set to PERCENTILE.
+    :param percentile_interpolation_type: Optional str. Determines the type of percentile interpolation type when the 
+                                          number of values from the input value raster to be calculated are even.
+                                            - AUTO_DETECT - If the input value raster has integer pixel type, the 
+                                                            NEAREST method is used. If the input value raster 
+                                                            has floating point pixel type, then the LINEAR 
+                                                            method is used. This is the default.
+                                            - NEAREST - Nearest value to the desired percentile. In this case, 
+                                                        the output pixel type is same as that of the input value 
+                                                        raster.
+                                            - LINEAR - Weighted average of two surrounding values from the 
+                                                        desired percentile. In this case, the output pixel 
+                                                        type is floating point.
+
+                                          Parameter available in ArcGIS Image Server 10.9 and higher.
     :return: output raster with function applied
 
     """
@@ -704,6 +719,13 @@ def zonal_statistics(in_zone_data,
 
     if percentile_value is not None:
         template_dict["rasterFunctionArguments"]["percentile_value"] = percentile_value
+
+    percentile_interpolation_type_list = ["AUTO_DETECT","NEAREST","LINEAR"]
+    if percentile_interpolation_type is not None:
+        if percentile_interpolation_type.upper() not in percentile_interpolation_type_list:
+            raise RuntimeError('percentile_interpolation_type should be one of the following '+ str(percentile_interpolation_type_list))
+        template_dict["rasterFunctionArguments"]["percentile_interpolation_type"] = percentile_interpolation_type
+
 
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra['rasterFunctionArguments']["in_zone_data"] = raster_ra1
@@ -1536,7 +1558,8 @@ def kernel_density(in_features,
                    search_radius=None,
                    area_unit_scale_factor="SQUARE_MAP_UNITS",
                    out_cell_values="DENSITIES",
-                   method="PLANAR"):
+                   method="PLANAR",
+                   in_barriers=None):
     """
     Calculates a magnitude-per-unit area from point or polyline features using a kernel function to
     fit a smoothly tapered surface to each point or polyline.
@@ -1590,7 +1613,7 @@ def kernel_density(in_features,
 
                    - GEODESIC-Uses geodesic distances between features. This method takes into account the curvature
                      of the spheroid and correctly deals with data near the poles and the International dateline.
-
+    :param in_barriers: Optional. The dataset that defines the barriers. The barriers can be a feature layer of polyline or polygon features. (Parameter available in ArcGIS Image Server 10.9 and higher.)
     :return: output raster
     """
 
@@ -1638,6 +1661,10 @@ def kernel_density(in_features,
     if method.upper() not in method_list:
         raise RuntimeError('method should be one of the following '+ str(method_list))
     template_dict["rasterFunctionArguments"]["method"] = method
+
+    if in_barriers is not None:
+        input_barriers = _layer_input(in_barriers)
+        template_dict["rasterFunctionArguments"]["in_barriers"] = input_barriers
 
     if isinstance(in_features, Item):
         in_features = in_features.layers[0]
@@ -3207,12 +3234,13 @@ def distance_accumulation(in_source_data,
     ----------
     :param in_source_data:  Required. The input source locations.
 
-                            This is a raster that identifies the cells or locations from
+                            This is a layer that identifies the cells or locations from
                             or to which the least accumulated cost distance for every output cell location is calculated.
-
+                            This parameter can have either a raster layer input or a feature layer input. 
                             For rasters, the input type can be integer or floating point.
 
-    :param in_barrier_data: Optional barrier raster. The input raster that defines the barriers. The dataset must contain 
+    :param in_barrier_data: Optional. The input layer that defines the barriers. 
+                            This parameter can have either a raster layer input or a feature layer input. The dataset must contain 
                             NoData where there are no barriers. Barriers are represented by valid values including zero. 
                             The barriers can be defined by an integer or floating-point raster. 
 
@@ -3323,9 +3351,8 @@ def distance_accumulation(in_source_data,
             layer3, in_barrier_data, raster_ra3 = _raster_input(in_barrier_data)
         else:
             raster_ra3 = _layer_input(in_barrier_data)
-            in_barrier_data = raster_ra1
-            layer3=raster_ra1
-        layer3, in_barrier_data, raster_ra3 = _raster_input(in_barrier_data)
+            in_barrier_data = raster_ra3
+            layer3 = raster_ra3
 
     if in_surface_raster is not None:
         layer4, in_surface_raster, raster_ra4 = _raster_input(in_surface_raster)
@@ -3463,14 +3490,15 @@ def distance_allocation(in_source_data,
 
     Parameters
     ----------
-    :param in_source_data:  Required The input source locations.
+    :param in_source_data:  Required. The input source locations.
 
-                            This is a raster that identifies the cells or locations from
+                            This is a layer that identifies the cells or locations from
                             or to which the least accumulated cost distance for every output cell location is calculated.
-
+                            This parameter can have either a raster layer input or a feature layer input.
                             For rasters, the input type can be integer or floating point.
 
-    :param in_barrier_data: Optional barrier raster. The input raster that defines the barriers. The dataset must contain 
+    :param in_barrier_data: Optional. The input layer that defines the barriers. 
+                            This parameter can have either a raster layer input or a feature layer input. The dataset must contain 
                             NoData where there are no barriers. Barriers are represented by valid values including zero. 
                             The barriers can be defined by an integer or floating-point raster. 
 
@@ -3578,9 +3606,8 @@ def distance_allocation(in_source_data,
             layer3, in_barrier_data, raster_ra3 = _raster_input(in_barrier_data)
         else:
             raster_ra3 = _layer_input(in_barrier_data)
-            in_barrier_data = raster_ra1
-            layer3=raster_ra1
-        layer3, in_barrier_data, raster_ra3 = _raster_input(in_barrier_data)
+            in_barrier_data = raster_ra3
+            layer3=raster_ra3
 
     if in_surface_raster is not None:
         layer4, in_surface_raster, raster_ra4 = _raster_input(in_surface_raster)
@@ -3709,10 +3736,12 @@ def optimal_path_as_raster(in_destination_data,
 
     Parameters
     ----------
-    :param in_destination_data: Required raster layer. A raster that identifies locations from which the optimal 
-                                path is determined to the least costly source. The input raster layer must
-                                consists of cells that have valid values (zero is a valid value), and the remaining
-                                cells must be assigned NoData.
+    :param in_destination_data: Required layer. A layer that identifies locations from which the optimal 
+                                path is determined to the least costly source. 
+                                This parameter can have either a raster layer input or a feature layer input.
+
+                                If the input is a raster, it must consists of cells that have valid values 
+                                (zero is a valid value), and the remaining cells must be assigned NoData.
 
     :param in_distance_accumulation_raster: Required raster layer. The distance accumulation raster is used 
                                             to determine the optimal path from the sources to the destinations. 
@@ -3747,8 +3776,13 @@ def optimal_path_as_raster(in_destination_data,
 
     :return: output raster with function applied
     """
-
-    layer1, in_destination_data, raster_ra1 = _raster_input(in_destination_data)
+    if in_destination_data is not None:
+        if isinstance (in_destination_data, ImageryLayer):
+            layer1, input_destination_data, raster_ra1 = _raster_input(in_destination_data)
+        else:
+            raster_ra1 = _layer_input(in_destination_data)
+            input_destination_data = raster_ra1
+            layer1=raster_ra1
 
     layer2, in_distance_accumulation_raster, raster_ra2 = _raster_input(in_distance_accumulation_raster)
 
@@ -3760,7 +3794,16 @@ def optimal_path_as_raster(in_destination_data,
             "toolName" : "OptimalPathAsRaster_sa",
             "PrimaryInputParameterName" : "in_destination_data",
             "OutputRasterParameterName":"out_path_accumulation_raster",
-            "in_destination_data" : in_destination_data
+            "in_destination_data" : input_destination_data,
+            "RasterInfo":{"blockWidth" : 2048,
+                "blockHeight":256,
+                "bandCount":1,
+                "pixelType":8,
+                "firstPyramidLevel":1,
+                "maximumPyramidLevel":30,
+                "pixelSizeX":1,
+                "pixelSizeY" :1,
+                "type":"RasterInfo"}
         }
     }
 
@@ -3788,5 +3831,94 @@ def optimal_path_as_raster(in_destination_data,
 
     if in_back_direction_raster is not None:
         function_chain_ra['rasterFunctionArguments']["in_back_direction_raster"] = raster_ra3
+
+    if isinstance(in_destination_data, ImageryLayer):
+        return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
+    else:
+        return _feature_gbl_clone_layer(in_destination_data, template_dict, function_chain_ra)
+
+
+def boundary_clean(input_raster, sort_type = "NO_SORT", number_of_runs="TWO_WAY"):
+    """
+    The boundary_clean function smooths the boundary between zones in a raster. 
+    Function available in ArcGIS Image Server 10.9 and higher.
+
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    input_raster                         Required. The input raster for which the boundary between zones will 
+                                         be smoothed. It must be of integer type.  
+    --------------------------------     --------------------------------------------------------------------
+    sort_type                            Optional string. Specifies the type of sorting to use in the smoothing process. The sorting determines the priority by which cells can expand into their neighbors. The sorting can be done based on zone value or zone area. 
+                                         The available choices are: ['NO_SORT', 'DESCEND', 'ASCEND'] 
+                                         The default is: 'NO_SORT'.
+
+                                         * ``NO_SORT`` - The zones are not sorted by size. Zones with larger values 
+                                           will have a higher priority to expand into zones with 
+                                           smaller values in the smoothed output. This is the default. 
+
+                                         * ``DESCEND`` - Sorts zones in descending order by size. Zones with 
+                                           larger total areas have a higher priority to expand into 
+                                           zones with smaller total areas. This option will tend to 
+                                           eliminate or reduce the prevalence of cells from smaller 
+                                           zones in the smoothed output. 
+
+                                         * ``ASCEND`` - Sorts zones in ascending order by size. Zones with smaller 
+                                           total areas have a higher priority to expand into zones 
+                                           with larger total areas. This option will tend to preserve 
+                                           or increase the prevalence of cells from smaller zones in 
+                                           the smoothed output. 
+    --------------------------------     --------------------------------------------------------------------
+    number_of_runs                       Optional String or Boolean. Specifies the number of times the smoothing 
+                                         process will take place, twice or once. 
+
+                                         * ``TWO_WAY`` (true) - Performs an expansion and shrinking operation two 
+                                           times.  For the first time the operation is performed according to the 
+                                           specified sorting type. Then an additional  expansion and shrinking 
+                                           operation is performed, but with the priority reversed. This is the default. 
+                                         * ``ONE_WAY`` (false) - Performs the expansion and shrinking operation 
+                                           once, according to the sorting type. 
+    ================================     ====================================================================
+ 
+    :returns: output raster with function applied
+
+    .. code-block:: python
+
+            # Usage Example: 
+            boundary_clean_output =  boundary_clean(input_raster = imagery_layer, sort_type = "NO_SORT", number_of_runs="TWO_WAY")
+
+            boundary_clean_item = boundary_clean_output.save()
+    """
+    layer1, input_raster, raster_ra1 = _raster_input(input_raster)
+
+    template_dict = {
+        "rasterFunction" : "GPAdapter",
+        "rasterFunctionArguments" : {
+            "toolName" : "BoundaryClean_sa",
+            "PrimaryInputParameterName" : "in_raster",
+            "OutputRasterParameterName" : "out_raster",
+            "in_raster" : input_raster
+        }
+    }
+
+    if sort_type is not None:
+        sort_type_list = ["NO_SORT", "DESCEND", "ASCEND"]
+        if sort_type.upper() not in sort_type_list:
+            raise RuntimeError('sort_type should be one of the following '+ str(sort_type_list))
+        template_dict["rasterFunctionArguments"]["sort_type"] = sort_type
+
+    if number_of_runs is not None:
+        if isinstance(number_of_runs, bool):
+            template_dict["rasterFunctionArguments"]["number_of_runs"] = number_of_runs
+        elif isinstance(number_of_runs, str):
+            if number_of_runs.upper() == "TWO_WAY":
+                number_of_runs = True
+            elif number_of_runs.upper() == "ONE_WAY":
+                number_of_runs = False
+            else:
+                 raise RuntimeError('number_of_runs should be one of the following - TWO_WAY, ONE_WAY or should be of type bool.')
+            template_dict["rasterFunctionArguments"]["number_of_runs"] = number_of_runs
+    function_chain_ra = copy.deepcopy(template_dict)
+    function_chain_ra["rasterFunctionArguments"]["in_raster"] = raster_ra1
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)

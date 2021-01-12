@@ -705,7 +705,7 @@ class SyncManager(object):
                     rollback_on_failure=True):
         """
         synchronizes replica with feature layer collection
-        http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000vv000000
+        https://developers.arcgis.com/rest/services-reference/synchronize-replica.htm
         """
         # TODO:
         return self._fs._synchronize_replica(replica_id=replica_id,
@@ -841,6 +841,7 @@ class SyncManager(object):
                     syncLayers_parent = parent_replica['layerServerGens']
                     for i in range(len(syncLayers_parent)):
                         syncLayers_child[i]['serverSibGen'] = syncLayers_parent[i]['serverGen']
+                        syncLayers_child[i]['syncDirection'] = "upload"
                     child_fs._synchronize_replica(
                         replica_id=child_replica_id,
                         sync_layers=syncLayers_child,
@@ -849,7 +850,8 @@ class SyncManager(object):
                         return_ids_for_adds=False,
                         data_format="sqlite",
                         asynchronous=False,
-                        edits_upload_format="sqlite")
+                        edits_upload_format="sqlite",
+                        rollback_on_failure=False)
                     return True
                 else:
                     return False
@@ -1500,6 +1502,14 @@ class FeatureLayerCollectionManager(_GISResource):
                         _log.error('Unable to parse the view_tables parameter')
 
         fs_view.manager.add_to_definition(add_def)
+        if extent and fs_view.layers:
+            for vw_lyr in fs_view.layers:
+                vw_lyr.manager.update_definition({"viewLayerDefinition": {"filter":
+                                                                          {"operator": "esriSpatialRelIntersects",
+                                                                           "value": {
+                                                                                "geometryType": "esriGeometryEnvelope",
+                                                                                "geometry": extent}}}})
+
         if view_layers:
             data = item.get_data()
             if 'layers' in data:
@@ -1628,7 +1638,7 @@ class FeatureLayerCollectionManager(_GISResource):
         definition property from a hosted feature layer collection service. The result of
         this operation is a response indicating success or failure with
         error code and description.
-        See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Delete_From_Definition_Feature_Service/02r30000021w000000/ # noqa
+        See https://developers.arcgis.com/rest/services-reference/delete-from-definition-feature-service-.htm # noqa
         for additional information on this function.
         Input:
           json_dict - part to add to host service.  The part format can
@@ -1792,48 +1802,105 @@ class FeatureLayerCollectionManager(_GISResource):
         :return: JSON message as dictionary with to be used as publishParameters payload in the publish REST call.
         """
 
-        # region construct publishParameters dictionary
-        # construct a full publishParameters that is a combination of existing Feature Layer definition
-        # and original publishParameters.json used for publishing the service the first time
+        # region Get Item associated with the service
+        if 'serviceItemId' in self.properties.keys():
+            feature_layer_item = self._gis.content.get(self.properties['serviceItemId'])
+        else:
+            return {'error': 'Can only overwrite a hosted feature layer collection'}
+        # endregion
 
-        # get old publishParameters.json
-        path = "content/items/" + flc_item.itemid + "/info/publishParameters.json"
-        postdata = {'f': 'json'}
-
-        old_publish_parameters = self._gis._con.post(path, postdata)
-
-        # get FeatureServer definition
-        feature_service_def = dict(self.properties)
-
-        # Get definition of each layer and table, remove fields in the dict
-        layers_dict = []
-        tables_dict = []
-        for layer in self.layers:
-            layer_def = dict(layer.properties)
-            if 'fields' in layer_def.keys():
-                dump = layer_def.pop("fields")
-            layers_dict.append(layer_def)
-
-        for table in self.tables:
-            table_def = dict(table.properties)
-            if 'fields' in table_def.keys():
-                dump = table_def.pop('fields')
-            tables_dict.append(table_def)
-
-        # Splice the detailed table and layer def with FeatuerServer def
-        feature_service_def['layers'] = layers_dict
-        feature_service_def['tables'] = tables_dict
-        from pathlib import Path
-        service_name = Path(self.url).parts[-2]  # get service name from url
-        feature_service_def['name'] = service_name
-
-        # combine both old publish params and full feature service definition
-        publish_parameters = feature_service_def
-        publish_parameters.update(old_publish_parameters)
+        # region find data item related to this hosted feature layer
+        related_data_items = feature_layer_item.related_items('Service2Data', 'forward')
+        if len(related_data_items) > 0:
+            related_data_item = related_data_items[0]
+        else:
+            return {'error': 'Cannot find related data item used to publish this feature layer'}
 
         # endregion
 
-        return publish_parameters
+        # region Construct publish parameters for Portal / Enterprise
+        params = None
+        if related_data_item.type in ['CSV', 'Shapefile', 'File Geodatabase'] and \
+           self._gis._portal.is_arcgisonline == False:
+            params = {
+                "name" : related_data_item.name,
+                "title" : related_data_item.title,
+                "tags" : related_data_item.tags,
+                "type" : related_data_item.type,
+                "overwrite" : True,
+                "overwriteService" : "on",
+                "useDescription" : "on"
+            }
+            lyr_url_info = "%s/layers" % feature_layer_item.layers[0].container._url
+            fs_url = "%s" % feature_layer_item.layers[0].container._url
+            layer_info = self._gis._con.get(lyr_url_info, {'f' : 'json'})
+            [lyr.pop('fields') for lyr in layer_info['layers']]
+            [lyr.pop('fields') for lyr in layer_info['tables']]
+            feature_service_def = self._gis._con.get(fs_url, {'f' : 'json'})
+            feature_service_def['tables'] = []
+            feature_service_def['layers'] = []
+            feature_service_def.update(layer_info)
+            publish_parameters = feature_service_def
+            publish_parameters['name'] = feature_layer_item.title
+            publish_parameters['_ssl'] = False
+            for idx, lyr in enumerate(publish_parameters['layers']):
+                lyr['parentLayerId'] = -1
+                for k in {'sourceSpatialReference', 'isCoGoEnabled',
+                          'parentLayer', 'isDataArchived', 'cimVersion'}:
+                    lyr.pop(k, None)
+            for idx, lyr in enumerate(publish_parameters['tables']):
+                lyr['parentLayerId'] = -1
+                for k in {'sourceSpatialReference', 'isCoGoEnabled',
+                          'parentLayer', 'isDataArchived', 'cimVersion'}:
+                    lyr.pop(k, None)
+        # endregion
+
+        # region Construct publish parameters for AGO
+        elif related_data_item.type in ['CSV', 'Shapefile', 'File Geodatabase'] and \
+           self._gis._portal.is_arcgisonline:
+            # construct a full publishParameters that is a combination of existing Feature Layer definition
+            # and original publishParameters.json used for publishing the service the first time
+
+            # get old publishParameters.json
+            path = "content/items/" + feature_layer_item.itemid + "/info/publishParameters.json"
+            postdata = {'f': 'json'}
+
+            old_publish_parameters = self._gis._con.post(path, postdata)
+
+            # get FeatureServer definition
+            feature_service_def = dict(self.properties)
+
+            # Get definition of each layer and table, remove fields in the dict
+            layers_dict = []
+            tables_dict = []
+            for layer in self.layers:
+                layer_def = dict(layer.properties)
+                if 'fields' in layer_def.keys():
+                    dump = layer_def.pop("fields")
+                layers_dict.append(layer_def)
+
+            for table in self.tables:
+                table_def = dict(table.properties)
+                if 'fields' in table_def.keys():
+                    dump = table_def.pop('fields')
+                tables_dict.append(table_def)
+
+            # Splice the detailed table and layer def with FeatuerServer def
+            feature_service_def['layers'] = layers_dict
+            feature_service_def['tables'] = tables_dict
+            from pathlib import Path
+            service_name = Path(self.url).parts[-2]  # get service name from url
+            feature_service_def['name'] = service_name
+
+            # combine both old publish params and full feature service definition
+            publish_parameters = feature_service_def
+            publish_parameters.update(old_publish_parameters)
+        else:
+            # overwriting a SD case - no need for detailed publish parameters
+            publish_parameters = None
+        # endregion
+
+        return (publish_parameters, params)
 
 class FeatureLayerManager(_GISResource):
     """
@@ -1945,7 +2012,7 @@ class FeatureLayerManager(_GISResource):
            definition property from a hosted feature layer. The result of
            this operation is a response indicating success or failure with
            error code and description.
-           See: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Delete_From_Definition_Feature_Service/02r30000021w000000/ # noqa
+           See: https://developers.arcgis.com/rest/services-reference/delete-from-definition-feature-service-.htm # noqa
            for additional information on this function.
            Input:
               json_dict - part to add to host service.  The part format can
@@ -1982,7 +2049,7 @@ class FeatureLayerManager(_GISResource):
            The truncate operation supports deleting all features or attachments
            in a hosted feature service layer. The result of this operation is a
            response indicating success or failure with error code and description.
-           See: http://resources.arcgis.com/en/help/arcgis-rest-api/#/Truncate_Feature_Layer/02r3000002v0000000/ # noqa
+           See: https://developers.arcgis.com/rest/services-reference/truncate-feature-layer-.htm # noqa
            for additional information on this function.
            Input:
               attachment_only - Deletes all the attachments for this layer.

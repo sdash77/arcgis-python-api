@@ -32,7 +32,7 @@ try:
     from ._arcgis_model import SaveModelCallback, _resnet_family
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
     from .._video_utils import VideoUtils
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from fastprogress.fastprogress import progress_bar
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -83,19 +83,17 @@ class RetinaNet(ArcGISModel):
         if backbone is None: 
             backbone = models.resnet50
 
-        super().__init__(data, backbone)
+        self._check_dataset_support(data)
+        if not (self._check_backbone_support(backbone)):
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+
+        super().__init__(data, backbone, **kwargs)
 
         
         n_bands = len(getattr(self._data, '_extract_bands', [0, 1, 2]))
         _backbone = self._backbone
         if hasattr(self, '_orig_backbone'):
             _backbone = self._orig_backbone
-
-        # Check if a backbone provided is compatible, use resnet50 as default
-        if not self._check_backbone_support(_backbone):
-            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
-
-        self._check_dataset_support(self._data)
 
         self.name = "RetinaNet"
         self._code = code
@@ -112,13 +110,14 @@ class RetinaNet(ArcGISModel):
 
         # Initialize the model, loss function and the Learner object        
         self._model = RetinaNetModel(self._encoder, n_classes=data.c-1, final_bias=-4, chip_size=self._chip_size, n_anchors=self._n_anchors, n_bands=n_bands)
-        self._loss_f = RetinaNetFocalLoss(sizes=self._model.sizes, scales=self.scales, ratios=self.ratios)
+        self._loss_f = RetinaNetFocalLoss(sizes=self._model.sizes, scales=self.scales, ratios=self.ratios, device=self._device)
         self.learn = Learner(data, self._model, loss_func=self._loss_f)
         self.learn.split([self._model.encoder[6], self._model.c5top5])
         self.learn.freeze()
         if pretrained_path is not None:
             self.load(str(pretrained_path))
         self._arcgis_init_callback() # make first conv weights learnable
+        self.learn.model = self.learn.model.to(self._device)
 
     def __str__(self):
         return self.__repr__()
@@ -145,10 +144,13 @@ class RetinaNet(ArcGISModel):
     def _supported_datasets():
         return ['PASCAL_VOC_rectangles', 'KITTI_rectangles']     
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        else:
+            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
         _emd_template["ModelConfiguration"] = "_RetinaNet_Inference"
         _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]
@@ -183,8 +185,8 @@ class RetinaNet(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from `prepare_data` function or None for
@@ -195,8 +197,7 @@ class RetinaNet(ArcGISModel):
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
-            
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)    
         emd = json.load(open(emd_path))
         model_file = Path(emd['ModelFile'])
         chip_size = emd["ImageWidth"]
@@ -253,7 +254,7 @@ class RetinaNet(ArcGISModel):
         rows                    Optional int. Number of rows of results
                                 to be displayed.
         ---------------------   -------------------------------------------
-        thresh                  Optional float. The probabilty above which
+        thresh                  Optional float. The probability above which
                                 a detection will be considered valid.
         ---------------------   -------------------------------------------
         nms_overlap             Optional float. The intersection over union
@@ -271,7 +272,8 @@ class RetinaNet(ArcGISModel):
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self)
 
     def _show_results_multispectral(self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs):
-        ax = show_results_multispectral(
+        return_fig = kwargs.get('return_fig', False)
+        ret_val = show_results_multispectral(
             self, 
             nrows=rows, 
             thresh=thresh, 
@@ -279,6 +281,10 @@ class RetinaNet(ArcGISModel):
             alpha=alpha, 
             **kwargs
         )
+        if return_fig:
+            fig, ax = ret_val
+            return fig
+
 
     def predict_video(
         self,
@@ -396,7 +402,7 @@ class RetinaNet(ArcGISModel):
         image_path              Required. Path to the image file to make the
                                 predictions on.
         ---------------------   -------------------------------------------
-        thresh                  Optional float. The probabilty above which
+        thresh                  Optional float. The probability above which
                                 a detection will be considered valid.
         ---------------------   -------------------------------------------
         nms_overlap             Optional float. The intersection over union
@@ -543,7 +549,7 @@ class RetinaNet(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        detect_thresh           Optional float. The probabilty above which
+        detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
                                 average precision.
         ---------------------   -------------------------------------------

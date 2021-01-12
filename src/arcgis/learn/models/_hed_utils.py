@@ -35,6 +35,7 @@ from fastai.vision.learner import create_body
 from fastai.callbacks.hooks import model_sizes
 from ._arcgis_model import _get_backbone_meta
 from fastprogress.fastprogress import progress_bar
+from skimage.morphology import skeletonize, binary_dilation
 
 class _HEDModel(nn.Module):
     def __init__(self, backbone_fn, chip_size=224):
@@ -151,7 +152,60 @@ def hed_loss(out, labels):
 def accuracy(input, target):
     if isinstance(input, tuple): # while training
         input = input[0]
-    target = target.squeeze(1)
+    target = target.byte().squeeze(1)
     input = input[-1]
     input = (input>=0.5).byte().squeeze(1)
     return (input == target).float().mean()
+
+def get_true_positive(mask1, mask2, buffer):
+    tp = 0
+    indices = np.where(mask1 == 1)
+    for ind in range(len(indices[0])):
+        tp += np.any(
+            mask2[max(indices[0][ind]-buffer,0): indices[0][ind]+buffer+1,
+              max(indices[1][ind]-buffer,0): indices[1][ind]+buffer+1]).astype(np.int)
+    return tp
+
+def get_confusion_metric(gt, pred, buffer):
+    
+    tp, predicted_tp, actual_tp = 0, 0, 0
+    for i in range(gt.shape[0]):
+        gt_mask = skeletonize(binary_dilation(gt[i]))
+        pred_mask = skeletonize(binary_dilation(pred[i]))
+        tp += get_true_positive(gt_mask, pred_mask, buffer)
+        predicted_tp += len(np.where(pred_mask == 1)[0])
+        actual_tp += len(np.where(gt_mask == 1)[0])
+    
+    return tp, predicted_tp, actual_tp
+
+def f1_score(pred, gt):
+
+    gt = gt.byte().squeeze(1).cpu().numpy()
+    pred = (pred[-1]>=0.5).byte().squeeze(1).cpu().numpy()
+    tp, predicted_tp, actual_tp = get_confusion_metric(gt, pred, 3)
+    precision = tp/(predicted_tp + 1e-12)
+    recall = tp/(actual_tp + 1e-12)
+    f1score = 2*precision*recall/(precision + recall + 1e-12)
+    return torch.tensor(f1score)
+
+def accuracies(model, dl, detect_thresh=0.5, buffer=3, show_progress=True):
+
+    precision, recall, f1score = [], [], []
+    model.learn.model.eval()
+    acc = {}
+    with torch.no_grad():
+        for input, gt in progress_bar(dl, display=show_progress):
+            predictions = model.learn.model(input)
+            gt = gt.byte().squeeze(1).cpu().numpy()
+            pred = (predictions[-1]>=detect_thresh).byte().squeeze(1).cpu().numpy()
+            tp, predicted_tp, actual_tp = get_confusion_metric(gt, pred, buffer)
+            prec = tp/(predicted_tp + 1e-12)
+            rec = tp/(actual_tp + 1e-12)
+            precision.append(prec)
+            recall.append(rec)
+            f1score.append(2*prec*rec/(prec + rec + 1e-12))
+    acc['Precision'] = np.mean(precision)
+    acc['Recall'] = np.mean(recall)
+    acc['F1 Score'] = np.mean(f1score)
+
+    return acc

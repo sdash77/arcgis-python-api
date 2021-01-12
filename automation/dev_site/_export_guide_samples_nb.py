@@ -17,6 +17,7 @@ log = logging.getLogger()
 from traitlets.config import Config
 from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
+import yaml
 
 from automation.misc._assets.css import get_css_asset_file_names
 
@@ -29,7 +30,8 @@ def export_notebooks(root_path, output_root_path, embed_try_it_live=False,
                      replace_video_path=False, video_prefix=DEFAULT_VIDEO_PREFIX,
                      replace_full_urls=True,
                      log_func=log.info,
-                     dummy_mode_css_add_head=False):
+                     dummy_mode_css_add_head=False,
+                     items_metadata_yaml_path=None):
     f"""
     export Jupyter Notebooks in basic HTML. Will not execute the notebook.
     {info_text}
@@ -56,6 +58,9 @@ def export_notebooks(root_path, output_root_path, embed_try_it_live=False,
                  f". Skipping these notebooks. unsafe_dirs = {unsafe_dirs}")
         return
     #endregion
+
+    nb_filename_to_try_it_live_url = _get_try_it_live_mappings(items_metadata_yaml_path)
+    log_func(f"Try it Live Mappings: {nb_filename_to_try_it_live_url}")
 
     #loop through all files in the root_path
     for directory, subdir_list, file_list in os.walk(root_path):
@@ -138,11 +143,21 @@ def export_notebooks(root_path, output_root_path, embed_try_it_live=False,
                         link["href"] = rel_url
                         log_func("HREF Replaced {} with {}".format(full_url,
                                                                    rel_url))
+                    # Do a best-guess for all <a href="foo.ipynb"> -> html
+                    if ".ipynb" in link["href"] and "/" not in link["href"]:
+                        new_href = str(link["href"]).replace("_", "-")
+                        new_href = "../" + new_href.replace(".ipynb", "/")
+                        new_href = new_href.lower()
+                        log_func(f"HREF {link['href']} changed to {new_href}")
+                        link["href"] = new_href
            #endregion
 
             #region inject try-it-live link
-            if embed_try_it_live:
-                button_html = _get_button_html(directory, curr_file)
+            curr_filename = os.path.basename(curr_file)
+            if embed_try_it_live and curr_filename in nb_filename_to_try_it_live_url:
+                href_url = nb_filename_to_try_it_live_url[curr_filename]
+                log_str += f" | Try it Live URL = {href_url}"
+                button_html = _assemble_button_html(directory, curr_file, href_url)
             else:
                 button_html = ""
             log_str += " | made button "
@@ -161,7 +176,7 @@ def export_notebooks(root_path, output_root_path, embed_try_it_live=False,
             #Print that log string that's been accumulating info so far
             log_func(log_str)
 
-def _get_button_html(directory, curr_file):
+def _assemble_button_html(directory, curr_file, href_url):
     """Gets the html str of the 'try it live' button.
      There is probably a better way, namely registering this as a
      custom processer in nbconvert and injecting using bs4 elements.
@@ -175,9 +190,8 @@ def _get_button_html(directory, curr_file):
             '#Download-and-run-the-sample-notebooks">' + \
         'Download the samples</a>'
     button_html = button_html + " " + \
-        '<a class="btn" href="https://notebooks.esri.com/notebooks/samples/'\
-        "" + curr_folder + r'/' + curr_file + ""\
-        '" target="_blank"> Try it live </a>'
+        f'<a class="btn" href="{href_url}"'\
+        ' target="_blank"> Try it live </a>'
     button_html = button_html + "</div>"
     return button_html 
 
@@ -194,3 +208,23 @@ def _get_output_file_name(file_name):
 if __name__ == '__main__':
     print(info_text)
     exit(1)
+
+def _get_try_it_live_mappings(items_metadata_yaml_path):
+    """Takes in the file path to arcgis-python-api/items_metadata.yaml
+    
+    returns a dict of key `file.ipynb` and value `https://some.url`
+
+    Used to populate the "Try it Live" buttons with the correct URL
+    for the converted .ipynb notebook
+    """
+    output = {}
+    if not items_metadata_yaml_path:
+        return output
+    with open(items_metadata_yaml_path) as f:
+        items_metadata = yaml.safe_load(f)
+        for entry in items_metadata["samples"] + items_metadata["guides"]:
+            filename = os.path.basename(entry["path"])
+            url = entry["url"]
+
+            output[filename] = url
+    return output

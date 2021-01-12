@@ -39,7 +39,10 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                                 'esri/layers/GeoJSONLayer',
                                 'esri/layers/CSVLayer',
                                 'esri/layers/support/RasterFunction',
-                                'esri/layers/support/MosaicRule'],
+                                'esri/layers/support/MosaicRule',
+                                'esri/layers/PointCloudLayer',
+                                'esri/layers/IntegratedMeshLayer',
+                                'esri/layers/BuildingSceneLayer'],
         options).then(([ImageryLayer,
                         KMLLayer,
                         TileLayer,
@@ -54,7 +57,10 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                         GeoJSONLayer,
                         CSVLayer,
                         RasterFunction,
-                        MosaicRule]) => {
+                        MosaicRule,
+                        PointCloudLayer,
+                        IntegratedMeshLayer,
+                        BuildingSceneLayer]) => {
             if (noTypeLayer.type === "ImageryLayer"){
                 var typedLayer = new ImageryLayer(noTypeLayer.url);
                 typedLayer.id = noTypeLayer._hashFromPython;
@@ -105,10 +111,6 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                 var typedLayer = new VectorTileLayer(noTypeLayer.url);
                 typedLayer.id = noTypeLayer._hashFromPython;
                 resolve(typedLayer);}
-            else if (noTypeLayer.type == "SceneLayer") {
-                var typedLayer = new SceneLayer(noTypeLayer.url);
-                typedLayer.id = noTypeLayer._hashFromPython;
-                resolve(typedLayer);}
             else if (noTypeLayer.type == "WMS"){
                 noTypeLayer.subLayers = [noTypeLayer.sublayers[0],];
                 delete noTypeLayer.type;
@@ -124,9 +126,29 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                 typedLayer.id = noTypeLayer._hashFromPython;
                 resolve(typedLayer);}
             else if (noTypeLayer.type == "GeoJSON"){
-                var typedLayer = new GeoJSONLayer({url: noTypeLayer.url});
+                if(Object.keys(noTypeLayer.data).length !== 0){
+                    var blob = new Blob([JSON.stringify(noTypeLayer.data)],
+                                        {type: "application/json"});
+                    url = URL.createObjectURL(blob);}
+                else{
+                    url = noTypeLayer.url;}
+                var typedLayer = new GeoJSONLayer({url: url});
                 typedLayer.id = noTypeLayer._hashFromPython;
-                resolve(typedLayer);}
+                if("renderer" in noTypeLayer){
+                    console.log("Using custom renderer for GeoJSON layer " + 
+                                typedLayer.id);
+                    inferRenderer(noTypeLayer.renderer.type,
+                                  noTypeLayer.renderer).then((renderer) => {
+                        typedLayer.renderer = renderer;
+                        resolve(typedLayer);
+                    }).catch((err) => {
+                        console.warn("Could not infer renderer for " + 
+                                     typedLayer.id);
+                        console.warn(err);
+                        resolve(typedLayer);
+                    });
+                } else {
+                    resolve(typedLayer);}}
             else if (noTypeLayer.type == "CSV"){
                 inferRenderer(noTypeLayer.layerDefinition.drawingInfo.renderer.type,
                     noTypeLayer.layerDefinition.drawingInfo.renderer).then((renderer) => {
@@ -138,6 +160,22 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                     var typedLayer = new CSVLayer({url: noTypeLayer.url});
                     typedLayer.id = noTypeLayer._hashFromPython;
                     resolve(typedLayer);})}
+            else if (noTypeLayer.type == "SceneLayer"){
+                var typedLayer = new SceneLayer({url: noTypeLayer.url});
+                typedLayer.id = noTypeLayer._hashFromPython;
+                resolve(typedLayer);}
+            else if (noTypeLayer.type == "PointCloudLayer"){
+                var typedLayer = new PointCloudLayer({url: noTypeLayer.url});
+                typedLayer.id = noTypeLayer._hashFromPython;
+                resolve(typedLayer);}
+            else if (noTypeLayer.type == "IntegratedMeshLayer"){
+                var typedLayer = new IntegratedMeshLayer({url: noTypeLayer.url});
+                typedLayer.id = noTypeLayer._hashFromPython;
+                resolve(typedLayer);}
+            else if (noTypeLayer.type == "BuildingSceneLayer"){
+                var typedLayer = new BuildingSceneLayer({url: noTypeLayer.url});
+                typedLayer.id = noTypeLayer._hashFromPython;
+                resolve(typedLayer);}
             else if ((noTypeLayer.type == "FeatureLayer") ||
                      (noTypeLayer.type == "Feature Layer")) {
                 //TODO: clean up this Feature layer stuff, seperate into new file

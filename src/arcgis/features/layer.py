@@ -54,41 +54,47 @@ class FeatureLayer(Layer):
         self._dynamic_layer = dynamic_layer
         self.attachments = AttachmentManager(self)
         self._time_filter = None
-        
+
+    @property
+    def _token(self):
+        if self._con.token:
+            return self._con.token
+        return None
+
     @property
     def time_filter(self):
         """
-        Starting at Enterprise 10.7.1+, instead of querying time-enabled map 
-        service layers or time-enabled feature service layers, a time filter 
-        can be specified. Time can be filtered as a single instant or by 
+        Starting at Enterprise 10.7.1+, instead of querying time-enabled map
+        service layers or time-enabled feature service layers, a time filter
+        can be specified. Time can be filtered as a single instant or by
         separating the two ends of a time extent with a comma.
-        
+
         ================     =================================================
         **Input**            **Description**
         ----------------     -------------------------------------------------
         value                Required Datetime/List Datetime. This is a single
-                             or list of start/stop date.  
+                             or list of start/stop date.
         ================     =================================================
-        
+
         :returns: String of datetime values as milliseconds from epoch
         """
         return self._time_filter
-    
+
     @time_filter.setter
     def time_filter(self, value):
         """
-        Starting at Enterprise 10.7.1+, instead of querying time-enabled map 
-        service layers or time-enabled feature service layers, a time filter 
-        can be specified. Time can be filtered as a single instant or by 
+        Starting at Enterprise 10.7.1+, instead of querying time-enabled map
+        service layers or time-enabled feature service layers, a time filter
+        can be specified. Time can be filtered as a single instant or by
         separating the two ends of a time extent with a comma.
-        
+
         ================     =================================================
         **Input**            **Description**
         ----------------     -------------------------------------------------
         value                Required Datetime/List Datetime. This is a single
-                             or list of start/stop date.  
+                             or list of start/stop date.
         ================     =================================================
-        
+
         :returns: String of datetime values as milliseconds from epoch
         """
         import datetime as _dt
@@ -112,7 +118,7 @@ class FeatureLayer(Layer):
             self._time_filter = None
         else:
             raise Exception("Invalid datetime filter")
-        
+
     @property
     def renderer(self):
         """
@@ -141,7 +147,8 @@ class FeatureLayer(Layer):
             self._renderer = None
         elif not isinstance(value, InsensitiveDict):
             raise ValueError("Invalid renderer type.")
-        self._refresh = value
+        else:
+            self._renderer = value
 
     @classmethod
     def fromitem(cls, item, layer_id=0):
@@ -419,7 +426,7 @@ class FeatureLayer(Layer):
             files = {'attachment': file_path}
             res = self._con.post(path=attach_url,
                                  postdata=params,
-                                 files=files, token=self._token)
+                                 files=files)
             return res
         else:
             params = {'f': 'json'}
@@ -460,7 +467,7 @@ class FeatureLayer(Layer):
             params['layer'] = self._dynamic_layer
         else:
             url = self._url + "/%s/deleteAttachments" % oid
-        return self._con.post(url, params, token=self._token)
+        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def _update_attachment(self, oid, attachment_id, file_path):
@@ -484,15 +491,15 @@ class FeatureLayer(Layer):
             "f": "json",
             "attachmentId": "%s" % attachment_id
         }
-        files = {'file': file_path}
+        files = {'attachment': file_path}
         if self._dynamic_layer is not None:
-            url = self.url.split('?')[0] + "/%s/attachments" % oid
+            url = self.url.split('?')[0] + f"/{oid}/updateAttachment"
             params['layer'] = self._dynamic_layer
         else:
-            url = self._url + "/%s/attachments" % oid
+            url = self._url + f"/{oid}/updateAttachment"
         res = self._con.post(path=url,
                              postdata=params,
-                             files=files, token=self._token)
+                             files=files)
         return res
 
     # ----------------------------------------------------------------------
@@ -507,7 +514,7 @@ class FeatureLayer(Layer):
             params['layer'] = self._dynamic_layer
         else:
             url = self._url + "/%s/attachments" % oid
-        return self._con.get(path=url, params=params, token=self._token)
+        return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
     def get_unique_values(self, attribute, query_string='1=1'):
@@ -737,6 +744,435 @@ class FeatureLayer(Layer):
             return res
         return None
 
+    def _qa_worker(self, url, params):
+        """Processes the job, gets the status and returns the results"""
+
+        count = self.query(where=params.get("where", "1=1"), return_count_only=True)
+        if 'maxRecordCount' in self.properties:
+            max_records = self.properties['maxRecordCount']
+        else:
+            max_records = 1000
+
+        jobs = {}
+        failed = {}
+        retry_count = 0
+        records = []
+        parts = []
+        df = None
+        if count > max_records:
+            oid_info = self.query(where=params.get("where", "1=1"),
+                              geometry_filter=params.get("geometry_filter", None),
+                              time_filter=params.get("time_filter", None),
+                              return_ids_only=True)
+            for ids in chunks(oid_info['objectIds'], max_records):
+                ids = [str(i) for i in ids]
+                sql = "%s in (%s)" % (oid_info['objectIdFieldName'], ",".join(ids))
+                params['where'] = sql
+                jobs[sql] = self._con.post(url, params)
+            for where, submit_job in jobs.items():
+                if 'statusUrl' in submit_job:
+                    jobs[where] = self._status_via_url(self._con, submit_job['statusUrl'], {'f' : 'json'})
+            for where, download_json in jobs.items():
+                if 'resultUrl' in download_json:
+                    jobs[where] = self._con.get(download_json['resultUrl'], {'f' : 'json'})
+            for where, json_file in jobs.items():
+                if isinstance(json_file, str) and \
+                   os.path.isfile(json_file):
+                    with open(json_file, 'r') as reader:
+                        feature_dict = json.loads(reader.read())
+                        parts.append(feature_dict)
+                    os.remove(json_file)
+                else:
+                    if isinstance(json_file, str):
+                        feature_dict = json.loads(json_file)
+                    else:
+                        feature_dict = json_file
+                    parts.append(feature_dict)
+                del where, json_file
+
+
+        else:
+            submit_job = self._con.post(url, params)
+            if 'statusUrl' in submit_job:
+                status_job = self._status_via_url(self._con, submit_job['statusUrl'], {'f' : 'json'})
+            else:
+                raise Exception(f"Job Failed: {submit_job}")
+            if 'resultUrl' in status_job:
+                download_json = self._con.get(status_job['resultUrl'], {'f' : 'json'})
+            else:
+                raise Exception(f"Job Failed: {result_json}")
+            if isinstance(download_json, str) and os.path.isfile(download_json):
+                with open(download_json, 'r') as reader:
+                    feature_dict = json.loads(reader.read())
+                    parts.append(feature_dict)
+                os.remove(download_json)
+            else:
+                if isinstance(download_json, str):
+                    feature_dict = json.loads(json_file)
+                else:
+                    feature_dict = download_json
+                parts.append(feature_dict)
+        # process the parts into a Spatially Enabled DataFrame
+        #
+        import pandas as pd
+        def _process_result(featureset_dict):
+            """converts the Dictionary to an SeDF"""
+            import pandas as pd
+            import arcgis
+            import numpy as np
+            from datetime import datetime as _datetime
+            _fld_lu = {
+                "esriFieldTypeSmallInteger" : np.int32,
+                "esriFieldTypeInteger" : np.int64,
+                "esriFieldTypeSingle" : np.int32,
+                "esriFieldTypeDouble" : float,
+                "esriFieldTypeFloat" : float,
+                "esriFieldTypeString" : str,
+                "esriFieldTypeDate" : _datetime,
+                "esriFieldTypeOID" : np.int64,
+                "esriFieldTypeGeometry" : object,
+                "esriFieldTypeBlob" : object,
+                "esriFieldTypeRaster" : object,
+                "esriFieldTypeGUID" : str,
+                "esriFieldTypeGlobalID" : str,
+                "esriFieldTypeXML" : object
+            }
+            def feature_to_row(feature, sr):
+                """:return: a feature from a dict"""
+                from arcgis.geometry import Geometry
+                geom = feature['geometry'] if 'geometry' in feature else None
+                attribs = feature['attributes'] if 'attributes' in feature else {}
+                if 'centroid' in feature:
+                    if attribs is None:
+                        attribs = {'centroid' : feature['centroid']}
+                    elif 'centroid' in attribs:
+                        import uuid
+                        fld = "centroid_" + uuid.uuid4().hex[:2]
+                        attribs[fld] = feature['centroid']
+                    else:
+                        attribs['centroid'] = feature['centroid']
+                if geom:
+                    if "spatialReference" not in geom:
+                        geom["spatialReference"] = sr
+                    attribs['SHAPE'] = Geometry(geom)
+                return attribs
+
+            if len(featureset_dict['features']) == 0:
+                return pd.DataFrame([])
+            sr = None
+            if 'spatialReference' in featureset_dict:
+                sr = featureset_dict['spatialReference']
+
+            df = None
+            dtypes = None
+            geom = None
+            names = None
+            dfields = []
+            rows = [feature_to_row(row, sr) \
+                    for row in featureset_dict['features']]
+            if len(rows) == 0:
+                return None
+            df = pd.DataFrame.from_records(data=rows)
+            if 'fields' in featureset_dict:
+                dtypes = {}
+                names = []
+                fields = featureset_dict['fields']
+                for fld in fields:
+                    if fld['type'] != "esriFieldTypeGeometry":
+                        dtypes[fld['name']] = _fld_lu[fld['type']]
+                        names.append(fld['name'])
+                    if fld['type'] == 'esriFieldTypeDate':
+                        dfields.append(fld['name'])
+            if 'SHAPE' in df:
+                df.spatial.set_geometry('SHAPE')
+            if len(dfields) > 0:
+                df[dfields] = df[dfields].apply(pd.to_datetime, unit='ms')
+            return df
+
+        if len(parts) == 1:
+            return _process_result(featureset_dict=parts[0])
+        elif len(parts) == 0:
+            return pd.DataFrame([])
+        else:
+            results = pd.concat([_process_result(df) for df in parts]).reset_index(drop=True)
+            return results
+    # ----------------------------------------------------------------------
+    def query_analytics(self,
+                        out_analytics, #
+                        where="1=1", #
+                        out_fields="*", #
+                        analytic_where=None, #
+                        geometry_filter=None, #
+                        out_sr=None, #
+                        return_geometry=True,
+                        order_by=None,
+                        result_type=None,
+                        cache_hint=None,
+                        result_offset=None,
+                        result_record_count=None,
+                        quantization_param=None,
+                        sql_format=None,
+                        future=True,
+                        **kwargs):
+        """
+        `query_analytics` exposes the standard SQL windows functions that compute
+        aggregate and ranking values based on a group of rows called window
+        partition. The window function is applied to the rows after the
+        partitioning and ordering of the rows. `query_analytics` defines a
+        window or user-specified set of rows within a query result set.
+        `query_analytics` can be used to compute aggregated values such as moving
+        averages, cumulative aggregates, or running totals.
+
+        **SQL Windows Function**
+
+        A window function performs a calculation across a set of rows (SQL partition
+        or window) that are related to the current row. Unlike regular aggregate
+        functions, use of a window function does not return single output row. The
+        rows retain their separate identities with each calculation appended to the
+        rows as a new field value. The window function can access more than just
+        the current row of the query result.
+
+        `query_analytics` currently supports the following windows functions:
+             - Aggregate functions
+             - Analytic functions
+             - Ranking functions
+
+        **Aggregate Functions**
+
+        Aggregate functions are deterministic function that perform a calculation on
+        a set of values and return a single value. They are used in the select list
+        with optional HAVING clause. GROUP BY clause can also be used to calculate
+        the aggregation on categories of rows. `query_analytics` can be used to
+        calculate the aggregation on a specific range of value. Supported aggregate
+        functions are:
+             - Min
+             - Max
+             - Sum
+             - Count
+             - AVG
+             - STDDEV
+             - VAR
+
+        **Analytic Functions**
+
+        Several analytic functions available now in all SQL vendors to compute an
+        aggregate value based on a group of rows or windows partition. Unlike
+        aggregation functions, analytic functions can return single or multiple rows
+        for each group.
+             - CUM_DIST
+             - FIRST_VALUE
+             - LAST_VALUE
+             - LEAD
+             - LAG
+             - PERCENTILE_DISC
+             - PERCENTILE_CONT
+             - PERCENT_RANK
+
+        **Ranking Functions**
+
+        Ranking functions return a ranking value for each row in a partition. Depending
+        on the function that is used, some rows might receive the same value as other rows.
+
+             - RANK
+             - NTILE
+             - DENSE_RANK
+             - ROW_NUMBER
+
+
+        **Partitioning**
+
+        Partitions are extremely useful when you need to calculate the same metric over
+        different group of rows. It is very powerful and has many potential usages. For
+        example, you can add partition by to your window specification to look at
+        different groups of rows individually.
+
+        'partitionBy' clause divides the query result set into partitions and the sql
+        window function is applied to each partition.
+        The 'partitionBy' clause normally refers to the column by which the result is
+        partitioned. 'partitionBy' can also be a value expression (column expression or
+        function) that references any of the selected columns (not aliases).
+
+
+
+        ===============================     ====================================================================
+        **Argument**                        **Description**
+        -------------------------------     --------------------------------------------------------------------
+        out_analytics                       Required List. A set of analytics to calculate on the Feature Layer.
+
+                                            The definitions for one or more field-based or expression analytics to be computed. This parameter is supported only on layers/tables that indicate supportsAnalytics is true.
+                                            Note: If outAnalyticFieldName is empty or missing, the server assigns a field name to the returned analytic field.
+
+                                            Syntax: An array of analytic definitions. An analytic definition specifies the type of analytic, the field or expression on which it is to be computed, and the resulting output field name.
+                                            Syntax
+                                            [
+                                              {
+                                                "analyticType": "<COUNT | SUM | MIN | MAX | AVG | STDDEV | VAR | FIRST_VALUE, LAST_VALUE, LAG, LEAD, PERCENTILE_CONT, PERCENTILE_DISC, PERCENT_RANK, RANK, NTILE, DENSE_RANK, EXPRESSION>",
+                                                "onAnalyticField": "Field1",
+                                                "outAnalyticFieldName": "Out_Field_Name1",
+                                                 "analyticParameters": {
+                                                      "orderBy": "<orderBy expression",
+                                                      "value": <double value>,// percentile value
+                                                      "partitionBy": "<field name or expression>",
+                                                      "offset": <integer>, // used by LAG/LEAD
+                                                      "windowFrame": {
+                                                         "type": "ROWS" | "RANGE",
+                                                         "extent": {
+                                                            "extentType": "PRECEDING" | "BOUNDARY",
+                                                            "PRECEDING": {
+                                                               "type": <"UNBOUNDED" |
+                                                                       "NUMERIC_CONSTANT" |
+                                                                        "CURRENT_ROW">
+                                                                "value": <numeric constant value>
+                                                             }
+                                                             "BOUNDARY": {
+                                                              "start": "UNBOUNDED_PRECEDING",
+                                                                       "NUMERIC_PRECEDING",
+                                                                        "CURRENT_ROW",
+                                                              "startValue": <numeric constant value>,
+                                                              "end": <"UNBOUNDED_FOLLOWING" |
+                                                                      "NUMERIC_FOLLOWING" |
+                                                                      "CURRENT_ROW",
+                                                              "endValue": <numeric constant value>
+                                                            }
+                                                          }
+                                                        }
+                                                     }
+                                                }
+                                              }
+                                            ]
+
+
+                                            Example:
+                                            [{
+                                                  "analyticType": "FIRST_VALUE",
+                                                  "onAnalyticField": "POP1990",
+                                                  "analyticParameters": {
+                                                      "orderBy": "POP1990",
+                                                      "partitionBy": "state_name"
+                                                  },
+                                                  "outAnalyticFieldName": "FirstValue"
+                                                }
+                                            ]
+
+
+        -------------------------------     --------------------------------------------------------------------
+        where                               Optional string. The default is 1=1. The selection sql statement.
+        -------------------------------     --------------------------------------------------------------------
+        out_fields                          Optional List of field names to return. Field names can be specified
+                                            either as a List of field names or as a comma separated string.
+                                            The default is "*", which returns all the fields.
+        -------------------------------     --------------------------------------------------------------------
+        analytic_where                      Optional String. A where clause for the query filter that applies to
+                                            the result set of applying the source where clause and all other params.
+        -------------------------------     --------------------------------------------------------------------
+        geometry_filter                     Optional from arcgis.geometry.filter. Allows for the information to
+                                            be filtered on spatial relationship with another geometry.
+        -------------------------------     --------------------------------------------------------------------
+        out_sr                              Optional Integer. The WKID for the spatial reference of the returned
+                                            geometry.
+        -------------------------------     --------------------------------------------------------------------
+        out_sr                              Optional Integer.  The output spatial reference `wkid`.
+        -------------------------------     --------------------------------------------------------------------
+        return_geometry                     Optional boolean. If true, geometry is returned with the query.
+                                            Default is true.
+        -------------------------------     --------------------------------------------------------------------
+        order_by                            Optional string. One or more field names on which the
+                                            features/records need to be ordered. Use ASC or DESC for ascending
+                                            or descending, respectively, following every field to control the
+                                            ordering.
+                                            example: STATE_NAME ASC, RACE DESC, GENDER
+        -------------------------------     --------------------------------------------------------------------
+        result_type                         Optional string. The result_type parameter can be used to control
+                                            the number of features returned by the query operation.
+                                            Values: None | standard | tile
+        -------------------------------     --------------------------------------------------------------------
+        cache_hint                          Optional Boolean. If you are performing the same query multiple times,
+                                            a user can ask the server to cache the call to obtain the results
+                                            quicker.  The default is `False`.
+        -------------------------------     --------------------------------------------------------------------
+        result_offset                       Optional integer. This option can be used for fetching query results
+                                            by skipping the specified number of records and starting from the
+                                            next record (that is, resultOffset + 1th).
+        -------------------------------     --------------------------------------------------------------------
+        result_record_count                 Optional integer. This option can be used for fetching query results
+                                            up to the result_record_count specified. When result_offset is
+                                            specified but this parameter is not, the map service defaults it to
+                                            max_record_count. The maximum value for this parameter is the value
+                                            of the layer's max_record_count property.
+        -------------------------------     --------------------------------------------------------------------
+        quantization_parameters             Optional dict. Used to project the geometry onto a virtual grid,
+                                            likely representing pixels on the screen.
+        -------------------------------     --------------------------------------------------------------------
+        sql_format                          Optional string.  The sql_format parameter can be either standard
+                                            SQL92 standard or it can use the native SQL of the underlying
+                                            datastore native. The default is none which means the sql_format
+                                            depends on useStandardizedQuery parameter.
+                                            Values: none | standard | native
+        -------------------------------     --------------------------------------------------------------------
+        future                              Optional Boolean. This determines if a `Future` object is returned
+                                            (True) the method returns the results directly (False).
+        ===============================     ====================================================================
+
+
+        :returns: pd.DataFrame
+
+        """
+
+        if self._gis._portal.is_arcgisonline == False:
+            raise Exception("`query_analytics` is only supported on ArcGIS Online Hosted Feature Layers.")
+
+        url = self._url + "/queryAnalytic"
+        params = {
+            "f": "json",
+            'dataFormat' : 'json'
+        }
+        if where:
+            params['where'] = where
+        if analytic_where:
+            params['analyticWhere'] = analytic_where
+        if geometry_filter and \
+                isinstance(geometry_filter, GeometryFilter):
+            for key, val in geometry_filter.filter:
+                params[key] = val
+        elif geometry_filter and \
+                isinstance(geometry_filter, dict):
+            for key, val in geometry_filter.items():
+                params[key] = val
+        if out_sr:
+            params['outSR'] = out_sr
+        if out_fields:
+            params['outFields'] = out_fields
+        if out_analytics:
+            params['outAnalytics'] = out_analytics
+        if order_by:
+            params['orderByFields'] = order_by
+        if result_type:
+            params['resultType'] = result_type
+        if not cache_hint is None:
+            params['cacheHint'] = cache_hint
+        if result_offset:
+            params['resultOffset'] = result_offset
+        if result_record_count:
+            params['resultRecordCount'] = result_record_count
+        if quantization_param:
+            params['quantizationParameters'] = quantization_param
+        if future:
+            params['async'] = future
+        if sql_format:
+            params['sql_format'] = sql_format
+        if len(kwargs) > 0:
+            for k,v in kwargs.items():
+                params[k] = v
+        params['async'] = True
+        executor =  concurrent.futures.ThreadPoolExecutor(1)
+        future_job = executor.submit(self._qa_worker, **{"url" : url, "params" : params})
+        executor.shutdown(False)
+
+        if future == False:
+            res = future_job.result()
+            del executor
+            return res
+        return future_job
     # ----------------------------------------------------------------------
     def query(self,
               where="1=1",
@@ -1130,6 +1566,7 @@ class FeatureLayer(Layer):
                 "esriFieldTypeInteger" : np.int64,
                 "esriFieldTypeSingle" : np.int32,
                 "esriFieldTypeDouble" : float,
+                "esriFieldTypeFloat" : float,
                 "esriFieldTypeString" : str,
                 "esriFieldTypeDate" : np.datetime64,
                 "esriFieldTypeOID" : np.int64,
@@ -1243,12 +1680,13 @@ class FeatureLayer(Layer):
                 df.spatial.renderer = self.renderer
                 df.spatial._meta.source = self
             for fld in dt_fields:
-                try:
-                    df[fld] = pd.to_datetime(df[fld]/1000,
-                                             infer_datetime_format=True,
-                                             unit='s')
-                except:
-                    df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                if fld in df.columns:
+                    try:
+                        df[fld] = pd.to_datetime(df[fld]/1000,
+                                                 infer_datetime_format=True,
+                                                 unit='s')
+                    except:
+                        df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True, errors='coerce')
             return df
         return result
     # ----------------------------------------------------------------------
@@ -1304,7 +1742,7 @@ class FeatureLayer(Layer):
         url = self._url + "/validateSQL"
         return self._con.post(path=url,
                               postdata=params,
-                              token=self._token)
+                              )
     # ----------------------------------------------------------------------
     def query_related_records(self,
                               object_ids,
@@ -1431,13 +1869,13 @@ class FeatureLayer(Layer):
         else:
             qrr_url = "%s/queryRelatedRecords" % self._url.split('?')[0]
 
-        return self._con.post(path=qrr_url, postdata=params, token=self._token)
+        return self._con.post(path=qrr_url, postdata=params)
 
     # ----------------------------------------------------------------------
     def get_html_popup(self, oid):
         """
         The htmlPopup resource provides details about the HTML pop-up
-        authored by the user using ArcGIS for Desktop.
+        authored by the user using ArcGIS Pro or ArcGIS Desktop.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1455,7 +1893,7 @@ class FeatureLayer(Layer):
                 'f': "json"
             }
 
-            return self._con.get(path=pop_url, params=params, token=self._token)
+            return self._con.get(path=pop_url, params=params)
         return ""
     # ----------------------------------------------------------------------
     def append(self,
@@ -1472,7 +1910,8 @@ class FeatureLayer(Layer):
                append_fields=None,
                rollback=False,
                skip_inserts=None,
-               upsert_matching_field=None
+               upsert_matching_field=None,
+               upload_id=None
                ):
         """
         Only available in ArcGIS Online
@@ -1539,6 +1978,11 @@ class FeatureLayer(Layer):
                                    upsert_matching_field will be used even if you specify
                                    use_globalids = True.
                                    Example: upsert_matching_field="MyfieldWithUniqueIndex"
+        ------------------------   --------------------------------------------------------------------
+        upload_id                  Optional string. The itemID field from an
+                                   :func:`~FeatureLayerCollection.upload` response, corresponding with
+                                   the `appendUploadId` REST API argument. This argument should not be
+                                   used along side the `item_id` argument.
         ========================   ====================================================================
 
 
@@ -1546,7 +1990,6 @@ class FeatureLayer(Layer):
 
         """
         import copy
-        upload_id = None
         if ((hasattr(self._gis, '_portal') and self._gis._portal.is_logged_in == False) or \
            (hasattr(self._gis, 'is_logged_in') and self._gis.is_logged_in == False)):
             raise Exception("Authentication required to perform append.")
@@ -1588,6 +2031,7 @@ class FeatureLayer(Layer):
         res = self._con.post(path=url,
                              postdata=params)
         if 'statusUrl' in res:
+            time.sleep(1)
             surl = res['statusUrl']
             sres = self._con.get(path=surl, params={'f' : 'json'})
             while sres['status'].lower() != "completed":
@@ -1681,12 +2125,12 @@ class FeatureLayer(Layer):
             print("Parameters not valid for delete_features")
             return None
         if future is False:
-            return self._con.post(path=delete_url, postdata=params, token=self._token)
+            return self._con.post(path=delete_url, postdata=params)
         else:
             params['async'] = True
             import concurrent.futures
             executor =  concurrent.futures.ThreadPoolExecutor(1)
-            res = self._con.post(path=delete_url, postdata=params, token=self._token)
+            res = self._con.post(path=delete_url, postdata=params)
             future = executor.submit(self._status_via_url, *(self._con, res['statusUrl'], {'f' : 'json'}))
             executor.shutdown(False)
             return future
@@ -1700,7 +2144,8 @@ class FeatureLayer(Layer):
                           'ExportAttachments', 'ImportAttachments', 'ProvisioningReplica',
                           'UnRegisteringReplica', 'CompletedWithErrors']
         status = con.get(url, params)
-        while not status['status'] in status_allowed:
+        while status['status'] in status_allowed and \
+              status['status'] != 'Completed':
             if status['status'] == 'Completed':
                 return status
             elif status['status'] == 'CompletedWithErrors':
@@ -1728,6 +2173,12 @@ class FeatureLayer(Layer):
         """
         This operation adds, updates, and deletes features to the
         associated feature layer or table in a single call.
+
+
+        When making large number (250+ records at once) of edits,
+        `append` should be used over `edit_features` to improve
+        performance and ensure service stability.
+
 
         =====================   ======================================================================================
         **Inputs**              **Description**
@@ -1951,7 +2402,14 @@ class FeatureLayer(Layer):
         if 'deletes' not in params and 'updates' not in params and 'adds' not in params:
             print("Parameters not valid for edit_features")
             return None
-        return self._con.post(path=edit_url, postdata=params)#, token=self._token)
+        try:
+            return self._con.post(path=edit_url, postdata=params)#)
+        except Exception as e:
+            if str(e).lower().find("Invalid Token".lower()) > -1:
+                params.pop('token', None)
+                return self._con.post(path=edit_url, postdata=params, add_token=False)
+            else:
+                raise
 
     # ----------------------------------------------------------------------
     def calculate(self, where, calc_expression,
@@ -2066,22 +2524,30 @@ class FeatureLayer(Layer):
             params['async'] = True
             executor =  concurrent.futures.ThreadPoolExecutor(1)
             res = self._con.post(path=url,
-                                 postdata=params, token=self._token)
+                                 postdata=params, )
             future = executor.submit(self._status_via_url, *(self._con, res['statusUrl'], {'f' : 'json'}))
             executor.shutdown(False)
             return future
         return self._con.post(path=url,
-                              postdata=params, token=self._token)
+                              postdata=params, )
 
     # ----------------------------------------------------------------------
-    def _query(self, url, params, raw=False):
+    def _query(self, url, params, raw=False, **kwargs):
         """ returns results of query """
         try:
-            result = self._con.post(path=url,
-                                    postdata=params, token=self._token)
+            if 'add_token' in kwargs:
+                result = self._con.post(path=url,
+                                    postdata=params,
+                                    add_token=kwargs.get('add_token', True))
+            else:
+                result = self._con.post(path=url,
+                                    postdata=params, )
         except Exception as queryException:
             error_list = ["Error performing query operation", "HTTP Error 504: GATEWAY_TIMEOUT"]
-            if any(ele in queryException.__str__() for ele in error_list):
+            if queryException.args[0].lower().find("invalid token") > -1:
+                params.pop('token', None)
+                return self._query(url, params, raw=False, add_token=False)
+            elif any(ele in queryException.__str__() for ele in error_list):
                 # half the max record count
                 max_record = int(params['resultRecordCount']) if 'resultRecordCount' in params else 1000
                 offset = int(params['resultOffset']) if 'resultOffset' in params else 0
@@ -2132,7 +2598,7 @@ class FeatureLayer(Layer):
             return FeatureSet.from_dict(result)
 
     # ----------------------------------------------------------------------
-    def _query_df(self, url, params):
+    def _query_df(self, url, params, **kwargs):
         """ returns results of a query as a pd.DataFrame"""
         import pandas as pd
         from arcgis.features import GeoAccessor, GeoSeriesAccessor
@@ -2143,6 +2609,7 @@ class FeatureLayer(Layer):
                 "esriFieldTypeInteger" : np.int64,
                 "esriFieldTypeSingle" : np.int32,
                 "esriFieldTypeDouble" : float,
+                "esriFieldTypeFloat" : float,
                 "esriFieldTypeString" : str,
                 "esriFieldTypeDate" : pd.datetime,
                 "esriFieldTypeOID" : np.int64,
@@ -2160,6 +2627,7 @@ class FeatureLayer(Layer):
                 "esriFieldTypeInteger" : np.int64,
                 "esriFieldTypeSingle" : np.int32,
                 "esriFieldTypeDouble" : float,
+                "esriFieldTypeFloat" : float,
                 "esriFieldTypeString" : str,
                 "esriFieldTypeDate" : _datetime,
                 "esriFieldTypeOID" : np.int64,
@@ -2191,10 +2659,22 @@ class FeatureLayer(Layer):
             return attribs
         #------------------------------------------------------------------
         try:
-            featureset_dict = self._con.post(url, params,
-                                             token=self._token)
+            if 'add_token' in kwargs:
+
+                featureset_dict = self._con.post(
+                    url,
+                    params,
+                    add_token=kwargs.get('add_token', True)
+                )
+            else:
+                featureset_dict = self._con.post(
+                    url,
+                    params)
         except Exception as queryException:
             error_list = ["Error performing query operation", "HTTP Error 504: GATEWAY_TIMEOUT"]
+            if queryException.args[0].lower().find("invalid token") > -1:
+                params.pop('token', None)
+                return self._query_df(url, params, raw=False, add_token=False)
             if any(ele in queryException.__str__() for ele in error_list):
                 # half the max record count
                 max_record = int(params['resultRecordCount']) if 'resultRecordCount' in params else 1000
@@ -2254,7 +2734,17 @@ class FeatureLayer(Layer):
         if 'SHAPE' in featureset_dict:
             df.spatial.set_geometry('SHAPE')
         if len(dfields) > 0:
-            df[dfields] = df[dfields].apply(pd.to_datetime, unit='ms')
+
+            for fld in [fld for fld in dfields if fld in df.columns]:
+                try:
+                    df[fld] = pd.to_datetime(df[fld]/1000,
+                                             infer_datetime_format=True,
+                                             errors='coerce',
+                                             unit='s')
+                except:
+
+                    df[fld] = pd.to_datetime(df[fld], errors='coerce',
+                                             infer_datetime_format=True)
         return df
 
 
@@ -2274,26 +2764,26 @@ class Table(FeatureLayer):
         The layer_id is the id of the layer in feature layer collection (feature service).
         """
         return item.tables[table_id]
-    
-    def query(self, where="1=1", 
-              out_fields="*", 
-              time_filter=None, 
-              return_count_only=False, 
-              return_ids_only=False, 
-              return_distinct_values=False, 
-              group_by_fields_for_statistics=None, 
-              statistic_filter=None, 
-              result_offset=None, 
-              result_record_count=None, 
-              object_ids=None, 
-              gdb_version=None, 
-              order_by_fields=None, 
-              out_statistics=None, 
-              return_all_records=True, 
-              historic_moment=None, 
-              sql_format=None, 
-              return_exceeded_limit_features=None, 
-              as_df=False, 
+
+    def query(self, where="1=1",
+              out_fields="*",
+              time_filter=None,
+              return_count_only=False,
+              return_ids_only=False,
+              return_distinct_values=False,
+              group_by_fields_for_statistics=None,
+              statistic_filter=None,
+              result_offset=None,
+              result_record_count=None,
+              object_ids=None,
+              gdb_version=None,
+              order_by_fields=None,
+              out_statistics=None,
+              return_all_records=True,
+              historic_moment=None,
+              sql_format=None,
+              return_exceeded_limit_features=None,
+              as_df=False,
               having=None,
               **kwargs):
         """
@@ -2528,6 +3018,7 @@ class Table(FeatureLayer):
                 "esriFieldTypeInteger" : np.int64,
                 "esriFieldTypeSingle" : np.int32,
                 "esriFieldTypeDouble" : float,
+                "esriFieldTypeFloat" : float,
                 "esriFieldTypeString" : str,
                 "esriFieldTypeDate" : np.datetime64,
                 "esriFieldTypeOID" : np.int64,
@@ -2704,7 +3195,7 @@ class FeatureLayerCollection(_GISResource):
 
         # fsurl = self.url + '/layers'
         # params = { "f" : "json" }
-        # allayers = self._con.post(fsurl, params, token=self._token)
+        # allayers = self._con.post(fsurl, params)
 
         # for layer in allayers['layers']:
         #    layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis))
@@ -2830,30 +3321,38 @@ class FeatureLayerCollection(_GISResource):
         and tables in the service have the ChangeTracking capability, the
         `extract_changes` operation can be used to get changes.
 
-
         ================================     ====================================================================
         **Argument**                         **Description**
         --------------------------------     --------------------------------------------------------------------
-        layers                               Required List.  The list of layers and tables to include in the
-                                             replica.
+        layers                               Required List.  The list of layers (by index value) and tables to include in the
+                                             output.
         --------------------------------     --------------------------------------------------------------------
-        servergen                            Required List.   The servergens allows a client to specify the last
-                                             layer generation numbers for the changes received from the server.
+        servergen                            Required List.   The servergen numbers allow a client to specify the last
+                                             layer generation numbers (a Unix epoch time value in milliseconds) for the
+                                             changes received from the server. All changes made after this value will be
+                                             returned.
 
-                                                + minServerGen: It is the min generation of the server data changes.
-                                                  clients with layerServerGens that is less than minServerGen cannot
+                                                + ``minServerGen``: It is the min generation of the server data changes.
+                                                  Clients with layerServerGens that is less than minServerGen cannot
                                                   extract changes and would need to make a full server/layers query
                                                   instead of extracting changes.
-                                                + serverGen: It is the current server generation number of the
+                                                + ``serverGen``: It is the current server generation number of the
                                                   changes. Every changed feature has a version or a generation number
                                                   that is changed every time the feature is updated.
 
-                                             Syntax: servergen = [{"id": <layerId1>, "serverGen": <genNum1>},
-                                                                 {"id": <layerId2>, "serverGen": <genNum2>}]
+                                             Syntax:
+                                                 servergen= [{"id": <layerId1>, "serverGen": <genNum1>}, {"id": <layerId2>, "serverGen": <genNum2>}]
 
-                                             Example: servergen= [{"id": 0, "serverGen": 10500},
-                                                                 {"id": 1, "serverGen": 1100},
-                                                                 {"id": 2, "serverGen": 1200}]
+                                             The ``id`` value for the layer is the index of the layer from the :attr:`layers`
+                                             attribute on the :class:`~arcgis.features.FeatureLayerCollection`. The ``serverGen`` value is a Unix epoch timestamp value in milliseconds.
+
+                                             .. code-block:: python
+
+                                                # Usage Example:
+
+                                                servergen= [{"id": 0, "serverGen": 10500},
+                                                            {"id": 1, "serverGen": 1100},
+                                                            {"id": 2, "serverGen": 1200}]
         --------------------------------     --------------------------------------------------------------------
         queries                              Optional Dictionary. In addition to the layers and geometry
                                              parameters, the `queries` parameter can be used to further define
@@ -2865,51 +3364,50 @@ class FeatureLayerCollection(_GISResource):
 
                                              The properties include the following:
 
-                                                + where - Defines an attribute query for a layer or table. The
+                                                + ``where`` - Defines an attribute query for a layer or table. The
                                                   default is no where clause.
-                                                + useGeometry - Determines whether or not to apply the geometry
+                                                + ``useGeometry`` - Determines whether or not to apply the geometry
                                                   for the layer. The default is true. If set to false, features
                                                   from the layer that intersect the geometry are not added.
-                                                + includeRelated - Determines whether or not to add related
+                                                + ``includeRelated`` - Determines whether or not to add related
                                                   rows. The default is true. The value true is honored only
                                                   for queryOption=none. This is only applicable if your data
                                                   has relationship classes. Relationships are only processed
                                                   in a forward direction from origin to destination.
-                                                + queryOption - Defines whether or how filters will be applied
+                                                + ``queryOption`` - Defines whether or how filters will be applied
                                                   to a layer. The queryOption was added in 10.2. See the
-                                                  Compatibility notes topic for more information.
+                                                  `Compatibility notes <https://developers.arcgis.com/rest/services-reference/sync-compatibility-notes.htm>`_ topic for more information.
+                                                  Valid values are ``None``, ``useFilter``, or ``all``. See also the
+                                                  ``layerQueries`` column in the Request Parameters table in the `Extract Changes (Feature Service) help <https://developers.arcgis.com/rest/services-reference/extract-changes-feature-service-.htm>`_
+                                                  for details and code samples.
 
-                                             Values: None, useFilter, or all
+                                                * When the value is none, no feature are returned based on where and filter geometry.
+                                                * If ``includeRelated`` is false, no features are returned.
+                                                * If ``includeRelated`` is true, features in this layer (that are related to the features in other layers in the replica) are returned.
+                                                * When the value is ``useFilter``, features that satisfy filtering based on geometry and ``where`` are returned. The value of ``includeRelated`` is ignored.
 
-                                             When is value is none, no feature are returned based on where and
-                                             filter geometry. if includeRelated is false, no features are
-                                             returned. If includeRelated is true, features in this layer (that
-                                             are related to the features in other layers in the replica) are
-                                             returned.
+                                             .. code-block:: python
 
-                                             When the value is useFilter, features that satisfy filtering based
-                                             on geometry and where are returned. The value of includeRelated is
-                                             ignored.
+                                                # Usage Example:
 
-                                             Syntax: queries={Layer_or_tableID1:{"where":"attribute query",
-                                             "useGeometry": true | false, "includeRelated": true | false},
-                                             Layer_or_tableID2: {.}}
+                                                queries={Layer_or_tableID1:{"where":"attribute query",
+                                                                            "useGeometry": true | false,
+                                                                            "includeRelated": true | false},
+                                                         Layer_or_tableID2: {.}}
         --------------------------------     --------------------------------------------------------------------
-        geometry                             Option Geometry/Extent. The geometry to apply as the spatial filter
-                                             for the changes. All the changed features in layers intersecting
-                                             this geometry will be returned. The structure of the geometry is the
-                                             same as the structure of the JSON geometry objects returned by the
-                                             ArcGIS REST API. In addition to the JSON structures, for envelopes
-                                             and points, you can specify the geometry with a simpler
+        geometry                             Optional :class:`~arcgis.geometry.Geometry`/:class:`~arcgis.geometry.Extent`.
+                                             The geometry to apply as the spatial filter for the changes. All the changed
+                                             features in layers intersecting this geometry will be returned. The structure
+                                             of the geometry is the same as the structure of the `JSON geometry objects <https://developers.arcgis.com/documentation/common-data-types/geometry-objects.htm>`_
+                                             returned by the ArcGIS REST API. In addition to the JSON structures,
+                                             for envelopes and points you can specify the geometry with a simpler
                                              comma-separated syntax.
         --------------------------------     --------------------------------------------------------------------
         geometry_type                        Optional String. The type of geometry specified by the geometry
                                              parameter. The geometry type can be an envelope, point, line or
                                              polygon. The default geometry type is an envelope.
 
-                                             Values: esriGeometryPoint, esriGeometryMultipoint,
-                                                     esriGeometryPolyline, esriGeometryPolygon,
-                                                     esriGeometryEnvelope
+                                             Values: ``esriGeometryPoint``, ``esriGeometryMultipoint``, ``esriGeometryPolyline``, ``esriGeometryPolygon``, ``esriGeometryEnvelope``
         --------------------------------     --------------------------------------------------------------------
         in_sr                                Optional Integer. The spatial reference of the input geometry.
         --------------------------------     --------------------------------------------------------------------
@@ -2931,7 +3429,7 @@ class FeatureLayerCollection(_GISResource):
         return_ids_only                      Optional Boolean. If true, the response includes an array of object
                                              IDs only. The default is false.
         --------------------------------     --------------------------------------------------------------------
-        return_attachments                  Optional Boolean.  If true, attachments changes are returned in the
+        return_attachments                   Optional Boolean.  If true, attachments changes are returned in the
                                              response. Otherwise, attachments are not included. The default is
                                              false. This parameter is only applicable if the feature service has
                                              attachments.
@@ -2949,7 +3447,42 @@ class FeatureLayerCollection(_GISResource):
                                              Values: None, large, medium, or small
         ================================     ====================================================================
 
+        :returns: dictionary containing the layerServerGens and an array of edits
 
+        .. code-block:: python
+
+           #Usage Example for extracting all changes to a feaature layer in a particular version since the time the Feature Layer was created.
+
+           from arcgis.gis import GIS
+           from arcgis.features import FeatureLayerCollection
+
+           >>> gis = GIS(<url>, <username>, <password>)
+
+           # Search for the Feature Service item
+           >>> fl_item = gis.content.search('title:"my_feature_layer" type:"Feature Layer"')[0]
+           >>> created_time = fl_item.created
+
+           # Get the Feature Service url
+           >>> fs=gis.content.search('title:"my_feature_layer" type:"Feature"')[0].url
+
+           # Instantiate the a FeatureLayerCollection from the url
+           >>> flc=FeatureLayerCollection(fs, gis)
+
+           # Extract the changes for the version
+           >>> extracted_changes=flc.extract_changes(layers=[0],
+                                      servergen=[{"id": 0, "serverGen": created_time}],
+                                      version="<version_owner>.<version_name>",
+                                      return_ids_only=True,
+                                      return_inserts=True,
+                                      return_updates=True,
+                                      return_deletes=True,
+                                      data_format="json")
+
+           >>> extracted_changes
+
+           {'layerServerGens': [{'id': 0, 'serverGen': 1600713614620}],
+            'edits': [{'id': 0,
+              'objectIds': {'adds': [], 'updates': [194], 'deletes': []}}]}
         """
         url = "%s/extractChanges"  % self._url
         params = {
@@ -2985,8 +3518,8 @@ class FeatureLayerCollection(_GISResource):
                 elif  status.lower() == 'failed':
                     return None
                 else:
-                    time.sleep(1)
-        return None
+                    time.sleep(.5)
+        return res
 
     def query(self,
               layer_defs_filter=None,
@@ -3032,7 +3565,7 @@ class FeatureLayerCollection(_GISResource):
                 isinstance(time_filter, dict):
             params['time'] = time_filter
         results = self._con.get(path=qurl,
-                                params=params, token=self._token)
+                                params=params)
         if 'error' in results:
             raise ValueError(results)
         if not return_count_only and not return_ids_only:
@@ -3147,7 +3680,7 @@ class FeatureLayerCollection(_GISResource):
         if geometry_precision is not None:
             params['geometryPrecision'] = geometry_precision
         qrr_url = self._url + "/queryRelatedRecords"
-        res = self._con.get(path=qrr_url, params=params, token=self._token)
+        res = self._con.get(path=qrr_url, params=params)
         return res
 
     # ----------------------------------------------------------------------
@@ -3159,7 +3692,7 @@ class FeatureLayerCollection(_GISResource):
 
         }
         url = self._url + "/replicas"
-        return self._con.get(path=url, params=params, token=self._token)
+        return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
     def _unregister_replica(self, replica_id):
@@ -3182,7 +3715,7 @@ class FeatureLayerCollection(_GISResource):
             "replicaID": replica_id
         }
         url = self._url + "/unRegisterReplica"
-        return self._con.post(path=url, postdata=params, token=self._token)
+        return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
     def _replica_info(self, replica_id):
@@ -3204,7 +3737,7 @@ class FeatureLayerCollection(_GISResource):
             "f": "json"
         }
         url = self._url + "/replicas/" + replica_id
-        return self._con.get(path=url, params=params, token=self._token)
+        return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
     def _create_replica(self,
@@ -3377,7 +3910,7 @@ class FeatureLayerCollection(_GISResource):
 
         if asynchronous:
             if wait:
-                export_job = self._con.post(path=url, postdata=params, token=self._token)
+                export_job = self._con.post(path=url, postdata=params)
                 status = self._replica_status(url=export_job['statusUrl'])
                 while status['status'] not in ("Completed", "CompletedWithErrors"):
                     if status['status'] == "Failed":
@@ -3389,9 +3922,9 @@ class FeatureLayerCollection(_GISResource):
                 res = status
 
             else:
-                res = self._con.post(path=url, postdata=params, token=self._token)
+                res = self._con.post(path=url, postdata=params)
         else:
-            res = self._con.post(path=url, postdata=params, token=self._token)
+            res = self._con.post(path=url, postdata=params)
 
         if out_path is not None and \
                 os.path.isdir(out_path):
@@ -3405,7 +3938,7 @@ class FeatureLayerCollection(_GISResource):
             if dl_url is not None:
 
                 return self._con.get(path=dl_url, file_name=dl_url.split('/')[-1],
-                                     out_folder=out_path, try_json=False, token=self._token)
+                                     out_folder=out_path, try_json=False)
 
             else:
                 return res
@@ -3444,7 +3977,7 @@ class FeatureLayerCollection(_GISResource):
             if "statusUrl" in res:
                 import concurrent.futures
                 executor =  concurrent.futures.ThreadPoolExecutor(1)
-                res = self._con.post(path=url, postdata=params, token=self._token)
+                res = self._con.post(path=url, postdata=params)
                 future = executor.submit(self._status_via_url, *(self._con, res['statusUrl'], {'f' : 'json'}))
                 executor.shutdown(False)
                 return future
@@ -3665,7 +4198,7 @@ class FeatureLayerCollection(_GISResource):
             params['closeReplica'] = close_replica
         if replica_servers_sib_gen:
             params['replicaServerSibGen'] = replica_servers_sib_gen
-        res = self._con.post(path=url, postdata=params, token=self._token)
+        res = self._con.post(path=url, postdata=params)
         if out_path is not None and \
                os.path.isdir(out_path):
             dl_url = None
@@ -3678,7 +4211,7 @@ class FeatureLayerCollection(_GISResource):
             if dl_url is not None:
                 return self._con.get(path=dl_url, file_name=dl_url.split('/')[-1],
                                      out_folder=out_path, try_json=False,
-                                     token=self._token)
+                                     )
             else:
                 return res
         return res
@@ -3689,14 +4222,14 @@ class FeatureLayerCollection(_GISResource):
         params = {"f": "json"}
         url += "/status"
         return self._con.get(path=url,
-                             params=params, token=self._token)
+                             params=params)
 
     #----------------------------------------------------------------------
     def upload(self, path, description=None):
         """
         Uploads a new item to the server. Once the operation is completed
-        successfully, the JSON structure of the uploaded item is returned.
-
+        successfully, the following is returned as a 2 element tuple:
+        the success Boolean, and the JSON structure of the uploaded item
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -3706,7 +4239,7 @@ class FeatureLayerCollection(_GISResource):
         description         Optional string. Descriptive text for the uploaded item.
         ===============     ====================================================================
 
-        :returns: boolean
+        :returns: A tuple of (Boolean, dict)
 
         """
         if (os.path.getsize(path) >> 20) <= 9:

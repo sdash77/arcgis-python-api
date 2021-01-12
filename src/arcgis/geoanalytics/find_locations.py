@@ -9,12 +9,13 @@ import logging as _logging
 import arcgis as _arcgis
 from arcgis import env as _env
 from arcgis.features import FeatureSet as _FeatureSet
-from arcgis.geoprocessing._support import _execute_gp_tool
-from ._util import (_id_generator, 
-                    _feature_input, 
-                    _set_context, 
-                    _create_output_service, 
-                    GAJob, 
+from arcgis.geoprocessing import import_toolbox as _import_toolbox
+from arcgis._impl.common._utils import inspect_function_inputs
+from ._util import (_id_generator,
+                    _feature_input,
+                    _set_context,
+                    _create_output_service,
+                    GAJob,
                     _prevent_bds_item)
 import datetime
 _log = _logging.getLogger(__name__)
@@ -33,15 +34,15 @@ def geocode_locations(input_layer,
                       context=None,
                       future=False):
     """
-    .. image:: _static/images/geocode_locations/geocode_locations.png 
+    .. image:: _static/images/geocode_locations/geocode_locations.png
 
-    The ``geocode_locations`` task geocodes a table from a big data file share. 
-    The task uses a geocode utility service configured with your portal. If you 
-    do not have a geocode utility service configured, talk to your administrator. 
-    `Learn more about configuring a locator 
+    The ``geocode_locations`` task geocodes a table from a big data file share.
+    The task uses a geocode utility service configured with your portal. If you
+    do not have a geocode utility service configured, talk to your administrator.
+    `Learn more about configuring a locator
     service <https://enterprise.arcgis.com/en/portal/latest/administer/windows/configure-portal-to-geocode-addresses.htm>`_.
 
-    When preparing to use the Geocode Location task be sure to review `Best Practices 
+    When preparing to use the Geocode Location task be sure to review `Best Practices
     for geocoding with GeoAnalytics Server <https://enterprise.arcgis.com/en/portal/latest/use/geoanalytics-geocoding-best-practices.htm>`_.
 
     ==========================   ===============================================================
@@ -56,11 +57,11 @@ def geocode_locations(input_layer,
                                  results, if applicable. Some geocoding services do not support
                                  category, and the available options depend on your geocode service.
     --------------------------   ---------------------------------------------------------------
-    include_attributes           Optional boolean. A Boolean value to return the output fields 
-                                 from the geocoding service in the results. To output all available 
-                                 output fields, set this value to 'True'. Setting the value to false will 
-                                 return your original data and with geocode coordinates. Some geocoding 
-                                 services do not support output fields, and the available options depend 
+    include_attributes           Optional boolean. A Boolean value to return the output fields
+                                 from the geocoding service in the results. To output all available
+                                 output fields, set this value to 'True'. Setting the value to false will
+                                 return your original data and with geocode coordinates. Some geocoding
+                                 services do not support output fields, and the available options depend
                                  on your geocode service.
     --------------------------   ---------------------------------------------------------------
     locator_parameters           Optional dict. Additional parameters specific to your locator.
@@ -68,10 +69,10 @@ def geocode_locations(input_layer,
     output_name                  Optional string. The task will create a feature service of the
                                  results. You define the name of the service.
     --------------------------   ---------------------------------------------------------------
-    geocode_service              Optional string or Geocoder. The URL of the geocode service 
-                                 that you want to geocode your addresses against. The URL must end in 
-                                 geocodeServer and allow batch requests. The geocode service must be 
-                                 configured to allow for batch geocoding. For more information, 
+    geocode_service              Optional string or Geocoder. The URL of the geocode service
+                                 that you want to geocode your addresses against. The URL must end in
+                                 geocodeServer and allow batch requests. The geocode service must be
+                                 configured to allow for batch geocoding. For more information,
                                  see `Configuring batch geocoding <https://enterprise.arcgis.com/en/portal/latest/administer/windows/configure-portal-to-geocode-addresses.htm>`_
     --------------------------   ---------------------------------------------------------------
     geocode_parameters           optional dict. This includes parameters that help parse
@@ -105,12 +106,12 @@ def geocode_locations(input_layer,
     gis                          Optional GIS. The GIS on which this tool runs. If not
                                  specified, the active GIS is used.
     --------------------------   ---------------------------------------------------------------
-    context                      Optional dict. Context contains additional settings that affect task execution. 
+    context                      Optional dict. Context contains additional settings that affect task execution.
                                  For this task, there are three settings:
 
                                  Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                                  Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                 Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                 Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
     future                       Optional boolean. If True, a GPJob is returned instead of
                                  results. The GPJob can be queried on the status of the execution.
@@ -125,7 +126,7 @@ def geocode_locations(input_layer,
 
             geocode_server = "https://mymachine.domain.com/server/rest/services/USALocator/GeocodeServer"
             geo_parameters = {"field_info": "[('ObjectID', 'TEXT', 255), ('Street', 'TEXT', 255), ('City', 'TEXT', 255), ('Region', 'TEXT', 255), ('State', 'TEXT', 255)]", "column_names": "", "file_type": "table", "header_row_exists": "true", "field_mapping": "[[\"Street\", \"Street\"], [\"City\", \"City\"], [\"State\", \"State\"], [\"ZIP\", \"ZIP\"]]"}
-            geocode_result = find_locations.geocode_locations(input_layer=NW_addresses, 
+            geocode_result = find_locations.geocode_locations(input_layer=NW_addresses,
                                                         output_name="geocoded_NW_USA",
                                                         geocode_service=geocode_server,
                                                         geocode_parameters = geo_parameters)
@@ -134,17 +135,13 @@ def geocode_locations(input_layer,
     from arcgis.features.layer import Layer
     from arcgis.gis import Item
     from arcgis.geocoding._functions import Geocoder
-    kwargs = locals()
+
     input_layer = _prevent_bds_item(input_layer)
     tool_name = "GeocodeLocations"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
-    params = {
-        "f" : "json"
-    }
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
+    tbx = _import_toolbox(url, gis=gis)
+
     if output_name is None:
         output_service_name = 'Geocoding_Results_' + _id_generator()
         output_service_name = output_service_name.replace(' ', '_')
@@ -171,6 +168,24 @@ def geocode_locations(input_layer,
         raise ValueError("Invalid input_layer input. Please pass an Item, " + \
                          "Big DataStore Layer or Big DataStore URL to geocode.")
 
+    params = {
+        "input_layer" : input_layer,
+        "geocode_service_url" : geocode_service_url,
+        "geocode_parameters" : geocode_parameters,
+    #    "source_country" : source_country,
+        "category" : category,
+        "include_attributes" : include_attributes,
+        "locator_parameters" : locator_parameters,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "future" : future
+    }
+    for key in list(params.keys()):
+        value = params[key]
+        if value is None:
+            del params[key]
+
     if geocode_service is None:
         for service in gis.properties.helperServices.geocode:
             if 'batch' in service and service['batch'] == True:
@@ -195,41 +210,38 @@ def geocode_locations(input_layer,
         geocode_parameters = tbx.analyze_geocode_input(input_table=input_layer,
                                                        geocode_service_url=geocode_service_url)
         params['geocode_parameters'] = geocode_parameters
+
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
+
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None
     output_service = _create_output_service(gis, output_name,
-                                            output_service_name, 'Geocoded Locations')
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+                                            output_service_name, 'Geocoded Locations',
+                                            output_datastore=output_datastore)
 
-    _set_context(params)
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "geocode_service_url": (str, "geocodeServiceURL"),
-        "geocode_parameters": (str, "geocodeParameters"),
-        "country": (str, "sourceCountry"),
-        "category": (str, "category"),
-        "include_attributes" : (bool, "includeAttributes"),
-        "locator_parameters" : (str, "locatorParameters"),
-        "output_name": (str, "outputName"),
-        "output": (_FeatureSet, "output"),
-        "context": (str, "context")
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
+
     try:
+        gpjob = tbx.geocode_locations(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        res = _execute_gp_tool(gis, tool_name, params, param_db,
-                               return_values, _use_async, url, True,
-                               future=future)
+        res = gpjob.result()
         return output_service
     except:
         output_service.delete()
         raise
-    return
 
 def detect_incidents(input_layer,
                      track_fields,
@@ -245,7 +257,7 @@ def detect_incidents(input_layer,
                      future=False):
     """
 
-    .. image:: _static/images/detect_incidents/detect_incidents.png 
+    .. image:: _static/images/detect_incidents/detect_incidents.png
 
     The ``detect_incidents`` task works with a time-enabled layer of points,
     lines, areas, or tables that represents an instant in time. Using
@@ -284,7 +296,7 @@ def detect_incidents(input_layer,
     ==========================   ===============================================================
     **Argument**                 **Description**
     --------------------------   ---------------------------------------------------------------
-    input_layer                  Required layer. The table, point, line or polygon features 
+    input_layer                  Required layer. The table, point, line or polygon features
                                  containing potential incidents. See :ref:`Feature Input<gaxFeatureInput>`.
     --------------------------   ---------------------------------------------------------------
     track_fields                 Required string. The fields used to identify distinct tracks.
@@ -306,7 +318,7 @@ def detect_incidents(input_layer,
                                  ``end_condition_expression`` is an incident. This is an
                                  Arcade expression.
     --------------------------   ---------------------------------------------------------------
-    output_mode                  Optional string. Determines which features are returned. 
+    output_mode                  Optional string. Determines which features are returned.
 
                                  Choice list: [AllFeatures', 'Incidents']
 
@@ -316,14 +328,14 @@ def detect_incidents(input_layer,
 
                                  The default value is 'AllFeatures'.
     --------------------------   ---------------------------------------------------------------
-    time_boundary_split          Optional integer. A time boundary to detect and incident. A time 
-                                 boundary allows your to analyze values within a defined time span. 
-                                 For example, if you use a time boundary of 1 day, starting on January 
-                                 1st, 1980 tracks will be analyzed 1 day at a time. The time boundary 
+    time_boundary_split          Optional integer. A time boundary to detect and incident. A time
+                                 boundary allows your to analyze values within a defined time span.
+                                 For example, if you use a time boundary of 1 day, starting on January
+                                 1st, 1980 tracks will be analyzed 1 day at a time. The time boundary
                                  parameter was introduced in ArcGIS Enterprise 10.7.
 
-                                 The ``time_boundary_split`` parameter defines the scale of the time boundary. 
-                                 In the case above, this would be 1. See the portal documentation for 
+                                 The ``time_boundary_split`` parameter defines the scale of the time boundary.
+                                 In the case above, this would be 1. See the portal documentation for
                                  this tool to learn more.
     --------------------------   ---------------------------------------------------------------
     time_split_unit              Optional string. The unit to detect an incident is `time_boundary_split` is used.
@@ -339,12 +351,12 @@ def detect_incidents(input_layer,
     gis                          optional GIS, the GIS on which this tool runs. If not
                                  specified, the active GIS is used.
     --------------------------   ---------------------------------------------------------------
-    context                      Optionl dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+    context                      Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
                                  #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                  #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                                  #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
     future                       optional boolean. If True, a GPJob is returned instead of
                                  results. The GPJob can be queried on the status of the execution.
@@ -357,70 +369,73 @@ def detect_incidents(input_layer,
     .. code-block:: python
 
             # Usage Example: This example finds when and where snowplows were moving slower than 10 miles per hour by calculating the mean of a moving window of five speed values.
-            
+
             arcgis.env.verbose = True # set environment
             arcgis.env.defaultAggregations = True # set environment
 
-            delay_incidents = output = detect_incidents(input_layer=snowplows, 
-                                                        track_fields="plowID, dayOfYear", 
-                                                        start_condition_expression="Mean($track.field["speed"].window(-5, 0)) < 10", 
+            delay_incidents = output = detect_incidents(input_layer=snowplows,
+                                                        track_fields="plowID, dayOfYear",
+                                                        start_condition_expression="Mean($track.field["speed"].window(-5, 0)) < 10",
                                                         output_name="Slow_Plow_Incidents")
     """
-    kwargs = locals()
     tool_name = "DetectIncidents"
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
+    tbx = _import_toolbox(url, gis=gis)
     params = {
-        "f" : "json"
+        "input_layer": input_layer,
+        "track_fields": track_fields,
+        "start_condition_expression": start_condition_expression,
+        "end_condition_expression": end_condition_expression,
+        "output_mode": output_mode,
+        "time_boundary_split" : time_boundary_split,
+        "time_boundary_split_unit" : time_split_unit,
+        "time_boundary_reference" : time_reference,
+        "output_name": output_name,
+        "context": context,
+        'future' : future
     }
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
+    for key in list(params.keys()):
+        value = params[key]
+        if value is None:
+            del params[key]
 
     if output_name is None:
         output_service_name = 'Detect_Incidents_' + _id_generator()
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Detect Track Incidents', output_datastore=output_datastore)
 
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Detect Track Incidents')
-
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
-
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_service_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
     if context is not None:
         params["context"] = context
     else:
         _set_context(params)
 
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "track_fields": (str, "trackFields"),
-        "start_condition_expression": (str, "startConditionExpression"),
-        "end_condition_expression": (str, "endConditionExpression"),
-        "output_mode": (str, "outputMode"),
-        "time_boundary_split" : (int, "timeBoundarySplit"),
-        "time_split_unit" : (str, "timeBoundarySplitUnit"),
-        "time_reference" : (datetime.datetime, "timeBoundaryReference"),
-        "output_name": (str, "outputName"),
-        "output": (_FeatureSet, "output"),
-        "context": (str, "context")
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
+    params = inspect_function_inputs(tbx.detect_incidents, **params)
+
     try:
+        params['future'] = True
+        gpjob = tbx.detect_incidents(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+        gpjob.result()
         return output_service
     except:
         output_service.delete()
         raise
 
-    return
 
 def find_dwell_locations(input_layer,
                          track_fields,
@@ -436,74 +451,74 @@ def find_dwell_locations(input_layer,
                          context=None,
                          future=False,
                          time_boundary_split=None,
-                         time_split_unit=None,
-                         time_reference=None):  
-    
-    """
-    
-    .. image:: _static/images/find_similar_locations/find_similar_locations.png 
+                         time_boundary_unit=None,
+                         time_boundary_ref=None):
 
-    The ``find_dwell_locations`` works with time-enabled points of type instant 
+    """
+
+    .. image:: _static/images/find_similar_locations/find_similar_locations.png
+
+    The ``find_dwell_locations`` works with time-enabled points of type instant
     to find where points dwell within a specific distance and duration.
 
-    Dwell locations are determined using both time (`time_tolerance`) and distance 
-    (`distance_tolerance`) values. First, the tool assigns features to a track using 
-    a unique identifier. Track order is determined by the time of features. Next, 
-    the distance between the first observation in a track and the next is 
-    calculated. Features are considered to be part of a dwell if two temporally 
-    consecutive points stay within the given distance for at least the given 
-    duration. When two features are found to be part of a dwell, the first 
-    feature in the dwell is used as a reference point, and the tool finds 
+    Dwell locations are determined using both time (`time_tolerance`) and distance
+    (`distance_tolerance`) values. First, the tool assigns features to a track using
+    a unique identifier. Track order is determined by the time of features. Next,
+    the distance between the first observation in a track and the next is
+    calculated. Features are considered to be part of a dwell if two temporally
+    consecutive points stay within the given distance for at least the given
+    duration. When two features are found to be part of a dwell, the first
+    feature in the dwell is used as a reference point, and the tool finds
     consecutive features that are within the specified distance of the reference
-    point in the dwell. Once all features within the specified distance are 
-    found, the tool collects the dwell features and calculates their mean 
-    center. Features before and after the current dwell are added to the dwell 
-    if they are within the given distance of the dwell location's mean center. 
+    point in the dwell. Once all features within the specified distance are
+    found, the tool collects the dwell features and calculates their mean
+    center. Features before and after the current dwell are added to the dwell
+    if they are within the given distance of the dwell location's mean center.
     This process continues until the end of the track.
 
-    For example, ecologists and conservation workers can use the Find Dwell 
+    For example, ecologists and conservation workers can use the Find Dwell
     Locations tool to improve the safety of elk during migratory seasons. Leverage
-    the results to implement or improve protected areas in locations where the 
+    the results to implement or improve protected areas in locations where the
     animals are spending the most time.
 
-    For another example, let's say you work with the Department of Transportation 
-    and you want to improve traffic congestion on highways near exits. Using the 
-    Find Dwell Locations tool, you can isolate areas experiencing congestion by 
-    identifying vehicle tracks that stay within a certain distance for a certain 
+    For another example, let's say you work with the Department of Transportation
+    and you want to improve traffic congestion on highways near exits. Using the
+    Find Dwell Locations tool, you can isolate areas experiencing congestion by
+    identifying vehicle tracks that stay within a certain distance for a certain
     amount of time.
-    
-    
+
+
     ==========================   ===============================================================
     **Argument**                 **Description**
     --------------------------   ---------------------------------------------------------------
-    input_layer                  Required layer. The ``input_layer`` is a time-enabled point 
+    input_layer                  Required layer. The ``input_layer`` is a time-enabled point
                                  features from which dwell locations will be found.
-    --------------------------   ---------------------------------------------------------------  
+    --------------------------   ---------------------------------------------------------------
     track_fields                 Required String. The fields used to identify distinct tracks.
-    --------------------------   ---------------------------------------------------------------  
-    distance_tolerance           Required Float.  The dwell distance tolerance is the maximum 
-                                 distance between points to be considered in a single dwell 
-                                 location.  Dwell locations are determined using both distance 
+    --------------------------   ---------------------------------------------------------------
+    distance_tolerance           Required Float.  The dwell distance tolerance is the maximum
+                                 distance between points to be considered in a single dwell
+                                 location.  Dwell locations are determined using both distance
                                  and time.
-    --------------------------   ---------------------------------------------------------------  
+    --------------------------   ---------------------------------------------------------------
     distance_unit                Required String. The unit value.
-    --------------------------   ---------------------------------------------------------------  
+    --------------------------   ---------------------------------------------------------------
     time_tolerance               Required Integer.  The dwell time tolerance is the minimum time
-                                 duration of a dwell to be considered in a single dwell 
-                                 location.  Dwell locations are determined using both distance 
+                                 duration of a dwell to be considered in a single dwell
+                                 location.  Dwell locations are determined using both distance
                                  and time.
-    --------------------------   ---------------------------------------------------------------  
+    --------------------------   ---------------------------------------------------------------
     time_unit                    Required String.  The time units.
-    --------------------------   ---------------------------------------------------------------  
-    summary_fields               Optional List.  A list of field names and statistical summary 
+    --------------------------   ---------------------------------------------------------------
+    summary_fields               Optional List.  A list of field names and statistical summary
                                  types you want to calculate. Note that the count of points in a
                                  dwell is always returned.
 
-                                 By default, all statistics are returned if the `dwell_type` 
-                                 specified is DwellMeanCenters (this is the default) or 
+                                 By default, all statistics are returned if the `dwell_type`
+                                 specified is DwellMeanCenters (this is the default) or
                                  DwellConvexHulls.
 
-                                 Only the count is returned if the `dwell_type` specified is 
+                                 Only the count is returned if the `dwell_type` specified is
                                  DwellFeatures or AllFeatures.
 
                                  onStatisticField specifies the name of the fields in the target layer. statisticType is one of the following:
@@ -518,72 +533,72 @@ def find_dwell_locations(input_layer,
                                  -  Any - Returns a sample string of a point in each dwell. For string and numeric fields.
                                  -  First - Returns a the first value of a specified field in the summarized track. For string and numeric fields. This parameters was introduced at ArcGIS Enterprise 10.8.1.
                                  -  Last - Returns a the last value of a specified field in the summarized track. For string and numeric fields. This parameters was introduced at ArcGIS Enterprise 10.8.1.
-                                 
+
                                  Example:
-                                 
+
                                  ```python
-                                 
+
                                  [{"statisticType": "Mean", "onStatisticField": "Annual_Sales"},
                                   {"statisticType": "Sum", "onStatisticField": "Annual_Sales"}]
 
                                  ```
-                                 
-    --------------------------   ---------------------------------------------------------------  
-    dwell_type                   Optional String. Determines which features are returned and the 
+
+    --------------------------   ---------------------------------------------------------------
+    dwell_type                   Optional String. Determines which features are returned and the
                                  format. Four types are available:
 
                                    -  DwellMeanCenters - A point representing the centroid of each discovered dwell location. This is the default.
                                    -  DwellConvexHulls - Polygons representing the convex hull of each dwell group.
                                    -  DwellFeatures - All of the input point features determined to belong to a dwell are returned.
                                    -  AllFeatures - All of the input point features are returned.
-                                
-    --------------------------   ---------------------------------------------------------------  
-    method                       Optional String. The method used to calculate distances between 
-                                 points. There are two methods from which to choose: Planar and 
-                                 Geodesic. The Planar method joins points using a planar method 
-                                 and will not cross the international date line. This method is 
-                                 appropriate for local analysis on projected data. This is the 
+
+    --------------------------   ---------------------------------------------------------------
+    method                       Optional String. The method used to calculate distances between
+                                 points. There are two methods from which to choose: Planar and
+                                 Geodesic. The Planar method joins points using a planar method
+                                 and will not cross the international date line. This method is
+                                 appropriate for local analysis on projected data. This is the
                                  default. The Geodesic method joins points geodesically and will
-                                 allow tracks to cross the international date line. This method 
-                                 is appropriate for large areas and geographic coordinate 
+                                 allow tracks to cross the international date line. This method
+                                 is appropriate for large areas and geographic coordinate
                                  systems.
-    --------------------------   ---------------------------------------------------------------  
-    output_name                  Optional string. The task will create a feature service of the results. 
+    --------------------------   ---------------------------------------------------------------
+    output_name                  Optional string. The task will create a feature service of the results.
                                  You define the name of the service.
-    --------------------------   ---------------------------------------------------------------      
+    --------------------------   ---------------------------------------------------------------
     gis                          Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
-    --------------------------   ---------------------------------------------------------------      
+    --------------------------   ---------------------------------------------------------------
     context                      Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
                                  #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                  #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                                  #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
-    --------------------------   ---------------------------------------------------------------      
+                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+    --------------------------   ---------------------------------------------------------------
     future                       Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
 
                                  The default value is 'False'.
     --------------------------   ---------------------------------------------------------------
-    time_boundary_split          Optional integer. A time boundary to detect and incident. A time 
-                                 boundary allows your to analyze values within a defined time span. 
-                                 For example, if you use a time boundary of 1 day, starting on January 
-                                 1st, 1980 tracks will be analyzed 1 day at a time. The time boundary 
+    time_boundary_split          Optional integer. A time boundary to detect and incident. A time
+                                 boundary allows your to analyze values within a defined time span.
+                                 For example, if you use a time boundary of 1 day, starting on January
+                                 1st, 1980 tracks will be analyzed 1 day at a time. The time boundary
                                  parameter was introduced in ArcGIS Enterprise 10.8.1.
 
-                                 The ``time_boundary_split`` parameter defines the scale of the time boundary. 
-                                 In the case above, this would be 1. See the portal documentation for 
+                                 The ``time_boundary_split`` parameter defines the scale of the time boundary.
+                                 In the case above, this would be 1. See the portal documentation for
                                  this tool to learn more.
     --------------------------   ---------------------------------------------------------------
-    time_split_unit              Optional string. The unit to detect an incident is `time_boundary_split` is used. This was introduced in ArcGIS Enterprise 10.8.1.
+    time_boundary_unit           Optional string. The unit to detect an incident is `time_boundary_split` is used. This was introduced in ArcGIS Enterprise 10.8.1.
 
                                  Choice list: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds'].
     --------------------------   ---------------------------------------------------------------
-    time_reference               Optional datetime.detetime. The starting date/time where analysis will
+    time_boundary_ref            Optional datetime.detetime. The starting date/time where analysis will
                                  begin from. This parameter was introduced in ArcGIS Enterprise 10.8.1.
     ==========================   ===============================================================
-    
+
     :returns: Output Service if future is False and GAJob if future is True
-    
+
     """
     gis = None
     if gis is None and \
@@ -592,21 +607,21 @@ def find_dwell_locations(input_layer,
     elif gis is None and \
          _env.active_gis:
         gis = _env.active_gis
-    if gis.version < [8,1]:
+    if gis.version < [8, 1]:
         return None
 
 
     url = gis.properties.helperServices.geoanalytics.url
     tbx = _arcgis.geoprocessing.import_toolbox(url, gis=gis)
     input_parameters = list(tbx.find_dwell_locations.__annotations__.keys())
-    
+
 
     if output_name is None:
         output_name = f'FDL_{_id_generator()}'.replace(' ', '_')
     else:
         output_name = output_name.replace(' ', '_')
     #del output_name
-    
+
     params = {
         "input_layer" : input_layer,
         "track_fields" : track_fields,
@@ -622,9 +637,9 @@ def find_dwell_locations(input_layer,
         "context" : context,
         "future" : future,
         "time_boundary_split" : time_boundary_split,
-        "time_split_unit" : time_split_unit,
-        "time_reference" : time_reference
-    }    
+        "time_boundary_split_unit" : time_boundary_unit,
+        "time_boundary_reference" : time_boundary_ref
+    }
 
     for k in list(params.keys()):
         if k not in input_parameters:
@@ -632,7 +647,7 @@ def find_dwell_locations(input_layer,
     ## Validate Input Parameters
     ##
     valid_values = dict(tbx.choice_list['find_dwell_locations'])
-    for k,v in params.items():
+    for k, v in params.items():
         if k in valid_values.keys():
             lookup = dict(zip([v.lower() for v in valid_values[k]], valid_values[k]))
 
@@ -640,17 +655,22 @@ def find_dwell_locations(input_layer,
                 raise ValueError(f"Value: {v} not supported at this version of `find_dwell_locations`")
             if v:
                 params[k] = lookup[v.lower()]
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None
     output_service = _create_output_service(gis,
                                             params['output_name'],
                                             params['output_name'],
-                                            'Find Dwell Locations')
-    params['output_name'] = _json.dumps(
-        {
-            "serviceProperties": {"name" : output_name,
-                                  "serviceUrl" : output_service.url},
-            "itemProperties": {"itemId" : output_service.itemid}
-        }
-    )
+                                            'Find Dwell Locations',
+                                            output_datastore=output_datastore)
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
 
     if context is not None:
         params["context"] = context
@@ -671,10 +691,10 @@ def find_dwell_locations(input_layer,
         _log.info(e)
         output_service.delete()
         raise
-    return None    
+    return None
 
-def find_similar_locations(
-                           input_layer,
+
+def find_similar_locations(input_layer,
                            search_layer,
                            analysis_fields,
                            most_or_least_similar="MostSimilar",
@@ -687,7 +707,7 @@ def find_similar_locations(
                            future=False,
                            return_tuple=False):
     """
-    .. image:: _static/images/find_similar_locations/find_similar_locations.png 
+    .. image:: _static/images/find_similar_locations/find_similar_locations.png
 
     The ``find_similar_locations`` task measures the similarity of candidate locations to one or more reference locations.
 
@@ -695,97 +715,97 @@ def find_similar_locations(
 
         * Which of your stores are most similar to your top performers with regard to customer profiles?
         * Based on characteristics of villages hardest hit by the disease, which other villages are high risk?
-        * To answer questions such as these, you provide the reference locations (the ``input_layer`` parameter), 
-          the candidate locations (the ``search_layer`` parameter), and the fields representing the criteria 
-          you want to match. For example, the ``input_layer`` might be a layer containing your top performing stores 
-          or the villages hardest hit by the disease. The ``search_layer`` contains your candidate locations to search. 
-          This might be all of your stores or all other villages. Finally, you supply a list of fields to use for 
-          measuring similarity. The ``find_similar_locations`` task will rank all of the candidate locations by how 
+        * To answer questions such as these, you provide the reference locations (the ``input_layer`` parameter),
+          the candidate locations (the ``search_layer`` parameter), and the fields representing the criteria
+          you want to match. For example, the ``input_layer`` might be a layer containing your top performing stores
+          or the villages hardest hit by the disease. The ``search_layer`` contains your candidate locations to search.
+          This might be all of your stores or all other villages. Finally, you supply a list of fields to use for
+          measuring similarity. The ``find_similar_locations`` task will rank all of the candidate locations by how
           closely they match your reference locations across all of the fields you have selected.
- 
+
     ==========================   ===============================================================
     **Argument**                 **Description**
     --------------------------   ---------------------------------------------------------------
-    input_layer                  Required layer. The ``input_layer`` contains one or more reference locations 
-                                 against which features in the ``search_layer`` will be evaluated for similarity. 
-                                 For example, the ``input_layer`` might contain your top performing stores or the 
+    input_layer                  Required layer. The ``input_layer`` contains one or more reference locations
+                                 against which features in the ``search_layer`` will be evaluated for similarity.
+                                 For example, the ``input_layer`` might contain your top performing stores or the
                                  villages hardest hit by a disease. See :ref:`Feature Input<gaxFeatureInput>`.
-                                  
-                                 It is not uncommon for ``input_layer`` and ``search_layer`` to be the same feature service. 
-                                 For example, the feature service contains locations of all stores, one of which 
-                                 is your top performing store. If you want to rank the remaining stores from most 
-                                 to least similar to your top performing store, you can provide a filter for both 
-                                 ``input_layer`` and ``search_layer``. The filter on ``input_layer`` would select the top performing 
-                                 store, while the filter on ``search_layer`` would select all stores except for the top 
+
+                                 It is not uncommon for ``input_layer`` and ``search_layer`` to be the same feature service.
+                                 For example, the feature service contains locations of all stores, one of which
+                                 is your top performing store. If you want to rank the remaining stores from most
+                                 to least similar to your top performing store, you can provide a filter for both
+                                 ``input_layer`` and ``search_layer``. The filter on ``input_layer`` would select the top performing
+                                 store, while the filter on ``search_layer`` would select all stores except for the top
                                  performing store. You can use the optional filter parameter to specify reference locations.
 
-                                 If there is more than one reference location, similarity will be based on averages 
-                                 for the fields you specify in the ``analysis_fields`` parameter. For example, if there 
-                                 are two reference locations and you are interested in matching population, the task 
-                                 will look for candidate locations in ``search_layer`` with populations that are most 
-                                 like the average population for both reference locations. If the values for the 
-                                 reference locations are 100 and 102, for example, the task will look for candidate 
-                                 locations with populations near 101. Consequently, you will want to use fields for 
-                                 the reference locations fields that have similar values. If, for example, the 
-                                 population values for one reference location is 100 and the other is 100,000, 
-                                 the tool will look for candidate locations with population values near the average 
-                                 of those two values: 50,050. Notice that this averaged value is nothing like the 
-                                 population for either of the reference locations. 
-    --------------------------   ---------------------------------------------------------------  
-    search_layer                 Required layer. The layer containing candidate locations that will be 
+                                 If there is more than one reference location, similarity will be based on averages
+                                 for the fields you specify in the ``analysis_fields`` parameter. For example, if there
+                                 are two reference locations and you are interested in matching population, the task
+                                 will look for candidate locations in ``search_layer`` with populations that are most
+                                 like the average population for both reference locations. If the values for the
+                                 reference locations are 100 and 102, for example, the task will look for candidate
+                                 locations with populations near 101. Consequently, you will want to use fields for
+                                 the reference locations fields that have similar values. If, for example, the
+                                 population values for one reference location is 100 and the other is 100,000,
+                                 the tool will look for candidate locations with population values near the average
+                                 of those two values: 50,050. Notice that this averaged value is nothing like the
+                                 population for either of the reference locations.
+    --------------------------   ---------------------------------------------------------------
+    search_layer                 Required layer. The layer containing candidate locations that will be
                                  evaluated against the reference locations.  See :ref:`Feature Input<gaxFeatureInput>`.
-    --------------------------   ---------------------------------------------------------------      
-    analysis_fields              Required string. A list of fields whose values are used to determine similarity. 
-                                 They must be numeric fields, and the fields must exist on both the ``input_layer`` 
-                                 and the ``search_layer``. Depending on the ``match_method`` selected, the task will 
+    --------------------------   ---------------------------------------------------------------
+    analysis_fields              Required string. A list of fields whose values are used to determine similarity.
+                                 They must be numeric fields, and the fields must exist on both the ``input_layer``
+                                 and the ``search_layer``. Depending on the ``match_method`` selected, the task will
                                  find features that are most similar based on values or profiles of the fields.
-    --------------------------   ---------------------------------------------------------------      
-    most_or_least_similar        Optional string. The features you want to be returned. You can search for 
-                                 features that are either most similar or least similar to the ``input_layer``, 
+    --------------------------   ---------------------------------------------------------------
+    most_or_least_similar        Optional string. The features you want to be returned. You can search for
+                                 features that are either most similar or least similar to the ``input_layer``,
                                  or search both the most and least similar.
-                                 
+
                                  Choice list:['MostSimilar', 'LeastSimilar', 'Both']
 
                                  The default value is 'MostSimilar'.
     --------------------------   ---------------------------------------------------------------
-    match_method                 Optional string. The method you select determines how matching is determined. 
+    match_method                 Optional string. The method you select determines how matching is determined.
 
-                                 Choice list:['AttributeValues', 'AttributeProfiles']    
+                                 Choice list:['AttributeValues', 'AttributeProfiles']
 
-                                    * The ``AttributeValues`` method uses the squared differences of standardized values. 
-                                    * The ``AttributeProfiles`` method uses cosine similarity mathematics to compare the profile 
-                                      of standardized values. Using ``AttributeProfiles`` requires the use of at least two analysis fields.   
+                                    * The ``AttributeValues`` method uses the squared differences of standardized values.
+                                    * The ``AttributeProfiles`` method uses cosine similarity mathematics to compare the profile
+                                      of standardized values. Using ``AttributeProfiles`` requires the use of at least two analysis fields.
 
                                  The default value is 'AttributeValues'.
-    --------------------------   ---------------------------------------------------------------    
-    number_of_results            Optional integer. The number of ranked candidate locations output 
-                                 to ``similar_result_layer``. If ``number_of_results`` is not set, the 10 
+    --------------------------   ---------------------------------------------------------------
+    number_of_results            Optional integer. The number of ranked candidate locations output
+                                 to ``similar_result_layer``. If ``number_of_results`` is not set, the 10
                                  locations will be returned. The maximum number of results is 10000.
 
                                  The default value is 10.
-    --------------------------   ---------------------------------------------------------------   
-    append_fields                Optional string. Optionally add fields to your data from your search layer. 
+    --------------------------   ---------------------------------------------------------------
+    append_fields                Optional string. Optionally add fields to your data from your search layer.
                                  By default, all fields from the search layer are appended.
-    --------------------------   ---------------------------------------------------------------      
-    output_name                  Optional string. The task will create a feature service of the results. 
+    --------------------------   ---------------------------------------------------------------
+    output_name                  Optional string. The task will create a feature service of the results.
                                  You define the name of the service.
-    --------------------------   ---------------------------------------------------------------      
+    --------------------------   ---------------------------------------------------------------
     gis                          Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
-    --------------------------   ---------------------------------------------------------------      
+    --------------------------   ---------------------------------------------------------------
     context                      Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
                                  #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                  #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                                  #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
-    --------------------------   ---------------------------------------------------------------      
+                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+    --------------------------   ---------------------------------------------------------------
     future                       Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
 
                                  The default value is 'False'.
-    --------------------------   ---------------------------------------------------------------      
+    --------------------------   ---------------------------------------------------------------
     return_tuple                 Optional boolean. If 'True', a named tuple with multiple output keys is returned.
-                                 
-                                 The default value is 'False'. 
+
+                                 The default value is 'False'.
     ==========================   ===============================================================
 
     :returns: named tuple with the following keys if ``return_tuple`` is set to 'True':
@@ -799,24 +819,32 @@ def find_similar_locations(
     .. code-block:: python
 
             # Usage Example: To find potential retail locations based on the current top locations and their attributes.
-            
+
             similar_location_result = find_similar_locations(input_layer=stores_layer,
                                                              search_layer=locations,
                                                              analysis_fields="median_income, population, nearest_competitor",
-                                                             most_or_least_similar="MostSimilar", 
-                                                             match_method="AttributeValues", 
-                                                             number_of_results=50, 
+                                                             most_or_least_similar="MostSimilar",
+                                                             match_method="AttributeValues",
+                                                             number_of_results=50,
                                                              output_name="similar_locations")
-    """  
-    kwargs = locals()
+    """
 
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
-
-    params = {}
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
+    tbx = _import_toolbox(url, gis=gis)
+    params = {
+        "input_layer": input_layer,
+        "search_layer": search_layer,
+        "analysis_fields": analysis_fields,
+        "most_or_least_similar": most_or_least_similar,
+        "match_method": match_method,
+        "number_of_results": number_of_results,
+        "append_fields": append_fields,
+        "output_name": output_name,
+        "context": context,
+        "return_tuple": return_tuple,
+        "process_info": ""#process_info
+    }
 
     if output_name is None:
         output_service_name = 'Similar Locations_' + _id_generator()
@@ -824,48 +852,42 @@ def find_similar_locations(
     else:
         output_service_name = output_name.replace(' ', '_')
 
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Find Similar Locations')
+    if context is not None:
+        output_datastore = context.get('dataStore', None)
+    else:
+        output_datastore = None
 
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Find Similar Locations', output_datastore=output_datastore)
+
+    if output_service:
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
+    else:
+        params['output_name'] = output_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_name}'"
+
 
     if context is not None:
         params["context"] = context
     else:
         _set_context(params)
 
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "search_layer": (_FeatureSet, "searchLayer"),
-        "analysis_fields": (str, "analysisFields"),
-        "most_or_least_similar": (str, "mostOrLeastSimilar"),
-        "match_method": (str, "matchMethod"),
-        "number_of_results": (int, "numberOfResults"),
-        "append_fields": (str, "appendFields"),
-        "output_name": (str, "outputName"),
-        "context": (str, "context"),
-        "return_tuple": (bool, "returnTuple"),        
-        "output": (_FeatureSet, "Output Features"),
-        "process_info": (list, "processInfo")
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-        {"name": "process_info", "display_name": "Process Information", "type": list}
-    ]
+    params = inspect_function_inputs(tbx.find_similar_locations, **params)
+    params['future'] = True
     try:
+
+        gpjob = tbx.find_similar_locations(**params)
         if future:
-            gpjob = _execute_gp_tool(gis, "FindSimilarLocations", params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        res = _execute_gp_tool(gis, "FindSimilarLocations", params, param_db, return_values, _use_async, url, True, future=future)
-        
+        res = gpjob.result()
         if return_tuple:
             return res
         else:
-            return output_service   
+            return output_service
     except:
         output_service.delete()
-        raise 
+        raise
 
 find_similar_locations.__annotations__ = {
     'most_or_least_similar': str,

@@ -51,8 +51,8 @@ def _parse_cmd_line_args():
         help="By default, when this script finishes running a web browser "\
              "will pop up and display the results of the tests. To stop this "\
              "from happening, specify this flag.")
-    parser.add_argument("--no-sanity","-n", action="store_true",
-        help="Skip the sanity test suite (default: False)")
+    parser.add_argument("--no-smoke","-n", action="store_true",
+        help="Skip the smoke test suite (default: False)")
     parser.add_argument("--verbose", "-v", action="store_true",
         help="Verbose logging output")
     args = parser.parse_args(sys.argv[1:]) #don't use filename as 1st arg
@@ -95,7 +95,7 @@ def _run_tests(args):
     output_xml_files, output_coverage_files = \
         run_suite(suite, args.output_dir,
             run_setup_env = False,
-            run_sanity_tests_before = not args.no_sanity)
+            run_smoke_tests_before = not args.no_smoke)
     if not args.no_browser_output:
         _display_results_in_browser(output_xml_files, output_coverage_files,
                                     args.output_dir)
@@ -109,11 +109,11 @@ def _add_to_suite_cmd_arg_tests(suite, tests):
         _add_to_suite_if_widget_test(suite, test)
 
 def _parse_suite(suite):
-    """Unblogs any paths and removes blacklist items when added in from
+    """Unblogs any paths and removes blocklist items when added in from
     cmd arguments
     """
     unglob_paths(suite)
-    remove_blacklist_paths(suite)
+    remove_blocklist_paths(suite)
 
 def _add_to_suite_if_unit_test(suite, test):
     if UNIT_TESTS_DIR in test:

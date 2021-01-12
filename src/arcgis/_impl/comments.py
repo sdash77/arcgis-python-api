@@ -5,6 +5,7 @@ from __future__ import absolute_import
 import json
 from ..gis._impl._con import Connection
 from ..gis import GIS, Item
+from urllib.parse import unquote
 ########################################################################
 class Comment(dict):
     """
@@ -74,12 +75,28 @@ class Comment(dict):
         if not self._hydrated and not name.startswith('_'):
             self._init()
         try:
+            if name.lower() == 'comment' and \
+               name.lower() in [g.lower() for g in self.__dict__.keys()]:
+                try:
+                    if "%u" in self.__dict__[name]:
+                        return unquote(self.__dict__[name]).replace("%u", "\\u").encode().decode('unicode_escape')
+                    return self.__dict__[name]             
+                except:
+                    return self.__dict__[name]             
             return self.__dict__[name]
         except:
             raise AttributeError("'%s' object has no attribute '%s'" % (type(self).__name__, name))
     #----------------------------------------------------------------------
     def __getitem__(self, k):
         try:
+            if k.lower() == 'comment' and \
+               k in [g.lower() for g in self.__dict__.keys()]:
+                try:
+                    if "%u" in self.__dict__[k]:
+                        return unquote(self.__dict__[k]).replace("%u", "\\u").encode().decode('unicode_escape')                    
+                    return self.__dict__[k]
+                except:
+                    return self.__dict__[k]                
             return self.__dict__[k]
         except KeyError:
             if not self._hydrated and not k.startswith('_'):

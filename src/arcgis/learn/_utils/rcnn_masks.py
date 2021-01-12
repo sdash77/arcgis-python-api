@@ -4,7 +4,7 @@ import torch
 import matplotlib.pyplot as plt
 import matplotlib
 from ..models._maskrcnn_utils import ArcGISImageSegment
-from .common import get_nbatches, kwarg_fill_none
+from .common import get_nbatches, kwarg_fill_none, image_batch_stretcher
 
 def show_batch_rcnn_masks(self, rows=3, alpha=0.5, **kwargs): # parameters adjusted in kwargs
     nrows = rows
@@ -32,6 +32,7 @@ def show_batch_rcnn_masks(self, rows=3, alpha=0.5, **kwargs): # parameters adjus
     cmap = kwargs.get('cmap', 'tab20')
 
     statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
+    stretch_type = kwargs.get('stretch_type', 'minmax') # Accepted Values `minmax`, `percentclip`
 
     # Get Batch
     if n_items is None:
@@ -74,11 +75,8 @@ def show_batch_rcnn_masks(self, rows=3, alpha=0.5, **kwargs): # parameters adjus
 
         # Extract RGB Bands
         symbology_x_batch = x_batch[:, symbology_bands]
-        if statistics_type == 'DRA':
-            shp = symbology_x_batch.shape
-            min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
-            max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
-            symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+        if stretch_type is not None:
+            symbology_x_batch = image_batch_stretcher(symbology_x_batch, stretch_type, statistics_type)
 
         # Channel first to channel last and clamp float values to range 0 - 1 for plotting
         symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)

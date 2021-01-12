@@ -7,9 +7,10 @@ channels:
 dependencies:
 - ipywidgets >=7
 - pandas >=1
+- ujson >=3
 - numpy>=1.16.2
 - pip
-- python=3.6
+- python>=3.7, <3.9
 - setuptools
 - widgetsnbextension >=3
 - keyring
@@ -19,8 +20,6 @@ dependencies:
 - requests
 - requests-kerberos>=0.12.0
 - requests-oauthlib>=1.2.0
-- requests-negotiate-sspi
-- pywin32>=223
 - jupyterlab
 - pytest
 - matplotlib
@@ -46,3 +45,4 @@ dependencies:
   - pytest-cov
   - requests_toolbelt>=0.9.1
   - requests_ntlm
+  - python-certifi-win32

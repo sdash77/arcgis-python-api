@@ -55,5 +55,7 @@ def _estimate_credits(task, parameters, gis=None):
         res = _execute_gp_tool(gis, gptask, kwargs, param_db, return_values, False, url, webtool=True, add_token=False)
         if 'cost' in res:
             return float(res['cost'])
+        elif 'maximumCost' in res:
+            return float(res['maximumCost'])
         return res
     return

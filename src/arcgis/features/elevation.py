@@ -9,7 +9,8 @@ from arcgis.features import FeatureSet
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
-
+from arcgis.geoprocessing import import_toolbox as _import_toolbox
+from .._impl.common._utils import inspect_function_inputs
 _log = _logging.getLogger(__name__)
 
 _use_async = True
@@ -63,27 +64,28 @@ def profile(input_line_features: FeatureSet = {'exceededTransferLimit': False,
                             maximum_sample_distance=500,
                             maximum_sample_distance_units='Meters')
     """
-    kwargs = locals()
 
     param_db = {
-        "input_line_features": (FeatureSet, "InputLineFeatures"),
-        "profile_id_field": (str, "ProfileIDField"),
-        "dem_resolution": (str, "DEMResolution"),
-        "maximum_sample_distance": (float, "MaximumSampleDistance"),
-        "maximum_sample_distance_units": (str, "MaximumSampleDistanceUnits"),
-        "output_profile": (FeatureSet, "Output Profile"),
+        "input_line_features": input_line_features,
+        "profile_id_field": profile_id_field,
+        "dem_resolution": dem_resolution,
+        "maximum_sample_distance": maximum_sample_distance,
+        "maximum_sample_distance_units": maximum_sample_distance_units,
+        'future' : True,
+        'gis' : gis
     }
-    return_values = [
-        {"name": "output_profile", "display_name": "Output Profile", "type": FeatureSet},
-    ]
 
     if gis is None:
         gis = arcgis.env.active_gis
 
     url = gis.properties.helperServices.elevation.url
-
-    return _execute_gp_tool(gis, "Profile", kwargs, param_db, return_values, _use_async, url, future=future)
-
+    tbx = _import_toolbox(url, gis=gis)
+    param_db = inspect_function_inputs(tbx.profile, **param_db)
+    param_db['future'] = True
+    gpjob = tbx.profile(**param_db)
+    if future:
+        return gpjob
+    return gpjob.result()
 
 def viewshed(input_points: FeatureSet = {'exceededTransferLimit': False,
                                          'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
@@ -180,30 +182,31 @@ def viewshed(input_points: FeatureSet = {'exceededTransferLimit': False,
                                      surface_offset_units='Meters',
                                      generalize_viewshed_polygons=True)
     """
-    kwargs = locals()
-
-    param_db = {
-        "input_points": (FeatureSet, "InputPoints"),
-        "maximum_distance": (float, "MaximumDistance"),
-        "maximum_distance_units": (str, "MaximumDistanceUnits"),
-        "dem_resolution": (str, "DEMResolution"),
-        "observer_height": (float, "ObserverHeight"),
-        "observer_height_units": (str, "ObserverHeightUnits"),
-        "surface_offset": (float, "SurfaceOffset"),
-        "surface_offset_units": (str, "SurfaceOffsetUnits"),
-        "generalize_viewshed_polygons": (bool, "GeneralizeViewshedPolygons"),
-        "output_viewshed": (FeatureSet, "Output Viewshed"),
-    }
-    return_values = [
-        {"name": "output_viewshed", "display_name": "Output Viewshed", "type": FeatureSet},
-    ]
 
     if gis is None:
         gis = arcgis.env.active_gis
 
     url = gis.properties.helperServices.elevation.url
+    tbx = _import_toolbox(url, gis=gis)
+    param_db = {'dem_resolution': dem_resolution,
+                'generalize_viewshed_polygons': generalize_viewshed_polygons,
+                'input_points': input_points,
+                'maximum_distance': maximum_distance,
+                'maximum_distance_units': maximum_distance_units,
+                'observer_height': observer_height,
+                'observer_height_units': observer_height_units,
+                'surface_offset': surface_offset,
+                'surface_offset_units': surface_offset_units,
+                'future' : future,
+                'gis' : gis
+    }
+    param_db = inspect_function_inputs(tbx.viewshed, **param_db)
+    param_db['future'] = True
+    gpjob = tbx.viewshed(**param_db)
+    if future:
+        return gpjob
+    return gpjob.result()
 
-    return _execute_gp_tool(gis, "Viewshed", kwargs, param_db, return_values, _use_async, url, future=future)
 
 
 def summarize_elevation(input_features: FeatureSet = {},
@@ -248,24 +251,23 @@ def summarize_elevation(input_features: FeatureSet = {},
                            dem_resolution='FINEST',
                            include_slope_aspect=True)
     """
-    kwargs = locals()
-
-    param_db = {
-        "input_features": (FeatureSet, "InputFeatures"),
-        "feature_id_field": (str, "FeatureIDField"),
-        "dem_resolution": (str, "DEMResolution"),
-        "include_slope_aspect": (bool, "IncludeSlopeAspect"),
-        "output_summary": (FeatureSet, "Output Summary"),
-    }
-    return_values = [
-        {"name": "output_summary", "display_name": "Output Summary", "type": FeatureSet},
-    ]
 
     if gis is None:
         gis = arcgis.env.active_gis
-
     url = gis.properties.helperServices.elevation.url
-
-    return _execute_gp_tool(gis, "SummarizeElevation", kwargs, param_db, return_values, _use_async, url, future=future)
-
+    tbx = _import_toolbox(url, gis=gis)
+    param_db = {
+        'dem_resolution': dem_resolution,
+        'feature_id_field': feature_id_field,
+        'include_slope_aspect': include_slope_aspect,
+        'input_features': input_features,
+        'gis' : gis,
+        'future' : future
+    }
+    param_db = inspect_function_inputs(tbx.summarize_elevation, **param_db)
+    param_db['future'] = True
+    gpjob = tbx.summarize_elevation(**param_db)
+    if future:
+        return gpjob
+    return gpjob.result()
 

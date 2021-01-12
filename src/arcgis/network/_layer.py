@@ -7,7 +7,7 @@ from arcgis.features import FeatureLayer, FeatureLayerCollection, Table
 
 from arcgis.mapping import MapImageLayer
 try:
-    
+
     import pandas as pd
     from arcgis.features.geo import _is_geoenabled
     HASPANDAS = True
@@ -20,9 +20,9 @@ from arcgis.gis import Item
 _log = logging.getLogger(__name__)
 
 ###########################################################################
-def _handle_spatial_inputs(data, 
+def _handle_spatial_inputs(data,
                            do_not_locate=True,
-                           has_z=False, 
+                           has_z=False,
                            where=None):
     """
     Handles the various supported inputs types
@@ -65,11 +65,11 @@ def _handle_spatial_inputs(data,
             query = quote("1=1")
             url += "/query?where=%s&outFields=*&f=json" % query
             if data._gis._con.token:
-                url += "&token=%s" % data._gis._con.token            
+                url += "&token=%s" % data._gis._con.token
         template['url'] = url
         return template
     else:
-        return data  
+        return data
     return data
 ###########################################################################
 class NAJob(object):
@@ -124,7 +124,7 @@ class NAJob(object):
     #----------------------------------------------------------------------
     def __str__(self):
         task = self._task
-        return f"<{task} Job>" 
+        return f"<{task} Job>"
     #----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
@@ -147,7 +147,7 @@ class NAJob(object):
 
         :returns: boolean
         """
-        
+
         if self.done():
             return False
         if self.cancelled():
@@ -187,7 +187,7 @@ class NAJob(object):
         """
         if self.cancelled():
             return None
-        return self._future.result()        
+        return self._future.result()
 ###########################################################################
 class NetworkLayer(Layer):
     """
@@ -206,7 +206,7 @@ class NetworkLayer(Layer):
         tp = concurrent.futures.ThreadPoolExecutor(1)
         future = tp.submit(fn=fn, **inputs)
         tp.shutdown(False)
-        return future        
+        return future
     #----------------------------------------------------------------------
     def retrieve_travel_modes(self):
         """identify all the valid travel modes that have been defined on the
@@ -214,7 +214,7 @@ class NetworkLayer(Layer):
         url = self._url + "/retrieveTravelModes"
         params = {"f":"json"}
         return self._con.get(path=url,
-                         params=params, token=self._token)
+                         params=params, )
 
 
 ###########################################################################
@@ -230,7 +230,7 @@ class RouteLayer(NetworkLayer):
               polygon_barriers=None,
               travel_mode=None,
               attribute_parameter_values=None,
-              return_directions=None,
+              return_directions=True,
               return_routes=True,
               return_stops=False,
               return_barriers=False,
@@ -260,7 +260,8 @@ class RouteLayer(NetworkLayer):
               return_z=False,
               overrides=None,
               preserve_objectid=False,
-              future=False):
+              future=False,
+              time_windows_are_utc=False):
         """
         The solve operation is performed on a network layer resource.
         The solve operation is supported on a network layer whose layerType
@@ -327,11 +328,13 @@ class RouteLayer(NetworkLayer):
                                                 with the analysis results.
         -----------------------------------     --------------------------------------------------------------------
         ignore_invalid_locations                Optional boolean. - If true, the solver will ignore invalid
-                                                locations. Otherwise, it will raise an error. The default is as
-                                                defined in the network layer.
+                                                locations. Otherwise, it will raise an error. Default is true.
         -----------------------------------     --------------------------------------------------------------------
         output_lines                            The type of output lines to be generated in the result. The default
                                                 is as defined in the network layer.
+                                                Values: esriNAOutputLineTrueShape |
+                                                        esriNAOutputLineTrueShapeWithMeasure |
+                                                        esriNAOutputLineStraight | esriNAOutputLineNone
         -----------------------------------     --------------------------------------------------------------------
         find_best_sequence                      Optional boolean. If true, the solver should re-sequence the route in
                                                 the optimal order. The default is as defined in the network layer.
@@ -377,11 +380,11 @@ class RouteLayer(NetworkLayer):
                                                 layer.
         -----------------------------------     --------------------------------------------------------------------
         directions_language                     Optional string. The language to be used when computing directions.
-                                                The default is as defined in the network layer. The list of supported
-                                                languages can be found in REST layer description.
+                                                The default is the language of the server's operating system. The list
+                                                of supported languages can be found in REST layer description.
         -----------------------------------     --------------------------------------------------------------------
         directions_output_type                  Optional string.  Defines content, verbosity of returned directions.
-                                                The default is esriDOTStandard.
+                                                The default is esriDOTInstructionsOnly.
                                                 Values: esriDOTComplete | esriDOTCompleteNoEvents
                                                         | esriDOTInstructionsOnly | esriDOTStandard |
                                                         esriDOTSummaryOnly
@@ -416,16 +419,20 @@ class RouteLayer(NetworkLayer):
                                                 routes and compressed geometry if the network dataset is Z-aware.
                                                 The default is false.
         -----------------------------------     --------------------------------------------------------------------
-        overrides                               Optional dictionary. Specify additional settings that can influence 
-                                                the behavior of the solver.  A list of supported override settings 
-                                                for each solver and their acceptable values can be obtained by 
+        overrides                               Optional dictionary. Specify additional settings that can influence
+                                                the behavior of the solver.  A list of supported override settings
+                                                for each solver and their acceptable values can be obtained by
                                                 contacting Esri Technical Support.
         -----------------------------------     --------------------------------------------------------------------
-        preserve_objectid                       Optional Boolean.  If True, all objectid values are maintained.  The 
+        preserve_objectid                       Optional Boolean.  If True, all objectid values are maintained.  The
                                                 default is False.
         -----------------------------------     --------------------------------------------------------------------
-        future                                  Optional Boolean.  If True, the process is run asynchronously. The 
+        future                                  Optional Boolean.  If True, the process is run asynchronously. The
                                                 default is False.
+        -----------------------------------     --------------------------------------------------------------------
+        time_windows_are_utc                    Optional boolean. Specify whether the TimeWindowStart and TimeWindowEnd
+                                                attribute values on stops are specified in coordinated universal time (UTC)
+                                                or geographically local time.
         ===================================     ====================================================================
 
 
@@ -449,7 +456,7 @@ class RouteLayer(NetworkLayer):
                                        return_stops=True, return_barriers=False, return_polygon_barriers=False,
                                        return_polyline_barriers=False, return_routes=True,
                                        output_lines='esriNAOutputLineStraight')
-                                       
+
         """
 
         if not self.properties.layerType == "esriNAServerRouteLayer":
@@ -501,10 +508,11 @@ class RouteLayer(NetworkLayer):
             params['preserveLastStop'] = preserve_last_stop
         if not use_time_windows is None:
             params['useTimeWindows'] = use_time_windows
+        if not time_windows_are_utc is None:
+            params['timeWindowsAreUTC'] = time_windows_are_utc
         if not start_time is None:
             if isinstance(start_time, datetime.datetime):
-                from arcgis._impl.common._utils import local_time_to_online
-                start_time = local_time_to_online(dt=start_time)            
+                start_time = f"{start_time.timestamp() * 1000}"
             params['startTime'] = start_time
         if not start_time_is_utc is None:
             params['startTimeIsUTC'] = start_time_is_utc
@@ -536,14 +544,13 @@ class RouteLayer(NetworkLayer):
             params['returnZ'] = return_z
         if not overrides is None:
             params['overrides'] = overrides
-        if preserve_objectid:
+        if not preserve_objectid is None:
             params['preserveObjectID'] = preserve_objectid
         if future:
-            f = self._run_async(self._con.post, **{'path' : url, 'postdata' : params, 'token' : self._token})
+            f = self._run_async(self._con.post, **{'path' : url, 'postdata' : params, 'token' : self._gis._con.token})
             return NAJob(future=f, task="RouteLayer Solve")
         return self._con.post(path=url,
-                              postdata=params, 
-                              token=self._token)
+                              postdata=params)#,
 
 ###########################################################################
 class ServiceAreaLayer(NetworkLayer):
@@ -588,7 +595,8 @@ class ServiceAreaLayer(NetworkLayer):
                            return_z=False,
                            overrides=None,
                            preserve_objectid=False,
-                           future=False):
+                           future=False,
+                           ignore_invalid_locations=True):
         """ The solve service area operation is performed on a network layer
         resource of type service area (layerType is esriNAServerServiceArea).
         You can provide arguments to the solve service area operation as
@@ -639,6 +647,8 @@ class ServiceAreaLayer(NetworkLayer):
                                         defined in the network analysis layer.
             outputLines - The type of lines(s) generated. The default is as
                           defined in the network analysis layer.
+                          Values: esriNAOutputLineNone | esriNAOutputLineTrueShape |
+                          esriNAOutputLineTrueShapeWithMeasure
             outputPolygons - The type of polygon(s) generated. The default is
                              as defined in the network analysis layer.
             overlapLines - Indicates if the lines should overlap from multiple
@@ -724,20 +734,24 @@ class ServiceAreaLayer(NetworkLayer):
                              of the service areas are staggered by time zone.
             travelDirection - Options for traveling to or from the facility. The
                               default is defined in the network analysis layer.
+                              Values: esriNATravelDirectionFromFacility |
+                                      esriNATravelDirectionToFacility
             returnZ - If true, Z values will be included in saPolygons and saPolylines
-                      geometry if the network dataset is Z-aware.
-            overrides - Optional dictionary. Specify additional settings that can 
-                        influence the behavior of the solver.  A list of supported 
-                        override settings for each solver and their acceptable values 
+                      geometry if the network dataset is Z-aware. The default is false.
+            overrides - Optional dictionary. Specify additional settings that can
+                        influence the behavior of the solver.  A list of supported
+                        override settings for each solver and their acceptable values
                         can be obtained by contacting Esri Technical Support.
-            preserve_objectid - Optional Boolean.  If True, all objectid values are 
+            preserve_objectid - Optional Boolean.  If True, all objectid values are
                                 maintained.  The default is False.
-        
-            future - Optional Boolean.  If True, the process is run asynchronously. 
-                     The default is False. If True, a NAJob is returned instead of the 
+            future - Optional Boolean.  If True, the process is run asynchronously.
+                     The default is False. If True, a NAJob is returned instead of the
                      results.
-            
-            
+            ignoreInvalidLocations - If true, the solver will ignore invalid
+                                     locations. Otherwise, it will raise an error.
+                                     Default is true.
+
+
     """
         if not self.properties.layerType == "esriNAServerServiceAreaLayer":
             raise TypeError("The solveServiceArea operation is supported on a network "
@@ -793,6 +807,8 @@ class ServiceAreaLayer(NetworkLayer):
             params['returnPolygonBarriers'] = return_polygon_barriers
         if not out_sr is None:
             params['outSR'] = out_sr
+        if not ignore_invalid_locations is None:
+            params['ignoreInvalidLocations'] = ignore_invalid_locations
         if not accumulate_attribute_names is None:
             params['accumulateAttributeNames'] = accumulate_attribute_names
         if not impedance_attribute_name is None:
@@ -808,6 +824,8 @@ class ServiceAreaLayer(NetworkLayer):
         if not use_hierarchy is None:
             params['useHierarchy'] = use_hierarchy
         if not time_of_day is None:
+            if isinstance(time_of_day, datetime.datetime):
+                time_of_day = f"{time_of_day.timestamp() * 1000}"
             params['timeOfDay'] = time_of_day
         if not time_of_day_is_utc is None:
             params['timeOfDayIsUTC'] = time_of_day_is_utc
@@ -817,14 +835,13 @@ class ServiceAreaLayer(NetworkLayer):
             params['returnZ'] = return_z
         if not overrides is None:
             params['overrides'] = overrides
-        if preserve_objectid:
+        if not preserve_objectid is None:
             params['preserveObjectID'] = preserve_objectid
         if future:
-            f = self._run_async(self._con.post, **{'path' : url, 'postdata' : params, 'token' : self._token})
+            f = self._run_async(self._con.post, **{'path' : url, 'postdata' : params, 'token' : self._gis._con.token})
             return NAJob(future=f, task='Solve Service Area')
         return self._con.post(path=url,
-                              postdata=params, 
-                              token=self._token)
+                              postdata=params)
 
 
 ###########################################################################
@@ -840,7 +857,7 @@ class ClosestFacilityLayer(NetworkLayer):
                                polygon_barriers=None,
                                travel_mode=None,
                                attribute_parameter_values=None,
-                               return_directions=None,
+                               return_directions=False,
                                directions_language=None,
                                directions_style_name=None,
                                directions_length_units=None,
@@ -869,7 +886,9 @@ class ClosestFacilityLayer(NetworkLayer):
                                return_z=False,
                                overrides=None,
                                preserve_objectid=False,
-                               future=False):
+                               future=False,
+                               ignore_invalid_locations=True,
+                               directions_output_type=None):
         """The solve operation is performed on a network layer resource of
         type closest facility (layerType is esriNAServerClosestFacilityLayer).
         You can provide arguments to the solve route operation as query
@@ -914,11 +933,11 @@ class ClosestFacilityLayer(NetworkLayer):
                                        can be parameterized to determine which
                                        network elements can be used by a vehicle.
             returnDirections - If true, directions will be generated and returned
-                               with the analysis results. Default is true.
+                               with the analysis results. Default is false.
             directionsLanguage - The language to be used when computing directions.
-                                 The default is as defined in the network layer. The
-                                 list of supported languages can be found in REST
-                                 layer description.
+                                 The default is the language of the server's operating
+                                 system. The list of supported languages can be found
+                                 in REST layer description.
             directionsOutputType -  Defines content, verbosity of returned
                                     directions. The default is esriDOTStandard.
                                     Values: esriDOTComplete | esriDOTCompleteNoEvents
@@ -952,6 +971,9 @@ class ClosestFacilityLayer(NetworkLayer):
                                     the analysis results. Default is false.
             outputLines - The type of output lines to be generated in the result.
                           The default is as defined in the network layer.
+                          Values: esriNAOutputLineTrueShape |
+                          esriNAOutputLineTrueShapeWithMeasure |
+                          esriNAOutputLineStraight | esriNAOutputLineNone
             defaultCutoff - The default cutoff value to stop traversing.
             defaultTargetFacilityCount - The default number of facilities to find.
             travelDirection - Options for traveling to or from the facility.
@@ -1014,16 +1036,19 @@ class ClosestFacilityLayer(NetworkLayer):
             returnZ - If true, Z values will be included in the returned routes and
                        compressed geometry if the network dataset is Z-aware.
                        The default is false.
-            overrides - Optional dictionary. Specify additional settings that can influence 
-                        the behavior of the solver.  A list of supported override settings 
-                        for each solver and their acceptable values can be obtained by 
+            overrides - Optional dictionary. Specify additional settings that can influence
+                        the behavior of the solver.  A list of supported override settings
+                        for each solver and their acceptable values can be obtained by
                         contacting Esri Technical Support.
-            preserve_objectid - Optional Boolean.  If True, all objectid values are 
+            preserve_objectid - Optional Boolean.  If True, all objectid values are
                                 maintained.  The default is False.
-            future - Optional Boolean.  If True, the process is run asynchronously. 
-                     The default is False. If True, a NAJob is returned instead of the 
+            future - Optional Boolean.  If True, the process is run asynchronously.
+                     The default is False. If True, a NAJob is returned instead of the
                      results.
-                        
+            ignoreInvalidLocations - If true, the solver will ignore invalid
+                                     locations. Otherwise, it will raise an error.
+                                     Default is true.
+
     """
 
         if not self.properties.layerType == "esriNAServerClosestFacilityLayer":
@@ -1057,6 +1082,8 @@ class ClosestFacilityLayer(NetworkLayer):
             params['directionsLengthUnits'] = directions_length_units
         if not directions_time_attribute_name is None:
             params['directionsTimeAttributeName'] = directions_time_attribute_name
+        if not directions_output_type is None:
+            params['directionsOutputType'] = directions_output_type
         if not return_cf_routes is None:
             params['returnCFRoutes'] = return_cf_routes
         if not return_facilities is None:
@@ -1079,6 +1106,8 @@ class ClosestFacilityLayer(NetworkLayer):
             params['travelDirection'] = travel_direction
         if not out_sr is None:
             params['outSR'] = out_sr
+        if not ignore_invalid_locations is None:
+            params['ignoreInvalidLocations'] = ignore_invalid_locations
         if not accumulate_attribute_names is None:
             params['accumulateAttributeNames'] = accumulate_attribute_names
         if not impedance_attribute_name is None:
@@ -1094,6 +1123,8 @@ class ClosestFacilityLayer(NetworkLayer):
         if not output_geometry_precision_units is None:
             params['outputGeometryPrecisionUnits'] = output_geometry_precision_units
         if not time_of_day is None:
+            if isinstance(time_of_day, datetime.datetime):
+                time_of_day = f"{time_of_day.timestamp() * 1000}"
             params['timeOfDay'] = time_of_day
         if not time_of_day_is_utc is None:
             params['timeOfDayIsUTC'] = time_of_day_is_utc
@@ -1103,237 +1134,249 @@ class ClosestFacilityLayer(NetworkLayer):
             params['returnZ'] = return_z
         if not overrides is None:
             params['overrides'] = overrides
-        if preserve_objectid:
+        if not preserve_objectid is None:
             params['preserveObjectID'] = preserve_objectid
         if future:
-            f = self._run_async(self._con.post, **{'path' : url, 
-                                                   'postdata' : params, 
-                                                   'token' : self._token})
+            f = self._run_async(self._con.post, **{'path' : url,
+                                                   'postdata' : params})
             return NAJob(future=f, task="Solve Closest Facility")
         return self._con.post(path=url,
-                              postdata=params, 
-                              token=self._token)
+                              postdata=params)
 ###########################################################################
 class ODCostMatrixLayer(NetworkLayer):
     """
     OD Cost Matrix Layer is part of the Network Layer services.  It allows users
-    to generate cost matrix data for a given set of input.  
+    to generate cost matrix data for a given set of input.
     """
-    def solve_od_cost_matrix(self, 
-                             origins, 
-                             destinations, 
-                             future=False,
-                             **kwargs):
+    def solve_od_cost_matrix(self,
+                             origins,
+                             destinations,
+                             default_cutoff=None,
+                             default_target_destination_count=None,
+                             travel_mode=None,
+                             output_type='Sparse Matrix',
+                             time_of_day=None,
+                             time_of_day_is_utc=None,
+                             barriers=None,
+                             polyline_barriers=None,
+                             polygon_barriers=None,
+                             impedance_attribute_name=None,
+                             accumulate_attribute_names=None,
+                             restriction_attribute_names=None,
+                             attribute_parameter_values=None,
+                             restrict_u_turns=None,
+                             use_hierarchy=True,
+                             return_origins=False,
+                             return_destinations=False,
+                             return_barriers=False,
+                             return_polyline_barriers=False,
+                             return_polygon_barriers=False,
+                             out_sr=None,
+                             ignore_invalid_locations=True,
+                             return_z=False,
+                             overrides=None,
+                             future=False):
         """
-        
-        The Origin Destination Cost Matrix service helps you to create an 
-        origin-destination (OD) cost matrix from multiple origins to 
-        multiple destinations. An Origin Destination Cost Matrix is a table 
+
+        The Origin Destination Cost Matrix service helps you to create an
+        origin-destination (OD) cost matrix from multiple origins to
+        multiple destinations. An Origin Destination Cost Matrix is a table
         that contains the cost, such as the travel time or travel distance,
-        from every origin to every destination. Additionally, it ranks the 
+        from every origin to every destination. Additionally, it ranks the
         destinations that each origin connects to in ascending order based
-        on the minimum cost required to travel from that origin to each 
-        destination. When generating an OD Cost Matrix, you can optionally 
-        specify the maximum number of destinations to find for each origin 
-        and the maximum time or distance to travel when searching for 
+        on the minimum cost required to travel from that origin to each
+        destination. When generating an OD Cost Matrix, you can optionally
+        specify the maximum number of destinations to find for each origin
+        and the maximum time or distance to travel when searching for
         destinations.
 
-        The results from the Origin Destination Cost Matrix service often 
+        The results from the Origin Destination Cost Matrix service often
         become input for other spatial analyses where the cost to travel on
-        the street network is more appropriate than straight-line cost. 
+        the street network is more appropriate than straight-line cost.
 
-        The travel time and/or distance for each origin-destination pair is 
-        stored in the output matrix (default) or as part of the attributes 
-        of the output lines, which can have no shapes or a straight line 
-        shape. Even though the lines are straight, they always store the 
+        The travel time and/or distance for each origin-destination pair is
+        stored in the output matrix (default) or as part of the attributes
+        of the output lines, which can have no shapes or a straight line
+        shape. Even though the lines are straight, they always store the
         travel time and/or travel distance based on the street network, not
         based on Euclidean distance.
-        
+
         ====================================     ====================================================================
-        **Required Parameters**                  **Description**
+        **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         origins                                  Required FeatureLayer/SeDF/FeatureSet. Specifies the starting points from which to travel to the destinations.
         ------------------------------------     --------------------------------------------------------------------
         destinations                             Required FeatureLayer/SeDF/FeatureSet. Specifies the ending point locations to travel to from the origins.
         ------------------------------------     --------------------------------------------------------------------
-        future                                   Optional boolean. If True, the result will be a `SolveJob` object and results will be returned asynchronously.
-        ====================================     ====================================================================
-        
-        
-        The service provides a wide range of optional input values specified below:
-        
-        ====================================     ====================================================================
-        **Optional Parameters**                  **Description**
+        default_cutoff                           Optional Float. Specify the travel time or travel distance value at
+                                                 which to stop searching for destinations. The default value is
+                                                 `None` which means to search until all destinations are found for
+                                                 every origin. The units are the same as the impedance attribute
+                                                 units.
         ------------------------------------     --------------------------------------------------------------------
-        accumulate_attribute_names               Optional String. Specify whether the service should accumulate 
-                                                 values other than the value specified for `impedance_attribute_names`.
-
-                                                 The parameter value should be specified as a comma-separated list of 
-                                                 names. The parameter values are the same as the 
-                                                 `impedance_attribute_names` input. 
-
-                                                 Values: `Miles, Kilometers, WalkTime, TravelTime, TruckTravelTime`
+        default_target_destination_count         Optional Integer. Specify the number of destinations to find per
+                                                 origin. The default value is `None` which means to search until all
+                                                 destinations are found for every origin.
         ------------------------------------     --------------------------------------------------------------------
-        attribute_parameter_values               Optional String. Specify additional values required by an attribute or restriction.
+        travel_mode                              Optional String. Choose the mode of transportation for the analysis.
         ------------------------------------     --------------------------------------------------------------------
-        barriers                                 Optional FeatureLayer/SeDF/FeatureSet. Specify one or more points that act as 
+        output_type                              Optional String. Specify the type of output returned by the service.
+                                                 Allowed value: `Sparse Matrix` (default), `Straight Lines`, or
+                                                 `No Lines`.
+        ------------------------------------     --------------------------------------------------------------------
+        time_of_day                              Optional Datetime. The `time_of_day` value represents the time at which
+                                                 the travel begins from the input origins.
+                                                 If a value of `now` is passed, the travel begins at current time.
+        ------------------------------------     --------------------------------------------------------------------
+        time_of_day_is_utc                       Optional Boolean. Specify the time zone or zones of the
+                                                 `time_of_day` parameter. The default is as defined
+                                                 in the network layer.
+        ------------------------------------     --------------------------------------------------------------------
+        barriers                                 Optional FeatureLayer/SeDF/FeatureSet. Specify one or more points that act as
                                                  temporary restrictions or represent additional time or distance that
                                                  may be required to travel on the underlying streets.
         ------------------------------------     --------------------------------------------------------------------
-        default_cutoff                           Optional Float. Specify the travel time or travel distance value at 
-                                                 which to stop searching for destinations. The default value is 
-                                                 `None` which means to search until all destinations are found for 
-                                                 every origin. The units are the same as the impedance attribute 
-                                                 units.
-        ------------------------------------     --------------------------------------------------------------------
-        ignore_invalid_locations                 Optional Boolean. Specify whether invalid input locations should be ignored when finding the best solution
-        ------------------------------------     --------------------------------------------------------------------
-        impedance_attribute_name                 Optional String. Specify the impedance. The default value is `TravelTime`.
-        ------------------------------------     --------------------------------------------------------------------
-        is_UTC                                   Optional Boolean. Specify the time zone or zones of the 
-                                                 `time_of_day` parameter. The default value is false.
-        ------------------------------------     --------------------------------------------------------------------
-        output_type                              Optional String. Specify the type of output returned by the service.
-                                                 Allowed value: `Sparse Matrix` (default), `Straight Lines`, or 
-                                                 `No Lines`.
-        ------------------------------------     --------------------------------------------------------------------
-        overrides                                Optional Dict. Specify additional settings that can influence the behavior of the solver.
-        ------------------------------------     --------------------------------------------------------------------
-        polygon_barriers                         Optional FeatureLayer/SeDF/FeatureSet. Specify polygons that either prohibit 
-                                                 travel or proportionately scale the time or distance required to 
-                                                 travel on the streets intersected by the polygons.
-        ------------------------------------     --------------------------------------------------------------------
-        polyline_barriers                        Optional FeatureLayer/SeDF/FeatureSet. Specify one or more lines that prohibit 
+        polyline_barriers                        Optional FeatureLayer/SeDF/FeatureSet. Specify one or more lines that prohibit
                                                  travel anywhere the lines intersect the streets.
         ------------------------------------     --------------------------------------------------------------------
-        restriction_attribute_names              Optional String. Specify which restrictions should be honored by the service. 
+        polygon_barriers                         Optional FeatureLayer/SeDF/FeatureSet. Specify polygons that either prohibit
+                                                 travel or proportionately scale the time or distance required to
+                                                 travel on the streets intersected by the polygons.
         ------------------------------------     --------------------------------------------------------------------
-        restrict_u_turns                         Optional String. Restrict or permit the route from making U-turns at 
-                                                 junctions. The default value is `AtDeadEndsAndIntersections`.
+        impedance_attribute_name                 Optional String. Specify the impedance. The default is as defined
+                                                 in the network layer.
+        ------------------------------------     --------------------------------------------------------------------
+        accumulate_attribute_names               Optional String. Specify whether the service should accumulate
+                                                 values other than the value specified for `impedance_attribute_names`.
 
-                                                 Values: `AtDeadEndsAndIntersections`, `AllowBacktrack`, `AtDeadEndsOnly`,
-                                                 or `NoBacktrack`
+                                                 The default is as defined in the network layer. The parameter value
+                                                 should be specified as a comma-separated list of names.
         ------------------------------------     --------------------------------------------------------------------
-        return_barriers                          Optional Boolean. Specify whether barriers will be returned by the service. The default value is false.
+        restriction_attribute_names              Optional String. Specify which restrictions should be honored by the service.
+        ------------------------------------     --------------------------------------------------------------------
+        attribute_parameter_values               Optional String. Specify additional values required by an attribute or restriction.
+        ------------------------------------     --------------------------------------------------------------------
+        restrict_u_turns                         Optional String. Restrict or permit the route from making U-turns at
+                                                 junctions. The default is as defined in the network layer.
+
+                                                 Values: esriNFSBAllowBacktrack | esriNFSBAtDeadEndsOnly |
+                                                         esriNFSBNoBacktrack | esriNFSBAtDeadEndsAndIntersections
+        ------------------------------------     --------------------------------------------------------------------
+        use_hierarchy                            Optional Boolean. Specify whether hierarchy should be used when finding the shortest paths. The default value is true.
+        ------------------------------------     --------------------------------------------------------------------
+        return_origins                           Optional Boolean. Specify whether origins will be returned by the service. The default value is false.
         ------------------------------------     --------------------------------------------------------------------
         return_destinations                      Optional Boolean. Specify whether origins will be returned by the service. The default value is false.
         ------------------------------------     --------------------------------------------------------------------
-        return_origins                           Optional Boolean. Specify whether origins will be returned by the service. The default value is false.
+        return_barriers                          Optional Boolean. Specify whether barriers will be returned by the service. The default value is false.
         ------------------------------------     --------------------------------------------------------------------
         return_polyline_barriers                 Optional Boolean. Specify whether polyline barriers will be returned by the service. The default value is false.
         ------------------------------------     --------------------------------------------------------------------
         return_polygon_barriers                  Optional Boolean. Specify whether polygon barriers will be returned by the service. The default value is false.
         ------------------------------------     --------------------------------------------------------------------
-        return_z                                 Optional Boolean. Include z values for the returned geometries if supported by the underlying network. The default value is false.
-        ------------------------------------     --------------------------------------------------------------------
-        target_destination_count                 Optional Integer. Specify the number of destinations to find per 
-                                                 origin. The default value is `None` which means to search until all 
-                                                 destinations are found for every origin.
-        ------------------------------------     --------------------------------------------------------------------
-        travel_mode                              Optional String. Choose the mode of transportation for the analysis.
-        
-        ------------------------------------     --------------------------------------------------------------------
-        time_of_day                              Optional Datetime. The `time_of_day` value represents the time at which 
-                                                 the travel begins from the input origins. 
-                                                 If a value of `now` is passed, the travel begins at current time. 
-        
-        ------------------------------------     --------------------------------------------------------------------
-        use_hierarchy                            Optional Boolean. Specify whether hierarchy should be used when finding the shortest paths. The default value is true.
-        ------------------------------------     --------------------------------------------------------------------
         out_sr                                   Optional Integer. Specify the spatial reference of the geometries.
         ------------------------------------     --------------------------------------------------------------------
+        ignore_invalid_locations                 Optional Boolean. Specify whether invalid input locations should be
+                                                 ignored when finding the best solution. The default is True.
+        ------------------------------------     --------------------------------------------------------------------
         return_z                                 Optional Boolean. Include z values for the returned geometries if supported by the underlying network. The default value is false.
+        ------------------------------------     --------------------------------------------------------------------
+        overrides                                Optional Dict. Specify additional settings that can influence the behavior of the solver.
+        ------------------------------------     --------------------------------------------------------------------
+        future                                   Optional boolean. If True, the result will be a `SolveJob` object and results will be returned asynchronously.
         ====================================     ====================================================================
-                
+
         :returns: Dictionary or `NAJob` when `future=True`
-        
+
         """
+        if not self.properties.layerType == "esriNAServerODCostMatrixLayer":
+            raise TypeError("The solveODCostMatrix operation is supported on a network "
+                             "layer of OD Cost Matrix type only")
         url = f"{self._url}/solveODCostMatrix"
-        ran = "Avoid Unpaved Roads, Avoid Private Roads, Driving an Automobile, Through Traffic Prohibited, Roads Under Construction Prohibited, Avoid Gates, Avoid Express Lanes, Avoid Carpool Roads"
         params = {
             "f" : "json",
-            "origins" : _handle_spatial_inputs(origins), 
-            "destinations": _handle_spatial_inputs(destinations),
-            "barriers" : _handle_spatial_inputs(kwargs.pop('barriers', None)),
-            "polylineBarriers": _handle_spatial_inputs(kwargs.pop('polyline_barriers', None)),
-            "polygonBarriers" : _handle_spatial_inputs(kwargs.pop('polygon_barriers', None)), 
-            "defaultCutoff" : kwargs.pop('default_cutoff', None),
-            "defaultTargetDestinationCount" : kwargs.pop('target_destination_count', None),
-            "outSR" : kwargs.pop('out_sr', None), 
-            "ignoreInvalidLocations": kwargs.pop("ignore_invalid_locations",True),
-            "accumulateAttributeNames": kwargs.pop("accumulate_attribute_names","Miles, Kilometers"),
-            "impedanceAttributeName": kwargs.pop("impedance_attribute_name", "TravelTime"),
-            "restrictionAttributeNames": kwargs.pop("restriction_attribute_names", ran),
-            "attributeParameterValues" : kwargs.pop("attribute_parameter_values", None), 
-            "restrictUTurns" : kwargs.pop("restrict_u_turns", "esriNFSBAtDeadEndsAndIntersections"),
-            "useHierarchy": kwargs.pop("use_hierarchy", True),
-            "outputType" : kwargs.pop('output_type',"Sparse Matrix"),
-            "returnOrigins": kwargs.pop("return_origins", False),
-            "returnDestinations" : kwargs.pop("return_destinations", False),
-            "returnBarriers" : kwargs.pop("return_barriers", False),
-            "returnPolylineBarriers": kwargs.pop("return_polyline_barriers", False),
-            "returnPolygonBarriers": kwargs.pop("return_polygon_barriers", False),
-            "timeOfDay" : kwargs.pop("time_of_day", None),
-            "timeOfDayIsUTC": kwargs.pop("is_UTC", False),
-            "returnZ": kwargs.pop("return_z", False),
-            "travelMode" : kwargs.pop("travel_mode", None),
-            "overrides": kwargs.pop("overrides", None),
-                        
+            "origins": _handle_spatial_inputs(origins),
+            "destinations": _handle_spatial_inputs(destinations)
         }
         allowed_output_types = {
             "esriNAODOutputSparseMatrix" : "esriNAODOutputSparseMatrix",
             "Sparse Matrix" : "esriNAODOutputSparseMatrix",
             "esriNAODOutputStraightLines" : "esriNAODOutputStraightLines",
             "Straight Lines" : "esriNAODOutputStraightLines",
-            "No Lines" : "esriNAODOutputNoLines",
-            "esriNAODOutputNoLines" : "esriNAODOutputNoLines"
+            "esriNAODOutputNoLines" : "esriNAODOutputNoLines",
+            "No Lines" : "esriNAODOutputNoLines"
         }
-        allowed_restrict_uturns = {
-            "esriNFSBAtDeadEndsAndIntersections" : "esriNFSBAtDeadEndsAndIntersections",
-            "AtDeadEndsAndIntersections" : "esriNFSBAtDeadEndsAndIntersections",
-            "esriNFSBAllowBacktrack" : "esriNFSBAllowBacktrack",
-            "AllowBacktrack" : "esriNFSBAllowBacktrack",
-            "esriNFSBAtDeadEndsOnly" : "esriNFSBAtDeadEndsOnly",
-            "AtDeadEndsOnly" : "esriNFSBAtDeadEndsOnly",
-            "esriNFSBNoBacktrack" : "esriNFSBNoBacktrack",
-            "NoBacktrack" : "esriNFSBNoBacktrack",
-            
-        }
-        for key in list(params.keys()):
-            if params[key] is None:
-                params.pop(key)
-        
-        if "outputType" in params and params['outputType']:
-            assert params['outputType'] in allowed_output_types
-            params['outputType'] = allowed_output_types[params['outputType']]
-        if "time_of_day" in params and params['time_of_day']:
-            tod = params['time_of_day']
-            if isinstance(tod, datetime.datetime):
-                params['time_of_day'] = f"{tod.timestamp() * 1000}"
-        if params.get("restrictUTurns", "esriNFSBAtDeadEndsAndIntersections"):
-            params['restrictUTurns'] = allowed_restrict_uturns[params.get("restrictUTurns", "esriNFSBAtDeadEndsAndIntersections")]
+        if not default_cutoff is None:
+            params['defaultCutoff'] = default_cutoff
+        if not default_target_destination_count is None:
+            params['defaultTargetDestinationCount'] = default_target_destination_count
+        if not travel_mode is None:
+            params['travelMode'] = travel_mode
+        if not output_type is None:
+            assert output_type in allowed_output_types
+            params['outputType'] = allowed_output_types[output_type]
+        if not time_of_day is None:
+            if isinstance(time_of_day, datetime.datetime):
+                time_of_day = f"{time_of_day.timestamp() * 1000}"
+            params['timeOfDay'] = time_of_day
+        if not time_of_day_is_utc is None:
+            params['timeOfDayIsUTC'] = time_of_day_is_utc
+        if not barriers is None:
+            params['barriers'] = _handle_spatial_inputs(barriers)
+        if not polyline_barriers is None:
+            params['polylineBarriers'] = _handle_spatial_inputs(polyline_barriers)
+        if not polygon_barriers is None:
+            params['polygonBarriers'] = _handle_spatial_inputs(polygon_barriers)
+        if not impedance_attribute_name is None:
+            params['impedanceAttributeName'] = impedance_attribute_name
+        if not accumulate_attribute_names is None:
+            params['accumulateAttributeNames'] = accumulate_attribute_names
+        if not restriction_attribute_names is None:
+            params['restrictionAttributeNames'] = restriction_attribute_names
+        if not attribute_parameter_values is None:
+            params['attributeParameterValues'] = attribute_parameter_values
+        if not restrict_u_turns is None:
+            params['restrictUTurns'] = restrict_u_turns
+        if not use_hierarchy is None:
+            params['useHierarchy'] = use_hierarchy
+        if not return_origins is None:
+            params['returnOrigins'] = return_origins
+        if not return_destinations is None:
+            params['returnDestinations'] = return_destinations
+        if not return_barriers is None:
+            params['returnBarriers'] = return_barriers
+        if not return_polyline_barriers is None:
+            params['returnPolylineBarriers'] = return_polyline_barriers
+        if not return_polygon_barriers is None:
+            params['returnPolygonBarriers'] = return_polygon_barriers
+        if not out_sr is None:
+            params['outSR'] = out_sr
+        if not ignore_invalid_locations is None:
+            params['ignoreInvalidLocations'] = ignore_invalid_locations
+        if not return_z is None:
+            params['returnZ'] = return_z
+        if not overrides is None:
+            params['overrides'] = overrides
         if future:
-            f = self._run_async(self._con.post, **{'path' : url, 
-                                                   'postdata' : params, 
-                                                   'token' : self._token})
+            f = self._run_async(self._con.post, **{'path' : url,
+                                                   'postdata' : params})
             return NAJob(future=f, task="Solve OD Cost Matrix")
         return self._con.post(path=url,
-                              postdata=params, 
-                              token=self._token)        
+                              postdata=params)
     #----------------------------------------------------------------------
     def retrieve_travel_modes(self):
         """
         Identify all the valid travel modes that have been defined on the
         network dataset or in the portal if the GIS server is federated
-        
+
         :returns: Dictionary
-        
+
         """
         from arcgis._impl.common._isd import InsensitiveDict
         url = self._url + "/retrieveTravelModes"
         params = {"f":"json"}
         return InsensitiveDict(self._con.get(path=url,
-                                             params=params, token=self._token))
+                                             params=params))
 ###########################################################################
 class NetworkDataset(_GISResource):
     """
@@ -1349,7 +1392,7 @@ class NetworkDataset(_GISResource):
         self._closestFacilityLayers = []
         self._routeLayers = []
         self._serviceAreaLayers = []
-        self._odCostMatrix = []        
+        self._odCostMatrix = []
         self._load_layers()
 
     @classmethod
@@ -1370,7 +1413,7 @@ class NetworkDataset(_GISResource):
         params = {
             "f" : "json",
         }
-        json_dict = self._con.get(path=self._url, params=params, token=self._token)
+        json_dict = self._con.get(path=self._url, params=params)
         for k,v in json_dict.items():
             if k == "routeLayers" and json_dict[k]:
                 self._routeLayers = []
@@ -1396,7 +1439,7 @@ class NetworkDataset(_GISResource):
                     self._odCostMatrix.append(
                         ODCostMatrixLayer(url=self._url + "/%s" % cf,
                                              gis=self._gis))
-                    
+
     #----------------------------------------------------------------------
     @property
     def route_layers(self):
@@ -1418,12 +1461,12 @@ class NetworkDataset(_GISResource):
         if self._closestFacilityLayers is None:
             self._load_layers()
         return self._closestFacilityLayers
-    
+
     @property
     def od_cost_matrix_layers(self):
         """
         List of OD Cost Matrix Layers
-        
+
         :returns: List
         """
         if self._odCostMatrix is None:

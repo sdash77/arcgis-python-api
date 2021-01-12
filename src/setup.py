@@ -52,7 +52,9 @@ else:
         'matplotlib',
         'keyring >=19',
         'lerc',
+        'ujson >=3',
         'jupyterlab',
+        'python-certifi-win32',
         'pywin32 >=223;platform_system=="Windows"',
         'pyshp >=2',
         'requests',
@@ -146,12 +148,14 @@ description_md_file.close()
 data_files = [('share/jupyter/nbextensions/arcgis', [
                    'arcgis/widgets/js/dist/extension.js',
                    'arcgis/widgets/js/dist/arcgis-map-ipywidget.js',
-                   'arcgis/widgets/js/dist/arcgis-map-ipywidget.js.map'
+                   'arcgis/widgets/js/dist/arcgis-map-ipywidget.js.map',
+                   'arcgis/apps/workforce/_store/resources/default-project-thumbnail.png'
                    ]),
              ]
 data_files += [] if ("win" in sys.platform or "darwin" in sys.platform) else \
               [(_get_rel_site_packages_dir() + "arcgis/gis/_impl", [
-                 "arcgis/gis/_impl/_decrypt_nbauth.cpython-36m-x86_64-linux-gnu.so"])
+                 "arcgis/gis/_impl/_decrypt_nbauth.cpython-36m-x86_64-linux-gnu.so",
+                 "arcgis/gis/_impl/_decrypt_nbauth.cpython-37m-x86_64-linux-gnu.so"])
               ]
 
 kwargs = {
@@ -160,7 +164,7 @@ kwargs = {
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    "version":'1.8.3',
+    "version":'1.9.0',
 
     "description":'ArcGIS API for Python',
     "long_description":long_description,
@@ -266,7 +270,7 @@ kwargs = {
     #     'sample': ['package_data.dat'],
     # },
     'package_data':{
-        'arcgis':['raster/*.dll', 'raster/*.so'],
+        'arcgis':['raster/*.dll', 'raster/*.so', 'learn/*.dll', 'learn/*.so'],
     },
 
     # Although 'package_data' is the preferred approach, in some case you may

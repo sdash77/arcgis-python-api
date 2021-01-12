@@ -1,8 +1,9 @@
 """
-A collection of classes for administering an ArcGIS Enterprise server.
+A collection of classes for administering ArcGIS Server sites.
 """
 from .catalog import ServicesDirectory
 from ._service import Service
+from .admin.parameters import Extension
 from .sm import ServerManager
 from .catalog import ServicesDirectory
 from .admin import Server

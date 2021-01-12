@@ -10,7 +10,7 @@ maps and creating a single map containing all the information found in the stack
 import arcgis as _arcgis
 from .._impl.common._utils import inspect_function_inputs
 #----------------------------------------------------------------------
-def generate_tessellation(extent_layer,
+def generate_tessellation(extent_layer=None,
                          bin_size=1,
                          bin_size_unit="SquareKilometers",
                          bin_type="SQUARE",
@@ -26,7 +26,7 @@ def generate_tessellation(extent_layer,
     ====================================     ====================================================================
     **Parameter**                            **Description**
     ------------------------------------     --------------------------------------------------------------------
-    extent_layer                             Required layer. A layer defining the processing extent.
+    extent_layer                             Optional layer. A layer defining the processing extent.
     ------------------------------------     --------------------------------------------------------------------
     bin_size                                 Optional Float. The size of each individual shape that makes up the tessellation.
     ------------------------------------     --------------------------------------------------------------------
@@ -58,13 +58,31 @@ def generate_tessellation(extent_layer,
     future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ====================================     ====================================================================
 
+    .. note::
+            The tool requires either an 'extent' given in the `context` or an `extent_layer`.
 
     :returns: FeatureLayer or Feature Layer Collection
 
     """
-    kwargs = locals()
+
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.generate_tessellations, **kwargs)    
+    if not ((context and 'extent' in context) or extent_layer):
+        raise ValueError("Tool requires an extent_layer or defined extent.")
+    kwargs = {
+        "extent_layer" : extent_layer,
+        "bin_size" : bin_size,
+        "bin_size_unit" : bin_size_unit,
+        "bin_type" : bin_type,
+        "intersect_study_area" : intersect_study_area,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "future" : future
+    }
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.generate_tessellations, **kwargs)
+    if extent_layer is None:
+        params['extent_layer'] = None
     return gis._tools.featureanalysis.generate_tesselation(**params)
 #----------------------------------------------------------------------
 def dissolve_boundaries(
@@ -86,11 +104,11 @@ def dissolve_boundaries(
     has a State_Name attribute, you can dissolve boundaries using the State_Name attribute. Adjacent counties will be merged together
     if they have the same value for State_Name. The end result is a layer of state boundaries.
 
-    ====================================     ====================================================================
+    ====================================     =====================================================================================
     **Parameter**                            **Description**
-    ------------------------------------     --------------------------------------------------------------------
+    ------------------------------------     -------------------------------------------------------------------------------------
     input_layer                              Required layer. The layer containing polygon features that will be dissolved. See :ref:`Feature Input<FeatureInput>`.
-    ------------------------------------     --------------------------------------------------------------------
+    ------------------------------------     -------------------------------------------------------------------------------------
     dissolve_fields                          Optional list of strings. One or more fields on the input_layer that control which polygons
                                              are merged. If you don't supply dissolve_fields , or you supply an empty list of fields, polygons
                                              that share a common border (that is, they are adjacent) or polygon areas that overlap will be dissolved into one polygon.
@@ -100,48 +118,76 @@ def dissolve_boundaries(
                                              and each county has a State_Name attribute, you can dissolve boundaries using the State_Name attribute.
                                              Adjacent counties will be merged together if they have the same value for State_Name. The end result is a layer of
                                              state boundaries.If two or more fields are specified, the values in these fields must be the same for the boundary to be dissolved.
-    ------------------------------------     --------------------------------------------------------------------
-    summary_fields                           Optional list of strings. A list of field names and statistical summary type that you wish to calculate from the polygons
-                                             that are dissolved together. For example, if you are dissolving counties based on State_Name, and each county had a Population field, you can sum Population.
-                                             The result would be a layer of state boundaries with total population.
+    ------------------------------------     -------------------------------------------------------------------------------------
+    summary_fields                           | Optional list of strings.
+                                             A list of field names and statistical summary types that you
+                                             wish to calculate from the polygons that are dissolved together:
 
-                                             fieldName is the name of one of the numeric fields found in the input_layer.
-                                             summary type is one of the following:
+                                             | *["fieldName summary type", "fieldName2 summaryType"]*
 
-                                             * Sum - Adds the total value of all the points in each polygon
-                                             * Mean - Calculates the average of all the points in each polygon.
-                                             * Min - Finds the smallest value of all the points in each polygon.
-                                             * Max - Finds the largest value of all the points in each polygon.
-                                             * Stddev - Finds the standard deviation of all the points in each polygon.
-                                             Example [fieldName1 summaryType1,fieldName2 summaryType2].
-    ------------------------------------     --------------------------------------------------------------------
+                                             `fieldName` is the name of one of the numeric fields found in the
+                                             input_layer.
+                                             `summary type` is one of the following:
+
+                                             * ``Sum`` - Adds the total value of all the points in each polygon
+                                             * ``Mean`` - Calculates the average of all the points in each polygon.
+                                             * ``Min`` - Finds the smallest value of all the points in each polygon.
+                                             * ``Max`` - Finds the largest value of all the points in each polygon.
+                                             * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
+
+                                             For example, if you are dissolving counties based on `State_Name`, and each
+                                             county has a `Population` field, you can sum the `Population` for all the
+                                             counties sharing the same `State_Name` attribute. The result would be a
+                                             layer of state boundaries with total population.
+
+                                             .. code-block:: python
+                                                :emphasize-lines: 5
+
+                                                # Usage Example
+
+                                                >>> dissolve_boundaries(input_layer="US_Counties",
+                                                                        dissolve_fields="State_Name",
+                                                                        summary_fields=["Population Sum"],
+                                                                        output_name="US_States")
+    ------------------------------------     -------------------------------------------------------------------------------------
     output_name                              Optional string. If provided, the task will create a feature service of the results.
                                              You define the name of the service. If output_name is not supplied, the task will return a feature collection.
-    ------------------------------------     --------------------------------------------------------------------
-    context                                  Optional string. Context contains additional settings that affect task execution. For dissolve_boundaries Points, there are two settings.
+    ------------------------------------     -------------------------------------------------------------------------------------
+    context                                  Optional string. Context contains additional settings that affect task execution.
+                                             For dissolve_boundaries, there are two settings:
 
-                                             #. Extent (extent)-a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
-                                             #. Output Spatial Reference (outSR) the output features will be projected into the output spatial reference.
-    ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    ------------------------------------     --------------------------------------------------------------------
+                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+
+                                             .. code-block:: python
+
+                                                # Example Usage
+
+                                                context = {"extent": {"xmin": 3164569.408035,
+                                                                      "ymin": -9187921.892449,
+                                                                      "xmax": 3174104.927313,
+                                                                      "ymax": -9175500.875353},
+                                                           "outSR": {"wkid": 3857}}
+    ------------------------------------     -------------------------------------------------------------------------------------
+    gis                                      Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     -------------------------------------------------------------------------------------
     estimate                                 Optional Boolean. If True, the number of credits to run the operation will be returned.
-    ------------------------------------     --------------------------------------------------------------------
-    multi_part_features                      Optional boolean. Specifies whether multipart features (i.e. features which share a common
-                                             attribute table but are not visibly connected) are allowed in the output feature class.
+    ------------------------------------     -------------------------------------------------------------------------------------
+    multi_part_features                      Optional boolean. Specifies whether multipart features (i.e. features which
+                                             share a common attribute table but are not visibly connected) are allowed in
+                                             the output feature class.
 
-                                             Choice list: ['True', 'False'].
+                                             | Choice list: [``True``, ``False``]
 
-                                             True: Specifies multipart features are allowed.
+                                               * ``True``: Specifies multipart features are allowed.
+                                               * ``False``: Specifies multipart features are not allowed. Instead of creating multipart features, individual features will be created for each part.
 
-                                             False: Specifies multipart features are not allowed. Instead of creating multipart features, individual features will be created for each part.
+                                             The default value is ``True``.
+    ------------------------------------     -------------------------------------------------------------------------------------
+    future                                   Optional boolean. If True, the result will be a :class:`~arcgis.geoprocessing.GPJob` object and results will be returned asynchronously.
+    ====================================     =====================================================================================
 
-                                             The default value is True.
-    ------------------------------------     --------------------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
-    ====================================     ====================================================================
-
-    :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
+    :returns: result_layer : Feature layer :class:`~arcgis.gis.Item` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
 
 
     .. code-block:: python
@@ -149,13 +195,24 @@ def dissolve_boundaries(
         USAGE EXAMPLE: To dissolve boundaries of polygons with same state name. The dissolved polygons are summarized using population as summary field and standard deviation as summary type.
         diss_counties = dissolve_boundaries(input_layer=usa_counties,
                                             dissolve_fields=["STATE_NAME"],
-                                            summary_fields=["POPULATION STDDEV"],
+                                            summary_fields=["POPULATION Stddev"],
                                             output_name="DissolveBoundaries")
     """
 
-    kwargs = locals()
+
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.dissolve_boundaries, **kwargs)   
+    kwargs = {
+        "input_layer" : input_layer,
+        "dissolve_fields" : dissolve_fields,
+        "summary_fields" : summary_fields,
+        "multi_part_features" : multi_part_features,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "future" : future
+    }
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.dissolve_boundaries, **kwargs)
     return gis._tools.featureanalysis.dissolve_boundaries(**params)
 #----------------------------------------------------------------------
 def extract_data(
@@ -234,9 +291,19 @@ def extract_data(
                                  data_format='ShapeFile',
                                  output_name='state highway extracted')
     """
-    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.extract_data, **kwargs)   
+    kwargs = {
+        "input_layers" : input_layers,
+        "extent" : extent,
+        "clip" : clip,
+        "data_format" : data_format,
+        "output_name" : output_name,
+        "gis" : gis,
+        "estimate" : estimate,
+        "future" : future
+    }
+
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.extract_data, **kwargs)
     return gis._tools.featureanalysis.extract_data(**params)
 #----------------------------------------------------------------------
 def merge_layers(
@@ -314,9 +381,19 @@ def merge_layers(
                               merging_attributes=["State Match Place_Name"],
                               output_name="merge layers")
     """
-    kwargs = locals()
+
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.merge_layers, **kwargs)   
+    kwargs = {
+        "input_layer" : input_layer,
+        "merge_layer" : merge_layer,
+        "merging_attributes" : merging_attributes,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "future" : future
+    }
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.merge_layers, **kwargs)
     return gis._tools.featureanalysis.merge_layers(**params)
 #----------------------------------------------------------------------
 def overlay_layers(
@@ -424,9 +501,21 @@ def overlay_layers(
 
 
     """
-    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.overlay_layers, **kwargs)   
+    kwargs = {
+        "input_layer" : input_layer,
+        "overlay_layer" : overlay_layer,
+        "overlay_type" : overlay_type,
+        "snap_to_input" : snap_to_input,
+        "output_type" : output_type,
+        "tolerance" : tolerance,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "future" : future
+    }
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.overlay_layers, **kwargs)
     return gis._tools.featureanalysis.overlay_layers(**params)
 #----------------------------------------------------------------------
 def create_route_layers(route_data_item,
@@ -496,13 +585,24 @@ def create_route_layers(route_data_item,
                             route_name_prefix="santa_ana",
                             folder_name="create route layers")
     """
-    kwargs = locals()
+
     gis = _arcgis.env.active_gis if gis is None else gis
-    params_tool = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.create_route_layers, **kwargs)   
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis.create_route_layers, **kwargs)   
+    kwargs = {
+        "route_data_item" : route_data_item,
+        "delete_route_data_item" : delete_route_data_item,
+        "tags" : tags,
+        "summary" : summary,
+        "route_name_prefix" : route_name_prefix,
+        "folder_name" : folder_name,
+        "gis" : gis,
+        "estimate" : estimate,
+        "future" : future
+    }
+    params_tool = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.create_route_layers, **kwargs)
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis.create_route_layers, **kwargs)
     if 'context' not in params_tool and 'context' in params:
         params.pop('context', None)
-        
+
     output_name = {}
     output_item_properties = {}
     if route_name_prefix:
@@ -529,7 +629,3 @@ def create_route_layers(route_data_item,
     if output_name:
         params['output_name'] = output_name
     return gis._tools.featureanalysis.create_route_layers(**params)
-    #return gis._tools.featureanalysis.create_route_layers(
-        #route_data_item,
-        #delete_route_data_item,
-        #output_name, estimate=estimate, future=future)

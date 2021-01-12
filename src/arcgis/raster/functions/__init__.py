@@ -27,6 +27,7 @@ from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, 
 from .utility import _raster_input_rft, _get_raster_ra_rft, _input_rft, _find_object_ref, \
                      _python_variable_name
 from arcgis.features.layer import FeatureLayer as _FeatureLayer
+from .._RasterInfo import RasterInfo
 import logging
 _LOGGER = logging.getLogger(__name__)
 from datetime import datetime
@@ -57,6 +58,8 @@ hidden_inputs = ["ToolName","PrimaryInputParameterName", "OutputRasterParameterN
 
 
 def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_name='Raster'):
+
+    _set_multidimensional_rules(function_chain)
 
     if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
         return _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2, variable_name)
@@ -105,6 +108,7 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     return newlyr
 
 def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
+    _set_multidimensional_rules(function_chain, function_chain_ra)
     if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
         return _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra)
     if isinstance(layer, Item):
@@ -163,9 +167,9 @@ def _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2=None, varia
         try:            
             import arcpy, json
             arcpylyr=arcpy.ia.Apply(layer._uri,json.dumps(function_chain_ra))
-            newlyr = Raster(str(arcpylyr), is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
-        except:
-            pass
+            newlyr = Raster(arcpylyr, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        except Exception as err:
+            _LOGGER.warning(err)
 
     #newlyr.properties = layer.properties
     newlyr._engine_obj._fn = function_chain
@@ -177,6 +181,7 @@ def _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2=None, varia
     newlyr._engine_obj._filtered = layer._filtered
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
+    newlyr._engine_obj.extent = layer.extent
 
     if layer._do_not_hydrate:
         newlyr._engine_obj.token = layer.token
@@ -191,10 +196,12 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
         newlyr = Raster(layer._url, is_multidimensional= layer._is_multidimensional, engine= layer._engine,  gis=layer._gis)
 
     if layer._engine==_ArcpyRaster:
-        import arcpy, json
-        arcpylyr=arcpy.ia.Apply(layer._uri,json.dumps(function_chain_ra))
-        newlyr = Raster(str(arcpylyr), is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
-
+        try:
+            import arcpy, json
+            arcpylyr=arcpy.ia.Apply(layer._uri,json.dumps(function_chain_ra))
+            newlyr = Raster(arcpylyr, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        except Exception as err:
+            _LOGGER.warning(err)
 
     #newlyr.properties = layer.properties
     newlyr._engine_obj._fn = function_chain
@@ -206,11 +213,30 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
     newlyr._engine_obj._filtered = layer._filtered
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
+    newlyr._engine_obj.extent = layer.extent
 
     if layer._do_not_hydrate:
         newlyr._engine_obj.token = layer.token
 
     return newlyr
+
+def _set_multidimensional_rules(function_chain = None, function_chain_ra = None):
+    match_variables = _arcgis.env.match_variables
+    union_dimension = _arcgis.env.union_dimension
+
+    if (match_variables is not None) and isinstance(match_variables, bool):
+        if (function_chain is not None) and 'MatchVariable' not in function_chain.keys():
+            function_chain['rasterFunctionArguments']['MatchVariable'] =  match_variables
+        if (function_chain_ra is not None) and 'MatchVariable' not in function_chain_ra.keys():
+            function_chain_ra['rasterFunctionArguments']['MatchVariable'] = match_variables
+    if (union_dimension is not None) and isinstance(union_dimension, bool):
+        if (function_chain is not None) and 'UnionDimension' not in function_chain.keys():
+            function_chain['rasterFunctionArguments']['UnionDimension'] = union_dimension
+        if (function_chain_ra is not None) and 'UnionDimension' not in function_chain.keys():
+            function_chain_ra['rasterFunctionArguments']['UnionDimension'] =  union_dimension
+
+
+
 
 def arg_statistics(rasters, stat_type=None, min_value=None, max_value=None, undefined_class=None, astype=None):
     """
@@ -516,7 +542,13 @@ def band_arithmetic(raster, band_indexes=None, astype=None, method=0):
                    20 = IronOxide,
                    21 = FerrousMinerals,
                    22 = ClayMinerals,
-                   23 = WNDWI
+                   23 = WNDWI,
+                   24 = BAI,
+                   25 = NBR,
+                   26 = NDBI,
+                   27 = NDMI,
+                   28 = NDSI,
+                   29 = MNDWI
 
     :return: band_arithmetic applied to the input raster
     """
@@ -875,6 +907,94 @@ def wndwi(raster, band_indexes="2 5 6 0.5", astype=None):
     """
     return band_arithmetic(raster, band_indexes, astype, 23)
 
+def bai(raster, band_indexes="3 4", astype=None):
+    """
+    The Burn Area Index (BAI) uses the reflectance values in the red and NIR portion of the spectrum to identify
+    the areas of the terrain affected by fire.
+
+    BAI = 1/((0.1 -RED)^2 + (0.06 - NIR)^2)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Red NIR", e.g., "3 4" or [3,4]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 24)
+
+def nbr(raster, band_indexes="7 5", astype=None):
+    """
+    The Normalized Burn Ratio Index (NBRI) uses the NIR and SWIR bands to emphasize burned areas,
+    while mitigating illumination and atmospheric effects. Your images should be corrected to reflectance values
+    before using this index.
+
+    NBR = (NIR - SWIR) / (NIR+ SWIR)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "SWIR NIR", e.g., "7 5" or [7,5]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 25)
+
+def ndbi(raster, band_indexes="6 5", astype=None):
+    """
+    The Normalized Difference Built-up Index (NDBI) uses the NIR and SWIR bands to emphasize  man-made built-up areas.
+    It is ratio based to mitigate the effects of terrain illumination differences as well as atmospheric effects.
+
+    NDBI = (SWIR - NIR) / (SWIR + NIR)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "SWIR NIR", e.g., "6 5" or [6,5]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 26)
+
+def ndmi(raster, band_indexes="5 6", astype=None):
+    """
+    The Normalized Difference Moisture Index (NDMI) is sensitive to the moisture levels in vegetation.
+    It is used to monitor droughts as well as monitor fuel levels in fire-prone areas. It uses NIR and SWIR bands to
+    create a ratio designed to mitigate illumination and atmospheric effects.
+
+    NDMI = (NIR - SWIR1)/(NIR + SWIR1)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR SWIR1", e.g., "5 6" or [5,6]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 27)
+
+def ndsi(raster, band_indexes="4 6", astype=None):
+    """
+    The Normalized Difference Snow Index (NDSI) is designed to use MODIS (band 4 and band 6) and
+    Landsat TM (band 2 and band 5) for identification of snow cover while ignoring cloud cover. Since it is ratio based,
+    it also mitigates atmospheric effects.
+
+    NDSI = (Green - SWIR) / (Green + SWIR)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Green SWIR", e.g., "4 6" or [4,6]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 28)
+
+def mndwi(raster, band_indexes="3 6", astype=None):
+    """
+    The Modified Normalized Difference Water Index (MNDWI) uses green and SWIR bands for the enhancement 
+    of open water features. It also diminishes built-up area features that are often correlated with open
+    water in other indices.
+
+    MNDWI = (Green - SWIR) / (Green + SWIR)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Green SWIR", e.g., "3 6" or [3,6]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 29)
+
 def expression(raster, expression="(B3 - B1 / B3 + B1)", astype=None):
     """
     Use a single-line algebraic formula to create a single-band output. The supported operators are -, +, /, *, and unary -.
@@ -975,7 +1095,7 @@ def colormap(raster, colormap_name=None, colormap=None, colorramp=None, astype=N
     :param colorramp: Can be a string specifiying color ramp name like <Black To White|Yellow To Red|Slope|more..>
                       or a color ramp object. 
                       For more information about colorramp object, see color ramp object at
-                      http://resources.arcgis.com/en/help/arcgis-rest-api/#/Color_ramp_objects/02r3000001m0000000/)
+                      https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
     :param astype: output pixel type
     :return: the colorized raster
     """
@@ -1004,12 +1124,14 @@ def colormap(raster, colormap_name=None, colormap=None, colorramp=None, astype=N
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def composite_band(rasters, astype=None):
+def composite_band(rasters, astype=None, cellsize_type='MaxOf'):
     """
     Combines multiple images to form a multiband image.
 
     :param rasters: input rasters
     :param astype: output pixel type
+    :param cellsize_type: The cell size used to create the output raster.
+                          one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
     :return: the multiband image
     """
     layer, raster, raster_ra = _raster_input(rasters)
@@ -1024,6 +1146,20 @@ def composite_band(rasters, astype=None):
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
+
+    cellsize_types = {
+        "firstof" : 0,
+        "minof" : 1,
+        "maxof" : 2,
+        "meanof" : 3,
+        "lastof" : 4
+    }      
+
+    if cellsize_type is not None:
+        if isinstance(cellsize_type, str):
+            template_dict["rasterFunctionArguments"]['CellsizeType'] = cellsize_types[cellsize_type.lower()]
+        elif isinstance(cellsize_type,int):
+            template_dict["rasterFunctionArguments"]['CellsizeType'] = cellsize_type
 
     return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
 
@@ -1254,29 +1390,39 @@ def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, 
 
 
 def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_factor=None, z_offset=None, constant_z=None,
-              correct_geoid=None, astype=None):
+              correct_geoid=None, astype=None, tolerance=None, dem= None):
     """
     The geometric function transforms the image (for example, orthorectification) based on a sensor definition and a
     terrain model.This function was added at 10.1.The arguments for the geometric function are as follows:
 
-    :param raster: input raster
+    :param raster: The input raster.
     :param geodata_transforms: Please refer to the Geodata Transformations documentation for more details.
-    :param append_geodata_xform: boolean
-    :param z_factor: double
-    :param z_offset: double
-    :param constant_z: double
-    :param correct_geoid: boolean
-    :param astype: output pixel type
-    :return: the output raster
+    :param append_geodata_xform: Optional boolean. Indicates whether the geodata transformation is appended to the existing one from the input raster.
+    :param z_factor: Optional double. Satellite rational polynomial coefficients (RPCs) are scaled for 
+                     elevation datasets with vertical units in meters. If your elevation uses other 
+                     vertical units, enter a Z Factor to rescale to meters. For example, if your 
+                     elevation units are in feet, you would use a value of 0.3048 to convert your 
+                     elevation units from feet to meters.
+    :param z_offset: Optional double. The base value to be added to the elevation value in the DEM. 
+                     This could be used to offset elevation values that do not start at sea level.
+    :param constant_z: Optional double. Specify a constant elevation to use for the Geometric function.
+    :param correct_geoid: Optional boolean. Set it to True to apply the geoid (EGM96) correction to the z-values, 
+                          unless your DEM is already referenced to ellipsoidal heights.
+    :param tolerance: Optional double. Specify the maximum tolerable error in the geometric function, given in number of pixels.
+    :param dem: Optional Raster. Specify the DEM to use for the Geometric function
 
     """
 
-    layer, raster, raster_ra = _raster_input(raster)
+    layer1, raster_1, raster_ra1 = _raster_input(raster)
+
+    layer2=None
+    if dem is not None:
+        layer2, raster_2, raster_ra2 = _raster_input(raster, dem)
 
     template_dict = {
         "rasterFunction": "Geometric",
         "rasterFunctionArguments": {
-            "Raster": raster
+            "Raster": raster_1
         },
         "variableName": "Raster"
     }
@@ -1296,8 +1442,13 @@ def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_fact
         template_dict["rasterFunctionArguments"]["ConstantZ"] = constant_z
     if correct_geoid is not None:
         template_dict["rasterFunctionArguments"]["CorrectGeoid"] = correct_geoid
+    if tolerance is not None:
+        template_dict["rasterFunctionArguments"]["Tolerance"] = tolerance
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    if dem is not None:
+        template_dict["rasterFunctionArguments"]["DEM"] = raster_2
+        return _clone_layer(layer1, template_dict, raster_ra1, raster_ra2)
+    return _clone_layer(layer1, template_dict, raster_ra1)
 
 
 def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_power=None, psz_factor=None,
@@ -1370,7 +1521,7 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
     The arguments for the local function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param operation: int see reference at http://resources.arcgis.com/en/help/arcobjects-net/componenthelp/index.html#//004000000149000000
+    :param operation: int see reference at https://desktop.arcgis.com/en/arcobjects/latest/net/webframe.htm#esriGeoAnalysisFunctionEnum.htm
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param astype: output pixel type
@@ -2848,7 +2999,7 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
     :param colorramp: string, specifying color ramp name like <Black To White|Yellow To Red|Slope|more..>
                       or a color ramp object. 
                       For more information about colorramp object, see color ramp object at
-                      http://resources.arcgis.com/en/help/arcgis-rest-api/#/Color_ramp_objects/02r3000001m0000000/)
+                      https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
     :param hillshade_type: new at 10.8.1. int, 0 = traditional, 1 = multi - directional; default is 0
     :return: the output raster
 
@@ -2953,11 +3104,14 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
     :param kernel_rows: int (e.g. 3)
     :param stat_type: int or string.
                       There are four types of focal statistical functions:
-                      1=Min, 2=Max, 3=Mean, 4=StandardDeviation
+                      1=Min, 2=Max, 3=Mean, 4=StandardDeviation, 5=Median, 6=Majority, 7=Minority
                       -Min-Calculates the minimum value of the pixels within the neighborhood
                       -Max-Calculates the maximum value of the pixels within the neighborhood
                       -Mean-Calculates the average value of the pixels within the neighborhood. This is the default.
                       -StandardDeviation-Calculates the standard deviation value of the pixels within the neighborhood
+                      -Median-Calculates the median value of pixels within the neighborhood.
+                      -Majority-Calculates the majority value, or the value that occurs most frequently, of the pixels within the neighborhood.
+                      -Minority-Calculates the minority value, or the value that occurs least frequently, of the pixels within the neighborhood.
     :param columns: int (e.g. 3). The number of pixel rows to use in your focal neighborhood dimension.
     :param rows: int (e.g. 3). The number of pixel columns to use in your focal neighborhood dimension.
     :param fill_no_data_only: bool
@@ -2967,7 +3121,7 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
     .. note::
         The focal_statistics() function is different from the focal_stats() function in the following aspects:
 
-        The focal_statistics() function supports  Minimum, Maximum, Mean, and Standard Deviation.
+        The focal_statistics() function supports  Minimum, Maximum, Mean, and Standard Deviation, Median, Majority, Minority.  
         The focal_stats() function supports Mean, Majority, Maximum, Median, Minimum, Minority, Range, Standard deviation, Sum, and Variety.
 
         The focal_statistics() function supports only Rectangle.
@@ -2983,7 +3137,7 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
 
     layer, raster, raster_ra = _raster_input(raster)
 
-    statistics_types = ["Min", "Max", "Mean", "StandardDeviation"]
+    statistics_types = ["Min", "Max", "Mean", "StandardDeviation", "Median", "Majority", "Minority"]
 
     template_dict = {
         "rasterFunction": "Statistics",
@@ -3356,7 +3510,7 @@ def apply(raster, fn_name, **kwargs):
         "rasterFunction" : "Identity",
         "rasterFunctionArguments": {
             "Raster" : {"renderingRule":copy.deepcopy(template_dict),
-                         "url":layer._url},
+                         "url":layer._lyr_json['url']},
         }
     }
 
@@ -4360,7 +4514,7 @@ def constant_raster(constant, raster_info, gis=None):
     Creates a virtual raster with a single pixel value.
 
     :param constant: Required list. The value of the constant to be added to the virtual raster.
-    :param raster_info: Required Raster info dictionary or ImageryLayer object to set the properties of the output raster.
+    :param raster_info: Required Raster info dictionary or arcgis.raster.RasterInfo object or ImageryLayer object to set the properties of the output raster.
                         if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
 
                         Example for RasterInfo dict - 
@@ -4403,6 +4557,8 @@ def constant_raster(constant, raster_info, gis=None):
         layer_raster_info = {}
         if isinstance(raster_info, ImageryLayer):
             layer_raster_info = copy.deepcopy(raster_info.raster_info)
+        elif isinstance(raster_info, RasterInfo):
+            layer_raster_info = copy.deepcopy(raster_info.to_dict())
         else:
             layer_raster_info = copy.deepcopy(raster_info)
         if "pixelType" in layer_raster_info.keys():
@@ -4429,7 +4585,7 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
     """
     Creates a virtual raster with random values for each cell.
 
-    :param raster_info: Required Raster info dictionary or ImageryLayer object to set the properties of the output raster.
+    :param raster_info: Required Raster info dictionary or arcgis.raster.RasterInfo object or ImageryLayer object to set the properties of the output raster.
                         if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
 
                         Example for RasterInfo dict - 
@@ -4567,6 +4723,8 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
         layer_raster_info = {}
         if isinstance(raster_info, ImageryLayer):
             layer_raster_info = copy.deepcopy(raster_info.raster_info)
+        elif isinstance(raster_info, RasterInfo):
+            layer_raster_info = copy.deepcopy(raster_info.to_dict())
         else:
             layer_raster_info = copy.deepcopy(raster_info)
         if "pixelType" in layer_raster_info.keys():
@@ -4688,7 +4846,8 @@ def _raster_item(raster, raster_id=None):
     return _clone_layer(layer, template_dict, raster_ra)
 
 def generate_trend(raster, dimension_name, regression_type=0, cycle_length = 1, cycle_unit = "YEARS",
-                   harmonic_frequency=1, polynomial_order=2, ignore_nodata=True, rmse=True, r2=False,slope_p_value=False):
+                   harmonic_frequency=1, polynomial_order=2, ignore_nodata=True, rmse=True, r2=False,slope_p_value=False,
+                   seasonal_period="DAYS"):
 
     """
     Estimates the trend for each pixel along a dimension for one or more variables in a multidimensional raster.
@@ -4701,6 +4860,8 @@ def generate_trend(raster, dimension_name, regression_type=0, cycle_length = 1, 
                             - 0 (LINEAR) : Fits the pixel values for a variable along a linear trend line. This is the default.
                             - 1 (HARMONIC) : Fits the pixel values for a variable along a harmonic trend line.
                             - 2 (POLYNOMIAL) : Fits the pixel values for a variable along a second-order polynomial trend line.
+                            - 3 (MANN-KENDALL) : Variable pixel values will be evaluated using the Mann-Kendall trend test. 
+                            - 4 (SEASONAL-KENDALL) : Variable pixel values will be evaluated using the Seasonal-Kendall trend test. 
 
     :param cycle_length: Optional Integer. The length of periodic variation to model. This parameter is required when Trend Line Type is
                          set to Harmonic. For example, leaf greenness often has one strong cycle of variation in a single year, so the 
@@ -4734,6 +4895,10 @@ def generate_trend(raster, dimension_name, regression_type=0, cycle_length = 1, 
                           - True : The p-value will be calculated and displayed when the tool is finished running. 
                           - False : The p-value will not be calculated. This is the default.
 
+    :param seasonal_period: Optional String. Specifies the seasonal period. Default - "DAYS"
+                            Possible Options - "DAYS", "MONTHS"
+
+
     :return: output raster 
     """
     layer, raster, raster_ra = _raster_input(raster)
@@ -4748,7 +4913,7 @@ def generate_trend(raster, dimension_name, regression_type=0, cycle_length = 1, 
     if dimension_name is not None:
         template_dict["rasterFunctionArguments"]['DimensionName'] = dimension_name
 
-    regression_type_dict = {"LINEAR":0, "HARMONIC":1, "POLYNOMIAL":2}
+    regression_type_dict = {"LINEAR":0, "HARMONIC":1, "POLYNOMIAL":2, "MANN-KENDALL":3,"SEASONAL-KENDALL":4}
     if regression_type is not None:
         if isinstance(regression_type, str):
             regression_type= regression_type_dict[regression_type.upper()]
@@ -4779,6 +4944,15 @@ def generate_trend(raster, dimension_name, regression_type=0, cycle_length = 1, 
 
     if slope_p_value is not None:
         template_dict["rasterFunctionArguments"]['SlopePValue'] = slope_p_value
+
+    if seasonal_period is not None:
+        seasonal_period_allowed_values = ["DAYS", "MONTHS"]
+        if [element.lower() for element in seasonal_period_allowed_values].count(seasonal_period.lower()) <= 0 :
+            raise RuntimeError('seasonal_period can only be one of the following:  '+str(seasonal_period_allowed_values))
+        for element in seasonal_period_allowed_values:
+            if seasonal_period.lower() == element.lower():
+                seasonal_period = element
+        template_dict["rasterFunctionArguments"]['SeasonalPeriod'] = seasonal_period
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -5135,7 +5309,7 @@ def interpolate_irregular_data(point_feature, value_field=None, cell_size=0, int
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    point_feature_class                  Rquired. The input point feature layer.
+    point_feature_class                  Required. The input point feature layer.
     --------------------------------     --------------------------------------------------------------------
     value_field                          Optional string. The name of the field that contains the value of the points to be interpolated.
     --------------------------------     --------------------------------------------------------------------
@@ -5244,6 +5418,1099 @@ def _simple_collection(raster, md_info=None):
     if md_info is not None:
         template_dict["rasterFunctionArguments"]['MultidimensionalInfo'] = md_info
 
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+def aggregate(raster,
+              dimension=None,
+              aggregation_function=None,
+              aggregation_definition_type="ALL",
+              interval_keyword=None,
+              interval_value=None,
+              interval_unit=None,
+              interval_ranges=None,
+              ignore_nodata=False
+              ):
+    """
+     Creates a new raster by applying an aggregation function
+    :param raster: Input Raster. 
+    :param aggregation_function: Optional String. Specifies the mathematical method that will be used
+                               to combine the aggregated slices in an interval.
+
+                                - MEAN : Calculates the mean of a pixel's values across all slices in the interval. This is the default.
+
+                                - MAXIMUM : Calculates the maximum value of a pixel across all slices in the interval.
+
+                                - MAJORITY : Calculates the value that occurred most frequently for a pixel across all slices in the interval.
+
+                                - MINIMUM : Calculates the minimum value of a pixel across all slices in the interval.
+
+                                - MINORITY : Calculates the value that occurred least frequently for a pixel across all slices in the interval.
+
+                                - MEDIAN : Calculates the median value of a pixel across all slices in the interval.
+
+                                - RANGE : Calculates the range of values for a pixel across all slices in the interval.
+
+                                - STD : Calculates the standard deviation of a pixel's values across all slices in the interval.
+
+                                - SUM : Calculates the sum of a pixel's values across all slices in the interval.
+
+                                - VARIETY : Calculates the number of unique values of a pixel across all slices in the interval.
+
+                                You may also pass custom aggregaation function. 
+                                Create an RFT object out of the raster function template item on the portal and 
+                                specify that as the input to aggregation_function or directly specify the RFT in JSON format as the 
+                                aggregation_method.
+
+    :param aggregation_definition_type: Optional String. Specifies the dimension interval for which the data
+                                        will be aggregated.
+
+                                        - ALL : The data values will be aggregated across all slices. This is the default.
+
+                                        - INTERVAL_KEYWORD : The variable data will be aggregated using a commonly known interval.
+
+                                        - INTERVAL_VALUE : The variable data will be aggregated using a user-specified interval and unit.
+
+                                        - INTERVAL_RANGES : The variable data will be aggregated between specified pairs of values or dates.
+    :param dimension: Optional String. This is the dimension along which the variables will be aggregated.
+    :param interval_keyword: Optional String. Specifies the keyword interval that will be used
+                                             when aggregating along the dimension. This parameter is required
+                                             when the aggregation_def parameter is set to INTERVAL_KEYWORD, and
+                                             the aggregation must be across time.
+
+                                             - HOURLY : The data values will be aggregated into hourly time steps, 
+                                               and the result will include every hour in the time series.
+
+                                             - DAILY : The data values will be aggregated into daily time steps, 
+                                               and the result will include every day in the time series.
+
+                                             - WEEKLY : The data values will be aggregated into weekly time steps, 
+                                               and the result will include every week in the time series.
+
+                                             - DEKADLY : Divides each month into 3 periods of 10 days each 
+                                               (last period might have more or less than 10 days)
+                                               and each month would output 3 slices.
+
+                                             - PENTADLY : Divides each month into 6 periods of 5 days each 
+                                               (last period might have more or less than 5 days)
+                                               and each month would output 6 slices.
+
+                                             - MONTHLY : The data values will be aggregated into monthly time steps, 
+                                               and the result will include every month in the time series.
+
+                                             - QUARTERLY : The data values will be aggregated into quarterly time steps, 
+                                               and the result will include every quarter in the time series.
+
+                                             - YEARLY : The data values will be aggregated into yearly time steps, 
+                                               and the result will include every year in the time series.
+
+                                             - RECURRING_DAILY : The data values will be aggregated into daily time steps, 
+                                               and the result includes each one aggregated value per day. 
+                                               The output will include, at most, 366 daily time slices
+
+                                             - RECURRING_WEEKLY : The data values will be aggregated into weekly time steps, 
+                                               and the result will include one aggregated value per week. 
+                                               The output will include, at most, 53 weekly time slices.
+
+                                             - RECURRING_MONTHLY : The data values will be aggregated into weekly time steps, 
+                                               and the result will include one aggregated value per month. 
+                                               The output will include, at most, 12 monthly time slices.
+
+                                             - RECURRING_QUARTERLY : The data values will be aggregated into weekly time steps, 
+                                               and the result will include one aggregated value per quarter. 
+                                               The output will include, at most, 4 quarterly time slices.
+
+    :param interval_value: Optional String. The size of the interval that will be used for the
+                           aggregation. This parameter is required when the aggregation_def
+                           parameter is set to INTERVAL_VALUE.
+
+                           For example, to aggregate 30 years of monthly temperature data into
+                           5-year increments, enter 5 as the interval_value, and specify
+                           interval_unit as YEARS.
+
+    :param interval_unit: Optional String. The unit that will be used for the interval value.
+                          This parameter is required when the dimension parameter is set to a
+                          time field and the aggregation_def parameter is set to INTERVAL_VALUE.
+
+                          If you are aggregating over anything other than time, this option
+                          will not be available and the unit for the interval value will match
+                          the variable unit of the input multidimensional raster data.
+
+                          - HOURS : The data values will be aggregated into hourly time slices at the interval provided.
+                          - DAYS : The data values will be aggregated into daily time slices at the interval provided.
+                          - WEEKS : The data values will be aggregated into weekly time slices at the interval provided.
+                          - MONTHS : The data values will be aggregated into monthly time slices at the interval provided.
+                          - YEARS : The data values will be aggregated into yearly time slices at the interval provided.
+    :param interval_ranges: Optional List of dictionary objects. Interval ranges specified as list of dictionary objects 
+                            that will be used to aggregate groups of values. 
+
+                            This parameter is required when the aggregation_definition parameter is set to INTERVAL_RANGE.
+                            If dimension is StdTime, then the value must be specified in human readable time format (YYYY-MM-DDTHH:MM:SS).
+
+                            Syntax: 
+                                [{"minValue":"<min value>","maxValue":"<max value>"},
+                                {"minValue":"<min value>","maxValue":"<max value>"}]
+
+                            Example:
+                                [{"minValue":"2012-01-15T03:00:00","maxValue":"2012-01-15T09:00:00"},
+                                {"minValue":"2012-01-15T12:00:00","maxValue":"2012-01-15T21:00:00"}]
+    
+    :param ignore_nodata: Optional Boolean. Specifies whether NoData values are ignored.
+
+                            - True : The function will include all valid pixels and ignore any NoData pixels.
+                                     This is the default.
+                            - False : The function will result in NoData if there are any NoData values.
+    :return: the output raster with function applied on it
+    """
+    from arcgis.raster._util import _local_function_template
+
+    layer, raster, raster_ra = _raster_input(raster)
+       
+    template_dict = {
+        "rasterFunction": "RasterCollection",
+        "rasterFunctionArguments": {
+            "RasterCollection": raster
+        },
+        "variableName": "RasterCollection"
+    }
+    
+
+    if aggregation_function is not None:
+        if isinstance(aggregation_function, RFT):
+            template_dict["rasterFunctionArguments"]["AggregationFunction"]=aggregation_function._rft_json
+        elif isinstance(aggregation_function, dict):
+            template_dict["rasterFunctionArguments"]["AggregationFunction"]=aggregation_function
+        elif isinstance(aggregation_function, str):
+            opnum = None
+            if aggregation_function.upper() == "MEAN":
+                opnum = 68 if ignore_nodata else 40
+            elif aggregation_function.upper() == "MAXIMUM":
+                opnum = 67 if ignore_nodata else 39
+            elif aggregation_function.upper() == "MAJORITY":
+                opnum = 66 if ignore_nodata else 38
+            elif aggregation_function.upper() == "MINIMUM":
+                opnum = 70 if ignore_nodata else 42
+            elif aggregation_function.upper() == "MINORITY":
+                opnum = 71 if ignore_nodata else 43
+            elif aggregation_function.upper() == "MEDIAN":
+                opnum = 69 if ignore_nodata else 41
+            elif aggregation_function.upper() == "RANGE":
+                opnum = 72 if ignore_nodata else 47
+            elif aggregation_function.upper() == "STD":
+                opnum = 73 if ignore_nodata else 54
+            elif aggregation_function.upper() == "SUM":
+                opnum = 74 if ignore_nodata else 55
+            elif aggregation_function.upper() == "VARIETY":
+                opnum = 75 if ignore_nodata else 58
+
+            if opnum is None:
+                raise RuntimeError("Invalid aggregation_function")
+            else:
+                template_dict["rasterFunctionArguments"]["AggregationFunction"] = _local_function_template(opnum)
+        if "type" not in template_dict["rasterFunctionArguments"]["AggregationFunction"]:
+            template_dict["rasterFunctionArguments"]["AggregationFunction"].update({'type':'RasterFunctionTemplate'})
+
+    aggregation_definition = {}
+    aggregation_definition.update({"definitionType": aggregation_definition_type})
+
+    if dimension is not None:
+         aggregation_definition.update({"dimension":dimension})
+
+    if aggregation_definition_type.upper() == "INTERVAL_VALUE":
+        if interval_value is None:
+            raise RuntimeError("interval_value cannot be None, if aggregation_definition_type is INTERVAL_VALUE")
+
+        aggregation_definition.update({"intervalValue":interval_value})
+        if interval_unit is not None:
+            aggregation_definition.update({"intervalUnits":interval_unit})
+
+    elif aggregation_definition_type.upper() == "INTERVAL_KEYWORD":
+        if interval_keyword is None:
+            raise RuntimeError("interval_keyword cannot be None, if aggregation_definition_type is INTERVAL_KEYWORD")
+
+        interval_keyword_val=interval_keyword
+        if interval_keyword is not None:
+            interval_keyword_allowed_values = ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY',
+                                               'RECURRING_MONTHLY', 'RECURRING_QUARTERLY', 'PENTADLY', 'DEKADLY']
+            if [element.lower() for element in interval_keyword_allowed_values].count(interval_keyword.lower()) <= 0 :
+                raise RuntimeError('interval_keyword can only be one of the following: '+str(interval_keyword_allowed_values))
+            interval_keyword_val=interval_keyword
+            for element in interval_keyword_allowed_values:
+                if interval_keyword.upper() == element:
+                    interval_keyword_val = element
+        aggregation_definition.update({"intervalKeyword":interval_keyword})
+
+    elif aggregation_definition_type.upper() == "INTERVAL_RANGES":
+        if interval_ranges is None:
+            raise RuntimeError("interval_ranges cannot be None, if aggregation_definition_type is INTERVAL_RANGES")
+            
+        min_list=[]
+        max_list=[]
+        if isinstance(interval_ranges, list):
+            for ele in interval_ranges:
+                if isinstance(ele,dict):
+                    min_list.append(ele["minValue"])
+                    max_list.append(ele["maxValue"])
+
+        if isinstance(interval_ranges, dict):
+            min_list.append(interval_ranges["minValue"])
+            max_list.append(interval_ranges["maxValue"])
+
+        aggregation_definition.update({"minValues":min_list})
+        aggregation_definition.update({"maxValues":max_list})
+
+    if aggregation_definition is not None:
+        template_dict["rasterFunctionArguments"]["AggregationDefinition"] = _json.dumps(aggregation_definition)
+
+    #if where_clause is not None:
+    #    template_dict["rasterFunctionArguments"]["WhereClause"] = where_clause
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def compute_change(raster1,
+                   raster2,
+                   method=0,
+                   from_class_values=[],
+                   to_class_values=[],
+                   filter_method=1,
+                   define_transition_colors=0,
+                   extent_type="IntersectionOf", 
+                   cellsize_type="MaxOf"):
+
+    """
+    Produce raster outputs representing of various changes.
+    Function available in ArcGIS Image Server 10.8.1 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    raster1                                  Required ImageryLayer object. The first raster for compute change function.
+                                             To evaluate change from time 1 (earlier) to time 2 (later), enter the time 1 raster here.
+    ------------------------------------     --------------------------------------------------------------------
+    raster2                                  Required ImageryLayer object. The second raster for compute change function.
+                                             To evaluate change from time 1 (earlier) to time 2 (later), enter the time 2 raster.
+    ------------------------------------     --------------------------------------------------------------------
+    method                                   Optional string. Specifies the method to be used.
+                                             - DIFFERENCE : The mathematical difference, or subtraction, between the pixel values in the input rasters will be calculated. This is the default.
+                                             - RELATIVE_DIFFERENCE : The difference in pixel values, accounting for the magnitudes of the values being compared, will be calculated.
+                                             - CATEGORICAL_DIFFERENCE : The difference between two categorical or thematic rasters will be calculated, where the output contains class transitions that occurred between the two rasters.
+
+                                             Example:
+                                                  "DIFFERENCE"
+    ------------------------------------     --------------------------------------------------------------------
+    from_class_values                        Optional list. List of integer values corresponding to the ClassValue 
+                                             field in raster1. 
+                                             Required if method is CATEGORICAL_DIFFERENCE.
+    ------------------------------------     --------------------------------------------------------------------
+    to_class_values                          Optional list. List of integer values corresponding to the ClassValue 
+                                             field in raster2. 
+                                             Required if method is CATEGORICAL_DIFFERENCE.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_method                            Optional string. Default value is "CHANGED_PIXELS_ONLY" (1).
+                                             Possible options are:
+                                             - ALL
+                                             - CHANGED_PIXELS_ONLY
+                                             - UNCHANGED_PIXELS_ONLY
+    ------------------------------------     --------------------------------------------------------------------
+    define_transition_colors                 Optional string. Defines the method used to assign color for the output classes
+                                             - AVERAGE : The color of the pixel will be the average of the color of its original class and the color of its final class.
+                                             - FROM_COLOR : The color of the pixel will be the color of its original class.
+                                             - TO_COLOR :The color of the pixel will be the color of its final class.
+    ------------------------------------     --------------------------------------------------------------------
+    extent_type                              Optional string.  One of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
+    ------------------------------------     --------------------------------------------------------------------
+    cellsize_type                            Optional string. One of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
+    ====================================     ====================================================================
+
+    :return: Imagery layer
+
+    """
+
+    layer1, raster_1, raster_ra1 = _raster_input(raster1)
+    layer2, raster_2, raster_ra2 = _raster_input(raster1, raster2)
+
+    if layer1 is not None and (layer2 is None or ((layer2 is not None) and layer2._datastore_raster is False)):
+        layer = layer1
+    else:
+        layer = layer2
+    #layer = layer1 if layer1 is not None else layer2
+
+    method_types = {
+        'DIFFERENCE': 0,
+        'RELATIVE_DIFFERENCE': 1,
+        'CATEGORICAL_DIFFERENCE' : 2
+    }
+
+    if isinstance(method, str):
+        method_allowed_values = ['DIFFERENCE', 'RELATIVE_DIFFERENCE', 'CATEGORICAL_DIFFERENCE']
+        if [element.upper() for element in method_allowed_values].count(method.upper()) <= 0 :
+            raise RuntimeError('method can only be one of the following: '+str(method_allowed_values))
+        in_method = method_types[method.upper()]
+    else:
+        in_method = method
+
+    template_dict = {
+        "rasterFunction": "ComputeChange",
+        "rasterFunctionArguments": {
+            "Method": in_method,
+            "Raster": raster_1,
+            "Raster2": raster_2
+        }
+    }
+
+    if from_class_values is not None:
+        template_dict["rasterFunctionArguments"]['FromClassValues'] = from_class_values
+
+    if to_class_values is not None:
+        template_dict["rasterFunctionArguments"]['ToClassValues'] = to_class_values
+
+
+    filter_method_types = {
+            'ALL': 0,
+            'CHANGED_PIXELS_ONLY': 1,
+            'UNCHANGED_PIXELS_ONLY' : 2
+        }
+
+    if isinstance(filter_method, str):
+        filter_method_allowed_values = ['ALL', 'CHANGED_PIXELS_ONLY', 'UNCHANGED_PIXELS_ONLY']
+        if [element.upper() for element in filter_method_allowed_values].count(filter_method.upper()) <= 0 :
+            raise RuntimeError('method can only be one of the following: '+str(filter_method_allowed_values))
+        in_filter_method = filter_method_types[filter_method.upper()]
+    else:
+        in_filter_method = filter_method
+
+    template_dict["rasterFunctionArguments"]['KeepMethod'] = in_filter_method
+
+
+    if define_transition_colors is not None:
+        define_transition_colors_types = {
+        'AVERAGE': 0,
+        'FROM_COLOR': 1,
+        'TO_COLOR' : 2
+    }
+
+        if isinstance(define_transition_colors, str):
+            define_transition_colors_allowed_values = ['AVERAGE', 'FROM_COLOR', 'TO_COLOR']
+            if [element.upper() for element in define_transition_colors_allowed_values].count(define_transition_colors.upper()) <= 0 :
+                raise RuntimeError('method can only be one of the following: '+str(define_transition_colors_allowed_values))
+            define_transition_colors = define_transition_colors_types[define_transition_colors.upper()]
+        else:
+            define_transition_colors = define_transition_colors
+        template_dict["rasterFunctionArguments"]['UseColorMethod'] = define_transition_colors
+
+    extent_types = {
+        "FIRSTOF": 0,
+        "INTERSECTIONOF": 1,
+        "UNIONOF": 2,
+        "LASTOF": 3
+    }
+
+    cellsize_types = {
+        "FIRSTOF": 0,
+        "MINOF": 1,
+        "MAXOF": 2,
+        "MEANOF": 3,
+        "LASTOF": 4
+    }
+
+    if extent_type.upper() not in extent_types.keys():
+        raise ValueError(
+            "Invalid extent_type value. Note that operation type should be one fo 'FirstOf', 'IntersectionOf', 'UnionOf', 'LastOf'")
+    in_extent_type = extent_types[extent_type.upper()]
+
+    if cellsize_type.upper() not in cellsize_types.keys():
+        raise ValueError(
+            "Invalid extent_type value. Note that operation type should be one fo 'FirstOf', 'MinOf', 'MaxOf', 'MeanOf', 'LastOf'")
+    in_cellsize_type = cellsize_types[cellsize_type.upper()]
+
+    if in_extent_type is not None:
+        template_dict["rasterFunctionArguments"]['ExtentType'] = in_extent_type
+    if in_cellsize_type is not None:
+        template_dict["rasterFunctionArguments"]['CellsizeType'] = in_cellsize_type
+
+    return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
+
+def detect_change_using_change_analysis_raster(raster, 
+                                               change_type="TIME_OF_LATEST_CHANGE", 
+                                               max_number_of_changes=1):
+
+    """
+    Function generates a raster containing pixel change information using the 
+    output change analysis raster from the arcgis.raster.analytics.analyze_changes_using_ccdc function.
+    Function available in ArcGIS Image Server 10.8.1 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    raster                                   Required ImageryLayer object. The raster generated from the analyze_changes_using_ccdc.
+    ------------------------------------     --------------------------------------------------------------------
+    change_type                              Optional String. Specifies the change information to calculate.
+
+                                                - TIME_OF_LATEST_CHANGE (0) - Each pixel will contain the date of the most recent change for that pixel in the time series.
+                                                - TIME_OF_EARLIEST_CHANGE (1) - Each pixel will contain the date of the earliest change for that pixel in the time series.
+                                                - TIME_OF_LARGEST_CHANGE (2) - Each pixel will contain the date of the most significant change for that pixel in the time series.
+                                                - NUM_OF_CHANGES (3) - Each pixel will contain the total number of times the pixel changed in the time series.
+
+                                             Example:
+                                                  "TIME_OF_LATEST_CHANGE"
+    ------------------------------------     --------------------------------------------------------------------
+    max_number_of_changes                    Optional Integer. The maximum number of changes per pixel that will 
+                                             be calculated when the change_type parameter is set to 
+                                             TIME_OF_LATEST_CHANGE, TIME_OF_EARLIEST_CHANGE, or TIME_OF_LARGEST_CHANGE. 
+                                             This number corresponds to the number of bands in the output raster. 
+                                             The default is 1, meaning only one change date will be calculated, 
+                                             and the output raster will contain only one band.
+
+                                             Example:
+                                                3
+    ====================================     ====================================================================
+
+    :return: Imagery layer
+
+    """
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "DetectChange",
+        "rasterFunctionArguments": {
+            "Raster" : raster,
+        },
+        "variableName": "Raster"
+    }
+
+
+    if change_type is not None:
+        change_types = {
+            'TIME_OF_LATEST_CHANGE': 0,
+            'TIME_OF_EARLIEST_CHANGE': 1,
+            'TIME_OF_LARGEST_CHANGE' : 2,
+            'NUM_OF_CHANGES' : 3
+        }
+
+        if isinstance(change_type, str):
+            in_change_type = change_types[change_type.upper()]
+        else:
+            in_change_type = change_type
+
+        template_dict["rasterFunctionArguments"]['ChangeType'] = in_change_type
+
+    if max_number_of_changes is not None:
+        template_dict["rasterFunctionArguments"]['MaxNumberChanges'] = max_number_of_changes
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+def trend_to_rgb(raster, 
+                 model_type=0):
+
+    """
+    Display the generate trend raster.
+    Function available in ArcGIS Image Server 10.8.1 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    raster                                   Required ImageryLayer object. 
+    ------------------------------------     --------------------------------------------------------------------
+    model_type                               Optional String. Specifies the model type.
+
+                                                - "LINEAR" (0)
+
+                                                - "HARMONIC" (1)
+
+                                             Example:
+                                                  "LINEAR"
+    ====================================     ====================================================================
+
+    :return: Imagery layer
+
+    """
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "TrendToRGB",
+        "rasterFunctionArguments": {
+            "Raster" : raster,
+        },
+        "variableName": "Raster"
+    }
+
+
+    if model_type is not None:
+        model_types = {
+            'linear': 0,
+            'harmonic': 1
+        }
+
+        if isinstance(model_type, str):
+            in_model_type = model_types[model_type.lower()]
+        else:
+            in_model_type = model_type
+
+        template_dict["rasterFunctionArguments"]['ModelType'] = in_model_type
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def apparent_reflectance(raster, radiance_gain_values = None, radiance_bias_values=None, 
+                         reflectance_gain_values=None, reflectance_bias_values=None,
+                         sun_elevation=None, albedo=False, scale_factor=None, offset=None):
+
+    """
+    Function calibrates the digital number (DN) values of imagery from some satellite 
+    sensors. The calibration uses sun elevation, acquisition date, sensor gain and 
+    bias for each band to derive Top of Atmosphere reflectance, plus sun angle correction.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    raster                                   Required ImageryLayer object. 
+    ------------------------------------     --------------------------------------------------------------------
+    radiance_gain_values                     Optional list. The radiance gain values
+    ------------------------------------     --------------------------------------------------------------------
+    radiance_bias_values                     Optional list. The radiance bias values
+    ------------------------------------     --------------------------------------------------------------------
+    reflectance_gain_values                  Optional list. The reflectance gain values
+    ------------------------------------     --------------------------------------------------------------------
+    reflectance_bias_values                  Optional list. The reflectance bias values
+    ------------------------------------     --------------------------------------------------------------------
+    sun_elevation                            This is sun elevation value, expressed in degrees.
+    ------------------------------------     --------------------------------------------------------------------
+    albedo                                   Optional bool The results of the Apparent Reflectance function can also 
+                                             be expressed as albedo, which is the percentage of the available 
+                                             energy reflected by the planetary surface. Albedo data is used 
+                                             by scientific users for complex modeling and technical 
+                                             remote-sensing applications.
+
+                                                False - The function returns apparent reflectance values. 
+                                                        This is the default.
+                                                True - The function returns 32-bit floating-point values, 
+                                                       which most commonly are in the range of 0.0 to 1.0. 
+                                                       No data clipping is performed if this option is selected.
+    ------------------------------------     --------------------------------------------------------------------
+    scale_factor                             Optional int. Your apparent reflectance output value can be expressed 
+                                             as an integer. The scaling factor is multiplied by the albedo to 
+                                             convert all floating-point values into integer values.
+
+                                             If the scale factor is either 0 or not specified, default scaling 
+                                             will be applied depending on the pixel type of the input data:
+
+                                                 For 16-bit unsigned data types, the default scale factor is 50,000.
+
+                                                 For 8-bit unsigned data types, default scale factor is 255.
+
+                                                 The scaling factor is always applied when the output is apparent reflectance.
+                                                 No scaling is applied when the output is albedo.
+    ------------------------------------     --------------------------------------------------------------------
+    offset                                   Optional int. 	
+                                             Your scaled albedo value can optionally have an offset value:
+
+                                             For 16-bit unsigned data types, the default scale offset is 5,000.
+                                             For 8-bit unsigned data types, the default scale offset is 0.
+                                             No scaling is applied when the output is albedo.
+    ====================================     ====================================================================
+
+    :return: Imagery layer
+
+    """
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "Reflectance",
+        "rasterFunctionArguments": {
+            "Raster" : raster,
+        },
+        "variableName": "Raster"
+    }
+
+    if radiance_gain_values is not None:
+        template_dict["rasterFunctionArguments"]['RadianceGainValues'] = radiance_gain_values
+
+    if radiance_bias_values is not None:
+        template_dict["rasterFunctionArguments"]['RadianceBiasValues'] = radiance_bias_values
+
+    if reflectance_gain_values is not None:
+        template_dict["rasterFunctionArguments"]['ReflectanceGainValues'] = reflectance_gain_values
+
+    if reflectance_bias_values is not None:
+        template_dict["rasterFunctionArguments"]['ReflectanceBiasValues'] = reflectance_bias_values
+
+    if sun_elevation is not None:
+        template_dict["rasterFunctionArguments"]['SunElevation'] = sun_elevation
+
+    if albedo is not None:
+        template_dict["rasterFunctionArguments"]['Albedo'] = albedo
+
+    if scale_factor is not None:
+        template_dict["rasterFunctionArguments"]['ScaleFactor'] = scale_factor
+
+    if offset is not None:
+        template_dict["rasterFunctionArguments"]['Offset'] = offset
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+#def radar_calibration(raster, calibration_type=None):
+
+#    """
+#    The Radar Calibration function is used to calibrate RADARSAT-2 imagery in a 
+#    mosaic dataset or as a raster product. Calibration is performed on radar 
+#    imagery so that the pixel values are a true representation of the radar backscatter.
+
+#    :param raster: The input raster.
+
+#    :param calibration_type: Optional string or int. one of four calibration types: 
+#                             "beta_nought" (0) - The function returns the radar reflectivity per unit area in slant range.
+#                             "sigma_nought" (1) - The function returns the radar reflectivity per unit area in ground range. 
+#                                                  Results are 32-bit floating-point values commonly in the range of 0.0 to 
+#                                                  1.0. No data clipping is performed if this option is selected.
+#                             "gamma" (2) - The function returns the radar reflectivity per unit area in the 
+#                                           plane perpendicular to the direction of measurement.
+#                              None - Specify None to not apply any calibration. This is the default.
+
+#    :return: output raster 
+#    """
+#    layer, raster, raster_ra = _raster_input(raster)
+
+#    template_dict = {
+#        "rasterFunction" : "RadarCalibration",
+#        "rasterFunctionArguments": {
+#            "Raster" : raster,            
+#        }
+#    }
+    
+#    calibration_type_dict = {"beta_nought":0, "sigma_nought":1, "gamma":2}
+#    if calibration_type is not None:
+#        if isinstance(calibration_type, str):
+#            calibration_type= calibration_type_dict[calibration_type.lower()]
+#            template_dict["rasterFunctionArguments"]['CalibrationType'] = calibration_type
+#        else:
+#            template_dict["rasterFunctionArguments"]['CalibrationType'] = calibration_type
+#    else:
+#        template_dict["rasterFunctionArguments"]['CalibrationType'] = 3
+
+#    return _clone_layer(layer, template_dict, raster_ra)
+
+def buffered(raster):
+
+    """
+    The Buffered function is used to optimize the performance of complex function chains. 
+    It stores the output from the part of the function chain that comes before it in memory.
+
+    :param raster: The input raster.
+
+    :return: output raster 
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "BufferedRaster",
+        "rasterFunctionArguments": {
+            "Raster" : raster,            
+        }
+    }
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def rasterize_features(raster, feature_class,  class_index_field=None, resolve_overlap_method = 0):
+    """
+    Converts features to raster. Features are assigned pixel values based on the feature's OBJECTID (default). 
+    Optionally, the pixel values can be based on a user defined value field in the input feature's attribute table.
+
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required. The input Imagery Layer object.
+    --------------------------------     --------------------------------------------------------------------
+    feature_class                        Required. The input point feature layer.
+    --------------------------------     --------------------------------------------------------------------
+    class_index_field                    Optional string.Select the field to use to identify each feature.
+    --------------------------------     --------------------------------------------------------------------
+    resolve_overlap_method               Optional int or string. Determine how to manage features that overlap:
+
+                                            FIRST - The overlapping areas will be assigned a value from the first 
+                                                    dataset listed.
+
+                                            LAST - The overlapping areas will be assigned a value from the last 
+                                                    dataset listed.
+
+                                            SMALLEST - The overlapping areas will be assigned a value from the 
+                                                       smaller of the features.
+
+                                            LARGEST - The overlapping areas will be assigned a value from the 
+                                                      larger of the features.
+      ================================     ====================================================================
+
+    :returns: output raster with function applied
+
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    if isinstance(feature_class, _FeatureLayer):
+        feature_class = feature_class.url
+
+    template_dict = {
+        "rasterFunction" : "RasterizeFeatureClass",
+        "rasterFunctionArguments": {
+            "Raster" : raster,
+        }
+    }
+
+    if feature_class is not None:
+        template_dict["rasterFunctionArguments"]['FeatureClass'] = feature_class
+
+    if class_index_field is not None:
+        template_dict["rasterFunctionArguments"]['ClassIndexField'] = class_index_field
+    
+    resolve_overlap_method_dict = {"first":0, "last":1, "smallest":2, 'largest':3}
+    if resolve_overlap_method is not None:
+        if isinstance(resolve_overlap_method, str):
+            resolve_overlap_method= resolve_overlap_method_dict[resolve_overlap_method.lower()]
+            template_dict["rasterFunctionArguments"]['ResolveOverlapMethod'] = resolve_overlap_method
+        else:
+            template_dict["rasterFunctionArguments"]['ResolveOverlapMethod'] = resolve_overlap_method
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+#def swath(raster, interpolation_method = 0, cell_size=0):
+#    """
+#    Interpolates from point clouds or irregular grids. (Supported from 10.8.1)
+
+#    ================================     ====================================================================
+#    **Argument**                         **Description**
+#    --------------------------------     --------------------------------------------------------------------
+#    raster                               Required Imagery Layer object. 
+#    --------------------------------     --------------------------------------------------------------------
+#    interpolation_method                 Optional int or string. The resampling method to use for interpolation:
+
+#                                          -  0 or NEAREST_NEIGBOR : Calculates pixel value using the nearest pixel. If no source pixel 
+#                                             exists, no new pixel can be created in the output. This is the default.
+
+#                                          -  1 or BILINEAR : Calculates pixel value using the distance-weighted 
+#                                             value of four nearest pixels.
+
+#                                          -  2 or LINEAR_TINNING : Uses a triangular irregular network from the center 
+#                                             points of each cell in the irregular raster to interpolate a surface 
+#                                             that is then converted to a regular raster.
+
+#                                          -  3 or NATURAL_NEIGHBOR : Finds the closest subset of input samples to a 
+#                                             query point and applies weights to them based on proportionate 
+#                                             areas to interpolate a value.
+#    --------------------------------     --------------------------------------------------------------------
+#    cell_size                            Optional int. The cell size for the output raster dataset. 
+#    ================================     ====================================================================
+
+#    :returns: output raster with function applied
+
+#    """
+#    layer, raster, raster_ra = _raster_input(raster)
+
+#    template_dict = {
+#        "rasterFunction" : "Swath",
+#        "rasterFunctionArguments": {"RasterInfo":{"blockWidth" : 2048,
+#                                                "blockHeight" : 256,
+#                                                "bandCount" : 0,
+#                                                "pixelType" : -1,
+#                                                "pixelSizeX" : cell_size,
+#                                                "pixelSizeY" : cell_size,
+#                                                "format" : "",
+#                                                "compressionType" : "",
+#                                                "firstPyramidLevel" : 1,
+#                                                "maximumPyramidLevel" : 30,
+#                                                "packetSize" : 4,
+#                                                "compressionQuality" : 0,
+#                                                "pyramidResamplingType" : -1,
+#                                                "type" : "RasterInfo"}
+#                                 }
+#                 }
+
+#    interpolation_methods = {
+#        'NEAREST_NEIGBOR': 0,
+#        'BILINEAR':1,
+#        'LINEAR_TINNING': 2,
+#        'NATURAL_NEIGHBOR' : 3
+#    }
+
+
+#    if interpolation_method is not None:
+#        if isinstance(interpolation_method, str):
+#            interpolation_method = interpolation_methods[interpolation_method.upper()]
+#        else:
+#            interpolation_method = interpolation_method
+#        template_dict["rasterFunctionArguments"]["InterpolationMethod"] = interpolation_method
+
+#    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def reproject(raster, spatial_reference=None, x_cell_size=0, y_cell_size=0, x_registration_point=0, y_registration_point=0):
+    """
+    Modifies the projection of a raster dataset, mosaic dataset, or raster item in a 
+    mosaic dataset. It can also resample the data to a new cell size and define an origin.
+
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required Imagery Layer object. The raster dataset to be reprojected or resampled.
+    --------------------------------     --------------------------------------------------------------------
+    spatial_reference                    Optional dict. The coordinate system used to reproject the data.
+
+                                         Example:
+                                         {
+                                            "wkid" : 4176,
+                                            "latestWkid" : 4176
+                                          }
+    --------------------------------     --------------------------------------------------------------------
+    x_cell_size                          Optional.The x-dimension to which the data should be resampled. 
+                                         This is optional. If the value is 0 or less, the output envelope 
+                                         (extent and cell sizes) is calculated from the input raster.
+    --------------------------------     --------------------------------------------------------------------
+    y_cell_size                          Optional.The y-dimension to which the data should be resampled. 
+                                         This is optional. If the value is 0 or less, the output envelope 
+                                         (extent and cell sizes) is calculated from the input raster.
+    --------------------------------     --------------------------------------------------------------------
+    x_registration_point                 Optional. The x-coordinate used to define the upper left corner 
+                                         of the dataset. This coordinate must be defined in the units of 
+                                         the new spatial reference. If both the x_cell_size and y_cell_size 
+                                         parameters are greater than 0,  they are used along with the
+                                         x_registration_point and y_registration_point
+                                         parameters to define the output envelope.
+    --------------------------------     --------------------------------------------------------------------
+    y_registration_point                 Optional. The y-coordinate used to define the upper left corner of the dataset. 
+                                         This coordinate must be defined in the units of the new spatial reference. 
+                                         If both the x_cell_size and y_cell_size parameters are greater than 0, 
+                                         they are used along with the x_registration_point and y_registration_point
+                                         parameters to define the output envelope.
+    ================================     ====================================================================
+
+    :returns: output raster with function applied
+
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "Reproject",
+        "rasterFunctionArguments": {
+            "Raster" : raster,
+        }
+    }
+
+
+    if spatial_reference is not None:
+        template_dict["rasterFunctionArguments"]['SpatialReference'] = spatial_reference
+
+    if x_cell_size is not None:
+        template_dict["rasterFunctionArguments"]['XCellsize'] = x_cell_size
+
+    if y_cell_size is not None:
+        template_dict["rasterFunctionArguments"]['YCellsize'] = y_cell_size
+
+    if x_registration_point is not None:
+        template_dict["rasterFunctionArguments"]['XOrigin'] = x_registration_point
+
+    if y_registration_point is not None:
+        template_dict["rasterFunctionArguments"]['YOrigin'] = y_registration_point
+
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def heat_index(temperature_raster, relative_humidity_raster, temperature_units="Fahrenheit",
+              heat_index_units="Fahrenheit"):
+    """
+    Calculates apparent temperature based on ambient temperature and relative humidity. The apparent temperature is often described as how hot it feels to the human body.
+    
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    temperature_raster                   The raster that represent temperature. A single-band raster where pixel 
+                                         values represent ambient air temperature.
+    --------------------------------     --------------------------------------------------------------------
+    relative_humidity_raster             The raster that represent relative humidity. A single-band raster 
+                                         where pixel values represent relative humidity as a percentage value between 0 and 100.
+    --------------------------------     --------------------------------------------------------------------
+    temperature_units                    Optional String. The unit of measurement associated with the input 
+                                         temperature raster. Available input units are Celsius, Fahrenheit, and Kelvin.
+    --------------------------------     --------------------------------------------------------------------
+    heat_index_units                     Optional String. The unit of measurement associated with the output raster. 
+                                         Available output units are Celsius, Fahrenheit, and Kelvin.
+    ================================     ====================================================================
+
+    :return: the output raster
+    """
+
+    layer1, raster_1, raster_ra1 = _raster_input(temperature_raster)
+    layer2, raster_2, raster_ra2 = _raster_input(temperature_raster, relative_humidity_raster)
+
+    if layer1 is not None and (layer2 is None or ((layer2 is not None) and layer2._datastore_raster is False)):
+        layer = layer1
+    else:
+        layer = layer2
+
+    template_dict = {
+        "rasterFunction": "PythonAdapter",
+        "rasterFunctionArguments": {"temperature": raster_1,
+            "rh": raster_2}
+    }
+    if temperature_units is not None:
+        template_dict["rasterFunctionArguments"]["units"] = temperature_units
+    if heat_index_units is not None:
+        template_dict["rasterFunctionArguments"]["outUnits"] = heat_index_units
+
+    template_dict["rasterFunctionArguments"]["ClassName"] = "HeatIndex"
+    template_dict["rasterFunctionArguments"]["PythonModule"] = "[functions]System\\HeatIndex.py"
+    #template_dict["rasterFunctionArguments"]["MatchVariable"] = False
+
+    function_chain_ra = copy.deepcopy(template_dict)
+    function_chain_ra['rasterFunctionArguments']['temperature'] = raster_ra1
+    function_chain_ra['rasterFunctionArguments']['rh'] = raster_ra2
+
+    return _clone_layer_without_copy(layer, template_dict, function_chain_ra)
+
+def wind_chill(temperature_raster, wind_speed_raster, temperature_units="Fahrenheit", wind_speed_units="mph",
+              wind_chill_units="Fahrenheit"):
+
+    """
+    The Wind Chill function is useful for identifying dangerous winter conditions that, depending on exposure times to
+    the elements, can result in frostbite or even hypothermia. Wind chill is a way to measure how cold an individual
+    feels when wind is taken into account with already cold temperatures. The faster the wind speed, the more 
+    quickly the body will lose heat and the colder they will feel.
+
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    temperature_raster                   The raster that represent temperature. A single-band raster where pixel 
+                                         values represent ambient air temperature.
+    --------------------------------     --------------------------------------------------------------------
+    wind_speed_raster                    The raster that represent relative humidity. A single-band raster 
+                                         where pixel values represent wind speed.
+    --------------------------------     --------------------------------------------------------------------
+    temperature_units                    Optional String. The unit of measurement associated with the input 
+                                         temperature raster. Available input units are Celsius, Fahrenheit, and Kelvin.
+    --------------------------------     --------------------------------------------------------------------
+    wind_speed_units                     Optional String.  Defines the unit of measurement for the wind-speed raster. 
+                                         Available input units are mph, km/h, ft/s and kn. Each represents
+
+                                           - Miles Per Hour (mph)
+                                           - Kilometers Per Hour (km/h)
+                                           - Meters Per Second (m/s)
+                                           - Feet Per Second (ft/s)
+                                           - Knots (kn)
+    --------------------------------     --------------------------------------------------------------------
+    wind_chill_units                     Optional String. The unit of measurement associated with the output 
+                                         raster. Available output units are Celsius, Fahrenheit, and Kelvin.
+    ================================     ====================================================================
+
+    :return: the output raster
+    """
+
+    layer1, raster_1, raster_ra1 = _raster_input(temperature_raster)
+    layer2, raster_2, raster_ra2 = _raster_input(temperature_raster, wind_speed_raster)
+
+    if layer1 is not None and (layer2 is None or ((layer2 is not None) and layer2._datastore_raster is False)):
+        layer = layer1
+    else:
+        layer = layer2
+
+
+    template_dict = {
+        "rasterFunction": "PythonAdapter",
+        "rasterFunctionArguments": {"temperature": raster_1, "ws": raster_2}
+    }
+
+    if temperature_units is not None:
+        template_dict["rasterFunctionArguments"]["tunits"] = temperature_units
+    if wind_speed_units is not None:
+        template_dict["rasterFunctionArguments"]["wunits"] = wind_speed_units
+    if wind_chill_units is not None:
+        template_dict["rasterFunctionArguments"]["ounits"] = wind_chill_units
+
+    template_dict["rasterFunctionArguments"]["ClassName"] = "Windchill"
+    template_dict["rasterFunctionArguments"]["PythonModule"] = "[functions]System\\Windchill.py"
+    #template_dict["rasterFunctionArguments"]["MatchVariable"] = False
+
+    function_chain_ra = copy.deepcopy(template_dict)
+    function_chain_ra['rasterFunctionArguments']['temperature'] = raster_ra1
+    function_chain_ra['rasterFunctionArguments']['ws'] = raster_ra2
+
+    return _clone_layer_without_copy(layer, template_dict, function_chain_ra)
+
+def aspect_slope(raster, z_factor=1):
+    """
+    Creates a raster layer that simultaneously displays the aspect and slope of a surface.
+
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               The input raster.
+    --------------------------------     --------------------------------------------------------------------
+    z_factor                             A multiplication factor that converts the vertical (elevation) values 
+                                         to the linear units of the horizontal (x,y) coordinate system. 
+                                         "Use larger values to add vertical exaggeration.
+    ================================     ====================================================================
+
+    :return: the output raster
+    """
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction": "PythonAdapter",
+        "rasterFunctionArguments": {"Raster" : raster}
+    }
+
+    template_dict['rasterFunctionArguments']['zf'] = z_factor
+
+    template_dict["rasterFunctionArguments"]["ClassName"] = "AspectSlope"
+    template_dict["rasterFunctionArguments"]["PythonModule"] = "[functions]System\\AspectSlope.py"
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+def contour(raster, adaptive_smoothing=2.5, contour_type="CONTOUR_LINES", z_base=0, number_of_contours=0,
+            contour_interval=100, nth_contour_line_in_bold=5, z_factor=1):
+    """
+    Creates contour lines.
+
+    :param raster: the raster from which the contour is created
+    :param adaptive_smoothing(double): adaptive smooting value, e.g., 2.5
+    :param contour_type(string): contour type. Available values could be "CONTOUR_LINES", "CONTOUR_FILL" or "SMOOTH_SURFACE_ONLY"
+    :param z_base(double): the z-base value, e.g., 0
+    :param number_of_contours(int): the number of contours, e.g., 0
+    :param contour_interval(double): the contour interval, e.g., 100
+    :param nth_contour_line_in_bold(int): the nth contour line that would be rendered in bold, e.g., 5
+    :param z_factor(double): the z-factor, e.g., 1
+    :return:
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction": "Contour",
+        "rasterFunctionArguments": {"Raster" : raster}
+    }
+
+    contour_types = {
+        'CONTOUR_LINES': 0,
+        'CONTOUR_FILL': 1,
+        'SMOOTH_SURFACE_ONLY': 2,
+    }
+
+    if adaptive_smoothing is not None:
+        template_dict['rasterFunctionArguments']['SigmaGaussian'] = adaptive_smoothing
+    if contour_type is not None:
+        template_dict['rasterFunctionArguments']['ContourType'] = contour_types[contour_type.upper()]
+    if z_base is not None:
+        template_dict['rasterFunctionArguments']['ZBase'] = z_base
+    if number_of_contours is not None:
+        template_dict['rasterFunctionArguments']['NumberOfContours'] = number_of_contours
+    if contour_interval is not None:
+        template_dict['rasterFunctionArguments']['ContourInterval'] = contour_interval
+    if nth_contour_line_in_bold is not None:
+        template_dict['rasterFunctionArguments']['NthContourLineInBold'] = nth_contour_line_in_bold
+    if z_factor is not None:
+        template_dict['rasterFunctionArguments']['ZFactor'] = z_factor
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -5410,7 +6677,10 @@ class RFT:
         task_url, job_info, job_id = _analysis_job(gptool, task, params)
         job_info = _analysis_job_status(gptool, task_url, job_info)
         job_values = _analysis_job_results(gptool, task_url, job_info)
-        result = gptool._con.post(job_values["outputRasterFunction"]["url"],{},token=gptool._token)
+        if gis._con._product == "AGOL":
+            result = gptool._con.get(job_values["outputRasterFunction"]["url"],{},token=gptool._token)
+        else:
+            result = gptool._con.post(job_values["outputRasterFunction"]["url"],{},token=gptool._token)
         return result
 
     def _apply_argument(self, input_dict,arg_dict):

@@ -18,15 +18,16 @@ try:
     from ._unet_utils import LabelCallback
     from ._arcgis_model import _EmptyData
     from fastai.layers import CrossEntropyFlat
-    from .._utils.segmentation_loss_functions import  FocalLoss, MixUpCallback
+    from .._utils.segmentation_loss_functions import  FocalLoss, MixUpCallback, DiceLoss
     from ._psp_utils import PSPNet, _pspnet_learner, _pspnet_learner_with_unet, accuracy
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from .._utils.classified_tiles import per_class_metrics
     import numpy as np
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.torch_core import split_model_idx
     from fastai.vision import flatten_model
     from ._deeplab_utils import compute_miou
+    from ._PointRend import PointRend_target_transform
     HAS_FASTAI = True
 except Exception as e:
     HAS_FASTAI = False
@@ -60,9 +61,14 @@ class PSPNetClassifier(ArcGISModel):
     pretrained_path         Optional string. Path where pre-trained PSPNet model is
                             saved.
     ---------------------   -------------------------------------------
-    unet_aux_loss           Optional. Bool If True will use auxillary loss for PSUnet.
+    unet_aux_loss           Optional. Bool If True will use auxiliary loss for PSUnet.
                             Default set to False. This flag is applicable only when
-                            use_unet is True.                            
+                            use_unet is True.
+    ---------------------   -------------------------------------------
+    pointrend               Optional boolean. If True, it will use PointRend
+                            architecture on top of the segmentation head.
+                            Default: False. PointRend architecture from
+                            https://arxiv.org/pdf/1912.08193.pdf.                        
     =====================   ===========================================
 
     **kwargs**
@@ -80,21 +86,41 @@ class PSPNetClassifier(ArcGISModel):
     focal_loss              Optional boolean. If True, it will use focal loss.
                             Default: False
     ---------------------   -------------------------------------------
+    dice_loss_fraction      Optional float. 
+                            Min_val=0, Max_val=1 
+                            If > 0 , model will use a combination of default or 
+                            focal(if focal=True) loss with the specified fraction 
+                            of dice loss.
+                            E.g. 
+                            for dice = 0.3, loss = (1-0.3)*default loss + 0.3*dice
+                            Default: 0
+    ---------------------   -------------------------------------------    
     ignore_classes          Optional list. It will contain the list of class
                             values on which model will not incur loss.
-                            Default: []                                                                             
+                            Default: []
+    ---------------------   -------------------------------------------
+    keep_dilation           Optional boolean. When PointRend architecture is used,
+                            keep_dilation=True can potentially improves accuracy
+                            at the cost of memory consumption. Default: False                                                                              
     =====================   ===========================================    
 
     :returns: `PSPNetClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, use_unet=True, pyramid_sizes=[1, 2, 3, 6], pretrained_path=None, unet_aux_loss=False, *args, **kwargs):
+    def __init__(self, data, backbone=None, use_unet=True, pyramid_sizes=[1, 2, 3, 6], pretrained_path=None, unet_aux_loss=False, pointrend=False, *args, **kwargs):
 
         # Set default backbone to be 'resnet50'
         if backbone is None: 
             backbone = models.resnet50
-      
-        super().__init__(data, backbone)
+        
+        self._check_dataset_support(data)
+        if not (self._check_backbone_support(backbone)):
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+
+        super().__init__(data, backbone, **kwargs)
+
+        if pointrend:
+            use_unet = False
 
         self._ignore_classes = kwargs.get('ignore_classes', [])
         if self._ignore_classes != [] and len(data.classes) <= 3:
@@ -109,27 +135,19 @@ class PSPNetClassifier(ArcGISModel):
             if 0 not in self._ignore_mapped_class:
                 self._ignore_mapped_class.insert(0, 0)
             global accuracy
-            accuracy = partial(accuracy, ignore_mapped_class=self._ignore_mapped_class)       
-
-
+            accuracy = partial(accuracy, ignore_mapped_class=self._ignore_mapped_class)
         self.mixup = kwargs.get('mixup', False)
         self.class_balancing = kwargs.get('class_balancing', False)
-        self.focal_loss = kwargs.get('focal_loss', False)        
-        
-        _backbone = self._backbone
-        if hasattr(self, '_orig_backbone'):
-            _backbone = self._orig_backbone
-       
-        # Check if a backbone provided is compatible, use resnet50 as default
-        if not self._check_backbone_support(_backbone):
-            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")              
-
-        self._check_dataset_support(self._data)
-
+        self.focal_loss = kwargs.get('focal_loss', False)
+        self.dice_loss_fraction = kwargs.get('dice_loss_fraction', False)
+        self.weighted_dice = kwargs.get('weighted_dice', False)
+        self.keep_dilation = kwargs.get('keep_dilation', False)
+        self._vggv2 = kwargs.get('vggv2', True)
         self._code = image_classifier_prf
         self.pyramid_sizes = pyramid_sizes
         self._use_unet = use_unet
         self._unet_aux_loss = unet_aux_loss
+        self._pointrend = pointrend
 
         if use_unet:
             self.learn = _pspnet_learner_with_unet(data,
@@ -138,7 +156,8 @@ class PSPNetClassifier(ArcGISModel):
                                                    pyramid_sizes=pyramid_sizes, 
                                                    pretrained=True, 
                                                    metrics=accuracy, 
-                                                   unet_aux_loss=unet_aux_loss)
+                                                   unet_aux_loss=unet_aux_loss,
+                                                   vggv2=self._vggv2)
 
             if self.class_balancing and data.class_weight is not None:
                 class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(self._device)
@@ -149,36 +168,49 @@ class PSPNetClassifier(ArcGISModel):
                                          backbone=self._backbone, 
                                          chip_size=self._data.chip_size, 
                                          pyramid_sizes=pyramid_sizes, 
-                                         pretrained=True, 
+                                         pretrained=True,
+                                         pointrend=self._pointrend,
+                                         keep_dilation=self.keep_dilation,
                                          metrics=accuracy)
 
-        if self.focal_loss:
-            self.learn.loss_func = FocalLoss(self.learn.loss_func)
+
         if self.mixup:
             self.learn.callbacks.append(MixUpCallback(self.learn))
 
         self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback 
 
+        class_weight = None
         if self.class_balancing:
-            if self._data.class_weight is None:
-                logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
-            elif getattr(data, 'overflow_encountered', False):
-                logger.warning("Overflow Encountered. Ignoring `class_balancing` parameter.")
-                class_weight = [1] * len(data.classes)
+            if data.class_weight is not None:
+                # Handle condition when nodata is already at pixel value 0 in data
+                if (data.c - 1) == data.class_weight.shape[0]:
+                    class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(
+                        self._device)
+                else:
+                    class_weight = torch.tensor(data.class_weight).float().to(self._device)
+            else:
+                if getattr(data, 'overflow_encountered', False):
+                    logger.warning("Overflow Encountered. Ignoring `class_balancing` parameter.")
+                    class_weight = [1] * len(data.classes)
+                else:
+                    logger.warning(
+                        "Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
 
         if self._ignore_classes != []:
             if not self.class_balancing:
                 class_weight = torch.tensor([1] * data.c).float().to(self._device)
             class_weight[self._ignore_mapped_class] = 0.
-        else:
-            class_weight = None
 
         self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
         self._final_class_weight = class_weight
 
-        if unet_aux_loss or not use_unet:
-            self.learn.loss_func = self._psp_loss
 
+        if unet_aux_loss or not use_unet:
+            self.learn.loss_func = self._psp_loss          
+        if self.focal_loss:
+            self.learn.loss_func = FocalLoss(self.learn.loss_func)            
+        if self.dice_loss_fraction:
+            self.learn.loss_func = DiceLoss(self.learn.loss_func, self.dice_loss_fraction,  weighted_dice=self.weighted_dice)
         self.learn.model = self.learn.model.to(self._device)
         self.freeze()
         self._arcgis_init_callback() # make first conv weights learnable
@@ -220,8 +252,8 @@ class PSPNetClassifier(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from `prepare_data` function or None for
@@ -230,7 +262,7 @@ class PSPNetClassifier(ArcGISModel):
 
         :returns: `PSPNetClassifier` Object
         """
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
             
@@ -240,6 +272,7 @@ class PSPNetClassifier(ArcGISModel):
             model_file = emd_path.parent / model_file
             
         model_params = emd['ModelParameters']
+        model_params['vggv2'] = model_params.get('vggv2', False)
 
         try:
             class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
@@ -260,20 +293,26 @@ class PSPNetClassifier(ArcGISModel):
 
     def _psp_loss(self, outputs, targets, **kwargs):
         targets = targets.squeeze(1).detach()
-
+        
         criterion = nn.CrossEntropyLoss(weight=self._final_class_weight).to(self._device)
-
-        if self.learn.model.training: # returns a tuple of aux_logits and main_logits while training
+        if self.learn.model.training:
             out = outputs[0]
             aux = outputs[1]
+            if self._pointrend:
+                pointrend_out = outputs[2][0]
+                pointrend_coord = outputs[2][1]
+                pointrend_target = PointRend_target_transform(targets, pointrend_coord)
         else: # validation
             out = outputs
-
         main_loss = criterion(out, targets)
 
         if self.learn.model.training:
             aux_loss = criterion(aux, targets)
-            total_loss = main_loss + 0.4 * aux_loss  ## weight out the auxillary loss.
+            if self._pointrend:
+                pointrend_loss = criterion(pointrend_out, pointrend_target)
+                total_loss = main_loss + 0.4 * aux_loss + pointrend_loss
+            else:
+                total_loss = main_loss + 0.4 * aux_loss
             return total_loss
         else:
             return main_loss
@@ -305,21 +344,35 @@ class PSPNetClassifier(ArcGISModel):
         if input is not None or target is not None:
             accuracy(input, target)
         else:
-            return self.learn.validate()[-1].tolist()
+            try:
+                return self.learn.validate()[1].tolist()
+            except Exception as e:
+                accuracy = self._data.emd.get('accuracy')
+                if accuracy:
+                    return accuracy
+                else:
+                    logger.error("Metric not found in the loaded model")
+
 
         
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         import random
         _emd_template = {"ModelParameters" : {}}
+        _emd_template["ModelType"] = "ImageClassification"
         _emd_template["ModelParameters"]["pyramid_sizes"] = self.pyramid_sizes
         _emd_template["ModelParameters"]["use_unet"] = self._use_unet
+        _emd_template["ModelParameters"]["pointrend"] = self._pointrend
+        _emd_template["ModelParameters"]["keep_dilation"] = self.keep_dilation
+        _emd_template["ModelParameters"]["vggv2"] = self._vggv2
         _emd_template["ModelParameters"]["unet_aux_loss"] = self._unet_aux_loss
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_psp"
-        _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+        else:
+            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template["ignore_mapped_class"] = self._ignore_mapped_class
-
         _emd_template['Classes'] = []
         class_data = {}
         for i, class_name in enumerate(self._data.classes[1:]):  # 0th index is background
@@ -343,12 +396,16 @@ class PSPNetClassifier(ArcGISModel):
         self.learn.show_results(rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs)
 
     def _show_results_multispectral(self, rows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
-        ax = show_results_multispectral(
+        return_fig = kwargs.get('return_fig', False)
+        ret_val = show_results_multispectral(
             self, 
             nrows=rows, 
             alpha=alpha, 
             **kwargs
         )
+        if return_fig:
+            fig, ax = ret_val
+            return fig
 
     @property
     def _model_metrics(self):
@@ -362,10 +419,9 @@ class PSPNetClassifier(ArcGISModel):
         try:
             model_accuracy = self.learn.recorder.metrics[-1][0]
             if checkpoint:
-                model_accuracy = np.max(self.learn.recorder.metrics)
+                val_losses = self.learn.recorder.val_losses
+                model_accuracy = self.learn.recorder.metrics[val_losses.index(min(val_losses))][0]
         except:
-            logger = logging.getLogger()
-            logger.debug("Cannot retrieve model accuracy.")
             model_accuracy = 0.0
 
         return float(model_accuracy)
@@ -382,15 +438,17 @@ class PSPNetClassifier(ArcGISModel):
                                 mean IOU, otherwise returns mean iou of all
                                 classes combined.   
         ---------------------   -------------------------------------------
-        show_progress           Optional bool. Displays the prgress bar if
+        show_progress           Optional bool. Displays the progress bar if
                                 True.                     
         =====================   ===========================================
         
         :returns: `dict` if mean is False otherwise `float`
         """
+        self._check_requisites()
         num_classes = torch.arange(self._data.c)
         miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress, self._ignore_mapped_class)
         if mean:
+            miou = [miou[i] for i in range(len(miou)) if i not in self._ignore_mapped_class]
             return np.mean(miou)
         if self._ignore_mapped_class == []:
             return dict(zip(['0'] + self._data.classes[1:], miou))
@@ -399,9 +457,26 @@ class PSPNetClassifier(ArcGISModel):
             return {class_values[i]: miou[i] for i in range(len(miou)) if i not in self._ignore_mapped_class} 
 
 
-    def per_class_metrics(self):
+    def per_class_metrics(self, ignore_classes=[]):
         """
         Computer per class precision, recall and f1-score on validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        self                    segmentation model object -> [PSPNetClassifier | UnetClassifier | DeepLab]
+        ---------------------   -------------------------------------------
+        ignore_classes          Optional list. It will contain the list of class
+                                values on which model will not incur loss.
+                                Default: []    
+        =====================   ===========================================
+
+        Returns per class precision, recall and f1 scores 
         """
-        ## Calling imported function `per_class_metrics`        
-        return per_class_metrics(self, ignore_mapped_class=self._ignore_mapped_class)
+        try:
+            self._check_requisites()
+            ## Calling imported function `per_class_metrics`
+            return per_class_metrics(self, ignore_classes)
+        except:
+            import pandas as pd
+            return pd.read_json(self._data.emd['per_class_metrics'])

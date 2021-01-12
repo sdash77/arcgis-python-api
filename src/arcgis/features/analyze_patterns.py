@@ -109,10 +109,27 @@ def calculate_density(
 
     """
 
-    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.calculate_density, 
-                                     **kwargs)    
+    kwargs = {
+        "input_layer" : input_layer,
+        "field" : field,
+        "cell_size" : cell_size,
+        "cell_size_units" : cell_size_units,
+        "radius" : radius,
+        "radius_units" : radius_units,
+        "bounding_polygon_layer" : bounding_polygon_layer,
+        "area_units" : area_units,
+        "classification_type" : classification_type,
+        "num_classes" : num_classes,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "future" : future        
+    }
+    gis = _arcgis.env.active_gis if gis is None else gis
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.calculate_density,
+                                     **kwargs)
     return gis._tools.featureanalysis.calculate_density(**params)
 #--------------------------------------------------------------------------
 def summarize_center_and_dispersion(
@@ -181,10 +198,22 @@ def summarize_center_and_dispersion(
         "process_info" : list of messages
     """
 
-    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.summarize_center_and_dispersion, 
-                                     **kwargs)    
+    kwargs = {
+        "analysis_layer" : analysis_layer,
+        "summarize_type" : summarize_type,
+        "ellipse_size" : ellipse_size,
+        "weight_field" : weight_field,
+        "group_field" : group_field,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "future" : future    
+    }
+    
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.summarize_center_and_dispersion,
+                                     **kwargs)
     return gis._tools.featureanalysis.summarize_center_and_dispersion(**params)
 #--------------------------------------------------------------------------
 def find_point_clusters(
@@ -194,7 +223,9 @@ def find_point_clusters(
         search_distance_unit=None,
         output_name=None,
         context=None,
-        gis=None, estimate=False, future=False):
+        gis=None, 
+        estimate=False, 
+        future=False):
     """
     .. image:: _static/images/find_point_clusters/find_point_clusters.png
 
@@ -274,10 +305,21 @@ def find_point_clusters(
 
     """
 
-    kwargs = locals()
+    
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_point_clusters, 
-                                     **kwargs)    
+    kwargs = {
+        "analysis_layer" : analysis_layer,
+        "min_features_cluster" : min_features_cluster,
+        "search_distance" : search_distance,
+        "search_distance_unit" : search_distance_unit,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "future" : future 
+    }
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_point_clusters,
+                                     **kwargs)
     return gis._tools.featureanalysis.find_point_clusters(**params)
 #--------------------------------------------------------------------------
 def find_hot_spots(
@@ -297,6 +339,7 @@ def find_hot_spots(
         distance_band_unit=None,
         future=False):
     """
+
     .. image:: _static/images/find_hot_spots/find_hot_spots.png
 
     The ``find_hot_spots`` method analyzes point data (such as crime incidents, traffic accidents, or trees) or field values associated with
@@ -381,10 +424,28 @@ def find_hot_spots(
                                              shape_type='hexagon')
     """
 
-    kwargs = locals()
+    distance_band_units = distance_band_unit
+    
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_hot_spots, 
-                                     **kwargs)    
+    kwargs = {
+        "analysis_layer" : analysis_layer,
+        "analysis_field" : analysis_field,
+        "divided_by_field" : divided_by_field,
+        "bounding_polygon_layer" : bounding_polygon_layer,
+        "aggregation_polygon_layer" : aggregation_polygon_layer,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "shape_type" : shape_type,
+        "cell_size" : cell_size,
+        "cell_size_unit" : cell_size_unit,
+        "distance_band" : distance_band,
+        "distance_band_units" : distance_band_units,
+        "futurue" : future
+    }
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_hot_spots,
+                                     **kwargs)
     return gis._tools.featureanalysis.find_hot_spots(**params)
 #--------------------------------------------------------------------------
 def find_outliers(analysis_layer,
@@ -498,11 +559,28 @@ def find_outliers(analysis_layer,
                                   output_name='find outliers')
 
     """
-
-    kwargs = locals()
+    distance_band_units = band_units
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_outliers, 
-                                     **kwargs)    
+    kwargs = {
+        "analysis_layer" : analysis_layer,
+        "analysis_field" : analysis_field,
+        "divided_by_field" : divided_by_field,
+        "bounding_polygon_layer" : bounding_polygon_layer,
+        "aggregation_polygon_layer" : aggregation_polygon_layer,
+        "permutations" : permutations,
+        "shape_type" : shape_type,
+        "cell_size" : cell_size,
+        "cell_units" : cell_units,
+        "distance_band" : distance_band,
+        "distance_band_units" : band_units,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "future" : future
+    }
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_outliers,
+                                     **kwargs)
     return gis._tools.featureanalysis.find_outliers(**params)
 #--------------------------------------------------------------------------
 def interpolate_points(
@@ -670,9 +748,25 @@ def interpolate_points(
                                           output_name='interpolate coal mines production')
     """
 
-    kwargs = locals()
+    
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.interpolate_points, 
-                                     **kwargs)   
+    kwargs = {
+        "input_layer" : input_layer,
+        "field" : field,
+        "interpolate_option" : interpolate_option,
+        "output_prediction_error" : output_prediction_error,
+        "classification_type" : classification_type,
+        "num_classes" : num_classes,
+        "class_breaks" : class_breaks,
+        "bounding_polygon_layer" : bounding_polygon_layer,
+        "predict_at_point_layer" : predict_at_point_layer,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "future" : future        
+    }
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.interpolate_points,
+                                     **kwargs)
     return gis._tools.featureanalysis.interpolate_points(**params)
 

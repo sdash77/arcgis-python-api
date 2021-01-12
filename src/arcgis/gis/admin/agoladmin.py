@@ -188,7 +188,7 @@ class AGOLAdminManager(object):
     @property
     def usage_reports(self):
         """
-        provides access to the usage reports of the AGOL organization
+        provides access to the usage reports of the ArcGIS Online organization
         """
         if self._ur is None:
             from ._usage import AGOLUsageReports
@@ -234,7 +234,7 @@ class AGOLAdminManager(object):
                 data_format='csv',
                 save_folder=None):
         """
-        Returns a CSV file containing the login history from a start_date to the present.
+        Returns a CSV file or Pandas's DataFrame containing the login history from a start_date to the present.
 
         ================  ===============================================================================
         **Argument**      **Description**
@@ -337,11 +337,11 @@ class AGOLAdminManager(object):
             data = []
             
             res = self._gis._con.post(url, params)
-            data.extend(data['items'])
+            data.extend(res['items'])
             while len(res['items']) > 0 and res['nextKey']:
                 params['start'] = res['nextKey']
                 res = self._gis._con.post(url, params)
-                data.extend(data['items'])
+                data.extend(res['items'])
                 if num > 0 and len(data) >= num:
                     data = data[:num]
                     break

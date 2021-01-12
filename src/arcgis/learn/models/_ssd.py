@@ -32,13 +32,13 @@ try:
     from ._ssd_utils import compute_class_AP, SSDHeadv2, kmeans, avg_iou
     from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
-    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback, _resnet_family, _vgg_family, _densenet_family
+    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback, _resnet_family, _vgg_family, _densenet_family, _change_tail
     from ._unet_utils import is_no_color
     from torch.nn import Module as NnModule
     import PIL
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
     from .._video_utils import VideoUtils
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path, read_image
     from fastprogress.fastprogress import progress_bar
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -84,7 +84,7 @@ class SingleShotDetector(ArcGISModel):
                             creating the base of the `SingleShotDetector`, which
                             is `resnet34` by default.
     ---------------------   -------------------------------------------
-    dropout                 Optional float. Dropout propbability. Increase it to
+    dropout                 Optional float. Dropout probability. Increase it to
                             reduce overfitting.
     ---------------------   -------------------------------------------
     bias                    Optional float. Bias for SSD head.
@@ -117,7 +117,7 @@ class SingleShotDetector(ArcGISModel):
                  pretrained_path=None, location_loss_factor=None, 
                  ssd_version=2, backend='pytorch', *args, **kwargs):
 
-        super().__init__(data, backbone)
+        super().__init__(data, backbone, **kwargs)
 
         self._backend = backend
         if self._backend == 'tensorflow':
@@ -138,29 +138,12 @@ class SingleShotDetector(ArcGISModel):
             backbone_cut = None
             backbone_split = None
 
-            if hasattr(self, '_orig_backbone'):
-                self._backbone_ms = self._backbone
-                self._backbone = self._orig_backbone
-                _backbone_meta = cnn_config(self._orig_backbone)
-                backbone_cut = _backbone_meta['cut']
-                backbone_split = _backbone_meta['split']
-
-            if backbone is None:
-                self._backbone = models.resnet34
-                backbone_name = 'res'
-            elif type(backbone) is str:
-                self._backbone = getattr(models, backbone)
-                backbone_name = backbone[:3]
-            else:
-                self._backbone = backbone
-                backbone_name = 'custom'
-
-            if not self._check_backbone_support(self._backbone):
-                raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
-
             self._check_dataset_support(self._data)
+            if not (self._check_backbone_support(getattr(self, '_backbone', backbone))):
+                raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+            backbone_name = self._backbone.__name__[:3]
 
-            if self._backbone == models.mobilenet_v2:
+            if self._backbone.__name__ == 'mobilenet_v2':
                 backbone_cut = -1
                 backbone_split = _mobilenet_split
 
@@ -206,8 +189,10 @@ class SingleShotDetector(ArcGISModel):
                     grids = list(set(grids))
                 
                 self._create_anchors(grids, zooms, ratios)
-
-                feature_sizes = model_sizes(create_body(self._backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
+                if hasattr(self, '_orig_backbone'):
+                    feature_sizes = model_sizes(create_body(self._orig_backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
+                else:
+                    feature_sizes = model_sizes(create_body(self._backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
                 num_features = feature_sizes[-1][-1]
                 num_channels = feature_sizes[-1][1] 
 
@@ -223,6 +208,10 @@ class SingleShotDetector(ArcGISModel):
             if hasattr(self, '_backbone_ms'):
                 self._orig_backbone = self._backbone
                 self._backbone = self._backbone_ms
+
+            if hasattr(self, '_orig_backbone') and 'densenet' in self._orig_backbone.__name__:
+                backbone_cut = cnn_config(self._orig_backbone)['cut']
+                backbone_split = cnn_config(self._orig_backbone)['split']
 
             self.learn = cnn_learner(data=data, base_arch=self._backbone, cut=backbone_cut, split_on=backbone_split, custom_head=ssd_head)
             self._arcgis_init_callback() # make first conv weights learnable
@@ -273,8 +262,8 @@ class SingleShotDetector(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file. 
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from `prepare_data` function or None for
@@ -307,7 +296,7 @@ class SingleShotDetector(ArcGISModel):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
             
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         emd = json.load(open(emd_path))
         model_file = Path(emd['ModelFile'])
         backbone = emd.get('backbone', 'resnet34')
@@ -424,8 +413,6 @@ class SingleShotDetector(ArcGISModel):
         try:
             gt_overlap,gt_idx = self._map_to_ground_truth(overlaps,print_it)
         except Exception as e:
-            logger = logging.getLogger()
-            logger.debug("Returning zero tensors as there is no overlap between ground truth and prior boxes")
             return torch.tensor(0., requires_grad=True).to(self._device), torch.tensor(0., requires_grad=True).to(self._device)
         gt_clas = clas[gt_idx]
         pos = gt_overlap > 0.4
@@ -472,11 +459,14 @@ class SingleShotDetector(ArcGISModel):
     def _analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ret_scores=True, device=None):
         return postprocess(pred, model=self, thresh=thresh, nms_overlap=nms_overlap, ret_scores=ret_scores, device=device)
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         import random
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        else:
+            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectDetector.py"
         _emd_template["ModelConfiguration"] = "_DynamicSSD"
         _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]
@@ -514,7 +504,8 @@ class SingleShotDetector(ArcGISModel):
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self)
 
     def _show_results_multispectral(self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs):
-        ax = show_results_multispectral(
+        return_fig = kwargs.get('return_fig', False)
+        ret_val = show_results_multispectral(
             self, 
             nrows=rows, 
             thresh=thresh, 
@@ -522,6 +513,9 @@ class SingleShotDetector(ArcGISModel):
             alpha=alpha, 
             **kwargs
         )
+        if return_fig:
+            fig, ax = ret_val
+            return fig
 
     def predict_video(
         self,
@@ -679,23 +673,35 @@ class SingleShotDetector(ArcGISModel):
         if not HAS_OPENCV:
             raise Exception("This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24")
 
+
         if isinstance(image_path, str):
-            image = cv2.imread(image_path)
+            #
+            if self._data._is_multispectral:
+                resize_to = None
+                if resize:
+                    if self._data.resize_to is not None:
+                        resize_to = self._data.resize_to
+                    elif self._data.chip_size is not None:
+                        resize_to = self._data.chip_size
+                image = read_image(image_path, resize_to)
+            else:
+                image = cv2.imread(image_path)
         else:
             image = image_path
 
         orig_height, orig_width, _ = image.shape
         orig_frame = image.copy()
 
-        if resize and self._data.resize_to is None\
-                and self._data.chip_size is not None:
-            image = cv2.resize(image, (self._data.chip_size, self._data.chip_size))
+        if not self._data._is_multispectral:
+            if resize and self._data.resize_to is None\
+                    and self._data.chip_size is not None:
+                image = cv2.resize(image, (self._data.chip_size, self._data.chip_size))
 
-        if self._data.resize_to is not None:
-            if isinstance(self._data.resize_to, tuple):
-                image = cv2.resize(image, self._data.resize_to)
-            else:
-                image = cv2.resize(image, (self._data.resize_to, self._data.resize_to))
+            if self._data.resize_to is not None:
+                if isinstance(self._data.resize_to, tuple):
+                    image = cv2.resize(image, self._data.resize_to)
+                else:
+                    image = cv2.resize(image, (self._data.resize_to, self._data.resize_to))
 
         height, width, _ = image.shape
 
@@ -712,7 +718,12 @@ class SingleShotDetector(ArcGISModel):
         self._data.valid_ds.tfms = []
 
         for chip in chips:
-            frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
+            if self._data._is_multispectral:
+                t = torch.tensor(np.rollaxis(chip['chip'], -1, 0).astype(np.float32), dtype=torch.float32)[None]
+                scaled_t = self._data._min_max_scaler(t)[0]
+                frame = Image(scaled_t[self._data._extract_bands])
+            else:
+                frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
             bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, model=self)[0]
             if bbox:
                 scores = bbox.scores
@@ -774,11 +785,25 @@ class SingleShotDetector(ArcGISModel):
             ]      
 
         if visualize:
-            image = _draw_predictions(orig_frame, predictions, labels)
+            if self._data._is_multispectral:
+                t = torch.tensor(np.rollaxis(orig_frame, -1, 0).astype(np.float32), dtype=torch.float32)[None]
+                # im = PIL.Image.fromarray(orig_frame)
+                # t = pil2tensor(im, dtype=np.float32)[None]
+                scaled_t = self._data._min_max_scaler(t)[0]
+                orig_frame = (scaled_t*255).round().numpy().astype(np.uint8)[self._data._symbology_rgb_bands]
+                orig_frame = np.rollaxis(orig_frame, 0, 3)
+                a = np.zeros(orig_frame.shape, dtype=np.uint8)
+                a[:] = orig_frame[:]
+                if len(labels) > 0:
+                    image = _draw_predictions(a, predictions, labels)
+                else:
+                    image = orig_frame
+            else:
+                image = _draw_predictions(orig_frame, predictions, labels)
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             import matplotlib.pyplot as plt
             plt.xticks([])
             plt.yticks([])
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             plt.imshow(PIL.Image.fromarray(image))
 
         if return_scores:
@@ -794,7 +819,7 @@ class SingleShotDetector(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        detect_thresh           Optional float. The probabilty above which
+        detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
                                 average precision.
         ---------------------   -------------------------------------------

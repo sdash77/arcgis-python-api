@@ -797,10 +797,22 @@ def enrich(study_areas,
             exceptions = [f.exception() for f in futures.done if not f.exception() is None]
             raise Exception(json.dumps(exceptions))
         if isinstance(areas, (SpatialDataFrame, pd.DataFrame)):
-            df = (pd.concat(results)
-                  .set_index(keys=areas.index, drop=True, 
-                             append=False, inplace=False, 
-                             verify_integrity=False))
+            df = pd.concat(results)
+            if len(df) != len(study_areas):
+                if "OBJECTID" in df.columns:
+                    missing_q = study_areas.OBJECTID.isin(list(set(study_areas.OBJECTID) - set(df.OBJECTID)))
+                    
+                    df = (pd.concat([df, study_areas[missing_q]]) 
+                          .set_index(keys=areas.index, drop=True, 
+                                 append=False, inplace=False, 
+                                 verify_integrity=False))
+                    
+            elif len(df) == len(study_areas):
+                df = (df
+                      .set_index(keys=areas.index, drop=True, 
+                                 append=False, inplace=False, 
+                                 verify_integrity=False))
+            
         else:
             df = pd.concat(results)
         return df
@@ -921,7 +933,7 @@ def _find_report(country, gis=None):
 @deprecated(deprecated_in="1.4.1",
             removed_in="1.5.0",
             current_version=__version__,
-            details="Method will be removed due to changes in the GeoEnrichment API")
+            details="Method was removed due to changes in the GeoEnrichment API")
 def find_businesses(type_filters=None,
                       feature_limit=1000,
                       feature_offset=0,
@@ -936,6 +948,9 @@ def find_businesses(type_filters=None,
                       as_featureset=False,
                       gis=None):
     """
+    
+    
+    
     The find_businesses method returns business points matching a given search criteria.
     Business points can be selected using any combination of three search criteria: search
     string, spatial filter and business type. A business point will be selected if it matches
@@ -987,21 +1002,7 @@ def find_businesses(type_filters=None,
 
     returns: DataFrame (Spatial or Pandas), FeatureSet, or dictionary on error.
     """
-    if gis is None:
-        gis = env.active_gis
-    ge = _GeoEnrichment(gis=gis)
-    return ge.select_businesses(type_filters=type_filters,
-                                 feature_limit=feature_limit,
-                                feature_offset=feature_offset,
-                                exact_match=exact_match,
-                                search_string=search_string,
-                                spatial_filter=spatial_filter,
-                                simple_search=simple_search,
-                                dataset_id=dataset_id,
-                                full_error_message=full_error_message,
-                                out_sr=out_sr,
-                                return_geometry=return_geometry,
-                                as_featureset=as_featureset)
+    raise Exception("This method is deprecated.")
 #----------------------------------------------------------------------
 def standard_geography_query(source_country=None,
                              country_dataset=None,

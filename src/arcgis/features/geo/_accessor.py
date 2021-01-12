@@ -1146,9 +1146,9 @@ class GeoAccessor(object):
                              svg)
         return
     @staticmethod
-    def from_feather(path, 
-                     spatial_column="SHAPE", 
-                     columns=None, 
+    def from_feather(path,
+                     spatial_column="SHAPE",
+                     columns=None,
                      use_threads=True):
         """
         Load a feather-format object from the file path.
@@ -1156,40 +1156,62 @@ class GeoAccessor(object):
         ======================    =========================================================
         **Argument**              **Description**
         ----------------------    ---------------------------------------------------------
-        path                      String. Path object or file-like object. Any valid string 
+        path                      String. Path object or file-like object. Any valid string
                                   path is acceptable. The string could be a URL. Valid
                                   URL schemes include http, ftp, s3, and file. For file URLs, a host is
                                   expected. A local file could be:
-                                  
+
                                   ``file://localhost/path/to/table.feather``.
-    
+
                                   If you want to pass in a path object, pandas accepts any
                                   ``os.PathLike``.
-    
+
                                   By file-like object, we refer to objects with a ``read()`` method,
                                   such as a file handler (e.g. via builtin ``open`` function)
                                   or ``StringIO``.
         ----------------------    ---------------------------------------------------------
         spatial_column            Optional String. The default is `SHAPE`. Specifies the column
-                                  containing the geo-spatial information. 
+                                  containing the geo-spatial information.
         ----------------------    ---------------------------------------------------------
-        columns                   Sequence/List/Array. The default is `None`.  If not 
+        columns                   Sequence/List/Array. The default is `None`.  If not
                                   provided, all columns are read.
         ----------------------    ---------------------------------------------------------
-        use_threads               Boolean. The default is `True`. Whether to parallelize 
+        use_threads               Boolean. The default is `True`. Whether to parallelize
                                   reading using multiple threads.
         ======================    =========================================================
-        
+
         :returns: pd.DataFrame
-        
+
         """
-        return read_feather(path=path, 
-                            spatial_column=spatial_column, 
-                            columns=columns, 
+        return read_feather(path=path,
+                            spatial_column=spatial_column,
+                            columns=columns,
                             use_threads=use_threads)
     #----------------------------------------------------------------------
-    def set_geometry(self, col, sr=None):
-        """Assigns the Geometry Column by Name or by List"""
+    def set_geometry(self, col, sr=None, inplace=True):
+        """Assigns the geometry column by name or by list
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        col                    Required string, Pandas Series, GeoArray, list or tuple. If a string, this
+                               is the name of the column containing the geometry. If a Pandas Series
+                               GeoArray, list or tuple, it is an iterable of Geometry objects.
+        ------------------     --------------------------------------------------------------------
+        sr                     Optional integer or spatial reference of the geometries described in
+                               the first parameter. If the geometry objects already have the spatial
+                               reference defined, this is not necessary. If the spatial reference for
+                               the geometry objects is NOT define, it will default to WGS84 (wkid 4326).
+        ------------------     --------------------------------------------------------------------
+        inplace                Optional bool. Whether or not to modify the dataframe in place, or return
+                               a new dataframe. If True, nothing is returned and the dataframe is modified
+                               in place. If False, a new dataframe is returned with the geometry set.
+                               Defaults to True.
+        ==================     ====================================================================
+
+        :return:
+            Spatially Enabled DataFrame or None
+        """
         from ._array import GeoArray
 
         if isinstance(col, str) and  \
@@ -1207,7 +1229,7 @@ class GeoAccessor(object):
                     self._sr = SpatialReference({'wkid' : 4326})
             self._name = col
             q = self._data[col].isna()
-            self._data.loc[q, "SHAPE"] = None
+            #self._data.loc[q, "SHAPE"] = None
             self._data[col] = GeoArray(self._data[col])
         elif isinstance(col, str) and  \
              col in self._data.columns and \
@@ -1230,6 +1252,9 @@ class GeoAccessor(object):
         else:
             raise ValueError(
                 "Column {name} is not valid. Please ensure it is of type Geometry".format(name=col))
+
+        if not inplace:
+            return self._data.copy()
     #----------------------------------------------------------------------
     @property
     def name(self):
@@ -2081,7 +2106,7 @@ class GeoAccessor(object):
             # return the map widget so it will be displayed below the cell in Jupyter Notebook
             return map_widget
     #----------------------------------------------------------------------
-    def to_featureclass(self, location, overwrite=True, has_z=None, has_m=None):
+    def to_featureclass(self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=True):
         """
         Exports a geo enabled dataframe to a feature class.
 
@@ -2103,16 +2128,22 @@ class GeoAccessor(object):
                                         based geometries.  If a geometry is missing a M value when true, a
                                         RuntimeError will be raised. When False, the API will not use the
                                         M value.
+        ---------------------------     --------------------------------------------------------------------
+        sanitize_columns                Optional Boolean. If True, column names will be converted to string,
+                                        invalid characters removed and other checks will be performed. The
+                                        default is True.
         ===========================     ====================================================================
 
         :returns: String
 
         """
-        location = os.path.abspath(path=location)
+        if location and not str(os.path.dirname(location)).lower() in ['memory', 'in_memory']:
+            location = os.path.abspath(path=location)
         return to_featureclass(self,
                                location=location,
                                overwrite=overwrite,
                                has_z=has_z,
+                               sanitize_columns=sanitize_columns,
                                has_m=has_m)
     #----------------------------------------------------------------------
     def to_table(self, location, overwrite=True):
@@ -2197,7 +2228,7 @@ class GeoAccessor(object):
         --------------------    ---------------------------------------------------------
         sr                      Optional integer. The WKID of the spatial reference.
         --------------------    ---------------------------------------------------------
-        geometry_column         Optional String.  The name of the geometry column to 
+        geometry_column         Optional String.  The name of the geometry column to
                                 convert to the arcgis.Geometry Objects (new at version 1.8.1)
         ====================    =========================================================
 
@@ -2235,7 +2266,7 @@ class GeoAccessor(object):
             df.spatial.project(sr)
             return df
         else:
-                
+
             if geocoder is None:
                 geocoder = arcgis.env.active_gis._tools.geocoders[0]
             sr = dict(geocoder.properties.spatialReference)
@@ -2258,7 +2289,7 @@ class GeoAccessor(object):
                             x = loc['x']
                             y = loc['y']
                             geoms.append(arcgis.geometry.Geometry({'x': x, 'y': y, 'spatialReference': sr}))
-    
+
                         except:
                             x, y = None, None
                             try:
@@ -2503,8 +2534,7 @@ class GeoAccessor(object):
     def __feature_set__(self):
         """returns a dictionary representation of an Esri FeatureSet"""
         import arcgis
-        cols_norm = [col for col in self._data.columns]
-        cols_lower = [col.lower() for col in self._data.columns]
+
 
         fields = []
         features = []
@@ -2529,41 +2559,47 @@ class GeoAccessor(object):
             "features" : []
         }
         # Ensure all number values are 0 so errors do not occur.
-        for c in self._data.select_dtypes(include='number').columns.tolist():
-            self._data[c].fillna(0, inplace=True)
-
+        df = self._data.where(pd.notnull(self._data), None)
+        cols_norm = [col for col in df.columns]
+        cols_lower = [col.lower() for col in df.columns]
+        old_series = None
         if 'objectid' in cols_lower:
             fs['objectIdFieldName'] = cols_norm[cols_lower.index('objectid')]
             fs['displayFieldName'] = cols_norm[cols_lower.index('objectid')]
-            if self._data[fs['objectIdFieldName']].is_unique == False:
-                old_series = self._data[fs['objectIdFieldName']].copy()
-                self._data[fs['objectIdFieldName']] = list(range(1, self._data.shape[0] + 1))
-                res = self.__feature_set__
-                self._data[fs['objectIdFieldName']] = old_series
-                return res
+            if df[fs['objectIdFieldName']].is_unique == False:
+                old_series = df[fs['objectIdFieldName']].copy()
+                df[fs['objectIdFieldName']] = list(range(1, df.shape[0] + 1))
+                #res = self.__feature_set__
+                #df[fs['objectIdFieldName']] = old_series
+                #return res
         elif 'fid' in cols_lower:
             fs['objectIdFieldName'] = cols_norm[cols_lower.index('fid')]
             fs['displayFieldName'] = cols_norm[cols_lower.index('fid')]
-            if self._data[fs['objectIdFieldName']].is_unique == False:
-                old_series = self._data[fs['objectIdFieldName']].copy()
-                self._data[fs['objectIdFieldName']] = list(range(1, self._data.shape[0] + 1))
-                res = self.__feature_set__
-                self._data[fs['objectIdFieldName']] = old_series
-                return res
+            if df[fs['objectIdFieldName']].is_unique == False:
+                old_series = df[fs['objectIdFieldName']].copy()
+                df[fs['objectIdFieldName']] = list(range(1, df.shape[0] + 1))
+                #res = self.__feature_set__
+                #df[fs['objectIdFieldName']] = old_series
+                #return res
         elif 'oid' in cols_lower:
             fs['objectIdFieldName'] = cols_norm[cols_lower.index('oid')]
             fs['displayFieldName'] = cols_norm[cols_lower.index('oid')]
-            if self._data[fs['objectIdFieldName']].is_unique == False:
-                old_series = self._data[fs['objectIdFieldName']].copy()
-                self._data[fs['objectIdFieldName']] = list(range(1, self._data.shape[0] + 1))
-                res = self.__feature_set__
-                self._data[fs['objectIdFieldName']] = old_series
-                return res
+            if df[fs['objectIdFieldName']].is_unique == False:
+                old_series = df[fs['objectIdFieldName']].copy()
+                df[fs['objectIdFieldName']] = list(range(1, df.shape[0] + 1))
+                #res = self.__feature_set__
+                #df[fs['objectIdFieldName']] = old_series
+                #return res
         else:
-            self._data['OBJECTID'] = list(range(1, self._data.shape[0] + 1))
-            res = self.__feature_set__
-            del self._data['OBJECTID']
-            return res
+            fs['objectIdFieldName'] = "OBJECTID"
+            fs['displayFieldName'] = "OBJECTID"
+
+            df['OBJECTID'] = list(range(1, df.shape[0] + 1))
+            cols_norm = [col for col in df.columns]
+            cols_lower = [col.lower() for col in df.columns]
+            #res = self.__feature_set__
+            #del df['OBJECTID']
+            #return res
         if 'objectIdFieldName' in fs:
             fields.append({
                 "name" : fs['objectIdFieldName'],
@@ -2585,12 +2621,12 @@ class GeoAccessor(object):
             cols_norm.pop(cols_norm.index(self.name))
         for col in cols_norm:
             try:
-                idx = self._data[col].first_valid_index()
-                col_val = self._data[col].loc[idx]
+                idx = df[col].first_valid_index()
+                col_val = df[col].loc[idx]
             except:
                 col_val = ""
             if isinstance(col_val, (str, np.str)):
-                l = self._data[col].str.len().max()
+                l = df[col].str.len().max()
                 if str(l) == 'nan':
                     l = 255
 
@@ -2637,7 +2673,7 @@ class GeoAccessor(object):
                     "alias" : col
                 })
         fs['fields'] = fields
-        for row in self._data.to_dict('records'):
+        for row in df.to_dict('records'):
             geom = {}
             if self.name in row:
                 geom = row[self.name]
@@ -2647,10 +2683,18 @@ class GeoAccessor(object):
                     row[f] = int(row[f].to_pydatetime().timestamp() * 1000)
                 except:
                     row[f] = None
-            if geom:
+            if geom and pd.notna(geom):
+
+
                 features.append(
                     {
                         "geometry" : dict(geom),
+                        "attributes" : row
+                    })
+            elif pd.notna(geom) == False:
+                features.append(
+                    {
+                        "geometry" : None,
                         "attributes" : row
                     })
             else:
@@ -2662,6 +2706,8 @@ class GeoAccessor(object):
             del row
             del geom
         fs['features'] = features
+        #if old_series:
+
         return fs
     #----------------------------------------------------------------------
     def _check_geometry_engine(self):
@@ -2684,7 +2730,7 @@ class GeoAccessor(object):
         """gets/sets the spatial reference of the dataframe"""
         data = [getattr(g, 'spatialReference', None) or g['spatialReference'] \
                 for g in self._data[self.name] \
-                if g not in [None, np.NaN, np.nan, '']]
+                if g not in [None, np.NaN, np.nan, ''] and isinstance(g, dict)]
         srs = [SpatialReference(sr) for sr in pd.DataFrame(data).drop_duplicates().to_dict('records')]
         if len(srs) == 1:
             return srs[0]
@@ -2702,9 +2748,13 @@ class GeoAccessor(object):
             if sr and \
                'wkid' in sr:
                 wkid = sr['wkid']
+            elif sr and \
+                'latestWkid' in sr:
+                wkid = sr['latestWkid']                  
             if sr and \
                'wkt' in sr:
                 wkt = sr['wkt']
+                  
             if isinstance(ref, (dict, SpatialReference)) and \
                sr is None:
                 self._data[self.name] = self._data[self.name].geom.project_as(ref)
@@ -2752,7 +2802,7 @@ class GeoAccessor(object):
         drawing_info           Optional dictionary. This is the rendering information for a
                                Feature Collection.  Rendering information is a dictionary with
                                the symbology, labelling and other properties defined.  See:
-                               http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Renderer_objects/02r30000019t000000/
+                               https://developers.arcgis.com/documentation/common-data-types/renderer-objects.htm
         ---------------------  ---------------------------------------------------------------
         extent                 Optional dictionary.  If desired, a custom extent can be
                                provided to set where the map starts up when showing the data.
@@ -3346,12 +3396,12 @@ class GeoAccessor(object):
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         HASPYPROJ = True
         try:
-            import imp 
+            import imp
             imp.find_module('pyproj')
         except ImportError:
             HASPYPROJ = False
         try:
-            
+
             if isinstance(spatial_reference, (int, str)) and HASARCPY:
                 import arcpy
                 spatial_reference = arcpy.SpatialReference(spatial_reference)

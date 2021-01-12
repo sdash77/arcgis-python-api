@@ -12,7 +12,8 @@ from parameterized import parameterized
 from fastai.vision.learner import ClassificationInterpretation
 import random
 import string
-from arcgis.learn import classify_pixels, detect_objects
+from sys import platform
+from arcgis.learn import classify_pixels, detect_objects, classify_objects
 import_exception = None
 
 try:
@@ -31,6 +32,8 @@ module_skip = False
 parameter = []
 parameter_fl = []
 authorization_data = {}
+check_ms = False
+current_path = ""
 if not HAS_DEPS:
     print("**Environment fails**")
     raise Exception(f"""{import_exception} \n\nThis module requires fastai, PyTorch, torchvision and scikit-image as its dependencies.""")
@@ -38,7 +41,7 @@ if not HAS_DEPS:
 else:
     from arcgis.gis import GIS
     from arcgis.features import FeatureLayerCollection
-    from integration.arcgis_learn.properties import data,data_folder, setuposenviron
+    from integration.arcgis_learn.properties import data,data_folder, setuposenviron, data_folder_ms
     from arcgis.learn import prepare_data, prepare_tabulardata
     from datetime import datetime
 
@@ -65,7 +68,6 @@ accuracy_values = {"attributes":
 def setUpModule():
     global authorization_data
     authorization_data = setuposenviron()
-    data_path = data_folder
     if os.environ['run_nightly'] == "1":
         accuracy_values["attributes"]["Date"] = convertdate(datetime.today())
     print("Setup completed successfully")
@@ -79,7 +81,7 @@ def updateAccuracyResults():
     data.edit_features(adds=[accuracy_values])
 
 
-def CommonTestUsingFL(query, model_type, prepare_tabular_data, regression_parameter, regression_test_score, inferencing_parameter, model_name, data_path, model_test):
+def CommonTestUsingFL(query, model_type, prepare_tabular_data, regression_parameter, regression_test_score, inferencing_parameter, model_name, data_path, model_test, current_path):
     gis = GIS(url="https://geosaurus.maps.arcgis.com",username= authorization_data["for_common_test_using_fl"]["username"], password= authorization_data["for_common_test_using_fl"]["password"])
     calgary_no_southland_solar = gis.content.search(**query)[
         0]
@@ -116,15 +118,15 @@ def CommonTestUsingFL(query, model_type, prepare_tabular_data, regression_parame
         model_object.fit(1, lr=0.001, checkpoint=False)
 
         # save model
-        model_object.save(f'{os.path.join(data_folder, data_path, model_test)}')
+        model_object.save(f'{os.path.join(current_path, data_path, model_test)}')
         # Load from saved model.
-        model_object.load(f'{os.path.join(data_folder, data_path, model_test)}')
+        model_object.load(f'{os.path.join(current_path, data_path, model_test)}')
 
         # From model with and without data bunch.
         model_object = model_type.from_model(
-            os.path.join(data_folder, data_path, f'{model_test}/{model_test}.emd'))
+            os.path.join(current_path, data_path, f'{model_test}/{model_test}.emd'))
         model_object = model_type.from_model(
-            os.path.join(data_folder, data_path, f'{model_test}/{model_test}.emd'),
+            os.path.join(current_path, data_path, f'{model_test}/{model_test}.emd'),
             data)
 
 
@@ -139,6 +141,9 @@ def CommonTestUsingFL(query, model_type, prepare_tabular_data, regression_parame
 
         accuracy_values["attributes"][model_name] = result
 
+    if os.environ["run_inference"] == "1":
+        model_object.predict(feature_layer, output_layer_name='prediction_layer_rf')
+
 
 
 
@@ -150,17 +155,25 @@ def convertdate(dates):
     return dstr
 
 
-def commonTestCases(model_type, model_test, data_path, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name, inferencing_image_server):
+def commonTestCases(model_type, model_test, data_path, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name, inferencing_image_server, ms_flag, current_path, num_epochs):
     data = prepare_data(**preparedata)
-
+    # data.show_batch()
     # Check model with all default backbone
     model_object = model_type(data)
+
+
+    # model_object.show_results()
+    # model_object.lr_find(allow_plot=False)
+
     # Fit for 1 epochs without LR.
     model_object.fit(1)
     # Fit for 1 epochs with LR.
     model_object.fit(1, lr=0.001)
 
-    ## Check model with all supported backbones
+    # save model
+    model_object.save(f'{model_test}')
+
+    # Check model with all supported backbones
     if os.environ['run_backbones'] == "1":
         print("Testing for all backbones")
         supported_backbones = model_object.supported_backbones
@@ -171,55 +184,103 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
             torch.cuda.empty_cache()
 
     if os.environ['run_nightly'] == "1":
-        print("Testing for accuracy with default backbone")
-        global accuracy_values
-        model_object.fit(15)
-        if regression_parameter == "average_precision_score":
-            result = model_object.average_precision_score()
-            result = [v for k, v in sorted(result.items(), key=lambda item: item[1], reverse=True)][0]
-        elif regression_parameter == "accuracy":
-            result = model_object.accuracy()
-        elif regression_parameter == "confusion_matrix":
-            array = ClassificationInterpretation.from_learner(model_object.learn).confusion_matrix()
-            true_prediction = array.diagonal().sum()
-            all_prediction = array.sum()
-            result = true_prediction / all_prediction
-        elif regression_parameter == "precision_score":
-            result = model_object.precision_score()
-        elif regression_parameter == "compute_precision_recall":
-            result = model_object.compute_precision_recall().loc["precision", :].max()
-        elif regression_parameter == "psnr_metric":
-            result = 0.0
-        else:
-            result = 0.0
+        if not ms_flag:
+            print("Testing for accuracy with default backbone")
+            global accuracy_values
+            model_object.fit(num_epochs)
+            if regression_parameter == "average_precision_score":
+                result = model_object.average_precision_score()
+                result = [v for k, v in sorted(result.items(), key=lambda item: item[1], reverse=True)][0]
+            elif regression_parameter == "accuracy":
+                result = model_object.accuracy()
+            elif regression_parameter == "confusion_matrix":
+                array = ClassificationInterpretation.from_learner(model_object.learn).confusion_matrix()
+                true_prediction = array.diagonal().sum()
+                all_prediction = array.sum()
+                result = true_prediction / all_prediction
+            elif regression_parameter == "precision_score":
+                result = model_object.precision_score()
+            elif regression_parameter == "compute_precision_recall":
+                result = model_object.compute_precision_recall().loc["precision", :].max()
+            elif regression_parameter == "psnr_metric":
+                result = model_object.compute_metrics()[-1]
+            elif regression_parameter == "f1_score":
+                result = model_object.f1_score()
+            else:
+                result = 0.0
 
-        accuracy_values["attributes"][model_name] = result
+            accuracy_values["attributes"][model_name] = result
 
-        # assert (accuracy >= regression_test_score),"Model accuracy is lower than the threshold value. Please check."
+            assert (result >= regression_test_score),"Model accuracy is lower than the threshold value. Please check."
 
 
 
     ## Inferencing function here.
-    if os.environ["run_inference"] == "1":
+    if os.environ["run_inference"] == "1" and ms_flag == False:
         from arcpy.ia import DetectObjectsUsingDeepLearning, ClassifyPixelsUsingDeepLearning, ClassifyObjectsUsingDeepLearning
         # Inferencing from image server
         from arcgis.gis import GIS
-        from arcgis.learn import Model
-        gis = GIS('https://datascienceadv.dev.geocloud.com/portal', authorization_data["for_inferencing"]["username"],authorization_data["for_inferencing"]["password"])
+        from arcgis.learn import Model, detect_objects
+        gis = GIS('https://ndhlnagsb01.esri.com/portal', authorization_data["for_inferencing"]["username"],authorization_data["for_inferencing"]["password"], verify_cert=False)
 
         letters = string.ascii_lowercase
         output_name = ''.join(random.choice(letters) for i in range(9))
 
         if inferencing_parameter["model_type"] == "DetectObjectsUsingDeepLearning":
-            DetectObjectsUsingDeepLearning(
-                    inferencing_parameter["sample_input"],
-                os.path.join(inferencing_parameter["path"], output_name+ ".shp"),
-                inferencing_parameter["model"],
-                inferencing_parameter["parameters"]
+            model_path = os.path.join(current_path, data_path, f'models/{model_test}/{model_test}.dlpk')
 
-            )
+            model_package = gis.content.add(
+                item_properties={"type": "Deep Learning Package", "typeKeywords": "Deep Learning",
+                                 "title": model_test,
+                                 "tags": "deeplearning, Detect object using deep learning", 'overwrite': 'True'}, data=model_path,
+                folder="model_inference")
+
+            detect_objects_model = Model(model_package)
+            detect_objects_model.install()
+            input_raster = gis.content.get(inferencing_image_server["input_raster"])
+
+            detect_objects(input_raster.url,
+                           model=detect_objects_model,
+                           model_arguments=inferencing_image_server["model_arguments"],
+                           output_name='test_model_'+output_name,
+                           folder="model_inference",
+                           context=inferencing_image_server["context"],
+                           gis=gis)
+
+            if "win" in platform:
+                DetectObjectsUsingDeepLearning(
+                        inferencing_parameter["sample_input"],
+                    os.path.join(inferencing_parameter["path"], output_name+ ".shp"),
+                    inferencing_parameter["model"],
+                    inferencing_parameter["parameters"]
+
+                )
+
+
 
         elif inferencing_parameter["model_type"] == "ClassifyPixelsUsingDeepLearning":
+
+            model_path = os.path.join(current_path, data_path, f'models/{model_test}/{model_test}.dlpk')
+
+            model_package = gis.content.add(
+                item_properties={"type": "Deep Learning Package", "typeKeywords": "Deep Learning",
+                                 "title": model_test,
+                                 "tags": "deeplearning, classify pxel using deeplearning", 'overwrite': 'True'}, data=model_path,
+                folder="model_inference")
+
+            classify_pixel_model = Model(model_package)
+            classify_pixel_model.install()
+            input_raster = gis.content.get(inferencing_image_server["input_raster"])
+
+            classify_pixels(input_raster=input_raster.url,
+                            model=classify_pixel_model,
+                            output_name='test_model_'+output_name,
+                            context=inferencing_image_server["context"],
+                            model_arguments=inferencing_image_server["model_args"],
+                            folder="model_inference",
+                            gis=gis)
+
+            if "win" in platform:
                 ClassifyPixelsUsingDeepLearning(
                     inferencing_parameter["sample_input"],
                     inferencing_parameter["model"],
@@ -227,44 +288,43 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
                     "PROCESS_AS_MOSAICKED_IMAGE"
                 )
 
-                model_item = gis.content.get(inferencing_image_server["model_package"])
-                classify_pixel_model = Model(model_item)
-                classify_pixel_model.install()
-                classify_pixel_model.query_info()
-
-                input_raster = gis.content.get(inferencing_image_server["input_raster"])
-
-                ext = {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
-                       'xmin': -13046171.4852458,
-                       'ymin': 4033856.50520854,
-                       'xmax': -13045909.5350487,
-                       'ymax': 4034115.48833226}
-
-                context = {'cellSize': 0.3,
-                           'processorType': 'GPU',
-                           'extent': ext,
-                           'batch_size': 4}
-
-                classify_pixels(input_raster=input_raster.url,
-                                model=classify_pixel_model,
-                                output_name=output_name,
-                                context=context,
-                                folder="model_inferencing",
-                                gis=gis)
-
-
 
         elif inferencing_parameter["model_type"] == "ClassifyObjectsUsingDeepLearning":
-            ClassifyObjectsUsingDeepLearning(
-                inferencing_parameter["sample_input"],
-                inferencing_parameter["path"],
-                inferencing_parameter["model"],
-                in_features=inferencing_parameter["feature_layer"],
-                class_label_field="ClassLabel",
-                processing_mode="PROCESS_AS_MOSAICKED_IMAGE",
-                model_arguments="batch_size 4"
 
-            )
+            model_path = os.path.join(current_path, data_path, f'models/{model_test}/{model_test}.dlpk')
+
+            model_package = gis.content.add(
+                item_properties={"type": "Deep Learning Package", "typeKeywords": "Deep Learning",
+                                 "title": model_test,
+                                 "tags": "deeplearning, Classify object using deep learning", 'overwrite': 'True'},
+                data=model_path,
+                folder="model_inference")
+
+            classify_pixel_model = Model(model_package)
+            classify_pixel_model.install()
+            input_raster = gis.content.get(inferencing_image_server["input_raster"])
+            input_feature = gis.content.get(inferencing_image_server["input_features"])
+            classify_objects(input_raster=input_raster.url,
+                             model=model_package,
+                             input_features=input_feature,
+                             class_value_field='status',
+                             model_arguments=inferencing_image_server["model_args"],
+                             output_name='test_model_'+output_name,
+                             context=inferencing_image_server["context"],
+                            folder="model_inference",
+                            gis=gis)
+
+            if "win" in platform:
+                ClassifyObjectsUsingDeepLearning(
+                    inferencing_parameter["sample_input"],
+                    inferencing_parameter["path"],
+                    inferencing_parameter["model"],
+                    in_features=inferencing_parameter["feature_layer"],
+                    class_label_field="ClassLabel",
+                    processing_mode="PROCESS_AS_MOSAICKED_IMAGE",
+                    model_arguments="batch_size 4"
+
+                )
         elif inferencing_parameter["model_type"] == "extract_entities":
             model_object.extract_entities(inferencing_parameter["sample_input"])
         elif inferencing_parameter["model_type"] == "predict_las":
@@ -276,27 +336,34 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
         else:
             pass
 
-    # save model
-    model_object.save(f'{model_test}')
+
     # Load from saved model.
     model_object.load(f'{model_test}')
 
     # From model with and without data bunch.
-    model_object = model_type.from_model(os.path.join(data_folder,data_path, f'models/{model_test}/{model_test}.emd'))
-    model_object = model_type.from_model(os.path.join(data_folder, data_path, f'models/{model_test}/{model_test}.emd'),
+    model_object = model_type.from_model(os.path.join(current_path,data_path, f'models/{model_test}/{model_test}.emd'))
+    model_object = model_type.from_model(os.path.join(current_path, data_path, f'models/{model_test}/{model_test}.emd'),
                                          data)
 
 
 def update_parameter():
+    check_ms = False
     for key, val in data.items():
         if val["should_test"] and not val["test_feature_layer"]:
-            parameter.append([key, val["model_test"], val["model"], val["datapath"], val["prepare_data"], val["regression_parameter"], val["regression_test_score"], val["inferencing_parameter"], val["model_name"], val["inferencing_image_server"]])
+            parameter.append([key, val["model_test"], val["model"], val["datapath"], val["prepare_data"], val["regression_parameter"], val["regression_test_score"], val["inferencing_parameter"], val["model_name"], val["inferencing_image_server"], check_ms, data_folder, val["regression_epochs"]])
+    return parameter
+
+def update_parameter_ms():
+    check_ms = True
+    for key, val in data.items():
+        if val["should_test"] and not val["test_feature_layer"] and val["prepare_data_ms"] != False:
+            parameter.append([key+"_ms", val["model_test"]+"_ms", val["model"], val["datapath_ms"], val["prepare_data_ms"], val["regression_parameter"], val["regression_test_score"], val["inferencing_parameter"], val["model_name"], val["inferencing_image_server"], check_ms, data_folder_ms, val["regression_epochs"]])
     return parameter
 
 def update_parameter_fl():
     for key, val in data.items():
         if val["should_test"] and val["test_feature_layer"]:
-            parameter_fl.append([key, val["gis_content_search"], val["model"], val["prepare_tabular_data"], val["regression_parameter"], val["regression_test_score"], val["inferencing_parameter"], val["model_name"], val["datapath"],val["model_test"]])
+            parameter_fl.append([key, val["gis_content_search"], val["model"], val["prepare_tabular_data"], val["regression_parameter"], val["regression_test_score"], val["inferencing_parameter"], val["model_name"], val["datapath"],val["model_test"], data_folder])
     return parameter_fl
 
 class TestTraining(unittest.TestCase):
@@ -309,22 +376,37 @@ class TestTraining(unittest.TestCase):
         print("Test: " + self._testMethodName)
 
     def tearDown(self):
+        torch.cuda.empty_cache()
+        for key, val in data.items():
+            os.system(f'rm -rf "{os.path.join(data_folder, val["datapath"], "models")}"')
+            if "datapath_ms" in val.keys():
+                os.system(f'rm -rf "{os.path.join(data_folder_ms, val["datapath_ms"], "models")}"')
         print("Test:" + self._testMethodName + "is completed.\n")
         print("------------------------------------------------------------------\n")
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter, skip_on_empty=True)
-    def test(self,name,model_test, model, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name,inferencing_image_server):
-        commonTestCases(model,model_test, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name,inferencing_image_server)
+    def test(self,name,model_test, model, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name,inferencing_image_server,ms_flag, data_folder_path, num_epochs):
+        commonTestCases(model,model_test, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name,inferencing_image_server, ms_flag, data_folder_path, num_epochs)
+
+    @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
+    @parameterized.expand(update_parameter_ms, skip_on_empty=True)
+    def test(self, name, model_test, model, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name, inferencing_image_server, ms_flag, data_folder_path, num_epochs):
+        commonTestCases(model, model_test, datapath, preparedata, regression_parameter, regression_test_score, inferencing_parameter, model_name, inferencing_image_server, ms_flag, data_folder_path, num_epochs)
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter_fl, skip_on_empty=True)
-    def test_fl(self, name,query, model_type, prepare_tabular_data, regression_parameter, regression_test_score, inferencing_parameter, model_name, data_path, model_test):
-        CommonTestUsingFL(query, model_type, prepare_tabular_data, regression_parameter, regression_test_score, inferencing_parameter, model_name, data_path, model_test)
+    def test_fl(self, name,query, model_type, prepare_tabular_data, regression_parameter, regression_test_score, inferencing_parameter, model_name, data_path, model_test, data_folder_path):
+        CommonTestUsingFL(query, model_type, prepare_tabular_data, regression_parameter, regression_test_score, inferencing_parameter, model_name, data_path, model_test, data_folder_path)
 
     @classmethod
     def tearDownClass(cls):
-        print("\n All Tests have completed")
+        torch.cuda.empty_cache()
+        for key, val in data.items():
+            os.system(f'rm -rf "{os.path.join(data_folder, val["datapath"], "models")}"')
+            if "datapath_ms" in val.keys():
+                os.system(f'rm -rf "{os.path.join(data_folder_ms, val["datapath_ms"], "models")}"')
+        print("\n All Tests have completed.")
         print("==================================================================")
 
 
@@ -332,11 +414,14 @@ class TestTraining(unittest.TestCase):
 
 ## Remove all model directories
 def tearDownModule():
+    torch.cuda.empty_cache()
     if os.environ['run_nightly'] == "1":
         print("Updating feature layer for accuracy dashboard\n")
         updateAccuracyResults()
     for key, val in data.items():
         os.system(f'rm -rf "{os.path.join(data_folder,val["datapath"],"models")}"')
+        if "datapath_ms" in val.keys():
+            os.system(f'rm -rf "{os.path.join(data_folder_ms, val["datapath_ms"], "models")}"')
 
     print("**End Common Arcgis Learn module Training**")
 

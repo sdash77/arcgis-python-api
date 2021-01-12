@@ -1,10 +1,10 @@
 import sys
-#sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_2678\src")
+sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_1902\src")
 import unittest
 from arcgis.gis import GIS
 from arcgis._impl.tools import _GeometryService
 from arcgis._impl._async.jobs import GeometryJob
-
+###########################################################################
 class TestGSSettingSR(unittest.TestCase):
     """
     Tests that async and sync operations set the spatial reference on the geometry objects
@@ -136,7 +136,7 @@ class TestGeometryService(unittest.TestCase):
             assert isinstance(gs, _GeometryService)
             from arcgis.geometry import Geometry
             a = Geometry({'x': -8575158.562007815, 'y': 4705980.159522079})
-            geometries = [Geometry(a)]
+            geometries = [a]
             inSR = 4269
             outSR = None	
             bufferSR = None
@@ -247,7 +247,6 @@ class TestGeometryService(unittest.TestCase):
                 else:    
                     assert gs.densify(geometries=target, sr=4326, maxSegmentLength=10, lengthUnit=9001, geodesic=True, future=fut)
     #----------------------------------------------------------------------
-    
     def test_gs_difference(self):
         """Tests the difference using auth and no auth"""
         for profile in [None, 'your_online_profile', 'your_enterprise_profile']:            

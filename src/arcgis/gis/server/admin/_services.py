@@ -1002,8 +1002,8 @@ class Service(BaseServer):
         self._url = url
         self._currentURL = url
         self._con = con
-        if url.lower().find('gpserver') > -1:
-            self.jobs = self._jobs
+        #if url.lower().find('gpserver') > -1:
+        #    self.jobs = self._jobs
         if initialize:
             self._init(self._con)
     #----------------------------------------------------------------------
@@ -1054,15 +1054,15 @@ class Service(BaseServer):
     def change_provider(self, provider):
         """
         Allows for the switching of the service provide and how it is hosted on the ArcGIS Server instance.
-        
+
         Values:
-        
-           + 'ArcObjects' means the service is running under the ArcMap runtime i.e. published from ArcMap      
+
+           + 'ArcObjects' means the service is running under the ArcMap runtime i.e. published from ArcMap
            + 'ArcObjects11': means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
            + 'DMaps': means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
-        
+
         :returns: Boolean
-        
+
         """
         allowed_providers = ['ArcObjects',  'ArcObjects11', 'DMaps']
         url = self._url + "/changeProvider"
@@ -1075,12 +1075,12 @@ class Service(BaseServer):
     #----------------------------------------------------------------------
     @property
     def extensions(self):
-        """lists the extensions on a service"""
+        """lists the :class:`extensions <arcgis.gis.server.Extension>` on a service"""
         if self._extensions is None:
             self._init()
         return self._extensions
     #----------------------------------------------------------------------
-    def _modify_extensions(self,
+    def modify_extensions(self,
                           extension_objects=None):
         """
         enables/disables a service extension type based on the name
@@ -1101,7 +1101,7 @@ class Service(BaseServer):
            isinstance(extension_objects[0], Extension):
             self._extensions = extension_objects
             self._json_dict['extensions'] = [x.value for x in extension_objects]
-            res = self.edit(str(self))
+            res = self.edit(str(self._json_dict))
             self._json = None
             self._init()
             return res
@@ -1445,6 +1445,15 @@ class Service(BaseServer):
         return self._ii
     #----------------------------------------------------------------------
     @property
+    def jobs(self):
+        """returns a `JobManager` to manage asynchronous geoprocessing tasks"""
+        if self._jm is None:
+            url = "%s/jobs" % self._url
+            self._jm = JobManager(url=url,
+                                  con=self._con)
+        return self._jm
+    #----------------------------------------------------------------------
+    @property
     def _jobs(self):
         """returns a `JobManager` to manage asynchronous geoprocessing tasks"""
         if self._jm is None:
@@ -1486,7 +1495,7 @@ class JobManager(BaseServer):
         ---------------     --------------------------------------------------------------------
         end_time            Optional Datetime. The end date/time of the geoprocessing job.
         ---------------     --------------------------------------------------------------------
-        status              Optional String. TThe current status of the job. The possible
+        status              Optional String. The current status of the job. The possible
                             statuses are as follows:
 
                             - esriJobNew
@@ -1693,7 +1702,7 @@ class ItemInformationManager(BaseServer):
 
         Resources
 
-           + clientName - Machine where ArcGIS for Desktop was used to
+           + clientName - Machine where ArcGIS Pro or ArcGIS Desktop was used to
                           publish the service.
            + onPremisePath - Path, relative to the 'clientName'
                              machine, where the source resource (.mxd,

@@ -25,9 +25,7 @@ if(/\/[0-9A-Fa-f]{32}\/notebooks\//.test(location.pathname)){
 var nbextensionPath = jupyterBase + "nbextensions/arcgis/";
 console.log("nbextension path = " + nbextensionPath);
 
-// end section
-// end section
-
+config.JSOutputContext = "default";
 config.JupyterTarget = "notebook"; 
 config.BaseRequireJSConfig = {
     map : {

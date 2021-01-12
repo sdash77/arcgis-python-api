@@ -10,9 +10,17 @@ try:
     HASARCPY = True
 except ImportError:
     HASARCPY = False
+except:
+    HASARCPY = False
+
+import sys
+if sys.platform == 'win32':
+    try:
+        import certifi_win32
+    except ImportError:
+        pass
 
 import os
-import sys
 import copy
 import json
 import uuid
@@ -29,7 +37,7 @@ from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 
-__version__ = "1.8.3"
+__version__ = "1.9.0"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 
@@ -83,9 +91,11 @@ class Connection(object):
         token_url
         AUTH keys = HOME, BUILTIN, PRO, ANON, PKI, HANDLER, UNKNOWN (Internal)
         custom_auth = Requests authencation handler
+        trust_env = T/F if to ignore netrc files
         """
         from arcgis.gis import GIS
         self._all_ssl = kwargs.pop("all_ssl", True)
+        self.trust_env = kwargs.pop("trust_env", None)
         if baseurl:
             while baseurl.endswith("/"):
                 baseurl = baseurl[:-1]
@@ -235,9 +245,9 @@ class Connection(object):
         self._session = Session()
         self._session.verify = self._verify_cert
         self._session.stream = True
+        self._session.trust_env = self.trust_env
         self._session.headers.update(self._header)
         self._session.proxies = proxies
-
         if self._referer is None and\
            (self._portal_connection and \
            str(self._portal_connection._auth).lower() == "home"):
@@ -489,7 +499,7 @@ class Connection(object):
                         data += it
                 data = json.loads(data)
                 if 'error' in data:
-                    raise Exception(resp['error'])
+                    raise Exception(data['error'])
             else:
                 data = resp.json()
             #if 'error' in data:
@@ -518,8 +528,9 @@ class Connection(object):
                 #_log.error(error['details'])
             else:
                 for errordetail in error['details']:
-                    errormessage = errormessage + "\n" + errordetail
-                    #_log.error(errordetail)
+                    if isinstance(errordetail, str):
+                        errormessage = errormessage + "\n" + errordetail
+                        #_log.error(errordetail)
 
         errormessage = errormessage + "\n(Error Code: " + str(errorcode) +")"
         raise Exception(errormessage)
@@ -624,6 +635,7 @@ class Connection(object):
                 self._session.headers.update({token_header: "Bearer %s" % token})
             elif token_as_header and token_header and self.token: # as X-Esri-Auth header with generated token
                 self._session.headers.update({token_header: "Bearer %s" % self.token})
+
         if try_json:
             params['f'] = 'json'
         if files:
@@ -808,7 +820,7 @@ class Connection(object):
         if self._cert_file:
             cert = (self._cert_file, self._key_file)
         else:
-            cert = None   
+            cert = None
         if json_encode:
             for k,v in params.items():
                 if isinstance(v, (dict, list, tuple, bool)):
@@ -826,7 +838,7 @@ class Connection(object):
             resp = self._session.put(url=url,
                                      data=params,
                                      cert=cert,
-                                     files=files)        
+                                     files=files)
         #
         return self._handle_response(resp=resp,
                                          out_path=out_path,
@@ -1177,7 +1189,8 @@ class Connection(object):
             client = BackendApplicationClient(client_id=self._client_id)
             oauth = OAuth2Session(client=client)
             res = oauth.fetch_token(
-                token_url=self._token_url,
+                #method="GET",
+                token_url=tu,
                 client_id=self._client_id,
                 client_secret=self._client_secret,
                 include_client_id=True,
@@ -1438,8 +1451,10 @@ class Connection(object):
             return "PORTAL"
         else:
             #Brute Force Method
-            root = baseurl.lower().split("/sharing")[0]
-            root = baseurl.lower().split('/rest')[0]
+            parsed = urlparse(baseurl)
+            root = fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
+            #root = baseurl.lower().split("/sharing")[0]
+            #root = baseurl.lower().split('/rest')[0]
             parts = ['/info', '/rest/info', '/sharing/rest/info']
             params = {"f" : "json"}
             for pt in parts:
@@ -1482,7 +1497,14 @@ class Connection(object):
                         b_parsed = b_parsed.split("/")[0]
                     if t_parsed.lower() != b_parsed.lower():
                         self._token_url = None
-                        return "FEDERATED_SERVER"
+                        if self._portal_connection:
+                            return "FEDERATED_SERVER"
+                        else:
+                            from arcgis.gis import GIS
+                            self._portal_connection = GIS(url=res['authInfo']['tokenServicesUrl'].split("/sharing/")[0],
+                                                          username=self._username, password=self._password,
+                                                          verify_cert=self._verify_cert)._con
+                            return "FEDERATED_SERVER"
                     return "SERVER"
                 elif isinstance(res, dict) and \
                      "currentVersion" in res and \

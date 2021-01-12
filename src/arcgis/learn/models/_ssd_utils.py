@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from fastai.vision import imagenet_stats
 from fastai.vision.image import ImageBBox
 from fastai.vision.data import ObjectCategoryList, ObjectItemList
+from fastai.core import split_kwargs_by_func
 from fastprogress.fastprogress import progress_bar
 
 import numpy as np
@@ -304,17 +305,32 @@ def compute_ap(precision, recall):
     ap = np.sum((recall[idx + 1] - recall[idx]) * precision[idx + 1])
     return ap
 
-def compute_class_AP(model, dl, n_classes, show_progress, iou_thresh=0.5, detect_thresh=0.35, num_keep=100):
+def compute_class_AP(model, dl, n_classes, show_progress, iou_thresh=0.5, detect_thresh=0.35, num_keep=100, **kwargs):
     tps, clas, p_scores = [], [], []
+    if getattr(model, "_is_model_extension", False):
+        transform_kwargs, kwargs = split_kwargs_by_func(kwargs, model.model_conf.transform_input)
     classes, n_gts = LongTensor(range(n_classes)),torch.zeros(n_classes).long()
     with torch.no_grad():
         for input,target in progress_bar(dl, display=show_progress):
 
             if getattr(model, "_is_model_extension", False):
-                if model._is_multispectral:
-                    output = model.learn.model.eval()(model.model_conf.transform_input_multispectral(input))
-                else:
-                    output = model.learn.model.eval()(model.model_conf.transform_input(input))
+                try:
+                    if model._is_multispectral:
+                        output = model.learn.model.eval()(model.model_conf.transform_input_multispectral(input, **transform_kwargs))
+                    else:
+                        output = model.learn.model.eval()(model.model_conf.transform_input(input, **transform_kwargs))
+                except Exception as e:
+
+                    if getattr(model, "_is_fasterrcnn", False):
+                        output = []
+                        for _ in range(input.shape[0]):
+                            res={}
+                            res['boxes'] = torch.empty(0,4)
+                            res['scores'] = torch.tensor([])
+                            res['labels'] = torch.tensor([])
+                            output.append(res)
+                    else:
+                        raise e
                 analyzed_pred_out = model._analyze_pred(output,
                                                         thresh=detect_thresh,
                                                         nms_overlap=iou_thresh,

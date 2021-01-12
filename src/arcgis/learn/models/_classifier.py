@@ -20,8 +20,10 @@ try:
     from ._codetemplate import feature_classifier_prf
     import torch
     from torchvision import models
-    from fastai.metrics import accuracy
+    from fastai.metrics import accuracy, MultiLabelFbeta
+    from .._utils.metrics import accuracy_multi
     from fastai.vision.image import open_image
+    from fastai.data_block import MultiCategoryList
     from fastai.vision.data import ImageDataBunch, ImageList
     from fastai.vision import imagenet_stats, normalize
     from fastai.basic_train import Learner, LearnerCallback
@@ -36,7 +38,9 @@ try:
     import PIL.Image
     import PIL.ExifTags
     from torch.nn import Module as NnModule
-    from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path, image_batch_stretcher
+    from matplotlib import pyplot as plt
+    import copy
     HAS_FASTAI = True
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -93,7 +97,8 @@ class FeatureClassifier(ArcGISModel):
                             The default is set to False.
     ---------------------   -------------------------------------------
     oversample              Optional boolean. If set to True, it oversamples unbalanced
-                            classes of the dataset during training.
+                            classes of the dataset during training. Not supported with
+                            MultiLabel dataset.
     ---------------------   -------------------------------------------
     backend                 Optional string. Controls the backend framework to be used
                             for this model, which is 'pytorch' by default.
@@ -111,7 +116,7 @@ class FeatureClassifier(ArcGISModel):
             super().__init__(data, None)
             self._intialize_tensorflow(data, backbone, pretrained_path, mixup, kwargs)
         else:
-            super().__init__(data, backbone)
+            super().__init__(data, backbone, **kwargs)
 
             backbone_cut = None
             backbone_split = None
@@ -133,13 +138,24 @@ class FeatureClassifier(ArcGISModel):
             self._check_dataset_support(self._data)
 
             self._code = feature_classifier_prf
-            self.learn = cnn_learner(data, self._backbone, metrics=accuracy, cut=backbone_cut, split_on=backbone_split)
+
+            if getattr(data, '_dataset_type', "Labeled_Tiles") == 'MultiLabeled_Tiles':
+                # ToDo: allow option to change `thresh` parameter by user
+                accuracy_multi.__name__ = "accuracy"
+                metrics = [accuracy_multi, MultiLabelFbeta()]
+            else:
+                metrics = accuracy
+
+            self.learn = cnn_learner(data, self._backbone, metrics=metrics, cut=backbone_cut, split_on=backbone_split)
             if oversample:
                 self.learn.callbacks.append(OverSamplingCallback(self.learn))
             self._arcgis_init_callback() # make first conv weights learnable
+            
             # Add Mixup data augmentation
             if mixup:
-                self.learn = self.learn.mixup()
+                # For mixup to work with multilabel call it with parameter stack_y=False
+                stack_y = getattr(data, '_dataset_type', "Labeled_Tiles") == 'Labeled_Tiles'
+                self.learn = self.learn.mixup(stack_y=stack_y)
 
             self.learn.model = self.learn.model.to(self._device)
 
@@ -169,7 +185,7 @@ class FeatureClassifier(ArcGISModel):
     
     @staticmethod
     def _supported_datasets():
-        return ['Labeled_Tiles']  
+        return ['Labeled_Tiles', 'MultiLabeled_Tiles']  
 
     def show_results(self, rows=5, **kwargs):
         """
@@ -184,15 +200,19 @@ class FeatureClassifier(ArcGISModel):
    
     def _show_results_multispectral(self, rows=5, **kwargs):
         from .._utils.image_classification import IC_show_results
-        IC_show_results(
+        return_fig = kwargs.get('return_fig', False)
+        fig=IC_show_results(
             self,
             nrows=rows,
             **kwargs
         )
+        if return_fig:
+            fig1,axs=fig
+            return fig1
 
     def predict(self, img_path):
         """
-        Runs prediction on an Image.
+        Runs prediction on an Image. Works with RGB images only.
         
         =====================   ===========================================
         **Argument**            **Description**
@@ -201,7 +221,7 @@ class FeatureClassifier(ArcGISModel):
                                 predictions on.
         =====================   ===========================================
         
-        :returns: prediciton label and confidence        
+        :returns: prediction label and confidence        
         """
         
         img = open_image(img_path)
@@ -215,8 +235,6 @@ class FeatureClassifier(ArcGISModel):
         return predicted_classes, predictions_conf
 
     def _save_confusion_matrix(self, path):
-        from matplotlib import pyplot as plt
-
         from IPython.utils import io
         with io.capture_output() as captured:
             self.plot_confusion_matrix()
@@ -227,30 +245,41 @@ class FeatureClassifier(ArcGISModel):
     def _model_metrics(self):
         return {}
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         _emd_template = {}
-        _emd_template["Framework"] = "PyTorch"
-        _emd_template["ModelConfiguration"] = "FeatureClassifier"
+        _emd_template["Framework"] = "arcgis.learn.models._inferencing"
+        _emd_template["ModelConfiguration"] = "_FeatureClassifier"
         _emd_template["ModelType"] = "ObjectClassification"
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISObjectClassifier.py"
+        else:
+            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectClassifier.py"
+        _emd_template["MetaDataMode"] = self._data._dataset_type
         _emd_template["ExtractBands"] = [0, 1, 2]
         _emd_template['CropSizeFixed'] = 1  # hardcoded
         _emd_template['BlackenAroundFeature'] = 0  # hardcoded
         _emd_template['ImageSpaceUsed'] = "MAP_SPACE"
         _emd_template['Classes'] = []
         class_data = {}
+
+        if self._data._dataset_type == 'MultiLabeled_Tiles':
+                self._data.class_mapping = {k: v for k, v in enumerate(self._data.classes)}
+        inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
+
         for i, class_name in enumerate(self._data.classes):
-            inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
             class_data["Value"] = inverse_class_mapping[class_name]
             class_data["Name"] = class_name
             color = [random.choice(range(256)) for i in range(3)]
             class_data["Color"] = color
             _emd_template['Classes'].append(class_data.copy())
 
-        if getattr(self, '_is_multispectral', False):
-            _emd_template["Framework"] = "arcgis.learn.models._inferencing"
-            _emd_template["ModelConfiguration"] = "_FeatureClassifier"
-            _emd_template["InferenceFunction"] = "ObjectClassifier.py"
-
+        # if getattr(self, '_is_multispectral', False):
+        #     _emd_template["Framework"] = "arcgis.learn.models._inferencing"
+        #     _emd_template["ModelConfiguration"] = "_FeatureClassifier"
+        #     if save_inference_file:
+        #         _emd_template["InferenceFunction"] = "ArcGISObjectClassifier.py"
+        #     else:
+        #         _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISObjectClassifier.py"
 
         return _emd_template
 
@@ -262,8 +291,8 @@ class FeatureClassifier(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from `prepare_data` function or None for
@@ -275,7 +304,7 @@ class FeatureClassifier(ArcGISModel):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
             
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
 
@@ -307,16 +336,22 @@ class FeatureClassifier(ArcGISModel):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
 
-                data = ImageDataBunch.single_from_classes(
-                    emd_path.parent.parent, sorted(list(class_mapping.values())),
-                    ds_tfms=transforms, size=chip_size).normalize(imagenet_stats)
+                if ("MetaDataMode" in emd) and (emd["MetaDataMode"] == "MultiLabeled_Tiles"):
+                    img_list = ImageList([], path=emd_path.parent.parent).split_by_idx([])
+                    data = img_list.label_const(0, label_cls=MultiCategoryList, 
+                                                classes=list(class_mapping.values())).transform(transforms).databunch().normalize(imagenet_stats)
+                    data._dataset_type = 'MultiLabeled_Tiles'
+                else:
+                    data = ImageDataBunch.single_from_classes(
+                        emd_path.parent.parent, sorted(list(class_mapping.values())),
+                        ds_tfms=transforms, size=chip_size).normalize(imagenet_stats)
 
             data.chip_size = chip_size
             data.class_mapping = class_mapping
             data.classes = list(class_mapping.values())
             data._is_empty = True
             data.emd_path = emd_path
-            data.emd = emd            
+            data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
 
         resize_to = emd.get('resize_to')
@@ -324,13 +359,72 @@ class FeatureClassifier(ArcGISModel):
 
         return cls(data, **model_params, pretrained_path=str(model_file))
 
-    def plot_confusion_matrix(self):
+    def plot_confusion_matrix(self, **kwargs):
         """
         Plots a confusion matrix of the model predictions to evaluate accuracy
+        kwargs: 'thresh' - confidence score threshold for multilabel predictions, defaults to 0.5
         """
-        self._check_requisites()
-        interp = ClassificationInterpretation.from_learner(self.learn)
-        interp.plot_confusion_matrix()
+        if self._data._dataset_type == 'MultiLabeled_Tiles':
+            # Get x, y from validation dataset
+            data_loader = self._data.valid_dl
+            nbatches = math.ceil(len(self._data.valid_ds)/self._data.batch_size)
+            from .._utils.common import get_nbatches
+            x_batch, y_batch = get_nbatches(data_loader, nbatches)
+            x_batch = torch.cat(x_batch)
+            y_batch = torch.cat(y_batch)
+            score_thresh = kwargs.get('thresh', 0.5)
+
+            # Get predictions
+            predictions = []
+            learn_temp = copy.copy(self.learn)
+            for i in range(0, x_batch.shape[0], self._data.batch_size):
+                batch_preds = learn_temp.pred_batch(batch=(x_batch[i:i+self._data.batch_size], y_batch[i:i+self._data.batch_size]))
+                predictions.append(batch_preds)
+            predictions = torch.cat(predictions)
+            one_hot_preds = (predictions >= score_thresh)
+
+            # Use Scikit-learn multilabel confusion matrix
+            from sklearn.metrics import multilabel_confusion_matrix
+            y_true = y_batch.to('cpu').numpy()
+            y_pred = one_hot_preds.to('cpu').numpy()
+            confusion_matrix = multilabel_confusion_matrix(y_true, y_pred)
+
+            # Plot the classwise confusion matrix
+            nrows=self._data.c
+            plt_size = 4
+            fig, axs = plt.subplots(nrows=nrows, figsize=(plt_size, (nrows)*plt_size))
+            fig.suptitle('Confusion Matrix', fontsize=16)
+            top = 1 - (math.sqrt(16)/math.sqrt(100*nrows*plt_size))
+            fig.subplots_adjust(top=top, hspace=0.5)
+
+            for i, (classname, matrix) in enumerate(zip(self._data.classes, confusion_matrix)):
+                cm = np.fliplr(np.flipud(matrix))
+                axi = axs[i]
+                cmap = "Blues"
+                axi.imshow(cm, interpolation='nearest', cmap=cmap)
+                title = classname
+                axi.set_title(title)
+                tick_marks = np.arange(2)
+                axi.set_xticks(ticks=tick_marks)
+                axi.set_xticklabels([classname, 'Rest'])
+                axi.set_yticks(ticks=tick_marks)
+                axi.set_yticklabels([classname, 'Rest'])
+                axi.set_ylabel('Actual')
+                axi.set_xlabel('Predicted')
+                axi.grid(False)
+
+                import itertools
+                thresh = cm.max() / 2.
+                for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+                    coeff = f'{cm[i, j]}'
+                    axi.text(j, i, coeff, horizontalalignment="center", verticalalignment="center", color="white" if cm[i, j] > thresh else "black")
+
+        # For single label classification
+        else:
+            self._check_requisites()
+            learn_temp = copy.copy(self.learn)
+            interp = ClassificationInterpretation.from_learner(learn_temp)
+            interp.plot_confusion_matrix()
 
     def plot_hard_examples(self, num_examples):
         """
@@ -344,11 +438,32 @@ class FeatureClassifier(ArcGISModel):
         =====================   ===========================================
         """
         self._check_requisites()
-        interp = ClassificationInterpretation.from_learner(self.learn)
+        # handling bug in fastai.
+        if num_examples == 1:
+            num_examples = 2
+        learn_temp = copy.copy(self.learn)
+        interp = ClassificationInterpretation.from_learner(learn_temp)
         heatmap = True
         if self._backend == 'tensorflow':
             heatmap = False
-        interp.plot_top_losses(num_examples, figsize=(15,15), heatmap=heatmap)
+        if self._data._dataset_type == 'MultiLabeled_Tiles':
+            try:
+                interp.plot_multi_top_losses(num_examples, figsize=(5,5))
+            except IndexError:
+                from IPython.display import clear_output
+                clear_output(wait=True)
+                print("No mismatches found.")
+            return
+        fig = interp.plot_top_losses(num_examples, figsize=(15,15), heatmap=heatmap, return_fig=True)
+        # fastai way of calculating num nrows and ncols
+        cols = math.ceil(math.sqrt(num_examples))
+        rows = math.ceil(num_examples/cols)
+        axes = fig.axes
+        # get number of empty axes from behind.
+        num_empty_ax = rows * cols - num_examples
+        # delete those from back.
+        for k in range(num_empty_ax):
+            fig.delaxes(axes[-(k+1)])
 
     @staticmethod
     def _convert_to_degrees(value, reference):
@@ -374,11 +489,13 @@ class FeatureClassifier(ArcGISModel):
     def predict_folder_and_create_layer(self, folder, feature_layer_name, gis=None, prediction_field='predict', confidence_field='confidence'):
         """
         Predicts on images present in the given folder and creates a feature layer.
+        The images stored in the folder contain GPS information as part of EXIF metadata.
+        Works with RGB images only.
         
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        folder                  Required String. Folder to inference on.
+        folder                  Required String. Folder containing images to inference on.
         ---------------------   -------------------------------------------
         feature_layer_name      Required String. The name of the feature layer used to publish.   
         ---------------------   -------------------------------------------
@@ -444,7 +561,7 @@ class FeatureClassifier(ArcGISModel):
                 ]
             )
         
-        dataframe = pandas.DataFrame(data, columns=['Image_Name', prediction_field, confidence_field, 'X', 'Y'])
+        dataframe = pandas.DataFrame(data, columns=['image_name', prediction_field, confidence_field, 'X', 'Y'])
         spatial_dataframe = dataframe.spatial.from_xy(df=dataframe, sr=4326, x_column='X', y_column='Y')
 
         feature_collection = gis_user.content.import_data(spatial_dataframe, title=feature_layer_name)
@@ -456,7 +573,7 @@ class FeatureClassifier(ArcGISModel):
         object_field = feature_layer.properties['objectIdField']
 
         for image_name, image_path in images.items():
-            object_id = df[object_field].where(df['Image_Name'] == image_name).values[0]  #assuming image_name is unique
+            object_id = df.loc[df['image_name'] == image_name, object_field].values[0]  #assuming image_name is unique
             if np.isnan(object_id):
                 continue #skipping those values which are not present.
             feature_layer.attachments.add(
@@ -632,6 +749,7 @@ class FeatureClassifier(ArcGISModel):
 
         """
         Classifies the exported images and updates the feature layer with the prediction results in the ``output_label_field``.
+        Works with RGB images only.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -658,7 +776,7 @@ class FeatureClassifier(ArcGISModel):
         ====================================     ====================================================================
 
         :return:
-            Boolean : True/False if operation is sucessful
+            Boolean : True/False if operation is successful
 
         """
 
@@ -1163,7 +1281,7 @@ class FeatureClassifier(ArcGISModel):
         """
         Categorizes each feature by classifying its attachments or an image of its geographical area (using the provided Imagery Layer)
         and updates the feature layer with the prediction results in the ``output_label_field``.
-        Deprecated, Please use arcgis.learn.classify_objects() instead.
+        Deprecated, please use arcgis.learn.classify_objects() instead.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -1365,7 +1483,7 @@ if HAS_FASTAI:
 
         def on_train_begin(self, **kwargs):
             ds,dl = self.data.train_ds,self.data.train_dl
-            self.labels = ds.y.items
+            self.labels = ds.y.items.astype(int)
             assert np.issubdtype(self.labels.dtype, np.integer), "Can only oversample integer values"
             _,self.label_counts = np.unique(self.labels,return_counts=True)
             if self.weights is None: self.weights = torch.DoubleTensor((1/self.label_counts)[self.labels])

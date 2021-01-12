@@ -2,6 +2,8 @@ var config = require("./common");
 
 config.CdnUrl = "https:" + config.CdnUrl;
 
+config.JSOutputContext = "embed";
+
 config.BaseRequireJSConfig = {
    packages: [{ name: "esri", location: config.CdnUrl + "esri" },
     { name: "dojo", location: config.CdnUrl + "dojo" },

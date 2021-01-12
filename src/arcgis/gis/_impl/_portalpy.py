@@ -14,7 +14,7 @@ from ..._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = '1.8.0'
+__version__ = '1.9.0'
 
 _log = logging.getLogger(__name__)
 
@@ -78,11 +78,12 @@ class Portal(object):
     def __init__(self, url, username=None, password=None, key_file=None,
                  cert_file=None, expiration=60, referer=None, proxy_host=None,
                  proxy_port=None, connection=None, workdir=tempfile.gettempdir(),
-                 tokenurl=None, verify_cert=True, client_id=None, custom_auth=None, 
-                 token=None):
+                 tokenurl=None, verify_cert=True, client_id=None, custom_auth=None,
+                 token=None, **kwargs):
         """ The Portal constructor. Requires URL and optionally username/password."""
         url = url.strip()            # be permissive in accepting home app urls
         homepos = url.find('/home')
+        trust_env = kwargs.get("trust_env", None)
         if homepos != -1:
             url = url[:homepos]
 
@@ -147,8 +148,9 @@ class Portal(object):
                                       proxy_host=proxy_host,
                                       proxy_port=proxy_port,
                                       verify_cert=verify_cert,
-                                      custom_auth=custom_auth, 
-                                      token=token)
+                                      custom_auth=custom_auth,
+                                      token=token,
+                                      trust_env=trust_env)
             else:
                 self.con = Connection(baseurl=self.resturl,
                                       tokenurl=tokenurl,
@@ -163,14 +165,16 @@ class Portal(object):
                                       proxy_port=proxy_port,
                                       verify_cert=verify_cert,
                                       client_id=client_id,
+                                      client_secret=kwargs.pop('client_secret', None),
                                       custom_auth=custom_auth,
-                                      token=token)
+                                      token=token,
+                                      trust_env=trust_env)
         #self.get_version(True)
         self.get_properties(True)
 
 
 
-    def add_group_users(self, user_names, group_id):
+    def add_group_users(self, user_names, group_id, admin_names):
         """ Adds users to the group specified.
 
         .. note::
@@ -184,6 +188,8 @@ class Portal(object):
         user_names    list of usernames
         ------------  --------------------------------------
         group_id      required string, specifying group id
+        ------------  --------------------------------------
+        admin_names   list of usernames to be a group admin
         ============  ======================================
 
         :return:
@@ -200,10 +206,33 @@ class Portal(object):
         #user_names = _unpack(user_names, 'username')
 
         postdata = self._postdata()
-        postdata['users'] = ','.join(user_names)
+        if user_names:
+            postdata['users'] = ','.join(user_names)
+        if admin_names:
+            postdata['admins'] = ",".join(admin_names)
         resp = self.con.post('community/groups/' + group_id + '/addUsers',
                              postdata)
         return resp
+
+    def delete_group_thumbnail(self, group_id):
+        """
+        Removes the group's thumbnail
+
+        ============  ======================================
+        **Argument**  **Description**
+        ------------  --------------------------------------
+        group_id      required string, The group id to remove the thumbnail for.
+        ============  ======================================
+
+        :returns: Boolean
+
+        """
+        url = f"community/groups/{group_id}/deleteThumbnail"
+        params = {'f' : 'json'}
+        res = self.con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
 
     def add_item(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
         """ Adds content to a Portal.
@@ -276,7 +305,7 @@ class Portal(object):
         ================  ============================================================================
 
 
-        URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+        URL 1: https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm
 
         :return:
              The item id of the uploaded item if successful, None if unsuccessful.
@@ -336,9 +365,9 @@ class Portal(object):
         CSV files that contain location fields, (ie.address fields or X, Y fields) are spatially enabled during the process of publishing.
         Shapefiles and file geodatabases should be packaged as *.zip files.
         Tiled map services can be created from service definition (*.sd) files, tile packages, and existing feature services.
-        Service definitions are authored in ArcGIS for Desktop and contain both the cartographic definition for a map as well as its packaged data together with the definition of the geo-service to be created.
+        Service definitions are authored in ArcGIS Pro or ArcGIS Desktop and contain both the cartographic definition for a map as well as its packaged data together with the definition of the geo-service to be created.
         Use the Analyze operation to generate the default publishing parameters for CSVs.
-        See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Publish_Item/02r300000080000000/
+        See https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm
         """
         # Postdata is a dictionary object whose keys and values will be sent via an HTTP Post.
         postdata = self._postdata()
@@ -355,7 +384,7 @@ class Portal(object):
         if outputType is not None:
             postdata['outputType'] = outputType
         if item_id and isinstance(item_id, str) and len(item_id) >=32:
-            postdata['itemIdToCreate'] = str(item_id)        
+            postdata['itemIdToCreate'] = str(item_id)
         postdata['overwrite'] = json.dumps(overwrite)
 
         postdata['buildInitialCache'] = buildInitialCache
@@ -392,10 +421,10 @@ class Portal(object):
                        wkid=102100,
                        service_type="imageService",
                        create_params=None,
-                       owner=None, 
-                       folder=None, 
-                       common_params=None, 
-                       is_view=False, 
+                       owner=None,
+                       folder=None,
+                       common_params=None,
+                       is_view=False,
                        item_id=None,
                        tags=None,
                        snippet=None):
@@ -2012,7 +2041,7 @@ class Portal(object):
                      snippet=None, access=None, is_invitation_only=None,
                      sort_field=None, sort_order=None, is_view_only=None,
                      thumbnail=None, max_file_size=None, users_update_items=None,
-                     clear_empty_fields=False, display_settings=None, 
+                     clear_empty_fields=False, display_settings=None,
                      is_open_data=False, leaving_disallowed=False):
         """ Updates a group.
 
@@ -2062,23 +2091,23 @@ class Portal(object):
 
         properties = dict()
         postdata = self._postdata()
-        if title:
+        if not title is None:
             properties['title'] = title
-        if tags:
+        if not tags is None:
             properties['tags'] = tags
-        if description:
+        if not description is None:
             properties['description'] = description
-        if snippet:
+        if not snippet is None:
             properties['snippet'] = snippet
-        if access:
+        if not access is None:
             properties['access'] = access
-        if sort_field:
+        if not sort_field is None:
             properties['sortField'] = sort_field
-        if sort_order:
+        if not sort_order is None:
             properties['sortOrder'] = sort_order
-        if is_view_only:
+        if not is_view_only is None:
             properties['isViewOnly'] = is_view_only
-        if max_file_size:
+        if not max_file_size is None:
             properties['MAX_FILE_SIZE'] = max_file_size
         elif max_file_size is None:
             properties['MAX_FILE_SIZE'] = 1024000
@@ -2097,7 +2126,7 @@ class Portal(object):
         if display_settings:
             properties['displaySettings'] = display_settings
         postdata.update(properties)
-        if True:
+        if clear_empty_fields == True:
             postdata['clearEmptyFields'] = True
         files = []
         if thumbnail:
@@ -2190,7 +2219,7 @@ class Portal(object):
         ================  ============================================================================
 
 
-        URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+        URL 1: https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm
 
         :return:
              a boolean, that indicates success.

@@ -3,9 +3,11 @@ from fastai.vision.image import open_image, show_image, pil2tensor
 from fastai.vision.data import SegmentationProcessor, ImageList
 from fastai.layers import CrossEntropyFlat
 from fastai.basic_train import LearnerCallback
+from fastai.core import is_listy
 from .._utils.common import ArcGISMSImage, get_top_padding, kwarg_fill_none, \
     find_data_loader, get_nbatches, dynamic_range_adjustment, image_tensor_checks_plotting, \
-    get_symbology_bands, predict_batch, denorm_x, get_nbatches
+    get_symbology_bands, predict_batch, denorm_x, get_nbatches, GDAL_INSTALL_MESSAGE, image_batch_stretcher
+from .._utils.env import HAS_GDAL
 from .._utils.pixel_classification import analyze_pred_pixel_classification
 import torch
 import warnings
@@ -24,16 +26,16 @@ def _class_array_to_rbg(ca : 'classified_array', cm : 'color_mapping', nodata=0)
     im[white_mask] = 255
     return im
 
-#def _show_batch_unet_multispectral(self, nrows=3, ncols=3, n_items=None, index=0, rgb_bands=None, nodata=0, alpha=0.7, imsize=5): # Proposed Parameters 
+#def _show_batch_unet_multispectral(self, nrows=3, ncols=3, n_items=None, index=0, rgb_bands=None, nodata=0, alpha=0.7, imsize=5): # Proposed Parameters
 def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # parameters adjusted in kwargs
     import matplotlib.pyplot as plt
     from .._data import _tensor_scaler
-   
+
     nrows = rows
     ncols = 3
     if kwargs.get('ncols', None) is not None:
         ncols = kwargs.get('ncols')
-    
+
     n_items = None
     if kwargs.get('n_items', None) is not None:
         n_items = kwargs.get('n_items')
@@ -66,6 +68,7 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
         imsize = kwargs.get('imsize')
 
     statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
+    stretch_type = kwargs.get('stretch_type', 'minmax') # Accepted Values `minmax`, `percentclip`
 
     e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
     symbology_bands = []
@@ -98,11 +101,8 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
 
     # Extract RGB Bands
     symbology_x_batch = x_batch[:, symbology_bands]
-    if statistics_type == 'DRA':
-        shp = symbology_x_batch.shape
-        min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
-        max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
-        symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+    if stretch_type is not None:
+        symbology_x_batch = image_batch_stretcher(symbology_x_batch, stretch_type, statistics_type)
 
     # Channel first to channel last and clamp float values to range 0 - 1 for plotting
     symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
@@ -136,6 +136,7 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
             else:
                 axi.axis('off')
             idx+=1
+    #
 
 class ArcGISImageSegment(Image):
     "Support applying transforms to segmentation masks data in `px`."
@@ -162,11 +163,22 @@ class ArcGISImageSegment(Image):
             ## This condition will not be true.
             ax = show_image(self, ax=ax, hide_axis=hide_axis, cmap="tab20", figsize=figsize,
                         interpolation='nearest', alpha=alpha, vmin=0, **kwargs)
-        else:     
+        else:
             color_mapping = torch.tensor(list(self.color_mapping.values()))
             color_mapping = torch.cat((color_mapping.float()/255, torch.tensor([float(alpha)] * len(color_mapping)).view(-1, 1)), dim=1)
             color_mapping = torch.cat((torch.tensor([0., 0., 0., 0.]).view(1, -1), color_mapping), dim=0)
-            ax = show_image(color_mapping[self.data[0]].permute(2, 0, 1), ax=ax, hide_axis=hide_axis, cmap=cmap, figsize=figsize,
+            try:
+                color_im = color_mapping[self.data[0]].permute(2, 0, 1)
+            except IndexError as e:
+
+                if HAS_GDAL:
+                    message = f"Encountered invalid values in training label values, please check your training data."
+                else:
+                    message = f"Encountered invalid values while reading training labels. Please install gdal for better support.\n\n" + GDAL_INSTALL_MESSAGE
+
+                raise Exception(f"{e} \n\n{message}")
+
+            ax = show_image(color_im, ax=ax, hide_axis=hide_axis, cmap=cmap, figsize=figsize,
                             interpolation='nearest', alpha=alpha, vmin=0, **kwargs)
         if title: ax.set_title(title)
 
@@ -207,7 +219,7 @@ class ArcGISSegmentationLabelList(ImageList):
         if not self.is_contiguous:
             self.pixel_mapping = [0] + list(self.class_mapping.keys())
 
-    def open(self, fn):
+    def _open_rgb(self, fn):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning) # EXIF warning from TiffPlugin
             x = PIL.Image.open(fn)
@@ -219,36 +231,49 @@ class ArcGISSegmentationLabelList(ImageList):
 
         if not self.is_contiguous:
             x = map_to_contiguous(x, self.pixel_mapping)
+
         return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
-    def analyze_pred(self, pred, thresh=0.5, ignore_mapped_class=[], model = None, thinning=None):
+    def analyze_pred(self, pred, thresh=0.5, ignore_mapped_class=[], model=None, thinning=None):
 
         if getattr(model, "_is_model_extension", False):
 
-            if thinning == None:
+            if thinning is None:
                 pred = model.model_conf.post_process(pred, thresh)
             else:
                 pred = model.model_conf.post_process(pred, thresh, thinning)
             return pred
 
-        if ignore_mapped_class == []: 
+        if is_listy(pred):
+            pred = pred[0]
+
+        if ignore_mapped_class == []:
             return pred.argmax(dim=0)[None]
         else:
             for k in ignore_mapped_class:
                 pred[k] = -1
             return pred.argmax(dim=0)[None]
 
-
-    def reconstruct(self, t): 
+    def reconstruct(self, t):
         return ArcGISImageSegment(t, color_mapping=self.color_mapping)
+
+    def open(self, fn):
+        x = ArcGISMSImage.open(fn).data
+        if not self.is_contiguous:
+            x = map_to_contiguous(x, self.pixel_mapping)
+        return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
 class ArcGISSegmentationItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."
     _label_cls, _square_show_res = ArcGISSegmentationLabelList, False
+    _div = None
+    _imagery_type = None
+    def open(self, fn):
+        return ArcGISMSImage.open(fn, div=self._div, imagery_type=self._imagery_type)
 
 class ArcGISSegmentationMSLabelList(ArcGISSegmentationLabelList):
     def open(self, fn):
-        import gdal
+        from osgeo import gdal
         path = str(os.path.abspath(fn))
         x = gdal.Open(path).ReadAsArray()
         x = torch.tensor(x.astype(np.float32))[None]
@@ -256,17 +281,11 @@ class ArcGISSegmentationMSLabelList(ArcGISSegmentationLabelList):
             x = map_to_contiguous(x, self.pixel_mapping)
         return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
-class ArcGISSegmentationMSItemList(ImageList):
-    "`ItemList` suitable for segmentation tasks."
-    _label_cls, _square_show_res = ArcGISSegmentationMSLabelList, False
-    def open(self, fn):
-        return ArcGISMSImage.open_gdal(fn)
-
 class LabelCallback(LearnerCallback):
     def __init__(self, learn):
         super().__init__(learn)
         self.label_mapping = {value:(idx+1) for idx, value in enumerate(learn.data.class_mapping.keys())}
-        
+
     def on_batch_begin(self, last_input, last_target, **kwargs):
         """
         This callback is not used anymore.
@@ -278,15 +297,18 @@ class LabelCallback(LearnerCallback):
         return {'last_input':last_input, 'last_target':last_target}
 
 
-#def show_results_multispectral(self, nrows=3, index=0, type_ds='valid', rgb_bands=None, nodata=0, alpha=0.7, imsize=5, top=0.97): # Proposed Parameters 
+#def show_results_multispectral(self, nrows=3, index=0, type_ds='valid', rgb_bands=None, nodata=0, alpha=0.7, imsize=5, top=0.97): # Proposed Parameters
 def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
     import matplotlib.pyplot as plt
 
     # Get Number of items
     ncols = 2
-
+    return_fig = kwargs.get('return_fig', False)
     type_data_loader = kwarg_fill_none(kwargs, 'data_loader', 'validation') # options : traininig, validation, testing
     data_loader = find_data_loader(type_data_loader, self._data)
+    if getattr(self, 'name') in ['MultiTaskRoadExtractor']:
+        data_loader = find_data_loader(type_data_loader, self._orient_data)
+        self._data.batch_size=1
 
     nodata = kwarg_fill_none(kwargs, 'nodata', 0)
 
@@ -298,17 +320,21 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
     title_font_size=16
     if top is None:
         top = get_top_padding(
-            title_font_size=title_font_size, 
-            nrows=nrows, 
+            title_font_size=title_font_size,
+            nrows=nrows,
             imsize=imsize
             )
-        
+
     statistics_type = kwarg_fill_none(kwargs, 'statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
-    
+    stretch_type = kwargs.get('stretch_type', 'minmax') # Accepted Values `minmax`, `percentclip`
+
     # get batches
     x_batch, y_batch = get_nbatches(data_loader, math.ceil(nrows/self._data.batch_size))
     symbology_x_batch = x_batch = torch.cat(x_batch)
-    y_batch = torch.cat(y_batch)
+    if getattr(self, 'name') in ['MultiTaskRoadExtractor']:
+        y_batch= torch.stack([item for sublist in y_batch for item in sublist[0]]).type(torch.long).unsqueeze(1)
+    else:
+        y_batch = torch.cat(y_batch)
 
     symbology_bands = [0, 1, 2]
     if self._is_multispectral:
@@ -325,6 +351,8 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
         activation_store.append(activations)
 
     # Analyze Pred
+    if getattr(self, 'name') in ['MultiTaskRoadExtractor']:
+        activation_store = [x[0] for x in activation_store]
     predictions = analyze_pred_pixel_classification(self, activation_store)
 
     # Denormalize X
@@ -332,11 +360,13 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
 
     # Extract RGB Bands for plotting
     symbology_x_batch = x_batch[:, symbology_bands]
-   
+    if stretch_type is not None:
+        symbology_x_batch = image_batch_stretcher(symbology_x_batch, stretch_type, statistics_type)
+
     # Apply Image Strecthing
     if statistics_type == 'DRA':
         symbology_x_batch = dynamic_range_adjustment(symbology_x_batch)
-    
+
     symbology_x_batch = image_tensor_checks_plotting(symbology_x_batch)
 
     # Get color Array
@@ -362,3 +392,6 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
             axi[1].imshow(p_rgb, alpha=alpha)
         axi[0].axis('off')
         axi[1].axis('off')
+    #
+    if return_fig:
+        return fig, axs
