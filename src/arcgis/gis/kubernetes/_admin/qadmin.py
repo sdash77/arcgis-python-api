@@ -41,6 +41,7 @@ class KubernetesAdmin(_BaseKube):
     _sp = None
     _mode = None
     _idp = None
+    _services = None
     _license = None
     _metadata = None
     _organizations = None
@@ -232,3 +233,11 @@ class KubernetesAdmin(_BaseKube):
             url = f"{self._url}/orgs"
             self._organizations = KubeOrganizations(url=url, gis=self._gis)
         return self._organizations
+    #----------------------------------------------------------------------
+    @property
+    def services(self):
+        if self._services is None:
+            from ._services import ServicesManager
+            url = f"{self._url}/services"
+            self._services = ServicesManager(url, gis=self._gis)
+        return self._services

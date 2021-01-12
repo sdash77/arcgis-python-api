@@ -7,6 +7,16 @@ from arcgis._impl.common._mixins import PropertyMap
 
 ###########################################################################
 class KubeService(object):
+    """
+    A service exposes GIS resources like maps, rasters, locators,
+    geodatabases, and so forth through REST and SOAP interfaces. The type
+    of the service is often dictated by the type of resources being
+    published. In addition to accessing the underlying resource, a GIS
+    service can expose additional capabilities called extensions (or server
+    object extensions). Extensions are packages of custom functionality that
+    can perform business logic or expose the service through additional
+    formats or protocols.
+    """
     _url = None
     _con = None
     _gis = None
@@ -171,6 +181,12 @@ class KubeService(object):
 
 ###########################################################################
 class ServicesManager(object):
+    """
+    The `ServicesManager` acts as the root folder and container for all
+    sub-folders and GIS services for your deployment. You can create a
+    new sub-folder by using the Create Folder operation as well as a new
+    GIS service by using the Create Service method.
+    """
     _gis = None
     _url = None
     _folder = None
