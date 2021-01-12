@@ -317,7 +317,43 @@ class ServicesManager(object):
         res = self._con.post(url, params)
         return res
     #----------------------------------------------------------------------
-    def can_create(self, *, folder:str=None, service_type:str=None, )
+    def can_create(self,
+                   service_type:str,
+                   *,
+                   folder:str=None,
+                   service:dict=None,
+                   options:dict=None) -> bool:
+        """
+        Checks if a service can be generated. It is recommended that the user
+        check if the service can be created before calling `create_service`.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        service_type        Required String.  The type of service to create.
+        ---------------     --------------------------------------------------------------------
+        folder              Optional String. The location to create the service in.  If the `folder`
+                            if set on the `ServicesManager`, the `folder` parameter will override
+                            the save location. The folder must exist before calling this method.
+        ---------------     --------------------------------------------------------------------
+        service             Optional Dict. The service configuration in JSON format.
+        ---------------     --------------------------------------------------------------------
+        options             Optional Dict. Provides additional information about the service, such as whether it is a hosted service.
+        ===============     ====================================================================
+
+        """
+        url = f"{self._url}/canCreateService"
+        params = {
+            'f' : 'json',
+            'folderName' : folder,
+            'serviceType' : service_type,
+            'service' : service,
+            'options' : options
+        }
+        res = self._con.post(url, params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
     #----------------------------------------------------------------------
     def create_service(self, service_json:dict, folder:str=None) -> bool:
         """
@@ -328,6 +364,10 @@ class ServicesManager(object):
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         service_json        Required dict. The JSON representation of the service being created.
+        ---------------     --------------------------------------------------------------------
+        folder              Optional String. The location to create the service in.  If the `folder`
+                            if set on the `ServicesManager`, the `folder` parameter will override
+                            the save location. The folder must exist before calling this method.
         ===============     ====================================================================
 
         :return: Bool
