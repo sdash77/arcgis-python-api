@@ -62,7 +62,7 @@ class DeprecatedWarning(DeprecationWarning):
         if self.deprecated_in:
             parts["deprecated"] = " as of %s" % self.deprecated_in
         if self.removed_in:
-            parts["removed"] = " and will be removed in %s" % self.removed_in
+            parts["removed"] = " and has be removed in %s" % self.removed_in
         if any([self.deprecated_in, self.removed_in, self.details]):
             parts["period"] = "."
         if self.details:
@@ -180,7 +180,7 @@ def deprecated(deprecated_in=None, removed_in=None, current_version=None,
                 "deprecated_in":
                     " %s" % deprecated_in if deprecated_in else "",
                 "removed_in":
-                    "\n   This will be removed in %s." %
+                    "\n   This was removed in %s." %
                     removed_in if removed_in else "",
                 "details":
                     " %s" % details if details else ""}

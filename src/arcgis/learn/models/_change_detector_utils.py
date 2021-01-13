@@ -513,9 +513,9 @@ class _PAMBlock(nn.Module):
                 start_x, start_y = i*step_h, j*step_w
                 end_x, end_y = min(start_x+step_h, h), min(start_y+step_w, w)
                 if i == (self.scale-1):
-                    end_x = h
+                    end_x = h - (h % step_h)
                 if j == (self.scale-1):
-                    end_y = w
+                    end_y = w - (w % step_h)
                 local_x += [start_x, end_x]
                 local_y += [start_y, end_y]
 
@@ -620,7 +620,8 @@ class PAM(nn.Module):
         #  concat
         context = []
         for i in range(0, len(priors)):
-            context += [priors[i]]
+            context += [F.interpolate(priors[i], size=feats.shape[-2:], mode='bilinear', align_corners=True)]
+            
         output = self.conv_bn(torch.cat(context, 1))
 
         return output

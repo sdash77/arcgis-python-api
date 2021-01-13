@@ -74,7 +74,7 @@ class UnetClassifier(ArcGISModel):
     ---------------------   -------------------------------------------
     dice_loss_fraction      Optional float. 
                             Min_val=0, Max_val=1 
-                            If > 0 , model will use a combination of defaut or 
+                            If > 0 , model will use a combination of default or 
                             focal(if focal=True) loss with the specified fraction 
                             of dice loss.
                             E.g. 
@@ -375,7 +375,7 @@ class UnetClassifier(ArcGISModel):
                                 mean IOU, otherwise returns mean iou of all
                                 classes combined.   
         ---------------------   -------------------------------------------
-        show_progress           Optional bool. Displays the prgress bar if
+        show_progress           Optional bool. Displays the progress bar if
                                 True.                     
         =====================   ===========================================
         

@@ -135,20 +135,20 @@ class TimeSeriesModel(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a FullyConnectedNetwork Object from an Esri Model Definition (EMD) file.
+        Creates a TimeSeriesModel Object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from `prepare_tabulardata` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `FullyConnectedNetwork` Object
+        :returns: `TimeSeriesModel` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -456,8 +456,8 @@ class TimeSeriesModel(ArcGISModel):
             if min_cell_size_y > cell_size.y:
                 min_cell_size_y = cell_size.y
 
-        max_raster_columns = math.ceil((xmax - xmin) / min_cell_size_x)
-        max_raster_rows = math.ceil((ymax - ymin) / min_cell_size_y)
+        max_raster_columns = int(abs(math.ceil((xmax - xmin) / min_cell_size_x)))
+        max_raster_rows = int(abs(math.ceil((ymax - ymin) / min_cell_size_y)))
 
         point_upper = arcgis.geometry.Point({'x': xmin, 'y': ymax, 'sr': default_sr})
         cell_size = arcgis.geometry.Point({'x': min_cell_size_x, 'y': min_cell_size_y, 'sr': default_sr})
@@ -533,7 +533,7 @@ class TimeSeriesModel(ArcGISModel):
         if isinstance(input_features, FeatureLayer):
             orig_dataframe = input_features.query().sdf
         else:
-            orig_dataframe = input_features
+            orig_dataframe = input_features.copy()
 
         if match_field_names is None:
             match_field_names = {}

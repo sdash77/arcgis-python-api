@@ -360,7 +360,7 @@ def classify_pixels(input_raster,
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_raster                             Required. raster layer that needs to be classified
+    input_raster                             Required. raster layer that needs to be classified.
     ------------------------------------     --------------------------------------------------------------------
     model                                    Required model object.
     ------------------------------------     --------------------------------------------------------------------
@@ -407,10 +407,10 @@ def classify_pixels(input_raster,
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean. 
-                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
 
-                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -501,7 +501,7 @@ def export_training_data(input_raster,
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_raster                             Required. Raster layer that needs to be exported for training bla
+    input_raster                             Required. Raster layer that needs to be exported for training.
     ------------------------------------     --------------------------------------------------------------------
     input_class_data                         Labeled data, either a feature layer or image layer.
                                              Vector inputs should follow a training sample format as

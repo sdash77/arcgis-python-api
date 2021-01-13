@@ -245,7 +245,7 @@ def from_table(filename, **kwargs):
     """
     filename = _ensure_path_string(filename)
 
-    if HASARCPY:
+    if HASARCPY and not filename.lower().endswith('.dbf'):
         where = kwargs.pop("where", None)
         fields = kwargs.pop('fields', "*")
         skip_nulls = kwargs.pop('skip_nulls', True)
@@ -255,6 +255,18 @@ def from_table(filename, **kwargs):
                                                  where_clause=where,
                                                  skip_nulls=skip_nulls,
                                                  null_value=null_value))
+    elif HASARCPY and filename.lower().endswith('.dbf'):
+        scur = arcpy.da.SearchCursor(in_table=filename,
+                                     field_names=fields, where_clause=where)
+        array = scur._as_array()
+        del scur
+        return pd.DataFrame(data=array)
+    elif filename.lower().endswith('.dbf'):
+        import shapefile
+        with open(filename, "rb") as f:
+            reader = shapefile.Reader(dbf=f)
+            return pd.DataFrame(
+                [record.as_dict() for record in reader.iterRecords()])
     elif filename.lower().find('.csv') > -1:
         return pd.read_csv(filename)
 

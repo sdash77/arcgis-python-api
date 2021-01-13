@@ -1300,7 +1300,7 @@ class MapView(widgets.DOMWidget):
         from arcgis.raster import Raster
 
         output_bool = True
-        if layers == None:
+        if layers is None:
             layers = self.layers
         else:
             layers = self._infer_layers(layers)
@@ -1351,7 +1351,9 @@ class MapView(widgets.DOMWidget):
 
         if isinstance(arg, Layer):
             output_layers.append(arg)
-        if isinstance(arg, BaseOGC):
+        elif isinstance(arg, ImageryLayer):
+            output_layers.append(arg)
+        elif isinstance(arg, BaseOGC):
             output_layers.append(arg)
         elif isinstance(arg, Item):
             for layer in arg.layers:
@@ -1394,15 +1396,20 @@ class MapView(widgets.DOMWidget):
         if self._is_hashable(item):
             return str(hash(item))
         else:
-            from arcgis.raster import Raster
+            from arcgis.raster import Raster, ImageryLayer
             if isinstance(item, dict):
                 return str(hash(frozenset(item)))
             elif is_numpy_array(item):
                 return get_hash_numpy_array(item)
             elif isinstance(item, Raster):
                 return str(hash(item.path))
+            elif isinstance(item, ImageryLayer):
+                return str(hash(item.url))
             else:
-                raise Exception("Cannot hash item {}".format(item))
+                try:
+                    return str(hash(item.url))
+                except Exception:
+                    raise Exception("Cannot hash item {}".format(item))
 
     def _is_hashable(self, item):
         try:

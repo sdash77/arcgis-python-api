@@ -710,6 +710,24 @@ if HAS_ARCPY:
             r = df.SHAPE.geom.snap_to_line(pt)
             assert r.dtype.name.lower() == "geometry"
             assert isinstance(r[0], Geometry)
+        # ----------------------------------------------------------------------
+        #@unittest.SkipTest
+        def test_to_methods_with_timedelta(self):
+            """test GeoAccessor 'to' methods with Timedelta column"""
+            from arcgis.features import FeatureSet, FeatureCollection
+            lst = [
+                [0, pd.Timedelta(20, unit='sec'),
+                 Geometry({'x': -92.31105, 'y': 38.906534, 'spatialReference': {'wkid': 4326}})],
+                [0, pd.Timedelta(2, unit='min'),
+                 Geometry({'x': -1.2, 'y': 1.2, 'spatialReference': {'wkid': 4326}})]
+            ]
+            sdf = pd.DataFrame(lst, columns=['FID', 'elapsed_time', 'SHAPE'])
+            ga = sdf.spatial
+            isinstance(ga, GeoAccessor)
+            fs = ga.to_featureset()
+            fc = ga.to_feature_collection(name='feature set with timedelta')
+            assert isinstance(fs, FeatureSet)
+            assert isinstance(fc, FeatureCollection)
         #------------------------------------------------------------------
         #@unittest.SkipTest
         def test_symmetric_difference(self):

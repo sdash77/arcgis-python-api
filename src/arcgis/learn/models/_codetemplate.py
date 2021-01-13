@@ -525,7 +525,12 @@ class ArcGISObjectClassifier:
                 'type': 'esriFieldTypeString',
                 'alias': 'Label'
             }
-        )         
+        )
+
+        if "MetaDataMode" in self.json_info and self.json_info["MetaDataMode"] == "MultiLabeled_Tiles":
+            for item in fields['fields']:
+                if item['name'] == 'Confidence':
+                    item['type'] = 'esriFieldTypeString'
 
         return json.dumps(fields)
 
@@ -557,7 +562,12 @@ class ArcGISObjectClassifier:
                 'type': 'esriFieldTypeString',
                 'alias': 'Label'
             }
-        )        
+        )
+
+        if "MetaDataMode" in self.json_info and self.json_info["MetaDataMode"] == "MultiLabeled_Tiles":
+            for item in features['fields']:
+                if item['name'] == 'Confidence':
+                    item['type'] = 'esriFieldTypeString'
 
         for i in range(len(polygon_list)):
 
@@ -574,7 +584,8 @@ class ArcGISObjectClassifier:
                 'attributes': {
                     'OID': i + 1,
                     'Confidence': str(scores[i]),
-                    'Label': labels[i]
+                    'Label': labels[i],
+                    'Classname': labels[i]
                 },
                 'geometry': {
                     'rings': rings
@@ -820,11 +831,14 @@ class ArcGISImageClassifier:
         pixelBlocks['raster_pixels'] = raster_pixels
 
         xx = self.child_image_classifier.updatePixels(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)        
-        tytx = getattr(self.child_image_classifier, 'tytx', self.json_info['ImageHeight'])
-        chunks, num_rows, num_cols =  chunk_it(xx.transpose(1, 2, 0), tytx)# self.json_info['ImageHeight'])  # ImageHeight = ImageWidth
-        xx = patch_chips(crop_flatten(chunks, self.child_image_classifier.padding), num_rows, num_cols)
-        xx = xx.transpose(2, 0, 1)
-        pixelBlocks['output_pixels'] = xx
+        if self.json_info['ModelName'] == 'MultiTaskRoadExtractor':
+            pixelBlocks['output_pixels'] = xx
+        else:
+            tytx = getattr(self.child_image_classifier, 'tytx', self.json_info['ImageHeight'])
+            chunks, num_rows, num_cols =  chunk_it(xx.transpose(1, 2, 0), tytx)# self.json_info['ImageHeight'])  # ImageHeight = ImageWidth
+            xx = patch_chips(crop_flatten(chunks, self.child_image_classifier.padding), num_rows, num_cols)
+            xx = xx.transpose(2, 0, 1)
+            pixelBlocks['output_pixels'] = xx
 
         return pixelBlocks
 """

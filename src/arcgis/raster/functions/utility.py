@@ -49,13 +49,20 @@ def _raster_input(raster, raster2=None):
                         raster2 = raster2._fn
                     else:
                         if(raster2._datastore_raster is False):
-                            if "url" in raster2._lyr_dict:
-                                url = raster2._lyr_dict["url"]
-                                if "serviceToken" in raster2._lyr_dict:
-                                    url = url+"?token="+ raster2._lyr_dict["serviceToken"]
-                                raster2 = _replace_raster_url(raster2._fn, url)
-                            else:
-                                raster2 = _replace_raster_url(raster2._fn, raster2._url)
+                            try:
+                                url = raster2._url
+                                if ((hasattr(raster2, "_lazy_token")) and raster2._lazy_token is None) or not hasattr(raster2, "_lazy_token"):
+                                    raster2._lazy_token = raster2._gis._con.generate_portal_server_token(serverUrl=url)
+                                if isinstance(raster2._lazy_token, str):
+                                    url = url+"?token="+ raster2._lazy_token
+                            except:
+                                if "url" in raster2._lyr_dict:
+                                    url = raster2._lyr_dict["url"]
+                                    if "serviceToken" in raster2._lyr_dict:
+                                        url = url+"?token="+ raster2._lyr_dict["serviceToken"]
+                                    raster2 = _replace_raster_url(raster2._fn, url)
+                                else:
+                                    raster2 = _replace_raster_url(raster2._fn, raster2._url)
                         else:
                             raster2 = _replace_raster_url(raster2._fn, raster2._uri)
                  else:
@@ -69,13 +76,21 @@ def _raster_input(raster, raster2=None):
                             raster2 = ['$' + str(x) for x in oids]
                     else:
                         if(raster2._datastore_raster is False):
-                            if "url" in raster2._lyr_dict:
-                                url = raster2._lyr_dict["url"]
-                                if "serviceToken" in raster2._lyr_dict:
-                                    url = url+"?token="+ raster2._lyr_dict["serviceToken"]
+                            try:
+                                url = raster2._url
+                                if ((hasattr(raster2, "_lazy_token")) and raster2._lazy_token is None) or not hasattr(raster2, "_lazy_token"):
+                                    raster2._lazy_token = raster2._gis._con.generate_portal_server_token(serverUrl=url)
+                                if isinstance(raster2._lazy_token, str):
+                                    url = url+"?token="+ raster2._lazy_token
                                 raster2 = url
-                            else:
-                                raster2 = raster2._url
+                            except:
+                                if "url" in raster2._lyr_dict:
+                                    url = raster2._lyr_dict["url"]
+                                    if "serviceToken" in raster2._lyr_dict:
+                                        url = url+"?token="+ raster2._lyr_dict["serviceToken"]
+                                    raster2 = url
+                                else:
+                                    raster2 = raster2._url
                         else:
                             raster2 = raster2._uri
         elif isinstance(raster2, (ImageryLayer, Raster)) and not isinstance(raster, (ImageryLayer, Raster)):
@@ -212,13 +227,21 @@ def _get_raster_url(raster, layer):
                 if raster._url == layer._url:
                     raster = raster._fn
                 else:
-                    if "url" in raster._lyr_dict:
-                        url = raster._lyr_dict["url"]
-                        if "serviceToken" in raster._lyr_dict:
-                            url = url+"?token="+ raster._lyr_dict["serviceToken"]
+                    try:
+                        url = raster._url
+                        if ((hasattr(raster, "_lazy_token")) and raster._lazy_token is None) or not hasattr(raster, "_lazy_token"):
+                            raster._lazy_token = raster._gis._con.generate_portal_server_token(serverUrl=url)
+                        if isinstance(raster._lazy_token, str):
+                            url = url+"?token="+ raster._lazy_token
                         raster = _replace_raster_url(raster._fn, url)
-                    else:
-                        raster = _replace_raster_url(raster._fn, raster._url)
+                    except:
+                        if "url" in raster._lyr_dict:
+                            url = raster._lyr_dict["url"]
+                            if "serviceToken" in raster._lyr_dict:
+                                url = url+"?token="+ raster._lyr_dict["serviceToken"]
+                            raster = _replace_raster_url(raster._fn, url)
+                        else:
+                            raster = _replace_raster_url(raster._fn, raster._url)
 
         else:
             if raster._datastore_raster and layer._datastore_raster:
@@ -230,13 +253,21 @@ def _get_raster_url(raster, layer):
                 if raster._url == layer._url:
                     raster = '$$'
                 else:
-                    if "url" in raster._lyr_dict:
-                        url = raster._lyr_dict["url"]
-                        if "serviceToken" in raster._lyr_dict:
-                            url = url+"?token="+ raster._lyr_dict["serviceToken"]
+                    try:
+                        url = raster._url
+                        if ((hasattr(raster, "_lazy_token")) and raster._lazy_token is None) or not hasattr(raster, "_lazy_token"):
+                            raster._lazy_token = raster._gis._con.generate_portal_server_token(serverUrl=url)
+                        if isinstance(raster._lazy_token, str):
+                            url = url+"?token="+ raster._lazy_token
                         raster = url
-                    else:
-                        raster = raster._url
+                    except:
+                        if "url" in raster._lyr_dict:
+                            url = raster._lyr_dict["url"]
+                            if "serviceToken" in raster._lyr_dict:
+                                url = url+"?token="+ raster._lyr_dict["serviceToken"]
+                            raster = url
+                        else:
+                            raster = raster._url
 
             # oids = raster.filtered_rasters()
             # if oids is None:
@@ -251,17 +282,13 @@ def _get_raster_url(raster, layer):
 def _get_raster_ra(raster):
 
     if isinstance(raster, (ImageryLayer, Raster)):
-        if hasattr(raster, "_do_not_hydrate"):
-            if raster._do_not_hydrate:
-                url = raster.url
-                if raster.token is not None:
-                    url = url+"?token="+ raster.token
-            else:
-                if "url" in raster._lyr_dict:
-                    url = raster._lyr_dict["url"]
-                if "serviceToken" in raster._lyr_dict:
-                    url = url+"?token="+ raster._lyr_dict["serviceToken"]
-        else:
+        try:
+            url = raster._url
+            if ((hasattr(raster, "_lazy_token")) and raster._lazy_token is None) or not hasattr(raster, "_lazy_token"):
+                raster._lazy_token = raster._gis._con.generate_portal_server_token(serverUrl=url)
+            if isinstance(raster._lazy_token, str):
+                url = url+"?token="+ raster._lazy_token
+        except:
             if "url" in raster._lyr_dict:
                 url = raster._lyr_dict["url"]
             if "serviceToken" in raster._lyr_dict:
@@ -314,10 +341,17 @@ def _get_raster_ra_rft(raster):
         if hasattr(raster,"_engine_obj"):
             raster=raster._engine_obj
     if isinstance(raster, (ImageryLayer, Raster)):
-        if "url" in raster._lyr_dict:
-            url = raster._lyr_dict["url"]
-        if "serviceToken" in raster._lyr_dict:
-            url = url+"?token="+ raster._lyr_dict["serviceToken"]
+        try:
+            url = raster._url
+            if ((hasattr(raster, "_lazy_token")) and raster._lazy_token is None) or not hasattr(raster, "_lazy_token"):
+                raster._lazy_token = raster._gis._con.generate_portal_server_token(serverUrl=url)
+            if isinstance(raster._lazy_token, str):
+                url = url+"?token="+ raster._lazy_token
+        except:
+            if "url" in raster._lyr_dict:
+                url = raster._lyr_dict["url"]
+            if "serviceToken" in raster._lyr_dict:
+                url = url+"?token="+ raster._lyr_dict["serviceToken"]
         if raster._fnra is not None:
             raster_ra = raster._fnra
         else:

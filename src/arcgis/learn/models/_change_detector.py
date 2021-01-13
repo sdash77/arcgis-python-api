@@ -102,14 +102,14 @@ class ChangeDetector(ArcGISModel):
     def from_model(cls, emd_path, data=None):
 
         """
-        Creates a ImageCaptioner model from an Esri Model Definition (EMD)
+        Creates a ChangeDetector model from an Esri Model Definition (EMD)
         file.
 
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Optional fastai Databunch. Returned
                                 data object from `prepare_data` function or

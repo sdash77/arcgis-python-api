@@ -330,19 +330,22 @@ class PortalAdminManager(BasePortalAdmin):
         :returns: string
 
         """
-        if self._gis.version >= [6.4]:
-            import tempfile, json
-            from arcgis._impl.common._utils import _date_handler
-            if save_folder is None:
-                save_folder = tempfile.gettempdir()
-            url = "{url}portals/self/history".format(url=self._gis._portal.resturl)
-            params = {
-                'f' : 'csv',
-                'num' : num,
-                'all' : True,
-                'fromDate' : json.dumps(start_date, default=_date_handler)
-            }
-            return self._gis._con.post(url, params,
-                                       file_name="history.csv",
-                                       out_folder=save_folder)
-        return None
+        if self._gis.properties.isPortal:
+            raise NotImplementedError("Login history only available in ArcGIS Online")
+        else:
+            if self._gis.version >= [6.4]:
+                import tempfile, json
+                from arcgis._impl.common._utils import _date_handler
+                if save_folder is None:
+                    save_folder = tempfile.gettempdir()
+                url = "{url}portals/self/history".format(url=self._gis._portal.resturl)
+                params = {
+                    'f' : 'csv',
+                    'num' : num,
+                    'all' : True,
+                    'fromDate' : json.dumps(start_date, default=_date_handler)
+                }
+                return self._gis._con.post(url, params,
+                                        file_name="history.csv",
+                                        out_folder=save_folder)
+

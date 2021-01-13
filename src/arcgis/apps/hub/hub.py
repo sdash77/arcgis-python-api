@@ -50,7 +50,7 @@ class Hub(object):
     @property
     def enterprise_org_id(self):
         """
-        Returns the AGOL org id of the Enterprise Organization associated with this Hub.
+        Returns the ArcGIS Online org id of the Enterprise Organization associated with this Hub.
         """
         try:
             self.gis.properties.portalProperties.hub
@@ -65,7 +65,7 @@ class Hub(object):
     @property
     def community_org_id(self):
         """
-        Returns the AGOL org id of the Community Organization associated with this Hub.
+        Returns the ArcGIS Online org id of the Community Organization associated with this Hub.
         """
         try:
             self.gis.properties.portalProperties.hub
@@ -80,7 +80,7 @@ class Hub(object):
     @property
     def enterprise_org_url(self):
         """
-        Returns the AGOL org url of the Enterprise Organization associated with this Hub.
+        Returns the ArcGIS Online org url of the Enterprise Organization associated with this Hub.
         """
         try:
             self.gis.properties.portalProperties.hub
@@ -100,7 +100,7 @@ class Hub(object):
     @property
     def community_org_url(self):
         """
-        Returns the AGOL org id of the Community Organization associated with this Hub.
+        Returns the ArcGIS Online org id of the Community Organization associated with this Hub.
         """
         try:
             self.gis.properties.portalProperties.hub

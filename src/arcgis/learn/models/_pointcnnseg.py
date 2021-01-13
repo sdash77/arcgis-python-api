@@ -34,8 +34,7 @@ class PointCNN(ArcGISModel):
                             `prepare_data` function.
     ---------------------   -------------------------------------------
     pretrained_path         Optional String. Path where pre-trained model
-                            is saved. Accepts a Deep Learning Package
-                            (DLPK) or Esri Model Definition(EMD) file. 
+                            is saved. 
     =====================   ===========================================
 
     **kwargs**
@@ -191,12 +190,13 @@ class PointCNN(ArcGISModel):
                                 based on validation loss will be saved during 
                                 training.
         ---------------------   -------------------------------------------
-        tensorboard             Optional boolean. Parameter to write the training log. 
-                                If set to 'True' the log will be saved at 
+        tensorboard             Optional boolean. Parameter to write the training log.
+                                If set to 'True' the log will be saved at
                                 <dataset-path>/training_log which can be visualized in
-                                tensorboard. Required tensorboardx version=2.1 
-                                (Experimental support).        
+                                tensorboard. Required tensorboardx version=2.1
+
                                 The default value is 'False'.
+                                **Note - Not applicable for Text Models
         =====================   ===========================================
 
         **kwargs**

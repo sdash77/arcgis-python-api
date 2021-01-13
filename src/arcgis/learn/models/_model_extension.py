@@ -452,7 +452,7 @@ class ModelExtension(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        detect_thresh           Optional float. The probabilty above which
+        detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
                                 average precision.
         ---------------------   -------------------------------------------
@@ -491,7 +491,7 @@ class ModelExtension(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        thresh                  Optional float. The probabilty above which
+        thresh                  Optional float. The probability above which
                                 a detection will be considered edge pixel.
         ---------------------   -------------------------------------------
         buffer                  Optional int. pixels in neighborhood to

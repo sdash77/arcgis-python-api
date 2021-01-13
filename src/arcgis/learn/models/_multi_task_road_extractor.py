@@ -21,6 +21,7 @@ HAS_ARCPY = True
 # so that relevant exception can be raised
 try:
     import numpy as np
+    import torch
     from fastai.vision.learner import create_body
     from torch import optim
     from torchvision import models
@@ -30,14 +31,17 @@ try:
         miou,
         road_orient_loss,
     )
+    from arcgis.learn.models._linknet_utils import compute_miou
     from arcgis.learn.models._hourglass_utils import StackHourglassMultiTaskModel
     from ._road_mtl_learner import MultiTaskRoadLearner
+    from ._unet_utils import show_results_multispectral
     from arcgis.learn.models._arcgis_model import _resnet_family, _EmptyData
     from arcgis.learn._utils.common import (
         get_multispectral_data_params_from_emd ,_get_emd_path
     )
     from arcgis.learn._utils.segmentation_loss_functions import dice
     from arcgis.learn.models._arcgis_model import _device_check
+    from ._arcgis_model import _set_multigpu_callback
     from .._data_utils._pixel_classifier_data import ClassifiedTilesData
     from .._data_utils._road_orient_data import RoadOrientation
 except Exception as e:
@@ -64,9 +68,8 @@ def safe_json(data):
 
 class MultiTaskRoadExtractor(ArcGISModel):
     """
-    Creates a Multi-Task Learning model for binary segmentation. Supports 8 bit
-    RGB imagery and offers experimental support for 16 bit RGB imagery.
-    Does not support Multispectral imagery yet.
+    Creates a Multi-Task Learning model for binary segmentation. Supports RGB
+    and Multispectral Imagery.
     Implementation based on https://doi.org/10.1109/CVPR.2019.01063 .
 
     =====================   ===========================================
@@ -169,6 +172,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
 
                 kwargs['orient_bin_size'] = bin_size #To ensure the data is consistent across multiple runs
 
+
             self._orient_data=self._get_road_orient_data(data,**kwargs)
             if len(data.classes) > 2:
                 raise Exception(
@@ -203,7 +207,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
                                                                                           '_min_max_scaler') else None
                 self._orient_data._min_max_scaler_tfm = self._data._min_max_scaler_tfm if hasattr(data,
                                                                                                   '_min_max_scaler_tfm') else None
-                self._orient_data._multispectral_color_array = self._data._multispectral_color_array if hasattr(data,
+                self._orient_data._multispectral_color_array = self._data._multispectral_color_array*255 if hasattr(data,
                                                                                                                 '_multispectral_color_array') else None
                 self._orient_data._multispectral_color_mapping = self._data._multispectral_color_mapping if hasattr(
                     data, '_multispectral_color_mapping') else None
@@ -223,6 +227,11 @@ class MultiTaskRoadExtractor(ArcGISModel):
                 self._orient_data._do_normalize = self._data._do_normalize if hasattr(data, '_do_normalize') else None
                 self._orient_data.train_ds.tfms = self._data.train_ds.tfms if hasattr(data.train_ds, 'tfms') else None
                 self._orient_data.valid_ds.tfms = self._data.valid_ds.tfms if hasattr(data.valid_ds, 'tfms') else None
+                if self._orient_data._do_normalize:
+                    self._orient_data = self._orient_data.normalize(stats=(self._orient_data._scaled_mean_values, self._orient_data._scaled_std_values), do_x=True,
+                                          do_y=False)
+                #self._data = self._orient_data
+                self.show_results = self._show_results_multispectral
         else:
             self._orient_data =self._data # Else use the data attributes obtained from emd
             #if self._orient_data._do_normalize:
@@ -313,14 +322,44 @@ class MultiTaskRoadExtractor(ArcGISModel):
             metrics=[pixel_accuracy, road_iou, dice_coeff],
             **learner_kwargs,
         )
-        self.learn.path = self._data.path
         self.learn.model = self.learn.model.to(self._device)
+        _set_multigpu_callback(self)
         if pretrained_path is not None:
             super().load(str(pretrained_path))
         self._arcgis_init_callback()  # make first conv weights learnable
 
     def __str__(self):
         return self.__repr__()
+
+    def mIOU(self, mean=False, show_progress=True):
+
+        """
+        Computes mean IOU on the validation set for each class.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        mean                    Optional bool. If False returns class-wise
+                                mean IOU, otherwise returns mean iou of all
+                                classes combined.
+        ---------------------   -------------------------------------------
+        show_progress           Optional bool. Displays the prgress bar if
+                                True.
+        =====================   ===========================================
+
+        :returns: `dict` if mean is False otherwise `float`
+        """
+        #self._check_requisites()
+        num_classes = torch.arange(self._orient_data.c)
+        miou = compute_miou(self, self._orient_data.valid_dl, mean, num_classes, show_progress, self._ignore_mapped_class)
+        if mean:
+            miou = [miou[i] for i in range(len(miou)) if i not in self._ignore_mapped_class]
+            return np.mean(miou)
+        if self._ignore_mapped_class == []:
+            return dict(zip(['0'] + self._orient_data.classes[1:], miou))
+        else:
+            class_values = [0] + list(self._orient_data.class_mapping.keys())
+            return {class_values[i]: miou[i] for i in range(len(miou)) if i not in self._ignore_mapped_class}
 
     def __repr__(self):
         return "<%s>" % (type(self).__name__)
@@ -377,7 +416,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
     def _supported_datasets():
         return ['Classified_Tiles']
 
-    def fit(self, epoch=10, lr=None, **kwargs):
+    def fit(self, epochs=10, lr=None, **kwargs):
         save_callback_params = {
             "monitor": "miou",
             "every": "improvement",
@@ -387,7 +426,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
         kwargs.update(save_callback_params=save_callback_params)
         if isinstance(lr, slice):
             lr = lr.stop
-        super().fit(epoch, lr=lr, **kwargs)
+        super().fit(epochs, lr=lr, **kwargs)
 
     def _get_emd_params(self,save_inference_file):
         _emd_template = {}
@@ -500,7 +539,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
 
         **kwargs**
 
-        =====================   ===========================================
+        =====================   ===========================================def
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         rows                    Number of rows of data to be displayed, if
@@ -517,6 +556,18 @@ class MultiTaskRoadExtractor(ArcGISModel):
         self.return_fig = kwargs.get("return_fig", False)
         fig=self.learn.show_results(rows=rows, **kwargs)
         if self.return_fig:
+            return fig
+
+    def _show_results_multispectral(self, rows=5, alpha=0.7, **kwargs):  # parameters adjusted in kwargs
+        return_fig = kwargs.get('return_fig', False)
+        ret_val = show_results_multispectral(
+            self,
+            nrows=rows,
+            alpha=alpha,
+            **kwargs
+        )
+        if return_fig:
+            fig, ax = ret_val
             return fig
 
     @property
