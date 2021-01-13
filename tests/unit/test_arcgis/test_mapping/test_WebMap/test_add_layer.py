@@ -64,10 +64,6 @@ def test_add_featurecollection_different_renderers():
 
 @patch("arcgis.widgets.MapView", MockMapView)
 def test_add_table():
-    """FeatureCollections can have multiple layers with different renderers.
-    Check that each sublayer has the correct renderer attached to it when
-    added to a WebMap
-    """
     from arcgis.mapping import WebMap
     mock_webmap = MockWebMap()
 
