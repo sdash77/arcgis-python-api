@@ -133,8 +133,10 @@ def _gbl_clone_layer_raster(layer, function_chain, function_chain_ra, **kwargs):
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
 
-    if layer._do_not_hydrate:
-        newlyr._engine_obj.token = layer.token
+    if hasattr(layer, "_lazy_token"):
+        newlyr._engine_obj._lazy_token = layer._lazy_token
+    else:
+        newlyr._lazy_token = layer._token
 
     return newlyr
 

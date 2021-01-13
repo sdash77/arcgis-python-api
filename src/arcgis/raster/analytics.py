@@ -6392,4 +6392,3 @@ def merge_multidimensional_rasters(input_multidimensional_rasters,
 #                                                    context=context,
 #                                                    future=future,
 #                                                    **kwargs)
-
