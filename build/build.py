@@ -399,7 +399,7 @@ def _apply_build_number_to_meta_yaml(build_number: int):
         meta_yaml = yaml.load(f)
         meta_yaml["build"]["number"] = str(build_number)
     with open(META_YAML_FILE_PATH, "w") as f:
-        yaml.dump(meta_yaml, f, default_flow_style=False)
+        yaml.dump(meta_yaml, f, default_flow_style=False, explicit_start=True)
 
 def _restore_default_build_number_to_meta_yaml():
     _apply_build_number_to_meta_yaml(0)

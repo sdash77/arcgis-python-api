@@ -19,7 +19,7 @@ try:
     from fastai.text import TextList, TextClasDataBunch, pad_collate, TextDataBunch,\
             SortishSampler, SortSampler, ItemList, ItemBase, Text
     from fastai.data_block import CategoryList, MultiCategoryList
-    from arcgis.learn._utils._seq2seq_utils import SequenceToSequenceTextList, shift_tfm
+    from ._seq2seq_utils import SequenceToSequenceTextList, teacher_forcing_tfm
     from .text_transforms import TransformerNERDataset, TransformerNERDataBunch, process_text
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -407,7 +407,7 @@ class TextDataObject:
             return
         dl_tfms=None
         if self._model_type in ['t5', 'bart', 'marian']:
-            dl_tfms=shift_tfm
+            dl_tfms=teacher_forcing_tfm
         data = SequenceToSequenceTextList.from_df(self._train_df,cols=self._text_cols, processor=transformer_processor)\
                         .split_by_rand_pct(valid_pct=self.val_split_pct)\
                         .label_from_df(cols= self._label_cols, label_cls=TextList, processor=transformer_processor)\

@@ -25,6 +25,7 @@ try:
     from fastai.vision.data import imagenet_stats
     from fastai.core import subplots
     from fastai.data_block import DataBunch
+    from fastai.vision.data import ImageDataBunch
     from fastai.torch_core import grab_idx, to_detach
     import torchvision.transforms.functional as TF
     from typing import Sequence
@@ -234,7 +235,7 @@ class RoadOrientation():
             ]
         ] if self.base.transforms is None else self.base.transforms
 
-    def get_databunch(self,orig_data,**kwargs) -> DataBunch:
+    def get_databunch(self,orig_data,**kwargs) -> ImageDataBunch:
         """
         Method to create Databunch
         """
@@ -252,7 +253,7 @@ class RoadOrientation():
         )
 
         device = get_device()
-        data = DataBunch(train_dl, valid_dl, device=device)
+        data = ImageDataBunch(train_dl, valid_dl, device=device)
 
 
         data.chip_size = data.train_ds[0][0].shape[-1]

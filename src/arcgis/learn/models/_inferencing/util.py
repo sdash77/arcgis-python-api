@@ -362,13 +362,14 @@ def detect_change(model,
                   model_info):
     mean = 255 * np.array([0.5] * (len(model_info['ExtractBands']) // 2), dtype=np.float32)
     std = 255 * np.array([0.5] * (len(model_info['ExtractBands']) // 2), dtype=np.float32)
-
     norm = lambda x: (x-mean) / std
     B, C, H, W = batch.shape
     batch_before = batch[:, :C//2]
     batch_after = batch[:, C//2:]
     
     if "NormalizationStats" in model_info:
+        mean = np.array([0.5] * (len(model_info['ExtractBands']) // 2), dtype=np.float32)
+        std = np.array([0.5] * (len(model_info['ExtractBands']) // 2), dtype=np.float32)        
         batch_before = scale_batch(batch_before, model_info, break_extract_bands=True)
         batch_after = scale_batch(batch_after, model_info, break_extract_bands=True)        
 

@@ -346,7 +346,7 @@ class FullyConnectedNetwork(ArcGISModel):
         if isinstance(input_features, FeatureLayer):
             dataframe = input_features.query().sdf
         else:
-            dataframe = input_features
+            dataframe = input_features.copy()
 
         fields_needed = self._data._categorical_variables + self._data._continuous_variables
         distance_feature_layers = distance_feature_layers if distance_feature_layers else []
@@ -475,8 +475,8 @@ class FullyConnectedNetwork(ArcGISModel):
             if min_cell_size_y > cell_size.y:
                 min_cell_size_y = cell_size.y
 
-        max_raster_columns = math.ceil((xmax - xmin) / min_cell_size_x)
-        max_raster_rows = math.ceil((ymax - ymin) / min_cell_size_y)
+        max_raster_columns = int(abs(math.ceil((xmax - xmin) / min_cell_size_x)))
+        max_raster_rows = int(abs(math.ceil((ymax - ymin) / min_cell_size_y)))
 
         point_upper = arcgis.geometry.Point({'x': xmin, 'y': ymax, 'sr': default_sr})
         cell_size = arcgis.geometry.Point({'x': min_cell_size_x, 'y': min_cell_size_y, 'sr': default_sr})

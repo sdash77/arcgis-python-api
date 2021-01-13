@@ -705,7 +705,7 @@ class SyncManager(object):
                     rollback_on_failure=True):
         """
         synchronizes replica with feature layer collection
-        http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000vv000000
+        https://developers.arcgis.com/rest/services-reference/synchronize-replica.htm
         """
         # TODO:
         return self._fs._synchronize_replica(replica_id=replica_id,
@@ -1638,7 +1638,7 @@ class FeatureLayerCollectionManager(_GISResource):
         definition property from a hosted feature layer collection service. The result of
         this operation is a response indicating success or failure with
         error code and description.
-        See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Delete_From_Definition_Feature_Service/02r30000021w000000/ # noqa
+        See https://developers.arcgis.com/rest/services-reference/delete-from-definition-feature-service-.htm # noqa
         for additional information on this function.
         Input:
           json_dict - part to add to host service.  The part format can
@@ -2012,7 +2012,7 @@ class FeatureLayerManager(_GISResource):
            definition property from a hosted feature layer. The result of
            this operation is a response indicating success or failure with
            error code and description.
-           See: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Delete_From_Definition_Feature_Service/02r30000021w000000/ # noqa
+           See: https://developers.arcgis.com/rest/services-reference/delete-from-definition-feature-service-.htm # noqa
            for additional information on this function.
            Input:
               json_dict - part to add to host service.  The part format can
@@ -2049,7 +2049,7 @@ class FeatureLayerManager(_GISResource):
            The truncate operation supports deleting all features or attachments
            in a hosted feature service layer. The result of this operation is a
            response indicating success or failure with error code and description.
-           See: http://resources.arcgis.com/en/help/arcgis-rest-api/#/Truncate_Feature_Layer/02r3000002v0000000/ # noqa
+           See: https://developers.arcgis.com/rest/services-reference/truncate-feature-layer-.htm # noqa
            for additional information on this function.
            Input:
               attachment_only - Deletes all the attachments for this layer.

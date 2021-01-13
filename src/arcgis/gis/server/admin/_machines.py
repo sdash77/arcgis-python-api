@@ -210,7 +210,7 @@ class Machine(BaseServer):
         site can be thought of as a distributed peer-to-peer network of
         machines. The server machine communicates with its peers over a
         range of TCP and UDP ports that can be configured using the edit operation
-        (http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Edit_Machine/02r3000001st000000/ ).
+        (https://developers.arcgis.com/rest/enterprise-administration/server/editmachine.htm ).
 
 
     .. note::
@@ -223,7 +223,7 @@ class Machine(BaseServer):
         get it signed by a trusted CA.
 
         The Generate Certificate
-        (http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Generate_Certificate/02r3000001tt000000/ )
+        (https://developers.arcgis.com/rest/enterprise-administration/server/generatecertificate.htm )
         operation creates a new self-signed certificate and adds it to
         the keystore. For your convenience, the server is capable of generating
         self-signed certificates that can be used during development or

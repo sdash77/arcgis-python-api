@@ -306,6 +306,9 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
     return_fig = kwargs.get('return_fig', False)
     type_data_loader = kwarg_fill_none(kwargs, 'data_loader', 'validation') # options : traininig, validation, testing
     data_loader = find_data_loader(type_data_loader, self._data)
+    if getattr(self, 'name') in ['MultiTaskRoadExtractor']:
+        data_loader = find_data_loader(type_data_loader, self._orient_data)
+        self._data.batch_size=1
 
     nodata = kwarg_fill_none(kwargs, 'nodata', 0)
 
@@ -328,7 +331,10 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
     # get batches
     x_batch, y_batch = get_nbatches(data_loader, math.ceil(nrows/self._data.batch_size))
     symbology_x_batch = x_batch = torch.cat(x_batch)
-    y_batch = torch.cat(y_batch)
+    if getattr(self, 'name') in ['MultiTaskRoadExtractor']:
+        y_batch= torch.stack([item for sublist in y_batch for item in sublist[0]]).type(torch.long).unsqueeze(1)
+    else:
+        y_batch = torch.cat(y_batch)
 
     symbology_bands = [0, 1, 2]
     if self._is_multispectral:
@@ -345,6 +351,8 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
         activation_store.append(activations)
 
     # Analyze Pred
+    if getattr(self, 'name') in ['MultiTaskRoadExtractor']:
+        activation_store = [x[0] for x in activation_store]
     predictions = analyze_pred_pixel_classification(self, activation_store)
 
     # Denormalize X
