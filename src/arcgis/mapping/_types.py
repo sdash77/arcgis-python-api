@@ -375,9 +375,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                     isinstance(layer, arcgis.features.FeatureCollection) or \
                     isinstance(layer, arcgis.features.FeatureSet)):
                     # Can be either a FeatureLayer or a table: figure it out
-                    if isinstance(layer, arcgis.features.Table):
-                        layer_type = 'Table'
-                    else:
+                    if not isinstance(layer, arcgis.features.Table):
                         layer_type = 'ArcGISFeatureLayer'
                 elif isinstance(layer, arcgis.raster.ImageryLayer):
                     layer_type='ArcGISImageServiceLayer'
@@ -408,7 +406,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                   if layer.type == 'Feature Collection':
                       options['serviceItemId'] = layer.itemid
                   for lyr in layer.layers:  # recurse - works for all.
-                      self.add_layer(lyr, options)
+                      self.add_layer(lyr, dict(options))
               if hasattr(layer, 'tables'):
                   for tbl in layer.tables:  # recurse - works for all.
                       self.add_table(tbl, options)
@@ -421,7 +419,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                 raise TypeError("FeatureLayerCollection object without layers or tables is not supported")
             if hasattr(layer, 'layers'):
                 for lyr in layer.layers:  # recurse - works for all.
-                    self.add_layer(lyr, options)
+                    self.add_layer(lyr, dict(options))
             if hasattr(layer, 'tables'):
                 for tbl in layer.tables:  # recurse - works for all.
                     self.add_table(tbl, options)
