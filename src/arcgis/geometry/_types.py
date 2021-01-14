@@ -30,8 +30,6 @@ def _check_geometry_engine():
 
     return _HASARCPY, _HASSHAPELY
 
-from arcgis.gis import _lazy_property
-
 def _is_valid(value):
     """checks if the value is valid"""
 
@@ -1429,52 +1427,6 @@ class Geometry(BaseGeometry):
         return
     #----------------------------------------------------------------------
     @property
-    def points(self):
-        """
-        Returns the X/Y coordinates as an array
-
-
-        .. code-block:: python
-
-            >>> geom = Geometry({
-              'x' : 1, 'y': 2,
-              "spatialReference" : {"wkid" : 4326}
-            })
-            >>> geom.points
-            [[1,2]]
-
-        :return: List
-        """
-        
-        points = []
-        if isinstance(self, Polygon):
-            rings = self['rings']
-            if len(rings) == 0:
-                return []
-            elif len(rings) == 1:
-                return [tuple(pt) for pt in rings[0]]
-            else:
-                for i, part in enumerate(rings):
-                    points.extend([tuple(pt) for pt in part])
-                return points
-            
-        elif isinstance(self, Polyline):
-            rings = self['paths']
-            if len(rings) == 0:
-                return []
-            elif len(rings) == 1:
-                return [tuple(pt) for pt in rings[0]]
-            else:
-                for i, part in enumerate(rings):
-                    points.extend([tuple(pt) for pt in part])
-                return points
-        elif isinstance(self, MultiPoint):
-            return [tuple(pt) for pt in self['points']]
-        elif isinstance(self, Point):
-            return [[self['x'], self['y']]]
-        return []
-    #----------------------------------------------------------------------
-    @property
     def spatial_reference(self):
         """
         The spatial reference of the geometry.
@@ -2782,7 +2734,6 @@ class Polygon(Geometry):
     def __getstate__(self):
         """ pickle support """
         return dict(self)
-    #----------------------------------------------------------------------
     @classmethod
     def _from_geojson(cls, data, sr=None):
         if sr is None:
