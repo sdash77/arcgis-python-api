@@ -242,3 +242,14 @@ class KubernetesAdmin(_BaseKube):
             url = f"{self._url}/services"
             self._services = ServicesManager(url, gis=self._gis)
         return self._services
+    #----------------------------------------------------------------------
+    @property
+    def uploads(self):
+        """Gets an object to work with the site uploads."""
+        if self._uploads is None:
+            from ._uploads import Uploads
+            url = self._url + "/uploads"
+            self._uploads = Uploads(url=url,
+                                    gis=self._con,
+                                    initialize=True)
+        return self._uploads
