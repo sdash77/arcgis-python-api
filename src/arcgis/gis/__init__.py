@@ -77,7 +77,7 @@ class GIS(object):
     as well as the results of your analysis. To create a new map, call the map() method.
 
     The constructor constructs a GIS object given a url and user credentials to ArcGIS Online
-    or an ArcGIS Enterprise Portal. User credentials can be passed in using username/password
+    or an ArcGIS Enterprise portal. User credentials can be passed in using username/password
     pair, or key_file/cert_file pair (in case of PKI). Supports built-in users, LDAP, PKI, Integrated Windows Authentication
     (using NTLM and Kerberos) and Anonymous access.
 
@@ -99,9 +99,9 @@ class GIS(object):
     **Argument**        **Description**
     ----------------    ---------------------------------------------------------------
     url                 Optional string. If URL is None, then the URL will be ArcGIS
-                        Online.  This should be a web address to either a local Portal
+                        Online.  This should be a web address to either an ArcGIS Enterprise portal
                         or to ArcGIS Online in the form:
-                        <scheme>://<fully_qualified_domain_name>/<web_adaptor> (Portal Example)
+                        <scheme>://<fully_qualified_domain_name>/<web_adaptor> (ArcGIS Enterprise example)
                         https://gis.example.com/portal
     ----------------    ---------------------------------------------------------------
     username            Optional string. The login user name (case-sensitive).
@@ -217,7 +217,7 @@ class GIS(object):
                  verify_cert=True, set_active=True, client_id=None, profile=None, **kwargs):
         """
         Constructs a GIS object given a url and user credentials to ArcGIS Online
-        or an ArcGIS Portal. User credentials can be passed in using username/password
+        or an ArcGIS Enterprise portal. User credentials can be passed in using username/password
         pair, or key_file/cert_file pair (in case of PKI). Supports built-in users, LDAP,
         PKI, Integrated Windows Authentication (using NTLM and Kerberos) and Anonymous access.
 
@@ -672,7 +672,7 @@ class GIS(object):
     @property
     def datastore(self):
         """
-        The resource managers for GIS datastores. This is only available with Enterprises version 10.7+.
+        The resource managers for GIS datastores. This is only available with ArcGIS Enterprise 10.7+.
         See :class:`~arcgis.gis._impl._datastores.PortalDataStore` for more information.
 
         :return: :class:`~arcgis.gis._impl._datastores.PortalDataStore`
@@ -920,10 +920,10 @@ class GIS(object):
 
         .. note::
             Note: If the Jupyter Notebook server is running over http, you need to
-            configure your portal/organization to allow your host and port; or else
-            you will run into CORs issues when displaying this map widget.
+            configure your ArcGIS Enterprise portal or ArcGIS Online organization to allow your host and port; or else
+            you will run into CORS issues when displaying this map widget.
 
-            This can be accomplished by signing into your portal/organization in a
+            This can be accomplished by signing into your ArcGIS Enterprise portal or ArcGIS Online organization in a
             browser, then navigating to:
 
             `Organization` > `Settings` > `Security` > `Allow origins` > `Add` > http://localhost:8888 (replace with the host/port you are running on)
@@ -1426,12 +1426,12 @@ class GroupMigrationManager(object):
 ###########################################################################
 class DatastoreManager(object):
     """
-    Helper class for managing the GIS data stores in on-premises ArcGIS Portals.
+    Helper class for managing the GIS data stores in ArcGIS Enterprise.
     This class is not created by users directly.
     Instances of this class are returned from arcgis.geoanalytics.get_datastores() and
     arcgis.raster.analytics.get_datastores() functions to get the corresponding datastores.
     Users call methods on this 'datastores' object to manage the datastores in a site
-    federated with the portal.
+    federated with the Enterprise portal.
     """
     def __init__(self, gis, admin_url, server):
         self._gis = gis
@@ -1880,7 +1880,7 @@ class DatastoreManager(object):
         ---------------     --------------------------------------------------------------------
         name                Required string. The name of the item to be added on the server.
         ---------------     --------------------------------------------------------------------
-        item                Required dictionary. The dictionary representing the data item.  See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000001s9000000
+        item                Required dictionary. The dictionary representing the data item.  See https://developers.arcgis.com/rest/enterprise-administration/server/dataitem.htm
         ===============     ====================================================================
 
 
@@ -2368,31 +2368,30 @@ class UserManager(object):
                provider='arcgis', idp_username=None, level=2, thumbnail=None, user_type=None, credits=-1,
                groups=None):
         """
-        This operation is used to pre-create built-in or enterprise accounts within the portal,
+        This operation is used to pre-create built-in or enterprise accounts within the Enterprise portal,
         or built-in users in an ArcGIS Online organization account. Only an administrator
         can call this method.
 
         To create a viewer account, choose role='org_viewer' and level='viewer'
 
         .. note:
-            When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
-            into portal using their enterprise credentials. By default, new installations of Portal for
-            ArcGIS do not allow accounts from an enterprise identity store to be registered to the portal
-            automatically. Only users with accounts that have been pre-created can sign in to the portal.
-            Alternatively, you can configure the portal to register enterprise accounts the first time
-            the user connects to the website.
+            When ArcGIS Enterprise is connected to an enterprise identity store users sign
+            into the Enterprise portal using their enterprise credentials. By default, new installations
+            of ArcGIS Enterprise do not allow accounts from an enterprise identity store to be registered
+            automatically. Only users with accounts that have been pre-created can sign in.
+            You can optionally configure the Enterprise portal to register enterprise accounts the
+            first time the user connects to the website.
 
         ================  ===============================================================================
         **Argument**      **Description**
         ----------------  -------------------------------------------------------------------------------
-        username          Required string. The user name, which must be unique in the Portal, and
-                          6-24 characters long.
+        username          Required string. The username must be unique and 6-24 characters long.
         ----------------  -------------------------------------------------------------------------------
         password          Required string. The password for the user.  It must be at least 8 characters.
-                          This is a required parameter only if
+                          This is a required parameter if
                           the provider is arcgis; otherwise, the password parameter is ignored.
                           If creating an account in an ArcGIS Online org, it can be set as None to let
-                          the user set their password by clicking on a link that is emailed to him/her.
+                          the user set their password by clicking on a link that is emailed to them.
         ----------------  -------------------------------------------------------------------------------
         firstname         Required string. The first name for the user
         ----------------  -------------------------------------------------------------------------------
@@ -2438,19 +2437,19 @@ class UserManager(object):
         idp_username      Optional string. The name of the user as stored by the enterprise user store.
                           This parameter is only required if the provider parameter is enterprise.
         ----------------  -------------------------------------------------------------------------------
-        level             Optional string. The account level. (Pre 10.7 Portal)
+        level             Optional string. The account level. (ArcGIS Enterprise prior to version 10.7)
                           See http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm
         ----------------  -------------------------------------------------------------------------------
         user_type         Required string. The account user type. This can be creator or viewer.  The
                           type effects what applications a user can use and what actions they can do in
-                          the organization. (10.7+)
+                          the organization. (ArcGIS Enterprise 10.7+ and ArcGIS Online)
                           See http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm
         ----------------  -------------------------------------------------------------------------------
         credits           Optional Float. The number of credits to assign a user.  The default is None,
-                          which means unlimited. (10.7+)
+                          which means unlimited. (ArcGIS Online only)
         ----------------  -------------------------------------------------------------------------------
         groups            Optional List. An array of Group objects to provide access to for a given
-                          user. (10.7+)
+                          user. (ArcGIS Enterprise 10.7+ and ArcGIS Online)
         ================  ===============================================================================
 
         :return:
@@ -2481,31 +2480,30 @@ class UserManager(object):
     def _createPre64(self, username, password, firstname, lastname, email, description=None, role='org_user',
                      provider='arcgis', idp_username=None, level=2, thumbnail=None):
         """
-        This operation is used to pre-create built-in or enterprise accounts within the portal,
+        This operation is used to pre-create built-in or enterprise accounts within ArcGIS Enterprise
         or built-in users in an ArcGIS Online organization account. Only an administrator
         can call this method.
 
         To create a viewer account, choose role='org_viewer' and level=1
 
         .. note:
-            When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
-            into portal using their enterprise credentials. By default, new installations of Portal for
-            ArcGIS do not allow accounts from an enterprise identity store to be registered to the portal
-            automatically. Only users with accounts that have been pre-created can sign in to the portal.
-            Alternatively, you can configure the portal to register enterprise accounts the first time
-            the user connects to the website.
+            When ArcGIS Enterprise is connected to an enterprise identity store, enterprise users sign
+            into the Enterprise portal using their enterprise credentials. By default, new installations
+            of ArcGIS Enterprise  do not allow accounts from an enterprise identity store to be registered
+            to the automatically. Only users with accounts that have been pre-created can sign in.
+            You can optionally configure the Enterprise portal to register enterprise accounts the
+            first time the user connects to the website.
 
         ================  ===============================================================================
         **Argument**      **Description**
         ----------------  -------------------------------------------------------------------------------
-        username          Required string. The user name, which must be unique in the Portal, and
-                          6-24 characters long.
+        username          Required string. The username must be unique and 6-24 characters long.
         ----------------  -------------------------------------------------------------------------------
         password          Required string. The password for the user.  It must be at least 8 characters.
                           This is a required parameter only if
                           the provider is arcgis; otherwise, the password parameter is ignored.
                           If creating an account in an ArcGIS Online org, it can be set as None to let
-                          the user set their password by clicking on a link that is emailed to him/her.
+                          the user set their password by clicking on a link that is emailed to them.
         ----------------  -------------------------------------------------------------------------------
         firstname         Required string. The first name for the user
         ----------------  -------------------------------------------------------------------------------
@@ -2614,12 +2612,12 @@ class UserManager(object):
         To create a viewer account, choose role='org_viewer' and level='viewer'
 
         .. note:
-            When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
-            into portal using their enterprise credentials. By default, new installations of Portal for
-            ArcGIS do not allow accounts from an enterprise identity store to be registered to the portal
-            automatically. Only users with accounts that have been pre-created can sign in to the portal.
-            Alternatively, you can configure the portal to register enterprise accounts the first time
-            the user connects to the website.
+            When ArcGIS Enterprise is connected to an enterprise identity store, enterprise users sign
+            into the Enterprise portal using their enterprise credentials. By default, new installations
+            of ArcGIS Enterprise  do not allow accounts from an enterprise identity store to be registered
+            to the automatically. Only users with accounts that have been pre-created can sign in.
+            You can optionally configure the Enterprise portal to register enterprise accounts the
+            first time the user connects to the website.
 
         ================  ===============================================================================
         **Argument**      **Description**
@@ -2902,16 +2900,15 @@ class UserManager(object):
     #----------------------------------------------------------------------
     def signup(self, username, password, fullname, email):
         """
-        Signs up a user to an instance of Portal for ArcGIS.
+        Create a new user account in an ArcGIS Enterprise deployment.
 
         .. note:
-            This method only applies to Portal and not ArcGIS
+            This method only applies to ArcGIS Enterprise, not ArcGIS
             Online.  This method can be called anonymously, but
             keep in mind that self-signup can also be disabled
-            in a Portal.  It also only creates built-in
-            accounts, it does not work with enterprise
-            accounts coming from ActiveDirectory or your
-            LDAP.
+            in ArcGIS Enterprise.  It also only creates built-in
+            accounts, it does not work with accounts coming from external identity providers
+            such as Active Directory, LDAP, or SAML IDPs.
 
         ================  ========================================================
         **Argument**      **Description**
@@ -3354,7 +3351,7 @@ class RoleManager(object):
         ------------------     --------------------------------------------------------------------
         privileges             Optional string. An array of strings with predefined permissions within
                                each privilege.  For supported privileges see
-                               http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Privileges/02r3000002wq000000/
+                               https://developers.arcgis.com/rest/users-groups-and-items/privileges.htm
         ==================     ====================================================================
 
 
@@ -3540,7 +3537,7 @@ class Role(object):
         - portal:admin:deleteGroups: grants the ability to delete groups within organization.
         - portal:admin:reassignGroups: grants the ability to reassign groups to other members within organization.
         - portal:admin:assignToGroups: grants the ability to assign members to, and remove members from, groups within organization.
-        - portal:admin:manageEnterpriseGroups: grants the ability to link group membership to an enterprise group. (This privilege is only applicable to Portal for ArcGIS.)
+        - portal:admin:manageEnterpriseGroups: grants the ability to link group membership to an enterprise group. (This privilege is only applicable to ArcGIS Enterprise.)
 
         Content
 
@@ -4097,7 +4094,8 @@ class ContentManager(object):
         return False
     #----------------------------------------------------------------------
     def add(self, item_properties, data=None, thumbnail=None,
-            metadata=None, owner=None, folder=None, item_id=None):
+            metadata=None, owner=None, folder=None, item_id=None,
+            **kwargs):
         """ Adds content to the GIS by creating an item.
 
         .. note::
@@ -4131,14 +4129,26 @@ class ContentManager(object):
         ---------------     --------------------------------------------------------------------
         folder              Optional string. Name of the folder where placing item.
         ---------------     --------------------------------------------------------------------
-        item_id             Optionl String. **Available in Enterprise/AGOL 10.8.1+**.  A string
-                            of 32 character UID without any special characters.
+        item_id             Optional string. Available in ArcGIS Enterprise 10.8.1+. Not available in ArcGIS Online.
+                            This parameter allows the desired item id to be specified during creation which
+                            can be useful for cloning and automated content creation scenarios.
+                            The specified id must be a 32 character GUID string without any special characters.
 
                             If the `item_id` is already being used, an error will be raised
                             during the `add` process.
 
                             Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
         ===============     ====================================================================
+
+
+        *Optional Input Parameters for the `add` method*
+
+        ========================     ====================================================================
+        **Optional Argument**        **Description**
+        ------------------------     --------------------------------------------------------------------
+        upload_size                  Optional float.  The default value is 1e7 bytes or ~10 MBs.  This the
+                                     minimum default value for the size of the file when uploading by parts.
+        ========================     ====================================================================
 
 
         *Key:Value Dictionary Options for Argument item_properties*
@@ -4287,11 +4297,16 @@ class ContentManager(object):
                                            thumbnail, metadata,
                                            owner_name, folder)
             # check the status and commit the final result
+            if kwargs.get("upload_size", 0) >= 1e7:
+                upload_size = kwargs.get("upload_size")
+            else:
+                upload_size = 1e7
+
             status = self._add_by_part(
                 file_path=data,
                 itemid=itemid,
                 item_properties=item_properties,
-                size=1e7,
+                size=upload_size,
                 owner=owner_name,
                 folder=folder)
 
@@ -4416,6 +4431,9 @@ class ContentManager(object):
 
         elif str(file_type).lower() in ['excel', 'csv']:
             params['fileType'] = file_type
+        elif str(file_type).lower() in ['filegeodatabase', 'shapefile']:
+            params['fileType'] = file_type
+            params['analyzeParameters']['enableGlobalGeocoding'] = False
         if source_country:
             params['analyzeParameters']['sourceCountry'] = source_country
         if country_hint:
@@ -4486,8 +4504,10 @@ class ContentManager(object):
         -----------------------    -------------------------------------------------------------
         is_view                    Optional boolean. Indicating if the service is a hosted feature layer view
         -----------------------    -------------------------------------------------------------
-        item_id                    Optionl String. **Available in Enterprise/AGOL 10.8.1+**.  A string
-                                   of 32 character UID without any special characters.
+        item_id                    Optional string. Available in ArcGIS Enterprise 10.8.1+. Not available in ArcGIS Online.
+                                   This parameter allows the desired item id to be specified during creation which
+                                   can be useful for cloning and automated content creation scenarios.
+                                   The specified id must be a 32 character GUID string without any special characters.
 
                                    If the `item_id` is already being used, an error will be raised
                                    during the `add` process.
@@ -4779,7 +4799,7 @@ class ContentManager(object):
         query             Required string. A query string.  See notes above.
         ----------------  --------------------------------------------------------------------------
         item_type         Optional string. Set type of item to search.
-                          http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+                          https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm
         ----------------  --------------------------------------------------------------------------
         sort_field        Optional string. Valid values can be title, uploaded, type, owner, modified,
                           avgRating, numRatings, numComments, and numViews.
@@ -5168,8 +5188,10 @@ class ContentManager(object):
         ----------------  --------------------------------------------------------------------------
         tags              Optional string. Tags listed as comma-separated values, or a list of strings. Provide tags when publishing a spatial dataframe to the the GIS.
         ----------------  --------------------------------------------------------------------------
-        item_id           Optionl String. **Available in Enterprise/AGOL 10.8.1+**.  A string
-                          of 32 character UID without any special characters.
+        item_id           Optional string. Available in ArcGIS Enterprise 10.8.1+. Not available in ArcGIS Online.
+                          This parameter allows the desired item id to be specified during creation which
+                          can be useful for cloning and automated content creation scenarios.
+                          The specified id must be a 32 character GUID string without any special characters.
 
                           If the `item_id` is already being used, an error will be raised
                           during the `add` process.
@@ -6351,7 +6373,7 @@ class ResourceManager(object):
 
 class Group(dict):
     """
-    Represents a group within the GIS (ArcGIS Online or Portal for ArcGIS).
+    Represents a group within the GIS (ArcGIS Online or ArcGIS Enterprise).
     """
     def __init__(self, gis, groupid, groupdict=None):
         dict.__init__(self)
@@ -7168,7 +7190,7 @@ class Group(dict):
 class GroupApplication(object):
     """
     Represents a single group application on the GIS (ArcGIS Online or
-    Portal for ArcGIS).
+    ArcGIS Enterprise).
     """
     _con = None
     _portal =  None
@@ -7249,7 +7271,7 @@ class GroupApplication(object):
 
 class User(dict):
     """
-    Represents a registered user of the GIS (ArcGIS Online, or Portal for ArcGIS).
+    Represents a registered user of the GIS (ArcGIS Online or ArcGIS Enterprise).
 
     =====================    =========================================================
     **Property**             **Details**
@@ -7325,7 +7347,7 @@ class User(dict):
     ---------------------    ---------------------------------------------------------
     provider                 The identity provider for the organization.<br>Values: arcgis (for built-in users) ,enterprise (for external users managed by an enterprise identity store), facebook (for public accounts in ArcGIS Online), google (for public accounts in ArcGIS Online)
     ---------------------    ---------------------------------------------------------
-    id                       (optional) The unique identifier of the user used on AGOL/ArcGIS Enterprise 10.7+
+    id                       (optional) The unique identifier of the user used in ArcGIS Online or ArcGIS Enterprise 10.7+
     =====================    =========================================================
 
 
@@ -8823,7 +8845,7 @@ class Item(dict):
                              'Excel', 'geoPackage', or 'Vector Tile Package'.
         ---------------     --------------------------------------------------------------------
         parameters          Optional string. A JSON object describing the layers to be exported
-                            and the export parameters for each layer.  See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Export_Item/02r30000008s000000/
+                            and the export parameters for each layer.  See https://developers.arcgis.com/rest/users-groups-and-items/export-item.htm
                             for guidance.
         ---------------     --------------------------------------------------------------------
         wait                Optional boolean. Default is True, which forces a wait for the
@@ -8889,7 +8911,14 @@ class Item(dict):
                 params['exportParameters']["enforceFieldVisibility"] = enforce_fld_vis
             else:
                 params['exportParameters'] = {"enforceFieldVisibility" : enforce_fld_vis }
-        res = self._portal.con.post(data_path, params)
+        try:
+            res = self._portal.con.post(data_path, params)
+        except Exception as e:
+            if e.args[0].find("You do not have permissions") > -1:
+                data_path = 'content/users/%s/export' % self._gis.users.me.username
+                res = self._portal.con.post(data_path, params)
+            else:
+                raise
         export_item = Item(gis=self._gis, itemid=res['exportItemId'])
         if wait == True:
             status = "partial"
@@ -9700,7 +9729,7 @@ class Item(dict):
         =================  =====================================================================
 
 
-        URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+        URL 1: https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -10151,7 +10180,7 @@ class Item(dict):
 
         Scene services can be created from scene layer package (*.spk, *.slpk) files.
 
-        Service definitions are authored in ArcGIS for Desktop and contain both the cartographic definition for a map
+        Service definitions are authored in ArcGIS Pro or ArcGIS Desktop and contain both the cartographic definition for a map
         as well as its packaged data together with the definition of the geo-service to be created.
 
         .. note::
@@ -10162,7 +10191,7 @@ class Item(dict):
         **Argument**           **Description**
         -------------------    ---------------------------------------------------------------
         publish_parameters     Optional dictionary. containing publish instructions and customizations.
-                               Cannot be combined with overwrite.  See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Publish_Item/02r300000080000000/ for details.
+                               Cannot be combined with overwrite.  See https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm for details.
         -------------------    ---------------------------------------------------------------
         address_fields         Optional dictionary. containing mapping of df columns to address fields,
                                eg: { "CountryCode" : "Country"} or { "Address" : "Address" }
@@ -10171,7 +10200,7 @@ class Item(dict):
                                eg: output_type='Tiles'
         -------------------    ---------------------------------------------------------------
         overwrite              Optional boolean.   If True, the hosted feature service is overwritten.
-                               Only available in ArcGIS Online and Portal for ArcGIS 10.5 or later.
+                               Only available in ArcGIS Enterprise 10.5+ and ArcGIS Online.
         -------------------    ---------------------------------------------------------------
         file_type              Optional string.  Some formats are not automatically detected, when this occurs, the
                                file_type can be specified: serviceDefinition,shapefile,csv,
@@ -10184,8 +10213,10 @@ class Item(dict):
                                and applicable for the file_type, the value will built cache
                                for the service.
         -------------------    ---------------------------------------------------------------
-        item_id                Optionl String. **Available in Enterprise/AGOL 10.8.1+**.  A string
-                               of 32 character UID without any special characters.
+        item_id                Optional string. Available in ArcGIS Enterprise 10.8.1+. Not available in ArcGIS Online.
+                               This parameter allows the desired item id to be specified during creation which
+                               can be useful for cloning and automated content creation scenarios.
+                               The specified id must be a 32 character GUID string without any special characters.
 
                                If the `item_id` is already being used, an error will be raised
                                during the `publish` process.
@@ -10197,7 +10228,7 @@ class Item(dict):
         :return:
             An arcgis.gis.Item object corresponding to the published web layer.
 
-        For publish_parameters, see http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Publish_Item/02r300000080000000/
+        For publish_parameters, see https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm
         """
 
         import time
@@ -10547,7 +10578,7 @@ class Item(dict):
                           Example: 80000.0
         ----------------  ---------------------------------------------------------------
         cache_info        Optional dictionary. If not none, administrator provides the
-                          tile cache info for the service. The default is the AGOL scheme.
+                          tile cache info for the service. The default is the ArcGIS Online scheme.
         ----------------  ---------------------------------------------------------------
         build_cache       Optional boolean. Default is False; if True, the cache will be
                           built at publishing time.  This will increase the time it takes

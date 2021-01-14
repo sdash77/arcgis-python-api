@@ -10,7 +10,9 @@ from typing import Tuple
 import numpy as np
 import torch
 #from arcgis.learn._utils.segmentation_loss_functions import mIoULoss
+from arcgis.learn.models._deeplab_utils import mask_iou
 from fastai.callbacks.hooks import hook_outputs, model_sizes
+from fastprogress.fastprogress import progress_bar
 from torch import nn
 
 
@@ -48,6 +50,7 @@ class DecoderBlock(nn.Module):
         # B, C/4, H, W -> B, C, H, W
         self.conv3 = nn.Conv2d(in_channels // 4, out_channels, 1, groups=group)
         self.norm3 = nn.BatchNorm2d(out_channels)
+        #self.up    = nn.Upsample(upsample_size)
         self.relu3 = nn.ReLU(inplace=True)
 
         for m in self.modules():
@@ -70,6 +73,9 @@ class DecoderBlock(nn.Module):
         x = self.relu2(x)
         x = self.conv3(x)
         x = self.norm3(x)
+        if self.hook is not None:
+            self.up = nn.Upsample(self.hook.stored.shape[2])
+            x = self.up(x)
         x = self.relu3(x)
         if self.hook:
             x = x + self.hook.stored
@@ -324,3 +330,35 @@ def miou(prediction, *target, ignore_mapped_class=[], smooth=1e-8):
         if mean_classes == 0:
             return 0
         return torch.tensor(sum / mean_classes)
+
+def compute_miou(model, dl, mean, num_classes, show_progress, ignore_mapped_class=[]):
+    ious=[]
+    model.learn.model.eval()
+    def fast_hist(a, b, n):
+        k = (a >= 0) & (a < n)
+        return np.bincount(n * a[k].astype(int) + b[k], minlength=n ** 2).reshape(n, n)
+    with torch.no_grad():
+        for input, target in progress_bar(dl, display=show_progress):
+            pred = model.learn.model(input)
+            if isinstance(pred, tuple):  # while training
+                pred = pred[0]
+            if isinstance(target, tuple):
+                target = target[0]
+            target = target[0].squeeze(1).long()
+            if ignore_mapped_class != []:
+                for k in ignore_mapped_class:
+                    pred[:, k] = -1000
+                pred = pred.argmax(dim=1)
+            else:
+                pred = pred.argmax(dim=1)
+            mask1 = []
+            mask2 = []
+            for i in range(pred.shape[0]):
+                mask1.append(pred[i].to(model._device) == num_classes[:, None, None].to(model._device))
+                mask2.append(target[i].to(model._device) == num_classes[:, None, None].to(model._device))
+            mask1 = torch.stack(mask1)
+            mask2 = torch.stack(mask2)
+            iou = mask_iou(mask1, mask2)
+            ious.append(iou.tolist())
+
+        return np.mean(ious, 0)

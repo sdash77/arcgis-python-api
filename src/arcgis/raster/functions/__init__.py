@@ -95,15 +95,17 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     newlyr._temporal_filter = layer._temporal_filter
     newlyr._mosaic_rule = layer._mosaic_rule
     newlyr._filtered = layer._filtered
-    newlyr._extent = layer._extent
     newlyr._uses_gbl_function = layer._uses_gbl_function
     newlyr._raster_info = layer._raster_info
 
-    newlyr._lazy_token = layer._token
-    newlyr._refresh()
-    newlyr._hydrated = True
-    if layer._extent==layer.properties.extent:
-        newlyr._extent = newlyr.properties.extent
+    if hasattr(layer, "_lazy_token"):
+        newlyr._lazy_token = layer._lazy_token
+    else:
+        newlyr._lazy_token = layer._token
+
+    if layer._extent_set:
+        newlyr._extent = layer._extent
+        newlyr._extent_set = layer._extent_set
 
     return newlyr
 
@@ -140,15 +142,16 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
     newlyr._temporal_filter = layer._temporal_filter
     newlyr._mosaic_rule = layer._mosaic_rule
     newlyr._filtered = layer._filtered
-    newlyr._extent = layer._extent
     newlyr._uses_gbl_function = layer._uses_gbl_function
     newlyr._raster_info = layer._raster_info
 
-    newlyr._lazy_token = layer._token
-    newlyr._refresh()
-    newlyr._hydrated = True
-    if layer._extent==layer.properties.extent:
-        newlyr._extent = newlyr.properties.extent
+    if hasattr(layer, "_lazy_token"):
+        newlyr._lazy_token = layer._lazy_token
+    else:
+        newlyr._lazy_token = layer._token
+    if layer._extent_set:
+        newlyr._extent = layer._extent
+        newlyr._extent_set = layer._extent_set
     return newlyr
 
 def _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2=None, variable_name='Raster'):
@@ -159,7 +162,10 @@ def _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2=None, varia
         function_chain_ra['rasterFunctionArguments']['Raster2'] = raster_ra2
 
     if layer._datastore_raster:
-        newlyr= Raster(layer._uri, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        if isinstance(layer._uri, dict) or isinstance(layer._uri,bytes):
+            newlyr= Raster(function_chain_ra, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        else:
+            newlyr= Raster(layer._uri, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
     else:
         newlyr = Raster(layer._url, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
 
@@ -186,17 +192,26 @@ def _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2=None, varia
     newlyr._engine_obj._filtered = layer._filtered
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
-    newlyr._engine_obj.extent = layer.extent
+    #newlyr._engine_obj.extent = layer.extent
+    if hasattr(layer, "_lazy_token"):
+        newlyr._engine_obj._lazy_token = layer._lazy_token
+    else:
+        if layer._engine!=_ArcpyRaster:
+            newlyr._lazy_token = layer._token
 
-    if layer._do_not_hydrate:
-        newlyr._engine_obj.token = layer.token
+    if layer._extent_set:
+        newlyr._engine_obj._extent = layer._extent
+        newlyr._engine_obj._extent_set = layer._extent_set
 
     return newlyr
 
 def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
 
     if layer._datastore_raster:
-        newlyr= Raster(layer._uri, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        if isinstance(layer._uri, dict) or isinstance(layer._uri,bytes):
+            newlyr= Raster(function_chain_ra, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        else:
+            newlyr= Raster(layer._uri, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
     else:
         newlyr = Raster(layer._url, is_multidimensional= layer._is_multidimensional, engine= layer._engine,  gis=layer._gis)
 
@@ -224,9 +239,15 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
     newlyr._engine_obj.extent = layer.extent
+    if hasattr(layer, "_lazy_token"):
+        newlyr._engine_obj._lazy_token = layer._lazy_token
+    else:
+        if layer._engine!=_ArcpyRaster:
+            newlyr._lazy_token = layer._token
 
-    if layer._do_not_hydrate:
-        newlyr._engine_obj.token = layer.token
+    if layer._extent_set:
+        newlyr._engine_obj._extent = layer._extent
+        newlyr._engine_obj._extent_set = layer._extent_set
 
     return newlyr
 
@@ -1105,7 +1126,7 @@ def colormap(raster, colormap_name=None, colormap=None, colorramp=None, astype=N
     :param colorramp: Can be a string specifiying color ramp name like <Black To White|Yellow To Red|Slope|more..>
                       or a color ramp object. 
                       For more information about colorramp object, see color ramp object at
-                      http://resources.arcgis.com/en/help/arcgis-rest-api/#/Color_ramp_objects/02r3000001m0000000/)
+                      https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
     :param astype: output pixel type
     :return: the colorized raster
     """
@@ -1531,7 +1552,7 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
     The arguments for the local function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param operation: int see reference at http://resources.arcgis.com/en/help/arcobjects-net/componenthelp/index.html#//004000000149000000
+    :param operation: int see reference at https://desktop.arcgis.com/en/arcobjects/latest/net/webframe.htm#esriGeoAnalysisFunctionEnum.htm
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param astype: output pixel type
@@ -3009,7 +3030,7 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
     :param colorramp: string, specifying color ramp name like <Black To White|Yellow To Red|Slope|more..>
                       or a color ramp object. 
                       For more information about colorramp object, see color ramp object at
-                      http://resources.arcgis.com/en/help/arcgis-rest-api/#/Color_ramp_objects/02r3000001m0000000/)
+                      https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
     :param hillshade_type: new at 10.8.1. int, 0 = traditional, 1 = multi - directional; default is 0
     :return: the output raster
 
@@ -6619,14 +6640,8 @@ class RFT:
                     if layer._engine_obj.url is None:
                         return None
                     if layer._engine==_ArcpyRaster:
-                        try:
-                            import arcpy, json
-                            arcpylyr=arcpy.ia.Apply(layer._engine_obj._uri,json.dumps(layer._engine_obj._fnra))
-                            layer = Raster(str(arcpylyr), is_multidimensional= layer._engine_obj._is_multidimensional, engine= layer._engine, gis=layer._engine_obj._gis)
-                            return layer
+                        return _clone_layer_raster_without_copy(layer._engine_obj, self._template, self._template)
 
-                        except:
-                            raise
                 else:
                     self._template = layer._fnra
                     if layer.url is None:
@@ -6644,13 +6659,8 @@ class RFT:
                 if layer._engine_obj.url is None:
                     return None
                 if layer._engine==_ArcpyRaster:
-                    try:
-                        import arcpy, json
-                        arcpylyr=arcpy.ia.Apply(layer._engine_obj._uri,json.dumps(layer._engine_obj._fnra))
-                        layer = Raster(str(arcpylyr), is_multidimensional= layer._engine_obj._is_multidimensional, engine= layer._engine, gis=layer._engine_obj._gis)
-                        return layer
-                    except:
-                        raise
+                    return _clone_layer_raster_without_copy(layer._engine_obj, self._template, self._template)
+
             else:
                 self._template = layer._fnra
                 if layer.url is None:
@@ -7069,7 +7079,10 @@ class RFT:
             complete_rft_dict = self._apply_argument(rft_dict,arg_dict_copy)
 
         if self._local_raster is not None:
-            newlyr = Raster(self._local_raster._url, is_multidimensional=self._local_raster._is_multidimensional,gis=self._local_raster._gis)
+            if self._local_raster._engine == _ArcpyRaster:
+                newlyr = Raster(self._local_raster._uri, is_multidimensional=self._local_raster._is_multidimensional,gis=self._local_raster._gis)
+            else:
+                newlyr = Raster(complete_rft_dict, is_multidimensional=self._local_raster._is_multidimensional, gis=self._gis)
             self._local_raster = None
             newlyr._engine_obj._fn = complete_rft_dict
             newlyr._engine_obj._fnra = complete_rft_dict

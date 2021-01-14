@@ -324,9 +324,9 @@ class LivingAtlas(BasePortalAdmin):
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        username            required string, username for AGOL
+        username            required string, username for ArcGIS Online
         ---------------     ----------------------------------------------------
-        password            required string, login password for AGOL account
+        password            required string, login password for ArcGIS Online account
         ---------------     ----------------------------------------------------
         online_url          optional string, Url to ArcGIS Online site.
                             default is https://www.arcgis.com
@@ -363,9 +363,9 @@ class LivingAtlas(BasePortalAdmin):
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        username            required string, username for AGOL
+        username            required string, username for ArcGIS Online
         ---------------     ----------------------------------------------------
-        password            required string, login password for AGOL account
+        password            required string, login password for ArcGIS Online account
         ===============     ====================================================
 
         :Note:
@@ -448,7 +448,7 @@ class LivingAtlas(BasePortalAdmin):
     #----------------------------------------------------------------------
     def enable_subscriber_atlas(self, username, password):
         """
-        Enables the Subscriber level Living Atlas Content for a local portal.
+        Enables the Subscriber level Living Atlas Content for an ArcGIS Enterprise portal.
 
         Subscriber content is the collection of ready-to-use map layers,
         analytic tools, and services published by Esri that requires an
@@ -463,13 +463,13 @@ class LivingAtlas(BasePortalAdmin):
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        username            required string, username for AGOL
+        username            required string, username for ArcGIS Online
         ---------------     ----------------------------------------------------
-        password            required string, login password for AGOL account
+        password            required string, login password for the specific ArcGIS Online account
         ===============     ====================================================
 
         :Note:
-          This will **not** cost your organization credits.
+          Use of these layers will **not** incur a credit cost for your organization.
 
 
         """

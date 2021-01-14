@@ -96,7 +96,7 @@ class AdminServiceGen(object):
     Inputs:
        url - internet address to the service
        server - Server class
-       item - Portal or AGOL Item class
+       item - Enterprise or Online Item class
     """
     def __init__(self, service, gis):
         iterable = None
