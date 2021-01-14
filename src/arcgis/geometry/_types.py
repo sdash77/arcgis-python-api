@@ -2783,17 +2783,6 @@ class Polygon(Geometry):
         """ pickle support """
         return dict(self)
     #----------------------------------------------------------------------
-    @_lazy_property
-    def efd(self):
-        """
-        Returns an `EFDAnalysis` class to work with elliptical fourier descriptors
-        
-        :returns: `EFDAnalysis`
-        
-        """
-        from ._spatial_edf._edf import EFDAnalysis
-        return EFDAnalysis(geom=self, normalize=True, init=False)
-    #----------------------------------------------------------------------
     @classmethod
     def _from_geojson(cls, data, sr=None):
         if sr is None:
