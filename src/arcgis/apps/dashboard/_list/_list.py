@@ -11,8 +11,7 @@ class List(_BaseWidget):
     =========================   ===========================================
     **Argument**                **Description**
     -------------------------   -------------------------------------------
-    item                        Required Item object. Item from which the
-                                Indicator is constructed. Item object can
+    item                        Required Portal Item object. Item object can
                                 be a Feature Layer or a MapWidget.
     -------------------------   -------------------------------------------
     name                        Optional string. Name of the List widget.
@@ -206,7 +205,7 @@ class List(_BaseWidget):
     def _convert_to_json(self):
         if self.item.type == 'mapWidget':
             wlayer = self.item.layers[self.layer]
-            widget_id = self.item.id
+            widget_id = self.item._id
             layer_id = wlayer["id"]
             self._datasource = {"id":str(widget_id)+'#'+str(layer_id)}
         else:

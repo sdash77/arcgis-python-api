@@ -4505,18 +4505,18 @@ class Events(object):
                 for widget in widgets:
                     if widget.type == "mapWidget":
                         action_type = "setExtent"
-                        self._actions.append({"type":action_type, "targetId":widget.id})
+                        self._actions.append({"type":action_type, "targetId":widget._id})
                     else:
                         action_type = "filter"
-                        widget_id = str(widget.id)+'#main'
+                        widget_id = str(widget._id)+'#main'
                         self._actions.append({"type":action_type, "by":"geometry", "targetId":widget_id})
             else:
                 if widgets.type == "mapWidget":
                     action_type = "setExtent"
-                    self._actions.append({"type":action_type, "targetId":widgets.id})
+                    self._actions.append({"type":action_type, "targetId":widgets._id})
                 else:
                     action_type = "filter"
-                    widget_id = str(widgets.id)+'#main'
+                    widget_id = str(widgets._id)+'#main'
                     self._actions.append({"type":action_type, "by":"geometry", "targetId":widget_id})
 
 
