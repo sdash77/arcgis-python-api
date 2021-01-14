@@ -12,6 +12,7 @@ from automation._common import *
 
 FTP_SITE = "zion"
 ESRI_CHANNEL_DEV = "http://zion/conda/esri_channel_dev/"
+ESRI_REQUESTS_CHANNEL = "http://zion/conda/esri_requests/"
 NUM_BUILDS_TO_KEEP = 100
 MASTER_ARCHS = ["win-64", "noarch"]
 SLAVE_ARCHS = ["linux-64", "osx-64"]
@@ -49,27 +50,29 @@ def _publish_archs_to_ftp_site(ftp, dst, archs):
         dst_dir_path = f"{dst}/{arch}"
         _delete_directory_recursive(ftp, dst_dir_path, ignore_if_exists = True)
         _make_dir_ignore_if_exists(ftp, dst_dir_path)
-        _merge_w_esri_channel_dev_and_upload(ftp = ftp,
+        _merge_w_conda_channels_and_upload(ftp = ftp,
                                             src_dir_path = src_dir_path,
                                             dst_dir_path = dst_dir_path,
                                             arch = arch)
 
-def _merge_w_esri_channel_dev_and_upload(ftp, src_dir_path, dst_dir_path, arch):
+def _merge_w_conda_channels_and_upload(ftp, src_dir_path, dst_dir_path, arch):
     log.debug(f"Uploading {src_dir_path} -> {dst_dir_path} after downloading "\
-              f" and merging with esri_chanel_dev...")
-    def get_package_urls_from(channel_url, arch):
-        channel_arch_url = f"{channel_url}/{arch}/"
-        ext = '.tar.bz2'
+              f" and merging with conda channels...")
+    def get_package_urls_from(channel_urls, arch):
         output = []
-        page = requests.get(channel_arch_url).text
-        soup = BeautifulSoup(page, 'html.parser')
-        for url in [f"{channel_arch_url}/{node.get('href')}" \
-                    for node in soup.find_all('a')]:
-            if url.endswith(ext):
-                output.append(url)
+        for channel_url in channel_urls:
+            channel_arch_url = f"{channel_url}/{arch}/"
+            ext = '.tar.bz2'
+            page = requests.get(channel_arch_url).text
+            soup = BeautifulSoup(page, 'html.parser')
+            for url in [f"{channel_arch_url}/{node.get('href')}" \
+                        for node in soup.find_all('a')]:
+                if url.endswith(ext):
+                    output.append(url)
         return output
 
-    for file_url in get_package_urls_from(ESRI_CHANNEL_DEV, arch):
+    channel_urls = [ESRI_REQUESTS_CHANNEL, ESRI_REQUESTS_CHANNEL]
+    for file_url in get_package_urls_from(channel_urls, arch):
         filename = os.path.basename(file_url)
         download_file_dst = os.path.join(src_dir_path, filename)
         urllib.request.urlretrieve(file_url, download_file_dst)
