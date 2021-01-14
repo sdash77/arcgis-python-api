@@ -5,28 +5,28 @@ from ._datastores import DataStores
 from arcgis.gis import Item, User
 from arcgis.apps.tracker._location_tracking import LocationTrackingManager
 
-parts = {
-'collaborations',
-'federation',
-'history',
-'idp',
-'license',
-'living_atlas',
-'location_tracking',
-'logs',
-'machines',
-'metadata',
-'password_policy',
-'properties',
-'scheduled_tasks',
-'security',
-'servers',
-'site',
-'social_providers',
-'system',
-'url',
-'ux',
-'webhooks'}
+#parts = {
+#'collaborations',
+#'federation',
+#'history',
+#'idp',
+#'license',
+#'living_atlas',
+#'location_tracking',
+#'logs',
+#'machines',
+#'metadata',
+#'password_policy',
+#'properties',
+#'scheduled_tasks',
+#'security',
+#'servers',
+#'site',
+#'social_providers',
+#'system',
+#'url',
+#'ux',
+#'webhooks'}
 
 class KubernetesAdmin(_BaseKube):
     """
