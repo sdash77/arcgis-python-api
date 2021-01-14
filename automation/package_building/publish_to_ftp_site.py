@@ -71,7 +71,7 @@ def _merge_w_conda_channels_and_upload(ftp, src_dir_path, dst_dir_path, arch):
                     output.append(url)
         return output
 
-    channel_urls = [ESRI_REQUESTS_CHANNEL, ESRI_REQUESTS_CHANNEL]
+    channel_urls = [ESRI_REQUESTS_CHANNEL, ESRI_CHANNEL_DEV]
     for file_url in get_package_urls_from(channel_urls, arch):
         filename = os.path.basename(file_url)
         download_file_dst = os.path.join(src_dir_path, filename)
