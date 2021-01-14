@@ -912,6 +912,17 @@ def prepare_data(path,
             msimage_list = ArcGISImageList(files_list)
             if msimage_list[0].shape[0] != 3:
                 kwargs['imagery_type'] = 'ms'
+    elif dataset_type == "CycleGAN" or dataset_type == "Pix2Pix":
+        from ._utils.cyclegan import get_files, image_extensions
+        path_a = path/"Images"/"train_a"
+        path_b = path/"Images"/"train_b"
+        files_list_a = get_files(path_a, extensions=image_extensions, recurse=True)
+        files_list_b = get_files(path_b, extensions=image_extensions, recurse=True)
+        msimage_list_a = ArcGISImageList(files_list_a)
+        msimage_list_b = ArcGISImageList(files_list_b)
+        if msimage_list_a[0].shape[0] != 3 or msimage_list_b[0].shape[0] != 3:
+            kwargs['imagery_type'] = 'ms'
+            
     alter_class_mapping = False
     color_mapping = None
 
