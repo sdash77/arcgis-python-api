@@ -4660,12 +4660,18 @@ class ImageryLayer(Layer):
         return boolean_or([other, self])
 
     def __ne__(self, other):
-        from arcgis.raster.functions import not_equal
-        return not_equal([self, other])
+        if isinstance(other, (ImageryLayer, Raster, numbers.Number)):
+            from arcgis.raster.functions import not_equal
+            return not_equal([self, other])
+        else:
+            return NotImplemented
 
     def __eq__(self, other):
-        from arcgis.raster.functions import equal_to
-        return equal_to([self, other])
+        if isinstance(other, (ImageryLayer, Raster, numbers.Number)):
+            from arcgis.raster.functions import equal_to
+            return equal_to([self, other])
+        else:
+            return NotImplemented
 
     def __gt__(self, other):
         from arcgis.raster.functions import greater_than
@@ -7968,12 +7974,18 @@ class _ArcpyRaster(Raster,ImageryLayer):
         return boolean_or([other, self])
 
     def __ne__(self, other):
-        from arcgis.raster.functions import not_equal
-        return not_equal([self, other])
+        if isinstance(other, (ImageryLayer, Raster, numbers.Number)):
+            from arcgis.raster.functions import not_equal
+            return not_equal([self, other])
+        else:
+            return NotImplemented
 
     def __eq__(self, other):
-        from arcgis.raster.functions import equal_to
-        return equal_to([self, other])
+        if isinstance(other, (ImageryLayer, Raster, numbers.Number)):
+            from arcgis.raster.functions import equal_to
+            return equal_to([self, other])
+        else:
+            return NotImplemented
 
     def __gt__(self, other):
         from arcgis.raster.functions import greater_than
