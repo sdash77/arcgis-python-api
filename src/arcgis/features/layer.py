@@ -401,7 +401,7 @@ class FeatureLayer(Layer):
             params['layer'] = self._dynamic_layer
         return self._con.post(path=url, postdata=params)
 
-    def _add_attachment(self, oid, file_path):
+    def _add_attachment(self, oid, file_path, keywords=None):
         """
         Adds an attachment to a feature service
 
@@ -418,6 +418,8 @@ class FeatureLayer(Layer):
         """
         if (os.path.getsize(file_path) >> 20) <= 9:
             params = {'f': 'json'}
+            if self._gis.version > [7,3] and keywords:
+                params['keywords'] = keywords
             if self._dynamic_layer:
                 attach_url = self._url.split('?')[0] + "/%s/addAttachment" % oid
                 params['layer'] = self._dynamic_layer
@@ -430,6 +432,8 @@ class FeatureLayer(Layer):
             return res
         else:
             params = {'f': 'json'}
+            if self._gis.version > [7,3] and keywords:
+                params['keywords'] = keywords
             container = self.container
             itemid = container.upload(file_path)
             if self._dynamic_layer:
