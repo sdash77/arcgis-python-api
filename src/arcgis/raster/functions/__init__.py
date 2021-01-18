@@ -6572,7 +6572,7 @@ class RFT:
                   "or the template is invalid."
                   "(Ensure that the user account has access to Raster Utilities of the server. "
                   "To share the Raster utilities to all user accounts. Please refer Sharing Raster Utilities section in "
-                  "https://esri.github.io/arcgis-python-api/apidoc/html/arcgis.raster.functions.RFT.html)")
+                  "https://esri.github.io/arcgis-python-api/apidoc/html/arcgis.raster.functions.RFT.html )")
 
     @property
     def __doc__(self):
