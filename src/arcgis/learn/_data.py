@@ -96,17 +96,14 @@ imagery_type_lib = {
 
 
 def get_installation_command():
-    installation_steps = ("Install them using - 'conda install -c esri -c fastai -c pytorch arcgis=1.8.2 "
-                          "scikit-image=0.15.0 pillow=6.2.2 libtiff=4.0.10 fastai=1.0.60 pytorch=1.4.0 "
-                          "torchvision=0.5.0 scikit-learn=0.23.1 --no-pin'"
-                          "\n'conda install gdal=2.3.3'"
-                          "\n'pip install transformers==3.3.0'")
+    installation_steps = ('Install all of them using: "conda install -c esri arcgis_learn"')
     return installation_steps 
 
 
 def _raise_fastai_import_error(import_exception=import_exception):
     installation_steps = get_installation_command()
-    raise Exception(f"""{import_exception} \n\nThis module requires fastai, PyTorch, torchvision and scikit-image as its dependencies.\n{installation_steps}""")
+    raise Exception(f"{import_exception} \n\nThis module requires fastai, PyTorch, torchvision "
+                    f"as its dependencies.\n{installation_steps}")
 
 
 class _ImagenetCollater():
@@ -802,10 +799,11 @@ def prepare_data(path,
                             for this model are - ['ner_json','BIO', 'LBIOU'].
     ---------------------   -------------------------------------------
     resize_to               Optional integer. Resize the images to a given size.
-                            Works only for "PASCAL_VOC_rectangles" and "superres".
-                            First resizes the image to the given size and
-                            then crops images of size equal to chip_size.
-                            Note: Keep chip_size < resize_to
+                            Works only for "PASCAL_VOC_rectangles",  "Labelled_Tiles"
+                            and  "superres". First resizes the image to the given 
+                            size and then crops images of size equal to chip_size.
+                            Note: If resize_to is less than chip_size, the
+                            resize_to is used as chip_size.
     =====================   ===========================================
 
     **Keyword Arguments**
@@ -894,6 +892,9 @@ def prepare_data(path,
         # Applying SQUISH ResizeMethod to avoid reflection padding
         kwargs_transforms['resize_method'] = ResizeMethod.SQUISH
 
+        if resize_to < chip_size:
+            chip_size = resize_to
+
     has_esri_files = _check_esri_files(path)
 
     # For change detection export data using export tiles format.
@@ -912,6 +913,17 @@ def prepare_data(path,
             msimage_list = ArcGISImageList(files_list)
             if msimage_list[0].shape[0] != 3:
                 kwargs['imagery_type'] = 'ms'
+    elif dataset_type == "CycleGAN" or dataset_type == "Pix2Pix":
+        from ._utils.cyclegan import get_files, image_extensions
+        path_a = path/"Images"/"train_a"
+        path_b = path/"Images"/"train_b"
+        files_list_a = get_files(path_a, extensions=image_extensions, recurse=True)
+        files_list_b = get_files(path_b, extensions=image_extensions, recurse=True)
+        msimage_list_a = ArcGISImageList(files_list_a)
+        msimage_list_b = ArcGISImageList(files_list_b)
+        if msimage_list_a[0].shape[0] != 3 or msimage_list_b[0].shape[0] != 3:
+            kwargs['imagery_type'] = 'ms'
+            
     alter_class_mapping = False
     color_mapping = None
 

@@ -117,7 +117,10 @@ class Dashboard(object):
             "theme": self.theme,
             "themeOverrides": {},
             "numberPrefixOverrides": [],
-            "layout": self._layout
+            "layout": self._layout,
+            "authoringApp": "ArcGIS API for Python",
+            "authoringAppVersion": arcgis.__version__,
+            "typeKeywords": "ArcGIS Dashboard(via Python)"
         }
 
         if self.header:

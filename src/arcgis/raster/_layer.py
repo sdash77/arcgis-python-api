@@ -4660,12 +4660,18 @@ class ImageryLayer(Layer):
         return boolean_or([other, self])
 
     def __ne__(self, other):
-        from arcgis.raster.functions import not_equal
-        return not_equal([self, other])
+        if isinstance(other, (ImageryLayer, Raster, numbers.Number)):
+            from arcgis.raster.functions import not_equal
+            return not_equal([self, other])
+        else:
+            return NotImplemented
 
     def __eq__(self, other):
-        from arcgis.raster.functions import equal_to
-        return equal_to([self, other])
+        if isinstance(other, (ImageryLayer, Raster, numbers.Number)):
+            from arcgis.raster.functions import equal_to
+            return equal_to([self, other])
+        else:
+            return NotImplemented
 
     def __gt__(self, other):
         from arcgis.raster.functions import greater_than
@@ -6625,6 +6631,10 @@ class _ImageServerRaster(ImageryLayer, Raster):
         if (hasattr(self, "_do_not_hydrate")) and not self._do_not_hydrate:	
             if super().tiles_only:
                 raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+                
+        if band_ids_or_names is None or (isinstance(band_ids_or_names, list) and len(band_ids_or_names) == 0):
+            band_count = super().band_count
+            band_ids_or_names = [i+1 for i in range(band_count)]
 
         from arcgis.raster.functions import extract_band
         return_list=[]
@@ -7968,12 +7978,18 @@ class _ArcpyRaster(Raster,ImageryLayer):
         return boolean_or([other, self])
 
     def __ne__(self, other):
-        from arcgis.raster.functions import not_equal
-        return not_equal([self, other])
+        if isinstance(other, (ImageryLayer, Raster, numbers.Number)):
+            from arcgis.raster.functions import not_equal
+            return not_equal([self, other])
+        else:
+            return NotImplemented
 
     def __eq__(self, other):
-        from arcgis.raster.functions import equal_to
-        return equal_to([self, other])
+        if isinstance(other, (ImageryLayer, Raster, numbers.Number)):
+            from arcgis.raster.functions import equal_to
+            return equal_to([self, other])
+        else:
+            return NotImplemented
 
     def __gt__(self, other):
         from arcgis.raster.functions import greater_than
