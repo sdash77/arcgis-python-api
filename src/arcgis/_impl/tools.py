@@ -10629,6 +10629,23 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                   input_change_analysis_raster,
                                                   change_type="TIME_OF_LATEST_CHANGES",
                                                   max_number_of_changes=1,
+                                                  segment_date='BEGINNING_OF_SEGMENT', 
+                                                  change_direction='ALL', 
+                                                  filter_by_year=False, 
+                                                  min_year=None, 
+                                                  max_year=None, 
+                                                  filter_by_duration=False, 
+                                                  min_duration=None, 
+                                                  max_duration=None, 
+                                                  filter_by_magnitude=False, 
+                                                  min_magnitude=None, 
+                                                  max_magnitude=None,
+                                                  filter_by_start_value=False,
+                                                  min_start_value=None,
+                                                  max_start_value=None,
+                                                  filter_by_end_value=False,
+                                                  min_end_value=None,
+                                                  max_end_value=None,
                                                   output_name=None,
                                                   context=None,
                                                   future=False,
@@ -10638,10 +10655,34 @@ class _RasterAnalysisTools(BaseAnalytics):
 
        output_name: outputName (str). Optional parameter.
 
-       change_type: changeType (str). Optional parameter.
-          Choice list:TIME_OF_LATEST_CHANGES,TIME_OF_EARLIEST_CHANGES,TIME_OF_LARGEST_CHANGES,NUM_OF_CHANGES,ALL_CHANGES
+       change_type: changeType (str). Optional parameter.  
+          Choice list:TIME_OF_LATEST_CHANGE,TIME_OF_EARLIEST_CHANGE,TIME_OF_LARGEST_CHANGE,NUM_OF_CHANGES
 
-       max_number_of_changes: maxNumberChanges (int). Optional parameter.
+       max_number_of_changes: maxNumberOfChanges (int). Optional parameter.  
+
+       segment_date: segmentDate (str). Optional parameter.  
+          Choice list:BEGINNING_OF_SEGMENT,END_OF_SEGMENT
+
+       change_direction: changeDirection (str). Optional parameter.  
+          Choice list:ALL,INCREASE,DECREASE
+
+       filter_by_year: filterByYear (bool). Optional parameter.  
+
+       min_year: minYear (int). Optional parameter.  
+
+       max_year: maxYear (int). Optional parameter.  
+
+       filter_by_duration: filterByDuration (bool). Optional parameter.  
+
+       min_duration: minDuration (float). Optional parameter.  
+
+       max_duration: maxDuration (float). Optional parameter.  
+
+       filter_by_magnitude: filterByMagnitude (bool). Optional parameter.  
+
+       min_magnitude: minMagnitude (float). Optional parameter.  
+
+       max_magnitude: maxMagnitude (float). Optional parameter. 
 
        context: context (str). Optional parameter.
 
@@ -10671,16 +10712,63 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if change_type.lower() == element.lower():
                     change_type = element
 
+        if segment_date is not None:
+            if "segment_date" in self._tbx.choice_list.detect_change_using_change_analysis_raster.keys():
+                segment_date_allowed_values = self._tbx.choice_list.detect_change_using_change_analysis_raster["segment_date"]
+                if [element.lower() for element in segment_date_allowed_values].count(segment_date.lower()) <= 0 :
+                    raise RuntimeError('segment_date can only be one of the following:  '+str(segment_date_allowed_values))
+                for element in segment_date_allowed_values:
+                    if segment_date.lower() == element.lower():
+                        segment_date = element
+
+        if change_direction is not None:
+            if "change_direction" in self._tbx.choice_list.detect_change_using_change_analysis_raster.keys():
+                change_direction_allowed_values = self._tbx.choice_list.detect_change_using_change_analysis_raster["change_direction"]
+                if [element.lower() for element in change_direction_allowed_values].count(change_direction.lower()) <= 0 :
+                    raise RuntimeError('change_direction can only be one of the following:  '+str(change_direction_allowed_values))
+                for element in change_direction_allowed_values:
+                    if change_direction.lower() == element.lower():
+                        change_direction = element
+
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
-        gpjob = self._tbx.detect_change_using_change_analysis_raster(input_change_analysis_raster=input_change_analysis_raster,
-                                                                    change_type=change_type,
-                                                                    max_number_of_changes=max_number_of_changes,
-                                                                    output_name=output_raster,
-                                                                    context=context,
-                                                                    gis=self._gis,
-                                                                    future=True)
+        if self._current_version is not None:
+            current_version = self._current_version
+            if((current_version is not None) and current_version<10.9):
+                gpjob = self._tbx.detect_change_using_change_analysis_raster(input_change_analysis_raster=input_change_analysis_raster,
+                                                                            change_type=change_type,
+                                                                            max_number_of_changes=max_number_of_changes,
+                                                                            output_name=output_raster,
+                                                                            context=context,
+                                                                            gis=self._gis,
+                                                                            future=True)
+            elif((current_version is not None) and current_version>=10.9):
+                gpjob = self._tbx.detect_change_using_change_analysis_raster(input_change_analysis_raster=input_change_analysis_raster,
+                                                                            change_type=change_type,
+                                                                            max_number_of_changes=max_number_of_changes,
+                                                                            segment_date=segment_date, 
+                                                                            change_direction=change_direction, 
+                                                                            filter_by_year=filter_by_year, 
+                                                                            min_year=min_year, 
+                                                                            max_year=max_year, 
+                                                                            filter_by_duration=filter_by_duration, 
+                                                                            min_duration=min_duration, 
+                                                                            max_duration=max_duration, 
+                                                                            filter_by_magnitude=filter_by_magnitude, 
+                                                                            min_magnitude=min_magnitude, 
+                                                                            max_magnitude=max_magnitude,
+                                                                            filter_by_start_value=filter_by_start_value,
+                                                                            min_start_value=min_start_value,
+                                                                            max_start_value=max_start_value,
+                                                                            filter_by_end_value=filter_by_end_value,
+                                                                            min_end_value=min_end_value,
+                                                                            max_end_value=max_end_value,
+                                                                            output_name=output_raster,
+                                                                            context=context,
+                                                                            gis=self._gis,
+                                                                            future=True)
+
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
@@ -11028,6 +11116,99 @@ class _RasterAnalysisTools(BaseAnalytics):
             return gpjob
         return gpjob.result()
 
+
+    def analyze_changes_using_landtrendr(self,
+                                          input_multidimensional_raster,
+                                          processing_band=None, 
+                                          snapping_date='06-30', 
+                                          max_num_segments=5, 
+                                          vertex_count_overshoot=2, 
+                                          spike_threshold=0.9, 
+                                          recovery_threshold=0.25, 
+                                          prevent_one_year_recovery=True, 
+                                          increasing_recovery_trend=True, 
+                                          min_num_observations=6, 
+                                          best_model_proportion=1.25, 
+                                          pvalue_threshold=0.01, 
+                                          output_other_bands=False,
+                                          output_name=None,
+                                          context=None,
+                                          future=False,
+                                          **kwargs):
+        """
+       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+
+       output_name: outputName (str). Required parameter.
+
+       processing_band: processingBand (str). Optional parameter.  
+
+       snapping_date: snappingDate (str). Optional parameter.  
+
+       max_num_segments: maxNumSegments (int). Optional parameter.  
+
+       vertex_count_overshoot: vertexCountOvershoot (int). Optional parameter.  
+
+       spike_threshold: spikeThreshold (float). Optional parameter.  
+
+       recovery_threshold: recoveryThreshold (float). Optional parameter.  
+
+       prevent_one_year_recovery: preventOneYearRecovery (bool). Optional parameter.  
+
+       increasing_recovery_trend: increasingRecoveryTrend (bool). Optional parameter.  
+
+       min_num_observations: minNumObservations (int). Optional parameter.  
+
+       best_model_proportion: bestModelProportion (float). Optional parameter.  
+
+       pvalue_threshold: pvalueThreshold (float). Optional parameter.  
+
+       output_other_bands: outputOtherBands (bool). Optional parameter.  
+
+       context: context (str). Optional parameter.
+
+       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        task = "AnalyzeChangesUsingLandTrendr"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
+
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.analyze_changes_using_land_trendr(input_multidimensional_raster=input_multidimensional_raster,
+                                                             processing_band=processing_band, 
+                                                             snapping_date=snapping_date, 
+                                                             max_num_segments=max_num_segments, 
+                                                             vertex_count_overshoot=vertex_count_overshoot, 
+                                                             spike_threshold=spike_threshold, 
+                                                             recovery_threshold=recovery_threshold, 
+                                                             prevent_one_year_recovery=prevent_one_year_recovery, 
+                                                             increasing_recovery_trend=increasing_recovery_trend, 
+                                                             min_num_observations=min_num_observations, 
+                                                             best_model_proportion=best_model_proportion, 
+                                                             pvalue_threshold=pvalue_threshold, 
+                                                             output_other_bands=output_other_bands,
+                                                             output_name=output_raster,
+                                                             context=context,
+                                                             gis=self._gis,
+                                                             future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
 ###########################################################################
 class _GeoanalyticsTools(_AsyncService):
     """

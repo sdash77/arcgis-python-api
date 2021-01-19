@@ -20,6 +20,8 @@ from arcgis.geometry import SpatialReference, Polygon
 from arcgis.gis import Layer, _GISResource, Item
 from arcgis.mapping._basemap_definitions import basemap_dict
 from arcgis.mapping._scenelyrs import SceneLayer
+from arcgis.mapping.forms import FormCollection
+from arcgis._impl.common._utils import _lazy_property
 try:
     from traitlets import HasTraits, observe
     from arcgis.widgets._mapview._traitlets_extension import ObservableDict
@@ -373,9 +375,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                     isinstance(layer, arcgis.features.FeatureCollection) or \
                     isinstance(layer, arcgis.features.FeatureSet)):
                     # Can be either a FeatureLayer or a table: figure it out
-                    if isinstance(layer, arcgis.features.Table):
-                        layer_type = 'Table'
-                    else:
+                    if not isinstance(layer, arcgis.features.Table):
                         layer_type = 'ArcGISFeatureLayer'
                 elif isinstance(layer, arcgis.raster.ImageryLayer):
                     layer_type='ArcGISImageServiceLayer'
@@ -406,7 +406,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                   if layer.type == 'Feature Collection':
                       options['serviceItemId'] = layer.itemid
                   for lyr in layer.layers:  # recurse - works for all.
-                      self.add_layer(lyr, options)
+                      self.add_layer(lyr, dict(options))
               if hasattr(layer, 'tables'):
                   for tbl in layer.tables:  # recurse - works for all.
                       self.add_table(tbl, options)
@@ -419,7 +419,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                 raise TypeError("FeatureLayerCollection object without layers or tables is not supported")
             if hasattr(layer, 'layers'):
                 for lyr in layer.layers:  # recurse - works for all.
-                    self.add_layer(lyr, options)
+                    self.add_layer(lyr, dict(options))
             if hasattr(layer, 'tables'):
                 for tbl in layer.tables:  # recurse - works for all.
                     self.add_table(tbl, options)
@@ -995,12 +995,35 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     def _is_exportable(self, layer):
         # check SRs are equivalent and exportTilesAllowed is set to true or AGOl-hosted esri basemaps
-        if (layer.properties['spatialReference']['wkid'] == self._webmapdict['spatialReference']['wkid']) \
+        if (self._get_layer_wkid(layer) == self._webmapdict['spatialReference']['wkid']) \
                 and (layer.properties['exportTilesAllowed'] or "services.arcgisonline.com" in layer.url or "server.arcgisonline.com" in layer.url):
             return True
         else:
             return False
 
+    def _get_layer_wkid(self, layer):
+        # spatialReference can either be set at the root level or within initialExtent
+        if "spatialReference" in layer.properties:
+            return layer.properties['spatialReference']['wkid']
+        elif "initialExtent" in layer.properties:
+            return layer.properties['initialExtent']['spatialReference']['wkid']
+        else:
+            raise ValueError("No wkid found")
+
+    @_lazy_property
+    def forms(self):
+        """
+        The smart forms corresponding to each layer and table in the webmap
+        :return: an instance of :class:`arcgis.mapping.forms.FormCollection`
+        .. code-block:: python
+            wm = WebMap()
+            wm.add_layer(table)
+            forms = wm.forms
+            form = forms.get(title="Manhole Inspection")
+            form.title = "Manhole Inspection Form"
+            form.update()
+        """
+        return FormCollection(parent=self)
 
     @property
     def tables(self):
@@ -4480,18 +4503,18 @@ class Events(object):
                 for widget in widgets:
                     if widget.type == "mapWidget":
                         action_type = "setExtent"
-                        self._actions.append({"type":action_type, "targetId":widget.id})
+                        self._actions.append({"type":action_type, "targetId":widget._id})
                     else:
                         action_type = "filter"
-                        widget_id = str(widget.id)+'#main'
+                        widget_id = str(widget._id)+'#main'
                         self._actions.append({"type":action_type, "by":"geometry", "targetId":widget_id})
             else:
                 if widgets.type == "mapWidget":
                     action_type = "setExtent"
-                    self._actions.append({"type":action_type, "targetId":widgets.id})
+                    self._actions.append({"type":action_type, "targetId":widgets._id})
                 else:
                     action_type = "filter"
-                    widget_id = str(widgets.id)+'#main'
+                    widget_id = str(widgets._id)+'#main'
                     self._actions.append({"type":action_type, "by":"geometry", "targetId":widget_id})
 
 

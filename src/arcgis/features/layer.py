@@ -56,6 +56,12 @@ class FeatureLayer(Layer):
         self._time_filter = None
 
     @property
+    def _token(self):
+        if self._con.token:
+            return self._con.token
+        return None
+
+    @property
     def time_filter(self):
         """
         Starting at Enterprise 10.7.1+, instead of querying time-enabled map
@@ -395,7 +401,7 @@ class FeatureLayer(Layer):
             params['layer'] = self._dynamic_layer
         return self._con.post(path=url, postdata=params)
 
-    def _add_attachment(self, oid, file_path):
+    def _add_attachment(self, oid, file_path, keywords=None):
         """
         Adds an attachment to a feature service
 
@@ -412,6 +418,8 @@ class FeatureLayer(Layer):
         """
         if (os.path.getsize(file_path) >> 20) <= 9:
             params = {'f': 'json'}
+            if self._gis.version > [7,3] and keywords:
+                params['keywords'] = keywords
             if self._dynamic_layer:
                 attach_url = self._url.split('?')[0] + "/%s/addAttachment" % oid
                 params['layer'] = self._dynamic_layer
@@ -424,6 +432,8 @@ class FeatureLayer(Layer):
             return res
         else:
             params = {'f': 'json'}
+            if self._gis.version > [7,3] and keywords:
+                params['keywords'] = keywords
             container = self.container
             itemid = container.upload(file_path)
             if self._dynamic_layer:
@@ -2526,14 +2536,22 @@ class FeatureLayer(Layer):
                               postdata=params, )
 
     # ----------------------------------------------------------------------
-    def _query(self, url, params, raw=False):
+    def _query(self, url, params, raw=False, **kwargs):
         """ returns results of query """
         try:
-            result = self._con.post(path=url,
+            if 'add_token' in kwargs:
+                result = self._con.post(path=url,
+                                    postdata=params,
+                                    add_token=kwargs.get('add_token', True))
+            else:
+                result = self._con.post(path=url,
                                     postdata=params, )
         except Exception as queryException:
             error_list = ["Error performing query operation", "HTTP Error 504: GATEWAY_TIMEOUT"]
-            if any(ele in queryException.__str__() for ele in error_list):
+            if queryException.args[0].lower().find("invalid token") > -1:
+                params.pop('token', None)
+                return self._query(url, params, raw=False, add_token=False)
+            elif any(ele in queryException.__str__() for ele in error_list):
                 # half the max record count
                 max_record = int(params['resultRecordCount']) if 'resultRecordCount' in params else 1000
                 offset = int(params['resultOffset']) if 'resultOffset' in params else 0
@@ -2584,7 +2602,7 @@ class FeatureLayer(Layer):
             return FeatureSet.from_dict(result)
 
     # ----------------------------------------------------------------------
-    def _query_df(self, url, params):
+    def _query_df(self, url, params, **kwargs):
         """ returns results of a query as a pd.DataFrame"""
         import pandas as pd
         from arcgis.features import GeoAccessor, GeoSeriesAccessor
@@ -2645,10 +2663,22 @@ class FeatureLayer(Layer):
             return attribs
         #------------------------------------------------------------------
         try:
-            featureset_dict = self._con.post(url, params,
-                                             )
+            if 'add_token' in kwargs:
+
+                featureset_dict = self._con.post(
+                    url,
+                    params,
+                    add_token=kwargs.get('add_token', True)
+                )
+            else:
+                featureset_dict = self._con.post(
+                    url,
+                    params)
         except Exception as queryException:
             error_list = ["Error performing query operation", "HTTP Error 504: GATEWAY_TIMEOUT"]
+            if queryException.args[0].lower().find("invalid token") > -1:
+                params.pop('token', None)
+                return self._query_df(url, params, raw=False, add_token=False)
             if any(ele in queryException.__str__() for ele in error_list):
                 # half the max record count
                 max_record = int(params['resultRecordCount']) if 'resultRecordCount' in params else 1000

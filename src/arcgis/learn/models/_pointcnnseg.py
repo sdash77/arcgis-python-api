@@ -3,6 +3,7 @@ from .._utils.env import raise_fastai_import_error
 
 import_exception = None
 try:
+    from .._data import _raise_fastai_import_error 
     from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback
     from ._pointcnn_utils import PointCNNSeg, SamplePointsCallback, CrossEntropyPC, accuracy, accuracy_non_zero, AverageMetric
     from .._utils.pointcloud_data import get_device, inference_las, show_results, compute_precision_recall, predict_h5, show_results_tool
@@ -112,6 +113,8 @@ class PointCNN(ArcGISModel):
 
         :returns: `PointCNN` Object
         """      
+        if not HAS_FASTAI:
+            _raise_fastai_import_error(import_exception=import_exception)        
 
         emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:

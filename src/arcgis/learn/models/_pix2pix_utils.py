@@ -2,6 +2,8 @@
 import torch
 from fastai.vision import nn, Callable, List, LearnerCallback, optim, ifnone, F, flatten_model, requires_grad, SmoothenValue, add_metrics
 from .._utils.cyclegan import calculate_activation_statistics, calculate_frechet_distance
+from fastprogress.fastprogress import progress_bar
+from .._utils.superres import psnr, ssim
 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -267,3 +269,14 @@ def compute_fid_metric(model, data):
     fid_value = calculate_frechet_distance(m1_b, s1_b, m2_b, s2_b)
 
     return fid_value
+
+def compute_metrics(model, dl, show_progress):
+    avg_psnr = 0
+    avg_ssim = 0
+    model.learn.model.eval()
+    with torch.no_grad():
+        for input, target in progress_bar(dl, display=False):
+            prediction = model.learn.model(input[0], input[1])
+            avg_psnr += psnr(prediction[0], input[1])
+            avg_ssim += ssim(prediction[0], input[1])
+    return avg_psnr/len(dl), avg_ssim.item()/len(dl)

@@ -32,6 +32,7 @@ requirements:
   - pywin32-security [win]
   - lerc
   - winkerberos      [win]
+  - esri_requests
   run:
   - python
   - six
@@ -54,6 +55,7 @@ requirements:
   - lerc
   - winkerberos      [win]
   - python-certifi-win32 [win]
+  - esri_requests
 source:
   path: ../../src
 test:

@@ -4,7 +4,7 @@ import traceback
 from .._data import _raise_fastai_import_error
 from ._arcgis_model import ArcGISModel
 try:
-    from ._pix2pix_utils import pix2pixLoss, pix2pixTrainer, optim, compute_fid_metric
+    from ._pix2pix_utils import pix2pixLoss, pix2pixTrainer, optim, compute_metrics, compute_fid_metric
     from ._pix2pix_utils import  pix2pix as pix2pix_model
     from .._utils.pix2pix import ImageTuple, ImageTupleList2, ImageTupleListMS2
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
@@ -118,11 +118,10 @@ class Pix2Pix(ArcGISModel):
         
     @property
     def _model_metrics(self):
-        if self._data._is_multispectral:
-            fid = None
-        else:
-            fid = self.compute_metrics()
-        return {'FID': f'{fid}'}
+        psnr_ssim_fid = self.compute_metrics(show_progress=True)
+        return {'psnr_metric': '{}'.format(psnr_ssim_fid["PSNR"]),
+                'ssim_metric': '{}'.format(psnr_ssim_fid["SSIM"]),
+                'FID': '{}'.format(psnr_ssim_fid["FID"])}
 
     def _get_emd_params(self, save_inference_file):
         _emd_template = {}
@@ -186,12 +185,16 @@ class Pix2Pix(ArcGISModel):
         self.learn.model.arcgis_results = False
         return pred_img
 
-    def compute_metrics(self):
+    def compute_metrics(self, accuracy=True, show_progress=True):
         """
-        Computes Frechet Inception Distance (FID) on validation set.
+        Computes Peak Signal-to-Noise Ratio (PSNR) and 
+        Structural Similarity Index Measure (SSIM) on validation set.
+
         """
-        if self._data._is_multispectral:
+        psnr, ssim = compute_metrics(self, self._data.valid_dl, show_progress)
+        if self._data.n_channel > 3:
             fid = None
+            return {"PSNR":psnr, "SSIM":ssim}
         else:
             fid = compute_fid_metric(self, self._data)
-        return fid
+            return {"PSNR":psnr, "SSIM":ssim, "FID":fid}

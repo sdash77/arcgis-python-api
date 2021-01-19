@@ -1,4 +1,5 @@
 from fastai.vision import ItemBase, ItemList, Tensor, ImageList, Tuple, Path, get_transforms, random, open_image, Image, math, plt, torch, Learner, partial, optim, ifnone
+from fastai.data_block import get_files as gf
 from .._utils.common import ArcGISImageList, ArcGISMSImage
 import torch.nn as nn
 import torch.nn.functional as F
@@ -9,6 +10,7 @@ from torch.nn.functional import adaptive_avg_pool2d
 import numpy as np
 import os
 import json
+import mimetypes
 
 class ImageTuple(ItemBase):
     def __init__(self, img1, img2):
@@ -457,3 +459,10 @@ def prepare_data_ms_cyclegan(path, norm_pct, val_split_pct, seed, databunch_kwar
     data._scaled_std_values_b = batch_stats_b['scaled_std_values']
 
     return data
+
+def get_files(*args, **kwargs):
+    return sorted(gf(*args, **kwargs))
+
+image_extensions = set(k for k, v in mimetypes.types_map.items()
+                       if v.startswith('image/'))
+

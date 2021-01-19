@@ -40,6 +40,7 @@ If you are a developer, follow these instructions:
 * Windows: ```activate geosaurus_dev_env```
 * Linux/OSX: ```source activate geosaurus_dev_env```
 * ```pip install -e ./src --no-deps``` (for using latest source code)
+* ```conda install -c http://zion/conda/esri_requests/ esri_requests``` (for using internal dependency `esri_requests`)
 * ```jupyter notebook``` (to start a jupyter notebook server)
 
 ### The map widget isn't displaying

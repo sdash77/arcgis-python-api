@@ -380,6 +380,7 @@ class ChangeDetectionDataset(Dataset):
         # Single channel that's indexed [0]
         change_data = self.change_label.data.numpy()[0]
         axes[2].imshow(get_colored_label(change_data, self.color_mapping))
+        axes[2].axis('off')
 
 
 def get_colored_label(change_data, color_mapping):
@@ -757,7 +758,7 @@ def display_row(axes,
                 display,
                 rgb_bands=None):
     if rgb_bands is None:
-        rgb_bands = [1, 2, 3]
+        rgb_bands = [0, 1, 2]
     for i, ax in enumerate(axes):
         if type(display[i]) is ArcGISMSImage:
             display[i].show(ax, rgb_bands)
@@ -899,6 +900,8 @@ def predict(
         fig.suptitle('Image Before / Image After /  Prediction', fontsize=16)
         if self._data._is_multispectral:
             rgb_bands = self._data._rgb_bands
+            if rgb_bands == []:
+                rgb_bands = [0, 1, 2]
             image_before.show(ax=ax[0], rgb_bands=rgb_bands)
             image_after.show(ax=ax[1], rgb_bands=rgb_bands)
             prediction.show(ax=ax[2], rgb_bands=rgb_bands)            

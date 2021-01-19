@@ -4127,7 +4127,8 @@ class ContentManager(object):
         return False
     #----------------------------------------------------------------------
     def add(self, item_properties, data=None, thumbnail=None,
-            metadata=None, owner=None, folder=None, item_id=None):
+            metadata=None, owner=None, folder=None, item_id=None,
+            **kwargs):
         """ Adds content to the GIS by creating an item.
 
         .. note::
@@ -8943,7 +8944,14 @@ class Item(dict):
                 params['exportParameters']["enforceFieldVisibility"] = enforce_fld_vis
             else:
                 params['exportParameters'] = {"enforceFieldVisibility" : enforce_fld_vis }
-        res = self._portal.con.post(data_path, params)
+        try:
+            res = self._portal.con.post(data_path, params)
+        except Exception as e:
+            if e.args[0].find("You do not have permissions") > -1:
+                data_path = 'content/users/%s/export' % self._gis.users.me.username
+                res = self._portal.con.post(data_path, params)
+            else:
+                raise
         export_item = Item(gis=self._gis, itemid=res['exportItemId'])
         if wait == True:
             status = "partial"

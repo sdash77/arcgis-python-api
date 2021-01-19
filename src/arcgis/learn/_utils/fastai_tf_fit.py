@@ -336,7 +336,7 @@ class TfLearner():
 
     def __del__(self): del(self.model, self.data)
 
-    def save(self, name:PathOrStr, return_path=True):
+    def save(self, name:PathOrStr, return_path=True, **kwargs):
         "Save model with `name` to `self.model_dir`."
         root = tf.train.Checkpoint(model=self.model)
         model_save_path = self.path/self.model_dir/f'{name}'
