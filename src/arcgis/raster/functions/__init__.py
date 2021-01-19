@@ -5854,17 +5854,35 @@ def compute_change(raster1,
 
 def detect_change_using_change_analysis_raster(raster, 
                                                change_type="TIME_OF_LATEST_CHANGE", 
-                                               max_number_of_changes=1):
+                                               max_number_of_changes=1,
+                                               segment_date="BEGINNING_OF_SEGMENT",
+                                               change_direction="ALL",
+                                               filter_by_year=False,
+                                               min_year=None,
+                                               max_year=None,
+                                               filter_by_duration=False,
+                                               min_duration=None,
+                                               max_duration=None,
+                                               filter_by_magnitude=False,
+                                               min_magnitude=None,
+                                               max_magnitude=None,
+                                               filter_by_start_value=False,
+                                               min_start_value=None,
+                                               max_start_value=None,
+                                               filter_by_end_value=False,
+                                               min_end_value=None,
+                                               max_end_value=None):
 
     """
     Function generates a raster containing pixel change information using the 
-    output change analysis raster from the arcgis.raster.analytics.analyze_changes_using_ccdc function.
+    output change analysis raster from the arcgis.raster.analytics.analyze_changes_using_ccdc function
+    or arcgis.raster.analytics.analyze_changes_using_landtrendr function.
     Function available in ArcGIS Image Server 10.8.1 and higher.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    raster                                   Required ImageryLayer object. The raster generated from the analyze_changes_using_ccdc.
+    raster                                   Required ImageryLayer object. The raster generated from the analyze_changes_using_ccdc or analyze_changes_using_landtrendr.
     ------------------------------------     --------------------------------------------------------------------
     change_type                              Optional String. Specifies the change information to calculate.
 
@@ -5872,19 +5890,196 @@ def detect_change_using_change_analysis_raster(raster,
                                                 - TIME_OF_EARLIEST_CHANGE (1) - Each pixel will contain the date of the earliest change for that pixel in the time series.
                                                 - TIME_OF_LARGEST_CHANGE (2) - Each pixel will contain the date of the most significant change for that pixel in the time series.
                                                 - NUM_OF_CHANGES (3) - Each pixel will contain the total number of times the pixel changed in the time series.
+                                                - TIME_OF_LONGEST_CHANGE (4) - Each pixel will contain the date of change at the end of the longest transition segment in the time series. Option available in ArcGIS Image Server 10.9 and higher.
+                                                - TIME_OF_SHORTEST_CHANGE (5) - Each pixel will contain the date of change at the end of the shortest transition segment in the time series. Option available in ArcGIS Image Server 10.9 and higher.
+                                                - TIME_OF_FASTEST_CHANGE (6) - Each pixel will contain the date of change at the end of the transition that occurred most quickly. Option available in ArcGIS Image Server 10.9 and higher.
+                                                - TIME_OF_SLOWEST_CHANGE (7) - Each pixel will contain the date of change at the end of the transition that occurred most slowly. Option available in ArcGIS Image Server 10.9 and higher.
 
                                              Example:
-                                                  "TIME_OF_LATEST_CHANGE"
+                                                "TIME_OF_LATEST_CHANGE"
     ------------------------------------     --------------------------------------------------------------------
     max_number_of_changes                    Optional Integer. The maximum number of changes per pixel that will 
-                                             be calculated when the change_type parameter is set to 
-                                             TIME_OF_LATEST_CHANGE, TIME_OF_EARLIEST_CHANGE, or TIME_OF_LARGEST_CHANGE. 
-                                             This number corresponds to the number of bands in the output raster. 
+                                             be calculated. This number corresponds to the number of bands in the output raster. 
                                              The default is 1, meaning only one change date will be calculated, 
                                              and the output raster will contain only one band.
 
+                                             This parameter is not available when the change_type parameter is set to NUM_OF_CHANGES.
+
                                              Example:
                                                 3
+    ------------------------------------     --------------------------------------------------------------------
+    segment_date                             Optional string. Specifies whether to extract the date at the beginning 
+                                             of a change segment, or the end. 
+
+                                             This parameter is available only when the input change analysis raster is 
+                                             the output from the arcgis.raster.analytics.analyze_changes_using_landtrendr function.
+
+                                                - BEGINNING_OF_SEGMENT - Extract the date at the beginning of a change segment. This is the default.
+                                                - END_OF_SEGMENT - Extract the date at the end of a change segment. 
+
+                                             Example:
+                                                "END_OF_SEGMENT"
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    change_direction                         Optional string. The direction of change to be included in the analysis. 
+                                             For example, choose Increasing to only extract date of change information for 
+                                             periods where the change is in the positive or increasing direction. 
+
+                                             This parameter is available only when the input change analysis raster 
+                                             is the output from the analyze_changes_using_landtrendr function.
+
+                                                - ALL - All change directions will be included in the output. This is the default. 
+                                                - INCREASE - Only change in the positive or increasing direction will be included in the output. 
+                                                - DECREASE - Only change in the negative or decreasing direction will be included in the output. 
+
+                                             Example:
+                                                "DECREASE"
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_year                           Optional boolean. Specifies whether to filter by a range of years. 
+
+                                                - True - Filter results such that only changes that occurred within a specific range of years is included in the output. 
+                                                - False - Do not filter results by year. This is the default.
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_year                                 Optional int. The earliest year to use to filter results. This parameter 
+                                             is required if the filter_by_year parameter is set to True. 
+
+                                             Example:
+                                                2000
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_year                                 Optional int. The latest year to use to filter results. This parameter 
+                                             is required if the filter_by_year parameter is set to True. 
+
+                                             Example:
+                                                2005
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_duration                       Optional boolean. Specifies whether to filter by the change duration. 
+                                             This parameter is available only when the input change analysis raster 
+                                             is the output from the analyze_changes_using_landtrendr function.
+
+                                                - True - Filter results by duration such that only the changes that lasted a given amount of time will be included in the output.
+                                                - False - Do not filter results by duration. This is the default. 
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_duration                             Optional float. The minimum number of consecutive years to include in 
+                                             the results. This parameter is required if the filter_by_duration parameter 
+                                             is set to True 
+
+                                             Example:
+                                                2
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_duration                             Optional float. The maximum number of consecutive years to include 
+                                             in the results. This parameter is required if the filter_by_duration 
+                                             parameter is set to True 
+
+                                             Example:
+                                                4
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_magnitude                      Optional boolean. Specifies whether to filter by change magnitude. 
+
+                                                - True - Filter results by magnitude such that only the changes of a given magnitude will be included in the output.
+                                                - False - Do not filter results by magnitude. This is the default. 
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_magnitude                            Optional float. The minimum magnitude to include in the results. 
+                                             This parameter is required if the filter_by_magnitude 
+                                             parameter is set to True. 
+
+                                             Example:
+                                                0.25
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_magnitude                            Optional float. The maximum magnitude to include in the results. 
+                                             This parameter is required if the filter_by_magnitude parameter is set 
+                                             to True.
+
+                                             Example:
+                                                3
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_start_value                    Optional boolean. Specifies whether to filter by start value. This 
+                                             parameter is available only when the input change analysis raster 
+                                             is the output from the arcgis.raster.analytics.analyze_changes_using_landtrendr function. 
+
+                                                - True - Filter results by start value so that only the change that starts with value defined by a range.
+                                                - False - Do not filter by start value. This is the default.
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_start_value                          Optional float. The minimum value that defines the range of start value. 
+                                             This parameter is required if the filter_by_start_value parameter is set 
+                                             to True.
+
+                                             Example:
+                                                0.75
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_start_value                          Optional float. The maximum value that defines the range of start value. 
+                                             This parameter is required if the filter_by_start_value parameter is 
+                                             set to True.
+
+                                             Example:
+                                                0.9
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_end_value                      Optional boolean. Specifies whether to filter by end value. This parameter 
+                                             is available only when the input change analysis raster is the output 
+                                             from the arcgis.raster.analytics.analyze_changes_using_landtrendr function.
+
+                                                - True - Filter results by end value so that only the change that ends with value defined by a range.
+                                                - False - Do not filter results by end value. This is the default. 
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_end_value                            Optional float. The minimum value that defines the range of end value. 
+                                             This parameter is required if the filter_by_end_value parameter is set 
+                                             to True.
+
+                                             Example:
+                                                -0.12
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_end_value                            Optional float. The maximum value that defines the range of end value. 
+                                             This parameter is required if the filter_by_end_value parameter is set 
+                                             to True.
+
+                                             Example:
+                                                0.35
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
     ====================================     ====================================================================
 
     :return: Imagery layer
@@ -5907,7 +6102,11 @@ def detect_change_using_change_analysis_raster(raster,
             'TIME_OF_LATEST_CHANGE': 0,
             'TIME_OF_EARLIEST_CHANGE': 1,
             'TIME_OF_LARGEST_CHANGE' : 2,
-            'NUM_OF_CHANGES' : 3
+            'NUM_OF_CHANGES' : 3,
+            'TIME_OF_LONGEST_CHANGE' : 4,
+            'TIME_OF_SHORTEST_CHANGE' : 5,
+            'TIME_OF_FASTEST_CHANGE' : 6,
+            'TIME_OF_SLOWEST_CHANGE' : 7
         }
 
         if isinstance(change_type, str):
@@ -5919,6 +6118,83 @@ def detect_change_using_change_analysis_raster(raster,
 
     if max_number_of_changes is not None:
         template_dict["rasterFunctionArguments"]['MaxNumberChanges'] = max_number_of_changes
+
+    if segment_date is not None:
+        segment_date_types = {
+            'BEGINNING_OF_SEGMENT': 0,
+            'END_OF_SEGMENT': 1
+        }
+
+        if isinstance(segment_date, str):
+            in_segment_date = segment_date_types[segment_date.upper()]
+        else:
+            in_segment_date = segment_date
+
+        template_dict["rasterFunctionArguments"]['SegmentDate'] = in_segment_date
+
+    if change_direction is not None:
+        change_direction_types = {
+            'ALL': 0,
+            'INCREASE': 1,
+            'DECREASE':2
+        }
+
+        if isinstance(change_direction, str):
+            in_change_direction = change_direction_types[change_direction.upper()]
+        else:
+            in_change_direction = change_direction
+
+        template_dict["rasterFunctionArguments"]['ChangeDirection'] = in_change_direction
+
+    if isinstance(filter_by_year, bool):
+        template_dict["rasterFunctionArguments"]['FilterByYear'] = filter_by_year
+
+        if filter_by_year:
+            if min_year is not None:
+                template_dict["rasterFunctionArguments"]['MinimumYear'] = min_year
+
+            if max_year is not None:
+                template_dict["rasterFunctionArguments"]['MaximumYear'] = max_year
+
+    if isinstance(filter_by_duration, bool):
+        template_dict["rasterFunctionArguments"]['FilterByDuration'] = filter_by_duration
+
+        if filter_by_duration:
+            if min_duration is not None:
+                template_dict["rasterFunctionArguments"]['MinimumDuration'] = min_duration
+
+            if max_duration is not None:
+                template_dict["rasterFunctionArguments"]['MaximumDuration'] = max_duration
+
+    if isinstance(filter_by_magnitude, bool):
+        template_dict["rasterFunctionArguments"]['FilterByMagnitude'] = filter_by_magnitude
+
+        if filter_by_magnitude:
+            if min_magnitude is not None:
+                template_dict["rasterFunctionArguments"]['MinimumMagnitude'] = min_magnitude
+
+            if max_magnitude is not None:
+                template_dict["rasterFunctionArguments"]['MaximumMagnitude'] = max_magnitude
+
+    if isinstance(filter_by_start_value, bool):
+        template_dict["rasterFunctionArguments"]['FilterByStartValue'] = filter_by_start_value
+
+        if filter_by_start_value:
+            if min_start_value is not None:
+                template_dict["rasterFunctionArguments"]['MinimumStartValue'] = min_start_value
+
+            if max_start_value is not None:
+                template_dict["rasterFunctionArguments"]['MaximumStartValue'] = max_start_value
+
+    if isinstance(filter_by_end_value, bool):
+        template_dict["rasterFunctionArguments"]['FilterByEndValue'] = filter_by_end_value
+
+        if filter_by_end_value:
+            if min_end_value is not None:
+                template_dict["rasterFunctionArguments"]['MinimumEndValue'] = min_end_value
+
+            if max_end_value is not None:
+                template_dict["rasterFunctionArguments"]['MaximumEndValue'] = max_end_value
 
     return _clone_layer(layer, template_dict, raster_ra)
 
