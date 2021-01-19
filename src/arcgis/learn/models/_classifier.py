@@ -205,10 +205,6 @@ class FeatureClassifier(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
         """
         self._check_requisites()
-        import math
-        if (rows ** 2) > len(self._data.valid_ds):
-            rows = math.floor(math.sqrt(len(self._data.valid_ds)))
-
         self.learn.show_results(rows=rows, **kwargs)
 
     def _show_results_multispectral(self, rows=5, **kwargs):
