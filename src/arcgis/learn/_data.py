@@ -799,10 +799,11 @@ def prepare_data(path,
                             for this model are - ['ner_json','BIO', 'LBIOU'].
     ---------------------   -------------------------------------------
     resize_to               Optional integer. Resize the images to a given size.
-                            Works only for "PASCAL_VOC_rectangles" and "superres".
-                            First resizes the image to the given size and
-                            then crops images of size equal to chip_size.
-                            Note: Keep chip_size < resize_to
+                            Works only for "PASCAL_VOC_rectangles",  "Labelled_Tiles"
+                            and  "superres". First resizes the image to the given 
+                            size and then crops images of size equal to chip_size.
+                            Note: If resize_to is less than chip_size, the
+                            resize_to is used as chip_size.
     =====================   ===========================================
 
     **Keyword Arguments**
@@ -890,6 +891,9 @@ def prepare_data(path,
         kwargs_transforms['size'] = resize_to
         # Applying SQUISH ResizeMethod to avoid reflection padding
         kwargs_transforms['resize_method'] = ResizeMethod.SQUISH
+
+        if resize_to < chip_size:
+            chip_size = resize_to
 
     has_esri_files = _check_esri_files(path)
 
