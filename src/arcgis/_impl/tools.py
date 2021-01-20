@@ -814,7 +814,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                             percent_points=percent_points,
                                             output_name=output_name,
                                             context=context,
-                                            bin_type='SQUARE',
+                                            bin_type=bin_type,
                                             bin_size=bin_size,
                                             bin_size_unit=bin_size_unit,
                                             gis=self._gis,
