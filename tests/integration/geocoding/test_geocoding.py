@@ -1,5 +1,5 @@
-#import sys
-#sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_4797\src")
+import sys
+sys.path.insert(0, r"c:\SVN\geosaurus_master_kubernetes\src")
 import os
 import sys
 import json
@@ -32,7 +32,7 @@ geocode - missing 4 parameters
 
 
 """
-profiles = ['your_enterprise_profile', 'your_online_profile', None]
+profiles = ['your_enterprise_profile', 'your_online_profile', None, 'your_kubernetes_profile']
 ###########################################################################
 class TestAnalyzeGeocodingInput(unittest.TestCase):
     def test_analyze_table_item(self):
@@ -42,7 +42,7 @@ class TestAnalyzeGeocodingInput(unittest.TestCase):
             os.remove(fp)
         df.to_csv(os.path.join(tempfile.gettempdir(), "data.csv"))
 
-        for p in ['your_enterprise_profile']:
+        for p in ['your_enterprise_profile', 'your_kubernetes_profile']:
             gis = GIS(profile=p, verify_cert=False)
             for i in gis.content.search("dummy_data_1234"):
                 i.delete()
