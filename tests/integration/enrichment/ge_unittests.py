@@ -4,7 +4,7 @@ Performs Unittests on GeoEnrichment
 WARNING THESE UNIT TESTS WILL COST CREDITS ON AGOL
 """
 import sys
-sys.path.insert(0, r"c:\SVN\geosaurus_master_kubernetes\src")
+#sys.path.insert(0, r"c:\SVN\geosaurus_master_kubernetes\src")
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 import unittest

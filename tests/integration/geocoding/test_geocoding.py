@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, r"c:\SVN\geosaurus_master_kubernetes\src")
+#sys.path.insert(0, r"c:\SVN\geosaurus_master_kubernetes\src")
 import os
 import sys
 import json
