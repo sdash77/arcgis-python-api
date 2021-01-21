@@ -6849,3 +6849,160 @@ def analyze_changes_using_landtrendr(input_multidimensional_raster,
 #                                                    context=context,
 #                                                    future=future,
 #                                                    **kwargs)
+def zonal_statistics_as_table(input_zone_raster_or_features, 
+                              input_value_raster, 
+                              zone_field, 
+                              ignore_nodata=True, 
+                              statistic_type='ALL', 
+                              percentile_values=[90],
+                              process_as_multidimensional=False,
+                              percentile_interpolation_type="AUTO_DETECT",
+                              output_name=None, 
+                              context=None,
+                              *,
+                              gis=None,
+                              future=False,
+                              **kwargs):
+
+    """
+    Calculates  the values of a raster within the zones of another dataset and reports the results to a table.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_zone_raster_or_features            Required. The input that defines the zones. Both raster and feature 
+                                             can be used for the zone input.
+    ------------------------------------     --------------------------------------------------------------------
+    input_value_raster                       Required raster. Raster that contains the values on which to summarize a statistic.
+    ------------------------------------     --------------------------------------------------------------------
+    zone_field                               Required parameter.  The field that defines each zone. It can be an 
+                                             integer or a string field of the zone dataset.
+    ------------------------------------     --------------------------------------------------------------------
+    ignore_nodata                            Optional boolean. Denotes whether NoData values in the value input 
+                                             will influence the results of the zone that they fall within.
+                                             true - Within any particular zone, only cells that have a value in 
+                                             the input value raster will be used in determining the output value 
+                                             for that zone. NoData cells in the value raster will be ignored in 
+                                             the statistic calculation. This is the default.
+                                             
+                                             false - Within any particular zone, if any NoData cells exist in the 
+                                             value raster, it is deemed that there is insufficient information to 
+                                             perform statistical calculations for all the cells in that zone; 
+                                             therefore, the entire zone will receive the NoData value on the output raster.
+    ------------------------------------     --------------------------------------------------------------------
+    statistic_type                           Optional string.  Choose the statistic to calculate.The available options 
+                                             when the value raster is integer are ALL, MEAN, MAJORITY, MAXIMUM, MEDIAN, 
+                                             MINIMUM, MINORITY, PERCENTILE, RANGE, STD, SUM, VARIETY,  
+                                             MIN_MAX, MEAN_STD, and  MIN_MAX_MEAN.
+                                             If the value raster is float, the options are ALL, MEAN, MAXIMUM, MINIMUM, 
+                                             RANGE, STD, and SUM.
+
+                                             ALL- All of the statistics will be calculated. 
+                                             This is the default.
+
+                                             MEAN-Calculates the average of all cells in the raster layer to be summarized that
+                                             belong to the same zone as the output cell.
+
+                                             MAJORITY- Determines the value that occurs most often of all cells in the raster 
+                                             layer to be summarized that belong to the same zone as the output cell.
+
+                                             MAXIMUM- Determines the largest value of all cells in the raster layer 
+                                             to be summarized that belong to the same zone as the output cell.
+
+                                             MEDIAN- Determines the median value of all cells in the raster layer 
+                                             to be summarized that belong to the same zone as the output cell.
+
+                                             MINIMUM- Determines the smallest value of all cells in the raster 
+                                             layer to be summarized that belong to the same zone as the output cell.
+
+                                             MINORITY- Determines the value that occurs least often of all cells in 
+                                             the raster layer to be summarized that belong to the same zone as the 
+                                             output cell.
+
+                                             PERCENTILE - Calculates a percentile of all cells in the value raster 
+                                             that belong to the same zone as the output cell. The 90th percentile is calculated by default. 
+                                             You can specify other values (from 0 to 100) using the Percentile Values parameter.
+
+                                             RANGE- Calculates the difference between the largest and smallest value of all 
+                                             cells in the raster layer to be summarized that belong to the same zone 
+                                             as the output cell.
+
+                                             STD - Calculates the standard deviation of all cells in 
+                                             the raster layer to be summarized that belong to the same zone as the output cell.
+
+                                             SUM- Calculates the total value of all cells in the raster layer to be 
+                                             summarized that belong to the same zone as the output cell.
+
+                                             VARIETY- Calculates the number of unique values for all cells in the raster 
+                                             layer to be summarized that belong to the same zone as the output cell.
+
+                                             MIN_MAX - Both the minimum and maximum statistics are calculated.
+
+                                             MEAN_STD -  Both the mean and standard deviation statistics 
+                                             are calculated.
+
+                                             MIN_MAX_MEAN - The minimum, maximum and mean statistics are calculated.
+    ------------------------------------     --------------------------------------------------------------------
+    percentile_values                        Optional list of double values.
+                                             The percentile to calculate. The default is 90, for the 90th percentile.
+                                             The values can range from 0 to 100. The 0th percentile is essentially 
+                                             equivalent to the Minimum statistic, and the 100th Percentile is equivalent to 
+                                             Maximum. A value of 50 will produce essentially the same result as the Median statistic.
+                                             This option is only available if the Statistics Type parameter is set to PERCENTILE or ALL.
+    ------------------------------------     --------------------------------------------------------------------
+    process_as_multidimensional              Optional bool, Determines how the input rasters will be processed if they 
+                                             are multidimensional.
+                                             False - Statistics will be calculated from the current slice of a 
+                                             multidimensional image service. This is the default.
+                                             True - Statistics will be calculated for all dimensions (such as time or depth) 
+                                             of a multidimensional image service.
+    ------------------------------------     --------------------------------------------------------------------
+    percentile_interpolation_type            Optional str. Determines the type of percentile interpolation type when the 
+                                             number of values from the input value raster to be calculated are even.
+
+                                                - AUTO_DETECT - If the input value raster has integer pixel type, the 
+                                                                NEAREST method is used. If the input value raster 
+                                                                has floating point pixel type, then the LINEAR 
+                                                                method is used. This is the default.
+                                                - NEAREST - Nearest value to the desired percentile. In this case, 
+                                                            the output pixel type is same as that of the input value 
+                                                            raster.
+                                                - LINEAR - Weighted average of two surrounding values from the 
+                                                            desired percentile. In this case, the output pixel 
+                                                            type is floating point.
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional string. Name of the output feature item or table item to be created.
+                                             If not provided, a random name is generated by the method and used as 
+                                             the output name. 
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS object. If not specified, the currently active connection
+                                             is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ====================================     ====================================================================
+
+    :return: Feature Layer
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.rasteranalysis.zonal_statistics_as_table(input_zone_raster_or_features=input_zone_raster_or_features, 
+                                                               input_value_raster=input_value_raster, 
+                                                               output_name=output_name,
+                                                               zone_field=zone_field, 
+                                                               ignore_nodata=ignore_nodata, 
+                                                               statistic_type=statistic_type, 
+                                                               percentile_values=percentile_values,
+                                                               process_as_multidimensional=process_as_multidimensional,
+                                                               percentile_interpolation_type=percentile_interpolation_type,
+                                                               context=context,
+                                                               future=future,
+                                                               **kwargs)
