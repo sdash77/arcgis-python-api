@@ -7,7 +7,6 @@ import unicodedata
 from urllib.parse import urlparse, urlsplit, urljoin
 from urllib.parse import urlunsplit, unquote, quote
 
-
 # Check https://regex101.com/r/A326u1/5 for reference
 DOMAIN_FORMAT = re.compile(
     r"(?:^(\w{1,255}):(.{1,255})@|^)" # http basic authentication [optional]
@@ -203,9 +202,29 @@ def _filename_from_url(url):
         return None
     return fname
 #--------------------------------------------------------------------------
-def _filename_from_headers(headers):
-    """Detect filename from Content-Disposition headers if present.
-    http://greenbytes.de/tech/tc2231/
+def _get_file_name(s:dict) -> str:
+    """stips the filename from content-disposition using regex"""
+    fname = re.findall("filename\*=([^;]+)", s, flags=re.IGNORECASE)
+    if not fname:
+        fname = re.findall("filename=([^;]+)", s, flags=re.IGNORECASE)
+    if "utf-8''" in fname[0].lower():
+        fname = re.sub("utf-8''", '', fname[0], flags=re.IGNORECASE)
+        try:
+            if type(fname) == str:
+                fname = unquote(fname)
+            else:
+                fname = unquote(fname).decode('utf-8')
+        except:
+            fname = unquote(fname).encode('utf-8')
+    else:
+        fname = fname[0]
+    # clean space and double quotes
+    return fname.strip().strip('"')
+#--------------------------------------------------------------------------
+def _filename_from_headers(headers:dict) -> str:
+    """
+    Detect filename from Content-Disposition headers if present.
+
 
     :param: headers as dict, list or string
     :return: filename from content-disposition header or None
@@ -217,17 +236,4 @@ def _filename_from_headers(headers):
     cdisp = headers.get("Content-Disposition")
     if not cdisp:
         return None
-    cdtype = cdisp.split(';')
-    if len(cdtype) == 1:
-        return None
-    if cdtype[0].strip().lower() not in ('inline', 'attachment'):
-        return None
-    # several filename params is illegal, but just in case
-    fnames = [x for x in cdtype[1:] if x.strip().startswith('filename=')]
-    if len(fnames) > 1:
-        return None
-    name = fnames[0].split('=')[1].strip(' \t"')
-    name = os.path.basename(name)
-    if not name:
-        return None
-    return name
+    return _get_file_name(cdisp)
