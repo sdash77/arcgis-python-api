@@ -7,12 +7,15 @@ import json
 import imghdr
 import logging
 import tempfile
+import requests
 from urllib.parse import urlparse, urlunparse
 from urllib.request import urlretrieve
 
 from arcgis.gis._impl._con import Connection
 from arcgis.gis._impl._con import _normalize_url, _is_http_url, _parse_hostname, _unpack
 from arcgis._impl.common._utils import _to_utf8
+from urllib import request
+from urllib.parse import urlparse
 
 __version__ = '1.9.0'
 
