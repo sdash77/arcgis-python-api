@@ -248,7 +248,7 @@ class Connection(object):
 
         self._session = Session()
         self._session.verify = self._verify_cert
-        self._session.stream = True
+        self._session.stream = False#True
         self._session.trust_env = self.trust_env
         self._session.headers.update(self._header)
         self._session.proxies = proxies
