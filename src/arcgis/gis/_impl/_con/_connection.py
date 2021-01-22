@@ -252,6 +252,10 @@ class Connection(object):
         self._session.trust_env = self.trust_env
         self._session.headers.update(self._header)
         self._session.proxies = proxies
+        from urllib3.util import Retry
+        a = requests.adapters.HTTPAdapter(max_retries=Retry(total=2, backoff_factor=1, method_whitelist=frozenset(['POST', 'DELETE', 'GET', 'HEAD', 'OPTIONS', 'PUT', 'TRACE'])))
+        self._session.mount("http://", a)
+        self._session.mount("https://", a)
         if self._referer is None and\
            (self._portal_connection and \
            str(self._portal_connection._auth).lower() == "home"):
@@ -604,6 +608,7 @@ class Connection(object):
         :returns: data returned from the URL call.
 
         """
+        retry_count = 0
         json_encode = kwargs.pop("json_encode", True)
         if self._baseurl.endswith("/") == False:
             self._baseurl += "/"
@@ -683,12 +688,14 @@ class Connection(object):
                 resp = self._session.post(url=url,
                                           json=params,
                                           cert=cert,
-                                          files=files)
+                                          files=files,
+                                          timeout=10)
             else:
                 resp = self._session.post(url=url,
                                           data=params,
                                           cert=cert,
-                                          files=files)
+                                          files=files,
+                                          timeout=10)
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
                 "Please set verify_cert=False due to encountered SSL error: %s" % err)
@@ -698,6 +705,7 @@ class Connection(object):
         except requests.exceptions.ConnectionError as errCE:
             raise requests.exceptions.ConnectionError(
                 "A connection error has occurred: %s" % errCE)
+
         except requests.exceptions.InvalidHeader as errIH:
             raise requests.exceptions.InvalidHeader(
                 "A invalid header was provided: %s" % errIH)
@@ -716,7 +724,7 @@ class Connection(object):
             import traceback
             raise Exception(
                 'An unknown error occurred: %s' % traceback.format_exc())
-
+        retry_count = 0
         return self._handle_response(resp=resp,
                                      out_path=out_path,
                                      file_name=file_name,
