@@ -8168,7 +8168,10 @@ class User(dict):
             reassign_to = reassign_to.username
 
         for l in self._gis.admin.license.all():
-            entitle = l.check(user=self.username)
+            try:
+                entitle = l.check(user=self.username)
+            except:
+                entitle = []
             if len(entitle) > 0:
                 l.revoke(username=self.username,
                              entitlements="*",

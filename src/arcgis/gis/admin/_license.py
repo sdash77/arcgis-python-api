@@ -92,7 +92,7 @@ class LicenseManager(BasePortalAdmin):
             for purchase in purchases:
                 licenses.append(License(gis=self._gis, info=purchase))
         return licenses
-    
+
 
     #----------------------------------------------------------------------
     @property
@@ -316,7 +316,7 @@ class Bundle(object):
         self._users = None
         self._properties = None
         for user in users:
-            if isinstance(users, str):
+            if isinstance(user, str):
                 us.append(user)
             elif isinstance(user, User):
                 us.append(user.username)
@@ -433,19 +433,25 @@ class License(object):
     def check(self, user) -> list:
         """
         Checks if the entitlement is assigned or not.
-        
+
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
         user                required string, the name of the user you want to
                             examine the entitlements for.
         ===============     ====================================================
-        
+
         :returns: list
         """
         if hasattr(user, 'username'):
             user = user.username
-        item_id = self.properties['listing']['itemId']
+        if 'listing' in self.properties:
+            item_id = self.properties['listing']['itemId']
+        else:
+            return []
+        #elif 'provision' in self.properties and 'itemId' in self.properties['provision']:
+        #    item_id = self.properties['provision']['itemId']
+
         url = "%scontent/listings/%s/userEntitlements/%s" % (
             self._gis._portal.resturl,
             item_id,
