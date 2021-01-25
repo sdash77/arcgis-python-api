@@ -8170,7 +8170,7 @@ class User(dict):
         for l in self._gis.admin.license.all():
             try:
                 entitle = l.check(user=self.username)
-            except:
+            except Exception as e:
                 entitle = []
             if len(entitle) > 0:
                 l.revoke(username=self.username,
