@@ -23,38 +23,46 @@ def _get_list_value(index, array):
     return array[index % len(array)]
 
 
-
-def export_map(web_map_as_json = None,
-               format = """PDF""",
-               layout_template = """MAP_ONLY""",
-               gis=None):
+def export_map(web_map_as_json=None, format="""PDF""", layout_template="""MAP_ONLY""", gis=None):
     """
+    This function takes the state of the web map (for example, included services, layer visibility
+    settings, client-side graphics, and so forth) and returns either (a) a page layout or
+    (b) a map without page surrounds of the specified area of interest in raster or vector format.
+    The input for this function is a piece of text in JavaScript object notation (JSON) format describing the layers,
+    graphics, and other settings in the web map. The JSON must be structured according to the WebMap specification
+    in the ArcGIS Help. This tool is shipped with ArcGIS Server to support web services for printing, including the
+    preconfigured service named PrintingTools.
 
+    Parameters:
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    web_map_as_json        Web Map JSON along with export options. See
+                           https://developers.arcgis.com/rest/services-reference/exportwebmap-specification.htm
+                           to understand how to structure this JSON
+    ------------------     --------------------------------------------------------------------
+    format                 Format (str). Optional parameter.  The format in which the map image
+                           for printing will be delivered. The following strings are accepted.
+                           For example:PNG8
+                           Choice list:['PDF', 'PNG32', 'PNG8', 'JPG', 'GIF', 'EPS', 'SVG', 'SVGZ']
+    ------------------     --------------------------------------------------------------------
+    layout_template        Layout Template (str). Optional parameter.  Either a name of a
+                           template from the list or the keyword MAP_ONLY. When MAP_ONLY is chosen
+                           or an empty string is passed in, the output map does not contain any
+                           page layout surroundings (for example title, legends, scale bar,
+                           and so forth). Choice list:['A3 Landscape', 'A3 Portrait',
+                           'A4 Landscape', 'A4 Portrait', 'Letter ANSI A Landscape',
+                           'Letter ANSI A Portrait', 'Tabloid ANSI B Landscape',
+                           'Tabloid ANSI B Portrait', 'MAP_ONLY']. You can get the layouts
+                           configured with your GIS by calling the
+                           :meth:get_layout_templates<arcgis.mapping.get_layout_templates> function
+    ------------------     --------------------------------------------------------------------
+    gis                    The :class:GIS<arcgis.gis.GIS> to use for printing. Optional
+                           parameter. When not specified, the active GIS will be used.
+    ==================     ====================================================================
 
-This function takes the state of the web map(for example, included services, layer visibility
-settings, client-side graphics, and so forth) and returns either (a) a page layout or
-(b) a map without page surrounds of the specified area of interest in raster or vector format.
-The input for this function is a piece of text in JavaScript object notation (JSON) format describing the layers,
-graphics, and other settings in the web map. The JSON must be structured according to the WebMap specification
-in the ArcGIS HelpThis tool is shipped with ArcGIS Server to support web services for printing, including the
-preconfigured service named PrintingTools.
-Parameters:
-
-   web_map_as_json: Web Map as JSON (str). Required parameter.  A JSON representation of the state of the map to be exported as it appears in the web application. See the WebMap specification in the ArcGIS Help to understand how this text should be formatted. The ArcGIS web APIs (for JavaScript, Flex, Silverlight, etc.) allow developers to easily get this JSON string from the map.
-
-   format: Format (str). Optional parameter.  The format in which the map image for printing will be delivered. The following strings are accepted.For example:PNG8 (default if the parameter is left blank)PDFPNG32JPGGIFEPSSVGSVGZ
-      Choice list:['PDF', 'PNG32', 'PNG8', 'JPG', 'GIF', 'EPS', 'SVG', 'SVGZ']
-
-   layout_template: Layout Template (str). Optional parameter.  Either a name of a template from the list or the keyword MAP_ONLY. When MAP_ONLY is chosen or an empty string is passed in, the output map does not contain any page layout surroundings (for example title, legends, scale bar, and so forth)
-      Choice list:['A3 Landscape', 'A3 Portrait', 'A4 Landscape', 'A4 Portrait', 'Letter ANSI A Landscape', 'Letter ANSI A Portrait', 'Tabloid ANSI B Landscape', 'Tabloid ANSI B Portrait', 'MAP_ONLY']
-
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-
-
-Returns:
-   output_file - Output File as a DataFile
-
-See https://utility.arcgisonline.com/arcgis/rest/directories/arcgisoutput/Utilities/PrintingTools_GPServer/Utilities_PrintingTools/ExportWebMapTask.htm for additional help.
+    Returns:
+        output_file - Output File as a DataFile
     """
 
     from arcgis.geoprocessing import DataFile
@@ -89,6 +97,7 @@ export_map.__annotations__ = {
                'format': str,
                'layout_template': str
             }
+
 
 def get_layout_templates(gis=None):
     """
