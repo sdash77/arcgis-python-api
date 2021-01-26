@@ -3858,10 +3858,12 @@ class ImageryLayer(Layer):
                 if slice_string.startswith("$"):
                     if "url" in kwargs.keys():
                         return _raster_slicestring(kwargs["url"])
-                elif '/fileShares/' in slice_string or '/rasterStores/' in slice_string or '/cloudStores/' in slice_string or '/vsi' in url:
+                elif '/fileShares/' in slice_string or '/rasterStores/' in slice_string or '/cloudStores/' in slice_string or '/vsi' in slice_string:
                     slice_string=slice_string.rsplit('/',1)[1]
                 elif '\\' in slice_string:
                     slice_string=slice_string.rsplit('\\',1)[1]
+                if "https" in slice_string and any(x in slice_string for x in ["MapServer","FeatureServer"]):
+                    slice_string = None
                 subString = slice_string
             return subString
 
@@ -3895,14 +3897,16 @@ class ImageryLayer(Layer):
                     if "url" in rfa_value.keys():
                         nodenumber+=1
                         rastername=_raster_slicestring(str(rfa_value["url"]))
-                        G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                        G.edge(str(nodenumber),str(connect),color="silver", arrowsize="0.9", penwidth="1")
+                        if rastername is not None:
+                            G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                            G.edge(str(nodenumber),str(connect),color="silver", arrowsize="0.9", penwidth="1")
 
                     if "uri" in rfa_value.keys():
                         nodenumber+=1
                         rastername=_raster_slicestring(str(rfa_value["uri"]))
-                        G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                        G.edge(str(nodenumber),str(connect),color="silver", arrowsize="0.9", penwidth="1")
+                        if rastername is not None:
+                            G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                            G.edge(str(nodenumber),str(connect),color="silver", arrowsize="0.9", penwidth="1")
 
                     elif "function" in rfa_value.keys():
                         _rft_draw_graph(G, rfa_value,rfa_key, connect, show_attributes)
@@ -3938,8 +3942,9 @@ class ImageryLayer(Layer):
                         rastername=_raster_slicestring(rfa_value,url=kwargs["url"])
                     else:
                         rastername=_raster_slicestring(rfa_value)
-                    G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                    G.edge(str(nodenumber),str(connect),color="silver", arrowsize="0.9", penwidth="1")
+                    if rastername is not None:
+                        G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                        G.edge(str(nodenumber),str(connect),color="silver", arrowsize="0.9", penwidth="1")
 
 
             def _attribute_function_graph(rfa_value,rfa_key,root):
@@ -4000,9 +4005,7 @@ class ImageryLayer(Layer):
                         else:
                             return "No raster function applied"
                     else:
-                        #print("here")
                         root+=1
-                        #print("1",root)
                         G.node(str(root), dvalue, style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")  #create first rasterFunction graph node
                         nodenumber = root
                         if ((root-1)>0):
@@ -4014,12 +4017,10 @@ class ImageryLayer(Layer):
                                     if rfa_key=="rasterFunction":           #To check if rasterFunctionArguments has another rasterFunction chain in it
                                         _function_graph(rfa_value,rfa_key,nodenumber)
                                     elif rfa_key == "Raster" or rfa_key=="Raster2" or rfa_key=="Rasters" or rfa_key=="PanImage" or rfa_key=="MSImage": #To check if rasterFunctionArguments includes raster inputs in it
-                                        #print("Raster",root)
                                         temproot=root
                                         _raster_function_graph(rfa_value,rfa_key,root)
-                                        #print("Raster2",root)
                                     elif show_attributes==True:
-                                        #print(root)
+                                        temproot=root
                                         _attribute_function_graph(rfa_value,rfa_key,temproot)
 
                 elif dkey == "rasterFunction" and dvalue == "GPAdapter": #To handle global function arguments
@@ -4138,13 +4139,15 @@ class ImageryLayer(Layer):
                         elif "url" in raster_dict["value"]: #if raster properties are preserved
                             nodenumber+=1
                             rastername=_raster_slicestring(str(raster_dict["value"]["url"]))
-                            G.node(str(nodenumber),rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                            G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                            if rastername is not None:
+                                G.node(str(nodenumber),rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                                G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
                         elif "uri" in raster_dict["value"]: #if raster properties are preserved
                             nodenumber+=1
                             rastername=_raster_slicestring(str(raster_dict["value"]["uri"]))
-                            G.node(str(nodenumber),rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                            G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                            if rastername is not None:
+                                G.node(str(nodenumber),rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                                G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
                         elif "datasetName" in raster_dict["value"]: #local image location
                             if "name" in raster_dict["value"]["datasetName"]:
                                 nodenumber+=1
@@ -4168,13 +4171,15 @@ class ImageryLayer(Layer):
                 elif "url" in raster_dict.keys(): #Handling Raster
                     nodenumber+=1
                     rastername=_raster_slicestring(str(raster_dict["url"]))
-                    G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                    G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                    if rastername is not None:
+                        G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                        G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
                 elif "uri" in raster_dict.keys():
                     nodenumber+=1
                     rastername=_raster_slicestring(str(raster_dict["uri"]))
-                    G.node(str(nodenumber),rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                    G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                    if rastername is not None:
+                        G.node(str(nodenumber),rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                        G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
                 elif "datasetName" in raster_dict.keys() and "name"  in raster_dict["datasetName"]: #if RasterInfo rf has data in it
                     rastername = str(raster_dict["datasetName"]["name"])
                     nodenumber+=1
@@ -4517,6 +4522,9 @@ class ImageryLayer(Layer):
         return dictdata
 
     def _repr_jpeg_(self):
+        if self._uses_gbl_function:
+            return self._repr_svg_()
+
         if self.tiles_only:
             fig = self.render_tilesonly_layer()
             try:
