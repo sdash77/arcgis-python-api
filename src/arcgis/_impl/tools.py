@@ -781,7 +781,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
             params = {}
             params["pointLayer"] = point_layer
             params["polygonLayer"] = polygon_layer
-
+            if bin_type is not None:
+                params['binType'] = bin_type
+            if bin_size is not None:
+                params['binSize'] = bin_size
+            if bin_size_unit is not None:
+                params['binSizeUnit'] = bin_size_unit
             if keep_boundaries_with_no_points is not None:
                 params["keepBoundariesWithNoPoints"] = keep_boundaries_with_no_points
             if summary_fields is not None:
@@ -809,9 +814,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                             percent_points=percent_points,
                                             output_name=output_name,
                                             context=context,
-                                            bin_type='SQUARE',
-                                            bin_size=None,
-                                            bin_size_unit=None,
+                                            bin_type=bin_type,
+                                            bin_size=bin_size,
+                                            bin_size_unit=bin_size_unit,
                                             gis=self._gis,
                                             future=True)
         gpjob._is_fa = True

@@ -445,7 +445,13 @@ class License(object):
         """
         if hasattr(user, 'username'):
             user = user.username
-        item_id = self.properties['listing']['itemId']
+        if 'listing' in self.properties:
+            item_id = self.properties['listing']['itemId']
+        else:
+            return []
+        #elif 'provision' in self.properties and 'itemId' in self.properties['provision']:
+        #    item_id = self.properties['provision']['itemId']
+
         url = "%scontent/listings/%s/userEntitlements/%s" % (
             self._gis._portal.resturl,
             item_id,
