@@ -342,7 +342,12 @@ def denorm_image(imagetensor_batch, mean=None, std=None):
 
 def predict_batch(self, imagetensor_batch):
     if self._backend == 'pytorch':
-        predictions = self.learn.model.eval()(imagetensor_batch.to(self._device).float()).detach()
+        predictions = self.learn.model.eval()(imagetensor_batch.to(self._device).float())
+        if type(predictions) in [tuple, list]:
+            predictions = [x.detach() for x in predictions]
+        else:
+            predictions = predictions.detach()
+        #predictions = self.learn.model.eval()(imagetensor_batch.to(self._device).float()).detach()
         return predictions
     elif self._backend == 'tensorflow':
         from .common_tf import predict_batch_tf

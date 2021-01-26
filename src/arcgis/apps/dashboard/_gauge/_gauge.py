@@ -11,8 +11,7 @@ class Gauge(_BaseWidget):
     =========================   ===========================================
     **Argument**                **Description**
     -------------------------   -------------------------------------------
-    item                        Required Item object. Item from which the
-                                Indicator is constructed. Item object can
+    item                        Required Portal Item object. Item object can
                                 be a Feature Layer or a MapWidget.
     -------------------------   -------------------------------------------
     name                        Optional string. Name of the gauge widget.

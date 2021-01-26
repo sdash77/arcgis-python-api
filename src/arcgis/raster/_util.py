@@ -591,3 +591,41 @@ def _upload_imagery_enterprise(files, raster_type_name=None, gis=None):
                     item_ids_list.append(item_id)
 
     return item_ids_list
+
+def _get_extent(extdict=None):
+    """
+    This method is used to convert the JSON presentation of extent (with spatial reference)
+    to arcpy.Extent object, so that it can be set to the GP environment.
+    :param context: context parameter contains output spatial reference info
+    :return geometry object and geometry coordinate
+    """
+    try:
+        import arcpy
+    except:
+        return None, None
+    outext = arcpy.Extent
+    extsr = ""
+    try:
+        if extdict is None: 
+            return outext, extsr
+        # Note: creating geometry directly from envelope JSON gave me a _passthrough
+        # which does not provide a extent object.
+        if "xmin" in extdict and "xmax" in extdict and "ymin" in extdict and "ymax" in extdict:
+            xmin = extdict["xmin"]
+            ymin = extdict["ymin"]
+            xmax = extdict["xmax"]
+            ymax = extdict["ymax"]
+            extjson = {"rings": [
+                [[xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin],
+                    [xmin, ymin]]]
+            }
+            if "spatialReference" in extdict:
+                srdict = extdict["spatialReference"]
+                extjson.update({"spatialReference": srdict})
+                extsr = srdict
+
+            polygon = arcpy.AsShape(extjson, True)
+            outext = polygon.extent
+        return outext, extsr
+    except:
+        return outext, extsr

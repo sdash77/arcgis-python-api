@@ -132,8 +132,8 @@ class NumberSelector(object):
     range                       Optional boolean. True to create a range
                                 selector.
     -------------------------   -------------------------------------------
-    display_type                Optional Portal Item. Item is required for
-                                categories from "spinner", "slider", "input".
+    display_type                Optional String. Display type can be from
+                                "spinner", "slider", "input".
     -------------------------   -------------------------------------------
     label                       Optional string. Label for the selector.
     =========================   ===========================================
@@ -496,8 +496,8 @@ class CategorySelector(object):
         item                        Required Portal Item.
                                     Dropdown values will be populated from this.
         -------------------------   -------------------------------------------
-        category_field              Optional String.
-                                    This
+        category_field              Optional String. This string denotes the
+                                    field to pick the values from.
         -------------------------   -------------------------------------------
         max_features                Optional Integer.
                                     Set max features to display.

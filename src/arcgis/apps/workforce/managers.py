@@ -854,6 +854,8 @@ class AssignmentIntegrationManager:
         # A version 2 Workforce project stores integrations in a table in its base feature layer collection
         if self.project._is_v2_project:
             self.integration_table = project.integrations_table
+        elif "assignmentIntegrations" not in self.project._item_data:
+            self.project._item_data["assignmentIntegrations"] = []
 
     def get(self, integration_id):
         """

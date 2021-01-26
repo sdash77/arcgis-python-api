@@ -1,0 +1,104 @@
+{% set name = "arcgis_learn" %}
+{% set version = "1.8.4" %}
+
+package:
+  name: {{ name | lower }}
+  version: {{ version }}
+
+build:
+  number: 4
+#  noarch: python
+
+requirements:
+  build:
+    #    - {{ pin_compatible('numpy') }}
+    - arcgis=1.8.3
+    - fastai=1.0.60
+    - fastprogress=0.2.3
+    - fasttext=0.9.2
+    - gdal=2.3.3
+    - graphviz=2
+    - h5py=2.10.0
+    - imagecodecs=2020.5.30
+    - keras-gpu=2.3
+    - laspy=1.7.0
+    - libgdal=2.3.3
+    - libtiff=4.1.0
+    - onnx=1.7.0
+    - onnx-tf=1.5.0
+    - opencv=4.0.1 # [not win]
+    - opencv=4.5.0 # [win]
+    - pillow-simd=7.1.2
+    - plotly=4.5.4
+    - pyshp=2.1.0
+    - python
+    - pytorch=1.4.0
+    - scikit-learn=0.23.2
+    - scikit-image=0.17.2
+    - spacy=2.2.4
+    - tensorboardx=2.1
+    - tensorflow-gpu=2.1.0
+    - torch-cluster=1.5.4
+    - torch-geometric=1.5.0
+    - torch-scatter=2.0.4
+    - torch-sparse=0.6.1
+    - torch-spline-conv=1.2.0
+    - torchvision=0.5.0
+    - transformers=3.3.0
+
+  run:
+    #    - {{ pin_compatible('numpy') }}
+    - arcgis=1.8.3
+    - fastai=1.0.60
+    - fastprogress=0.2.3
+    - fasttext=0.9.2
+    - gdal=2.3.3
+    - graphviz=2
+    - h5py=2.10.0
+    - imagecodecs=2020.5.30
+    - keras-gpu=2.3
+    - laspy=1.7.0
+    - libgdal=2.3.3
+    - libtiff=4.1.0
+    - onnx=1.7.0
+    - onnx-tf=1.5.0
+    - opencv=4.0.1 # [not win]
+    - opencv=4.5.0 # [win]
+    - pillow-simd=7.1.2
+    - plotly=4.5.4
+    - pyshp=2.1.0
+    - python
+    - pytorch=1.4.0
+    - scikit-learn=0.23.2
+    - scikit-image=0.17.2
+    - spacy=2.2.4
+    - tensorboardx=2.1
+    - tensorflow-gpu=2.1.0
+    - torch-cluster=1.5.4
+    - torch-geometric=1.5.0
+    - torch-scatter=2.0.4
+    - torch-sparse=0.6.1
+    - torch-spline-conv=1.2.0
+    - torchvision=0.5.0
+    - transformers=3.3.0
+
+test:
+  imports:
+    - arcgis
+    - fastai
+    - gdal
+    - PIL
+    - torch
+    - torchvision
+    - skimage
+    - sklearn
+
+about:
+  home: https://developers.arcgis.com/python
+  license: Esri Master License Agreement (MLA)
+  summary: A Metapackage to simplify installation of the required deep learning dependecies for ArcGIS Python API.
+
+extra:
+  recipe-maintainers:
+    - SandeepKumar
+    - SurajBaloni

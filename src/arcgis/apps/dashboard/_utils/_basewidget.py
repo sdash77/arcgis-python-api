@@ -281,19 +281,23 @@ def _auto_calculate_width(elements):
     remaining_elements = len(elements)
 
     for el in elements:
-        if getattr(el, 'width', 1) != 1:
+        element_width = getattr(el, 'width', 1)
+        if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+            element_width = el.get('width', 1)
+
+        if element_width != 1:
             remaining_elements = remaining_elements - 1
-            available_width = available_width - getattr(el, 'width', 1)
+            available_width = available_width - element_width
 
     if remaining_elements > 0:
         available_width = float(available_width / remaining_elements)
 
     for el in elements:
-        if getattr(el, 'width', 1) == 1:
-            if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+        if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+            if el.get('width', 1) == 1:
                 el['width'] = available_width
-            else:
-                el.width = available_width
+        elif getattr(el, 'width', 1) == 1:
+            el.width = available_width
 
     return elements
 
@@ -304,19 +308,23 @@ def _auto_calculate_height(elements):
     remaining_elements = len(elements)
 
     for el in elements:
-        if getattr(el, 'height', 1) != 1:
+        element_height = getattr(el, 'height', 1)
+        if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+            element_height = el.get('height', 1)
+
+        if element_height != 1:
             remaining_elements = remaining_elements - 1
-            available_height = available_height - getattr(el, 'height', 1)
+            available_height = available_height - element_height
 
     if remaining_elements > 0:
         available_height = float(available_height / remaining_elements)
 
     for el in elements:
-        if getattr(el, 'height', 1) == 1:
-            if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+        if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+            if el.get('height', 1) == 1:
                 el['height'] = available_height
-            else:
-                el.height = available_height
+        elif getattr(el, 'height', 1) == 1:
+            el.height = available_height
 
     return elements
 

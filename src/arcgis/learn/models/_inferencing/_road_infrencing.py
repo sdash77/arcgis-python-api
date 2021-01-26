@@ -2,10 +2,11 @@ try:
     import os, json
     import numpy as np
     import torch
+    import torch.nn as nn
     import math
     from torch import tensor
+    from .util import variable_tile_size_check
     HAS_TORCH = True
-
 except Exception:
     HAS_TORCH = False
 
@@ -18,6 +19,30 @@ except Exception:
     pass
 
 
+def split_tensor(tensor, tile_size, stride): 
+    # based on # https://discuss.pytorch.org/t/seemlessly-blending-tensors-together/65235/9
+    mask = torch.ones_like(tensor)
+    softmax_mask = torch.ones_like(tensor[0][0].unsqueeze(0).unsqueeze(0))
+
+    unfold  = nn.Unfold(kernel_size=(tile_size, tile_size), stride=stride)
+    # Apply to mask and original image
+    mask_p  = unfold(softmax_mask)
+    patches = unfold(tensor)
+
+    patches = patches.reshape(3, tile_size, tile_size, -1).permute(3, 0, 1, 2)
+    if tensor.is_cuda:
+        patches_base = torch.zeros(patches.size(), device=tensor.get_device())
+    else: 
+        patches_base = torch.zeros(patches.size())
+
+    return mask_p, patches_base, (tensor.size(2), tensor.size(3)), patches
+
+def rebuild_tensor(input_tensor, mask_t, t_size, tile_size, stride):
+    input_tensor_permuted = input_tensor.permute(1, 2, 3, 0).reshape(-1, input_tensor.size(0)).unsqueeze(0)
+    fold = nn.Fold(output_size=(t_size[0], t_size[1]), kernel_size=(tile_size, tile_size), stride=stride)
+    output_tensor = fold(input_tensor_permuted)/fold(mask_t)
+    return output_tensor
+ 
 def calculate_rectangle_size_from_batch_size(batch_size):
     """
     calculate number of rows and cols to composite a rectangle given a batch size
@@ -175,6 +200,14 @@ class ChildImageClassifier:
                     "description": "Batch Size",
                 },
                 {
+                    'name': 'threshold',
+                    'dataType': 'numeric',
+                    'value': 0.5,
+                    'required': False,
+                    'displayName': 'Confidence Score Threshold [0.0, 1.0]',
+                    'description': 'Confidence score threshold value [0.0, 1.0]'
+                },
+                {
                     "name": "predict_background",
                     "dataType": "string",
                     "required": False,
@@ -184,15 +217,14 @@ class ChildImageClassifier:
                 },
             ]
         )
+        required_parameters = variable_tile_size_check(self.json_info, required_parameters)
         return required_parameters
 
     def getConfiguration(self, **scalars):
-        self.padding = int(
-            scalars.get("padding", self.json_info["ImageHeight"] // 4)
-        )  # Default padding Imageheight//4.
-        self.batch_size = (
-            int(math.sqrt(int(scalars.get("batch_size", 4)))) ** 2
-        )  # Default 4 batch_size
+        
+        self.tytx = int(scalars.get('tile_size', self.json_info['ImageHeight']))
+        self.padding = int(scalars.get("padding", self.json_info["ImageHeight"] // 4))  # Default padding Imageheight//4.
+        self.batch_size = int(math.sqrt(int(scalars.get("batch_size", 4)))) ** 2 # Default 4 batch_size
         self.predict_background = scalars.get("predict_background", "true").lower() in [
             "true",
             "1",
@@ -200,55 +232,21 @@ class ChildImageClassifier:
             "y",
             "yes",
         ]  # Default value True
-
-        (
-            self.rectangle_height,
-            self.rectangle_width,
-        ) = calculate_rectangle_size_from_batch_size(self.batch_size)
-        ty, tx = get_tile_size(
-            self.json_info["ImageHeight"],
-            self.json_info["ImageWidth"],
-            self.padding,
-            self.rectangle_height,
-            self.rectangle_width,
-        )
+        self.rectangle_height, self.rectangle_width = calculate_rectangle_size_from_batch_size(self.batch_size)
+        ty, tx = get_tile_size(self.tytx, self.tytx, self.padding, self.rectangle_height, self.rectangle_width)
+        
+        self.thres = float(scalars.get('threshold', 0.5)) ## Default 0.5 threshold.
 
         return {
             "extractBands": tuple(self.json_info["ExtractBands"]),
             "padding": self.padding,
             "tx": tx,
             "ty": ty,
+            "threshold": self.thres,
             "fixedTileSize": 1,
         }
 
-    def updatePixels(self, tlc, shape, props, **pixelBlocks):  # 8 x 224 x 224 x 3
-        input_image = pixelBlocks["raster_pixels"].astype(np.float32)
-        batch, batch_height, batch_width = tile_to_batch(
-            input_image,
-            self.json_info["ImageHeight"],
-            self.json_info["ImageWidth"],
-            self.padding,
-            fixed_tile_size=True,
-            batch_height=self.rectangle_height,
-            batch_width=self.rectangle_width,
-        )
-
-        semantic_predictions = self.pixel_classify_image(
-            self.model,
-            batch,
-            self.device,
-            classes=[clas["Name"] for clas in self.json_info["Classes"]],
-            predict_bg=self.predict_background,
-            model_info=self.json_info,
-        )
-        semantic_predictions = batch_to_tile(
-            semantic_predictions.unsqueeze(dim=1).cpu().numpy(),
-            batch_height,
-            batch_width,
-        )
-        return semantic_predictions
-
-    def pixel_classify_image(self, model, tiles, device, classes, predict_bg, model_info):
+    def pixel_classify_image(self, model, tiles, device, classes, predict_bg, model_info, threshold):
         model = model.to(device).eval()
         #logger.info("Tiles length is ", len(tiles))
         normed_batch_tensor = tensor(tiles).to(device).float()
@@ -261,7 +259,34 @@ class ChildImageClassifier:
         #if not predict_bg:
         #    road_pixels[road_pixels == 0] = -1
         if predict_bg:
-            return output.max(dim=1)[1]
+            # return output.max(dim=1)[1]
+            return torch.where(output.softmax(dim=1).gt(threshold), tensor(1).to(device), tensor(0).to(device))[:, 1, :, :]
         else:
             output[:, 0] = -1
-            return output.max(dim=1)[1]
+            return torch.where(output.softmax(dim=1).gt(threshold), tensor(1).to(device), tensor(0).to(device))[:, 1, :, :]
+            # return output.max(dim=1)[1]
+
+        
+    def updatePixels(self, tlc, shape, props, **pixelBlocks):
+        
+        input_image = pixelBlocks["raster_pixels"].astype(np.float32)
+        input_image_tensor = tensor(input_image).to(self.device).float()
+        
+        kernel_size = self.tytx #json_info["ImageHeight"]
+        stride = 2 * self.padding
+
+        # Split image into overlapping tiles
+        mask_t, base_tensor, t_size, patches = split_tensor(input_image_tensor.unsqueeze(0), kernel_size, stride)
+        
+        # predict
+        with torch.no_grad():
+            output, _ = self.model(patches)
+
+        # get probablity of roads - class 1
+        softmax_output = output.softmax(dim=1)[:, [1], :, :] # probability of road (class 1)
+
+        # merge predictions from overlapping chips
+        softmax_surface = rebuild_tensor(softmax_output, mask_t, t_size, kernel_size, stride)
+        predictions = (softmax_surface.gt(self.thres) * tensor(1.))
+        pad = self.padding
+        return predictions[0][0][pad:-pad, pad:-pad].unsqueeze(0).cpu().numpy()

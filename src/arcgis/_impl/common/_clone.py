@@ -909,7 +909,7 @@ class _DeepCloner():
 
         # If the item is a feature collection get the FeatureCollectionDefintion
         elif item['type'] == 'Feature Collection':
-            return _FeatureCollectionDefinition(self.target, self._clone_mapping, dict(item), data=item.get_data(), thumbnail=None, portal_item=item, folder=self.folder, search_existing=self._search_existing_items, owner=self.owner)
+            return _FeatureCollectionDefinition(self.target, self._clone_mapping, dict(item), data=item.get_data(), thumbnail=None, portal_item=item, folder=self.folder, copy_data=self._copy_data, search_existing=self._search_existing_items, owner=self.owner)
 
         # If the item is a pro map get the ProMapDefintion
         elif item['type'] == 'Pro Map':
@@ -1338,7 +1338,7 @@ class _FeatureCollectionDefinition(_TextItemDefinition):
     Represents the definition of a feature collection within ArcGIS Online or Portal.
     """
 
-    def __init__(self, target, clone_mapping, info, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, item_extent=None, copy_data=False, search_existing=True, owner=None):
+    def __init__(self, target, clone_mapping, info, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, item_extent=None, copy_data=True, search_existing=True, owner=None):
         super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing, owner)
         self.copy_data = copy_data
 

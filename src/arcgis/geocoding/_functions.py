@@ -396,7 +396,7 @@ class Geocoder(_GISResource):
         if preferred_label_values is not None:
             params['preferredLabelValues'] = preferred_label_values
 
-        resp = self._con.post(url, params, token=self._token)
+        resp = self._con.post(url, params)
         if resp is not None and as_featureset:
             sr = resp['spatialReference']
 

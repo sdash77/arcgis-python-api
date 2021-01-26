@@ -5796,6 +5796,23 @@ def detect_change_using_change_analysis_raster(input_change_analysis_raster=None
                                                max_number_of_changes=1, 
                                                output_name=None,
                                                context=None,
+                                               segment_date='BEGINNING_OF_SEGMENT', 
+                                               change_direction='ALL', 
+                                               filter_by_year=False, 
+                                               min_year=None, 
+                                               max_year=None, 
+                                               filter_by_duration=False, 
+                                               min_duration=None, 
+                                               max_duration=None, 
+                                               filter_by_magnitude=False, 
+                                               min_magnitude=None, 
+                                               max_magnitude=None,
+                                               filter_by_start_value=None,
+                                               min_start_value=None,
+                                               max_start_value=None,
+                                               filter_by_end_value=None,
+                                               min_end_value=None,
+                                               max_end_value=None,
                                                *,
                                                gis=None,
                                                future=False,
@@ -5803,31 +5820,36 @@ def detect_change_using_change_analysis_raster(input_change_analysis_raster=None
 
     """
     Function generates a raster containing pixel change information using the 
-    output change analysis raster from the arcgis.raster.analytics.analyze_changes_using_ccdc function.
+    output change analysis raster from the arcgis.raster.analytics.analyze_changes_using_ccdc 
+    or arcgis.raster.analytics.analyze_changes_using_landtrendr function.
     Function available in ArcGIS Image Server 10.8.1 and higher.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_change_analysis_raster             Required ImageryLayer object. The raster generated from the analyze_changes_using_ccdc .
+    input_change_analysis_raster             Required ImageryLayer object. The raster generated from the analyze_changes_using_ccdc or analyze_changes_using_landtrendr.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
     change_type                              Optional String. Specifies the change information to calculate.
 
-                                                - TIME_OF_LATEST_CHANGE - Each pixel will contain the date of the most recent change for that pixel in the time series.
+                                                - TIME_OF_LATEST_CHANGE - Each pixel will contain the date of the most recent change for that pixel in the time series. This is the default.
                                                 - TIME_OF_EARLIEST_CHANGE - Each pixel will contain the date of the earliest change for that pixel in the time series.
                                                 - TIME_OF_LARGEST_CHANGE - Each pixel will contain the date of the most significant change for that pixel in the time series.
                                                 - NUM_OF_CHANGES - Each pixel will contain the total number of times the pixel changed in the time series.
+                                                - TIME_OF_LONGEST_CHANGE - Each pixel will contain the date of change at the end of the longest transition segment in the time series. Option available in ArcGIS Image Server 10.9 and higher.
+                                                - TIME_OF_SHORTEST_CHANGE - Each pixel will contain the date of change at the end of the shortest transition segment in the time series. Option available in ArcGIS Image Server 10.9 and higher.
+                                                - TIME_OF_FASTEST_CHANGE - Each pixel will contain the date of change at the end of the transition that occurred most quickly. Option available in ArcGIS Image Server 10.9 and higher.
+                                                - TIME_OF_SLOWEST_CHANGE - Each pixel will contain the date of change at the end of the transition that occurred most slowly. Option available in ArcGIS Image Server 10.9 and higher.
 
                                              Example:
-                                                  "TIME_OF_LATEST_CHANGE"
+                                                "TIME_OF_LATEST_CHANGE"
     ------------------------------------     --------------------------------------------------------------------
     max_number_of_changes                    Optional Integer. The maximum number of changes per pixel that will 
-                                             be calculated when the change_type parameter is set to 
-                                             TIME_OF_LATEST_CHANGE, TIME_OF_EARLIEST_CHANGE, or TIME_OF_LARGEST_CHANGE. 
-                                             This number corresponds to the number of bands in the output raster. 
+                                             be calculated. This number corresponds to the number of bands in the output raster. 
                                              The default is 1, meaning only one change date will be calculated, 
                                              and the output raster will contain only one band.
+
+                                             This parameter is not available when the change_type parameter is set to NUM_OF_CHANGES.
 
                                              Example:
                                                 3
@@ -5884,6 +5906,180 @@ def detect_change_using_change_analysis_raster(input_change_analysis_raster=None
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
+    segment_date                             Optional string. Specifies whether to extract the date at the beginning 
+                                             of a change segment, or the end. 
+
+                                             This parameter is available only when the input change analysis raster is 
+                                             the output from the arcgis.raster.analytics.analyze_changes_using_landtrendr function.
+
+                                                - BEGINNING_OF_SEGMENT - Extract the date at the beginning of a change segment. This is the default.
+                                                - END_OF_SEGMENT - Extract the date at the end of a change segment. 
+
+                                             Example:
+                                                "END_OF_SEGMENT"
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    change_direction                         Optional string. The direction of change to be included in the analysis. 
+                                             For example, choose Increasing to only extract date of change information for 
+                                             periods where the change is in the positive or increasing direction. 
+
+                                             This parameter is available only when the input change analysis raster 
+                                             is the output from the analyze_changes_using_landtrendr function. 
+
+                                                - ALL - All change directions will be included in the output. This is the default.
+                                                - INCREASE - Only change in the positive or increasing direction will be included in the output.
+                                                - DECREASE - Only change in the negative or decreasing direction will be included in the output. 
+
+                                             Example:
+                                                "DECREASE"
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_year                           Optional boolean. Specifies whether to filter by a range of years.
+
+                                                - True - Filter results such that only changes that occurred within a specific range of years is included in the output. 
+                                                - False - Do not filter results by year. This is the default.
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_year                                 Optional int. The earliest year to use to filter results. This parameter 
+                                             is required if the filter_by_year parameter is set to True. 
+
+                                             Example:
+                                                2000
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_year                                 Optional int. The latest year to use to filter results. This parameter 
+                                             is required if the filter_by_year parameter is set to True. 
+
+                                             Example:
+                                                2005
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_duration                       Optional boolean. Specifies whether to filter by the change duration. 
+                                             This parameter is available only when the input change analysis raster 
+                                             is the output from the analyze_changes_using_landtrendr function.
+
+                                                - True - Filter results by duration such that only the changes that lasted a given amount of time will be included in the output. 
+                                                - False - Do not filter results by duration. This is the default. 
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_duration                             Optional float. The minimum number of consecutive years to include in 
+                                             the results. This parameter is required if the filter_by_duration parameter 
+                                             is set to True 
+
+                                             Example:
+                                                2
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_duration                             Optional float. The maximum number of consecutive years to include 
+                                             in the results. This parameter is required if the filter_by_duration 
+                                             parameter is set to True 
+
+                                             Example:
+                                                4
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_magnitude                      Optional boolean. Specifies whether to filter by change magnitude.
+
+                                                - True - Filter results by magnitude such that only the changes of a given magnitude will be included in the output.
+                                                - False - Do not filter results by magnitude. This is the default. 
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_magnitude                            Optional float. The minimum magnitude to include in the results. 
+                                             This parameter is required if the filter_by_magnitude 
+                                             parameter is set to True. 
+
+                                             Example:
+                                                0.25
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_magnitude                            Optional float. The maximum magnitude to include in the results. 
+                                             This parameter is required if the filter_by_magnitude parameter is set 
+                                             to True.
+
+                                             Example:
+                                                3
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_start_value                    Optional boolean. Specifies whether to filter by start value. This 
+                                             parameter is available only when the input change analysis raster 
+                                             is the output from the arcgis.raster.analytics.analyze_changes_using_landtrendr function. 
+
+                                                - True - Filter results by start value so that only the change that starts with value defined by a range.
+                                                - False - Do not filter by start value. This is the default.
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_start_value                          Optional float. The minimum value that defines the range of start value. 
+                                             This parameter is required if the filter_by_start_value parameter is set 
+                                             to True.
+
+                                             Example:
+                                                0.75
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_start_value                          Optional float. The maximum value that defines the range of start value. 
+                                             This parameter is required if the filter_by_start_value parameter is 
+                                             set to True.
+
+                                             Example:
+                                                0.9
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_end_value                      Optional boolean. Specifies whether to filter by end value. This parameter 
+                                             is available only when the input change analysis raster is the output 
+                                             from the arcgis.raster.analytics.analyze_changes_using_landtrendr function.
+
+                                                - True - Filter results by end value so that only the change that ends with value defined by a range.
+                                                - False - Do not filter results by end value. This is the default. 
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_end_value                            Optional float. The minimum value that defines the range of end value. 
+                                             This parameter is required if the filter_by_end_value parameter is set 
+                                             to True.
+
+                                             Example:
+                                                -0.12
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_end_value                            Optional float. The maximum value that defines the range of end value. 
+                                             This parameter is required if the filter_by_end_value parameter is set 
+                                             to True.
+
+                                             Example:
+                                                0.35
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -5929,6 +6125,23 @@ def detect_change_using_change_analysis_raster(input_change_analysis_raster=None
     return gis._tools.rasteranalysis.detect_change_using_change_analysis_raster(input_change_analysis_raster=input_change_analysis_raster,
                                                                                 change_type=change_type,
                                                                                 max_number_of_changes=max_number_of_changes,
+                                                                                segment_date=segment_date, 
+                                                                                change_direction=change_direction, 
+                                                                                filter_by_year=filter_by_year, 
+                                                                                min_year=min_year, 
+                                                                                max_year=max_year, 
+                                                                                filter_by_duration=filter_by_duration, 
+                                                                                min_duration=min_duration, 
+                                                                                max_duration=max_duration, 
+                                                                                filter_by_magnitude=filter_by_magnitude, 
+                                                                                min_magnitude=min_magnitude, 
+                                                                                max_magnitude=max_magnitude,
+                                                                                filter_by_start_value=filter_by_start_value,
+                                                                                min_start_value=min_start_value,
+                                                                                max_start_value=max_start_value,
+                                                                                filter_by_end_value=filter_by_end_value,
+                                                                                min_end_value=min_end_value,
+                                                                                max_end_value=max_end_value,
                                                                                 output_name=output_name,
                                                                                 context=context,
                                                                                 future=future,
@@ -6306,6 +6519,250 @@ def merge_multidimensional_rasters(input_multidimensional_rasters,
                                                                     future=future,
                                                                     **kwargs)
 
+def analyze_changes_using_landtrendr(input_multidimensional_raster,
+                                      processing_band=None, 
+                                      snapping_date='06-30', 
+                                      max_num_segments=5, 
+                                      vertex_count_overshoot=2, 
+                                      spike_threshold=0.9, 
+                                      recovery_threshold=0.25, 
+                                      prevent_one_year_recovery=True, 
+                                      increasing_recovery_trend=True, 
+                                      min_num_observations=6, 
+                                      best_model_proportion=1.25, 
+                                      pvalue_threshold=0.01, 
+                                      output_other_bands=False,
+                                      output_name=None,
+                                      context=None,
+                                      *,
+                                      gis=None,
+                                      future=False,
+                                      **kwargs):
+
+    """
+    Function evaluates changes in pixel values over time using the Landsat-based detection of trends 
+    in disturbance and recovery (LandTrendr) method and generates a change analysis raster containing the model results.
+    Function available in ArcGIS Image Server 10.9 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
+                                             Portal Item can be passed.
+    ------------------------------------     --------------------------------------------------------------------
+    processing_band                          Optional string. The band to use for segmenting the pixel value 
+                                             trajectories over time. Choose the band that will best capture the 
+                                             changes in the feature you want to observe. 
+
+                                             If no band value is specified and the input is multiband imagery, 
+                                             the first band in the multiband image will be used. 
+
+                                             Example:
+                                                  "Band_1"
+    ------------------------------------     --------------------------------------------------------------------
+    snapping_date                            Optional string. The date used to select a slice for each year in the 
+                                             input multidimensional dataset. The slice with the date closest to 
+                                             the snapping date will be selected. This parameter is required if 
+                                             the input dataset contains sub-yearly data. 
+
+                                             The default is "06-30" (or June 30), approximately midway through a calendar year. 
+
+                                             Example:
+                                                "06-30"
+    ------------------------------------     --------------------------------------------------------------------
+    max_num_segments                         Optional int. The maximum number of segments to be fitted to the 
+                                             time series for each pixel. The default is 5. 
+
+                                             Example:
+                                                5
+    ------------------------------------     --------------------------------------------------------------------
+    vertex_count_overshoot                   Optional int. The number of additional vertices beyond 
+                                             max_num_segments + 1 that can be used to fit the model during 
+                                             the initial stage of identifying vertices. Later in the modeling 
+                                             process, the number of additional vertices will be reduced to 
+                                             max_num_segments + 1. The default is 2. 
+
+                                             Example:
+                                                2
+    ------------------------------------     --------------------------------------------------------------------
+    spike_threshold                          Optional float. The threshold to use for dampening spikes or anomalies 
+                                             in the pixel value trajectory. The value must range between 0 and 1, 
+                                             where 1 means no dampening. The default is 0.9. 
+
+                                             Example:
+                                                0.9
+    ------------------------------------     --------------------------------------------------------------------
+    recovery_threshold                       Optional float. The recovery threshold value, in years. If a segment 
+                                             has a recovery rate that is faster than 1/recovery threshold, the segment 
+                                             is discarded and not included in the time series model. The value must 
+                                             range between 0 and 1. The default is 0.25. 
+
+                                             Example:
+                                                0.25
+    ------------------------------------     --------------------------------------------------------------------
+    prevent_one_year_recovery                Optional boolean. Specifies whether segments that exhibit a one year 
+                                             recovery will be excluded. 
+
+                                                - True - Segments that exhibit a one year recovery will be excluded. This is the default. 
+
+                                                - False - Segments that exhibit a one year recovery will not be excluded. 
+
+                                             Example:
+                                                True
+    ------------------------------------     --------------------------------------------------------------------
+    increasing_recovery_trend                Optional boolean. Specifies whether the recovery has an increasing (positive) trend. 
+
+                                                - True - The recovery has an increasing trend. This is the default. 
+
+                                                - False - The recovery has a decreasing trend. 
+
+                                             Example:
+                                                True
+    ------------------------------------     --------------------------------------------------------------------
+    min_num_observations                     Optional int. The minimum number of valid observations required to 
+                                             perform fitting. The number of years in the input multidimensional 
+                                             dataset must be equal to or greater than this value. The default is 6. 
+
+                                             Example:
+                                                6
+    ------------------------------------     --------------------------------------------------------------------
+    best_model_proportion                    Optional float. The best model proportion value. During the model 
+                                             selection process, the tool will calculate the p-value for each 
+                                             model and select a model that has the most vertices while 
+                                             maintaining the smallest (most significant) p-value based on this 
+                                             proportion value. A value of 1 means the model has the lowest 
+                                             p-value but may not have a high number of vertices. 
+                                             The default is 1.25. 
+
+                                             Example:
+                                                1.25
+    ------------------------------------     --------------------------------------------------------------------
+    pvalue_threshold                         Optional float. The p-value threshold for a model to be selected. 
+                                             After the vertices are detected in the initial stage of the model 
+                                             fitting, the tool will fit each segment and calculate the p-value 
+                                             to determine the significance of the model. On the next iteration, 
+                                             the model will decrease the number of segments by one and 
+                                             recalculate the p-value. This will continue and, if the p-value 
+                                             is smaller than the value specified in this parameter, the model 
+                                             will be selected and the tool will stop searching for a better model. 
+                                             If no such model is selected, the tool will select a model with a 
+                                             p-value smaller than the lowest p-value × best model proportion value. 
+                                             The default is 0.01. 
+
+                                             Example:
+                                                0.01
+    ------------------------------------     --------------------------------------------------------------------
+    output_other_bands                       Optional boolean. Specifies whether other bands will be included in the 
+                                             segmentation process.
+
+                                                - True - Other bands will be included. The segmentation and vertices information from the initial segmentation band specified in the processing_band parameter will also be fitted to the remaining bands in the multiband images. The model results will include the segmentation band first, then the remaining bands. 
+
+                                                - False - Other bands will not be included. This is the default. 
+
+                                             Example:
+                                                2
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional. If not provided, an Image Service is created by the method and used as the output raster. 
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution. 
+
+                                             context parameter overwrites values set through arcgis.env parameter
+                                         
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+                                            
+                                                Example: 
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6, 
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be 
+                                                projected into the output spatial reference.
+                                                
+                                                Example: 
+                                                    {"outSR": {spatial reference}}
+
+                                              - Snap Raster (snapRaster): The output raster will have its 
+                                                cells aligned with the specified snap raster.
+                                                        
+                                                Example: 
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                                specified by cell size.
+
+                                                Example:
+                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total 
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS object. If not specified, the currently active connection
+                                             is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+    ====================================     ====================================================================
+
+    :return: Imagery layer item
+
+    .. code-block:: python
+
+            # Usage Example 1: 
+            analyze_changes_using_landtrendr_op = analyze_changes_using_landtrendr(input_multidimensional_raster=input_multidimensional_raster,
+                                                                               processing_band="Band_1")
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.analyze_changes_using_landtrendr(input_multidimensional_raster=input_multidimensional_raster,
+                                                                       processing_band=processing_band, 
+                                                                       snapping_date=snapping_date, 
+                                                                       max_num_segments=max_num_segments, 
+                                                                       vertex_count_overshoot=vertex_count_overshoot, 
+                                                                       spike_threshold=spike_threshold, 
+                                                                       recovery_threshold=recovery_threshold, 
+                                                                       prevent_one_year_recovery=prevent_one_year_recovery, 
+                                                                       increasing_recovery_trend=increasing_recovery_trend, 
+                                                                       min_num_observations=min_num_observations, 
+                                                                       best_model_proportion=best_model_proportion, 
+                                                                       pvalue_threshold=pvalue_threshold, 
+                                                                       output_other_bands=output_other_bands,
+                                                                       output_name=output_name,
+                                                                       context=context,
+                                                                       future=future,
+                                                                       **kwargs)
+
 #def transfer_files(input_files, 
 #                   output_datastore=None, 
 #                   tf_filter=None,
@@ -6392,4 +6849,160 @@ def merge_multidimensional_rasters(input_multidimensional_rasters,
 #                                                    context=context,
 #                                                    future=future,
 #                                                    **kwargs)
+def zonal_statistics_as_table(input_zone_raster_or_features, 
+                              input_value_raster, 
+                              zone_field, 
+                              ignore_nodata=True, 
+                              statistic_type='ALL', 
+                              percentile_values=[90],
+                              process_as_multidimensional=False,
+                              percentile_interpolation_type="AUTO_DETECT",
+                              output_name=None, 
+                              context=None,
+                              *,
+                              gis=None,
+                              future=False,
+                              **kwargs):
 
+    """
+    Calculates  the values of a raster within the zones of another dataset and reports the results to a table.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_zone_raster_or_features            Required. The input that defines the zones. Both raster and feature 
+                                             can be used for the zone input.
+    ------------------------------------     --------------------------------------------------------------------
+    input_value_raster                       Required raster. Raster that contains the values on which to summarize a statistic.
+    ------------------------------------     --------------------------------------------------------------------
+    zone_field                               Required parameter.  The field that defines each zone. It can be an 
+                                             integer or a string field of the zone dataset.
+    ------------------------------------     --------------------------------------------------------------------
+    ignore_nodata                            Optional boolean. Denotes whether NoData values in the value input 
+                                             will influence the results of the zone that they fall within.
+                                             true - Within any particular zone, only cells that have a value in 
+                                             the input value raster will be used in determining the output value 
+                                             for that zone. NoData cells in the value raster will be ignored in 
+                                             the statistic calculation. This is the default.
+                                             
+                                             false - Within any particular zone, if any NoData cells exist in the 
+                                             value raster, it is deemed that there is insufficient information to 
+                                             perform statistical calculations for all the cells in that zone; 
+                                             therefore, the entire zone will receive the NoData value on the output raster.
+    ------------------------------------     --------------------------------------------------------------------
+    statistic_type                           Optional string.  Choose the statistic to calculate.The available options 
+                                             when the value raster is integer are ALL, MEAN, MAJORITY, MAXIMUM, MEDIAN, 
+                                             MINIMUM, MINORITY, PERCENTILE, RANGE, STD, SUM, VARIETY,  
+                                             MIN_MAX, MEAN_STD, and  MIN_MAX_MEAN.
+                                             If the value raster is float, the options are ALL, MEAN, MAXIMUM, MINIMUM, 
+                                             RANGE, STD, and SUM.
+
+                                             ALL- All of the statistics will be calculated. 
+                                             This is the default.
+
+                                             MEAN-Calculates the average of all cells in the raster layer to be summarized that
+                                             belong to the same zone as the output cell.
+
+                                             MAJORITY- Determines the value that occurs most often of all cells in the raster 
+                                             layer to be summarized that belong to the same zone as the output cell.
+
+                                             MAXIMUM- Determines the largest value of all cells in the raster layer 
+                                             to be summarized that belong to the same zone as the output cell.
+
+                                             MEDIAN- Determines the median value of all cells in the raster layer 
+                                             to be summarized that belong to the same zone as the output cell.
+
+                                             MINIMUM- Determines the smallest value of all cells in the raster 
+                                             layer to be summarized that belong to the same zone as the output cell.
+
+                                             MINORITY- Determines the value that occurs least often of all cells in 
+                                             the raster layer to be summarized that belong to the same zone as the 
+                                             output cell.
+
+                                             PERCENTILE - Calculates a percentile of all cells in the value raster 
+                                             that belong to the same zone as the output cell. The 90th percentile is calculated by default. 
+                                             You can specify other values (from 0 to 100) using the Percentile Values parameter.
+
+                                             RANGE- Calculates the difference between the largest and smallest value of all 
+                                             cells in the raster layer to be summarized that belong to the same zone 
+                                             as the output cell.
+
+                                             STD - Calculates the standard deviation of all cells in 
+                                             the raster layer to be summarized that belong to the same zone as the output cell.
+
+                                             SUM- Calculates the total value of all cells in the raster layer to be 
+                                             summarized that belong to the same zone as the output cell.
+
+                                             VARIETY- Calculates the number of unique values for all cells in the raster 
+                                             layer to be summarized that belong to the same zone as the output cell.
+
+                                             MIN_MAX - Both the minimum and maximum statistics are calculated.
+
+                                             MEAN_STD -  Both the mean and standard deviation statistics 
+                                             are calculated.
+
+                                             MIN_MAX_MEAN - The minimum, maximum and mean statistics are calculated.
+    ------------------------------------     --------------------------------------------------------------------
+    percentile_values                        Optional list of double values.
+                                             The percentile to calculate. The default is 90, for the 90th percentile.
+                                             The values can range from 0 to 100. The 0th percentile is essentially 
+                                             equivalent to the Minimum statistic, and the 100th Percentile is equivalent to 
+                                             Maximum. A value of 50 will produce essentially the same result as the Median statistic.
+                                             This option is only available if the Statistics Type parameter is set to PERCENTILE or ALL.
+    ------------------------------------     --------------------------------------------------------------------
+    process_as_multidimensional              Optional bool, Determines how the input rasters will be processed if they 
+                                             are multidimensional.
+                                             False - Statistics will be calculated from the current slice of a 
+                                             multidimensional image service. This is the default.
+                                             True - Statistics will be calculated for all dimensions (such as time or depth) 
+                                             of a multidimensional image service.
+    ------------------------------------     --------------------------------------------------------------------
+    percentile_interpolation_type            Optional str. Determines the type of percentile interpolation type when the 
+                                             number of values from the input value raster to be calculated are even.
+
+                                                - AUTO_DETECT - If the input value raster has integer pixel type, the 
+                                                                NEAREST method is used. If the input value raster 
+                                                                has floating point pixel type, then the LINEAR 
+                                                                method is used. This is the default.
+                                                - NEAREST - Nearest value to the desired percentile. In this case, 
+                                                            the output pixel type is same as that of the input value 
+                                                            raster.
+                                                - LINEAR - Weighted average of two surrounding values from the 
+                                                            desired percentile. In this case, the output pixel 
+                                                            type is floating point.
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional string. Name of the output feature item or table item to be created.
+                                             If not provided, a random name is generated by the method and used as 
+                                             the output name. 
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS object. If not specified, the currently active connection
+                                             is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ====================================     ====================================================================
+
+    :return: Feature Layer
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.rasteranalysis.zonal_statistics_as_table(input_zone_raster_or_features=input_zone_raster_or_features, 
+                                                               input_value_raster=input_value_raster, 
+                                                               output_name=output_name,
+                                                               zone_field=zone_field, 
+                                                               ignore_nodata=ignore_nodata, 
+                                                               statistic_type=statistic_type, 
+                                                               percentile_values=percentile_values,
+                                                               process_as_multidimensional=process_as_multidimensional,
+                                                               percentile_interpolation_type=percentile_interpolation_type,
+                                                               context=context,
+                                                               future=future,
+                                                               **kwargs)
