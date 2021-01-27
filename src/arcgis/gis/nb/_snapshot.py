@@ -198,9 +198,10 @@ class SnapshotManager(object):
                 'itemId' : item.id,
                 'name' : name,
                 'description' : description or "",
-                'notebookJSON' : notebook_json or "",
                 'privateAccess' : access,
             }
+
+            params['notebookJSON'] = notebook_json or ""
             url = f"{self._url}/create"
             return self._gis._con.post(url, params)
         else:
@@ -256,8 +257,8 @@ class SnapshotManager(object):
         if isinstance(item, Item) and item.type.lower() == 'notebook':
             params = {
             "itemId" : item.id,
-            "resourceKeys" : snapshot,
-            "preserveAsSnapshot" : preserve,
+            "resourceKey" : snapshot,
+            "preserveCurrentAsSnapshot" : preserve,
             "description" : description or "",
             "f": "json"
             }
