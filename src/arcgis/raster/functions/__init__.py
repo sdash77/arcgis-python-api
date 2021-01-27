@@ -6438,18 +6438,18 @@ def rasterize_features(raster, feature_class,  class_index_field=None, resolve_o
     --------------------------------     --------------------------------------------------------------------
     resolve_overlap_method               Optional int or string. Determine how to manage features that overlap:
 
-                                            FIRST - The overlapping areas will be assigned a value from the first 
-                                                    dataset listed.
+                                         - FIRST - The overlapping areas will be assigned a value from the first 
+                                           dataset listed.
 
-                                            LAST - The overlapping areas will be assigned a value from the last 
-                                                    dataset listed.
+                                         - LAST - The overlapping areas will be assigned a value from the last 
+                                           dataset listed.
 
-                                            SMALLEST - The overlapping areas will be assigned a value from the 
-                                                       smaller of the features.
+                                         - SMALLEST - The overlapping areas will be assigned a value from the 
+                                           smaller of the features.
 
-                                            LARGEST - The overlapping areas will be assigned a value from the 
-                                                      larger of the features.
-      ================================     ====================================================================
+                                         - LARGEST - The overlapping areas will be assigned a value from the 
+                                           larger of the features.
+    ================================     ====================================================================
 
     :returns: output raster with function applied
 
