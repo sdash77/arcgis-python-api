@@ -952,7 +952,7 @@ def bai(raster, band_indexes="3 4", astype=None):
     """
     return band_arithmetic(raster, band_indexes, astype, 24)
 
-def nbr(raster, band_indexes="7 5", astype=None):
+def nbr(raster, band_indexes="5 7", astype=None):
     """
     The Normalized Burn Ratio Index (NBRI) uses the NIR and SWIR bands to emphasize burned areas,
     while mitigating illumination and atmospheric effects. Your images should be corrected to reflectance values
@@ -961,7 +961,7 @@ def nbr(raster, band_indexes="7 5", astype=None):
     NBR = (NIR - SWIR) / (NIR+ SWIR)
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "SWIR NIR", e.g., "7 5" or [7,5]
+    :param band_indexes: "NIR SWIR", e.g., "5 7" or [5,7]
     :param astype: output pixel type
     :return: output raster
     """
