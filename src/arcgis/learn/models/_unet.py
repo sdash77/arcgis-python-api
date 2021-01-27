@@ -500,5 +500,8 @@ class UnetClassifier(ArcGISModel):
             return per_class_metrics(self, ignore_classes)
         except:
             import pandas as pd
-            return pd.read_json(self._data.emd['per_class_metrics'])        
+            if 'per_class_metrics' in self._data.emd.keys():
+                return pd.read_json(self._data.emd['per_class_metrics'])        
+            else:
+                logger.error("Metric not found in the loaded model")
         
