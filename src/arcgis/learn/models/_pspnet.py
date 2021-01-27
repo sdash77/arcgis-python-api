@@ -94,7 +94,22 @@ class PSPNetClassifier(ArcGISModel):
                             E.g. 
                             for dice = 0.3, loss = (1-0.3)*default loss + 0.3*dice
                             Default: 0
-    ---------------------   -------------------------------------------    
+    ---------------------   -------------------------------------------
+    dice_loss_average       Optional str. 
+                            micro: Micro dice coefficient will be used for loss 
+                            calculation.
+                            macro: Macro dice coefficient will be used for loss 
+                            calculation.
+                            A macro-average will compute the metric independently 
+                            for each class and then take the average (hence treating 
+                            all classes equally), whereas a micro-average will 
+                            aggregate the contributions of all classes to compute the 
+                            average metric. In a multi-class classification setup, 
+                            micro-average is preferable if you suspect there might be 
+                            class imbalance (i.e you may have many more examples of 
+                            one class than of other classes)
+                            Default: 'micro'
+    ---------------------   -------------------------------------------                        
     ignore_classes          Optional list. It will contain the list of class
                             values on which model will not incur loss.
                             Default: []
@@ -141,6 +156,7 @@ class PSPNetClassifier(ArcGISModel):
         self.focal_loss = kwargs.get('focal_loss', False)
         self.dice_loss_fraction = kwargs.get('dice_loss_fraction', False)
         self.weighted_dice = kwargs.get('weighted_dice', False)
+        self.dice_loss_average = kwargs.get('dice_loss_average', 'micro')
         self.keep_dilation = kwargs.get('keep_dilation', False)
         self._vggv2 = kwargs.get('vggv2', True)
         self._code = image_classifier_prf
@@ -210,7 +226,7 @@ class PSPNetClassifier(ArcGISModel):
         if self.focal_loss:
             self.learn.loss_func = FocalLoss(self.learn.loss_func)            
         if self.dice_loss_fraction:
-            self.learn.loss_func = DiceLoss(self.learn.loss_func, self.dice_loss_fraction,  weighted_dice=self.weighted_dice)
+            self.learn.loss_func = DiceLoss(self.learn.loss_func, self.dice_loss_fraction,  weighted_dice=self.weighted_dice, dice_average = self.dice_loss_average)
         self.learn.model = self.learn.model.to(self._device)
         self.freeze()
         self._arcgis_init_callback() # make first conv weights learnable
