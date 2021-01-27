@@ -62,7 +62,7 @@ def export_map(web_map_as_json=None, format="""PDF""", layout_template="""MAP_ON
     ==================     ====================================================================
 
     Returns:
-        output_file - Output File as a DataFile
+        Dictionary with URL to download the output file.
     """
 
     from arcgis.geoprocessing import DataFile
