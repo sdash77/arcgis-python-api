@@ -53,13 +53,15 @@ class MyFasterRCNN():
                 backbone = getattr(self.torchvision.models.detection, backbone)
         else:
             backbone = backbone
+        pretrained_backbone = kwargs.get('pretrained_backbone', True)
+        assert type(pretrained_backbone) == bool
         if backbone.__name__ is 'resnet50':
-            model = self.torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True,
+            model = self.torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=pretrained_backbone,
                                                                               min_size = 1.5*data.chip_size,
                                                                               max_size = 2*data.chip_size,
                                                                               **self.fasterrcnn_kwargs)
         elif backbone.__name__ in ['resnet18','resnet34']:
-            backbone_small = self.fastai.vision.learner.create_body(backbone)
+            backbone_small = self.fastai.vision.learner.create_body(backbone, pretrained=pretrained_backbone)
             backbone_small.out_channels = 512
             model = self.torchvision.models.detection.FasterRCNN(backbone_small,
                                                                  91,
@@ -67,7 +69,10 @@ class MyFasterRCNN():
                                                                  max_size = 2*data.chip_size,
                                                                  **self.fasterrcnn_kwargs)
         else:
-            backbone_fpn = self.torchvision.models.detection.backbone_utils.resnet_fpn_backbone(backbone.__name__, True)
+            backbone_fpn = self.torchvision.models.detection.backbone_utils.resnet_fpn_backbone(
+                backbone.__name__,
+                pretrained = pretrained_backbone
+            )
             model = self.torchvision.models.detection.FasterRCNN(backbone_fpn,
                                                                  91,
                                                                  min_size = 1.5*data.chip_size,
@@ -217,9 +222,6 @@ class MyFasterRCNN():
         for p in pred:
             
             bbox, label, score = p["boxes"], p["labels"], p["scores"]
-            #take only those predictions which have probabilty greater than thresold
-            score_mask = score>thres
-            bbox, label, score = bbox[score_mask], label[score_mask], score[score_mask]
             #convert bboxes in range -1 to 1.
             bbox = bbox/(chip_size/2) - 1
             #convert bboxes in format [y1,x1,y2,x2]
@@ -231,37 +233,110 @@ class MyFasterRCNN():
 
 class FasterRCNN(ModelExtension):
     """
-    Creates a ``FasterRCNN`` model
+    Model architecture from https://arxiv.org/abs/1506.01497.
+    Creates a ``FasterRCNN`` object detection model,
+    based on https://github.com/pytorch/vision/blob/master/torchvision/models/detection/faster_rcnn.py.
 
-    =====================   ===========================================
-    **Argument**            **Description**
-    ---------------------   -------------------------------------------
-    data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
-    ---------------------   -------------------------------------------
-    backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the `FasterRCNN`, which
-                            is `resnet50` by default. 
-                            Compatible backbones: 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152'
-    ---------------------   -------------------------------------------
-    pretrained_path         Optional string. Path where pre-trained model is
-                            saved.
-    ---------------------   -------------------------------------------
-    kwargs                  Optional arguments, torchvision FasterRCNN arguments can be
-                            given in form of keyword arguments.
-    =====================   ===========================================
+    =============================   =============================================
+    **Argument**                    **Description**
+    -----------------------------   ---------------------------------------------
+    data                            Required fastai Databunch. Returned data object from
+                                    ``prepare_data`` function.
+    -----------------------------   ---------------------------------------------
+    backbone                        Optional function. Backbone CNN model to be used for
+                                    creating the base of the `FasterRCNN`, which
+                                    is `resnet50` by default. 
+                                    Compatible backbones: 'resnet18', 'resnet34', 
+                                    'resnet50', 'resnet101', 'resnet152'
+    -----------------------------   ---------------------------------------------
+    pretrained_path                 Optional string. Path where pre-trained model is
+                                    saved.
+    =============================   =============================================
+
+    **kwargs**
+
+    =============================   =============================================
+    **Argument**                    **Description**
+    -----------------------------   ---------------------------------------------
+    rpn_pre_nms_top_n_train         Optional int. Number of proposals to keep before
+                                    applying NMS during training.
+                                    Default: 2000
+    -----------------------------   ---------------------------------------------
+    rpn_pre_nms_top_n_test          Optional int. Number of proposals to keep before
+                                    applying NMS during testing.
+                                    Default: 1000
+    -----------------------------   ---------------------------------------------
+    rpn_post_nms_top_n_train        Optional int. Number of proposals to keep after
+                                    applying NMS during training.
+                                    Default: 2000
+    -----------------------------   ---------------------------------------------
+    rpn_post_nms_top_n_test         Optional int. Number of proposals to keep after
+                                    applying NMS during testing.
+                                    Default: 1000
+    -----------------------------   ---------------------------------------------
+    rpn_nms_thresh                  Optional float. NMS threshold used for postprocessing
+                                    the RPN proposals.
+                                    Default: 0.7
+    -----------------------------   ---------------------------------------------
+    rpn_fg_iou_thresh               Optional float. Minimum IoU between the anchor
+                                    and the GT box so that they can be considered
+                                    as positive during training of the RPN.
+                                    Default: 0.7
+    -----------------------------   ---------------------------------------------
+    rpn_bg_iou_thresh               Optional float. Maximum IoU between the anchor and
+                                    the GT box so that they can be considered as negative
+                                    during training of the RPN.
+                                    Default: 0.3
+    -----------------------------   ---------------------------------------------
+    rpn_batch_size_per_image        Optional int. Number of anchors that are sampled
+                                    during training of the RPN for computing the loss.
+                                    Default: 256
+    -----------------------------   ---------------------------------------------
+    rpn_positive_fraction           Optional float. Proportion of positive anchors in a
+                                    mini-batch during training of the RPN.
+                                    Default: 0.5
+    -----------------------------   ---------------------------------------------
+    box_score_thresh                Optional float. During inference, only return proposals
+                                    with a classification score greater than box_score_thresh
+                                    Default: 0.05
+    -----------------------------   ---------------------------------------------
+    box_nms_thresh                  Optional float. NMS threshold for the prediction head.
+                                    Used during inference.
+                                    Default: 0.5
+    -----------------------------   ---------------------------------------------
+    box_detections_per_img          Optional int. Maximum number of detections per
+                                    image, for all classes.
+                                    Default: 100
+    -----------------------------   ---------------------------------------------
+    box_fg_iou_thresh               Optional float. Minimum IoU between the proposals and
+                                    the GT box so that they can be considered as positive
+                                    during training of the classification head.
+                                    Default: 0.5
+    -----------------------------   ---------------------------------------------
+    box_bg_iou_thresh               Optional float. Maximum IoU between the proposals and 
+                                    the GT box so that they can be considered as negative 
+                                    during training of the classification head.
+                                    Default: 0.5
+    -----------------------------   ---------------------------------------------
+    box_batch_size_per_image        Optional int. Number of proposals that are sampled during
+                                    training of the classification head.
+                                    Default: 512
+    -----------------------------   ---------------------------------------------
+    box_positive_fraction           Optional float. Proportion of positive proposals in a
+                                    mini-batch during training of the classification head.
+                                    Default: 0.25
+    =============================   =============================================
 
     :returns: ``FasterRCNN`` Object
     """
     def __init__(self, data, backbone='resnet50', pretrained_path=None, **kwargs):
 
+        self._check_dataset_support(data)
         backbone_name = backbone if type(backbone) is str else backbone.__name__
         if backbone_name not in self.supported_backbones:
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
         super().__init__(data, MyFasterRCNN, backbone, pretrained_path, **kwargs)
-
-        self._check_dataset_support(self._data)
 
         idx = 27
         if self._backbone.__name__ in ['resnet18','resnet34']:
@@ -281,6 +356,10 @@ class FasterRCNN(ModelExtension):
             for p in i.parameters():
                 p.requires_grad = False
         return idx
+
+    @property
+    def _is_fasterrcnn(self):
+        return True
 
     @property
     def supported_backbones(self):
@@ -308,8 +387,8 @@ class FasterRCNN(ModelExtension):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from ``prepare_data`` function or None for
@@ -519,3 +598,34 @@ class FasterRCNN(ModelExtension):
             =====================   ===========================================
             
             """
+
+    def average_precision_score(self, detect_thresh=0.2, iou_thresh=0.1, mean=False, show_progress=True):
+
+        """
+        Computes average precision on the validation set for each class.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        detect_thresh           Optional float. The probability above which
+                                a detection will be considered for computing
+                                average precision.
+        ---------------------   -------------------------------------------
+        iou_thresh              Optional float. The intersection over union
+                                threshold with the ground truth labels, above
+                                which a predicted bounding box will be
+                                considered a true positive.
+        ---------------------   -------------------------------------------
+        mean                    Optional bool. If False returns class-wise
+                                average precision otherwise returns mean
+                                average precision.                        
+        =====================   ===========================================
+        
+        :returns: `dict` if mean is False otherwise `float`
+        """
+
+    def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
+
+        """
+        Displays the results of a trained model on a part of the validation set.
+        """

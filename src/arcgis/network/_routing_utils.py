@@ -5,14 +5,13 @@ from arcgis.features import FeatureSet
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
-
+from arcgis.geoprocessing import import_toolbox as _import_toolbox
 _log = _logging.getLogger(__name__)
 
 _use_async = False
 
 
-def get_travel_modes(
-    gis=None):
+def get_travel_modes(gis=None):
     """
 
 
@@ -29,23 +28,13 @@ Returns the following as a named tuple:
 
 See https://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/Utilities_GPServer/World_Utilities/GetTravelModes.htm for additional help.
     """
-    kwargs = locals()
-
-    param_db = {
-        "supported_travel_modes": (FeatureSet, "Supported Travel Modes"),
-        "default_travel_mode": (str, "Default Travel Mode"),
-    }
-    return_values = [
-        {"name": "supported_travel_modes", "display_name": "Supported Travel Modes", "type": FeatureSet},
-        {"name": "default_travel_mode", "display_name": "Default Travel Mode", "type": str},
-    ]
 
     if gis is None:
         gis = arcgis.env.active_gis
 
     url = gis.properties.helperServices.routingUtilities.url
-
-    return _execute_gp_tool(gis, "GetTravelModes", kwargs, param_db, return_values, _use_async, url)
+    tbx = _import_toolbox(url, gis=gis)
+    return tbx.get_travel_modes()
 
 get_travel_modes.__annotations__ = {
     'return': tuple}
@@ -75,22 +64,23 @@ Returns:
 
 See https://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/Utilities_GPServer/World_Utilities/GetToolInfo.htm for additional help.
     """
-    kwargs = locals()
 
-    param_db = {
-        "service_name": (str, "serviceName"),
-        "tool_name": (str, "toolName"),
-        "tool_info": (str, "Tool Info"),
-    }
-    return_values = [
-        {"name": "tool_info", "display_name": "Tool Info", "type": str},
-    ]
+
 
     if gis is None:
         gis = arcgis.env.active_gis
 
     url = gis.properties.helperServices.routingUtilities.url
-    return _execute_gp_tool(gis, "GetToolInfo", kwargs, param_db, return_values, _use_async, url)
+    tbx = _import_toolbox(url, gis=gis)
+    kwargs = {
+        "service_name": service_name,
+        "tool_name": tool_name,
+        "gis" : gis,
+        "future" : False
+    }
+
+    return tbx.get_tool_info(**kwargs)
+
 
 get_tool_info.__annotations__ = {
     'service_name': str,

@@ -9,6 +9,8 @@ from arcgis._impl.common._utils import _date_handler
 import datetime
 from arcgis.geometry import Geometry  as _Geometry
 import numbers
+import time
+import os
 
 
 import logging as _logging
@@ -473,3 +475,157 @@ def build_query_string(field_name, operator, field_values):
         return field_name + ' NOT IN ' + values
     else:
         raise ValueError('invalid operator value')
+
+def _generate_direct_access_url(gis=None):
+    """helper fn to get the direct access url for azure storage"""
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = "%s/sharing/rest/content/users/%s/generateDirectAccessUrl" % (gis._portal.url,
+                                                                 gis._username)
+    params = {"f" : "json", "storeType":"rasterStore"}
+    res = gis._portal.con.post(url, params)
+    if isinstance(res, dict):
+        if "url" in res.keys():
+            return res["url"]
+        else:
+            raise RuntimeError("Couldn't generate direct access url")
+    else:
+        raise RuntimeError("Couldn't generate direct access url")
+    
+def _upload_imagery_agol(files, gis=None):
+    """uploads a file to the image layer to AGOL and returns the list of urls"""
+
+    try:
+        from azure.storage.blob import ContainerClient
+    except:
+        print("Install Azure library packages for Python. (version - azure-storage-blob-12.5.0) \
+        (https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install)")
+    sas_url = _generate_direct_access_url(gis)
+    container = ContainerClient.from_container_url(sas_url)
+    if not isinstance(files,list):
+        files = [files]
+
+    url_list = []
+    for file in files:
+        current_time = int(time.time())
+        prefix =  "_images/"+str(current_time)+"/"
+
+        if os.path.exists(file):
+            if(os.path.isdir(file)):
+                folder = os.path.basename(file)
+                basename_len=len(os.path.dirname(file))
+                for root,d_names,f_names in os.walk(file):
+                    for f in f_names:
+                        blobname = prefix + (root+"/"+f)[basename_len+1:].replace(os.sep, '/')
+                        filepath = os.path.join(root, f)
+                        blob=container.get_blob_client(blobname)
+                        url = blob.url.split("?", 1)[0]
+                        url_list.append(url)
+                        with open(filepath, "rb") as data:
+                            blob.upload_blob(data, blob_type="BlockBlob")
+
+            else:
+                blobname = prefix+os.path.basename(file).replace(os.sep, '/')
+                blob=container.get_blob_client(blobname)
+                with open(file, "rb") as data:
+                    blob.upload_blob(data, blob_type="BlockBlob")
+                url = blob.url.split("?", 1)[0]
+                url_list.append(url)
+
+    return url_list
+
+def _upload_imagery_enterprise(files, raster_type_name=None, gis=None):
+    """uploads a file to the image layer to enterprise and returns the item id"""
+    
+    ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
+    url = "%s/uploads/upload" % ra_url
+    params = {
+        "f" : 'json'
+    }
+
+   
+    if not isinstance(files,list):
+        files = [files]
+
+    item_ids_list = []
+    res = {}
+    
+    append_path = False
+    for file in files:
+        item_id_dict={}
+        if os.path.exists(file):
+            if(os.path.isdir(file)):
+                if file.endswith(".crf") or raster_type_name !="Raster Dataset":
+                    append_path = True
+                folder = os.path.basename(file)
+                basename_len=len(os.path.dirname(file))
+                for root,d_names,f_names in os.walk(file):
+                    for f in f_names:
+                        fp =os.path.join(root, f)
+                        path = ("/"+root+"/"+f)[basename_len+1:].replace(os.sep, '/')
+                        files_param = {'file' : fp }
+                        try:
+                            res = gis._con.post(path=url, postdata=params, files=files_param)
+                        except Exception as e:
+                            _LOGGER.warning('file: '+str(fp)+ " "+ str(e))
+
+                        if 'success' in res and res['success']:
+                            item_id = res['item']['itemID']
+                            res = {}
+                            if append_path:
+                                item_id_dict = {"itemId":item_id, "path":fp}
+                                item_ids_list.append(item_id_dict)
+                                item_id_dict={}
+                            else:
+                                item_ids_list.append(item_id)
+
+            else:
+                files_param = {'file' : file}
+                try:
+                    res = gis._con.post(path=url, postdata=params, files=files_param)
+                except Exception as e:
+                    _LOGGER.warning('file: '+str(file)+ " "+ str(e))
+                if 'success' in res and res['success']:
+                    item_id = res['item']['itemID']
+                    res = {}
+                if item_id is not None:
+                    item_ids_list.append(item_id)
+
+    return item_ids_list
+
+def _get_extent(extdict=None):
+    """
+    This method is used to convert the JSON presentation of extent (with spatial reference)
+    to arcpy.Extent object, so that it can be set to the GP environment.
+    :param context: context parameter contains output spatial reference info
+    :return geometry object and geometry coordinate
+    """
+    try:
+        import arcpy
+    except:
+        return None, None
+    outext = arcpy.Extent
+    extsr = ""
+    try:
+        if extdict is None: 
+            return outext, extsr
+        # Note: creating geometry directly from envelope JSON gave me a _passthrough
+        # which does not provide a extent object.
+        if "xmin" in extdict and "xmax" in extdict and "ymin" in extdict and "ymax" in extdict:
+            xmin = extdict["xmin"]
+            ymin = extdict["ymin"]
+            xmax = extdict["xmax"]
+            ymax = extdict["ymax"]
+            extjson = {"rings": [
+                [[xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin],
+                    [xmin, ymin]]]
+            }
+            if "spatialReference" in extdict:
+                srdict = extdict["spatialReference"]
+                extjson.update({"spatialReference": srdict})
+                extsr = srdict
+
+            polygon = arcpy.AsShape(extjson, True)
+            outext = polygon.extent
+        return outext, extsr
+    except:
+        return outext, extsr

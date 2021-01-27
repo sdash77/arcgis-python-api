@@ -20,6 +20,8 @@ from arcgis.geometry import SpatialReference, Polygon
 from arcgis.gis import Layer, _GISResource, Item
 from arcgis.mapping._basemap_definitions import basemap_dict
 from arcgis.mapping._scenelyrs import SceneLayer
+from arcgis.mapping.forms import FormCollection
+from arcgis._impl.common._utils import _lazy_property
 try:
     from traitlets import HasTraits, observe
     from arcgis.widgets._mapview._traitlets_extension import ObservableDict
@@ -158,7 +160,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         """
 
         #Dashboard items.
-        self.id = str(uuid4())
+        self._id = str(uuid4())
         self.type = "mapWidget"
 
         self._pop_ups = False
@@ -243,6 +245,9 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     @property
     def events(self):
+        """
+        :return: list of events attached to the widget.
+        """
         return self._events
 
     def _ipython_display_(self, *args, **kwargs):
@@ -370,9 +375,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                     isinstance(layer, arcgis.features.FeatureCollection) or \
                     isinstance(layer, arcgis.features.FeatureSet)):
                     # Can be either a FeatureLayer or a table: figure it out
-                    if isinstance(layer, arcgis.features.Table):
-                        layer_type = 'Table'
-                    else:
+                    if not isinstance(layer, arcgis.features.Table):
                         layer_type = 'ArcGISFeatureLayer'
                 elif isinstance(layer, arcgis.raster.ImageryLayer):
                     layer_type='ArcGISImageServiceLayer'
@@ -403,7 +406,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                   if layer.type == 'Feature Collection':
                       options['serviceItemId'] = layer.itemid
                   for lyr in layer.layers:  # recurse - works for all.
-                      self.add_layer(lyr, options)
+                      self.add_layer(lyr, dict(options))
               if hasattr(layer, 'tables'):
                   for tbl in layer.tables:  # recurse - works for all.
                       self.add_table(tbl, options)
@@ -416,7 +419,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                 raise TypeError("FeatureLayerCollection object without layers or tables is not supported")
             if hasattr(layer, 'layers'):
                 for lyr in layer.layers:  # recurse - works for all.
-                    self.add_layer(lyr, options)
+                    self.add_layer(lyr, dict(options))
             if hasattr(layer, 'tables'):
                 for tbl in layer.tables:  # recurse - works for all.
                     self.add_table(tbl, options)
@@ -992,12 +995,35 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     def _is_exportable(self, layer):
         # check SRs are equivalent and exportTilesAllowed is set to true or AGOl-hosted esri basemaps
-        if (layer.properties['spatialReference']['wkid'] == self._webmapdict['spatialReference']['wkid']) \
+        if (self._get_layer_wkid(layer) == self._webmapdict['spatialReference']['wkid']) \
                 and (layer.properties['exportTilesAllowed'] or "services.arcgisonline.com" in layer.url or "server.arcgisonline.com" in layer.url):
             return True
         else:
             return False
 
+    def _get_layer_wkid(self, layer):
+        # spatialReference can either be set at the root level or within initialExtent
+        if "spatialReference" in layer.properties:
+            return layer.properties['spatialReference']['wkid']
+        elif "initialExtent" in layer.properties:
+            return layer.properties['initialExtent']['spatialReference']['wkid']
+        else:
+            raise ValueError("No wkid found")
+
+    @_lazy_property
+    def forms(self):
+        """
+        The smart forms corresponding to each layer and table in the webmap
+        :return: an instance of :class:`arcgis.mapping.forms.FormCollection`
+        .. code-block:: python
+            wm = WebMap()
+            wm.add_layer(table)
+            forms = wm.forms
+            form = forms.get(title="Manhole Inspection")
+            form.title = "Manhole Inspection Form"
+            form.update()
+        """
+        return FormCollection(parent=self)
 
     @property
     def tables(self):
@@ -1552,7 +1578,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             "showPopup": self.pop_ups,
             "scalebarStyle": self.scale_bar,
             "layers": [{"type": "featureLayerDataSource", "layerId": layer['id']} for layer in self.layers],
-            "id": self.id,
+            "id": self._id,
             "name": self.item.title,
             "caption": self.item.name,
             "showLastUpdate": True,
@@ -2987,7 +3013,7 @@ class VectorTileLayer(Layer):
     def styles(self):
         url = "{url}/styles".format(url=self._url)
         params = {"f": "json"}
-        return self._con.get(path=url, params=params, token=self._token)
+        return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
     def tile_fonts(self, fontstack, stack_range):
@@ -2999,7 +3025,7 @@ class VectorTileLayer(Layer):
             stack_range=stack_range)
         params = {}
         return self._con.get(path=url,
-                             params=params, force_bytes=True, token=self._token)
+                             params=params, force_bytes=True)
 
     # ----------------------------------------------------------------------
     def vector_tile(self, level, row, column):
@@ -3012,7 +3038,7 @@ class VectorTileLayer(Layer):
                                                              column=column)
         params = {}
         return self._con.get(path=url,
-                             params=params, try_json=False, force_bytes=True, token=self._token)
+                             params=params, try_json=False, force_bytes=True)
 
     # ----------------------------------------------------------------------
     def tile_sprite(self, out_format="sprite.json"):
@@ -3022,7 +3048,7 @@ class VectorTileLayer(Layer):
         url = "{url}/resources/sprites/{f}".format(url=self._url,
                                                    f=out_format)
         return self._con.get(path=url,
-                             params={}, token=self._token)
+                             params={})
 
     # ----------------------------------------------------------------------
     @property
@@ -3031,7 +3057,7 @@ class VectorTileLayer(Layer):
         url = "{url}/resources/info".format(url=self._url)
         params = {"f": "json"}
         return self._con.get(path=url,
-                             params=params, token=self._token)
+                             params=params)
 
 
 ###########################################################################
@@ -3333,8 +3359,8 @@ class MapImageLayer(Layer):
         else:
             lyr_dict =  { 'type' : type(self).__name__, 'url' : url }
 
-        if self._token is not None:
-            lyr_dict['serviceToken'] = self._token
+        if self._token is not None :
+            lyr_dict['serviceToken'] = self._token or self._con.token
 
         if self.filter is not None:
             lyr_dict['filter'] = self.filter
@@ -3346,7 +3372,8 @@ class MapImageLayer(Layer):
     def _lyr_json(self):
         url = self.url
         if self._token is not None:  # causing geoanalytics Invalid URL error
-            url += '?token=' + self._token
+            token = self._token or self._con.token
+            url += '?token=' + token
 
         if "lods" in self.properties:
             lyr_dict =  { 'type' : 'ArcGISTiledMapServiceLayer', 'url' : url }
@@ -3375,7 +3402,7 @@ class MapImageLayer(Layer):
                 tables.append(lyr)
         # fsurl = self.url + '/layers'
         # params = { "f" : "json" }
-        # allayers = self._con.post(fsurl, params, token=self._token)
+        # allayers = self._con.post(fsurl, params)
 
         # for layer in allayers['layers']:
         #    layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis))
@@ -3482,7 +3509,7 @@ class MapImageLayer(Layer):
         url = "{url}/kml/mapImage.kmz".format(url=self._url)
         return self._con.get(url, {"f": 'json'},
                              file_name="mapImage.kmz",
-                             out_folder=tempfile.gettempdir(), token=self._token)
+                             out_folder=tempfile.gettempdir())
 
     # ----------------------------------------------------------------------
     @property
@@ -3490,7 +3517,7 @@ class MapImageLayer(Layer):
         """returns the service's item's infomation"""
         url = "{url}/info/iteminfo".format(url=self._url)
         params = {"f": "json"}
-        return self._con.get(url, params, token=self._token)
+        return self._con.get(url, params)
 
     #----------------------------------------------------------------------
     @property
@@ -3515,7 +3542,7 @@ class MapImageLayer(Layer):
         """returns the service's XML metadata file"""
         url = "{url}/info/metadata".format(url=self._url)
         params = {"f": "json"}
-        return self._con.get(url, params, token=self._token)
+        return self._con.get(url, params)
 
     # ----------------------------------------------------------------------
     def thumbnail(self, out_path=None):
@@ -3529,7 +3556,7 @@ class MapImageLayer(Layer):
         return self._con.get(url,
                              params,
                              out_folder=out_path,
-                             file_name="thumbnail.png", token=self._token)
+                             file_name="thumbnail.png")
 
     # ----------------------------------------------------------------------
     def identify(self,
@@ -3752,7 +3779,7 @@ class MapImageLayer(Layer):
         if layer_parameters:
             params['layerParameterValues'] = layer_parameters
         identifyURL = "{url}/identify".format(url=self._url)
-        return self._con.post(identifyURL, params, token=self._token)
+        return self._con.post(identifyURL, params)
 
     # ----------------------------------------------------------------------
     def find(self,
@@ -3917,7 +3944,7 @@ class MapImageLayer(Layer):
                 params[k] = v
         res = self._con.post(path=url,
                              postdata=params,
-                             token=self._token)
+                             )
         return res
 
     # ----------------------------------------------------------------------
@@ -3961,7 +3988,7 @@ class MapImageLayer(Layer):
         }
         return self._con.get(kmlURL, params,
                              out_folder=save_location,
-                             token=self._token)
+                             )
     # ----------------------------------------------------------------------
     def export_map(self,
                    bbox,
@@ -4137,23 +4164,22 @@ class MapImageLayer(Layer):
         if len(kwargs) > 0:
             for k,v in kwargs.items():
                 params[k] = v
-        #return self._con.get(exportURL, params, token=self._token)
+        #return self._con.get(exportURL, params)
 
         if f == "json":
-            return self._con.post(url, params, token=self._token)
+            return self._con.post(url, params)
         elif f == "image":
             if save_folder is not None and save_file is not None:
                 return self._con.post(url, params,
                                       out_folder=save_folder, try_json=False,
-                                      file_name=save_file, token=self._token)
+                                      file_name=save_file)
             else:
                 return self._con.post(url, params,
-                                      try_json=False, force_bytes=True,
-                                      token=self._token)
+                                      try_json=False, force_bytes=True)
         elif f == "kmz":
             return self._con.post(url, params,
                                   out_folder=save_folder,
-                                  file_name=save_file, token=self._token)
+                                  file_name=save_file)
         else:
             print('Unsupported output format')
 
@@ -4241,22 +4267,22 @@ class MapImageLayer(Layer):
         if not area_of_interest is None:
             params['areaOfInterest'] = area_of_interest
         if asynchronous == True:
-            return self._con.get(url, params, token=self._token)
+            return self._con.get(url, params)
         else:
-            exportJob = self._con.get(url, params, token=self._token)
+            exportJob = self._con.get(url, params)
 
             job_id = exportJob['jobId']
             path = "%s/jobs/%s" % (url, exportJob['jobId'])
 
             params = {"f": "json"}
-            job_response = self._con.post(path, params, token=self._token)
+            job_response = self._con.post(path, params)
 
             if "status" in job_response:
                 status = job_response.get("status")
                 while not status == "esriJobSucceeded":
                     time.sleep(5)
 
-                    job_response = self._con.post(path, params, token=self._token)
+                    job_response = self._con.post(path, params)
                     status = job_response.get("status")
                     if status in ['esriJobFailed',
                                   'esriJobCancelling',
@@ -4289,8 +4315,8 @@ class MapImageLayer(Layer):
         is Map Service Job. This job response contains a reference to the
         Map Service Result resource, which returns a URL to the resulting
         tile package (.tpk) or a cache raster dataset.
-        exportTiles can be enabled in a service by using ArcGIS for Desktop
-        or the ArcGIS Server Administrator Directory. In ArcGIS for Desktop
+        exportTiles can be enabled in a service by using ArcGIS Desktop
+        or the ArcGIS Server Administrator Directory. In ArcGIS Desktop
         make an admin or publisher connection to the server, go to service
         properties, and enable Allow Clients to Export Cache Tiles in the
         advanced caching page of the Service Editor. You can also specify
@@ -4299,7 +4325,7 @@ class MapImageLayer(Layer):
         using the Administrator Directory, edit the service, and set the
         properties exportTilesAllowed=true and maxExportTilesCount=100000.
 
-        At 10.2.2 and later versions, exportTiles is supported as an
+        In ArcGIS Server 10.2.2 and later versions, exportTiles is supported as an
         operation of the Map Server. The use of the
         http://Map Service/exportTiles/submitJob operation is deprecated.
         You can provide arguments to the exportTiles operation as defined
@@ -4386,22 +4412,22 @@ class MapImageLayer(Layer):
             params["areaOfInterest"] = area_of_interest
 
         if asynchronous == True:
-            return self._con.get(path=url, params=params, token=self._token)
+            return self._con.get(path=url, params=params)
         else:
-            exportJob = self._con.get(path=url, params=params, token=self._token)
+            exportJob = self._con.get(path=url, params=params)
 
             job_id = exportJob['jobId']
             path = "%s/jobs/%s" % (url, exportJob['jobId'])
 
             params = {"f": "json"}
-            job_response = self._con.post(path, params, token=self._token)
+            job_response = self._con.post(path, params)
 
             if "status" in job_response:
                 status = job_response.get("status")
                 while not status == 'esriJobSucceeded':
                     time.sleep(5)
 
-                    job_response = self._con.post(path, params, token=self._token)
+                    job_response = self._con.post(path, params)
                     status = job_response.get("status")
                     if status in ['esriJobFailed',
                                   'esriJobCancelling',
@@ -4420,7 +4446,7 @@ class MapImageLayer(Layer):
                     params = {
                         "f": "json"
                     }
-                    gpRes = self._con.get(path=value, params=params, token=self._token)
+                    gpRes = self._con.get(path=value, params=params)
                     if tile_package == True:
                         files = []
                         for f in gpRes['files']:
@@ -4429,7 +4455,7 @@ class MapImageLayer(Layer):
                             files.append(
                                 self._con.get(dlURL, params,
                                               out_folder=tempfile.gettempdir(),
-                                              file_name=name), token=self._token)
+                                              file_name=name))
                         return files
                     else:
                         return gpRes['folders']
@@ -4477,18 +4503,18 @@ class Events(object):
                 for widget in widgets:
                     if widget.type == "mapWidget":
                         action_type = "setExtent"
-                        self._actions.append({"type":action_type, "targetId":widget.id})
+                        self._actions.append({"type":action_type, "targetId":widget._id})
                     else:
                         action_type = "filter"
-                        widget_id = str(widget.id)+'#main'
+                        widget_id = str(widget._id)+'#main'
                         self._actions.append({"type":action_type, "by":"geometry", "targetId":widget_id})
             else:
                 if widgets.type == "mapWidget":
                     action_type = "setExtent"
-                    self._actions.append({"type":action_type, "targetId":widgets.id})
+                    self._actions.append({"type":action_type, "targetId":widgets._id})
                 else:
                     action_type = "filter"
-                    widget_id = str(widgets.id)+'#main'
+                    widget_id = str(widgets._id)+'#main'
                     self._actions.append({"type":action_type, "by":"geometry", "targetId":widget_id})
 
 

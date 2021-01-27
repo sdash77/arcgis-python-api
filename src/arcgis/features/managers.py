@@ -369,15 +369,16 @@ class AttachmentManager(object):
             return self._download_all(object_ids=oid,
                                       save_folder=save_path)
 
-    def add(self, oid, file_path):
+    def add(self, oid, file_path, keywords=None):
         """ Adds an attachment to a feature layer
             Input:
               oid - string - OBJECTID value to add attachment to
               file_path - string - path to file
+              keywords - sring - Sets a text value that is stored as the keywords value for the attachment.
             Output:
               JSON Repsonse
         """
-        return self._layer._add_attachment(oid, file_path)
+        return self._layer._add_attachment(oid, file_path, keywords=keywords)
 
     def delete(self, oid, attachment_id):
         """ removes an attachment from a feature
@@ -705,7 +706,7 @@ class SyncManager(object):
                     rollback_on_failure=True):
         """
         synchronizes replica with feature layer collection
-        http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000vv000000
+        https://developers.arcgis.com/rest/services-reference/synchronize-replica.htm
         """
         # TODO:
         return self._fs._synchronize_replica(replica_id=replica_id,
@@ -878,13 +879,13 @@ class WebHook(object):
         return f"<WebHook @ {self._url}>"
     #----------------------------------------------------------------------
     def __repr__(self):
-        return self.__str__()    
+        return self.__str__()
     #----------------------------------------------------------------------
     @property
     def properties(self) -> PropertyMap:
         """
         Returns the WebHook's properties
-        
+
         :returns: PropertyMap
         """
         if self._properties is None:
@@ -901,7 +902,7 @@ class WebHook(object):
              payload_format:str=None) -> dict:
         """
         Updates the existing WebHook's Properties.
-        
+
         =====================================    ===========================================================================
         **Argument**                             **Description**
         -------------------------------------    ---------------------------------------------------------------------------
@@ -909,39 +910,39 @@ class WebHook(object):
         -------------------------------------    ---------------------------------------------------------------------------
         hook_url                                 Optional String.  The URL to which the payloads will be delivered.
         -------------------------------------    ---------------------------------------------------------------------------
-        change_types                             Optional String.  The default is "*", which means all events.  This is a 
-                                                 comma separated list of values that will fire off the web hook.  The list 
-                                                 each supported type is below. 
+        change_types                             Optional String.  The default is "*", which means all events.  This is a
+                                                 comma separated list of values that will fire off the web hook.  The list
+                                                 each supported type is below.
         -------------------------------------    ---------------------------------------------------------------------------
-        signature_key                            Optional String. If specified, the key will be used in generating the HMAC 
-                                                 hex digest of value using sha256 hash function and is return in the 
+        signature_key                            Optional String. If specified, the key will be used in generating the HMAC
+                                                 hex digest of value using sha256 hash function and is return in the
                                                  x-esriHook-Signature header.
         -------------------------------------    ---------------------------------------------------------------------------
-        active                                   Optional bool. Enable or disable call backs when the webhook is triggered. 
+        active                                   Optional bool. Enable or disable call backs when the webhook is triggered.
         -------------------------------------    ---------------------------------------------------------------------------
         schedule_info                            Optional Dict. Allows the trigger to be used as a given schedule.
                                                  Example:
-                                                 
+
                                                  ```
                                                  {
-                                                    "name" : "Every-5seconds", 
-                                                    "startAt" : 1478280677536, 
-                                                    "state" : "enabled", 
-                                                    
+                                                    "name" : "Every-5seconds",
+                                                    "startAt" : 1478280677536,
+                                                    "state" : "enabled",
+
                                                     "recurrenceInfo" : {
-                                                      "frequency" : "second", 
+                                                      "frequency" : "second",
                                                       "interval" : 5
                                                     }
                                                  }
                                                  ```
         -------------------------------------    ---------------------------------------------------------------------------
-        payload_format                           Optional String. The payload can be sent in pretty format or standard.  
+        payload_format                           Optional String. The payload can be sent in pretty format or standard.
                                                  The default is `json`.
         =====================================    ===========================================================================
 
-        
+
         A list of allowed web hook triggers is shown below.
-        
+
         =====================================    ===========================================================================
         **Name**                                 **Trigged When**
         -------------------------------------    ---------------------------------------------------------------------------
@@ -968,9 +969,9 @@ class WebHook(object):
         `FeatureServiceDefinitionChanged`        Any time a feature service is changed
         =====================================    ===========================================================================
 
-        
+
         :returns: dict
-        
+
         """
         props = dict(self.properties)
         url = f"{self._url}/edit"
@@ -998,7 +999,7 @@ class WebHook(object):
     def delete(self) -> bool:
         """
         Deletes the current webhook from the system
-        
+
         :returns: bool
         """
         url = f"{self._url}/delete"
@@ -1008,8 +1009,8 @@ class WebHook(object):
 ###########################################################################
 class WebHookServiceManager(object):
     """
-    The `WebHookServiceManager` allows owners and administrators wire feature 
-    service specific events to feature layer collections.  
+    The `WebHookServiceManager` allows owners and administrators wire feature
+    service specific events to feature layer collections.
     """
     _fc = None
     _url = None
@@ -1035,14 +1036,14 @@ class WebHookServiceManager(object):
     @property
     def list(self) -> tuple:
         """Returns a list of web hooks on the Feature Layer Collection
-        
+
         :returns: tuple[WebHook]
         """
         resp = self._gis._con.post(self._url, {'f' : 'json'})
         ret = [WebHook(url=self._url + f"/{d['globalId']}", gis=self._gis) for d in resp]
         return ret
     #----------------------------------------------------------------------
-    def create(self, 
+    def create(self,
                name:str,
                hook_url:str,
                change_types:str="*",
@@ -1051,10 +1052,10 @@ class WebHookServiceManager(object):
                schedule_info:dict=None,
                payload_format:str="json") -> WebHook:
         """
-        
+
         Creates a New Feature Collection Web Hook
-        
-        
+
+
         =====================================    ===========================================================================
         **Argument**                             **Description**
         -------------------------------------    ---------------------------------------------------------------------------
@@ -1062,38 +1063,38 @@ class WebHookServiceManager(object):
         -------------------------------------    ---------------------------------------------------------------------------
         hook_url                                 Required String.  The URL to which the payloads will be delivered.
         -------------------------------------    ---------------------------------------------------------------------------
-        change_types                             Optional String.  The default is "*", which means all events.  This is a 
-                                                 comma separated list of values that will fire off the web hook.  The list 
-                                                 each supported type is below. 
+        change_types                             Optional String.  The default is "*", which means all events.  This is a
+                                                 comma separated list of values that will fire off the web hook.  The list
+                                                 each supported type is below.
         -------------------------------------    ---------------------------------------------------------------------------
-        signature_key                            Optional String. If specified, the key will be used in generating the HMAC 
-                                                 hex digest of value using sha256 hash function and is return in the 
+        signature_key                            Optional String. If specified, the key will be used in generating the HMAC
+                                                 hex digest of value using sha256 hash function and is return in the
                                                  x-esriHook-Signature header.
         -------------------------------------    ---------------------------------------------------------------------------
-        active                                   Optional bool. Enable or disable call backs when the webhook is triggered. 
+        active                                   Optional bool. Enable or disable call backs when the webhook is triggered.
         -------------------------------------    ---------------------------------------------------------------------------
         schedule_info                            Optional Dict. Allows the trigger to be used as a given schedule.
                                                  Example:
-                                                
+
                                                  {
-                                                    "name" : "Every-5seconds", 
-                                                    "startAt" : 1478280677536, 
-                                                    "state" : "enabled", 
-                                                    
+                                                    "name" : "Every-5seconds",
+                                                    "startAt" : 1478280677536,
+                                                    "state" : "enabled",
+
                                                     "recurrenceInfo" : {
-                                                      "frequency" : "second", 
+                                                      "frequency" : "second",
                                                       "interval" : 5
                                                     }
                                                  }
-                                                 
+
         -------------------------------------    ---------------------------------------------------------------------------
-        payload_format                           Optional String. The payload can be sent in pretty format or standard.  
+        payload_format                           Optional String. The payload can be sent in pretty format or standard.
                                                  The default is `json`.
         =====================================    ===========================================================================
 
-        
+
         A list of allowed web hook triggers is shown below.
-        
+
         =====================================    ===========================================================================
         **Name**                                 **Trigged When**
         -------------------------------------    ---------------------------------------------------------------------------
@@ -1142,17 +1143,17 @@ class WebHookServiceManager(object):
             return WebHook(url=hook_url,
                            gis=self._gis)
         else:
-            
+
             return WebHook(url=resp['url'], gis=self._gis)
     #----------------------------------------------------------------------
     def enable_hooks(self) -> bool:
         """
-        The `enable_hooks` operation restarts a deactivated webhook. When 
-        activated, payloads will be delivered to the payload URL when the 
+        The `enable_hooks` operation restarts a deactivated webhook. When
+        activated, payloads will be delivered to the payload URL when the
         webhook is invoked.
-        
+
         :returns: bool
-        
+
         """
         url = f"{self._url}/activateAll"
         params = {'f' : 'json'}
@@ -1161,9 +1162,9 @@ class WebHookServiceManager(object):
     def disable_hooks(self) -> bool:
         """
         The `disable_hooks` will turn off all web hooks for the current service.
-        
+
         :returns: bool
-        
+
         """
         url = f"{self._url}/deactivateAll"
         params = {'f' : 'json'}
@@ -1172,14 +1173,14 @@ class WebHookServiceManager(object):
     def delete_all_hooks(self) -> bool:
         """
         The `delete_all_hooks` operation will permanently remove the specified webhook.
-        
+
         :returns: bool
-        
+
         """
         url = f"{self._url}/deleteAll"
         params = {'f' : 'json'}
         return self._gis._con.post(url, params).get('status', 'failed') == 'success'
-###########################################################################    
+###########################################################################
 class FeatureLayerCollectionManager(_GISResource):
     """
     Allows updating the definition (if access permits) of a feature layer collection.
@@ -1225,7 +1226,7 @@ class FeatureLayerCollectionManager(_GISResource):
                 self._wh = WebHookServiceManager(url=self._url + "/WebHooks", fc=self._fs, gis=self._gis)
             return self._wh
         return None
-        
+
     # ----------------------------------------------------------------------
     def refresh(self):
         """ refreshes a feature layer collection """
@@ -1245,9 +1246,9 @@ class FeatureLayerCollectionManager(_GISResource):
     def generate_service_definition(self):
         """
         Returns a dictionary can be used for service generation.
-        
+
         :returns: dict or None (if not supported on the service)
-        
+
         """
         return self._generate_mapservice_definition()
     #----------------------------------------------------------------------
@@ -1502,6 +1503,14 @@ class FeatureLayerCollectionManager(_GISResource):
                         _log.error('Unable to parse the view_tables parameter')
 
         fs_view.manager.add_to_definition(add_def)
+        if extent and fs_view.layers:
+            for vw_lyr in fs_view.layers:
+                vw_lyr.manager.update_definition({"viewLayerDefinition": {"filter":
+                                                                          {"operator": "esriSpatialRelIntersects",
+                                                                           "value": {
+                                                                                "geometryType": "esriGeometryEnvelope",
+                                                                                "geometry": extent}}}})
+
         if view_layers:
             data = item.get_data()
             if 'layers' in data:
@@ -1630,7 +1639,7 @@ class FeatureLayerCollectionManager(_GISResource):
         definition property from a hosted feature layer collection service. The result of
         this operation is a response indicating success or failure with
         error code and description.
-        See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Delete_From_Definition_Feature_Service/02r30000021w000000/ # noqa
+        See https://developers.arcgis.com/rest/services-reference/delete-from-definition-feature-service-.htm # noqa
         for additional information on this function.
         Input:
           json_dict - part to add to host service.  The part format can
@@ -1794,48 +1803,105 @@ class FeatureLayerCollectionManager(_GISResource):
         :return: JSON message as dictionary with to be used as publishParameters payload in the publish REST call.
         """
 
-        # region construct publishParameters dictionary
-        # construct a full publishParameters that is a combination of existing Feature Layer definition
-        # and original publishParameters.json used for publishing the service the first time
+        # region Get Item associated with the service
+        if 'serviceItemId' in self.properties.keys():
+            feature_layer_item = self._gis.content.get(self.properties['serviceItemId'])
+        else:
+            return {'error': 'Can only overwrite a hosted feature layer collection'}
+        # endregion
 
-        # get old publishParameters.json
-        path = "content/items/" + flc_item.itemid + "/info/publishParameters.json"
-        postdata = {'f': 'json'}
-
-        old_publish_parameters = self._gis._con.post(path, postdata)
-
-        # get FeatureServer definition
-        feature_service_def = dict(self.properties)
-
-        # Get definition of each layer and table, remove fields in the dict
-        layers_dict = []
-        tables_dict = []
-        for layer in self.layers:
-            layer_def = dict(layer.properties)
-            if 'fields' in layer_def.keys():
-                dump = layer_def.pop("fields")
-            layers_dict.append(layer_def)
-
-        for table in self.tables:
-            table_def = dict(table.properties)
-            if 'fields' in table_def.keys():
-                dump = table_def.pop('fields')
-            tables_dict.append(table_def)
-
-        # Splice the detailed table and layer def with FeatuerServer def
-        feature_service_def['layers'] = layers_dict
-        feature_service_def['tables'] = tables_dict
-        from pathlib import Path
-        service_name = Path(self.url).parts[-2]  # get service name from url
-        feature_service_def['name'] = service_name
-
-        # combine both old publish params and full feature service definition
-        publish_parameters = feature_service_def
-        publish_parameters.update(old_publish_parameters)
+        # region find data item related to this hosted feature layer
+        related_data_items = feature_layer_item.related_items('Service2Data', 'forward')
+        if len(related_data_items) > 0:
+            related_data_item = related_data_items[0]
+        else:
+            return {'error': 'Cannot find related data item used to publish this feature layer'}
 
         # endregion
 
-        return publish_parameters
+        # region Construct publish parameters for Portal / Enterprise
+        params = None
+        if related_data_item.type in ['CSV', 'Shapefile', 'File Geodatabase'] and \
+           self._gis._portal.is_arcgisonline == False:
+            params = {
+                "name" : related_data_item.name,
+                "title" : related_data_item.title,
+                "tags" : related_data_item.tags,
+                "type" : related_data_item.type,
+                "overwrite" : True,
+                "overwriteService" : "on",
+                "useDescription" : "on"
+            }
+            lyr_url_info = "%s/layers" % feature_layer_item.layers[0].container._url
+            fs_url = "%s" % feature_layer_item.layers[0].container._url
+            layer_info = self._gis._con.get(lyr_url_info, {'f' : 'json'})
+            [lyr.pop('fields') for lyr in layer_info['layers']]
+            [lyr.pop('fields') for lyr in layer_info['tables']]
+            feature_service_def = self._gis._con.get(fs_url, {'f' : 'json'})
+            feature_service_def['tables'] = []
+            feature_service_def['layers'] = []
+            feature_service_def.update(layer_info)
+            publish_parameters = feature_service_def
+            publish_parameters['name'] = feature_layer_item.title
+            publish_parameters['_ssl'] = False
+            for idx, lyr in enumerate(publish_parameters['layers']):
+                lyr['parentLayerId'] = -1
+                for k in {'sourceSpatialReference', 'isCoGoEnabled',
+                          'parentLayer', 'isDataArchived', 'cimVersion'}:
+                    lyr.pop(k, None)
+            for idx, lyr in enumerate(publish_parameters['tables']):
+                lyr['parentLayerId'] = -1
+                for k in {'sourceSpatialReference', 'isCoGoEnabled',
+                          'parentLayer', 'isDataArchived', 'cimVersion'}:
+                    lyr.pop(k, None)
+        # endregion
+
+        # region Construct publish parameters for AGO
+        elif related_data_item.type in ['CSV', 'Shapefile', 'File Geodatabase'] and \
+           self._gis._portal.is_arcgisonline:
+            # construct a full publishParameters that is a combination of existing Feature Layer definition
+            # and original publishParameters.json used for publishing the service the first time
+
+            # get old publishParameters.json
+            path = "content/items/" + feature_layer_item.itemid + "/info/publishParameters.json"
+            postdata = {'f': 'json'}
+
+            old_publish_parameters = self._gis._con.post(path, postdata)
+
+            # get FeatureServer definition
+            feature_service_def = dict(self.properties)
+
+            # Get definition of each layer and table, remove fields in the dict
+            layers_dict = []
+            tables_dict = []
+            for layer in self.layers:
+                layer_def = dict(layer.properties)
+                if 'fields' in layer_def.keys():
+                    dump = layer_def.pop("fields")
+                layers_dict.append(layer_def)
+
+            for table in self.tables:
+                table_def = dict(table.properties)
+                if 'fields' in table_def.keys():
+                    dump = table_def.pop('fields')
+                tables_dict.append(table_def)
+
+            # Splice the detailed table and layer def with FeatuerServer def
+            feature_service_def['layers'] = layers_dict
+            feature_service_def['tables'] = tables_dict
+            from pathlib import Path
+            service_name = Path(self.url).parts[-2]  # get service name from url
+            feature_service_def['name'] = service_name
+
+            # combine both old publish params and full feature service definition
+            publish_parameters = feature_service_def
+            publish_parameters.update(old_publish_parameters)
+        else:
+            # overwriting a SD case - no need for detailed publish parameters
+            publish_parameters = None
+        # endregion
+
+        return (publish_parameters, params)
 
 class FeatureLayerManager(_GISResource):
     """
@@ -1947,7 +2013,7 @@ class FeatureLayerManager(_GISResource):
            definition property from a hosted feature layer. The result of
            this operation is a response indicating success or failure with
            error code and description.
-           See: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Delete_From_Definition_Feature_Service/02r30000021w000000/ # noqa
+           See: https://developers.arcgis.com/rest/services-reference/delete-from-definition-feature-service-.htm # noqa
            for additional information on this function.
            Input:
               json_dict - part to add to host service.  The part format can
@@ -1984,7 +2050,7 @@ class FeatureLayerManager(_GISResource):
            The truncate operation supports deleting all features or attachments
            in a hosted feature service layer. The result of this operation is a
            response indicating success or failure with error code and description.
-           See: http://resources.arcgis.com/en/help/arcgis-rest-api/#/Truncate_Feature_Layer/02r3000002v0000000/ # noqa
+           See: https://developers.arcgis.com/rest/services-reference/truncate-feature-layer-.htm # noqa
            for additional information on this function.
            Input:
               attachment_only - Deletes all the attachments for this layer.

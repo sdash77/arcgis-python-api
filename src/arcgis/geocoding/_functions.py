@@ -102,7 +102,7 @@ class Geocoder(_GISResource):
                                  a user will search for places and addresses only
                                  within the current map extent.
         --------------------     ----------------------------------------------------
-        location                 optionl [x,y], Defines an origin point location that
+        location                 optional [x,y], Defines an origin point location that
                                  is used with the distance parameter to sort
                                  geocoding candidates based upon their proximity to
                                  the location.
@@ -148,38 +148,38 @@ class Geocoder(_GISResource):
         as_featureset            optional boolean, if True, the result set will be a
                                  FeatureSet instead of a dictionary. False is default
         --------------------     ----------------------------------------------------
-        match_out_of_range       Optional Boolean. Provides better spatial accuracy 
-                                 for inexact street addresses by specifying whether 
-                                 matches will be returned when the input number is 
-                                 outside of the house range defined for the input 
-                                 street. Out of range matches will be defined as 
-                                 Addr_type=StreetAddressExt. Input house numbers 
+        match_out_of_range       Optional Boolean. Provides better spatial accuracy
+                                 for inexact street addresses by specifying whether
+                                 matches will be returned when the input number is
+                                 outside of the house range defined for the input
+                                 street. Out of range matches will be defined as
+                                 Addr_type=StreetAddressExt. Input house numbers
                                  that exceed the range on a street segment by more
                                  than 100 will not result in `StreetAddressExt`
-                                 matches. The default value of this parameter is 
+                                 matches. The default value of this parameter is
                                  True.
         --------------------     ----------------------------------------------------
-        location_type            Optional Str. Specifies whether the rooftop point or 
-                                 street entrance is used as the output geometry of 
-                                 PointAddress matches. By default, street is used, 
+        location_type            Optional Str. Specifies whether the rooftop point or
+                                 street entrance is used as the output geometry of
+                                 PointAddress matches. By default, street is used,
                                  which is useful in routing scenarios, as the rooftop
-                                 location of some addresses may be offset from a 
+                                 location of some addresses may be offset from a
                                  street by a large distance. However, for map display
-                                 purposes, you may want to use rooftop instead, 
-                                 especially when large buildings or landmarks are 
+                                 purposes, you may want to use rooftop instead,
+                                 especially when large buildings or landmarks are
                                  geocoded. The `location_type` parameter only affects
-                                 the location object in the JSON response and does 
-                                 not change the x,y or DisplayX/DisplayY attribute 
+                                 the location object in the JSON response and does
+                                 not change the x,y or DisplayX/DisplayY attribute
                                  values.
 
                                  Values: `street` or `rooftop`
         --------------------     ----------------------------------------------------
-        lang_code                Optional str. Sets the language in which geocode 
+        lang_code                Optional str. Sets the language in which geocode
                                  results are returned.
         --------------------     ----------------------------------------------------
-        source_country           Optional str. Limits the returned candidates to the 
-                                 specified country or countries for either single-field 
-                                 or multifield requests. Acceptable values include 
+        source_country           Optional str. Limits the returned candidates to the
+                                 specified country or countries for either single-field
+                                 or multifield requests. Acceptable values include
                                  the 3-character country code.
         ====================     ====================================================
 
@@ -228,7 +228,7 @@ class Geocoder(_GISResource):
         if not match_out_of_range is None:
             params['matchOutOfRange'] = match_out_of_range
         if not location_type is None:
-            params['locationType'] = location_type    
+            params['locationType'] = location_type
         if lang_code:
             params['langCode'] = lang_code
         if source_country:
@@ -289,7 +289,7 @@ class Geocoder(_GISResource):
             params['featureTypes'] = feature_types
         if location_type:
             params['locationType'] = location_type
-            
+
         resp = self._con.post(url, params, token=self._token)
         if resp is not None and as_featureset:
             geom = copy.copy(resp['location'])
@@ -396,7 +396,7 @@ class Geocoder(_GISResource):
         if preferred_label_values is not None:
             params['preferredLabelValues'] = preferred_label_values
 
-        resp = self._con.post(url, params, token=self._token)
+        resp = self._con.post(url, params)
         if resp is not None and as_featureset:
             sr = resp['spatialReference']
 
@@ -438,7 +438,7 @@ class Geocoder(_GISResource):
 
     def _suggest(self,
                  text,
-                 location,
+                 location=None,
                  distance=None,
                  category=None,
                  search_extent=None,
@@ -509,8 +509,7 @@ class Geocoder(_GISResource):
             params['location'] = "%s,%s" % (location[0], location[1])
         elif isinstance(location, dict):
             params['location'] = dict(location)
-        else:
-            raise Exception("Invalid location, please try again")
+
         if not category is None:
             params['category'] = category
         if not distance is None and \
@@ -980,7 +979,7 @@ def geocode(address,
             match_out_of_range=True,
             location_type='street',
             lang_code=None,
-            source_country=None):            
+            source_country=None):
     """
     The geocode function geocodes one location per request.
 
@@ -991,7 +990,7 @@ def geocode(address,
                              Specifies the location to be geocoded. This can be
                              a string containing the street address, place name,
                              postal code, or POI.
-                             
+
                              Alternatively, this can be a dictionary containing
                              the various address fields accepted by the
                              corresponding geocoder. These fields are listed in
@@ -1013,7 +1012,7 @@ def geocode(address,
                              a user will search for places and addresses only
                              within the current map extent.
     --------------------     ----------------------------------------------------
-    location                 Optionl [x,y], Defines an origin point location that
+    location                 Optional [x,y], Defines an origin point location that
                              is used with the distance parameter to sort
                              geocoding candidates based upon their proximity to
                              the location.
@@ -1042,8 +1041,8 @@ def geocode(address,
     max_location             Optional integer, The number of locations to be
                              returned from the service. The default is 20.
     --------------------     ----------------------------------------------------
-    magic_key                Optional string. The find operation retrieves 
-                             results quicker when you pass a valid text and 
+    magic_key                Optional string. The find operation retrieves
+                             results quicker when you pass a valid text and
                              `magic_key` value.
     --------------------     ----------------------------------------------------
     for_storage              Optional Boolean. Specifies whether the results of the operation will
@@ -1061,38 +1060,38 @@ def geocode(address,
                              returned as a FeatureSet object, else it is a
                              dictionary.
     --------------------     ----------------------------------------------------
-    match_out_of_range       Optional Boolean. Provides better spatial accuracy 
-                             for inexact street addresses by specifying whether 
-                             matches will be returned when the input number is 
-                             outside of the house range defined for the input 
-                             street. Out of range matches will be defined as 
-                             Addr_type=StreetAddressExt. Input house numbers 
+    match_out_of_range       Optional Boolean. Provides better spatial accuracy
+                             for inexact street addresses by specifying whether
+                             matches will be returned when the input number is
+                             outside of the house range defined for the input
+                             street. Out of range matches will be defined as
+                             Addr_type=StreetAddressExt. Input house numbers
                              that exceed the range on a street segment by more
                              than 100 will not result in `StreetAddressExt`
-                             matches. The default value of this parameter is 
+                             matches. The default value of this parameter is
                              True.
     --------------------     ----------------------------------------------------
-    location_type            Optional Str. Specifies whether the rooftop point or 
-                             street entrance is used as the output geometry of 
-                             PointAddress matches. By default, street is used, 
+    location_type            Optional Str. Specifies whether the rooftop point or
+                             street entrance is used as the output geometry of
+                             PointAddress matches. By default, street is used,
                              which is useful in routing scenarios, as the rooftop
-                             location of some addresses may be offset from a 
+                             location of some addresses may be offset from a
                              street by a large distance. However, for map display
-                             purposes, you may want to use rooftop instead, 
-                             especially when large buildings or landmarks are 
+                             purposes, you may want to use rooftop instead,
+                             especially when large buildings or landmarks are
                              geocoded. The `location_type` parameter only affects
-                             the location object in the JSON response and does 
-                             not change the x,y or DisplayX/DisplayY attribute 
+                             the location object in the JSON response and does
+                             not change the x,y or DisplayX/DisplayY attribute
                              values.
 
                              Values: `street` or `rooftop`
     --------------------     ----------------------------------------------------
-    lang_code                Optional str. Sets the language in which geocode 
+    lang_code                Optional str. Sets the language in which geocode
                              results are returned.
     --------------------     ----------------------------------------------------
-    source_country           Optional str. Limits the returned candidates to the 
-                             specified country or countries for either single-field 
-                             or multifield requests. Acceptable values include 
+    source_country           Optional str. Limits the returned candidates to the
+                             specified country or countries for either single-field
+                             or multifield requests. Acceptable values include
                              the 3-character country code.
     ====================     ====================================================
 
@@ -1121,10 +1120,10 @@ def geocode(address,
         source_country=source_country)
 
 
-def reverse_geocode(location, distance=None, 
+def reverse_geocode(location, distance=None,
                     out_sr=None, lang_code=None,
                     return_intersection=False,
-                    for_storage=False, geocoder=None, 
+                    for_storage=False, geocoder=None,
                     feature_types=None, roof_top='street'):
     """
     The reverse_geocode operation determines the address at a particular
@@ -1143,13 +1142,13 @@ def reverse_geocode(location, distance=None,
     out_sr              optional integer, spatial reference of the x/y
                         coordinate returned.
     ------------------- ----------------------------------------------------
-    lang_code           optional string. Sets the language in which geocode 
-                        results are returned. This is useful for ensuring 
-                        that results are returned in the expected language. 
-                        If the lang_code parameter isn't included in a 
-                        request, or if it is included but there are no 
+    lang_code           optional string. Sets the language in which geocode
+                        results are returned. This is useful for ensuring
+                        that results are returned in the expected language.
+                        If the lang_code parameter isn't included in a
+                        request, or if it is included but there are no
                         matching features with the input language code, the
-                        resultant match is returned in the language code of 
+                        resultant match is returned in the language code of
                         the primary matched components from the input search
                         string.
     ------------------- ----------------------------------------------------
@@ -1164,31 +1163,31 @@ def reverse_geocode(location, distance=None,
     geocoder            optional geocoder, the geocoder to be used. If not
                         specified, the active GIS's first geocoder is used.
     ------------------- ----------------------------------------------------
-    feature_types       Optional String. Limits the possible match types 
-                        performed by the `reverse_geocode` method. If a 
-                        single value is included, the search tolerance for 
-                        the input feature type is 500 meters. If multiple 
-                        values (separated by a comma, with no spaces) are 
-                        included, the default search distances specified in 
+    feature_types       Optional String. Limits the possible match types
+                        performed by the `reverse_geocode` method. If a
+                        single value is included, the search tolerance for
+                        the input feature type is 500 meters. If multiple
+                        values (separated by a comma, with no spaces) are
+                        included, the default search distances specified in
                         the feature type hierarchy table are applied.
 
-                        Values: StreetInt, DistanceMarker, StreetAddress, 
+                        Values: StreetInt, DistanceMarker, StreetAddress,
                                 StreetName, POI, PointAddress, Postal, and
                                 Locality
     ------------------- ----------------------------------------------------
     location_type       Optional string. Specifies whether the rooftop point
-                        or street entrance is used as the output geometry of 
-                        point address matches. By default, street is used, 
-                        which is useful in routing scenarios, as the rooftop 
-                        location of some addresses may be offset from a 
+                        or street entrance is used as the output geometry of
+                        point address matches. By default, street is used,
+                        which is useful in routing scenarios, as the rooftop
+                        location of some addresses may be offset from a
                         street by a large distance. However, for map display
-                        purposes, you may want to use rooftop instead, 
-                        especially when large buildings or landmarks are 
+                        purposes, you may want to use rooftop instead,
+                        especially when large buildings or landmarks are
                         geocoded. The location_type parameter only affects
-                        the location object in the JSON response and does 
-                        not change the x,y or DisplayX/DisplayY attribute 
+                        the location object in the JSON response and does
+                        not change the x,y or DisplayX/DisplayY attribute
                         values.
-                        
+
                         Values: street, rooftop
     =================== ====================================================
 
@@ -1199,13 +1198,13 @@ def reverse_geocode(location, distance=None,
     if geocoder is None:
         geocoder = arcgis.env.active_gis._tools.geocoders[0]
         assert isinstance(geocoder, Geocoder)
-    return geocoder._reverse_geocode(location=location, 
-                                     distance=distance, 
-                                     out_sr=out_sr, 
+    return geocoder._reverse_geocode(location=location,
+                                     distance=distance,
+                                     out_sr=out_sr,
                                      lang_code=lang_code,
-                                     return_intersection=return_intersection, 
-                                     for_storage=for_storage, 
-                                     feature_types=feature_types, 
+                                     return_intersection=return_intersection,
+                                     for_storage=for_storage,
+                                     feature_types=feature_types,
                                      location_type=roof_top)
 
 
@@ -1324,7 +1323,7 @@ def batch_geocode(addresses,
 
 
 def suggest(text,
-            location,
+            location=None,
             distance=None,
             category=None,
             geocoder=None,
@@ -1375,7 +1374,7 @@ def suggest(text,
                         places within or near the map extent.
                         The location parameter can be specified without
                         specifying a distance. If distance is not specified,
-                        it defaults to 2000 meters.
+                        it defaults to 2000 meters. This parameter is **optional**.
     ---------------     -----------------------------------------------------------------
     distance            Specifies the radius around the point defined in the
                         location parameter to create an area, which is used to boost
@@ -1395,29 +1394,29 @@ def suggest(text,
     geocoder            Optional, the geocoder to be used. If not specified,
                         the active GIS's first geocoder is used.
     ---------------     -----------------------------------------------------------------
-    search_extent       Optional String/Dict. A set of bounding box coordinates that 
-                        limit the search area to a specific region. You can specify the 
-                        spatial reference of the `search_extent` coordinates, which is 
-                        necessary if the map spatial reference is different than that of 
-                        the geocoding service; otherwise, the spatial reference of the 
-                        map coordinates is assumed to be the same as that of the 
+    search_extent       Optional String/Dict. A set of bounding box coordinates that
+                        limit the search area to a specific region. You can specify the
+                        spatial reference of the `search_extent` coordinates, which is
+                        necessary if the map spatial reference is different than that of
+                        the geocoding service; otherwise, the spatial reference of the
+                        map coordinates is assumed to be the same as that of the
                         geocoding service. The input can either be a comma-separated list
-                        of coordinates defining the bounding box or a JSON envelope 
-                        object. The `search_extent` coordinates should always use a 
-                        period as the decimal separator, even in countries where 
+                        of coordinates defining the bounding box or a JSON envelope
+                        object. The `search_extent` coordinates should always use a
+                        period as the decimal separator, even in countries where
                         traditionally a comma is used.
     ---------------     -----------------------------------------------------------------
-    max_suggestions     Optional Int.  The maximum number of suggestions returned by the 
-                        suggest operation, up to the maximum number allowed by the 
-                        service. If maxSuggestions is not included in the suggest 
-                        request, the default value is 5. The maximum suggestions value 
+    max_suggestions     Optional Int.  The maximum number of suggestions returned by the
+                        suggest operation, up to the maximum number allowed by the
+                        service. If maxSuggestions is not included in the suggest
+                        request, the default value is 5. The maximum suggestions value
                         can be modified in the source address locator.
     ---------------     -----------------------------------------------------------------
-    country_code        Optional Str. Limits the returned suggestions to values in a 
-                        particular country. Valid two- and three-character country code 
-                        values for each country are available in geocode coverage. When 
-                        the `country_code` parameter is specified in a suggest request, 
-                        the corresponding `geocode` call must also include the 
+    country_code        Optional Str. Limits the returned suggestions to values in a
+                        particular country. Valid two- and three-character country code
+                        values for each country are available in geocode coverage. When
+                        the `country_code` parameter is specified in a suggest request,
+                        the corresponding `geocode` call must also include the
                         `country_code` parameter with the same value.
     ===============     =================================================================
     """

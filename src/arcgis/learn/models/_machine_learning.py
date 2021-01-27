@@ -61,7 +61,7 @@ def raise_data_exception():
 
 class MLModel(object):
     """
-    Creates a machine learning model based on it's implementation from scikit-learn.
+    Creates a machine learning model based on its implementation from scikit-learn.
     For supervised learning:
     Refer https://scikit-learn.org/stable/supervised_learning.html#supervised-learning
     For unsupervised learning:
@@ -583,6 +583,7 @@ class MLModel(object):
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 
+            gis = gis if gis else arcgis.env.active_gis
             return self._predict_features(input_features, rasters, datefield, distance_features, output_layer_name, gis, match_field_names, prediction_type)
         else:
             if not rasters:
@@ -607,7 +608,7 @@ class MLModel(object):
         if isinstance(input_features, FeatureLayer):
             dataframe = input_features.query().sdf
         else:
-            dataframe = input_features
+            dataframe = input_features.copy()
 
         fields_needed = self._data._categorical_variables + self._data._continuous_variables
         distance_feature_layers = distance_feature_layers if distance_feature_layers else []
@@ -706,7 +707,10 @@ class MLModel(object):
 
         fields_needed = self._data._categorical_variables + self._data._continuous_variables
 
-        arcpy.env.outputCoordinateSystem = rasters[0].extent['spatialReference']['wkt']
+        try:
+            arcpy.env.outputCoordinateSystem = rasters[0].extent['spatialReference']['wkt']
+        except:
+            arcpy.env.outputCoordinateSystem = rasters[0].extent['spatialReference']['wkid']
 
         xmin = rasters[0].extent['xmin']
         xmax = rasters[0].extent['xmax']
@@ -746,8 +750,8 @@ class MLModel(object):
             if min_cell_size_y > cell_size.y:
                 min_cell_size_y = cell_size.y
 
-        max_raster_columns = math.ceil((xmax-xmin)/min_cell_size_x)
-        max_raster_rows = math.ceil((ymax-ymin)/min_cell_size_y)
+        max_raster_columns = int(abs(math.ceil((xmax-xmin)/min_cell_size_x)))
+        max_raster_rows = int(abs(math.ceil((ymax-ymin)/min_cell_size_y)))
 
         point_upper = arcgis.geometry.Point({'x': xmin, 'y': ymax, 'sr': default_sr})
         cell_size = arcgis.geometry.Point({'x': min_cell_size_x, 'y': min_cell_size_y, 'sr': default_sr})
@@ -758,29 +762,49 @@ class MLModel(object):
             point_upper_translated = arcgis.geometry.project([point_upper], default_sr, raster.extent['spatialReference'])[0]
             cell_size_translated = arcgis.geometry.project([cell_size], default_sr, raster.extent['spatialReference'])[0]
             if field_name in fields_needed:
-                raster_data[field_name] = raster.read(origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns, nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
+                raster_read = raster.read(origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns, nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
+                for row in range(max_raster_rows):
+                    for column in range(max_raster_columns):
+                        values = raster_read[row][column]
+                        index = 0
+                        for value in values:
+                            key = field_name
+                            if index != 0:
+                                key = key + f'_{index}'
+                            if not raster_data.get(key):
+                                raster_data[key] = []
+                            index = index + 1
+                            raster_data[key].append(value)
             elif match_field_names and match_field_names.get(raster.name):
                 field_name = match_field_names.get(raster.name)
-                raster_data[field_name] = raster.read(origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns, nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
+                raster_read = raster.read(origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns, nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
+                for row in range(max_raster_rows):
+                    for column in range(max_raster_columns):
+                        values = raster_read[row][column]
+                        index = 0
+                        for value in values:
+                            key = field_name
+                            if index != 0:
+                                key = key + f'_{index}'
+                            if not raster_data.get(key):
+                                raster_data[key] = []
+                            index = index + 1
+                            raster_data[key].append(value)
             else:
                 continue
 
         for field in fields_needed:
-            if field not in list(raster_data.keys()):
+            if field not in list(raster_data.keys()) and match_field_names and match_field_names.get(field, None) is None:
                 raise Exception(f"Field missing {field}")
 
         processed_data = []
 
-        for row in progress_bar(range(max_raster_rows)):
-            for column in range(max_raster_columns):
-                processed_row = []
-                for raster_name in sorted(raster_data):
-                    value = raster_data[raster_name][row][column]
-                    if len(value) > 0:
-                        processed_row.append(value[0])
-                    else:
-                        processed_row.append(0)
-                processed_data.append(processed_row)
+        length_values = len(raster_data[list(raster_data.keys())[0]])
+        for i in range(length_values):
+            processed_row = []
+            for raster_name in sorted(raster_data.keys()):
+                processed_row.append(raster_data[raster_name][i])
+            processed_data.append(processed_row)
 
         processed_df = pd.DataFrame(data=np.array(processed_data), columns=sorted(raster_data))
 

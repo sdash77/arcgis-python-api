@@ -79,6 +79,10 @@ atanh
 _____
 .. autofunction:: arcgis.raster.functions.atanh
 
+bai
+_______________
+.. autofunction:: arcgis.raster.functions.bai
+
 band_arithmetic
 _______________
 .. autofunction:: arcgis.raster.functions.band_arithmetic
@@ -394,6 +398,10 @@ ml_classify
 ___________
 .. autofunction:: arcgis.raster.functions.ml_classify
 
+mndwi
+___________
+.. autofunction:: arcgis.raster.functions.mndwi
+
 mod
 ___
 .. autofunction:: arcgis.raster.functions.mod
@@ -414,6 +422,22 @@ _____
 multidimensional_filter
 _______________________
 .. autofunction:: arcgis.raster.functions.multidimensional_filter
+
+nbr
+____
+.. autofunction:: arcgis.raster.functions.nbr
+
+ndbi
+____
+.. autofunction:: arcgis.raster.functions.ndbi
+
+ndmi
+____
+.. autofunction:: arcgis.raster.functions.ndmi
+
+ndsi
+____
+.. autofunction:: arcgis.raster.functions.ndsi
 
 ndvi
 ____

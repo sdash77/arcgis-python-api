@@ -1,5 +1,6 @@
 
 import math
+from itertools import compress
 from .env import HAS_TENSORFLOW
 if HAS_TENSORFLOW:
     import tensorflow as tf
@@ -11,7 +12,7 @@ if HAS_TENSORFLOW:
     from .._utils.fastai_tf_fit import _tf_to_pytorch, _pytorch_to_tf_batch, _pytorch_to_tf
     from .common_tf import NormalizationLayerRGB
 
-from .common import get_nbatches
+from .common import get_nbatches, image_batch_stretcher
 
 try:
     import torch
@@ -26,11 +27,7 @@ except:
 ## Common section starts
 
 def IC_show_results(self, nrows=5, **kwargs):
-
-    # Get Number of items
-    ncols = kwargs.get('ncols', nrows)
-    n_items = kwargs.get('n_items', nrows * ncols)
-
+    
     type_data_loader = kwargs.get('data_loader', 'validation') # options : traininig, validation, testing
     if type_data_loader == 'training':
         data_loader = self._data.train_dl
@@ -42,36 +39,40 @@ def IC_show_results(self, nrows=5, **kwargs):
         e = Exception(f'could not find {type_data_loader} in data. Please ensure that the data loader type is traininig, validation or testing ')
         raise(e)
 
-
+    thresh = kwargs.get('thresh', 0.5)
     nodata = kwargs.get('nodata', 0)
-
     index = kwargs.get('start_index', 0)
-
     imsize = kwargs.get('imsize', 5)
-    
-    title_font_size = 16
-    _top = 1 - (math.sqrt(title_font_size)/math.sqrt(100*nrows*imsize))
-    top = kwargs.get('top', _top)
-    
     statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
+    stretch_type = kwargs.get('stretch_type', 'minmax') # Accepted Values `minmax`, `percentclip`
 
     # Get Batch
-    x_batch, y_batch = get_nbatches(data_loader, n_items)
-        
+    n_items = min(nrows, len(data_loader.x))
+    nbatches = math.ceil(n_items/self._data.batch_size)
+    x_batch, y_batch = get_nbatches(data_loader, nbatches)
     x_batch = torch.cat(x_batch)
-    # Denormalize X
     y_batch = torch.cat(y_batch)
 
     # Get Predictions
     predictions_class_store = []
-    predictions_confidence_store = []
+    predictions = []
     for i in range(0, x_batch.shape[0], self._data.batch_size):
         if self._backend == 'pytorch':
-            _classes, _confidences = self._predict_batch(x_batch[i:i+self._data.batch_size])
+            batch_preds = self.learn.pred_batch(batch=(x_batch[i:i+self._data.batch_size], y_batch[i:i+self._data.batch_size]))
+            # batch_preds: torch.tensor(B,C), where B is the batch size and C is the number of classes
+            if self._data.dataset_type == "MultiLabeled_Tiles":
+                predictions.append(batch_preds)
+            else:
+                confidences, class_idxs = torch.max(batch_preds, dim=1)
+                predictions_class_store.extend(class_idxs)
+
         elif self._backend == 'tensorflow':
-            _classes, _confidences = TF_IC_predict_batch(self, x_batch[i:i+self._data.batch_size])
-        predictions_class_store.extend(_classes)
-        predictions_confidence_store.extend(_confidences)
+            class_idxs, _confidences = TF_IC_predict_batch(self, x_batch[i:i+self._data.batch_size])
+            predictions_class_store.extend(class_idxs)
+    
+    # predictions will only hold values with Multilabel_Tiles
+    # convert predictions from List[torch.tensor] to a torch.tensor
+    if predictions: predictions = torch.cat(predictions)
 
     if self._is_multispectral:
 
@@ -97,11 +98,8 @@ def IC_show_results(self, nrows=5, **kwargs):
         
         # Extract RGB Bands
         symbology_x_batch = x_batch[:, symbology_bands]
-        if statistics_type == 'DRA':
-            shp = symbology_x_batch.shape
-            min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
-            max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
-            symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+        if stretch_type is not None:
+            symbology_x_batch = image_batch_stretcher(symbology_x_batch, stretch_type, statistics_type)
 
     else:
         # normalization stats
@@ -123,34 +121,50 @@ def IC_show_results(self, nrows=5, **kwargs):
     # Get color Array
     color_array = self._data._multispectral_color_array
 
-    # Handle Sparse Data
-    if y_batch.ndim > 1:
+    # Handle Sparse Data (not to be applied with Multilabel data)
+    if self._data.dataset_type != "MultiLabeled_Tiles" and y_batch.ndim > 1:
         y_batch = y_batch.max(-1)[1]
-
-    # Size for plotting
-    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
-    fig.suptitle('Ground Truth\nPredictions', fontsize=title_font_size)
+    
+    # Plotting Ground Truth and Prediction side by side
+    ncols = 2
+    title_font_size = 16
+    _top = 1 - (math.sqrt(title_font_size)/math.sqrt(100*n_items*imsize))
+    top = kwargs.get('top', _top)
+    fig, axs = plt.subplots(nrows=n_items, ncols=ncols, figsize=(ncols*imsize, n_items*imsize))
+    fig.suptitle('Ground truth/Predictions', fontsize=title_font_size, weight='bold')
     plt.subplots_adjust(top=top)
     idx=0
-    for r in range(nrows):
-        for c in range(ncols):
-            if nrows==1:
-                axi = axs
-            else:
-                axi  = axs[r][c]
-            if idx < symbology_x_batch.shape[0]:
-                axi.imshow(symbology_x_batch[idx].cpu().numpy())
-                y = self._data.classes[y_batch[idx].item()]
-                prediction = self._data.classes[predictions_class_store[idx]]
-                # prediction_confidence = predictions_confidence_store[idx]
-                # title = f"{y} \n {prediction} {prediction_confidence:0.f}%"
-                title = f"{y}\n{prediction}"
-                axi.set_title(title)
-                axi.axis('off')
-            else:
-                axi.axis('off')
-            idx+=1
-    return fig
+    for r in range(n_items):
+        if n_items==1:
+            ax_i = axs
+        else:
+            ax_i  = axs[r]
+
+        # Get ground truth and prediction class names
+        if self._data.dataset_type == "MultiLabeled_Tiles":
+            one_hot_labels = y_batch[idx].tolist()
+            gt_label = ";".join(compress(self._data.classes, one_hot_labels))
+            one_hot_pred = (predictions[idx] >= thresh).tolist()
+            prediction = ";".join(compress(self._data.classes, one_hot_pred))
+        #For single label (Pytorch and TF)
+        else:
+            gt_label = self._data.classes[y_batch[idx].item()]
+            prediction = self._data.classes[predictions_class_store[idx]]
+
+        #Plot ground truth
+        ax_ground_truth = ax_i[0]
+        ax_ground_truth.axis('off')
+        ax_ground_truth.imshow(symbology_x_batch[idx].cpu().numpy())
+        ax_ground_truth.set_title(gt_label)
+            
+        # Plot Predictions
+        ax_prediction  = ax_i[1]
+        ax_prediction.axis('off')
+        ax_prediction.imshow(symbology_x_batch[idx].cpu().numpy())
+        ax_prediction.set_title(prediction)
+        
+        idx+=1
+    return fig, axs
 
 ## Common section ends
 

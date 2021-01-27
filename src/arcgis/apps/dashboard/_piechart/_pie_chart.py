@@ -4,42 +4,38 @@ from .._utils._basewidget import _BaseWidget
 from .._utils._basewidget import Legend
 from .._utils._basewidget import NoDataProperties
 
+
 class PieChart(_BaseWidget):
+    """
+    Creates a dashboard Pie Chart widget.
 
-    def __init__(self, item, name, layer=0, categories_from="groupByValues", title='', description=''):
-        """
-        Creates a dashboard Pie Chart widget.
+    =========================   ===========================================
+    **Argument**                **Description**
+    -------------------------   -------------------------------------------
+    item                        Required Portal Item object. Item object can
+                                be a Feature Layer or a MapWidget.
+    -------------------------   -------------------------------------------
+    name                        Optional string. Name of the pie chart
+                                widget.
+    -------------------------   -------------------------------------------
+    layer                       Optional integer. Layer number when item is
+                                a mapwidget.
+    -------------------------   -------------------------------------------
+    categories_from             Optional string. Select from groupByValues,
+                                features or fields.
+    -------------------------   -------------------------------------------
+    title                       Optional string. Title or Caption for the
+                                widget.
+    -------------------------   -------------------------------------------
+    description                 Optional string. Description for the widget.
+    =========================   ===========================================
+    """
+    def __init__(self, item, name='PieChart', layer=0, categories_from="groupByValues", title='', description=''):
+        super().__init__(name, title, description)
 
-        =========================   ===========================================
-        **Argument**                **Description**
-        -------------------------   -------------------------------------------
-        item                        Required Item object. Item from which the
-                                    Indicator is constructed. Item object can 
-                                    be a Feature Layer or a MapWidget.
-        -------------------------   -------------------------------------------
-        name                        Optional string. Name of the pie chart
-                                    widget.
-        -------------------------   -------------------------------------------
-        layer                       Optional integer. Layer number when item is
-                                    a mapwidget.
-        -------------------------   -------------------------------------------
-        categories_from             Optional string. Select from groupByValues,
-                                    features or fields.
-        -------------------------   -------------------------------------------
-        title                       Optional string. Title or Caption for the
-                                    widget.
-        -------------------------   -------------------------------------------
-        description                 Optional string. Description for the widget.
-        =========================   ===========================================
-        """
-        super().__init__(title, description)
-
-        if not name:
-            raise Exception("Please specify a name")
         if item.type not in ['Feature Service', 'mapWidget']:
             raise Exception("Please specify an item")
 
-        self.name = name
         self.item = item
         self.type = "pieChartWidget"
         self.layer = layer
@@ -48,21 +44,18 @@ class PieChart(_BaseWidget):
 
         self._max_features = None
         self._show_last_update = True
+        self._targetid = None
 
         if categories_from not in ["groupByValues", "features", "fields"]:
             raise Exception("category_from can be groupByValues or features or fields")
 
-        self._data = PieChartData._create_data(categories_from)
-
+        self._data = PieChartData._create_data(categories_from, data_item = item)
         self._pie = PieChartProperties._create_chart()
-
         self._slices = SliceProperties._slice_properties()
-
         self._nodata = NoDataProperties._nodata_init()
-
         self._legend = Legend._create_legend()
-
         self._outline = OutlineProperties._outline_init()
+        self._events = Events._create_events()
 
     @classmethod
     def _from_json(cls, widget_json):
@@ -77,11 +70,11 @@ class PieChart(_BaseWidget):
         return pie_chart
 
     @property
-    def categories_from(self):
+    def events(self):
         """
-        :return: Selected categories from, groupByValues, features or fields.
+        :return: list of events attached to the widget.
         """
-        return self._categories_from
+        return self._events
 
     @property
     def data(self):
@@ -167,21 +160,37 @@ class PieChart(_BaseWidget):
         """
         self._labels = bool(value)
 
+    def _color_picker(self):
+        import random
+        
+        random_number = random.randint(0,16777215)
+        hex_number = str(hex(random_number))
+        hex_number ='#'+ hex_number[2:]
+
+        return hex_number
+
     def _convert_to_json(self):
 
         self._fields_slices = []
         self._statistic_fields = []
 
-        if self._data.categories_from == "fields":
-            self._category = "category"
-            for category_field in self._data.category_fields:
-                self._fields_slices.append({"key":str(category_field), "labels":str(category_field), "color":"#ff00aa"})
-                self._statistic_fields.append({"onStatisticField":str(category_field), "outStatisticFieldName":"value", "statisticType":self._data.statistic})
-        elif self._data.categories_from == "groupByValues":
-            self._statistic_fields.append({"onStatisticField":str(self._data.category_field), "outStatisticFieldName":"value", "statisticType":self._data.statistic})
-            self._category = self._data.category_field
+        if self.data.categories_from in ["groupByValues", "features"]:
+            self.data._get_slices()
 
+        if self._data.categories_from == "fields":
+            self._category = None
+            self._field_name = "category"
+            for category_field in self._data.category_field:
+                self._fields_slices.append({"key":str(category_field), "label":str(category_field), "color":self._color_picker()})
+                self._statistic_fields.append({"onStatisticField":str(category_field), "outStatisticFieldName":str(category_field), "statisticType":self.data.statistic})
+        elif self._data.categories_from == "groupByValues":
+            for slices in self.data._slice_fields:
+                self._fields_slices.append({"key":str(slices), "label":str(slices), "color":self._color_picker()})
+            self._statistic_fields.append({"onStatisticField":str(self.data.statistics_field), "outStatisticFieldName":"value", "statisticType":self.data.statistic})
+            self._category = self._data.category_field
         else:
+            for slices in self.data._slice_fields:
+                self._fields_slices.append({"key":str(slices), "label":str(slices), "color":self._color_picker()})
             self._category = self._data.category_field
 
         if self.labels == True:
@@ -191,9 +200,10 @@ class PieChart(_BaseWidget):
 
         if self.item.type == 'mapWidget':
             wlayer = self.item.layers[self.layer]
-            widget_id = self.item.id
+            widget_id = self.item._id
             layer_id = wlayer["id"]
             self._datasource = {"id":str(widget_id)+'#'+str(layer_id)}
+            self._targetid = self._datasource
         else:
             self._datasource = {
                         "type": "featureServiceDataSource",
@@ -206,7 +216,7 @@ class PieChart(_BaseWidget):
             "type": "pieChartWidget",
             "category": {
                 "sliceProperties": self._fields_slices,
-                "fieldName":self._category,
+                "fieldName": self._category if self._category else self._field_name,
                 "nullLabel":self._slices.null_label,
                 "blankLabel":self._slices.blank_label,
                 "defaultColor":self._slices.default_color,
@@ -238,7 +248,7 @@ class PieChart(_BaseWidget):
                 "groupPercent":self._slices.grouping_percent,
                 "groupedColor":self._slices.grouping_color
             },
-            "valueField":self._data.value_field,
+            #"valueField":self._data.value_field,
             "legend":{
                 "enabled":self._legend.visibility,
                 "format":"value",
@@ -262,26 +272,25 @@ class PieChart(_BaseWidget):
                 "prefix":False,
                 "pattern":"#.##"
             },
+            "events":[],
             "selectionMode":"single",
             "categoryType":self._data.categories_from,
-            "backgroundColor":self.background_color,
-            "textColor":self.text_color,
             "datasets":[
                     {
                     "type":"serviceDataset",
                     "dataSource":self._datasource,
                     "outFields":["*"],
-                    "groupByFields":self._category,
+                    "groupByFields":[self._category] if self._category else [],
                     "orderByFields":[],
                     "statisticDefinitions":self._statistic_fields,
-                    "max_features":self.max_features,
+                    "maxFeatures": self.max_features,
                     "querySpatialRelationship":"esriSpatialRelIntersects",
                     "returnGeometry":False,
                     "clientSideStatistics":False,
                     "name":"main"
                 }
             ],
-            "id": self.id,
+            "id": self._id,
             "name": self.name,
             "caption": self.title,
             "description": self.description,
@@ -290,25 +299,51 @@ class PieChart(_BaseWidget):
             "noDataVerticalAlignment":self._nodata.alignment,
             "showCaptionWhenNoData":self._nodata.show_title,
             "showDescriptionWhenNoData":self._nodata.show_description
-            }
+        }
+
+        if self.events.enable:
+            json_data["events"].append({"type":self.events.type, "actions":self.events.synced_widgets})
+            json_data["selectionMode"] = self.events.selection_mode
+
+        if self.background_color:
+            json_data["backgroundColor"] = self.background_color,
+
+        if self.text_color:
+            json_data["textColor"] = self.text_color
+
+        if self.events.enable:
+            json_data["events"].append({"type": self.events.type, "actions": self.events.synced_widgets})
+            json_data["selectionMode"] = self.events.selection_mode
+
+        if hasattr(self._data, '_value_field'):
+            json_data["valueField"] = self._data._value_field
+
         return json_data
+
 
 class PieChartData(object):
 
     @classmethod
-    def _create_data(cls, categories_from):
+    def _create_data(cls, categories_from, data_item=None):
         piechart_data = PieChartData()
 
         piechart_data._categories_from = "groupByValues"
+        piechart_data._item = data_item
         piechart_data._category_field = None
-        piechart_data._value_field = None
+        piechart_data._objectid_field = data_item.tables[0].properties["objectIdField"]
+
+        if categories_from != "fields":
+            piechart_data._value_field = piechart_data._objectid_field
+        piechart_data._statistics_field = piechart_data._objectid_field
         piechart_data._parse_dates = True
         piechart_data._statistic = "count"
+        piechart_data._filters = []
+        
+        piechart_data._slice_fields = []
 
         piechart_data._categories_from = categories_from
 
         return piechart_data
-
 
     @property
     def categories_from(self):
@@ -330,6 +365,20 @@ class PieChartData(object):
         Set True to parse input category fields of type date. For groupByValues and features.
         """
         self._parse_dates = bool(value)
+        
+    @property
+    def objectid_field(self):
+        """
+        :return: object ID field name.
+        """
+        return self._objectid_field
+    
+    @property
+    def statistics_field(self):
+        """
+        :return: Statistics field name.
+        """
+        return self._statistics_field
 
     @property
     def category_field(self):
@@ -341,13 +390,10 @@ class PieChartData(object):
     @category_field.setter
     def category_field(self, value):
         """
-        Set category field from dataset. For groupByValues or features.
+        Set category field from dataset. For groupByValues or features pass a single value. For fields pass a list
         """
-        if self._categories_from == "fields":
-            raise Exception("Can't set this attribute for 'fields' categories.")
-
         self._category_field = value
-
+            
     @property
     def value_field(self):
         """
@@ -358,10 +404,10 @@ class PieChartData(object):
     @value_field.setter
     def value_field(self, value):
         """
-        Set value field from dataset. For features only.
+        Set value field from dataset. For features and groupByValues only.
         """
-        if self._categories_from in ["fields", "groupByValues"]:
-            raise Exception("Can set this attribute for 'features' category only.")
+        if self._categories_from in ["fields"]:
+            raise Exception("Can set this attribute for 'features' or 'groupByValues' category only.")
 
         self._value_field = value
 
@@ -382,24 +428,48 @@ class PieChartData(object):
 
         if value in ['count', 'avg', 'min', 'max', 'stddev', 'sum']:
             self._statistic = value
-
-    def add_fields(self, category_fields):
+    
+    @property
+    def filters(self):
         """
-        Add category field to Pie chart.
-
-        =========================   ===========================================
-        **Argument**                **Description**
-        -------------------------   -------------------------------------------
-        category_field              Required field or list of fields from
-                                    input item. For groupByValues  and features
-                                    only one field is accepted. For fields, add
-                                    a list of fields.
-        =========================   ===========================================
+        :return: filters associated with widget
         """
-        if isinstance(category_field, list):
-                self._category_fields = category_fields
+        return self._filters
+    
+    def add_filter(self, field, join, condition, **kwargs):
+        """
+        Add filters associated with widget.
+        """
+        self._filter_field = field
+        if join in ["AND", "OR"]:
+            self._filter_join = join
         else:
-            self._category_fields = [category_fields]
+            raise Exception("Please select from 'AND', 'OR'")
+        if condition in ["between", "not between", "equal", "not equal", "greater than", "greater than or equal", "less than", "less than or equal", "is null", "is not null"]:
+            self._filter_condition = condition
+        else:
+            raise Exception("Please select the right condition")
+
+        if condition in ["between", "not between"]:
+            self._val1 = kwargs.get('start')
+            self,_val2 = kwargs.get('end')
+            self._filters.append({"filtertype":self._filter_join, "field":self._filter_field, "operator":self._filter_condition, "start":self._val1, "end":self._val2})
+        else:
+            raise Exception("Please provide 'start' and 'end' values as parameters")
+
+        if condition in ["equal", "not equal", "greater than", "greater than or equal", "less than", "less than or equal"]:
+            self._val = kwargs.get('value')
+            self._filters.append({"filtertype":self._filter_join, "field":self._filter_field, "operator":self._filter_condition, "value":self._val})
+        else:
+            raise Exception("Please provide a 'value' parameter for comparison")
+
+    def _get_slices(self):
+        statistics = self.statistic
+        c_field = self.category_field
+        v_field = self.value_field
+
+        x = self._item.tables[0].query(group_by_fields_for_statistics=c_field ,out_statistics=[{"statisticType":statistics,"onStatisticField":v_field,"outStatisticFieldName":"value"}], as_df=True)
+        self._slice_fields = x[c_field]
 
 class PieChartProperties(object):
 
@@ -495,17 +565,17 @@ class PieChartProperties(object):
 class SliceProperties(object):
 
     @classmethod
-    def _slice_properties(cls, opacity=1.0, default_color="#ffffff", null_color="#ffffff", blank_color="#000000", grouping_color="#000000", grouping_percent=0, null_label='', blank_label=''):
+    def _slice_properties(cls, opacity=1.0, default_color="#ffffff", null_color="#ffffff", blank_color="#000000", grouping_color="#000000", grouping_percent=0, null_label='Null', blank_label='Blank'):
         slices = SliceProperties()
 
         slices._opacity = 1.0
         slices._default_color = "#ffffff"
 
         slices._null_color = "#ffffff"
-        slices._null_label = ''
+        slices._null_label = 'Null'
 
         slices._blank_color = "#000000"
-        slices._blank_label = ''
+        slices._blank_label = 'Blank'
 
         slices._grouping_percent = 0
         slices._grouping_color = "#000000"
@@ -634,7 +704,7 @@ class SliceProperties(object):
         """
         Set grouping percentage.
         """
-        self._grouping_percent = str(value)
+        self._grouping_percent = value
 
 class OutlineProperties(object):
 
@@ -693,4 +763,124 @@ class OutlineProperties(object):
         Set outline color.
         """
         self._color = str(value)
-        
+ 
+class Events(object):
+
+    @classmethod
+    def _create_events(cls, enable=False):
+        events = Events()
+
+        events._enable = False
+        events._selection_mode = "single"
+        events._type = "selectionChanged"
+        events._actions = []
+
+        events.enable = enable
+
+        return events
+
+    @property
+    def selection_mode(self):
+        """
+        :return: Selection mode of events.
+        """
+        return self._selection_mode
+
+    @selection_mode.setter
+    def selection_mode(self, value):
+        """
+        Set Selection mode of events.
+        """
+        if value in ["single", "multi"]:
+            self._selection_mode = value
+        else:
+            raise Exception("Please specify selection_mode from 'single' and 'multi'")
+
+    @property
+    def enable(self):
+        """
+        :return: if events are enabled or not.
+        """
+        return self._enable
+
+    @enable.setter
+    def enable(self, value):
+        """
+        Set if events are enabled or not.
+        """
+        self._enable = bool(value)
+
+    @property
+    def type(self):
+        """
+        :return: type of trigger for event.
+        """
+        return self._type
+
+    @property
+    def synced_widgets(self):
+        """
+        :return: List of synced widgets.
+        """
+        return self._actions
+
+    def sync_map(self, action_type, widget):
+        """
+        Synchronize a mapWidget with PieChart for triggered events.
+
+        =========================   ===========================================
+        **Argument**                **Description**
+        -------------------------   -------------------------------------------
+        action_type                 Required string. Actions can be one of 
+                                    "zoom", "flash", "show_popup", "pan".
+        -------------------------   -------------------------------------------
+        widget                      Required MapWidget item. Name of the map
+                                    widget.
+        =========================   ===========================================
+        """
+        if self.enable == False:
+            raise Exception("Please enable events")
+        else:
+            if widget.type == "mapWidget":
+                if action_type in ["zoom", "flash", "show_popup", "pan"]:
+                    self._actions.append({"type": action_type, "targetId": widget._id})
+                elif action_type == "filter":
+                    if self._targetid is not None:
+                        self._actions.append({"type":action_type, "by":"whereClause", "targetId":self._targetid})
+                    else:
+                        raise Exception("This operation is not suitable for given dataSource.")
+                else:
+                    raise Exception("Please select action_type from 'zoom', 'flash', 'show_popup' and 'pan'")
+            else:
+                raise Exception("Please select a map widget")
+
+    def sync_widget(self, widgets):
+        """
+        Synchronize non-mapWidget type widgets with PieChart for triggered events.
+
+        =========================   ===========================================
+        **Argument**                **Description**
+        -------------------------   -------------------------------------------
+        widget                      Required widget item or list of widget items
+                                    .Name of the widgets to be synced.
+        =========================   ===========================================
+        """
+        if self.enable == False:
+            raise Exception("Please enable events")
+
+        else:
+            if isinstance(widgets, list):
+                for widget in widgets:
+                    if widget.type == "mapWidget":
+                        raise Exception("Use sync_map method to add actions for map widgets") ##duplicate or erase
+                    else:
+                        action_type = "filter"
+                        widget_id = str(widget._id)+'#main'
+                        self._actions.append({"type":action_type, "by":"whereClause", "targetId":widget_id})
+            else:
+                if widgets.type == "mapWidget":
+                    raise Exception("Use sync_map method to add actions for map widgets") ##duplicate or erase
+                else:
+                    action_type = "filter"
+                    widget_id = str(widgets._id)+'#main'
+                    self._actions.append({"type":action_type, "by":"whereClause", "targetId":widget_id})

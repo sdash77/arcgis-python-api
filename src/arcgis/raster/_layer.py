@@ -14,6 +14,7 @@ import logging
 import arcgis as _arcgis
 import base64
 from collections import defaultdict
+from ._RasterInfo import RasterInfo
 try:
     import numpy as np
 except:
@@ -345,8 +346,42 @@ class ImageryLayerCacheManager(_GISResource):
         url = self._url + "/deleteTiles"
         return self._con.post(url, params)
 ###########################################################################
+class _RasterRenderingService(Layer):
+    def __init__(self, gis=None):
+        self.gis = gis
+        url=None
+        if gis is not None:
+            if gis._con._product == "AGOL":
+                ra_url = gis.properties.helperServices.get("rasterAnalytics", {})\
+                                                              .get("url", "")
+                url = ra_url.replace("rasteranalysis", "rasterutils").replace("RasterAnalysisTools", "RasterRendering").replace("GPServer", "ImageServer")
+            else:
+                image_hosting_server_url = None
+                raster_analytics_server_url = None
+                hosting_server_url = None
+                
+                for ds in gis._datastores:
+                    if ('serverFunction' in ds._server.keys()) and 'ImageHosting' in ds._server['serverFunction']:
+                        image_hosting_server_url = ds._server['url']
+                        break
+                    elif ('serverFunction' in ds._server.keys()) and 'RasterAnalytics' in ds._server['serverFunction']:
+                        raster_analytics_server_url = ds._server['url']
+                    elif ('serverFunction' in ds._server.keys()) and ds._server['serverFunction'] == '':
+                        hosting_server_url = ds._server['url']
+                if image_hosting_server_url:
+                    url = image_hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
+                elif raster_analytics_server_url:
+                    url = raster_analytics_server_url + "/rest/services/System/RasterRendering/ImageServer"
+                elif hosting_server_url:
+                    url = hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
+        self.url = url
+        if url is not None:
+            self.token = gis._con.generate_portal_server_token(serverUrl=url)
+
+
 class ImageryLayer(Layer):
     _ilm = None
+    rendering_service_object = None
     def __init__(self, url, gis=None):
         self._datastore_raster = False
         self._uri = None
@@ -355,32 +390,26 @@ class ImageryLayer(Layer):
             url = url.decode("UTF-8")
             import ast
             url = ast.literal_eval(url)
-        if '/fileShares/' in url or '/rasterStores/' in url or '/cloudStores/' in url or isinstance(url,dict) or '/vsi' in url or isinstance(url, bytes):
-            self._gis = _arcgis.env.active_gis if gis is None else gis
-            self._datastore_raster = True
-            self._uri = url
-            if isinstance(url,dict):
-                encoded_dict = str(self._uri).encode('utf-8')
-                self._uri = base64.b64encode(encoded_dict)
-            gis = _arcgis.env.active_gis if gis is None else gis
-
-            image_hosting_server_url = None
-            raster_analytics_server_url = None
-            hosting_server_url = None
-            for ds in gis._datastores:
-                if ('serverFunction' in ds._server.keys()) and 'ImageHosting' in ds._server['serverFunction']:
-                    image_hosting_server_url = ds._server['url']
-                    break
-                elif ('serverFunction' in ds._server.keys()) and 'RasterAnalytics' in ds._server['serverFunction']:
-                    raster_analytics_server_url = ds._server['url']
-                elif ('serverFunction' in ds._server.keys()) and ds._server['serverFunction'] == '':
-                    hosting_server_url = ds._server['url']
-            if image_hosting_server_url:
-                url = image_hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
-            elif raster_analytics_server_url:
-                url = raster_analytics_server_url + "/rest/services/System/RasterRendering/ImageServer"
-            elif hosting_server_url:
-                url = hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
+        if isinstance(url, str) or isinstance(url, dict) or isinstance(url, bytes):
+            if '/fileShares/' in url or '/rasterStores/' in url or '/cloudStores/' in url or isinstance(url,dict) or '/vsi' in url or isinstance(url, bytes) or "ImageServer" not in url:
+                self._gis = _arcgis.env.active_gis if gis is None else gis
+                self._datastore_raster = True
+                self._uri = url
+                if isinstance(url,dict):
+                    encoded_dict = str(self._uri).encode('utf-8')
+                    self._uri = base64.b64encode(encoded_dict)
+                gis = _arcgis.env.active_gis if gis is None else gis
+                if gis is not None:
+                    if ImageryLayer.rendering_service_object is None or \
+                        (((ImageryLayer.rendering_service_object is not None) and ImageryLayer.rendering_service_object.gis is not None) and \
+                        ImageryLayer.rendering_service_object.gis.url != gis.url):
+                        ImageryLayer.rendering_service_object = _RasterRenderingService(gis)
+                        url = ImageryLayer.rendering_service_object.url
+                    else:
+                        if ImageryLayer.rendering_service_object.gis is not None:
+                            if ImageryLayer.rendering_service_object.gis.url == gis.url:
+                                url = ImageryLayer.rendering_service_object.url
+                                self._lazy_token = ImageryLayer.rendering_service_object.token
 
         super(ImageryLayer, self).__init__(url, gis)
         self._spatial_filter = None
@@ -395,6 +424,7 @@ class ImageryLayer(Layer):
         self._other_outputs = {}
         self._raster_info = {}
         self._tiles_only = None
+        self._extent_set = False
 
     @property
     def rasters(self):
@@ -573,8 +603,10 @@ class ImageryLayer(Layer):
             return self._tiles_only
         else:
             self._tiles_only = False
-            if "TilesOnly" in self.properties.capabilities:
-                self._tiles_only = True
+            props = self._get_service_info()
+            if ("capabilities" in props.keys()):
+                if "TilesOnly" in props["capabilities"]:
+                    self._tiles_only = True
             return self._tiles_only
 
     @property
@@ -624,6 +656,8 @@ class ImageryLayer(Layer):
         Returns information about the ImageryLayer such as 
         bandCount, extent , pixelSizeX, pixelSizeY, pixelType
         """
+        if self._raster_info !={}:
+            return self._raster_info
         if "extent" in self.properties:
             self._raster_info.update({"extent":dict(self.properties.extent)})
 
@@ -638,10 +672,24 @@ class ImageryLayer(Layer):
 
         if "pixelSizeY" in self.properties:
             self._raster_info.update({"pixelSizeY":self.properties.pixelSizeY})
+
+        if "compressionType" in self.properties:
+            self._raster_info.update({"compressionType":self.properties.compressionType})
+
+        if "blockHeight" in self.properties:
+            self._raster_info.update({"blockHeight":self.properties.blockHeight})
+
+        if "blockWidth" in self.properties:
+            self._raster_info.update({"blockWidth":self.properties.blockWidth})
+
+        if "noDataValues" in self.properties:
+            self._raster_info.update({"noDataValues":self.properties.noDataValues})
+
         return self._raster_info
 
     @extent.setter
     def extent(self, value):
+        self._extent_set = True 
         self._extent = value
 
     #----------------------------------------------------------------------
@@ -676,7 +724,7 @@ class ImageryLayer(Layer):
 
             if self._datastore_raster:
                 params["Raster"]=self._uri
-                if isinstance(self._uri, bytes):
+                if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                     del params['renderingRule']
                     params["Raster"]=self._uri
 
@@ -693,14 +741,19 @@ class ImageryLayer(Layer):
         Common data sources for multidimensional image services are mosaic
         datasets created from netCDF, GRIB, and HDF data.
         """
-        if "hasMultidimensions" in self.properties and \
-           self.properties['hasMultidimensions'] == True:
+        if ("hasMultidimensions" in self.properties and \
+           self.properties['hasMultidimensions'] == True) or self._datastore_raster:
             url = "%s/multiDimensionalInfo" % self._url
             params = {'f':'json'}
+            if self._fn is not None:
+                params['renderingRule'] = self._fn
+
             if self._datastore_raster:
                 params["Raster"]=self._uri
-            return self._con.get(path=url, params=params)
-        return None
+                if isinstance(self._uri, bytes):
+                    del params['renderingRule']
+                    params['Raster']=self._uri
+            return self._con.post(path=url, params=params)
     #----------------------------------------------------------------------
     def project(self,
                 geometries,
@@ -902,7 +955,7 @@ class ImageryLayer(Layer):
 
         if self._datastore_raster:
             params["Raster"]=self._uri
-            if isinstance(self._uri, bytes):
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params['renderingRule']
                 params["Raster"]=self._uri
 
@@ -1212,11 +1265,12 @@ class ImageryLayer(Layer):
         newlyr._fnra = self._fnra
         newlyr._mosaic_rule = self._mosaic_rule
         newlyr._extent = self._extent
+        newlyr._extent_set = self._extent_set
 
-        # newlyr._where_clause = self._where_clause
-        # newlyr._spatial_filter = self._spatial_filter
-        # newlyr._temporal_filter = self._temporal_filter
-        # newlyr._filtered = self._filtered
+        newlyr._where_clause = self._where_clause
+        newlyr._spatial_filter = self._spatial_filter
+        newlyr._temporal_filter = self._temporal_filter
+        newlyr._filtered = self._filtered
 
         return newlyr
 
@@ -1546,7 +1600,7 @@ class ImageryLayer(Layer):
 
         if self._datastore_raster:
             params["Raster"]=self._uri
-            if isinstance(self._uri, bytes):
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params['renderingRule']
                 params["Raster"]=self._uri
         if f == "json":
@@ -2019,7 +2073,7 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         muldidef              optional array. Multidimensional definition used for querying 
                               dimensional slices of the input image service.
-                              See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
+                              See https://developers.arcgis.com/documentation/common-data-types/multidimensional-definition.htm
         -----------------     --------------------------------------------------------------------
 
         .. code-block:: python
@@ -2536,7 +2590,7 @@ class ImageryLayer(Layer):
 
         if self._datastore_raster:
             params["Raster"]=self._uri
-            if isinstance(self._uri, bytes):
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params['renderingRule']
 
         return self._con.post(path=url, postdata=params)
@@ -2622,7 +2676,7 @@ class ImageryLayer(Layer):
 
         if self._datastore_raster:
             params["Raster"]=self._uri
-            if isinstance(self._uri, bytes):
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params['renderingRule']
 
         legend = self._con.post(path=url, postdata=params)
@@ -2655,7 +2709,7 @@ class ImageryLayer(Layer):
         rendering_rule      optional dictionary. Specifies the rendering rule for how the
                             requested image should be rendered.
                             See the raster function objects for the JSON syntax and examples.
-                            http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Raster_function_objects/02r3000000rv000000/
+                            https://developers.arcgis.com/documentation/common-data-types/raster-function-objects.htm
         ---------------     --------------------------------------------------------------------
         variable            Optional String. This parameter can be used to request a 
                             colormap for each variable for an image service that has 
@@ -2679,7 +2733,7 @@ class ImageryLayer(Layer):
             if self._datastore_raster:
                 params["Raster"]=self._uri
                 if isinstance(self._uri, bytes):
-                    if "renderingRule" in params.keys():
+                    if "renderingRule" in params.keys() and "renderingRule" in params.keys():
                         del params['renderingRule']
             return self._con.get(url, params, token=self._token)
         else:
@@ -2727,12 +2781,12 @@ class ImageryLayer(Layer):
                             (as advertised in the root resource: defaultMosaicMethod,
                             mosaicOperator, sortField, sortValue).
                             See Mosaic rule objects help for more information:
-                            http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000s4000000
+                            https://developers.arcgis.com/documentation/common-data-types/mosaic-rules.htm
         ---------------     --------------------------------------------------------------------
         rendering_rule      optional dictionary. Specifies the rendering rule for how the
                             requested image should be rendered.
                             See the raster function objects for the JSON syntax and examples.
-                            http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Raster_function_objects/02r3000000rv000000/
+                            https://developers.arcgis.com/documentation/common-data-types/raster-function-objects.htm
         ---------------     --------------------------------------------------------------------
         pixel_size          optional list or dictionary. The pixel level being used (or the
                             resolution being looked at). If pixel size is not specified, then
@@ -2772,7 +2826,7 @@ class ImageryLayer(Layer):
 
         if self._datastore_raster:
             params["Raster"]=self._uri
-            if isinstance(self._uri, bytes):
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params['renderingRule']
 
         return self._con.post(path=url, postdata=params)
@@ -2799,7 +2853,7 @@ class ImageryLayer(Layer):
                               (as advertised in the root resource: defaultMosaicMethod,
                               mosaicOperator, sortField, sortValue).
                               See Mosaic rule objects help for more information:
-                              http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000s4000000
+                              https://developers.arcgis.com/documentation/common-data-types/mosaic-rules.htm
         -----------------     --------------------------------------------------------------------
         rendering_rule        Specifies the rendering rule for how the requested image should be
                               processed. The response is updated Layer info that reflects a
@@ -2898,7 +2952,7 @@ class ImageryLayer(Layer):
             params['time'] = _set_time_param(time)
         if self._datastore_raster:
             params["Raster"]=self._uri
-            if isinstance(self._uri, bytes):
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params['renderingRule']
 
         return self._con.post(url, params, token=self._token)
@@ -3059,7 +3113,7 @@ class ImageryLayer(Layer):
 
         if self._datastore_raster:
             params["Raster"]=self._uri
-            if isinstance(self._uri, bytes):
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params['renderingRule']
 
         return self._con.post(path=url, postdata=params, token=self._token)
@@ -3116,7 +3170,7 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         muldidef              optional array. multidemensional definition used for filtering by
                               variable/dimensions.
-                              See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
+                              See https://developers.arcgis.com/documentation/common-data-types/multidimensional-definition.htm
         -----------------     --------------------------------------------------------------------
         op                    optional string, first,last,min,max,mean,blend,sum mosaic operation
                               to resolve overlap pixel values: from first or last raster, use the
@@ -3126,7 +3180,7 @@ class ImageryLayer(Layer):
         =================     ====================================================================
 
         :return: a mosaic rule defined in the format at
-            http://resources.arcgis.com/en/help/arcgis-rest-api/#/Mosaic_rule_objects/02r3000000s4000000/
+            https://developers.arcgis.com/documentation/common-data-types/mosaic-rules.htm
         Also see http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/understanding-the-mosaicking-rules-for-a-mosaic-dataset.htm#ESRI_SECTION1_ABDC9F3F6F724A4F8079051565DC59E
         """
         if self.tiles_only:
@@ -3205,7 +3259,7 @@ class ImageryLayer(Layer):
 
         if self._datastore_raster:
             params["Raster"]=self._uri
-            if isinstance(self._uri, bytes):
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params['renderingRule']
 
         return self._con.post(path=url, postdata=params)
@@ -3323,8 +3377,9 @@ class ImageryLayer(Layer):
 
         :return: dictionary showing whether the specified rendering rule and/or mosaic rule is valid
         """
-        if self.tiles_only:
-            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+        if ((hasattr(self, "_do_not_hydrate")) and not self._do_not_hydrate) or not hasattr(self, "_do_not_hydrate"):	
+            if self.tiles_only:
+                raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
 
         url = self._url + "/queryBoundary"
 
@@ -3559,7 +3614,7 @@ class ImageryLayer(Layer):
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        output_name                              optional string. If not provided, an Imagery Layer item is created
+        output_name                              Optional string. If not provided, an Imagery Layer item is created
                                                  by the method and used as the output.
                                                  You can pass in the name of the output Imagery Layer that should be
                                                  created by this method to be used as the output for the tool.
@@ -3567,7 +3622,7 @@ class ImageryLayer(Layer):
                                                  Image Layer Item from your GIS to use that instead.
                                                  A RuntimeError is raised if a layer by that name already exists
         ------------------------------------     --------------------------------------------------------------------
-        for_viz                                  optional boolean. If True, a new Item is created that uses the
+        for_viz                                  Optional boolean. If True, a new Item is created that uses the
                                                  applied raster functions for visualization at display resolution
                                                  using on-the-fly image processing.
                                                  If for_viz is False, distributed raster analysis is used for
@@ -3582,11 +3637,16 @@ class ImageryLayer(Layer):
                                                  multidimensional raster. Valid only if process_as_multidimensional
                                                  is set to True
         ------------------------------------     --------------------------------------------------------------------
-        gis                                      optional arcgis.gis.GIS object. The GIS to be used for saving the
+        gis                                      Optional arcgis.gis.GIS object. The GIS to be used for saving the
                                                  output. Keyword only parameter.
         ------------------------------------     --------------------------------------------------------------------
         future                                   Optional boolean. If True, the result will be a GPJob object and
                                                  results will be returned asynchronously. Keyword only parameter.
+        ------------------------------------     --------------------------------------------------------------------
+        tiles_only                               In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                                 To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                                 Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
         ====================================     ====================================================================
 
         :return: output_raster - Image layer item
@@ -3798,8 +3858,12 @@ class ImageryLayer(Layer):
                 if slice_string.startswith("$"):
                     if "url" in kwargs.keys():
                         return _raster_slicestring(kwargs["url"])
-                elif '/fileShares/' in slice_string or '/rasterStores/' in slice_string or '/cloudStores/' in slice_string or '/vsi' in url:
+                elif '/fileShares/' in slice_string or '/rasterStores/' in slice_string or '/cloudStores/' in slice_string or '/vsi' in slice_string:
                     slice_string=slice_string.rsplit('/',1)[1]
+                elif '\\' in slice_string:
+                    slice_string=slice_string.rsplit('\\',1)[1]
+                if "https" in slice_string and any(x in slice_string for x in ["MapServer","FeatureServer"]):
+                    slice_string = None
                 subString = slice_string
             return subString
 
@@ -3833,14 +3897,16 @@ class ImageryLayer(Layer):
                     if "url" in rfa_value.keys():
                         nodenumber+=1
                         rastername=_raster_slicestring(str(rfa_value["url"]))
-                        G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                        G.edge(str(nodenumber),str(connect),color="silver", arrowsize="0.9", penwidth="1")
+                        if rastername is not None:
+                            G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                            G.edge(str(nodenumber),str(connect),color="silver", arrowsize="0.9", penwidth="1")
 
                     if "uri" in rfa_value.keys():
                         nodenumber+=1
                         rastername=_raster_slicestring(str(rfa_value["uri"]))
-                        G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                        G.edge(str(nodenumber),str(connect),color="silver", arrowsize="0.9", penwidth="1")
+                        if rastername is not None:
+                            G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                            G.edge(str(nodenumber),str(connect),color="silver", arrowsize="0.9", penwidth="1")
 
                     elif "function" in rfa_value.keys():
                         _rft_draw_graph(G, rfa_value,rfa_key, connect, show_attributes)
@@ -3876,8 +3942,9 @@ class ImageryLayer(Layer):
                         rastername=_raster_slicestring(rfa_value,url=kwargs["url"])
                     else:
                         rastername=_raster_slicestring(rfa_value)
-                    G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                    G.edge(str(nodenumber),str(connect),color="silver", arrowsize="0.9", penwidth="1")
+                    if rastername is not None:
+                        G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                        G.edge(str(nodenumber),str(connect),color="silver", arrowsize="0.9", penwidth="1")
 
 
             def _attribute_function_graph(rfa_value,rfa_key,root):
@@ -3938,9 +4005,7 @@ class ImageryLayer(Layer):
                         else:
                             return "No raster function applied"
                     else:
-                        #print("here")
                         root+=1
-                        #print("1",root)
                         G.node(str(root), dvalue, style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")  #create first rasterFunction graph node
                         nodenumber = root
                         if ((root-1)>0):
@@ -3952,12 +4017,10 @@ class ImageryLayer(Layer):
                                     if rfa_key=="rasterFunction":           #To check if rasterFunctionArguments has another rasterFunction chain in it
                                         _function_graph(rfa_value,rfa_key,nodenumber)
                                     elif rfa_key == "Raster" or rfa_key=="Raster2" or rfa_key=="Rasters" or rfa_key=="PanImage" or rfa_key=="MSImage": #To check if rasterFunctionArguments includes raster inputs in it
-                                        #print("Raster",root)
                                         temproot=root
                                         _raster_function_graph(rfa_value,rfa_key,root)
-                                        #print("Raster2",root)
                                     elif show_attributes==True:
-                                        #print(root)
+                                        temproot=root
                                         _attribute_function_graph(rfa_value,rfa_key,temproot)
 
                 elif dkey == "rasterFunction" and dvalue == "GPAdapter": #To handle global function arguments
@@ -4076,13 +4139,15 @@ class ImageryLayer(Layer):
                         elif "url" in raster_dict["value"]: #if raster properties are preserved
                             nodenumber+=1
                             rastername=_raster_slicestring(str(raster_dict["value"]["url"]))
-                            G.node(str(nodenumber),rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                            G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                            if rastername is not None:
+                                G.node(str(nodenumber),rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                                G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
                         elif "uri" in raster_dict["value"]: #if raster properties are preserved
                             nodenumber+=1
                             rastername=_raster_slicestring(str(raster_dict["value"]["uri"]))
-                            G.node(str(nodenumber),rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                            G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                            if rastername is not None:
+                                G.node(str(nodenumber),rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                                G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
                         elif "datasetName" in raster_dict["value"]: #local image location
                             if "name" in raster_dict["value"]["datasetName"]:
                                 nodenumber+=1
@@ -4106,13 +4171,15 @@ class ImageryLayer(Layer):
                 elif "url" in raster_dict.keys(): #Handling Raster
                     nodenumber+=1
                     rastername=_raster_slicestring(str(raster_dict["url"]))
-                    G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                    G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                    if rastername is not None:
+                        G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                        G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
                 elif "uri" in raster_dict.keys():
                     nodenumber+=1
                     rastername=_raster_slicestring(str(raster_dict["uri"]))
-                    G.node(str(nodenumber),rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                    G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                    if rastername is not None:
+                        G.node(str(nodenumber),rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                        G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
                 elif "datasetName" in raster_dict.keys() and "name"  in raster_dict["datasetName"]: #if RasterInfo rf has data in it
                     rastername = str(raster_dict["datasetName"]["name"])
                     nodenumber+=1
@@ -4419,7 +4486,45 @@ class ImageryLayer(Layer):
                     data = np.transpose(data, axes=[1, 2, 0])
             return data
 
+    def _get_service_info(self, rendering_rule=None):
+        url = self._url 
+
+        params = {
+            "f": "json"
+        }
+        if rendering_rule is not None:
+            params['renderingRule'] = rendering_rule
+
+        if self._datastore_raster:
+            params["Raster"]=self._uri
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
+                del params['renderingRule']
+
+        dictdata = {}
+        token=None
+        try:
+            dictdata = self._con.post(self.url, params)
+        except Exception as e:
+            try:
+                if ((hasattr(self, "_lazy_token")) and self._lazy_token is None) or not hasattr(self, "_lazy_token"):
+                    token = self._gis._con.generate_portal_server_token(serverUrl=self._url)
+            except Exception as e:
+                token = self._token
+            try:
+                dictdata = self._con.post(self.url, params, token=token)
+            except Exception as e:
+                if hasattr(e, 'msg') and e.msg == "Method Not Allowed":
+                    dictdata = self._con.get(self.url, params, token=token)
+                elif str(e).lower().find("token required") > -1:
+                    dictdata = self._con.get(self.url, params)
+                else:
+                    raise e
+        return dictdata
+
     def _repr_jpeg_(self):
+        if self._uses_gbl_function:
+            return self._repr_svg_()
+
         if self.tiles_only:
             fig = self.render_tilesonly_layer()
             try:
@@ -4561,6 +4666,41 @@ class ImageryLayer(Layer):
     def __ror__(self, other):
         from arcgis.raster.functions import boolean_or
         return boolean_or([other, self])
+
+    def __ne__(self, other):
+        if isinstance(other, (ImageryLayer, Raster, numbers.Number)):
+            from arcgis.raster.functions import not_equal
+            return not_equal([self, other])
+        else:
+            return NotImplemented
+
+    def __eq__(self, other):
+        if isinstance(other, (ImageryLayer, Raster, numbers.Number)):
+            from arcgis.raster.functions import equal_to
+            return equal_to([self, other])
+        else:
+            return NotImplemented
+
+    def __gt__(self, other):
+        from arcgis.raster.functions import greater_than
+        return greater_than([self, other])
+
+    def __ge__(self, other):
+        from arcgis.raster.functions import greater_than_equal
+        return greater_than_equal([self, other])
+
+    def __lt__(self, other):
+        from arcgis.raster.functions import less_than
+        return less_than([self, other])
+
+    def __le__(self, other):
+        from arcgis.raster.functions import less_than_equal
+        return less_than_equal([self, other])
+
+
+    def __deepcopy__(self, memo=None):
+        newlyr = self._clone_layer()
+        return newlyr
 
         # Raster.Raster.__pos__ = unaryPos         # +v
 # Raster.Raster.__abs__ = Functions.Abs    # abs(v)
@@ -4756,6 +4896,8 @@ class Raster():
              engine = _get_engine(engine)
              self._engine=engine
         else:
+            if isinstance(path, RasterInfo):
+                engine=_ArcpyRaster
             if isinstance(path, str):
                 if "https://" not in path and "http://" not in path and  '/fileShares/' not in path and '/rasterStores/' not in path and '/cloudStores/' not in path and not isinstance(path,dict) and '/vsi' not in path: #local raster case
                     if engine is None:
@@ -4827,11 +4969,20 @@ class Raster():
         on a MapView, vmin and vmax define the data range that the colormap covers.
         This property is the lower end of that range.
         """
+        if self._vmin is None:
+            self._vmin = self._attempt_infer_vmin()
         return self._vmin
 
     @vmin.setter
     def vmin(self, value):
         self._vmin = value
+
+    def _attempt_infer_vmin(self):
+        # only tested against _ArcpyRaster engines..
+        try:
+            return self._engine_obj._raster.minimum
+        except Exception:
+            return None
 
     _vmax = None
     @property
@@ -4840,11 +4991,20 @@ class Raster():
         on a MapView, vmin and vmax define the data range that the colormap covers.
         This property is the upper end of that range.
         """ 
+        if self._vmax is None:
+            self._vmax = self._attempt_infer_vmax()
         return self._vmax
 
     @vmax.setter
     def vmax(self, value):
         self._vmax = value
+
+    def _attempt_infer_vmax(self):
+        # only tested against _ArcpyRaster engines..
+        try:
+            return self._engine_obj._raster.maximum
+        except Exception:
+            return None
 
     _opacity = 1
     @property
@@ -5037,6 +5197,14 @@ class Raster():
         Return the attribute table as a dictionary if the table exists
         """
         return self._engine_obj.RAT
+
+    @property
+    def raster_info(self):
+        """
+        Returns information about the ImageryLayer such as 
+        bandCount, extent , pixelSizeX, pixelSizeY, pixelType
+        """
+        return self._engine_obj.raster_info
 
     def get_raster_bands(self, band_ids_or_names=None):
         """
@@ -5789,6 +5957,33 @@ class Raster():
                      f, save_folder, save_file, compression_tolerance, adjust_aspect_ratio,
                      lerc_version)
 
+    def draw_graph(self,show_attributes=False,graph_size="14.25, 15.25"):
+        """
+        Displays a structural representation of the function chain and it's raster input values. If
+        show_attributes is set to True, then the draw_graph function also displays the attributes
+        of all the functions in the function chain, representing the rasters in a blue rectangular
+        box, attributes in green rectangular box and the raster function names in yellow.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        show_attributes       optional boolean. If True, the graph displayed includes all the
+                              attributes of the function and not only it's function name and raster
+                              inputs
+                              Set to False by default, to display only he raster function name and
+                              the raster inputs to it.
+        -----------------     --------------------------------------------------------------------
+        graph_size            optional string. Maximum width and height of drawing, in inches,
+                              seperated by a comma. If only a single number is given, this is used
+                              for both the width and the height. If defined and the drawing is
+                              larger than the given size, the drawing is uniformly scaled down so
+                              that it fits within the given size.
+        =================     ====================================================================
+
+        :return: Graph
+        """
+
+        return self._engine_obj.draw_graph(show_attributes, graph_size)
 
     def __sub__(self, other):
         return self._engine_obj.__sub__(other)
@@ -5877,6 +6072,24 @@ class Raster():
 
     def __ror__(self, other):
         return self._engine_obj.__ror__(other)
+
+    def __ne__(self, other):
+        return self._engine_obj.__ne__(other)
+
+    def __eq__(self, other):
+        return self._engine_obj.__eq__(other)
+
+    def __gt__(self, other):
+        return self._engine_obj.__gt__(other)
+
+    def __ge__(self, other):
+        return self._engine_obj.__ge__(other)
+
+    def __lt__(self, other):
+        return self._engine_obj.__lt__(other)
+
+    def __le__(self, other):
+        return self._engine_obj.__le__(other)
 
         # bbox_sr = None
         # if not isinstance(bbox, arcpy.arcobjects.Extent):
@@ -6009,7 +6222,7 @@ class Raster():
         -----------------     --------------------------------------------------------------------
         muldidef              optional array. multidemensional definition used for filtering by
                               variable/dimensions.
-                              See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
+                              See https://developers.arcgis.com/documentation/common-data-types/multidimensional-definition.htm
         -----------------     --------------------------------------------------------------------
         op                    optional string, first,last,min,max,mean,blend,sum mosaic operation
                               to resolve overlap pixel values: from first or last raster, use the
@@ -6018,7 +6231,7 @@ class Raster():
         item_rendering_rule   optional item rendering rule, applied on items before mosaicking.
         =================     ====================================================================
         :return: a mosaic rule defined in the format at
-            http://resources.arcgis.com/en/help/arcgis-rest-api/#/Mosaic_rule_objects/02r3000000s4000000/
+            https://developers.arcgis.com/documentation/common-data-types/mosaic-rules.htm
         Also see http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/understanding-the-mosaicking-rules-for-a-mosaic-dataset.htm#ESRI_SECTION1_ABDC9F3F6F724A4F8079051565DC59E
         """
         if self._datastore_raster:
@@ -6077,10 +6290,21 @@ class _ImageServerRaster(ImageryLayer, Raster):
         self._do_not_hydrate=False
         self._created_from_collection=False
         self._mdinfo=None
+        self._extent=None
+        self._extent_set=False
         
     @property
     def extent(self):
-        return super().extent
+        if self._extent is None:
+            return super().extent
+        else:
+            return self._extent
+
+
+    @extent.setter
+    def extent(self, value):
+        self._extent_set=True
+        self._extent = value
 
     @property
     def pixel_type(self):
@@ -6408,9 +6632,23 @@ class _ImageServerRaster(ImageryLayer, Raster):
     def RAT(self):
         return super().attribute_table()
 
+    @property
+    def raster_info(self):
+        """
+        Returns information about the ImageryLayer such as 
+        bandCount, extent , pixelSizeX, pixelSizeY, pixelType
+        """
+        return super().raster_info
+
     def get_raster_bands(self, band_ids_or_names=None):
-        if super().tiles_only:
-            raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+        if (hasattr(self, "_do_not_hydrate")) and not self._do_not_hydrate:	
+            if super().tiles_only:
+                raise RuntimeError("This operation cannot be performed on a TilesOnly Service")
+                
+        if band_ids_or_names is None or (isinstance(band_ids_or_names, list) and len(band_ids_or_names) == 0):
+            band_count = super().band_count
+            band_ids_or_names = [i+1 for i in range(band_count)]
+
         from arcgis.raster.functions import extract_band
         return_list=[]
         if isinstance(band_ids_or_names, list):
@@ -6586,9 +6824,11 @@ class _ImageServerRaster(ImageryLayer, Raster):
         ymax = origin_coordinate[1]
         size = (round((xmax - xmin) / cell_size[0]), round((ymax - ymin) / cell_size[1]))
 
-        if self.is_multidimensional:
+        if (not self._do_not_hydrate) and self.is_multidimensional:
             multidimensional_info = super().multidimensional_info['multidimensionalInfo']
-            mosaic_rule = {'multidimensionalDefinition': []}
+            mosaic_rule = {"mosaicMethod" : "esriMosaicAttribute",
+                           "ascending" : False,
+                           "multidimensionalDefinition":[]}
             for variable in multidimensional_info['variables']:
                 variable_name = variable['name']
                 for dimension in variable['dimensions']:
@@ -6596,8 +6836,8 @@ class _ImageServerRaster(ImageryLayer, Raster):
                     extent = dimension['extent']
 
                     mosaic_rule['multidimensionalDefinition'].append({
-                        'variable_name': variable_name,
-                        'dimensionaName': dimension_name,
+                        'variableName': variable_name,
+                        'dimensionName': dimension_name,
                         'values': [
                             extent
                         ]
@@ -6620,7 +6860,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
             raise RuntimeError('decoding bytes from imagery service failed.')
 
         # transpose
-        if self.is_multidimensional:
+        if (not self._do_not_hydrate) and self.is_multidimensional:
             if len(data) == 2:
                 data = np.expand_dims(np.expand_dims(data, axis=2), axis=0)
             elif len(data) == 3:
@@ -6802,6 +7042,33 @@ class _ImageServerRaster(ImageryLayer, Raster):
         else:
             return result
 
+    def draw_graph(self,show_attributes=False,graph_size="14.25, 15.25"):
+        """
+        Displays a structural representation of the function chain and it's raster input values. If
+        show_attributes is set to True, then the draw_graph function also displays the attributes
+        of all the functions in the function chain, representing the rasters in a blue rectangular
+        box, attributes in green rectangular box and the raster function names in yellow.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        show_attributes       optional boolean. If True, the graph displayed includes all the
+                              attributes of the function and not only it's function name and raster
+                              inputs
+                              Set to False by default, to display only he raster function name and
+                              the raster inputs to it.
+        -----------------     --------------------------------------------------------------------
+        graph_size            optional string. Maximum width and height of drawing, in inches,
+                              seperated by a comma. If only a single number is given, this is used
+                              for both the width and the height. If defined and the drawing is
+                              larger than the given size, the drawing is uniformly scaled down so
+                              that it fits within the given size.
+        =================     ====================================================================
+
+        :return: Graph
+        """
+        return super().draw_graph(show_attributes, graph_size)
+
 
     def __sub__(self, other):
         from arcgis.raster.functions import minus
@@ -6927,20 +7194,38 @@ class _ArcpyRaster(Raster,ImageryLayer):
         self._is_multidimensional = is_multidimensional
         self._engine=_ArcpyRaster
         import arcpy
-        if isinstance(path, str):
-            if ("https://"  in path or "http://"  in path): #To provide access to secured service
-                if self._token is not None:
-                    self._raster = arcpy.ia.Raster(path+"?token="+self._token, is_multidimensional)
+        if isinstance(path, RasterInfo):
+            ri = arcpy.RasterInfo()
+            rinfo = path.to_dict()
+            if "geodataXform" not in rinfo.keys():
+                if ("extent" in rinfo.keys()) and "spatialReference" in rinfo["extent"].keys():
+                    if ("wkid" in rinfo["extent"]["spatialReference"].keys()) and rinfo["extent"]["spatialReference"]["wkid"] is not None:
+                        rinfo.update({"geodataXform":{"spatialReference": rinfo["extent"]["spatialReference"],
+                                                                  "type":"IdentityXform"}})
+                    else:
+                        rinfo.update({"geodataXform":{"type":"IdentityXform"}})
+            ri.fromJSONString(json.dumps(rinfo))
+            self._raster = arcpy.ia.Raster(ri, is_multidimensional)            
+            self._uri=str(self._raster)
+            self._path=str(self._raster)
+        else:
+            if isinstance(path, str):
+                if ("https://"  in path or "http://"  in path): #To provide access to secured service
+                    if self._token is not None:
+                        self._raster = arcpy.ia.Raster(path+"?token="+self._token, is_multidimensional)
+                    else:
+                        self._raster = arcpy.ia.Raster(path, is_multidimensional)
                 else:
                     self._raster = arcpy.ia.Raster(path, is_multidimensional)
             else:
-                self._raster = arcpy.ia.Raster(path, is_multidimensional)
-        else:
-            self._raster = path
+                self._raster = path
+
+            self._uri=str(path)
+            self._path=str(path)
         self._datastore_raster=True
         self._do_not_hydrate=False
-        self._uri=path
-        self._path = path
+        self._extent_set=False
+        self._extent = None
 
     @property
     def _lyr_dict(self):
@@ -6962,17 +7247,17 @@ class _ArcpyRaster(Raster,ImageryLayer):
     def __setitem__(self, idx, value):
         return (self._raster.__setitem__(idx, value))
 
-    _extent_override = None
     @property
     def extent(self):
-        if self._extent_override:
-            return self._extent_override
+        if self._extent:
+            return self._extent
         else:
             return json.loads(self._raster.extent.JSON)
 
     @extent.setter
     def extent(self, value):
-        self._extent_override = value
+        self._extent_set=True
+        self._extent = value
 
     @property
     def pixel_type(self):
@@ -7121,11 +7406,64 @@ class _ArcpyRaster(Raster,ImageryLayer):
     def RAT(self):
         return self._raster.RAT
 
+    @property
+    def raster_info(self):
+        """
+        Returns information about the ImageryLayer such as 
+        bandCount, extent , pixelSizeX, pixelSizeY, pixelType
+        """
+        if self._raster_info !={}:
+            return self._raster_info
+        try:
+            ras_info =  self._raster.getRasterInfo()
+            ras_info_dict = json.loads(ras_info.toJSONString())
+            self._raster_info = ras_info_dict
+        except:
+            #if getRasterInfo fails, get the info from the properties
+            if self.extent is not None:
+                self._raster_info.update({"extent":dict(self.extent)})
+
+            if self.band_count is not None:
+                self._raster_info.update({"bandCount":self.band_count})
+
+            if self.pixel_type is not None:
+                self._raster_info.update({"pixelType":self.pixel_type})
+
+            if self.mean_cell_width is not None:
+                self._raster_info.update({"pixelSizeX":self.mean_cell_width})
+
+            if self.mean_cell_height is not None:
+                self._raster_info.update({"pixelSizeY":self.mean_cell_height})
+
+            if self.compression_type is not None:
+                self._raster_info.update({"compressionType":self.compression_type})
+
+            if self.block_size is not None:
+                self._raster_info.update({"blockHeight":self.block_size[1]})
+
+            if self.block_size is not None:
+                self._raster_info.update({"blockWidth":self.block_size[0]})
+
+            if self.no_data_values is not None:
+                self._raster_info.update({"noDataValues":self.no_data_values})
+
+        return self._raster_info
+
     def get_raster_bands(self, band_ids_or_names=None):
-        raster_bands = self._raster.getRasterBands(band_ids_or_names)
-        if isinstance(raster_bands, list):
-            return [Raster(r) for r in raster_bands]
-        return Raster(raster_bands)
+        if band_ids_or_names is None or (isinstance(band_ids_or_names, list) and len(band_ids_or_names) == 0):
+            band_count = self.band_count
+            band_ids_or_names = [i+1 for i in range(band_count)]
+        from arcgis.raster.functions import extract_band
+        return_list=[]
+        if isinstance(band_ids_or_names, list):
+            for ele in band_ids_or_names:
+                if isinstance(ele, int):
+                    return_list.append(extract_band(self, band_ids=[ele]))
+                else:
+                    return_list.append(extract_band(self, band_names=[ele]))
+            return return_list[0] if len(return_list) == 1 else return_list
+        else:
+            raise RuntimeError("band_ids_or_names should be of type list")
 
     def get_variable_attributes(self, variable_name):
         return self._raster.getVariableAttributes(variable_name)
@@ -7247,7 +7585,18 @@ class _ArcpyRaster(Raster,ImageryLayer):
                 build_transpose = "NO_TRANSPOSE"
         else:
             build_transpose = "NO_TRANSPOSE"
-        result = arcpy.GenerateRasterFromRasterFunction_management(json.dumps(self._fnra), output_name) 
+
+        ext_dict=None
+        if self._extent_set  and _arcgis.env.analysis_extent is None:
+            ext_dict = dict(self.extent)
+        else:
+            ext_dict = _arcgis.env.analysis_extent
+
+        if ext_dict is not None:
+            outext, extsr = _get_extent(ext_dict)
+            arcpy.env.extent = outext
+
+        result = arcpy.GenerateRasterFromRasterFunction_management(json.dumps(self._fnra), output_name, process_as_multidimensional=process_as_multidimensional) 
         uri = result.getOutput(0)
         if uri and process_as_multidimensional == "ALL_SLICES" and build_transpose == "TRANSPOSE":
             arcpy.management.BuildMultidimensionalTranspose(uri)
@@ -7419,6 +7768,10 @@ class _ArcpyRaster(Raster,ImageryLayer):
 
         # convert extent and spatial reference
         extent, spatial_reference = None, None
+        if isinstance(bbox_sr, dict):
+            if "wkid" in bbox_sr.keys():
+                if bbox_sr["wkid"] is None:
+                    bbox_sr=None
         if bbox_sr is not None and not isinstance(bbox_sr, _arcgis.geometry.SpatialReference):
             bbox_sr = _arcgis.geometry.SpatialReference(bbox_sr)
             bbox_sr = bbox_sr.as_arcpy
@@ -7493,6 +7846,33 @@ class _ArcpyRaster(Raster,ImageryLayer):
                   pixel_size=None
                   ):
         raise RuntimeError('Operation is not supported on local rasters')
+
+    def draw_graph(self,show_attributes=False,graph_size="14.25, 15.25"):
+        """
+        Displays a structural representation of the function chain and it's raster input values. If
+        show_attributes is set to True, then the draw_graph function also displays the attributes
+        of all the functions in the function chain, representing the rasters in a blue rectangular
+        box, attributes in green rectangular box and the raster function names in yellow.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        show_attributes       optional boolean. If True, the graph displayed includes all the
+                              attributes of the function and not only it's function name and raster
+                              inputs
+                              Set to False by default, to display only he raster function name and
+                              the raster inputs to it.
+        -----------------     --------------------------------------------------------------------
+        graph_size            optional string. Maximum width and height of drawing, in inches,
+                              seperated by a comma. If only a single number is given, this is used
+                              for both the width and the height. If defined and the drawing is
+                              larger than the given size, the drawing is uniformly scaled down so
+                              that it fits within the given size.
+        =================     ====================================================================
+
+        :return: Graph
+        """
+        return ImageryLayer.draw_graph(self, show_attributes, graph_size)
 
     def __sub__(self, other):
         from arcgis.raster.functions import minus
@@ -7610,6 +7990,36 @@ class _ArcpyRaster(Raster,ImageryLayer):
         from arcgis.raster.functions import boolean_or
         return boolean_or([other, self])
 
+    def __ne__(self, other):
+        if isinstance(other, (ImageryLayer, Raster, numbers.Number)):
+            from arcgis.raster.functions import not_equal
+            return not_equal([self, other])
+        else:
+            return NotImplemented
+
+    def __eq__(self, other):
+        if isinstance(other, (ImageryLayer, Raster, numbers.Number)):
+            from arcgis.raster.functions import equal_to
+            return equal_to([self, other])
+        else:
+            return NotImplemented
+
+    def __gt__(self, other):
+        from arcgis.raster.functions import greater_than
+        return greater_than([self, other])
+
+    def __ge__(self, other):
+        from arcgis.raster.functions import greater_than_equal
+        return greater_than_equal([self, other])
+
+    def __lt__(self, other):
+        from arcgis.raster.functions import less_than
+        return less_than([self, other])
+
+    def __le__(self, other):
+        from arcgis.raster.functions import less_than_equal
+        return less_than_equal([self, other])
+
 def _get_raster_collection_engine(engine):
 
     """
@@ -7633,7 +8043,7 @@ def _get_raster_collection_engine(engine):
         return engine_dict[engine]
     return engine
 
-from ._util import _local_function_template, _get_geometry
+from ._util import _local_function_template, _get_geometry, _get_extent
 
 #class RasterCollectionEngineFactory():
 #    def get_engine(self, engine):
@@ -7668,8 +8078,7 @@ class RasterCollection():
     ------------------------------------     --------------------------------------------------------------------
     where_clause                             Optional string. An expression that limits the records returned. 
     ------------------------------------     --------------------------------------------------------------------
-    query_geometry                           Optional. An object that filters 
-                                             the items such that 
+    query_geometry                           Optional. An object that filters the items such that 
                                              only those that intersect with the object will be returned.
     ------------------------------------     --------------------------------------------------------------------
     engine                                   Optional string. The backend engine to be used.
@@ -7678,35 +8087,65 @@ class RasterCollection():
 
                                                 - "image_server" : Use the Image Server engine for processing.
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional. GIS of the Raster object. 
+    gis                                      Optional GIS of the RasterCollection object. 
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Optional. Additional properties to control the creation of RasterCollection.
+                                             The context parameter would be honoured by all other collections created from this
+                                             i.e., the map/filter outputs. The filter/map methods also support the context parameter
+                                             which can be configured separately for each method. 
+
+                                             Currently available:
+
+                                                 -  query_boundary:
+                                                    The boolean value set to this option determines whether to add SHAPE field to the RasterCollection. 
+                                                    The value in the SHAPE field represents the boundary/geometry of the raster. 
+                                                    The query_boundary parameter is honoured only when the RasterCollection 
+                                                    is created from a list of Rasters.
+
+                                                    True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+                                                    
+                                                    False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. 
+                                                           (Creation of RasterCollection would be faster)
+                                                    
+                                                    By default, query_boundary is set to True, i.e, SHAPE field will be added.
+
+                                                    Example:
+                                                    {"query_boundary":True}
     ====================================     ====================================================================
 
     """
-    def __init__(self, rasters=None, attribute_dict=None, where_clause=None, query_geometry=None, engine=None, gis=None):
+    def __init__(self, rasters=None, attribute_dict=None, where_clause=None, query_geometry=None, engine=None, gis=None, context=None):
         #self._remote = raster.use_server_engine
         #super().__init__(rasters, gis)
 
         #self._do_not_hydrate=False
         local_class=True
-
         engine = _get_raster_collection_engine(engine)
+
+        if context is None:
+            self._context = {}
+        else:
+            self._context = context
 
         if (engine is not None) and engine!= _ArcpyRasterCollection and engine !=_ImageServerRasterCollection and engine !=_LocalRasterCollection:
             self._ras_coll_engine = engine
-            self._ras_coll_engine_obj=engine(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry, engine=engine, gis=gis)
+            self._ras_coll_engine_obj=engine(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry, engine=engine, gis=gis, context = context)
         else:
             if isinstance(rasters, str):
                 if ("https://"  in rasters or "http://"  in rasters):
                     self._ras_coll_engine = _ImageServerRasterCollection
-                    self._ras_coll_engine_obj=_ImageServerRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry,engine= _ImageServerRasterCollection, gis=gis)
+                    self._ras_coll_engine_obj=_ImageServerRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry,engine= _ImageServerRasterCollection, gis=gis, context=context)
                 else:
                     self._ras_coll_engine = _ArcpyRasterCollection
-                    self._ras_coll_engine_obj=_ArcpyRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry, engine=_ArcpyRasterCollection,  gis=gis)
+                    self._ras_coll_engine_obj=_ArcpyRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry, engine=_ArcpyRasterCollection,  gis=gis, context=context)
     
             elif isinstance(rasters,list):
                 for ele in rasters:
                     if isinstance(ele, Raster):
-                        continue
+                        if isinstance(ele._engine_obj, _ArcpyRaster):
+                            local_class=False
+                        else:
+                            continue
                     elif isinstance(ele, str):
                         if '/fileShares/' in ele or '/rasterStores/' in ele or '/cloudStores/' in ele or '/vsi' in ele:
                             continue
@@ -7715,17 +8154,19 @@ class RasterCollection():
 
                 if local_class == True:
                     self._ras_coll_engine = _LocalRasterCollection
-                    self._ras_coll_engine_obj=_LocalRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry, engine=_LocalRasterCollection, gis=gis)
+                    self._ras_coll_engine_obj=_LocalRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry, engine=_LocalRasterCollection, gis=gis, context=context)
                 else:
                     self._ras_coll_engine = _ArcpyRasterCollection
-                    self._ras_coll_engine_obj=_ArcpyRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry,engine=_ArcpyRasterCollection, gis=gis)
+                    self._ras_coll_engine_obj=_ArcpyRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry,engine=_ArcpyRasterCollection, gis=gis, context=context)
+
+
            
 
     def set_engine(self, engine):
         """Can be used to change the back end engine"""
         return RasterCollection(rasters=self._ras_coll_engine_obj._rasters, attribute_dict=self._ras_coll_engine_obj._attribute_dict,  
                                 where_clause=self._ras_coll_engine_obj._where_clause, query_geometry= self._ras_coll_engine_obj._spatial_filter, 
-                                engine=engine, gis=self._ras_coll_engine_obj._gis)
+                                engine=engine, gis=self._ras_coll_engine_obj._gis, context = self._context)
 
     @property
     def count(self):
@@ -7753,7 +8194,7 @@ class RasterCollection():
     def __getitem__(self, item):
         return self._ras_coll_engine_obj.__getitem__(item)
 
-    def filter_by(self, where_clause=None, query_geometry_or_extent=None, raster_query=None):
+    def filter_by(self, where_clause=None, query_geometry_or_extent=None, raster_query=None, context=None):
         """
         filter a raster collection based on attribute and/or spatial queries
 
@@ -7767,15 +8208,36 @@ class RasterCollection():
         ------------------------------------     --------------------------------------------------------------------
         raster_query                             Optional string. An SQL expression used to select a subset of rasters 
                                                  by the raster's key properties.
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
+                                                 The default value for the context parameter would be the same as that of the 
+                                                 context settings applied to the parent collection.
+
+                                                 Currently available:
+
+                                                     -  query_boundary:
+                                                        This boolean value set to this option determines whether to add SHAPE field 
+                                                        to the RasterCollection. The value in the SHAPE field represents the 
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured 
+                                                        only when the RasterCollection is created from a list of Rasters.
+
+                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+
+                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. 
+                                                               (Creation of RasterCollection would be faster)
+
+                                                        Example:
+
+                                                        {"query_boundary":True}
         ====================================     ====================================================================
 
         :returns: a RasterCollection object that only contains items sastisfying the queries
 
         """
-        return self._ras_coll_engine_obj.filter_by(where_clause=where_clause, query_geometry_or_extent=query_geometry_or_extent,raster_query=raster_query )
+        return self._ras_coll_engine_obj.filter_by(where_clause=where_clause, query_geometry_or_extent=query_geometry_or_extent,raster_query=raster_query, context=context)
 
 
-    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None):
+    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None, context=None):
         """
         filter a raster collection by time
 
@@ -7793,16 +8255,36 @@ class RasterCollection():
                                                  Please ref the python date time standard for this argument. 
                                                  https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
                                                  Default is None and this means using the Pro standard time format 
-                                                 '%Y-%m-%dT%H:%M:%S' and ignoring the following sub-second..
+                                                 '%Y-%m-%dT%H:%M:%S' and ignoring the following sub-second.
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
+                                                 The default value for the context parameter would be the same as that of the 
+                                                 context settings applied to the parent collection.
+
+                                                 Currently available:
+
+                                                     -  query_boundary:
+                                                        This boolean value set to this option determines whether to add SHAPE field 
+                                                        to the RasterCollection. The value in the SHAPE field represents the 
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured 
+                                                        only when the RasterCollection is created from a list of Rasters.
+
+                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+
+                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. 
+                                                               (Creation of RasterCollection would be faster)
+
+                                                        Example:
+
+                                                        {"query_boundary":True}
         ====================================     ====================================================================
 
         :returns: a RasterCollection object that only contains items sastisfying the filter
 
         """
+        return self._ras_coll_engine_obj.filter_by_time(start_time=start_time, end_time=end_time, time_field_name=time_field_name, date_time_format=date_time_format, context=context)
 
-        return self._ras_coll_engine_obj.filter_by_time(start_time=start_time, end_time=end_time, time_field_name=time_field_name, date_time_format=date_time_format)
-
-    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None):
+    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None, context=None):
         """
         filter the raster collection by a calendar_field and its start and end value (inclusive). i.e. if you would like
         to select all the rasters that have the time stamp on Monday, specify calendar_field as 'DAY_OF_WEEK' and put start and
@@ -7834,15 +8316,37 @@ class RasterCollection():
         date_time_format                         Optional string. The time format of the values in the time field. 
                                                  For example, if the input time value is "1990-01-31", the 
                                                  date_time_format is "%Y-%m-%d".
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
+                                                 The default value for the context parameter would be the same as that of the 
+                                                 context settings applied to the parent collection.
+
+                                                 Currently available:
+
+                                                     -  query_boundary:
+                                                        This boolean value set to this option determines whether to add SHAPE field 
+                                                        to the RasterCollection. The value in the SHAPE field represents the 
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured 
+                                                        only when the RasterCollection is created from a list of Rasters.
+
+                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+
+                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. 
+                                                               (Creation of RasterCollection would be faster)
+
+                                                        Example:
+
+                                                        {"query_boundary":True}
         ====================================     ====================================================================
 
         :returns: a RasterCollection object that only contains items sastisfying the filter
 
         """
         # validation
-        return self._ras_coll_engine_obj.filter_by_calendar_range(calendar_field=calendar_field, start=start,end=end,time_field_name=time_field_name,date_time_format=date_time_format)
 
-    def filter_by_geometry(self, query_geometry_or_extent):
+        return self._ras_coll_engine_obj.filter_by_calendar_range(calendar_field=calendar_field, start=start,end=end,time_field_name=time_field_name,date_time_format=date_time_format, context=context)
+
+    def filter_by_geometry(self, query_geometry_or_extent, context=None):
         """
         Filters the collection of raster items so that only those that intersect with the geometry will be returned.
 
@@ -7852,14 +8356,35 @@ class RasterCollection():
         query_geometry_or_extent                 Required object that filters the items such that only those that 
                                                  intersect with the object will be returned. This can be specified 
                                                  with a Geometry object, Raster object, ImageryLayer object.
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
+                                                 The default value for the context parameter would be the same as that of the 
+                                                 context settings applied to the parent collection.
+
+                                                 Currently available:
+
+                                                     -  query_boundary:
+                                                        This boolean value set to this option determines whether to add SHAPE field 
+                                                        to the RasterCollection. The value in the SHAPE field represents the 
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured 
+                                                        only when the RasterCollection is created from a list of Rasters.
+
+                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+
+                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. 
+                                                               (Creation of RasterCollection would be faster)
+
+                                                        Example:
+
+                                                        {"query_boundary":True}
         ====================================     ====================================================================
 
         :returns: a RasterCollection object that only contains items sastisfying the filter
 
         """
-        return self._ras_coll_engine_obj.filter_by_geometry(query_geometry_or_extent=query_geometry_or_extent)
+        return self._ras_coll_engine_obj.filter_by_geometry(query_geometry_or_extent=query_geometry_or_extent, context=context)
 
-    def filter_by_attribute(self, field_name, operator, field_values):
+    def filter_by_attribute(self, field_name, operator, field_values, context=None):
         """
         Filters the collection of raster items by an attribute query and returns a raster collection 
         containing only the items that satisfy the query.
@@ -7902,14 +8427,35 @@ class RasterCollection():
         ------------------------------------     --------------------------------------------------------------------
         field_values                             Required object. The attribute value or values against which to compare. 
                                                  This can be specified as a string, a list, or a number.
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
+                                                 The default value for the context parameter would be the same as that of the 
+                                                 context settings applied to the parent collection.
+
+                                                 Currently available:
+
+                                                     -  query_boundary:
+                                                        This boolean value set to this option determines whether to add SHAPE field 
+                                                        to the RasterCollection. The value in the SHAPE field represents the 
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured 
+                                                        only when the RasterCollection is created from a list of Rasters.
+
+                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+
+                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. 
+                                                               (Creation of RasterCollection would be faster)
+
+                                                        Example:
+
+                                                        {"query_boundary":True}
         ====================================     ====================================================================
 
         :returns: a RasterCollection object that only contains items sastisfying the filter
 
         """
-        return self._ras_coll_engine_obj.filter_by_attribute(field_name=field_name, operator=operator, field_values=field_values)
+        return self._ras_coll_engine_obj.filter_by_attribute(field_name=field_name, operator=operator, field_values=field_values, context=context)
 
-    def filter_by_raster_property(self, property_name, operator, property_values):
+    def filter_by_raster_property(self, property_name, operator, property_values, context=None):
         """
         Filters the collection of raster items by a raster property query and returns a raster collection 
         containing only the items that satisfy the query.
@@ -7951,15 +8497,36 @@ class RasterCollection():
                                                   -  STARTS_WITH - The attribute starts with the specified string or number.
         ------------------------------------     --------------------------------------------------------------------
         field_values                             Required object. The property value or values against which to compare. 
-                                                 This can be specified as a string, a list, or a number..
+                                                 This can be specified as a string, a list, or a number.
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
+                                                 The default value for the context parameter would be the same as that of the 
+                                                 context settings applied to the parent collection.
+
+                                                 Currently available:
+
+                                                     -  query_boundary:
+                                                        This boolean value set to this option determines whether to add SHAPE field 
+                                                        to the RasterCollection. The value in the SHAPE field represents the 
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured 
+                                                        only when the RasterCollection is created from a list of Rasters.
+
+                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+
+                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. 
+                                                               (Creation of RasterCollection would be faster)
+
+                                                        Example:
+
+                                                        {"query_boundary":True}
         ====================================     ====================================================================
 
         :returns: a RasterCollection object that only contains items sastisfying the filter
 
         """
-        return self._ras_coll_engine_obj.filter_by_raster_property(property_name=property_name, operator=operator, property_values=property_values)
+        return self._ras_coll_engine_obj.filter_by_raster_property(property_name=property_name, operator=operator, property_values=property_values,context=context)
 
-    def sort(self, field_name, ascending=True):
+    def sort(self, field_name, ascending=True, context=None):
         """
         Sorts the collection of rasters by a field name and returns a raster collection that is in the order specified.
 
@@ -7970,12 +8537,28 @@ class RasterCollection():
         ------------------------------------     --------------------------------------------------------------------
         ascending                                Optional bool. Specifies whether to sort in ascending or descending order. 
                                                  (The default value is True)
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
+                                                 The default value for the context parameter would be the same as that of the 
+                                                 context settings applied to the parent collection.
+
+                                                 Currently available:
+
+                                                     -  query_boundary:
+                                                        This boolean value set to this option determines whether to add SHAPE field 
+                                                        to the RasterCollection. The value in the SHAPE field represents the 
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured 
+                                                        only when the RasterCollection is created from a list of Rasters.
+
+                                                        Example:
+
+                                                        {"query_boundary":True}
         ====================================     ====================================================================
 
         :returns: a sorted RasterCollection object 
 
         """
-        return self._ras_coll_engine_obj.sort(field_name=field_name, ascending=ascending)
+        return self._ras_coll_engine_obj.sort(field_name=field_name, ascending=ascending, context=context)
 
 
     def get_field_values(self, field_name, max_count=0):
@@ -8025,7 +8608,7 @@ class RasterCollection():
         """
         return self._ras_coll_engine_obj.to_multidimensional_raster(variable_field_name=variable_field_name, dimension_field_names=dimension_field_names)
 
-    def max(self):
+    def max(self, ignore_nodata=True):
         """
         Returns a raster object in which each band contains the maximum pixel values for that 
         band across all rasters in the raster collection.
@@ -8036,12 +8619,22 @@ class RasterCollection():
         Band numbers are matched between raster items using the band index, so the items 
         in the raster collection must follow the same band order.
         
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
+
+                                                    - True : The method will include all valid pixels and ignore any NoData pixels.
+                                                             This is the default.
+                                                    - False : The method will result in NoData if there are any NoData values.
+        ====================================     ====================================================================
+
         :returns: a Raster object
 
         """
-        return self._ras_coll_engine_obj.max()
+        return self._ras_coll_engine_obj.max(ignore_nodata=ignore_nodata)
 
-    def min(self):
+    def min(self, ignore_nodata=True):
         """
         Returns a raster object in which each band contains the minimum pixel values for that 
         band across all rasters in the raster collection.
@@ -8052,11 +8645,21 @@ class RasterCollection():
         Band numbers are matched between raster items using the band index, so the items 
         in the raster collection must follow the same band order.
         
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
+
+                                                    - True : The method will include all valid pixels and ignore any NoData pixels.
+                                                             This is the default.
+                                                    - False : The method will result in NoData if there are any NoData values.
+        ====================================     ====================================================================
+
         :returns: a Raster object
         """
-        return self._ras_coll_engine_obj.min()
+        return self._ras_coll_engine_obj.min(ignore_nodata=ignore_nodata)
 
-    def median(self):
+    def median(self, ignore_nodata=True):
         """
         Returns a raster object in which each band contains the median pixel values 
         for that band across all rasters in the raster collection.
@@ -8071,10 +8674,10 @@ class RasterCollection():
         :returns: a Raster object
 
         """
-        return self._ras_coll_engine_obj.median()
+        return self._ras_coll_engine_obj.median(ignore_nodata=ignore_nodata)
 
 
-    def mean(self):
+    def mean(self, ignore_nodata=True):
         """
         Returns a raster object in which each band contains the average pixel values 
         for that band across all rasters in the raster collection.
@@ -8086,12 +8689,21 @@ class RasterCollection():
         between raster items using the band index, so the items in the raster 
         collection must follow the same band order.
 
-        :returns: a Raster object
-        
-        """
-        return self._ras_coll_engine_obj.mean()
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
 
-    def majority(self):
+                                                    - True : The method will include all valid pixels and ignore any NoData pixels.
+                                                             This is the default.
+                                                    - False : The method will result in NoData if there are any NoData values.
+        ====================================     ====================================================================
+
+        :returns: a Raster object
+        """
+        return self._ras_coll_engine_obj.mean(ignore_nodata=ignore_nodata)
+
+    def majority(self, ignore_nodata=True):
         """
         Returns a raster object in which each band contains the pixel 
         value that occurs most frequently for that band across all 
@@ -8105,12 +8717,22 @@ class RasterCollection():
         between raster items using the band index, so the items 
         in the raster collection must follow the same band order.
 
-        :returns: a Raster object
-        
-        """
-        return self._ras_coll_engine_obj.majority()
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
 
-    def sum(self):
+                                                    - True : The method will include all valid pixels and ignore any NoData pixels.
+                                                             This is the default.
+                                                    - False : The method will result in NoData if there are any NoData values.
+        ====================================     ====================================================================
+
+        :returns: a Raster object
+
+        """
+        return self._ras_coll_engine_obj.majority(ignore_nodata=ignore_nodata)
+
+    def sum(self, ignore_nodata=True):
         """
         Returns a raster object in which each band contains the sum 
         of pixel values for that band across all rasters in the raster collection.
@@ -8122,10 +8744,19 @@ class RasterCollection():
         Band numbers are matched between raster items using the band index, 
         so the items in the raster collection must follow the same band order.
 
-        :returns: a Raster object
-        
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
+
+                                                    - True : The method will include all valid pixels and ignore any NoData pixels.
+                                                             This is the default.
+                                                    - False : The method will result in NoData if there are any NoData values.
+        ====================================     ====================================================================
+
+        :returns: a Raster object        
         """
-        return self._ras_coll_engine_obj.sum()
+        return self._ras_coll_engine_obj.sum(ignore_nodata=ignore_nodata)
 
     def mosaic(self, mosaic_method):
         """
@@ -8198,7 +8829,7 @@ class RasterCollection():
         """
         return self._ras_coll_engine_obj.quality_mosaic(quality_rc_or_list=quality_rc_or_list, statistic_type=statistic_type)
 
-    def select_bands(self, band_ids_or_names):
+    def select_bands(self, band_ids_or_names, context=None):
         """
         Selects a list of bands from every raster item in a raster collection and 
         returns a raster collection that contains raster items with only the selected bands.
@@ -8209,15 +8840,36 @@ class RasterCollection():
         band_ids_or_names                        Required. The names or index numbers of bands to be included in 
                                                  the returned raster items. This can be specified with a single string, 
                                                  integer, or a list of strings or integers.
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
+                                                 The default value for the context parameter would be the same as that of the 
+                                                 context settings applied to the parent collection.
+
+                                                 Currently available:
+
+                                                     -  query_boundary:
+                                                        This boolean value set to this option determines whether to add SHAPE field 
+                                                        to the RasterCollection. The value in the SHAPE field represents the 
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured 
+                                                        only when the RasterCollection is created from a list of Rasters.
+
+                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+
+                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. 
+                                                               (Creation of RasterCollection would be faster)
+
+                                                        Example:
+
+                                                        {"query_boundary":True}
         ====================================     ====================================================================
 
         :returns: a RasterCollection that contains raster items with only the selected bands.
         
         """
-        return self._ras_coll_engine_obj.select_bands(band_ids_or_names=band_ids_or_names)
+        return self._ras_coll_engine_obj.select_bands(band_ids_or_names=band_ids_or_names, context=context)
 
 
-    def map(self, func):
+    def map(self, func, context=None):
         """
         Maps a Python function over a raster collection.
 
@@ -8228,12 +8880,33 @@ class RasterCollection():
                                                  The return value of the function must be a dictionary in which one 
                                                  of the keys is raster. For example, 
                                                  {"raster": output_raster_object, "name": input_item_name["name"]}.
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
+                                                 The default value for the context parameter would be the same as that of the 
+                                                 context settings applied to the parent collection.
+
+                                                 Currently available:
+
+                                                     -  query_boundary:
+                                                        This boolean value set to this option determines whether to add SHAPE field 
+                                                        to the RasterCollection. The value in the SHAPE field represents the 
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured 
+                                                        only when the RasterCollection is created from a list of Rasters.
+
+                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+
+                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. 
+                                                               (Creation of RasterCollection would be faster)
+
+                                                        Example:
+
+                                                        {"query_boundary":True}
         ====================================     ====================================================================
 
         :returns: a new RasterCollection created from the existing RasterCollection after applying the func on each item.
         
         """
-        return self._ras_coll_engine_obj.map(func=func)
+        return self._ras_coll_engine_obj.map(func=func, context=context)
 
 
     def _as_df(self, result_offset=None, result_record_count=None, return_all_records=False):
@@ -8310,7 +8983,7 @@ class RasterCollection():
         return None
 
 class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
-    def __init__(self, rasters, attribute_dict=None,where_clause=None, query_geometry=None, engine=None, gis=None):
+    def __init__(self, rasters, attribute_dict=None,where_clause=None, query_geometry=None, engine=None, gis=None, context=None):
         ImageryLayer.__init__(self, str(rasters), gis=gis)
 
         self._mosaic_rule = None
@@ -8329,7 +9002,6 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
 
         self._attribute_dict = attribute_dict
 
-
         self._local=False
         #self._do_not_hydrate=False
         self._rasters=rasters
@@ -8337,6 +9009,10 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         #self._engine=_ArcpyRaster
         #self._engine_obj=_ArcpyRaster(rasters, False, gis)
         self._ras_coll_engine = engine
+        if context is None:
+            self._context = {}
+        else:
+            self._context = context
         import arcpy
         try:
             arcpy.CheckOutExtension("ImageAnalyst")
@@ -8351,6 +9027,14 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
                     self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
             else:
                 self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
+        if isinstance(rasters,list):
+            arcpy_rasters_list=[]
+            for ele in rasters:
+                if ((isinstance(ele,  Raster)) and isinstance(ele._engine_obj, _ArcpyRaster)):
+                    arcpy_rasters_list.append(ele._engine_obj._raster)
+
+            if arcpy_rasters_list !=[]:
+                rasters = arcpy_rasters_list                
         self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
         self._df=self._as_df()
 
@@ -8415,8 +9099,10 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
     #    return (self._raster_collection.__getitem__(item))
 
 
-    def filter_by(self, where_clause="", query_geometry_or_extent=None, raster_query=""):
-        newcollection = self._clone_raster_collection()
+    def filter_by(self, where_clause="", query_geometry_or_extent=None, raster_query="", context=None):
+        if context is None:
+            context = self._context
+        newcollection = self._clone_raster_collection(context=context)
         if isinstance(query_geometry_or_extent, _arcgis.geometry.Geometry):
             query_geometry_or_extent = query_geometry_or_extent.as_arcpy
         if where_clause is None:
@@ -8430,14 +9116,16 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
 
 
 
-    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None):
-        newcollection = self._clone_raster_collection()
+    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None, context=None):
+        if context is None:
+            context = self._context
+        newcollection = self._clone_raster_collection(context=context)
         newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByTime(start_time=start_time, end_time=end_time, time_field_name=time_field_name)
         newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj._as_df()
         return newcollection
 
 
-    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None):
+    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None, context=None):
         """
         filter the raster collection by a calendar_field and its start and end value (inclusive). i.e. if you would like
         to select all the rasters that have the time stamp on Monday, specify calendar_field as 'DAY_OF_WEEK' and put start and
@@ -8456,7 +9144,9 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         :return: a filtered raster collection.
         """
         # validation
-        newcollection = self._clone_raster_collection()
+        if context is None:
+            context = self._context
+        newcollection = self._clone_raster_collection(context=context)
         newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByCalendarRange(calendar_field=calendar_field, start=start, end=end,
                                                           time_field_name=time_field_name,
                                                           date_time_format=date_time_format)
@@ -8464,8 +9154,10 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj._as_df()
         return newcollection
     
-    def filter_by_geometry(self, query_geometry_or_extent):
-        newcollection = self._clone_raster_collection()
+    def filter_by_geometry(self, query_geometry_or_extent, context=None):
+        if context is None:
+            context = self._context
+        newcollection = self._clone_raster_collection(context=context)
         if isinstance(query_geometry_or_extent, _arcgis.geometry.Geometry):
             query_geometry_or_extent = query_geometry_or_extent.as_arcpy
         newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByGeometry(query_geometry_or_extent=query_geometry_or_extent)
@@ -8473,20 +9165,26 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         return newcollection
 
 
-    def filter_by_attribute(self, field_name, operator, field_values):
-        newcollection = self._clone_raster_collection()
+    def filter_by_attribute(self, field_name, operator, field_values, context=None):
+        if context is None:
+            context = self._context
+        newcollection = self._clone_raster_collection(context=context)
         newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByAttribute(field_name=field_name, operator=operator,field_values=field_values)
         newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj._as_df()
         return newcollection
 
-    def filter_by_raster_property(self, property_name, operator, property_values):
-        newcollection = self._clone_raster_collection()
+    def filter_by_raster_property(self, property_name, operator, property_values, context=None):
+        if context is None:
+            context = self._context
+        newcollection = self._clone_raster_collection(context=context)
         newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByRasterProperty(property_name=property_name, operator=operator, property_values=property_values)
         newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj._as_df()
         return newcollection
 
-    def sort(self, field_name, ascending=True):
-        newcollection = self._clone_raster_collection()
+    def sort(self, field_name, ascending=True, context=None):
+        if context is None:
+            context = self._context
+        newcollection = self._clone_raster_collection(context=context)
         newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.sort(field_name=field_name, ascending=ascending)
         newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj._as_df()
         return newcollection
@@ -8499,25 +9197,25 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
     def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
         return Raster(self._raster_collection.toMultidimensionalRaster(variable_field_name=variable_field_name, dimension_field_names=dimension_field_names))
 
-    def max(self):
-        return Raster(self._raster_collection.max())
+    def max(self, ignore_nodata=True):
+        return Raster(self._raster_collection.max(ignore_nodata=ignore_nodata))
 
 
-    def min(self):
-        return Raster(self._raster_collection.min())
+    def min(self, ignore_nodata=True):
+        return Raster(self._raster_collection.min(ignore_nodata=ignore_nodata))
 
 
-    def median(self):
-        return Raster(self._raster_collection.median())
+    def median(self, ignore_nodata=True):
+        return Raster(self._raster_collection.median(ignore_nodata=ignore_nodata))
 
-    def mean(self):
-        return Raster(self._raster_collection.mean())
+    def mean(self, ignore_nodata=True):
+        return Raster(self._raster_collection.mean(ignore_nodata=ignore_nodata))
 
-    def majority(self):
-        return Raster(self._raster_collection.majority())
+    def majority(self, ignore_nodata=True):
+        return Raster(self._raster_collection.majority(ignore_nodata=ignore_nodata))
 
-    def sum(self):
-        return Raster(self._raster_collection.sum())
+    def sum(self, ignore_nodata=True):
+        return Raster(self._raster_collection.sum(ignore_nodata=ignore_nodata))
 
     def mosaic(self, mosaic_method):
         return Raster(self._raster_collection.mosaic(mosaic_method=mosaic_method))
@@ -8525,11 +9223,15 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
     def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
         return Raster(self._raster_collection.quality_mosaic(quality_rc_or_list=quality_rc_or_list,statistic_type=statistic_type))
 
-    def select_bands(self, band_ids_or_names):
-        return RasterCollection(self._raster_collection.selectBands(band_ids_or_names))
+    def select_bands(self, band_ids_or_names, context=None):
+        if context is None:
+            context = self._context
+        return RasterCollection(self._raster_collection.selectBands(band_ids_or_names), context=context)
 
 
-    def map(self, func):
+    def map(self, func, context=None):
+        if context is None:
+            context = self._context
         res = map(func, iter(self))
         rasters = []
         attribute_dict = defaultdict(list)
@@ -8539,7 +9241,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
                 if key != 'raster':
                     attribute_dict[key].append(value)
 
-        return RasterCollection(rasters, attribute_dict)                
+        return RasterCollection(rasters, attribute_dict, context=context)                
           
 
     def _as_df(self, result_offset=None, result_record_count=None, return_all_records=False):
@@ -8547,12 +9249,12 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         data = {}
         value_rasters=[]
         value_geometries=[]
-        for field in self.fields:
+        for index, field in enumerate(self.fields):
             try:
                 value = self.get_field_values(field)
                 if field=="Raster":
                     for ele in value:
-                        value_rasters.append(Raster(ele))
+                        value_rasters.append(Raster(self._raster_collection[index]['Raster']))
                     data[field] = value_rasters
                 elif field=="Shape":
                     for ele in value:
@@ -8567,8 +9269,8 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
     def display_image(self, item=None):
         raise RuntimeError('Not available in non server env')
 
-    def _clone_raster_collection(self):
-        new_raster_collection = RasterCollection(self._rasters, self._attribute_dict, self._where_clause, self._spatial_filter, self._ras_coll_engine, self._gis)
+    def _clone_raster_collection(self, context=None):
+        new_raster_collection = RasterCollection(self._rasters, self._attribute_dict, self._where_clause, self._spatial_filter, self._ras_coll_engine, self._gis, context=context)
         new_raster_collection._fn = self._fn
         new_raster_collection._fnra = self._fnra
         new_raster_collection._mosaic_rule = self._mosaic_rule
@@ -8589,7 +9291,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
 
 
 class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
-    def __init__(self, rasters=None, attribute_dict=None, where_clause=None, query_geometry=None, engine=None, gis=None):
+    def __init__(self, rasters=None, attribute_dict=None, where_clause=None, query_geometry=None, engine=None, gis=None, context= None):
         #self._remote = raster.use_server_engine
         ImageryLayer.__init__(self, rasters, gis=gis)
         self._mosaic_rule = None
@@ -8619,6 +9321,10 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         self._engine_obj=_ImageServerRaster(rasters, False, gis)
         self._ras_coll_engine = engine
         self._df=None
+        if context is None:
+            self._context = {}
+        else:
+            self._context = context
 
         if str(self.properties['capabilities']).lower().find('catalog') == -1:
             raise RuntimeError("Image Service should have 'Catalog' capability to create a RasterCollection object.")
@@ -8683,47 +9389,49 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
             self._lower_limit=offset
         return(self._rep_df.to_dict('records', into=dict))[item-offset]
 
-    def filter_by(self, where_clause=None, query_geometry_or_extent=None, raster_query=None):
-            from arcgis.geometry.filters import intersects
-            geometry_filter=None
-            if query_geometry_or_extent is not None:
-                query_geometry_or_extent = _get_geometry(query_geometry_or_extent)
-                geometry_filter = intersects(query_geometry_or_extent)
-            else:
-                geometry_filter = self._spatial_filter
-            #newcollection = self._clone_raster_collection()
-            if where_clause is not None:
-                where_clause = self._where_clause+" AND ("+ where_clause+")"
-            else:
-                where_clause=self._where_clause
+    def filter_by(self, where_clause=None, query_geometry_or_extent=None, raster_query=None, context=None):
+        if context is None:
+            context = self._context
+        from arcgis.geometry.filters import intersects
+        geometry_filter=None
+        if query_geometry_or_extent is not None:
+            query_geometry_or_extent = _get_geometry(query_geometry_or_extent)
+            geometry_filter = intersects(query_geometry_or_extent)
+        else:
+            geometry_filter = self._spatial_filter
+        #newcollection = self._clone_raster_collection()
+        if where_clause is not None:
+            where_clause = self._where_clause+" AND ("+ where_clause+")"
+        else:
+            where_clause=self._where_clause
 
 
-            if raster_query is not None and self._raster_query is not None:
-                raster_query = self._raster_query+" AND ("+ raster_query+")"
-            elif raster_query is None:
-                raster_query=self._raster_query
-            oids = super().query(where=where_clause,
-                                 geometry_filter=geometry_filter,
-                                 return_ids_only=True,
-                                 raster_query=raster_query)['objectIds']
+        if raster_query is not None and self._raster_query is not None:
+            raster_query = self._raster_query+" AND ("+ raster_query+")"
+        elif raster_query is None:
+            raster_query=self._raster_query
+        oids = super().query(where=where_clause,
+                                geometry_filter=geometry_filter,
+                                return_ids_only=True,
+                                raster_query=raster_query)['objectIds']
 
-            newcollection = RasterCollection(rasters=self._url, attribute_dict=self._attribute_dict, where_clause=where_clause, query_geometry=geometry_filter, gis=self._gis)
-            newcollection._ras_coll_engine_obj._mosaic_rule = {
-                "mosaicMethod": "esriMosaicLockRaster",
-                "lockRasterIds": oids,
-                "ascending": True,
-                "mosaicOperation": "MT_FIRST"
-            }
-            newcollection._ras_coll_engine_obj._raster_query=raster_query
-            newcollection._ras_coll_engine_obj._object_ids=oids
-            #newcollection._where_clause=where_clause
-            #newcollection._spatial_filter=geometry_filter
-            #newcollection._filtered =True
-            newcollection._ras_coll_engine_obj._df= newcollection._as_df()
-            return newcollection
+        newcollection = RasterCollection(rasters=self._url, attribute_dict=self._attribute_dict, where_clause=where_clause, query_geometry=geometry_filter, gis=self._gis, context=context)
+        newcollection._ras_coll_engine_obj._mosaic_rule = {
+            "mosaicMethod": "esriMosaicLockRaster",
+            "lockRasterIds": oids,
+            "ascending": True,
+            "mosaicOperation": "MT_FIRST"
+        }
+        newcollection._ras_coll_engine_obj._raster_query=raster_query
+        newcollection._ras_coll_engine_obj._object_ids=oids
+        #newcollection._where_clause=where_clause
+        #newcollection._spatial_filter=geometry_filter
+        #newcollection._filtered =True
+        newcollection._ras_coll_engine_obj._df= newcollection._as_df()
+        return newcollection
 
 
-    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None):
+    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None, context=None):
         if time_field_name not in self.fields:
             raise ValueError('the time_field_name is not existed. Please input a valid name for time field.')
 
@@ -8735,9 +9443,9 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         else:
             sql_query = sql_query1 if sql_query1 else sql_query2
 
-        return self.filter_by(sql_query)
+        return self.filter_by(sql_query, context=context)
 
-    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None):
+    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None, context=None):
         """
         filter the raster collection by a calendar_field and its start and end value (inclusive). i.e. if you would like
         to select all the rasters that have the time stamp on Monday, specify calendar_field as 'DAY_OF_WEEK' and put start and
@@ -8756,6 +9464,8 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         :return: a filtered raster collection.
         """
         # validation
+        if context is None:
+            context = self._context
 
         calendar_field_types = ['YEAR', 'MONTH', 'QUARTER', 'WEEK_OF_YEAR', 'DAY_OF_YEAR', 'DAY_OF_MONTH', 'DAY_OF_WEEK', 'HOUR']
         if not isinstance(calendar_field, str):
@@ -8805,7 +9515,7 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         oids = oids_dict["objectIds"]
         df = self._as_df()
         filtered_rasters_oids=[]
-        newcollection = self._clone_raster_collection()
+        newcollection = self._clone_raster_collection(context=context)
         for index, row in df.iterrows():
             if date_time_format is None:
                 date_time = datetime.datetime.strptime(row[time_field_name], '%Y-%m-%dT%H:%M:%S')
@@ -8860,32 +9570,34 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         newcollection._ras_coll_engine_obj._df= newcollection._as_df()
         return newcollection
 
-    def filter_by_geometry(self, query_geometry_or_extent):
-        return self.filter_by(query_geometry_or_extent = query_geometry_or_extent)
+    def filter_by_geometry(self, query_geometry_or_extent, context=None):
+        return self.filter_by(query_geometry_or_extent = query_geometry_or_extent, context=context)
 
-    def filter_by_attribute(self, field_name, operator, field_values):
+    def filter_by_attribute(self, field_name, operator, field_values, context=None):
         if not isinstance(field_name, str):
             raise TypeError("field_name should be string")
 
         from arcgis.raster._util import build_query_string
 
         query_string = build_query_string(field_name, operator.lower(), field_values)
-        return self.filter_by(query_string)
+        return self.filter_by(query_string, context=context)
 
-    def filter_by_raster_property(self, property_name, operator, property_values):
+    def filter_by_raster_property(self, property_name, operator, property_values, context=None):
         if not isinstance(property_name, str):
             raise TypeError("property_name should be string")
         from arcgis.raster._util import build_query_string
         raster_query  = build_query_string(property_name, operator.lower(), property_values)
-        return self.filter_by(raster_query = raster_query)
+        return self.filter_by(raster_query = raster_query, context=context)
 
 
-    def sort(self, field_name, ascending=True):
+    def sort(self, field_name, ascending=True, context=None):
+        if context is None:
+            context = self._context
         if ascending is True:
             order_by_fields_string = str(field_name)+" "+"ASC"
         else:
             order_by_fields_string = str(field_name)+" "+"DESC"
-        newcollection = self._clone_raster_collection()
+        newcollection = self._clone_raster_collection(context=context)
         newcollection._ras_coll_engine_obj._order_by_fields = order_by_fields_string
         newcollection._ras_coll_engine_obj._df= newcollection._as_df()
 
@@ -8920,42 +9632,48 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         return lyr
 
 
-    def max(self):
+    def max(self, ignore_nodata=True):
         from arcgis.raster.functions import raster_collection_function
-        raster_function_json = _local_function_template(67)
+        opnum = 67 if ignore_nodata else 39
+        raster_function_json = _local_function_template(opnum)
         return raster_collection_function(self, aggregation_function=raster_function_json)
 
 
 
 
-    def min(self):
+    def min(self, ignore_nodata=True):
         from arcgis.raster.functions import raster_collection_function
-        raster_function_json = _local_function_template(70)
+        opnum = 70 if ignore_nodata else 42
+        raster_function_json = _local_function_template(opnum)
         return raster_collection_function(self, aggregation_function=raster_function_json)
 
 
-    def median(self):
+    def median(self, ignore_nodata=True):
         from arcgis.raster.functions import raster_collection_function
-        raster_function_json = _local_function_template(69)
+        opnum = 69 if ignore_nodata else 41
+        raster_function_json = _local_function_template(opnum)
         return raster_collection_function(self, aggregation_function=raster_function_json)
 
 
 
-    def mean(self):
+    def mean(self, ignore_nodata=True):
         from arcgis.raster.functions import raster_collection_function
-        raster_function_json = _local_function_template(68)
+        opnum = 68 if ignore_nodata else 40
+        raster_function_json = _local_function_template(opnum)
         return raster_collection_function(self, aggregation_function=raster_function_json)
 
 
-    def majority(self):
+    def majority(self, ignore_nodata=True):
         from arcgis.raster.functions import raster_collection_function
-        raster_function_json = _local_function_template(66)
+        opnum = 66 if ignore_nodata else 38
+        raster_function_json = _local_function_template(opnum)
         return raster_collection_function(self, aggregation_function=raster_function_json)
 
 
-    def sum(self):
+    def sum(self, ignore_nodata=True):
         from arcgis.raster.functions import raster_collection_function
-        raster_function_json = _local_function_template(74)
+        opnum = 74 if ignore_nodata else 55
+        raster_function_json = _local_function_template(opnum)
         return raster_collection_function(self, aggregation_function=raster_function_json)
 
 
@@ -9001,7 +9719,9 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
             inp_list.append(ele)
         return _pick(inp_list)
 
-    def select_bands(self, band_ids_or_names):
+    def select_bands(self, band_ids_or_names, context=None):
+        if context is None:
+            context = self._context
         from arcgis.raster.functions import raster_collection_function, extract_band
         by_bandID_or_bandName = 0  # 1: by band id; 2: by band name
         if not (isinstance(band_ids_or_names, list) or isinstance(band_ids_or_names, str) or isinstance(
@@ -9038,15 +9758,17 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
                 continue
             in_raster_collection_dict[field_name] = self.get_field_values(field_name)
 
-        return RasterCollection(new_rasters, in_raster_collection_dict)
+        return RasterCollection(new_rasters, in_raster_collection_dict, context=context)
 
 
-    def map(self, func):
+    def map(self, func, context=None):
+        if context is None:
+            context = self._context
         if isinstance(func, _arcgis.raster.functions.RFT) or isinstance(func, dict):
             from arcgis.raster.functions import raster_collection_function
             layer = raster_collection_function(self, item_function=func)
 
-            newcollection = self._clone_raster_collection()
+            newcollection = self._clone_raster_collection(context=context)
             newcollection._fn = layer._fn
             newcollection._fnra = layer._fnra
             return newcollection   
@@ -9060,7 +9782,7 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
                     if key != 'raster':
                         attribute_dict[key].append(value)
 
-            return RasterCollection(rasters, attribute_dict)
+            return RasterCollection(rasters, attribute_dict, context=context)
           
 
     def _as_df(self, result_offset=None, result_record_count=None, return_all_records=False):
@@ -9093,8 +9815,7 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
             for i in range (0, len(df.index)):
                 #self._do_not_hydrate=True
                 df.loc[i, "Raster"] = _raster_item(self,int(df[oid_name].loc[i]))
-                df.loc[i, "Raster"].token = self._token
-                df.loc[i, "Raster"]._do_not_hydrate = True
+                df.loc[i, "Raster"]._engine_obj._do_not_hydrate = True
 
         return df
 
@@ -9121,8 +9842,8 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
             except:
                 return byte_array
 
-    def _clone_raster_collection(self):
-        new_raster_collection = RasterCollection(self._url, self._attribute_dict, self._where_clause, self._spatial_filter, self._ras_coll_engine, self._gis)
+    def _clone_raster_collection(self, context=None):
+        new_raster_collection = RasterCollection(self._url, self._attribute_dict, self._where_clause, self._spatial_filter, self._ras_coll_engine, self._gis, context=context)
 
         new_raster_collection._lazy_token = self._token
         new_raster_collection._fn = self._fn
@@ -9151,7 +9872,7 @@ def _get_shape(ele):
     return boundary
 
 class _LocalRasterCollection(ImageryLayer, RasterCollection):
-    def __init__(self, rasters=None, attribute_dict=None, where_clause=None, query_geometry=None, engine=None, gis=None):
+    def __init__(self, rasters=None, attribute_dict=None, where_clause=None, query_geometry=None, engine=None, gis=None, context= None):
         #self._remote = raster.use_server_engine
         ImageryLayer.__init__(self, rasters, gis=gis)
         self._mosaic_rule = None
@@ -9177,7 +9898,12 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         self._engine=_ImageServerRaster
         self._engine_obj=_ImageServerRaster(rasters, False, gis)
 
+
         self._ras_coll_engine=engine
+        if context is None:
+            self._context = {}
+        else:
+            self._context = context
        #self._engine=_ImageServerRaster
         #self._engine_obj=_ImageServerRaster(rasters, False, gis)
         ids = list(range(1,len(rasters)+1))
@@ -9190,22 +9916,33 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         for ele in rasters:
             if not isinstance(ele, Raster):
                 ele = Raster(ele)
-                ele._do_not_hydrate = True
+            ele._engine_obj._do_not_hydrate = True
+            #ele._engine_obj.token = self._token
             arcgis_rasters.append(ele)
         data = {"Raster":arcgis_rasters, "ID":ids}
 
-        if "SHAPE" not in attribute_dict.keys():
-            if not isinstance(ele._engine_obj, _ArcpyRaster):
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor(max_workers=len(rasters)) as executor:
-    
-                    future_to_url = (executor.submit(_get_shape,ele) for ele in arcgis_rasters)
-                    for future in concurrent.futures.as_completed(future_to_url):
-                        shapes.append(future.result())
+        query_boundary = True
+        if isinstance(self._context, dict):
+            if "query_boundary" in self._context.keys():
+                if isinstance(self._context["query_boundary"], bool):
+                    query_boundary= self._context["query_boundary"]
+                else:
+                    _LOGGER.warning("Value for query_boundary key in context should be bool")
 
-            if shapes !=[]:
-                data.update({"SHAPE":shapes})
-        data.update(attribute_dict)
+        if query_boundary:
+            if "SHAPE" not in attribute_dict.keys():
+                if not isinstance(ele._engine_obj, _ArcpyRaster):
+                    import concurrent.futures
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=len(rasters)) as executor:
+    
+                        future_to_url = (executor.submit(_get_shape,ele) for ele in arcgis_rasters)
+                        for future in concurrent.futures.as_completed(future_to_url):
+                            shapes.append(future.result())
+
+                if shapes !=[]:
+                    data.update({"SHAPE":shapes})
+        if attribute_dict is not None:
+            data.update(attribute_dict)
         self._attribute_dict = data
         import pandas as pd
         df_obj = pd.DataFrame(data)
@@ -9241,8 +9978,10 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         return self._df.to_dict('records', into=dict)[item]
 
 
-    def filter_by(self, where_clause=None, query_geometry_or_extent=None, raster_query=None):        
-        newcollection = self._clone_raster_collection()
+    def filter_by(self, where_clause=None, query_geometry_or_extent=None, raster_query=None, context=None):
+        if context is None:
+            context = self._context
+        newcollection = self._clone_raster_collection(context=context)
         if where_clause is not None:
             if "LIKE" in where_clause or "NOT LIKE" in where_clause:
                 raise RuntimeError("Local RasterCollection does not support LIKE or NOT LIKE in where_clause.")
@@ -9274,11 +10013,13 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                     for key, value in item.items():
                         if key not in ['Raster', 'Path']:
                             attribute_dict[key].append(value)
-            newcollection= RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
+            newcollection= RasterCollection(filtered_rasters, attribute_dict, context = context) if filtered_rasters else None
         return newcollection
 
 
-    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None):
+    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None, context=None):
+        if context is None:
+            context = self._context
         if date_time_format is None:
             if start_time:
                 start_time = datetime.datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S')
@@ -9315,10 +10056,10 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
             warnings.warn(
                 "Warning: the output is None because no items have raster properties satisfying the query")
 
-        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
+        return RasterCollection(filtered_rasters, attribute_dict, context = context) if filtered_rasters else None
 
 
-    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None):
+    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None, context=None):
         """
         filter the raster collection by a calendar_field and its start and end value (inclusive). i.e. if you would like
         to select all the rasters that have the time stamp on Monday, specify calendar_field as 'DAY_OF_WEEK' and put start and
@@ -9337,6 +10078,9 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         :return: a filtered raster collection.
         """
         # validation
+
+        if context is None:
+            context = self._context
         filtered_rasters = []
         attribute_dict = defaultdict(list)
 
@@ -9389,9 +10133,11 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
             warnings.warn(
                 "Warning: the output is None because no items have raster properties satisfying the query")
 
-        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
+        return RasterCollection(filtered_rasters, attribute_dict, context = context) if filtered_rasters else None
 
-    def filter_by_geometry(self, query_geometry_or_extent):
+    def filter_by_geometry(self, query_geometry_or_extent, context=None):
+        if context is None:
+            context = self._context
         filtered_rasters = []
         attribute_dict = defaultdict(list)
 
@@ -9413,9 +10159,11 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         if not filtered_rasters:
             warnings.warn(
                 "Warning: the output is None because no items have raster properties satisfying the query")
-        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
+        return RasterCollection(filtered_rasters, attribute_dict, context = context) if filtered_rasters else None
 
-    def filter_by_raster_property(self, property_name, operator, property_values):
+    def filter_by_raster_property(self, property_name, operator, property_values, context=None):
+        if context is None:
+            context = self._context
         values = property_values
         if not isinstance(values, str) and not isinstance(values, list):
             raise TypeError('values must be string of list of string')
@@ -9481,9 +10229,11 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
 
         if not filtered_rasters:
             warnings.warn("Warning: the output is None because no items have raster properties satisfying the query")
-        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
+        return RasterCollection(filtered_rasters, attribute_dict, context = context) if filtered_rasters else None
 
-    def filter_by_attribute(self, field_name, operator, field_values):
+    def filter_by_attribute(self, field_name, operator, field_values, context=None):
+        if context is None:
+            context = self._context
         filtered_rasters = []
         attribute_dict = defaultdict(list)
 
@@ -9539,11 +10289,13 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         if not filtered_rasters:
             warnings.warn(
                 "Warning: the output is None because no items have raster properties satisfying the query")
-        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
+        return RasterCollection(filtered_rasters, attribute_dict, context = context) if filtered_rasters else None
 
 
-    def sort(self, field_name, ascending=True):
-        newcollection = self._clone_raster_collection()
+    def sort(self, field_name, ascending=True, context=None):
+        if context is None:
+            context = self._context
+        newcollection = self._clone_raster_collection(context=context)
         newcollection._ras_coll_engine_obj._df = self._df.sort_values(by=field_name, ascending=ascending)
 
         return newcollection
@@ -9596,32 +10348,29 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         return lyr
 
 
-    def max(self):        
+    def max(self, ignore_nodata=True):        
         from arcgis.raster.functions import max
-        return max(self._rasters_list)
+        return max(self._rasters_list, ignore_nodata=ignore_nodata)
 
-
-
-    def min(self):
+    def min(self, ignore_nodata=True):
         from arcgis.raster.functions import min
-        return min(self._rasters_list)
+        return min(self._rasters_list, ignore_nodata=ignore_nodata)
 
-    def median(self):        
+    def median(self, ignore_nodata=True):        
         from arcgis.raster.functions import median
-        return median(self._rasters_list)
+        return median(self._rasters_list, ignore_nodata=ignore_nodata)
 
-
-    def mean(self):
+    def mean(self, ignore_nodata=True):
         from arcgis.raster.functions import mean
-        return mean(self._rasters_list)
+        return mean(self._rasters_list, ignore_nodata=ignore_nodata)
 
-    def majority(self):
+    def majority(self, ignore_nodata=True):
         from arcgis.raster.functions import majority
-        return majority(self._rasters_list)
+        return majority(self._rasters_list, ignore_nodata=ignore_nodata)
 
-    def sum(self):
+    def sum(self, ignore_nodata=True):
         from arcgis.raster.functions import sum
-        return sum(self._rasters_list)
+        return sum(self._rasters_list, ignore_nodata=ignore_nodata)
 
     def mosaic(self, mosaic_method):
         raise RuntimeError("Local RasterCollection does not support mosaic function")
@@ -9660,7 +10409,9 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
             inp_list.append(ele)
         return _pick(inp_list)
 
-    def select_bands(self, band_ids_or_names):
+    def select_bands(self, band_ids_or_names, context = None):
+        if context is None:
+            context = self._context
         from arcgis.raster.functions import raster_collection_function, extract_band
         by_bandID_or_bandName = 0  # 1: by band id; 2: by band name
         if not (isinstance(band_ids_or_names, list) or isinstance(band_ids_or_names, str) or isinstance(
@@ -9698,10 +10449,12 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                 continue
             in_raster_collection_dict[field_name] = self.get_field_values(field_name)
 
-        return RasterCollection(new_rasters, in_raster_collection_dict)
+        return RasterCollection(new_rasters, in_raster_collection_dict, context = context)
 
 
-    def map(self, func):
+    def map(self, func, context = None):
+        if context is None:
+            context = self._context
         res = map(func, iter(self))
         rasters = []
         attribute_dict = defaultdict(list)
@@ -9711,7 +10464,7 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                 if key != 'raster':
                     attribute_dict[key].append(value)
 
-        return RasterCollection(rasters, attribute_dict)
+        return RasterCollection(rasters, attribute_dict, context = context)
 
 
 
@@ -9733,8 +10486,8 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
             raise RuntimeError('invalid raster collection')
         return raster
 
-    def _clone_raster_collection(self):
-        new_raster_collection = RasterCollection(self._rasters, self._attribute_dict, self._where_clause, self._spatial_filter, self._ras_coll_engine, self._gis)
+    def _clone_raster_collection(self, context=None):
+        new_raster_collection = RasterCollection(self._rasters, self._attribute_dict, self._where_clause, self._spatial_filter, self._ras_coll_engine, self._gis, context = context)
         return new_raster_collection
 
     def _object_id_name(self):

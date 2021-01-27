@@ -203,7 +203,7 @@ class MapFeatureLayer(Layer):
         The `MapImageLayer` to which this layer belongs.
         """
         if self._storage is None:
-            self._storage = MapImageLayer(url=self._url.rstrip(digits)[:-1])
+            self._storage = MapImageLayer(url=self._url.rstrip(digits)[:-1], gis=self._gis)
         return self._storage
     #----------------------------------------------------------------------
     def export_attachments(self, output_folder, label_field=None):
@@ -1006,12 +1006,14 @@ class MapFeatureLayer(Layer):
                 df.spatial.renderer = self.renderer
                 df.spatial._meta.source = self
             for fld in dt_fields:
-                try:
-                    df[fld] = pd.to_datetime(df[fld]/1000,
-                                             infer_datetime_format=True,
-                                             unit='s')
-                except:
-                    df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                if fld in df.columns:
+
+                    try:
+                        df[fld] = pd.to_datetime(df[fld]/1000,
+                                                 infer_datetime_format=True,
+                                                 unit='s')
+                    except:
+                        df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True, errors='coerce')
             return df
         return result
     # ----------------------------------------------------------------------
@@ -1146,7 +1148,7 @@ class MapFeatureLayer(Layer):
     def get_html_popup(self, oid):
         """
         The htmlPopup resource provides details about the HTML pop-up
-        authored by the user using ArcGIS for Desktop.
+        authored by the user using ArcGIS Pro or ArcGIS Desktop.
 
         ===============     ====================================================================
         **Argument**        **Description**

@@ -20,9 +20,11 @@ log = logging.getLogger(__name__)
 import yaml
 
 ESRI_CHANNEL_DEV = "http://zion/conda/esri_channel_dev/"
+ESRI_REQUESTS_CHANNEL = "http://zion/conda/esri_requests/"
 
-BASE_BUILD_CMD = "cd {build_dir} && conda build -c " + ESRI_CHANNEL_DEV + " "\
-                 "arcgis --py {python_version} --output-folder {output_dir}"
+BASE_BUILD_CMD =  "cd {build_dir} && conda build " + \
+                 f"-c {ESRI_CHANNEL_DEV} -c {ESRI_REQUESTS_CHANNEL} " + \
+                  "arcgis --py {python_version} --output-folder {output_dir}"
 BASE_CONVERT_CMD = "conda convert -f -p {os_build_target} {conda_package} "\
                    "-o {output_dir}" 
 BASE_INDEX_CMD = "cd {output_dir} && conda index {os_build_target}"
@@ -399,7 +401,7 @@ def _apply_build_number_to_meta_yaml(build_number: int):
         meta_yaml = yaml.load(f)
         meta_yaml["build"]["number"] = str(build_number)
     with open(META_YAML_FILE_PATH, "w") as f:
-        yaml.dump(meta_yaml, f, default_flow_style=False)
+        yaml.dump(meta_yaml, f, default_flow_style=False, explicit_start=True)
 
 def _restore_default_build_number_to_meta_yaml():
     _apply_build_number_to_meta_yaml(0)

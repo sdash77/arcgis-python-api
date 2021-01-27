@@ -25,6 +25,7 @@ try:
     from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
     from fastai.basic_train import Learner
     from ._maskrcnn_utils import is_no_color, mask_rcnn_loss, train_callback, compute_class_AP
+    from ._MaskRCNN_PointRend import create_pointrend
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from fastai.torch_core import split_model_idx
     import matplotlib.pyplot as plt
@@ -33,7 +34,7 @@ try:
     from fastai.basic_data import DatasetType
     from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
     import os as arcgis_os
-    from .._utils.common import get_nbatches
+    from .._utils.common import get_nbatches, image_batch_stretcher
 
     HAS_FASTAI = True
 except Exception as e:
@@ -43,7 +44,9 @@ except Exception as e:
 
 class MaskRCNN(ArcGISModel):
     """
-    Creates a ``MaskRCNN`` Instance segmentation object
+    Model architecture from https://arxiv.org/abs/1703.06870.
+    Creates a ``MaskRCNN`` Instance segmentation model,
+    based on https://github.com/pytorch/vision/blob/master/torchvision/models/detection/mask_rcnn.py.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -59,31 +62,108 @@ class MaskRCNN(ArcGISModel):
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     ---------------------   -------------------------------------------
-    kwargs                  Optional arguments, torchvision MaskRCNN arguments can be
-                            given in form of keyword arguments.
+    pointrend               Optional boolean. If True, it will use PointRend
+                            architecture on top of the segmentation head.
+                            Default: False. PointRend architecture from
+                            https://arxiv.org/pdf/1912.08193.pdf.      
     =====================   ===========================================
+    
+    **kwargs**
+
+    =============================   =============================================
+    **Argument**                    **Description**
+    -----------------------------   ---------------------------------------------
+    rpn_pre_nms_top_n_train         Optional int. Number of proposals to keep before
+                                    applying NMS during training.
+                                    Default: 2000
+    -----------------------------   ---------------------------------------------
+    rpn_pre_nms_top_n_test          Optional int. Number of proposals to keep before
+                                    applying NMS during testing.
+                                    Default: 1000
+    -----------------------------   ---------------------------------------------
+    rpn_post_nms_top_n_train        Optional int. Number of proposals to keep after
+                                    applying NMS during training.
+                                    Default: 2000
+    -----------------------------   ---------------------------------------------
+    rpn_post_nms_top_n_test         Optional int. Number of proposals to keep after
+                                    applying NMS during testing.
+                                    Default: 1000
+    -----------------------------   ---------------------------------------------
+    rpn_nms_thresh                  Optional float. NMS threshold used for postprocessing
+                                    the RPN proposals.
+                                    Default: 0.7
+    -----------------------------   ---------------------------------------------
+    rpn_fg_iou_thresh               Optional float. Minimum IoU between the anchor
+                                    and the GT box so that they can be considered
+                                    as positive during training of the RPN.
+                                    Default: 0.7
+    -----------------------------   ---------------------------------------------
+    rpn_bg_iou_thresh               Optional float. Maximum IoU between the anchor and
+                                    the GT box so that they can be considered as negative
+                                    during training of the RPN.
+                                    Default: 0.3
+    -----------------------------   ---------------------------------------------
+    rpn_batch_size_per_image        Optional int. Number of anchors that are sampled
+                                    during training of the RPN for computing the loss.
+                                    Default: 256
+    -----------------------------   ---------------------------------------------
+    rpn_positive_fraction           Optional float. Proportion of positive anchors in a
+                                    mini-batch during training of the RPN.
+                                    Default: 0.5
+    -----------------------------   ---------------------------------------------
+    box_score_thresh                Optional float. During inference, only return proposals
+                                    with a classification score greater than box_score_thresh
+                                    Default: 0.05
+    -----------------------------   ---------------------------------------------
+    box_nms_thresh                  Optional float. NMS threshold for the prediction head.
+                                    Used during inference.
+                                    Default: 0.5
+    -----------------------------   ---------------------------------------------
+    box_detections_per_img          Optional int. Maximum number of detections per
+                                    image, for all classes.
+                                    Default: 100
+    -----------------------------   ---------------------------------------------
+    box_fg_iou_thresh               Optional float. Minimum IoU between the proposals and
+                                    the GT box so that they can be considered as positive
+                                    during training of the classification head.
+                                    Default: 0.5
+    -----------------------------   ---------------------------------------------
+    box_bg_iou_thresh               Optional float. Maximum IoU between the proposals and 
+                                    the GT box so that they can be considered as negative 
+                                    during training of the classification head.
+                                    Default: 0.5
+    -----------------------------   ---------------------------------------------
+    box_batch_size_per_image        Optional int. Number of proposals that are sampled during
+                                    training of the classification head.
+                                    Default: 512
+    -----------------------------   ---------------------------------------------
+    box_positive_fraction           Optional float. Proportion of positive proposals in a
+                                    mini-batch during training of the classification head.
+                                    Default: 0.25
+    =============================   =============================================
 
     :returns: ``MaskRCNN`` Object
     """
-    def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
+    def __init__(self, data, backbone=None, pretrained_path=None, pointrend=False, *args, **kwargs):
 
         # Set default backbone to be 'resnet50'
         if backbone is None:
             backbone = models.resnet50
 
-        super().__init__(data, backbone)
+        self._check_dataset_support(data)
+        if not (self._check_backbone_support(backbone)):
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+
+        super().__init__(data, backbone, **kwargs)
         if self._is_multispectral:
             self._backbone_ms = self._backbone
             self._backbone = self._orig_backbone
             scaled_mean_values = data._scaled_mean_values[data._extract_bands].tolist()
             scaled_std_values = data._scaled_std_values[data._extract_bands].tolist()
 
-        if not self._check_backbone_support(self._backbone):
-            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
-
-        self._check_dataset_support(self._data)
-
         self._code = instance_detector_prf
+
+        self._pointrend = pointrend
 
         self.maskrcnn_kwargs, kwargs = split_kwargs_by_func(kwargs, models.detection.MaskRCNN.__init__)
 
@@ -143,13 +223,18 @@ class MaskRCNN(ArcGISModel):
                     max_size = 2*data.chip_size,
                     **self.maskrcnn_kwargs
                 )
+
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, data.c)
-        in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
-        hidden_layer = 256
-        model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
-                                                       hidden_layer,
-                                                       data.c)
+
+        if pointrend:
+            model = create_pointrend(model, data.c)
+        else:
+            in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
+            hidden_layer = 256
+            model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
+                                                        hidden_layer,
+                                                        data.c)
 
         if not _isnotebook() and arcgis_os.name=='posix':
             _set_ddp_multigpu(self)
@@ -225,8 +310,8 @@ class MaskRCNN(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from ``prepare_data`` function or None for
@@ -266,15 +351,21 @@ class MaskRCNN(ArcGISModel):
 
         return cls(data, **model_params, pretrained_path=str(model_file), **maskrcnn_kwargs)
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         import random
 
-        _emd_template = {}
+        _emd_template = {"ModelParameters" : {}}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_maskrcnn_inferencing"
-        _emd_template["InferenceFunction"] = "ArcGISInstanceDetector.py"
+        if save_inference_file:
+            _emd_template["InferenceFunction"] = "ArcGISInstanceDetector.py"
+        else:
+            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISInstanceDetector.py"
+        _emd_template["ModelType"] = "InstanceDetection"
         _emd_template["MaskRCNNkwargs"] = self.maskrcnn_kwargs
+        _emd_template["ModelParameters"]["pointrend"] = self._pointrend
         _emd_template["ExtractBands"] = [0, 1, 2]
+        _emd_template["SupportsVariableTileSize"] = True
         _emd_template['Classes'] = []
         class_data = {}
         for i, class_name in enumerate(self._data.classes[1:]):  # 0th index is background
@@ -347,14 +438,14 @@ class MaskRCNN(ArcGISModel):
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         mode                    Required arguments within ['bbox', 'mask', 'bbox_mask'].
-                                    * ``bbox`` - For visualizing only boundig boxes.
+                                    * ``bbox`` - For visualizing only bounding boxes.
                                     * ``mask`` - For visualizing only mask
                                     * ``bbox_mask`` - For visualizing both mask and bounding boxes.
         ---------------------   -------------------------------------------
-        mask_threshold          Optional float. The probabilty above which
+        mask_threshold          Optional float. The probability above which
                                 a pixel will be considered mask.
         ---------------------   -------------------------------------------
-        box_threshold           Optional float. The pobabilty above which
+        box_threshold           Optional float. The probability above which
                                 a detection will be considered valid.
         ---------------------   -------------------------------------------
         nrows                   Optional int. Number of rows of results
@@ -382,6 +473,7 @@ class MaskRCNN(ArcGISModel):
             raise(e)
 
         statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
+        stretch_type = kwargs.get('stretch_type', 'minmax') # Accepted Values `minmax`, `percentclip`
 
         cmap_fn = getattr(matplotlib.cm, cmap)
         return_fig = kwargs.get('return_fig', False)
@@ -431,11 +523,8 @@ class MaskRCNN(ArcGISModel):
 
             # Extract RGB Bands
             symbology_x_batch = x_batch[:, symbology_bands]
-            if statistics_type == 'DRA':
-                shp = symbology_x_batch.shape
-                min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
-                max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
-                symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+            if stretch_type is not None:
+                symbology_x_batch = image_batch_stretcher(symbology_x_batch, stretch_type, statistics_type)
 
             # Channel first to channel last for plotting
             symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
@@ -499,7 +588,7 @@ class MaskRCNN(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        detect_thresh           Optional float. The probabilty above which
+        detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
                                 average precision.
         ---------------------   -------------------------------------------                        

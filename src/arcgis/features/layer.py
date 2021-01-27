@@ -141,7 +141,8 @@ class FeatureLayer(Layer):
             self._renderer = None
         elif not isinstance(value, InsensitiveDict):
             raise ValueError("Invalid renderer type.")
-        self._refresh = value
+        else:
+            self._renderer = value
 
     @classmethod
     def fromitem(cls, item, layer_id=0):
@@ -394,7 +395,7 @@ class FeatureLayer(Layer):
             params['layer'] = self._dynamic_layer
         return self._con.post(path=url, postdata=params)
 
-    def _add_attachment(self, oid, file_path):
+    def _add_attachment(self, oid, file_path, keywords=None):
         """
         Adds an attachment to a feature service
 
@@ -411,6 +412,8 @@ class FeatureLayer(Layer):
         """
         if (os.path.getsize(file_path) >> 20) <= 9:
             params = {'f': 'json'}
+            if self._gis.version > [7,3] and keywords:
+                params['keywords'] = keywords
             if self._dynamic_layer:
                 attach_url = self._url.split('?')[0] + "/%s/addAttachment" % oid
                 params['layer'] = self._dynamic_layer
@@ -419,10 +422,12 @@ class FeatureLayer(Layer):
             files = {'attachment': file_path}
             res = self._con.post(path=attach_url,
                                  postdata=params,
-                                 files=files, token=self._token)
+                                 files=files)
             return res
         else:
             params = {'f': 'json'}
+            if self._gis.version > [7,3] and keywords:
+                params['keywords'] = keywords
             container = self.container
             itemid = container.upload(file_path)
             if self._dynamic_layer:
@@ -460,7 +465,7 @@ class FeatureLayer(Layer):
             params['layer'] = self._dynamic_layer
         else:
             url = self._url + "/%s/deleteAttachments" % oid
-        return self._con.post(url, params, token=self._token)
+        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def _update_attachment(self, oid, attachment_id, file_path):
@@ -492,7 +497,7 @@ class FeatureLayer(Layer):
             url = self._url + f"/{oid}/updateAttachment"
         res = self._con.post(path=url,
                              postdata=params,
-                             files=files, token=self._token)
+                             files=files)
         return res
 
     # ----------------------------------------------------------------------
@@ -507,7 +512,7 @@ class FeatureLayer(Layer):
             params['layer'] = self._dynamic_layer
         else:
             url = self._url + "/%s/attachments" % oid
-        return self._con.get(path=url, params=params, token=self._token)
+        return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
     def get_unique_values(self, attribute, query_string='1=1'):
@@ -1673,12 +1678,13 @@ class FeatureLayer(Layer):
                 df.spatial.renderer = self.renderer
                 df.spatial._meta.source = self
             for fld in dt_fields:
-                try:
-                    df[fld] = pd.to_datetime(df[fld]/1000,
-                                             infer_datetime_format=True,
-                                             unit='s')
-                except:
-                    df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                if fld in df.columns:
+                    try:
+                        df[fld] = pd.to_datetime(df[fld]/1000,
+                                                 infer_datetime_format=True,
+                                                 unit='s')
+                    except:
+                        df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True, errors='coerce')
             return df
         return result
     # ----------------------------------------------------------------------
@@ -1734,7 +1740,7 @@ class FeatureLayer(Layer):
         url = self._url + "/validateSQL"
         return self._con.post(path=url,
                               postdata=params,
-                              token=self._token)
+                              )
     # ----------------------------------------------------------------------
     def query_related_records(self,
                               object_ids,
@@ -1861,13 +1867,13 @@ class FeatureLayer(Layer):
         else:
             qrr_url = "%s/queryRelatedRecords" % self._url.split('?')[0]
 
-        return self._con.post(path=qrr_url, postdata=params, token=self._token)
+        return self._con.post(path=qrr_url, postdata=params)
 
     # ----------------------------------------------------------------------
     def get_html_popup(self, oid):
         """
         The htmlPopup resource provides details about the HTML pop-up
-        authored by the user using ArcGIS for Desktop.
+        authored by the user using ArcGIS Pro or ArcGIS Desktop.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1885,7 +1891,7 @@ class FeatureLayer(Layer):
                 'f': "json"
             }
 
-            return self._con.get(path=pop_url, params=params, token=self._token)
+            return self._con.get(path=pop_url, params=params)
         return ""
     # ----------------------------------------------------------------------
     def append(self,
@@ -1902,7 +1908,8 @@ class FeatureLayer(Layer):
                append_fields=None,
                rollback=False,
                skip_inserts=None,
-               upsert_matching_field=None
+               upsert_matching_field=None,
+               upload_id=None
                ):
         """
         Only available in ArcGIS Online
@@ -1969,6 +1976,11 @@ class FeatureLayer(Layer):
                                    upsert_matching_field will be used even if you specify
                                    use_globalids = True.
                                    Example: upsert_matching_field="MyfieldWithUniqueIndex"
+        ------------------------   --------------------------------------------------------------------
+        upload_id                  Optional string. The itemID field from an
+                                   :func:`~FeatureLayerCollection.upload` response, corresponding with
+                                   the `appendUploadId` REST API argument. This argument should not be
+                                   used along side the `item_id` argument.
         ========================   ====================================================================
 
 
@@ -1976,7 +1988,6 @@ class FeatureLayer(Layer):
 
         """
         import copy
-        upload_id = None
         if ((hasattr(self._gis, '_portal') and self._gis._portal.is_logged_in == False) or \
            (hasattr(self._gis, 'is_logged_in') and self._gis.is_logged_in == False)):
             raise Exception("Authentication required to perform append.")
@@ -2018,6 +2029,7 @@ class FeatureLayer(Layer):
         res = self._con.post(path=url,
                              postdata=params)
         if 'statusUrl' in res:
+            time.sleep(1)
             surl = res['statusUrl']
             sres = self._con.get(path=surl, params={'f' : 'json'})
             while sres['status'].lower() != "completed":
@@ -2111,12 +2123,12 @@ class FeatureLayer(Layer):
             print("Parameters not valid for delete_features")
             return None
         if future is False:
-            return self._con.post(path=delete_url, postdata=params, token=self._token)
+            return self._con.post(path=delete_url, postdata=params)
         else:
             params['async'] = True
             import concurrent.futures
             executor =  concurrent.futures.ThreadPoolExecutor(1)
-            res = self._con.post(path=delete_url, postdata=params, token=self._token)
+            res = self._con.post(path=delete_url, postdata=params)
             future = executor.submit(self._status_via_url, *(self._con, res['statusUrl'], {'f' : 'json'}))
             executor.shutdown(False)
             return future
@@ -2389,7 +2401,7 @@ class FeatureLayer(Layer):
             print("Parameters not valid for edit_features")
             return None
         try:
-            return self._con.post(path=edit_url, postdata=params)#, token=self._token)
+            return self._con.post(path=edit_url, postdata=params)#)
         except Exception as e:
             if str(e).lower().find("Invalid Token".lower()) > -1:
                 params.pop('token', None)
@@ -2510,22 +2522,30 @@ class FeatureLayer(Layer):
             params['async'] = True
             executor =  concurrent.futures.ThreadPoolExecutor(1)
             res = self._con.post(path=url,
-                                 postdata=params, token=self._token)
+                                 postdata=params, )
             future = executor.submit(self._status_via_url, *(self._con, res['statusUrl'], {'f' : 'json'}))
             executor.shutdown(False)
             return future
         return self._con.post(path=url,
-                              postdata=params, token=self._token)
+                              postdata=params, )
 
     # ----------------------------------------------------------------------
-    def _query(self, url, params, raw=False):
+    def _query(self, url, params, raw=False, **kwargs):
         """ returns results of query """
         try:
-            result = self._con.post(path=url,
-                                    postdata=params, token=self._token)
+            if 'add_token' in kwargs:
+                result = self._con.post(path=url,
+                                    postdata=params,
+                                    add_token=kwargs.get('add_token', True))
+            else:
+                result = self._con.post(path=url,
+                                    postdata=params, )
         except Exception as queryException:
             error_list = ["Error performing query operation", "HTTP Error 504: GATEWAY_TIMEOUT"]
-            if any(ele in queryException.__str__() for ele in error_list):
+            if queryException.args[0].lower().find("invalid token") > -1:
+                params.pop('token', None)
+                return self._query(url, params, raw=False, add_token=False)
+            elif any(ele in queryException.__str__() for ele in error_list):
                 # half the max record count
                 max_record = int(params['resultRecordCount']) if 'resultRecordCount' in params else 1000
                 offset = int(params['resultOffset']) if 'resultOffset' in params else 0
@@ -2576,7 +2596,7 @@ class FeatureLayer(Layer):
             return FeatureSet.from_dict(result)
 
     # ----------------------------------------------------------------------
-    def _query_df(self, url, params):
+    def _query_df(self, url, params, **kwargs):
         """ returns results of a query as a pd.DataFrame"""
         import pandas as pd
         from arcgis.features import GeoAccessor, GeoSeriesAccessor
@@ -2637,10 +2657,22 @@ class FeatureLayer(Layer):
             return attribs
         #------------------------------------------------------------------
         try:
-            featureset_dict = self._con.post(url, params,
-                                             token=self._token)
+            if 'add_token' in kwargs:
+
+                featureset_dict = self._con.post(
+                    url,
+                    params,
+                    add_token=kwargs.get('add_token', True)
+                )
+            else:
+                featureset_dict = self._con.post(
+                    url,
+                    params)
         except Exception as queryException:
             error_list = ["Error performing query operation", "HTTP Error 504: GATEWAY_TIMEOUT"]
+            if queryException.args[0].lower().find("invalid token") > -1:
+                params.pop('token', None)
+                return self._query_df(url, params, raw=False, add_token=False)
             if any(ele in queryException.__str__() for ele in error_list):
                 # half the max record count
                 max_record = int(params['resultRecordCount']) if 'resultRecordCount' in params else 1000
@@ -2700,7 +2732,17 @@ class FeatureLayer(Layer):
         if 'SHAPE' in featureset_dict:
             df.spatial.set_geometry('SHAPE')
         if len(dfields) > 0:
-            df[dfields] = df[dfields].apply(pd.to_datetime, unit='ms')
+
+            for fld in [fld for fld in dfields if fld in df.columns]:
+                try:
+                    df[fld] = pd.to_datetime(df[fld]/1000,
+                                             infer_datetime_format=True,
+                                             errors='coerce',
+                                             unit='s')
+                except:
+
+                    df[fld] = pd.to_datetime(df[fld], errors='coerce',
+                                             infer_datetime_format=True)
         return df
 
 
@@ -3151,7 +3193,7 @@ class FeatureLayerCollection(_GISResource):
 
         # fsurl = self.url + '/layers'
         # params = { "f" : "json" }
-        # allayers = self._con.post(fsurl, params, token=self._token)
+        # allayers = self._con.post(fsurl, params)
 
         # for layer in allayers['layers']:
         #    layers.append(FeatureLayer(self.url + '/' + str(layer['id']), self._gis))
@@ -3474,7 +3516,7 @@ class FeatureLayerCollection(_GISResource):
                 elif  status.lower() == 'failed':
                     return None
                 else:
-                    time.sleep(1)
+                    time.sleep(.5)
         return res
 
     def query(self,
@@ -3521,7 +3563,7 @@ class FeatureLayerCollection(_GISResource):
                 isinstance(time_filter, dict):
             params['time'] = time_filter
         results = self._con.get(path=qurl,
-                                params=params, token=self._token)
+                                params=params)
         if 'error' in results:
             raise ValueError(results)
         if not return_count_only and not return_ids_only:
@@ -3636,7 +3678,7 @@ class FeatureLayerCollection(_GISResource):
         if geometry_precision is not None:
             params['geometryPrecision'] = geometry_precision
         qrr_url = self._url + "/queryRelatedRecords"
-        res = self._con.get(path=qrr_url, params=params, token=self._token)
+        res = self._con.get(path=qrr_url, params=params)
         return res
 
     # ----------------------------------------------------------------------
@@ -3648,7 +3690,7 @@ class FeatureLayerCollection(_GISResource):
 
         }
         url = self._url + "/replicas"
-        return self._con.get(path=url, params=params, token=self._token)
+        return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
     def _unregister_replica(self, replica_id):
@@ -3671,7 +3713,7 @@ class FeatureLayerCollection(_GISResource):
             "replicaID": replica_id
         }
         url = self._url + "/unRegisterReplica"
-        return self._con.post(path=url, postdata=params, token=self._token)
+        return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
     def _replica_info(self, replica_id):
@@ -3693,7 +3735,7 @@ class FeatureLayerCollection(_GISResource):
             "f": "json"
         }
         url = self._url + "/replicas/" + replica_id
-        return self._con.get(path=url, params=params, token=self._token)
+        return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
     def _create_replica(self,
@@ -3866,7 +3908,7 @@ class FeatureLayerCollection(_GISResource):
 
         if asynchronous:
             if wait:
-                export_job = self._con.post(path=url, postdata=params, token=self._token)
+                export_job = self._con.post(path=url, postdata=params)
                 status = self._replica_status(url=export_job['statusUrl'])
                 while status['status'] not in ("Completed", "CompletedWithErrors"):
                     if status['status'] == "Failed":
@@ -3878,9 +3920,9 @@ class FeatureLayerCollection(_GISResource):
                 res = status
 
             else:
-                res = self._con.post(path=url, postdata=params, token=self._token)
+                res = self._con.post(path=url, postdata=params)
         else:
-            res = self._con.post(path=url, postdata=params, token=self._token)
+            res = self._con.post(path=url, postdata=params)
 
         if out_path is not None and \
                 os.path.isdir(out_path):
@@ -3894,7 +3936,7 @@ class FeatureLayerCollection(_GISResource):
             if dl_url is not None:
 
                 return self._con.get(path=dl_url, file_name=dl_url.split('/')[-1],
-                                     out_folder=out_path, try_json=False, token=self._token)
+                                     out_folder=out_path, try_json=False)
 
             else:
                 return res
@@ -3933,7 +3975,7 @@ class FeatureLayerCollection(_GISResource):
             if "statusUrl" in res:
                 import concurrent.futures
                 executor =  concurrent.futures.ThreadPoolExecutor(1)
-                res = self._con.post(path=url, postdata=params, token=self._token)
+                res = self._con.post(path=url, postdata=params)
                 future = executor.submit(self._status_via_url, *(self._con, res['statusUrl'], {'f' : 'json'}))
                 executor.shutdown(False)
                 return future
@@ -4154,7 +4196,7 @@ class FeatureLayerCollection(_GISResource):
             params['closeReplica'] = close_replica
         if replica_servers_sib_gen:
             params['replicaServerSibGen'] = replica_servers_sib_gen
-        res = self._con.post(path=url, postdata=params, token=self._token)
+        res = self._con.post(path=url, postdata=params)
         if out_path is not None and \
                os.path.isdir(out_path):
             dl_url = None
@@ -4167,7 +4209,7 @@ class FeatureLayerCollection(_GISResource):
             if dl_url is not None:
                 return self._con.get(path=dl_url, file_name=dl_url.split('/')[-1],
                                      out_folder=out_path, try_json=False,
-                                     token=self._token)
+                                     )
             else:
                 return res
         return res
@@ -4178,14 +4220,14 @@ class FeatureLayerCollection(_GISResource):
         params = {"f": "json"}
         url += "/status"
         return self._con.get(path=url,
-                             params=params, token=self._token)
+                             params=params)
 
     #----------------------------------------------------------------------
     def upload(self, path, description=None):
         """
         Uploads a new item to the server. Once the operation is completed
-        successfully, the JSON structure of the uploaded item is returned.
-
+        successfully, the following is returned as a 2 element tuple:
+        the success Boolean, and the JSON structure of the uploaded item
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -4195,7 +4237,7 @@ class FeatureLayerCollection(_GISResource):
         description         Optional string. Descriptive text for the uploaded item.
         ===============     ====================================================================
 
-        :returns: boolean
+        :returns: A tuple of (Boolean, dict)
 
         """
         if (os.path.getsize(path) >> 20) <= 9:

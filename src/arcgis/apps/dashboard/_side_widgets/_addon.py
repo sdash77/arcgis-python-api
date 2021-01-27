@@ -2,41 +2,36 @@ import uuid
 
 
 class DatePicker(object):
+    """
+    Creates a Date Selector widget for Side Panel or Header.
 
-    def __init__(self, range=False, operator='is', min_value=None, max_value=None, label="Pick Date"):
-        """
-        Creates a Date Selector widget for Side Panel or Header.
-
-        =========================   ===========================================
-        **Argument**                **Description**
-        -------------------------   -------------------------------------------
-        range                       Optional boolean. True to create a range
-                                    selector.
-        -------------------------   -------------------------------------------
-        operator                    Optional String. Operator for non range
-                                    datepicker.
-                                    Options: "is", "is not", "is before",
-                                    "is or is before", "is after",
-                                    "is or is after".
-        -------------------------   -------------------------------------------
-        min_value                   Optional. Min default value.
-                                    Options:
-                                    "today"
-                                    Or
-                                    A tuple containing
-                                    (year, month, day, minutes)
-        -------------------------   -------------------------------------------
-        max_value                   Optional. Max default value.
-                                    Options:
-                                    "today"
-                                    Or
-                                    A tuple containing
-                                    (year, month, day, minutes)
-        -------------------------   -------------------------------------------
-        label                       Optional String. Label for the widget.
-        =========================   ===========================================
-        """
-        self.id = str(uuid.uuid4())
+    =========================   ===========================================
+    **Argument**                **Description**
+    -------------------------   -------------------------------------------
+    range                       Optional boolean. True to create a range
+                                selector.
+    -------------------------   -------------------------------------------
+    operator                    Optional String. Operator for non range
+                                datepicker.
+                                Options: "is", "is not", "is before",
+                                "is or is before", "is after",
+                                "is or is after".
+    -------------------------   -------------------------------------------
+    label                       Optional String. Label for the widget.
+    -------------------------   -------------------------------------------
+    **kwargs                    If "range" is True, provide two parameters
+                                "min_value" and "max_value". If "range" is
+                                False provide single parameter "value".
+                                Allowed values:
+                                None, "Today", or a fixed value in
+                                24 hours format
+                                (year, month, day, hour, minutes)
+                                or
+                                (year, month, day)
+    =========================   ===========================================
+    """
+    def __init__(self, range=False, operator='is', label="", **kwargs):
+        self._id = str(uuid.uuid4())
         self.type = "dateSelectorWidget"
 
         self._operator_mapping = {
@@ -48,42 +43,60 @@ class DatePicker(object):
             'is or is after': 'is_on_after'
         }
 
+        self._selection_type = "single"
         if range:
-            self.selection_type = "range"
+            self._selection_type = "range"
             self.operator = "between"
-        else:
-            self.selection_type = "single"
-            self.operator = self._operator_mapping.get(operator, 'is_on')
+            min_value = kwargs.get("min_value", None)
+            max_value = kwargs.get("max_value", None)
+            if min_value:
+                if isinstance(min_value, str) and min_value.lower() == "today":
+                    self._min_value = {"type": "date", "includeTime": False, "defaultToToday": True}
+                else:
+                    self._min_value = {"type": "date", "includeTime": False, "defaultToToday": False, "year": min_value[0], "month": min_value[1]-1, "date": min_value[2], "hours": min_value[3] if len(min_value) > 3 else 0, "minutes": min_value[4] if len(min_value) > 3 else 0, "seconds": 0, "milliSeconds": 0}
+            else:
+                #raise Exception("Please provide min_value parameter")
+                self._min_value = None
 
-        self.min_value = None
-        self.max_value = None
+            if max_value:
+                if isinstance(max_value, str) and max_value.lower() == "today":
+                    self._max_value = {"type": "date", "includeTime": False, "defaultToToday": True}
+                else:
+                    self._max_value = {"type": "date", "includeTime": False, "defaultToToday": False, "year": max_value[0], "month": max_value[1]-1, "date": max_value[2], "hours": max_value[3] if len(max_value) > 3 else 0, "minutes": max_value[4] if len(max_value) > 3 else 0, "seconds": 0, "milliSeconds": 0}
+            else:
+                #raise Exception("Please provide max_value parameter")
+                self._max_value = None
+        else:
+            self.operator = operator
+            min_value = kwargs.get("value", None)
+            self._max_value = None
+            if min_value:
+                if isinstance(min_value, str) and min_value.lower() == "today":
+                    self._min_value = {"type": "date", "includeTime": False, "defaultToToday": True}
+                else:
+                    self._min_value = {"type": "date", "includeTime": False, "defaultToToday": False, "year": min_value[0], "month": min_value[1]-1, "date": min_value[2], "hours": min_value[3] if len(min_value) > 3 else 0, "minutes": min_value[4] if len(min_value) > 3 else 0, "seconds": 0, "milliSeconds": 0}
+            else:
+                self._min_value = None
+                #raise Exception("Please provide value parameter")
 
         self.label = label
 
-        if min_value:
-            if min_value == "today":
-                self.min_value = {"type": "date", "includeTime": False, "defaultToToday": True}
-            else:
-                self.min_value = {"type": "date", "includeTime": False, "defaultToToday": False, "year": min_value[0], "month": min_value[1], "date": min_value[2], "hours": min_value[3] if len(min_value) > 3 else 0, "minutes": min_value[4] if len(min_value) > 3 else 0, "seconds": 0, "milliSeconds": 0}
-
-        if max_value:
-            if max_value == "today":
-                self.max_value = {"type": "date", "includeTime": False, "defaultToToday": True}
-            else:
-                self.max_value = {"type": "date", "includeTime": False, "defaultToToday": False, "year": max_value[0], "month": max_value[1], "date": max_value[2], "hours": max_value[3] if len(max_value) > 3 else 0, "minutes": max_value[4] if len(max_value) > 3 else 0, "seconds": 0, "milliSeconds": 0}
-
     def _convert_to_json(self):
-        return {
+
+        if self._selection_type == "range":
+            self._operator_logic = "between"
+        else:
+            self._operator_logic = self._operator_mapping.get(self.operator, 'is_on')
+
+        data = {
             "type": "dateSelectorWidget",
             "optionType": "datePicker",
             "datePickerOption": {
                 "type": "datePicker",
-                "selectionType": self.selection_type,
-                "operator": "between",
-                "minDefaultValue": self.min_value,
-                "maxDefaultValue": self.max_value
+                "selectionType": self._selection_type,
+                "operator": self._operator_logic
             },
-            "id": self.id,
+            "id": self._id,
             "name": "Date Selector (1)",
             "caption": self.label,
             "showLastUpdate": True,
@@ -92,36 +105,68 @@ class DatePicker(object):
             "showDescriptionWhenNoData": True
         }
 
+        if self._min_value:
+            data['datePickerOption']['minDefaultValue'] = self._min_value
+
+        if self._max_value:
+            data['datePickerOption']['maxDefaultValue'] = self._max_value
+
+        return data
+
+    def _repr_html_(self):
+        from arcgis.apps.dashboard import Dashboard
+        from arcgis.apps.dashboard import SidePanel
+        sp = SidePanel()
+        sp.add_selector(self)
+        url = Dashboard._publish_random(sp)
+        return f"""<iframe src={url} width=300 height=300>"""
+
 
 class NumberSelector(object):
+    """
+    Creates a Number Selector widget for Side Panel or Header.
 
-    def __init__(self, range=False, display_type="spinner"):
-        """
-        Creates a Number Selector widget for Side Panel or Header.
+    =========================   ===========================================
+    **Argument**                **Description**
+    -------------------------   -------------------------------------------
+    range                       Optional boolean. True to create a range
+                                selector.
+    -------------------------   -------------------------------------------
+    display_type                Optional String. Display type can be from
+                                "spinner", "slider", "input".
+    -------------------------   -------------------------------------------
+    label                       Optional string. Label for the selector.
+    =========================   ===========================================
 
-        =========================   ===========================================
-        **Argument**                **Description**
-        -------------------------   -------------------------------------------
-        range                       Optional boolean. True to create a range
-                                    selector.
-        -------------------------   -------------------------------------------
-        display_type                Optional Portal Item. Item is required for
-                                    categories from "spinner", "slider", "input".
-        =========================   ===========================================
-        """
+    **Keyword Arguments**
+
+    =========================   ===========================================
+    **Argument**                **Description**
+    -------------------------   -------------------------------------------
+    operator                    Optional string for non-range input.
+                                Allowed: "equal", "not equal", "greater than",
+                                "greater than or equal", "less than",
+                                "less than or equal".
+                                Default: "equal"
+    -------------------------   -------------------------------------------
+    increment_factor            Optional int for slider and spinner input.
+    =========================   ===========================================
+    """
+
+    def __init__(self, range=False, display_type="spinner", label='Select a number', **kwargs):
 
         self._json = {}
         self._display_type = display_type
-        self.type = "categorySelectorWidget"
-        self.id = str(uuid.uuid4())
-        self._label = ""
-        self._increment = 1
+        self.type = "numberSelectorWidget"
+        self._id = str(uuid.uuid4())
+        self._label = label if label else ''
+        self._increment = kwargs.get('increment_factor', 1)
         self._lower_limit = 0
         self._upper_limit = 100
         self._lower_default = 0
         self._upper_default = 100
         self._range = range
-        self._operator = "equal"
+        self._operator = kwargs.get('operator', "equal")
 
         self._left_placeholder_text = ""
         self._right_placeholder_text = ""
@@ -144,19 +189,13 @@ class NumberSelector(object):
             "secondDefault": self._upper_default
         }
 
-    @property
-    def label(self):
-        """
-        :return: Label for the selector
-        """
-        return self._label
-
-    @label.setter
-    def label(self, value):
-        """
-        Set label for the selector.
-        """
-        self._label = value
+    def _repr_html_(self):
+        from arcgis.apps.dashboard import Dashboard
+        from arcgis.apps.dashboard import SidePanel
+        sp = SidePanel()
+        sp.add_selector(self)
+        url = Dashboard._publish_random(sp)
+        return f"""<iframe src={url} width=300 height=300>"""
 
     @property
     def placeholder_text(self):
@@ -186,21 +225,7 @@ class NumberSelector(object):
         """
         self._right_placeholder_text = value
 
-    @property
-    def operator(self):
-        """
-        :return: Operator for non range input.
-        """
-        return self._operator
-
-    @operator.setter
-    def operator(self, value):
-        """
-        :return: Set operator for non range input.
-        """
-        self._operator = self._operator_mapping.get(value, "equal")
-
-    def set_limits(self, item, field, default="min"):
+    def set_statistics_limits(self, item, field, default="min", layer_id=0):
         """
         Set the item to pick values from for spinner and slider display type.
 
@@ -213,15 +238,17 @@ class NumberSelector(object):
         -------------------------   -------------------------------------------
         default                     Optional String. Default value statistic.
                                     Options: "min", "max", "avg"
+        -------------------------   -------------------------------------------
+        layer_id                    Optional Int. Layer Id for the item.
         =========================   ===========================================
         """
 
-        self._dataset = {
+        self._stat_dataset = {
             "type": "serviceDataset",
             "dataSource": {
                 "type": "featureServiceDataSource",
                 "itemId": item.itemid,
-                "layerId": 0,
+                "layerId": layer_id,
                 "table": True
             },
             "outFields": ["*"],
@@ -246,20 +273,39 @@ class NumberSelector(object):
 
         if default in ["min", "max", "avg"]:
             self._constraint["defaultStatistic"] = default
+    
+    def set_defined_limits(self, lower_limit=0, upper_limit=100, **kwargs):
+        """
+        Set the item to pick values from for spinner and slider display type.
 
-    @property
-    def lower_limit(self):
-        """
-        :return: Returns the minimum lower value allowed.
-        """
-        return self._lower_limit
+        =========================   ===========================================
+        **Argument**                **Description**
+        -------------------------   -------------------------------------------
+        lower_limit                 Optional integer. Set the lower limit.
+        -------------------------   -------------------------------------------
+        upper_limit                 Optional integer. Set the upper limit.
+        =========================   ===========================================
 
-    @lower_limit.setter
-    def lower_limit(self, value):
+        **Keyword Arguments**
+
+        =========================   ===========================================
+        **Argument**                **Description**
+        -------------------------   -------------------------------------------
+        default                     Optional integer. Set default value for
+                                    non-range selector.
+        -------------------------   -------------------------------------------
+        lower_default               Optional integer. Set the lower default
+                                    value for range selector.
+        -------------------------   -------------------------------------------
+        upper_default               Optional integer. Set the upper default
+                                    value for range selector.
+        =========================   ===========================================
         """
-        Set lower limit of the selector.
-        """
-        self._lower_limit = value
+
+        self._lower_limit = lower_limit
+        self._upper_limit = upper_limit
+        self._lower_default = kwargs.get('default', kwargs.get('lower_default', 0))
+        self._upper_default = kwargs.get('upper_default', 100)
         self._constraint = {
             "type": "fixed",
             "lowerLimit": self._lower_limit,
@@ -267,85 +313,35 @@ class NumberSelector(object):
             "firstDefault": self._lower_default,
             "secondDefault": self._upper_default
         }
-
-    @property
-    def upper_limit(self):
-        """
-        :return: Returns the maximum value allowed for spinner and slider.
-        """
-        return self._upper_limit
-
-    @upper_limit.setter
-    def upper_limit(self, value):
-        """
-        Set maximum limit of the selector for spinner and slider.
-        """
-        self._upper_limit = value
-        self._constraint = {
-            "type": "fixed",
-            "lowerLimit": self._lower_limit,
-            "upperLimit": self._upper_limit,
-            "firstDefault": self._lower_default,
-            "secondDefault": self._upper_default
-        }
-
-    @property
-    def lower_default(self):
-        """
-        :return: Returns the left placeholder default value.
-        """
-        return self._lower_default
-
-    @lower_default.setter
-    def lower_default(self, value):
-        """
-        Set left placeholder default of the selector.
-        """
-        self._lower_default = value
-        self._constraint = {
-            "type": "fixed",
-            "lowerLimit": self._lower_limit,
-            "upperLimit": self._upper_limit,
-            "firstDefault": self._lower_default,
-            "secondDefault": self._upper_default
-        }
-
-    @property
-    def upper_default(self):
-        """
-        :return: Returns the right placeholder default value for range.
-        """
-        return self._upper_default
-
-    @upper_default.setter
-    def upper_default(self, value):
-        """
-        Set right placeholder default of the selector for range.
-        """
-        self._upper_default = value
-        self._constraint = {
-            "type": "fixed",
-            "lowerLimit": self._lower_limit,
-            "upperLimit": self._upper_limit,
-            "firstDefault": self._lower_default,
-            "secondDefault": self._upper_default
-        }
-
-    @property
-    def increment_factor(self):
-        """
-        :return: Increment factor of the selector for spinner and slider.
-        """
-        return self._increment
-
-    @increment_factor.setter
-    def increment_factor(self, value):
-        """
-        Set increment factor of the selector for spinner and slider.
-        """
-        self._increment = value
 
     def _convert_to_json(self):
+
+        # self._dataset = {
+        #     "type": "serviceDataset",
+        #     "dataSource": {
+        #         "type": "featureServiceDataSource",
+        #         "itemId": self.item.itemid,
+        #         "layerId": 0,
+        #         "table": True
+        #     },
+        #     "outFields": ["*"],
+        #     "groupByFields": [],
+        #     "orderByFields": [],
+        #     "statisticDefinitions": [
+        #         {"onStatisticField": field, "outStatisticFieldName": "lowerLimit",
+        #          "statisticType": "min"},
+        #         {"onStatisticField": field, "outStatisticFieldName": "upperLimit",
+        #          "statisticType": "max"},
+        #         {"onStatisticField": field, "outStatisticFieldName": "averageStatisticValue",
+        #          "statisticType": "avg"}
+        #     ],
+        #     "maxFeatures": 50,
+        #     "querySpatialRelationship": "esriSpatialRelIntersects",
+        #     "returnGeometry": False,
+        #     "clientSideStatistics": False,
+        #     "name": "main"
+        # }
+
         json = {
             "type": "numericSelectorWidget",
             "displayType": self._display_type,
@@ -353,7 +349,7 @@ class NumberSelector(object):
             "valueLabelFormat": {"name": "value", "type": "decimal", "prefix": False, "pattern": "#,###"},
             "selection": {"type": "single" if not self._range else "range"},
             "datasets": [],
-            "id": self.id,
+            "id": self._id,
             "name": "Number Selector (1)",
             "caption": self._label,
             "showLastUpdate": True,
@@ -373,25 +369,34 @@ class NumberSelector(object):
             if self._range:
                 json['selection']['rightPlaceHolderText'] = self._right_placeholder_text
 
-        if self._dataset:
-            json["datasets"].append(self._dataset)
+        if getattr(self,'_stat_dataset', None):
+            json["datasets"].append(self._stat_dataset)
+        # else:
+        #     json["datasets"].append(self._dataset)
 
         return json
 
 
 class CategorySelector(object):
+    """
+    Creates a Category Selector widget for Side Panel or Header.
+    """
 
     def __init__(self):
-        """
-        Creates a Category Selector widget for Side Panel or Header.
-        """
-
         self._categories_from = 'static'
 
-        self.id = str(uuid.uuid4())
+        self._id = str(uuid.uuid4())
         self._selector = CategorySelectorProperties._create_selector_properties()
 
         self._dataset = None
+
+    def _repr_html_(self):
+        from arcgis.apps.dashboard import Dashboard
+        from arcgis.apps.dashboard import SidePanel
+        sp = SidePanel()
+        sp.add_selector(self)
+        url = Dashboard._publish_random(sp)
+        return f"""<iframe src={url} width=300 height=300>"""
 
     def set_defined_values(self, key_value_pairs, value_type="string"):
         """
@@ -436,7 +441,7 @@ class CategorySelector(object):
             })
             id = id + 1
 
-    def set_feature_options(self, item, line_item_text="", max_features=50):
+    def set_feature_options(self, item, line_item_text="", field_name=None, max_features=50):
         """
         Set feature values for dropdown.
 
@@ -449,13 +454,18 @@ class CategorySelector(object):
         line_item_text              Optional String.
                                     This text will be displayed with options.
         -------------------------   -------------------------------------------
+        field_name                  Optional String.
+                                    Data from this field will be added to list.
+        -------------------------   -------------------------------------------
         max_features                Optional Integer.
                                     Set max features to display.
         =========================   ===========================================
         """
         self._categories_from = "features"
 
-        self._line_item_text = line_item_text
+        self._line_item_text = line_item_text if line_item_text else ""
+        if field_name is not None:
+            self._line_item_text = self._line_item_text + '{' + field_name + '}'
 
         self._dataset = {
             "type": "serviceDataset",
@@ -486,8 +496,8 @@ class CategorySelector(object):
         item                        Required Portal Item.
                                     Dropdown values will be populated from this.
         -------------------------   -------------------------------------------
-        category_field              Optional String.
-                                    This
+        category_field              Optional String. This string denotes the
+                                    field to pick the values from.
         -------------------------   -------------------------------------------
         max_features                Optional Integer.
                                     Set max features to display.
@@ -535,7 +545,7 @@ class CategorySelector(object):
             "preferredDisplayType": self._selector._preferred_display, #dropdown, button_bar, radio_buttons
             "displayThreshold": self._selector._display_threshold,
             "datasets": [],
-            "id": self.id,
+            "id": self._id,
             "name": "Category Selector (1)",
             "caption": self._selector._label,
             "showLastUpdate": True,
@@ -714,3 +724,4 @@ class CategorySelectorProperties(object):
             raise Exception("Invalid value")
 
         self._none_placement = value
+

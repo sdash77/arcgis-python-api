@@ -124,10 +124,10 @@ def run_pytest_on(paths, output_xml_path,
                               surround_paths_with_quotes=False):
         pytest_args = []
         if surround_paths_with_quotes:
-            pytest_args += [ f'"{sys.executable}"', "-m", "pytest", "-x" ] + \
+            pytest_args += [ f'"{sys.executable}"', "-m", "pytest", "-vv", "-x" ] + \
                 list(f'"{x}"' for x in paths)
         else:
-            pytest_args += [ sys.executable, "-m", "pytest", "-x" ] + paths
+            pytest_args += [ sys.executable, "-m", "pytest", "-vv", "-x" ] + paths
         pytest_args += [ f'--junit-xml={output_xml_path}',
                          f'--maxfail={max_fail}' ]
         if block_network_access:

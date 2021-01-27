@@ -6,7 +6,7 @@ from fastai.basic_train import LearnerCallback
 from fastai.core import is_listy
 from .._utils.common import ArcGISMSImage, get_top_padding, kwarg_fill_none, \
     find_data_loader, get_nbatches, dynamic_range_adjustment, image_tensor_checks_plotting, \
-    get_symbology_bands, predict_batch, denorm_x, get_nbatches, GDAL_INSTALL_MESSAGE
+    get_symbology_bands, predict_batch, denorm_x, get_nbatches, GDAL_INSTALL_MESSAGE, image_batch_stretcher
 from .._utils.env import HAS_GDAL
 from .._utils.pixel_classification import analyze_pred_pixel_classification
 import torch
@@ -68,6 +68,7 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
         imsize = kwargs.get('imsize')
 
     statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
+    stretch_type = kwargs.get('stretch_type', 'minmax') # Accepted Values `minmax`, `percentclip`
 
     e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
     symbology_bands = []
@@ -100,11 +101,8 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
 
     # Extract RGB Bands
     symbology_x_batch = x_batch[:, symbology_bands]
-    if statistics_type == 'DRA':
-        shp = symbology_x_batch.shape
-        min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
-        max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
-        symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+    if stretch_type is not None:
+        symbology_x_batch = image_batch_stretcher(symbology_x_batch, stretch_type, statistics_type)
 
     # Channel first to channel last and clamp float values to range 0 - 1 for plotting
     symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
@@ -138,6 +136,7 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
             else:
                 axi.axis('off')
             idx+=1
+    #
 
 class ArcGISImageSegment(Image):
     "Support applying transforms to segmentation masks data in `px`."
@@ -307,6 +306,9 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
     return_fig = kwargs.get('return_fig', False)
     type_data_loader = kwarg_fill_none(kwargs, 'data_loader', 'validation') # options : traininig, validation, testing
     data_loader = find_data_loader(type_data_loader, self._data)
+    if getattr(self, 'name','') in ['MultiTaskRoadExtractor']:
+        data_loader = find_data_loader(type_data_loader, self._orient_data)
+        self._data.batch_size=1
 
     nodata = kwarg_fill_none(kwargs, 'nodata', 0)
 
@@ -324,11 +326,15 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
             )
 
     statistics_type = kwarg_fill_none(kwargs, 'statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
+    stretch_type = kwargs.get('stretch_type', 'minmax') # Accepted Values `minmax`, `percentclip`
 
     # get batches
     x_batch, y_batch = get_nbatches(data_loader, math.ceil(nrows/self._data.batch_size))
     symbology_x_batch = x_batch = torch.cat(x_batch)
-    y_batch = torch.cat(y_batch)
+    if getattr(self, 'name','') in ['MultiTaskRoadExtractor']:
+        y_batch= torch.stack([item for sublist in y_batch for item in sublist[0]]).type(torch.long).unsqueeze(1)
+    else:
+        y_batch = torch.cat(y_batch)
 
     symbology_bands = [0, 1, 2]
     if self._is_multispectral:
@@ -345,6 +351,8 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
         activation_store.append(activations)
 
     # Analyze Pred
+    if getattr(self, 'name','') in ['MultiTaskRoadExtractor']:
+        activation_store = [x[0] for x in activation_store]
     predictions = analyze_pred_pixel_classification(self, activation_store)
 
     # Denormalize X
@@ -352,6 +360,8 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
 
     # Extract RGB Bands for plotting
     symbology_x_batch = x_batch[:, symbology_bands]
+    if stretch_type is not None:
+        symbology_x_batch = image_batch_stretcher(symbology_x_batch, stretch_type, statistics_type)
 
     # Apply Image Strecthing
     if statistics_type == 'DRA':
@@ -382,5 +392,6 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
             axi[1].imshow(p_rgb, alpha=alpha)
         axi[0].axis('off')
         axi[1].axis('off')
+    #
     if return_fig:
-        return fig,axi
+        return fig, axs

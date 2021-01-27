@@ -30,6 +30,7 @@ from urllib.error import HTTPError
 from arcgis.geoprocessing import import_toolbox
 from ._async.jobs import GeometryJob
 from arcgis.raster._util import _set_context as _set_raster_context
+from arcgis._impl.common._utils import inspect_function_inputs
 _log = logging.getLogger(__name__)
 
 try:
@@ -780,7 +781,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
             params = {}
             params["pointLayer"] = point_layer
             params["polygonLayer"] = polygon_layer
-
+            if bin_type is not None:
+                params['binType'] = bin_type
+            if bin_size is not None:
+                params['binSize'] = bin_size
+            if bin_size_unit is not None:
+                params['binSizeUnit'] = bin_size_unit
             if keep_boundaries_with_no_points is not None:
                 params["keepBoundariesWithNoPoints"] = keep_boundaries_with_no_points
             if summary_fields is not None:
@@ -808,9 +814,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                             percent_points=percent_points,
                                             output_name=output_name,
                                             context=context,
-                                            bin_type='SQUARE',
-                                            bin_size=None,
-                                            bin_size_unit=None,
+                                            bin_type=bin_type,
+                                            bin_size=bin_size,
+                                            bin_size_unit=bin_size_unit,
                                             gis=self._gis,
                                             future=True)
         gpjob._is_fa = True
@@ -1142,6 +1148,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         -------
         drive_time_areas_layer : layer (FeatureCollection)
         """
+        #kwargs = locals()
         params = {}
         task ="CreateDriveTimeAreas"
 
@@ -1201,21 +1208,31 @@ class _FeatureAnalysisTools(BaseAnalytics):
             from arcgis.features._credits import _estimate_credits
             return _estimate_credits(task=task,
                                      parameters=params)
-        gpjob = self._tbx.create_drive_time_areas(input_layer=input_layer,
-                                                  break_values=break_values,
-                                                  break_units=break_units,
-                                                  travel_mode=travel_mode,
-                                                  overlap_policy=overlap_policy,
-                                                  time_of_day=time_of_day,
-                                                  time_zone_for_time_of_day=time_zone_for_time_of_day,
-                                                  output_name=output_name,
-                                                  context=context, point_barrier_layer=point_barrier_layer,
-                                                  line_barrier_layer=line_barrier_layer,
-                                                  polygon_barrier_layer=polygon_barrier_layer,
-                                                  gis=self._gis, future=True,
-                                                  travel_direction=travel_direction,
-                                                  show_holes=show_holes,
-                                                  include_reachable_streets=include_reachable_streets)
+
+        params = {
+            "input_layer":input_layer,
+            "break_values":break_values,
+            "break_units":break_units,
+            "travel_mode":travel_mode,
+            "overlap_policy":overlap_policy,
+            "time_of_day":time_of_day,
+            "time_zone_for_time_of_day":time_zone_for_time_of_day,
+            "output_name":output_name,
+            "context":context,
+            "point_barrier_layer":point_barrier_layer or "",
+            "line_barrier_layer":line_barrier_layer or "",
+            "polygon_barrier_layer":polygon_barrier_layer or "",
+            "gis":self._gis,
+            "future":True,
+            "travel_direction":travel_direction,
+            "show_holes":show_holes,
+            "include_reachable_streets":include_reachable_streets
+        }
+        params = inspect_function_inputs(fn=self._tbx.create_drive_time_areas,
+                                         **params)
+        params['future'] = True
+        params.pop('estimate', None)
+        gpjob = self._tbx.create_drive_time_areas(**params)
         gpjob._is_fa = True
         if future:
             return gpjob
@@ -2856,7 +2873,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
            tessellation_layer - FeatureLayer or Feature Layer Collection
 
         """
-        extent_layer = self._feature_input(extent_layer)
+        if extent_layer:
+            extent_layer = self._feature_input(extent_layer)
         if output_name and isinstance(output_name, str):
             output_name = {"serviceProperties": {"name": output_name }}
         elif output_name and isinstance(output_name, FeatureLayer):
@@ -3081,7 +3099,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
             from arcgis.features._credits import _estimate_credits
             return _estimate_credits(task=task,
                                      parameters=params)
-        params = locals()
+        params = {
+            "target_layer" : target_layer,
+            "join_layer" : join_layer,
+            "spatial_relationship" : spatial_relationship,
+            "spatial_relationship_distance" : spatial_relationship_distance,
+            "spatial_relationship_distance_units" : spatial_relationship_distance_units,
+            "attribute_relationship" : attribute_relationship,
+            "join_operation" : join_operation,
+            "summary_fields" : summary_fields,
+            "output_name" : output_name,
+            "context" : context,
+            "records_to_match" : records_to_match,
+            "future" : future,
+            "join_type" : join_type
+        }
         params = _inspect_function_inputs(self._tbx.join_features, **params)
         params['future'] = True
         gpjob = self._tbx.join_features(**params)
@@ -5541,6 +5573,13 @@ class _RasterAnalysisTools(BaseAnalytics):
             self._gptbx._is_ra = True
         return self._gptbx
     #----------------------------------------------------------------------
+    @property
+    def _current_version(self):
+        if ('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()):
+            return self._gis._tools.rasteranalysis.properties["currentVersion"]
+        else:
+            return None
+    #----------------------------------------------------------------------
     def __str__(self):
         return '<%s url:"%s">' % (type(self).__name__, self._url)
     #----------------------------------------------------------------------
@@ -5662,8 +5701,16 @@ class _RasterAnalysisTools(BaseAnalytics):
             url = input_param["url"]
             if "/RasterRendering/" in url:
                 url = input_layer._uri
-                input_param = {"uri":url}
+                if "renderingRule" in input_param.keys():
+                    input_param.update({"function": input_param["renderingRule"]})
+                    input_param.pop("renderingRule", None)
+                input_param.update({"uri":url})
+                input_param.pop("url", None)
+                input_param.pop("type", None)
+                input_param.pop("uses_gbl", None)
+                input_param.pop("raster", None)
                 return input_param
+
         if "ImageServer" in url or "MapServer" in url:
             if "serviceToken" in input_param:
                 url = url+"?token="+ input_param["serviceToken"]
@@ -5766,6 +5813,8 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         output_service = gis.content.create_service(output_name, create_params=create_parameters,
                                                           service_type="imageService", folder=folder)
+        if output_service is None:
+            raise RuntimeError("Unable to create service")
         description = "Image Service generated from running the " + task + " tool."
         item_properties = {
             "description": description,
@@ -5781,7 +5830,12 @@ class _RasterAnalysisTools(BaseAnalytics):
         input_raster_specified = False
         input_rasters_dict={}
         raster_type_dict={}
+        upload_rasters_list = []
+        items_on_server=False
         # input rasters
+        if isinstance(input_rasters, str):
+            if os.path.exists(input_rasters):
+                input_rasters = [input_rasters]
         if isinstance(input_rasters, list):
             # extract the IDs of all the input items
             # and then convert the list to JSON
@@ -5794,11 +5848,22 @@ class _RasterAnalysisTools(BaseAnalytics):
                 elif isinstance(item, str):
                     if 'http:' in item or 'https:' in item:
                         url_list.append(item)
+                    elif (os.path.exists(item)):
+                        upload_rasters_list.append(item)
                     else:
                         uri_list.append(item)
+            if upload_rasters_list != []:
+                from arcgis.raster._util import _upload_imagery_agol, _upload_imagery_enterprise
+                if gis._con._product == "AGOL":
+                    url_list = _upload_imagery_agol(upload_rasters_list, gis)
+                else:
+                    item_id_list = _upload_imagery_enterprise(upload_rasters_list, raster_type_name, gis)
+                    items_on_server = True
 
             if len(item_id_list) > 0:
                 input_rasters_dict = {"itemIds" : item_id_list }
+                if items_on_server:
+                    input_rasters_dict.update({"itemsOnServer":True})
                 input_raster_specified = True
             elif len(url_list) > 0:
                 input_rasters_dict = {"urls" : url_list}
@@ -5826,8 +5891,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                 input_rasters_dict.update({"byref":True})
 
         # raster_type
-        if not isinstance(raster_type_name, str):
-            raise RuntimeError("Invalid input raster_type parameter")
+        if raster_type_name is not None:
+            if not isinstance(raster_type_name, str):
+                raise RuntimeError("Invalid input raster_type parameter")
 
         elevation_set = 0
         if raster_type_params is not None:
@@ -5931,6 +5997,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             input_raster_specified = True
 
         return input_rasters_dict
+
     #----------------------------------------------------------------------
     def add_image(self,
                   image_collection,
@@ -6146,6 +6213,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                           output_area_units="SquareMiles",
                           output_cell_size=None,
                           context=None,
+                          input_barriers=None,
                           future=False,
                           **kwargs):
 
@@ -6183,15 +6251,32 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
-        gpjob = self._tbx.calculate_density(input_point_or_line_features=input_point_or_line_features,
-                                            output_name=output_raster,
-                                            count_field=count_field,
-                                            search_distance=search_distance,
-                                            output_area_units=output_area_units,
-                                            output_cell_size=output_cell_size,
-                                            context=context,
-                                            gis=self._gis,
-                                            future=True)
+        if input_barriers is not None:
+            input_barriers = self._feature_input(input_barriers)
+
+        if self._current_version is not None:
+            current_version = self._current_version
+            if((current_version is not None) and current_version<10.9):
+                gpjob = self._tbx.calculate_density(input_point_or_line_features=input_point_or_line_features,
+                                                    output_name=output_raster,
+                                                    count_field=count_field,
+                                                    search_distance=search_distance,
+                                                    output_area_units=output_area_units,
+                                                    output_cell_size=output_cell_size,
+                                                    context=context,
+                                                    gis=self._gis,
+                                                    future=True)
+            elif((current_version is not None) and current_version>=10.9):
+                gpjob = self._tbx.calculate_density(input_point_or_line_features=input_point_or_line_features,
+                                                    output_name=output_raster,
+                                                    count_field=count_field,
+                                                    search_distance=search_distance,
+                                                    output_area_units=output_area_units,
+                                                    output_cell_size=output_cell_size,
+                                                    context=context,
+                                                    in_barriers=input_barriers,
+                                                    gis=self._gis,
+                                                    future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
@@ -8703,6 +8788,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     output_name=None,
                     context=None,
                     future=False,
+                    raster_type_name=None,
+                    raster_type_params = None,
                     **kwargs):
         """
         input_raster: inputRaster (str). Required parameter.
@@ -8732,14 +8819,36 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         gis = self._gis
 
+        use_input_rasters_by_ref = None
+        if context is not None:
+            if "byref" in context:
+                use_input_rasters_by_ref = context["byref"]
+                del context["byref"]
+
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
             context = context_param['context']
 
-        input_raster = self._layer_input(input_layer=input_raster)
-
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        if not isinstance(input_raster, str) and not isinstance(input_raster, list):
+            input_raster = self._layer_input(input_layer=input_raster)
+
+        else:
+            input_raster, raster_type = self._build_param_dictionary(input_rasters=input_raster,
+                                                                      raster_type_name=raster_type_name,
+                                                                      raster_type_params=raster_type_params,
+                                                                      image_collection_properties=None,
+                                                                      use_input_rasters_by_ref=use_input_rasters_by_ref)
+            if isinstance(raster_type, str):
+                try:
+                    raster_type = json.loads(raster_type)
+                except:
+                    pass
+            if isinstance (input_raster,dict) and isinstance(raster_type, dict):
+                input_raster.update({"rasterType":raster_type})
+
         gpjob = self._tbx.copy_raster(input_raster=input_raster,
                                       output_name=output_raster,
                                       output_cellsize=output_cellsize,
@@ -9886,6 +9995,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                              path_type=None,
                              context=None,
                              future=False,
+                             create_network_paths="DESTINATIONS_TO_SOURCES",
                              **kwargs):
         """
         Parameters
@@ -9975,16 +10085,39 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_polyline_name = json.dumps({"serviceProperties": {"name": output_polyline_service_name , "serviceUrl": output_polyline_service.url},
                                            "itemProperties": {"itemId": output_polyline_service.itemid}})
 
+        if create_network_paths is not None:
+            if isinstance(create_network_paths, str):
+                if create_network_paths.upper() == "NETWORK_PATHS":
+                    create_network_paths = True
+                elif create_network_paths.upper() == "DESTINATIONS_TO_SOURCES":
+                    create_network_paths = False
+            if not isinstance(create_network_paths, bool):
+                raise RuntimeError('create_network_paths should be one of the following - NETWORK_PATHS, DESTINATIONS_TO_SOURCES or should be of type bool.')
 
-        gpjob = self._tbx.optimal_path_as_line(input_destination_raster_or_features=input_destination_raster_or_features,
-                                               input_distance_accumulation_raster=input_distance_accumulation_raster,
-                                               input_back_direction_raster=input_back_direction_raster,
-                                               output_polyline_name=output_polyline_name,
-                                               path_type=path_type_val,
-                                               destination_field=destination_field,
-                                               context=context,
-                                               gis=self._gis,
-                                               future=True)
+        if self._current_version is not None:
+            current_version = self._current_version
+            if((current_version is not None) and current_version<10.9):
+                gpjob = self._tbx.optimal_path_as_line(input_destination_raster_or_features=input_destination_raster_or_features,
+                                                       input_distance_accumulation_raster=input_distance_accumulation_raster,
+                                                       input_back_direction_raster=input_back_direction_raster,
+                                                       output_polyline_name=output_polyline_name,
+                                                       path_type=path_type_val,
+                                                       destination_field=destination_field,
+                                                       context=context,
+                                                       gis=self._gis,
+                                                       future=True)
+            elif((current_version is not None) and current_version>=10.9):
+                gpjob = self._tbx.optimal_path_as_line(input_destination_raster_or_features=input_destination_raster_or_features,
+                                                       input_distance_accumulation_raster=input_distance_accumulation_raster,
+                                                       input_back_direction_raster=input_back_direction_raster,
+                                                       output_polyline_name=output_polyline_name,
+                                                       path_type=path_type_val,
+                                                       destination_field=destination_field,
+                                                       create_network_paths=create_network_paths,
+                                                       context=context,
+                                                       gis=self._gis,
+                                                       future=True)
+
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
@@ -10511,6 +10644,23 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                   input_change_analysis_raster,
                                                   change_type="TIME_OF_LATEST_CHANGES",
                                                   max_number_of_changes=1,
+                                                  segment_date='BEGINNING_OF_SEGMENT', 
+                                                  change_direction='ALL', 
+                                                  filter_by_year=False, 
+                                                  min_year=None, 
+                                                  max_year=None, 
+                                                  filter_by_duration=False, 
+                                                  min_duration=None, 
+                                                  max_duration=None, 
+                                                  filter_by_magnitude=False, 
+                                                  min_magnitude=None, 
+                                                  max_magnitude=None,
+                                                  filter_by_start_value=False,
+                                                  min_start_value=None,
+                                                  max_start_value=None,
+                                                  filter_by_end_value=False,
+                                                  min_end_value=None,
+                                                  max_end_value=None,
                                                   output_name=None,
                                                   context=None,
                                                   future=False,
@@ -10520,10 +10670,34 @@ class _RasterAnalysisTools(BaseAnalytics):
 
        output_name: outputName (str). Optional parameter.
 
-       change_type: changeType (str). Optional parameter.
-          Choice list:TIME_OF_LATEST_CHANGES,TIME_OF_EARLIEST_CHANGES,TIME_OF_LARGEST_CHANGES,NUM_OF_CHANGES,ALL_CHANGES
+       change_type: changeType (str). Optional parameter.  
+          Choice list:TIME_OF_LATEST_CHANGE,TIME_OF_EARLIEST_CHANGE,TIME_OF_LARGEST_CHANGE,NUM_OF_CHANGES
 
-       max_number_of_changes: maxNumberChanges (int). Optional parameter.
+       max_number_of_changes: maxNumberOfChanges (int). Optional parameter.  
+
+       segment_date: segmentDate (str). Optional parameter.  
+          Choice list:BEGINNING_OF_SEGMENT,END_OF_SEGMENT
+
+       change_direction: changeDirection (str). Optional parameter.  
+          Choice list:ALL,INCREASE,DECREASE
+
+       filter_by_year: filterByYear (bool). Optional parameter.  
+
+       min_year: minYear (int). Optional parameter.  
+
+       max_year: maxYear (int). Optional parameter.  
+
+       filter_by_duration: filterByDuration (bool). Optional parameter.  
+
+       min_duration: minDuration (float). Optional parameter.  
+
+       max_duration: maxDuration (float). Optional parameter.  
+
+       filter_by_magnitude: filterByMagnitude (bool). Optional parameter.  
+
+       min_magnitude: minMagnitude (float). Optional parameter.  
+
+       max_magnitude: maxMagnitude (float). Optional parameter. 
 
        context: context (str). Optional parameter.
 
@@ -10553,16 +10727,63 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if change_type.lower() == element.lower():
                     change_type = element
 
+        if segment_date is not None:
+            if "segment_date" in self._tbx.choice_list.detect_change_using_change_analysis_raster.keys():
+                segment_date_allowed_values = self._tbx.choice_list.detect_change_using_change_analysis_raster["segment_date"]
+                if [element.lower() for element in segment_date_allowed_values].count(segment_date.lower()) <= 0 :
+                    raise RuntimeError('segment_date can only be one of the following:  '+str(segment_date_allowed_values))
+                for element in segment_date_allowed_values:
+                    if segment_date.lower() == element.lower():
+                        segment_date = element
+
+        if change_direction is not None:
+            if "change_direction" in self._tbx.choice_list.detect_change_using_change_analysis_raster.keys():
+                change_direction_allowed_values = self._tbx.choice_list.detect_change_using_change_analysis_raster["change_direction"]
+                if [element.lower() for element in change_direction_allowed_values].count(change_direction.lower()) <= 0 :
+                    raise RuntimeError('change_direction can only be one of the following:  '+str(change_direction_allowed_values))
+                for element in change_direction_allowed_values:
+                    if change_direction.lower() == element.lower():
+                        change_direction = element
+
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
-        gpjob = self._tbx.detect_change_using_change_analysis_raster(input_change_analysis_raster=input_change_analysis_raster,
-                                                                    change_type=change_type,
-                                                                    max_number_of_changes=max_number_of_changes,
-                                                                    output_name=output_raster,
-                                                                    context=context,
-                                                                    gis=self._gis,
-                                                                    future=True)
+        if self._current_version is not None:
+            current_version = self._current_version
+            if((current_version is not None) and current_version<10.9):
+                gpjob = self._tbx.detect_change_using_change_analysis_raster(input_change_analysis_raster=input_change_analysis_raster,
+                                                                            change_type=change_type,
+                                                                            max_number_of_changes=max_number_of_changes,
+                                                                            output_name=output_raster,
+                                                                            context=context,
+                                                                            gis=self._gis,
+                                                                            future=True)
+            elif((current_version is not None) and current_version>=10.9):
+                gpjob = self._tbx.detect_change_using_change_analysis_raster(input_change_analysis_raster=input_change_analysis_raster,
+                                                                            change_type=change_type,
+                                                                            max_number_of_changes=max_number_of_changes,
+                                                                            segment_date=segment_date, 
+                                                                            change_direction=change_direction, 
+                                                                            filter_by_year=filter_by_year, 
+                                                                            min_year=min_year, 
+                                                                            max_year=max_year, 
+                                                                            filter_by_duration=filter_by_duration, 
+                                                                            min_duration=min_duration, 
+                                                                            max_duration=max_duration, 
+                                                                            filter_by_magnitude=filter_by_magnitude, 
+                                                                            min_magnitude=min_magnitude, 
+                                                                            max_magnitude=max_magnitude,
+                                                                            filter_by_start_value=filter_by_start_value,
+                                                                            min_start_value=min_start_value,
+                                                                            max_start_value=max_start_value,
+                                                                            filter_by_end_value=filter_by_end_value,
+                                                                            min_end_value=min_end_value,
+                                                                            max_end_value=max_end_value,
+                                                                            output_name=output_raster,
+                                                                            context=context,
+                                                                            gis=self._gis,
+                                                                            future=True)
+
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
@@ -10758,6 +10979,472 @@ class _RasterAnalysisTools(BaseAnalytics):
             return gpjob
         return gpjob.result()
 
+    def compute_accuracyfor_object_detection(self,
+                                             detected_features,
+                                             ground_truth_features,
+                                             out_accuracy_table_name=None,
+                                             out_accuracy_report_name=None,
+                                             detected_class_value_field=None,
+                                             ground_truth_class_value_field=None,
+                                             min_iou=None,
+                                             mask_features=None,
+                                             context=None,
+                                             future=False,
+                                             **kwargs):
+        """
+        detected_features: detectedFeatures (str). Required parameter.
+
+        ground_truth_features: groundTruthFeatures (str). Required parameter.
+
+        out_accuracy_table_name: outAccuracyTableName (str). Required parameter.
+
+        out_accuracy_report_name: outAccuracyReportName (str). Optional parameter.
+
+        detected_class_value_field: detectedClassValueField (str). Optional parameter.
+
+        ground_truth_class_value_field: groundTruthClassValuField (str). Optional parameter.
+
+        min_io_u: minIoU (str). Optional parameter.
+
+        mask_features: maskFeatures (str). Optional parameter.
+
+        context: context (str). Optional parameter.
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        """
+
+        task = "ComputeAccuracyforObjectDetection"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        detected_features = self._feature_input(input_layer=detected_features)
+
+        ground_truth_features = self._feature_input(input_layer=ground_truth_features)
+
+        if mask_features is not None:
+            mask_features = self._feature_input(input_layer=mask_features)
+
+        folder = None
+        folderId = None
+
+        if out_accuracy_table_name is None:
+            out_accuracy_table_name = str(task) + '_' + _id_generator()
+
+        if kwargs is not None:
+            if "folder" in kwargs:
+                folder = kwargs["folder"]
+        if folder is not None:
+            if isinstance(folder, dict):
+                if "id" in folder:
+                    folderId = folder["id"]
+                    folder=folder["title"]
+            else:
+                owner = gis.properties.user.username
+                folderId = gis._portal.get_folder_id(owner, folder)
+            if folderId is None:
+                folder_dict = gis.content.create_folder(folder, owner)
+                folder = folder_dict["title"]
+                folderId = folder_dict["id"]
+            out_accuracy_table_name =  json.dumps({"serviceProperties": {"name" : out_accuracy_table_name}, "itemProperties": {"folderId" : folderId}})
+        else:
+            out_accuracy_table_name = json.dumps({"serviceProperties": {"name" : out_accuracy_table_name}})
+
+        if out_accuracy_report_name is not None:
+            if isinstance(out_accuracy_report_name, str):
+                if '/fileShares/' in out_accuracy_report_name or '/rasterStores/' in out_accuracy_report_name:
+                    out_accuracy_report_name = {"uri":out_accuracy_report_name}
+                else:
+                    out_accuracy_report_name = {"name":out_accuracy_report_name}
+            elif isinstance(out_accuracy_report_name, arcgis.gis.Item):
+                out_accuracy_report_name = {"itemId":out_accuracy_report_name.itemid, "name":out_accuracy_report_name.name}
+        gpjob = self._tbx.compute_accuracyfor_object_detection(detected_features=detected_features,
+                                                               ground_truth_features=ground_truth_features,
+                                                               out_accuracy_table_name=out_accuracy_table_name,
+                                                               out_accuracy_report_name=out_accuracy_report_name,
+                                                               detected_class_value_field=detected_class_value_field,
+                                                               ground_truth_class_value_field=ground_truth_class_value_field,
+                                                               min_io_u=min_iou,
+                                                               mask_features=mask_features,
+                                                               context=context,
+                                                               gis=self._gis,
+                                                               future=True)
+
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    def merge_multidimensional_rasters(self,
+                                       input_multidimensional_rasters,
+                                       resolve_overlap_method='FIRST',
+                                       output_name=None,
+                                       context=None,
+                                       future=False,
+                                       **kwargs):
+        """
+       input_multidimensional_rasters: inputMultidimensionalRasters (str). Required parameter.
+
+       output_name: outputName (str). Required parameter.
+
+       resolve_overlap_method: resolveOverlapMethod (str). Optional parameter.
+          Choice list:FIRST,LAST,MIN,MAX,MEAN,SUM
+       context: context (str). Optional parameter.
+       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        """
+
+        task = "MergeMultidimensionalRasters"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_multidimensional_rasters = self._set_multiple_raster_inputs(input_multidimensional_rasters)
+        resolve_overlap_method_allowed_values = self._tbx.choice_list.merge_multidimensional_rasters["resolve_overlap_method"]
+        if [element.lower() for element in resolve_overlap_method_allowed_values].count(resolve_overlap_method.lower()) <= 0 :
+            raise RuntimeError('resolve_overlap_method can only be one of the following: '+str(resolve_overlap_method_allowed_values))
+        for element in resolve_overlap_method_allowed_values:
+            if resolve_overlap_method.lower() == element.lower():
+                resolve_overlap_method = element
+
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.merge_multidimensional_rasters(input_multidimensional_rasters=input_multidimensional_rasters,
+                                                        resolve_overlap_method=resolve_overlap_method,
+                                                        output_name=output_raster,
+                                                        context=context,
+                                                        gis=self._gis,
+                                                        future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+
+    def analyze_changes_using_landtrendr(self,
+                                          input_multidimensional_raster,
+                                          processing_band=None, 
+                                          snapping_date='06-30', 
+                                          max_num_segments=5, 
+                                          vertex_count_overshoot=2, 
+                                          spike_threshold=0.9, 
+                                          recovery_threshold=0.25, 
+                                          prevent_one_year_recovery=True, 
+                                          increasing_recovery_trend=True, 
+                                          min_num_observations=6, 
+                                          best_model_proportion=1.25, 
+                                          pvalue_threshold=0.01, 
+                                          output_other_bands=False,
+                                          output_name=None,
+                                          context=None,
+                                          future=False,
+                                          **kwargs):
+        """
+       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+
+       output_name: outputName (str). Required parameter.
+
+       processing_band: processingBand (str). Optional parameter.  
+
+       snapping_date: snappingDate (str). Optional parameter.  
+
+       max_num_segments: maxNumSegments (int). Optional parameter.  
+
+       vertex_count_overshoot: vertexCountOvershoot (int). Optional parameter.  
+
+       spike_threshold: spikeThreshold (float). Optional parameter.  
+
+       recovery_threshold: recoveryThreshold (float). Optional parameter.  
+
+       prevent_one_year_recovery: preventOneYearRecovery (bool). Optional parameter.  
+
+       increasing_recovery_trend: increasingRecoveryTrend (bool). Optional parameter.  
+
+       min_num_observations: minNumObservations (int). Optional parameter.  
+
+       best_model_proportion: bestModelProportion (float). Optional parameter.  
+
+       pvalue_threshold: pvalueThreshold (float). Optional parameter.  
+
+       output_other_bands: outputOtherBands (bool). Optional parameter.  
+
+       context: context (str). Optional parameter.
+
+       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        task = "AnalyzeChangesUsingLandTrendr"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
+
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.analyze_changes_using_land_trendr(input_multidimensional_raster=input_multidimensional_raster,
+                                                             processing_band=processing_band, 
+                                                             snapping_date=snapping_date, 
+                                                             max_num_segments=max_num_segments, 
+                                                             vertex_count_overshoot=vertex_count_overshoot, 
+                                                             spike_threshold=spike_threshold, 
+                                                             recovery_threshold=recovery_threshold, 
+                                                             prevent_one_year_recovery=prevent_one_year_recovery, 
+                                                             increasing_recovery_trend=increasing_recovery_trend, 
+                                                             min_num_observations=min_num_observations, 
+                                                             best_model_proportion=best_model_proportion, 
+                                                             pvalue_threshold=pvalue_threshold, 
+                                                             output_other_bands=output_other_bands,
+                                                             output_name=output_raster,
+                                                             context=context,
+                                                             gis=self._gis,
+                                                             future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    def zonal_statistics_as_table(self,
+                                  input_zone_raster_or_features=None, 
+                                  input_value_raster=None, 
+                                  zone_field=None, 
+                                  ignore_nodata=True,
+                                  statistic_type='ALL', 
+                                  percentile_values=[90],
+                                  process_as_multidimensional=False,
+                                  percentile_interpolation_type="AUTO_DETECT",
+                                  output_name=None,
+                                  context=None,
+                                  future=False,
+                                  **kwargs):
+        """
+        Calculates  the values of a raster within the zones of another dataset and reports the results to a table.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        input_zone_raster_or_features            Required. The input that defines the zones. Both raster and feature 
+                                                 can be used for the zone input.
+        ------------------------------------     --------------------------------------------------------------------
+        input_value_raster                       Required raster. Raster that contains the values on which to summarize a statistic.
+        ------------------------------------     --------------------------------------------------------------------
+        zone_field                               Required parameter.  The field that defines each zone. It can be an 
+                                                 integer or a string field of the zone dataset.
+        ------------------------------------     --------------------------------------------------------------------
+        ignore_nodata                            Optional boolean. Denotes whether NoData values in the value input 
+                                                 will influence the results of the zone that they fall within.
+                                                 true - Within any particular zone, only cells that have a value in 
+                                                 the input value raster will be used in determining the output value 
+                                                 for that zone. NoData cells in the value raster will be ignored in 
+                                                 the statistic calculation. This is the default.
+                                             
+                                                 false - Within any particular zone, if any NoData cells exist in the 
+                                                 value raster, it is deemed that there is insufficient information to 
+                                                 perform statistical calculations for all the cells in that zone; 
+                                                 therefore, the entire zone will receive the NoData value on the output raster.
+        ------------------------------------     --------------------------------------------------------------------
+        statistic_type                           Optional string.  Choose the statistic to calculate.The available options 
+                                                 when the value raster is integer are ALL, MEAN, MAJORITY, MAXIMUM, MEDIAN, 
+                                                 MINIMUM, MINORITY, PERCENTILE, RANGE, STD, SUM, VARIETY,  
+                                                 MIN_MAX, MEAN_STD, and  MIN_MAX_MEAN.
+                                                 If the value raster is float, the options are ALL, MEAN, MAXIMUM, MINIMUM, 
+                                                 RANGE, STD, and SUM.
+
+                                                 ALL- All of the statistics will be calculated. 
+                                                 This is the default.
+
+                                                 MEAN-Calculates the average of all cells in the raster layer to be summarized that
+                                                 belong to the same zone as the output cell.
+
+                                                 MAJORITY- Determines the value that occurs most often of all cells in the raster 
+                                                 layer to be summarized that belong to the same zone as the output cell.
+
+                                                 MAXIMUM- Determines the largest value of all cells in the raster layer 
+                                                 to be summarized that belong to the same zone as the output cell.
+
+                                                 MEDIAN- Determines the median value of all cells in the raster layer 
+                                                 to be summarized that belong to the same zone as the output cell.
+
+                                                 MINIMUM- Determines the smallest value of all cells in the raster 
+                                                 layer to be summarized that belong to the same zone as the output cell.
+
+                                                 MINORITY- Determines the value that occurs least often of all cells in 
+                                                 the raster layer to be summarized that belong to the same zone as the 
+                                                 output cell.
+
+                                                 PERCENTILE - Calculates a percentile of all cells in the value raster 
+                                                 that belong to the same zone as the output cell. The 90th percentile is calculated by default. 
+                                                 You can specify other values (from 0 to 100) using the Percentile Values parameter.
+
+                                                 RANGE- Calculates the difference between the largest and smallest value of all 
+                                                 cells in the raster layer to be summarized that belong to the same zone 
+                                                 as the output cell.
+
+                                                 STD - Calculates the standard deviation of all cells in 
+                                                 the raster layer to be summarized that belong to the same zone as the output cell.
+
+                                                 SUM- Calculates the total value of all cells in the raster layer to be 
+                                                 summarized that belong to the same zone as the output cell.
+
+                                                 VARIETY- Calculates the number of unique values for all cells in the raster 
+                                                 layer to be summarized that belong to the same zone as the output cell.
+
+                                                 MIN_MAX - Both the minimum and maximum statistics are calculated.
+
+                                                 MEAN_STD -  Both the mean and standard deviation statistics 
+                                                 are calculated.
+
+                                                 MIN_MAX_MEAN - The minimum, maximum and mean statistics are calculated.
+        ------------------------------------     --------------------------------------------------------------------
+        percentile_values                        Optional list of double values.
+                                                 The percentile to calculate. The default is 90, for the 90th percentile.
+                                                 The values can range from 0 to 100. The 0th percentile is essentially 
+                                                 equivalent to the Minimum statistic, and the 100th Percentile is equivalent to 
+                                                 Maximum. A value of 50 will produce essentially the same result as the Median statistic.
+                                                 This option is only available if the Statistics Type parameter is set to PERCENTILE or ALL.
+        ------------------------------------     --------------------------------------------------------------------
+        percentile_value                         Optional int. The percentile to calculate when the  
+                                                 statistics_type parameter is set to PERCENTILE.
+                                                 This value can range from 0 to 100. The default is 90. 
+        ------------------------------------     --------------------------------------------------------------------
+        process_as_multidimensional              Optional bool, Determines how the input rasters will be processed if they 
+                                                 are multidimensional.
+                                                 False - Statistics will be calculated from the current slice of a 
+                                                 multidimensional image service. This is the default.
+                                                 True - Statistics will be calculated for all dimensions (such as time or depth) 
+                                                 of a multidimensional image service.
+        ------------------------------------     --------------------------------------------------------------------
+        percentile_interpolation_type            Optional str. Determines the type of percentile interpolation type when the 
+                                                 number of values from the input value raster to be calculated are even.
+
+                                                    - AUTO_DETECT - If the input value raster has integer pixel type, the 
+                                                                    NEAREST method is used. If the input value raster 
+                                                                    has floating point pixel type, then the LINEAR 
+                                                                    method is used. This is the default.
+                                                    - NEAREST - Nearest value to the desired percentile. In this case, 
+                                                                the output pixel type is same as that of the input value 
+                                                                raster.
+                                                    - LINEAR - Weighted average of two surrounding values from the 
+                                                                desired percentile. In this case, the output pixel 
+                                                                type is floating point.
+        ------------------------------------     --------------------------------------------------------------------
+        output_name                              Optional string. Name of the output feature item or table item to be created.
+                                                 If not provided, a random name is generated by the method and used as 
+                                                 the output name. 
+        ------------------------------------     --------------------------------------------------------------------
+        gis                                      Optional GIS object. If not specified, the currently active connection
+                                                 is used.
+        ------------------------------------     --------------------------------------------------------------------
+        future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                                 results will be returned asynchronously.
+        ------------------------------------     --------------------------------------------------------------------
+        folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                                 not exist, with the given folder name and persists the output in this folder.
+                                                 The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                                 Example:
+                                                    {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+        ====================================     ====================================================================
+
+        :return: Feature Layer
+        """
+
+        task = "ZonalStatisticsAsTable"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        if isinstance(input_zone_raster_or_features, _FEATURE_INPUTS):
+            input_zone_raster_or_features = self._feature_input(input_zone_raster_or_features)
+        elif isinstance(input_zone_raster_or_features, Item):
+            input_zone_raster_or_features = {"itemId": input_zone_raster_or_features.itemid }
+        else:
+            input_zone_raster_or_features = self._layer_input(input_zone_raster_or_features)
+
+        input_value_raster = self._layer_input(input_layer=input_value_raster)
+
+        statistic_type_allowed_values = self._tbx.choice_list.zonal_statistics_as_table["statistic_type"]
+        if [element.lower() for element in statistic_type_allowed_values].count(statistic_type.lower()) <= 0 :
+            raise RuntimeError('statistic_type can only be one of the following: '+str(statistic_type_allowed_values))
+        for element in statistic_type_allowed_values:
+            if statistic_type.lower() == element.lower():
+                statistic_type = element
+
+        percentile_interpolation_type_allowed_values = self._tbx.choice_list.zonal_statistics_as_table["percentile_interpolation_type"]
+        if [element.lower() for element in percentile_interpolation_type_allowed_values].count(percentile_interpolation_type.lower()) <= 0 :
+            raise RuntimeError('percentile_interpolation_type can only be one of the following: '+str(percentile_interpolation_type_allowed_values))
+        for element in percentile_interpolation_type_allowed_values:
+            if percentile_interpolation_type.lower() == element.lower():
+                percentile_interpolation_type = element
+
+        folder = None
+        folderId = None
+
+        if output_name is None:
+            output_name = str(task) + '_' + _id_generator()
+
+        if kwargs is not None:
+            if "folder" in kwargs:
+                folder = kwargs["folder"]
+        if folder is not None:
+            if isinstance(folder, dict):
+                if "id" in folder:
+                    folderId = folder["id"]
+                    folder=folder["title"]
+            else:
+                owner = gis.properties.user.username
+                folderId = gis._portal.get_folder_id(owner, folder)
+            if folderId is None:
+                folder_dict = gis.content.create_folder(folder, owner)
+                folder = folder_dict["title"]
+                folderId = folder_dict["id"]
+            output_name =  json.dumps({"serviceProperties": {"name" : output_name}, "itemProperties": {"folderId" : folderId}})
+        else:
+            output_name = json.dumps({"serviceProperties": {"name" : output_name}})
+
+        gpjob = self._tbx.zonal_statistics_as_table(input_zone_raster_or_features=input_zone_raster_or_features, 
+                                                    input_value_raster=input_value_raster, 
+                                                    zone_field=zone_field, 
+                                                    ignore_nodata=ignore_nodata,
+                                                    statistic_type=statistic_type, 
+                                                    percentile_values=percentile_values,
+                                                    process_as_multidimensional=process_as_multidimensional,
+                                                    percentile_interpolation_type=percentile_interpolation_type,
+                                                    output_table_name=output_name,
+                                                    context=context,
+                                                    gis=self._gis,
+                                                    future=True)
+
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
 ###########################################################################
 class _GeoanalyticsTools(_AsyncService):
     """

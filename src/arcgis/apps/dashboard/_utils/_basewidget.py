@@ -2,22 +2,22 @@ import uuid
 
 class _BaseWidget(object):
 
-    def __init__(self, title, description):
+    def __init__(self, name, title, description):
         
         self._title = ""
+        self._name = ""
         self._description = ""
         self._background_color = None #"#ffffff"
         self._text_color = None #"#000000"
-        self.id = str(uuid.uuid4())
+        self._id = str(uuid.uuid4())
         self._type = None
 
         self.title = title
+        self.name = name
         self.description = description
 
         self._width = 1
         self._height = 1
-
-        self._filters = []
     
     def _repr_html_(self):
         from arcgis.apps.dashboard import Dashboard
@@ -37,6 +37,20 @@ class _BaseWidget(object):
         Set widget type.
         """
         self._type = str(value)
+
+    @property
+    def name(self):
+        """
+        :return: widget name.
+        """
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        """
+        Set widget name.
+        """
+        self._name = value
 
     @property
     def title(self):
@@ -134,40 +148,6 @@ class _BaseWidget(object):
         else:
             self._width = value
     
-    @property
-    def filters(self):
-        """
-        :return: filters associated with widget
-        """
-        return self._filters
-    
-    def add_filter(self, field, join, condition, **kwargs):
-        """
-        Add filters associated with widget.
-        """
-        self._filter_field = field
-        if join in ["AND", "OR"]:
-            self._filter_join = join
-        else:
-            raise Exception("Please select from 'AND', 'OR'")
-        if condition in ["between", "not between", "equal", "not equal", "greater than", "greater than or equal", "less than", "less than or equal", "is null", "is not null"]:
-            self._filter_condition = condition
-        else:
-            raise Exception("Please select the right condition")
-
-        if condition in ["between", "not between"]:
-            self._val1 = kwargs.get('start')
-            self,_val2 = kwargs.get('end')
-            self._filters.append({"filtertype":self._filter_join, "field":self._filter_field, "operator":self._filter_condition, "start":self._val1, "end":self._val2})
-        else:
-            raise Exception("Please provide 'start' and 'end' values as parameters")
-
-        if condition in ["equal", "not equal", "greater than", "greater than or equal", "less than", "less than or equal"]:
-            self._val = kwargs.get('value')
-            self._filters.append({"filtertype":self._filter_join, "field":self._filter_field, "operator":self._filter_condition, "value":self._val})
-        else:
-            raise Exception("Please provide a 'value' parameter for comparison")
-
 class Legend(object):
 
     @classmethod
@@ -301,19 +281,23 @@ def _auto_calculate_width(elements):
     remaining_elements = len(elements)
 
     for el in elements:
-        if getattr(el, 'width', 1) != 1:
+        element_width = getattr(el, 'width', 1)
+        if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+            element_width = el.get('width', 1)
+
+        if element_width != 1:
             remaining_elements = remaining_elements - 1
-            available_width = available_width - getattr(el, 'width', 1)
+            available_width = available_width - element_width
 
     if remaining_elements > 0:
         available_width = float(available_width / remaining_elements)
 
     for el in elements:
-        if getattr(el, 'width', 1) == 1:
-            if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+        if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+            if el.get('width', 1) == 1:
                 el['width'] = available_width
-            else:
-                el.width = available_width
+        elif getattr(el, 'width', 1) == 1:
+            el.width = available_width
 
     return elements
 
@@ -324,19 +308,23 @@ def _auto_calculate_height(elements):
     remaining_elements = len(elements)
 
     for el in elements:
-        if getattr(el, 'height', 1) != 1:
+        element_height = getattr(el, 'height', 1)
+        if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+            element_height = el.get('height', 1)
+
+        if element_height != 1:
             remaining_elements = remaining_elements - 1
-            available_height = available_height - getattr(el, 'height', 1)
+            available_height = available_height - element_height
 
     if remaining_elements > 0:
         available_height = float(available_height / remaining_elements)
 
     for el in elements:
-        if getattr(el, 'height', 1) == 1:
-            if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+        if isinstance(el, dict) and not isinstance(el, arcgis.mapping.WebMap):
+            if el.get('height', 1) == 1:
                 el['height'] = available_height
-            else:
-                el.height = available_height
+        elif getattr(el, 'height', 1) == 1:
+            el.height = available_height
 
     return elements
 
@@ -348,7 +336,7 @@ def add_row(elements, height=1):
     =========================   ===========================================
     **Argument**                **Description**
     -------------------------   -------------------------------------------
-    elements                    Optional List. Widgets that have to be part
+    elements                    Required List. Widgets that have to be part
                                 of the row.
     -------------------------   -------------------------------------------
     height                      Optional int. Height of the row.
@@ -366,14 +354,14 @@ def add_row(elements, height=1):
     }
 
     for el in elements:
-        if not hasattr(el, 'id'):
+        if not hasattr(el, '_id'):
             json['widgets'] = json['widgets'] + el['widgets']
             del el['widgets']
             json['elements'].append(el)
         else:
             json['elements'].append({
                 'type': 'itemLayoutElement',
-                'id': el.id,
+                'id': el._id,
                 'height': el.height,
                 'width': el.width
             })
@@ -389,7 +377,7 @@ def add_column(elements, width=1):
     =========================   ===========================================
     **Argument**                **Description**
     -------------------------   -------------------------------------------
-    elements                    Optional List. Widgets that have to be part
+    elements                    Required List. Widgets that have to be part
                                 of the row.
     -------------------------   -------------------------------------------
     width                       Optional int. Width of the Column.
@@ -407,14 +395,14 @@ def add_column(elements, width=1):
     }
 
     for el in elements:
-        if not hasattr(el, 'id'):
+        if not hasattr(el, '_id'):
             json['widgets'] = json['widgets'] + el['widgets']
             del el['widgets']
             json['elements'].append(el)
         else:
             json['elements'].append({
                 'type': 'itemLayoutElement',
-                'id': el.id,
+                'id': el._id,
                 'height': el.height,
                 'width': el.width
             })

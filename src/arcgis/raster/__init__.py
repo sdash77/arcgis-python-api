@@ -14,3 +14,4 @@ from .analytics import *
 from .functions import *
 from .orthomapping import *
 #from .charts import *
+from ._RasterInfo import RasterInfo

@@ -828,10 +828,10 @@ def generate_raster(raster_function,
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean. 
-                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
 
-                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter on ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -957,10 +957,10 @@ def convert_feature_to_raster(input_feature,
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean. 
-                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False.
 
-                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -985,6 +985,8 @@ def copy_raster(input_raster,
                 process_as_multidimensional=None,
                 build_transpose=None,
                 context=None,
+                raster_type_name=None,
+                raster_type_params = None,
                 *,
                 gis=None,
                 future=False,
@@ -994,13 +996,19 @@ def copy_raster(input_raster,
     .. image:: _static/images/ra_copy_raster/ra_copy_raster.png 
 
     The Copy Raster task takes single raster input and generates the output image using parallel processing.
-
     The input raster can be clipped, resampled, and reprojected based on the setting.
+
+    The function can also create hosted imagery layers in ArcGIS Enterprise and ArcGIS Online from local raster datasets by uploading the data to the server.
+    Multiple images are mosaicked into a single dataset to create one layer.
+    For this functionality to work in ArcGIS Online, Azure library packages for Python (version - azure-storage-blob-12.5.0)
+    needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    input_raster                         Required feature layer. The input feature layer to convert to a raster dataset.
+    input_raster                         Required raster layer or string. The input raster layer to be copied to.
+                                         Path to a local raster dataset can also be given to create hosted imagery 
+                                         layers on enterprise and AGOL.
     --------------------------------     --------------------------------------------------------------------
     output_cellsize                      Required dict. The cell size and unit for the output imagery layer.
                                          The available units are Feet, Miles, Meters, and Kilometers.
@@ -1012,12 +1020,15 @@ def copy_raster(input_raster,
     clip_setting                         Optional string.  The field that will be used to assign values to the
                                          output raster.
     --------------------------------     --------------------------------------------------------------------
-    output_name                          Optional. If not provided, an Image Service is created by the method and used as the output raster.
+    output_name                          Optional. If not provided, an Image Service is created by the method 
+                                         and used as the output raster.
 
-                                         You can pass in an existing Image Service Item from your GIS to use that instead.
+                                         You can pass in an existing Image Service Item from your GIS to use 
+                                         that instead.
 
-                                         Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
-                                         used as the output for the tool.
+                                         Alternatively, you can pass in the name of the output Image Service 
+                                         that should be created by this method to be used as the output for 
+                                         the tool.
                                          A RuntimeError is raised if a service by that name already exists
     --------------------------------     --------------------------------------------------------------------
     process_as_multidimensional          Optional bool, Process as multidimensional if set to True, 
@@ -1037,29 +1048,118 @@ def copy_raster(input_raster,
                                                 
                                             Example: 
                                                 {"outSR": {spatial reference}}
+
+
+                                         The context parameter can also be used to specify whether to
+                                         build footprints, pixel value that represents the NoData,
+                                         resamplingMethod etc.
+
+
+                                         Example:
+                                            {"buildFootprints":True,
+                                            "footprintsArguments":{"method":"RADIOMETRY","minValue":1,
+                                            "maxValue":5,
+                                            "shrinkDistance":50,"skipOverviews":True,"updateBoundary":True,
+                                            "maintainEdge":False,"simplification":None,"numVertices":20,
+                                            "minThinnessRatio":0.05,"maxSliverSize":20,"requestSize":2000,
+                                            "minRegionSize":100},
+                                            "defineNodata":True,
+                                            "noDataArguments":{"noDataValues":[500],"numberOfBand":99,
+                                            "compositeValue":True}}
+    --------------------------------     --------------------------------------------------------------------
+    raster_type_name                     Required string. The name of the raster type to use for adding data to 
+                                         the mosaic dataset.
+
+
+                                         Choice list: [
+                                         "ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV"
+                                         "GF-2 PMS", "GRIB", "HDF","IKONOS", "KOMPSAT-2", "KOMPSAT-3", 
+                                         "Landsat 1-5 MSS","Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", 
+                                         "NetCDF", "Pleiades-1", "QuickBird", "RapidEye", "Raster Dataset", 
+                                         "Sentinel-2"," SkySat", "SPOT 5", "SPOT 6", "SPOT 7", "UAV/UAS", 
+                                         "WordView-1", "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", 
+                                         "Aerial", "ScannedAerial","ZY3-CRESDA"]
+                                         
+
+                                         Example:
+                                            "QuickBird"
+    --------------------------------     --------------------------------------------------------------------
+    raster_type_params                   Optional dict. Additional ``raster_type`` specific parameters.
+
+        
+                                         The process of add rasters to the mosaic datset can be
+                                         controlled by specifying additional raster type arguments.
+
+
+                                         The raster type parameters argument is a dictionary.
+
+
+                                         The dictionary can contain productType, processingTemplate,
+                                         pansharpenType, filter, pansharpenWeights, constantZ
+
+
+                                         Please check the table in create_image_collection documentation
+                                         (Supported Raster Types), for more details about the product types,
+                                         processing templates, pansharpen weights for each raster type. 
+
+
+                                         - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", 
+                                           "Mean", "Gram-Schmidt"]
+                                         - Possible values for filter - [None, "Sharpen", "SharpenMore"]
+
+
+                                         Example:
+                                            {"productType":"All","processingTemplate":"Pansharpen",
+                                            "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
+                                            "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
     --------------------------------     --------------------------------------------------------------------
     gis                                  Optional GIS object. If not specified, the currently active connection
                                          is used.
     --------------------------------     --------------------------------------------------------------------
-    future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
-                                         results will be returned asynchronously.
+    future                               Keyword only parameter. Optional boolean. If True, the result will 
+                                         be a GPJob object and results will be returned asynchronously.
     --------------------------------     --------------------------------------------------------------------
-    folder                               Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
-                                         not exist, with the given folder name and persists the output in this folder.
-                                         The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+    folder                               Keyword only parameter. Optional str or dict. Creates a folder in the 
+                                         portal, if it does not exist, with the given folder name and persists 
+                                         the output in this folder. The dictionary returned by the 
+                                         gis.content.create_folder() can also be passed in as input.
 
                                          Example:
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     --------------------------------     --------------------------------------------------------------------
     tiles_only                           Keyword only parameter. Optional boolean. 
-                                         On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                         To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+                                         On AGOL, the default output image service for this function would 
+                                         be a Tiled Imagery Layer. 
+                                         To create Dynamic Imagery Layer as output on AGOL, 
+                                         set tiles_only parameter to False.
 
-                                         Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                         Function will not honor tiles_only parameter on enterprise and 
+                                         will generate Dynamic Imagery Layer by default. 
     ================================     ====================================================================
 
     :return:
     output_raster : Imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1: This example creates a tiled image layer in ArcGIS Online. (To create dynamic imagery layer set the tiles_only keyword argument to False)
+
+        copy_raster_op = copy_raster(input_raster="C:\\data\\input_raster.tif",
+                                     output_name="output_name",
+                                     raster_type_name="Raster Dataset",
+                                     gis=gis,
+                                     tiles_only=True)
+
+    .. code-block:: python
+
+        # Usage Example 2: This example creates a tiled image layer in AGOL from the datasets detected in the input folder. (To create dynamic imagery layer set the tiles_only keyword argument to False)
+
+        copy_raster_op = copy_raster(input_raster="C:\\data",
+                                     output_name="output_name",
+                                     raster_type_name="Raster Dataset",
+                                     gis=gis,
+                                     tiles_only=True)
+
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -1078,6 +1178,8 @@ def copy_raster(input_raster,
                                                  output_name=output_name,
                                                  context=context,
                                                  future=future,
+                                                 raster_type_name=raster_type_name,
+                                                 raster_type_params = raster_type_params,
                                                  **kwargs)
 
 
@@ -1235,7 +1337,7 @@ def summarize_raster_within(input_zone_layer,
                                              
                                              False - Statistics will be calculated for all dimensions 
                                              (such as time or depth) of a multidimensional image service.
-                                             Parameter added in 10.8.1.
+                                             Parameter available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     percentile_value                         Optional Double, The percentile to calculate. The default is 90, for the 90th percentile. 
                                              The values can range from 0 to 100. The 0th percentile is essentially 
@@ -1244,7 +1346,7 @@ def summarize_raster_within(input_zone_layer,
                              
                                              This parameter is honoured only available if the statistics_type parameter is 
                                              set to Percentile.
-                                             Parameter added in 10.8.1.
+                                             Parameter available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     percentile_interpolation_type            Optional str. Determines the type of percentile interpolation type when the 
                                              number of values from the input value raster to be calculated are even.
@@ -1259,7 +1361,7 @@ def summarize_raster_within(input_zone_layer,
                                                            desired percentile. In this case, the output pixel 
                                                            type is floating point.
 
-                                             Parameter added in 10.9.
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
@@ -1275,10 +1377,10 @@ def summarize_raster_within(input_zone_layer,
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean. 
-                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
 
-                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -1418,6 +1520,7 @@ def calculate_density(input_point_or_line_features,
                       output_cell_size=None,
                       output_name=None,
                       context=None,
+                      input_barriers=None,
                       *,
                       gis=None,
                       future=False,
@@ -1550,6 +1653,11 @@ def calculate_density(input_point_or_line_features,
                                                 Example:
                                                     {'resamplingMethod': "Nearest"} 
     ------------------------------------     --------------------------------------------------------------------
+    input_barriers                           Optional. The dataset that defines the barriers. The barriers can be 
+                                             a feature layer of polyline or polygon features. 
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -1564,10 +1672,10 @@ def calculate_density(input_point_or_line_features,
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean. 
-                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
 
-                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter on ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -1583,6 +1691,7 @@ def calculate_density(input_point_or_line_features,
                                                         output_cell_size=output_cell_size,
                                                         context=context,
                                                         future=future,
+                                                        input_barriers=input_barriers,
                                                         **kwargs)
 
 def create_viewshed(input_elevation_surface,
@@ -1797,10 +1906,10 @@ def create_viewshed(input_elevation_surface,
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean. 
-                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
 
-                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -2004,10 +2113,10 @@ def interpolate_points(input_point_features,
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean. 
-                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
 
-                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -2143,10 +2252,10 @@ def classify(input_raster,
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     --------------------------------     --------------------------------------------------------------------
     tiles_only                           Keyword only parameter. Optional boolean. 
-                                         On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                         To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+                                         In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                         To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
 
-                                         Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                         Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ================================     ====================================================================
 
     :return:
@@ -2288,10 +2397,10 @@ def segment(input_raster, spectral_detail=15.5, spatial_detail=15, minimum_segme
                                              {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     --------------------------------     --------------------------------------------------------------------
     tiles_only                           Keyword only parameter. Optional boolean. 
-                                         On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                         To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+                                         In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                         To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
 
-                                         Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                         Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ================================     ====================================================================
 
     :return:
@@ -2421,6 +2530,11 @@ def create_image_collection(image_collection,
     Provides provision to use input rasters by reference 
     and to specify image collection properties through context parameter.
 
+    The function can also create hosted imagery layers in ArcGIS Enterprise and ArcGIS Online from local raster datasets by uploading the data to the server.
+    A collection can be created from multiple input rasters.
+    For this functionality to work on ArcGIS Online, Azure library packages for Python (version - azure-storage-blob-12.5.0)
+    needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install
+
     ==================                   ====================================================================
     **Argument**                         **Description**
     ------------------                   --------------------------------------------------------------------
@@ -2444,11 +2558,24 @@ def create_image_collection(image_collection,
                                          - An image service URL
                                          - Shared data path (this path must be accessible by the server)
                                          - Name of a folder on the portal
+                                         The function can create hosted imagery layers on enterprise and AGOL from 
+                                         local raster datasets by uploading the data to the server.
     ------------------                   --------------------------------------------------------------------
     raster_type_name                     Required string. The name of the raster type to use for adding data to 
                                          the image collection.
 
-                                         Choice list: ['UAV/UAS', 'Aerial', 'ScannedAerial', 'Landsat 7 EMT+', 'Landsat 8', 'Sentinel-2', 'ZY3-SASMAC', 'ZY3-CRESDA']
+                                         Choice list: [
+                                         "ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV"
+                                         "GF-2 PMS", "GRIB", "HDF","IKONOS", "KOMPSAT-2", "KOMPSAT-3", "Landsat 1-5 MSS"
+                                         "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "NetCDF", "Pleiades-1"
+                                         "QuickBird", "RapidEye", "Raster Dataset", "Sentinel-2"," SkySat"
+                                         "SPOT 5", "SPOT 6", "SPOT 7", "UAV/UAS", "WordView-1"
+                                         "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "Aerial", "ScannedAerial",
+                                         "ZY3-CRESDA"]         
+                                         
+
+                                         Example:
+                                            "QuickBird"
     ------------------                   --------------------------------------------------------------------
     raster_type_params                   Optional dict. Additional ``raster_type`` specific parameters.
         
@@ -2456,6 +2583,21 @@ def create_image_collection(image_collection,
                                          controlled by specifying additional raster type arguments.
 
                                          The raster type parameters argument is a dictionary.
+
+                                         The dictionary can contain productType, processingTemplate,
+                                         pansharpenType, filter, pansharpenWeights, constantZ
+
+                                         Please check the table below (Supported Raster Types), 
+                                         for more details about the product types,
+                                         processing templates, pansharpen weights for each raster type. 
+
+                                         - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", "Mean", "Gram-Schmidt"]
+                                         - Possible values for filter - [None, "Sharpen", "SharpenMore"]
+
+                                         Example:
+                                            {"productType":"All","processingTemplate":"Pansharpen",
+                                            "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
+                                            "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
     ------------------                   --------------------------------------------------------------------
     out_sr                               Optional integer. Additional parameters of the service.
                             
@@ -2481,6 +2623,21 @@ def create_image_collection(image_collection,
                                             If the imageCollectionType is not set, it defaults to "UAV/UAS"
 
                                          If ``byref`` is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
+
+                                         The context parameter can also be used to specify whether to build overviews,
+                                         build footprints, to specify pixel value that represents the NoData etc.
+
+
+                                         Example:
+                                            {"buildFootprints":True,                                            
+                                            "footprintsArguments":{"method":"RADIOMETRY","minValue":1,"maxValue":5,
+                                            "shrinkDistance":50,"skipOverviews":True,"updateBoundary":True,
+                                            "maintainEdge":False,"simplification":None,"numVertices":20,
+                                            "minThinnessRatio":0.05,"maxSliverSize":20,"requestSize":2000,
+                                            "minRegionSize":100},
+                                            "defineNodata":True,                                            
+                                            "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
+                                            "buildOverview":True}
     ------------------                   --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------                   --------------------------------------------------------------------
@@ -2493,13 +2650,371 @@ def create_image_collection(image_collection,
 
                                          Example:
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------                   --------------------------------------------------------------------
+    tiles_only                           Keyword only parameter. Optional boolean. 
+                                         In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                         To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                         Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ==================                   ====================================================================
 
     :returns: The imagery layer item
 
-    .. code-block:: python
++-----------------------------------------------------------------------------------------------------------------------------------------------+
+|     Supported Raster Types                                                                                                                    |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| **Raster Type**        | **pansharpenWeights**  | **productType**                              |**processingTemplate**                        |
++========================+========================+==============================================+==============================================+
+| "QuickBird"            |[0.85, 0.7, 0.35, 1]    |"All" (default), "Basic",                     |"All Bands",                                  |
+|                        |                        |"Orthorectified",                             |"Multispectral",                              |
+|                        |                        |"Standard Orthoready",                        |"Multispectral AComp",                        |
+|                        |                        |"Standard"                                    |"Panchromatic",                               |
+|                        |                        |                                              |"Panchromatic AComp",                         |
+|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"Pansharpen AComp",                           |
+|                        |                        |                                              |"Pansharpen and Multispectral"                |
+|                        |                        |                                              |                                              |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Orthorectified Acomp"                        |"Multispectral AComp" (default),              |
+|                        |                        |                                              |"Panchromatic AComp",                         |
+|                        |                        |                                              |"Pansharpen AComp"                            |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Standard AComp"                              |"Multispectral AComp" (default),              |
+|                        |                        |                                              |"Panchromatic AComp",                         |
+|                        |                        |                                              |"Pansharpen AComp"                            |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Standard OrthoreadyAcomp"                    |"Multispectral AComp" (default),              |
+|                        |                        |                                              |"Panchromatic AComp",                         |
+|                        |                        |                                              |"Pansharpen AComp"                            |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+|"DubaiSat-2"            |[0.166,0.167,0.167,0.5] | "All" (default), "Geo", "Radio"              |"All Bands", "Multispectral",                 |
+|                        |                        |                                              |"Panchromatic",                               | 
+|                        |                        |                                              |"Pansharpen (default)",                       |
+|                        |                        |                                              |"Pansharpen and Multispectral"                |    
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+|"GF-1 PMS"              |[0.2501,0.3646,0,0.3853]| "All" (default), "LEVEL 1"                   |"All Bands", "Multispectral" ,                |
+|                        |                        |                                              |"Panchromatic",                               | 
+|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"Pansharpen and Multispectral"                |    
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+|"GF-1 WFV"              |                        | "All" (default), "LEVEL 1"                   |"Multispectral" (default)                     |
+|                        |                        |                                              |                                              |
+|                        |                        |                                              |                                              |    
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+|"GF-2 PMS"              |[0.2501,0.3646,0,0.3853]| "All" (default), "LEVEL 1"                   |"All Bands", "Multispectral" ,                |
+|                        |                        |                                              |"Panchromatic",                               | 
+|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"Pansharpen and Multispectral"                |   
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+|"KOMPSAT-2"             |[0.166,0.167,0.167,0.5] | "All" (default), "KOMPSAT-2 Scene 1A",       |"All Bands", "Multispectral",                 |
+|                        |                        | "KOMPSAT-2 Scene 2A"                         |"Panchromatic",                               | 
+|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"Pansharpen and Multispectral"                |   
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+|"KOMPSAT-3"             |[0.166,0.167,0.167,0.5] | "All" (default), "Level 1G", "Level 1O"      |"All Bands", "Multispectral" ,                |
+|                        |                        | "Level 1R"                                   |"Panchromatic",                               | 
+|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"Pansharpen and Multispectral"                |   
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+|"Landsat 8"             |[0.42, 0.51, 0.07, 0.0] | "All" (default), "Level1"                    |"All Bands",                                  |
+|                        |                        |                                              |"Brightness Temperature",                     |
+|                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
+|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Panchromatic", "Pansharpen" (default),       |
+|                        |                        |                                              |"Pansharpen and Multispectral", "QA",         |
+|                        |                        |                                              |"SnowIce", "Spectral Indices",                |
+|                        |                        |                                              |"Surface Reflectance", "Thermal",             |
+|                        |                        |                                              |"Top of Atmosphere Reflectance",              |
+|                        |                        |                                              |"Vegetation", "Water"                         |                            
+|                        |                        |                                              |                                              |   
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+|"Landsat 7 ETM+"        |[0.11, 0.14, 0.14, 0.61]| "All" (default), "Level1"                    |"All Bands",                                  |
+|                        |                        |                                              |"Brightness Temperature",                     |
+|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Panchromatic", "Pansharpen" (default),       |
+|                        |                        |                                              |"Pansharpen and Multispectral",               |
+|                        |                        |                                              |"Spectral Indices",                           |
+|                        |                        |                                              |"Surface Reflectance", "Thermal",             |
+|                        |                        |                                              |"Top of Atmosphere Reflectance",              |  
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+|"Landsat 4-5 TM"        |                        | "All" (default), "Level1"                    |"All Bands",                                  |
+|                        |                        |                                              |"Brightness Temperature",                     |
+|                        |                        |                                              |"Multispectral" (default),                    |
+|                        |                        |                                              |"Spectral Indices",                           |
+|                        |                        |                                              |"Surface Reflectance", "Thermal",             |
+|                        |                        |                                              |"Top of Atmosphere Reflectance",              |  
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+|"Landsat 1-5 MSS"       |                        | "All" (default), "Level1"                    |"All Bands",                                  |
+|                        |                        |                                              |"Multispectral" (default),                    |
+|                        |                        |                                              |"Pseudocolor", "Thermal",                     |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+ 
+| "Sentinel-2"           |[0.85, 0.7, 0.35, 1]    |"ALL" (default)                               |"All Bands",                                  |
+|                        |                        |                                              |"BOA Reflectance-10m" (default),              |
+|                        |                        |                                              |"BOA Reflectance-20m",                        |
+|                        |                        |                                              |"BOA Reflectance-60m",                        |
+|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Multispectral-10m",                          |
+|                        |                        |                                              |"Multispectral-20m",                          |
+|                        |                        |                                              |"Multispectral-60m",                          |
+|                        |                        |                                              |"True Color"                                  |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Level1"                                      |"Multispectral" (default),                    |
+|                        |                        |                                              |"Multispectral-10m",                          |
+|                        |                        |                                              |"Multispectral-20m",                          |
+|                        |                        |                                              |"Multispectral-60m",                          |
+|                        |                        |                                              |"True Color"                                  |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Level2"                                      |"All Bands",                                  |
+|                        |                        |                                              |"BOA Reflectance-10m",                        |
+|                        |                        |                                              |"BOA Reflectance-20m",                        |
+|                        |                        |                                              |"BOA Reflectance-60m"                         |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+ 
+| "GeoEye-1"             |[0.41, 0.16, 0.13, 0.3] |"All" (default), "Basic",                     |"All Bands",                                  |
+|                        |                        |"Geo", "GeoProfessional"                      |"Multispectral",                              |
+|                        |                        |"Orthorectified",                             |"Multispectral AComp",                        |
+|                        |                        |"Standard",                                   |"Panchromatic",                               |
+|                        |                        |"Standard Orthoready",                        |"Panchromatic AComp",                         |
+|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"Pansharpen AComp",                           |
+|                        |                        |                                              |"Pansharpen and Multispectral"                |
+|                        |                        |                                              |                                              |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Orthorectified Acomp"                        |"Multispectral AComp" (default),              |
+|                        |                        |                                              |"Panchromatic AComp",                         |
+|                        |                        |                                              |"Pansharpen AComp"                            |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Standard AComp"                              |"Multispectral AComp" (default),              |
+|                        |                        |                                              |"Panchromatic AComp",                         |
+|                        |                        |                                              |"Pansharpen AComp"                            |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Standard Orthoready Acomp"                   |"Multispectral AComp" (default),              |
+|                        |                        |                                              |"Panchromatic AComp",                         |
+|                        |                        |                                              |"Pansharpen AComp"                            |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "Pleiades-1"           |[0.9, 0.75, 0.5, 0.5]   |"All" (default), "Basic",                     |"All Bands",                                  |
+|                        |                        |"Geo", "GeoProfessional"                      |"Multispectral",                              |
+|                        |                        |"Orthorectified",                             |"Multispectral AComp",                        |
+|                        |                        |"Standard",                                   |"Panchromatic",                               |
+|                        |                        |"Standard Orthoready",                        |"Panchromatic AComp",                         |
+|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"Pansharpen AComp",                           |
+|                        |                        |                                              |"Pansharpen and Multispectral"                |
+|                        |                        |                                              |                                              |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Orthorectified Acomp"                        |"Multispectral AComp" (default),              |
+|                        |                        |                                              |"Panchromatic AComp",                         |
+|                        |                        |                                              |"Pansharpen AComp"                            |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Standard AComp"                              |"Multispectral AComp" (default),              |
+|                        |                        |                                              |"Panchromatic AComp",                         |
+|                        |                        |                                              |"Pansharpen AComp"                            |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Standard Orthoready Acomp"                   |"Multispectral AComp" (default),              |
+|                        |                        |                                              |"Panchromatic AComp",                         |
+|                        |                        |                                              |"Pansharpen AComp"                            |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "SPOT 5"               |[0.166,0.167,0.167,0.5] |"All" (default), "SPOT Scene 1A",             |"All Bands",                                  |
+|                        |                        |"SPOT Scene 2A", "SPOTView Ortho"             |"Multispectral",                              |
+|                        |                        |                                              |"Panchromatic",                               |
+|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"Pansharpen and Multispectral",               |
+|                        |                        |                                              |"Pseudocolor"                                 |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "SPOT 6"               |[0.45, 0.55, 0, 0]      |"All" (default), "ORTHO",                     |"All Bands",                                  |
+|                        |                        |"PRIMARY", "PROJECTED"                        |"Multispectral",                              |
+|                        |                        |                                              |"Multispectral Display",                      | 
+|                        |                        |                                              |"Multispectral Reflectance",                  |
+|                        |                        |                                              |"Panchromatic",                               |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"Pansharpen and Multispectral",               |
+|                        |                        |                                              |"Pansharpen Display",                         |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"ORTHO DISPLAY"                               |"Multispectral Display" (default),            |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Pansharpen Display"                          |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"ORTHO REFLECTANCE"                           |"Multispectral Reflectance" (default),        |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"PRIMARY DISPLAY"                             |"Multispectral Display" (default),            |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Pansharpen Display"                          |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"PRIMARY REFLECTANCE"                         |"Multispectral Reflectance" (default),        |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"PROJECTED DISPLAY"                           |"Multispectral Display" (default),            |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Pansharpen Dispplay"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"PROJECTED REFLECTANCE"                       |"Multispectral Reflectance" (default),        |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "SPOT 7"               |[0.45, 0.55, 0, 0]      |"All" (default), "ORTHO",                     |"All Bands",                                  |
+|                        |                        |"PRIMARY", "PROJECTED"                        |"Multispectral",                              |
+|                        |                        |                                              |"Multispectral Display",                      | 
+|                        |                        |                                              |"Multispectral Reflectance",                  |
+|                        |                        |                                              |"Panchromatic",                               |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"Pansharpen and Multispectral",               |
+|                        |                        |                                              |"Pansharpen Display",                         |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"ORTHO DISPLAY"                               |"Multispectral Display" (default),            |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Pansharpen Display"                          |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"ORTHO REFLECTANCE"                           |"Multispectral Reflectance" (default),        |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"PRIMARY DISPLAY"                             |"Multispectral Display" (default),            |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Pansharpen Display"                          |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"PRIMARY REFLECTANCE"                         |"Multispectral Reflectance" (default),        |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"PROJECTED DISPLAY"                           |"Multispectral Display" (default),            |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Pansharpen Dispplay"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"PROJECTED REFLECTANCE"                       |"Multispectral Reflectance" (default),        |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "IKONOS"               |[0.378, 0.211, 0, 0.411]|"All" (default), "Geo",                       |"All Bands",                                  |
+|                        |                        |"GeoProfessional",                            |"Multispectral",                              |
+|                        |                        |                                              |"Panchromatic",                               |
+|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"Pansharpen and Multispectral"                |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "WorldView-1"          |                        |"All" (default), "Basic",                     |"Panchromatic" (default)                      |
+|                        |                        |"Orthorectified", "Standard",                 |                                              |
+|                        |                        |"Standard Orthoready"                         |                                              |
+|                        |                        |                                              |                                              |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "WorldView-2"          |[0.39, 0.23, 0.21, 0.17]|"All" (default), "Basic",                     |"All Bands",                                  |
+|                        |                        |"Orthorectified",                             |"Multispectral",                              |
+|                        |                        |"Standard Orthoready",                        |"Multispectral AComp"                         |
+|                        |                        |"Standard"                                    |"Panchromatic",                               |
+|                        |                        |                                              |"Panchromatic AComp",                         |
+|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"Pansharpen AComp",                           |
+|                        |                        |                                              |"Pansharpen and Multispectral"                |
+|                        |                        |                                              |                                              |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Orthorectified Acomp"                        |"Multispectral AComp" (default),              |
+|                        |                        |                                              |"Panchromatic AComp",                         |
+|                        |                        |                                              |"Pansharpen AComp"                            |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Standard AComp"                              |"Multispectral AComp" (default),              |
+|                        |                        |                                              |"Panchromatic AComp",                         |
+|                        |                        |                                              |"Pansharpen AComp"                            |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Standard OrthoreadyAcomp"                    |"Multispectral AComp" (default),              |
+|                        |                        |                                              |"Panchromatic AComp",                         |
+|                        |                        |                                              |"Pansharpen AComp"                            |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "WorldView-3"          |[0.38, 0.25, 0.2, 0.16] |"All" (default), "Basic",                     |"All Bands",                                  |
+|                        |                        |"Orthorectified",                             |"Multispectral",                              |
+|                        |                        |"Standard Orthoready",                        |"Multispectral AComp"                         |
+|                        |                        |"Standard"                                    |"Panchromatic" ,                              |
+|                        |                        |                                              |"Panchromatic AComp",                         |
+|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"Pansharpen AComp",                           |
+|                        |                        |                                              |"Pansharpen and Multispectral"                |
+|                        |                        |                                              |"SWIR"                                        |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Orthorectified Acomp"                        |"Multispectral AComp" (default),              |
+|                        |                        |                                              |"Panchromatic AComp"                          |
+|                        |                        |                                              |"Pansharpen AComp"                            |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Standard AComp"                              |"Multispectral AComp" (default),              |
+|                        |                        |                                              |"Panchromatic AComp"                          |
+|                        |                        |                                              |"Pansharpen AComp"                            |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Standard OrthoreadyAcomp"                    |"Multispectral AComp" (default),              |
+|                        |                        |                                              |"Panchromatic AComp"                          |
+|                        |                        |                                              |"Pansharpen AComp"                            |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "WorldView-4"          |[0.39, 0.23, 0.21, 0.17]|"All" (default), "Basic",                     |"All Bands"                                   |
+|                        |                        |"Standard OrthoReady"                         |"Multispectral",                              |
+|                        |                        |                                              |"Panchromatic"                                |
+|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"Pansharpen and Multispectral"                |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "ZY3-SASMAC"           |[0.329, 0.509, 0, 0.162]|"All" (default), "LEVEL1"                     |"All Bands"                                   |
+|                        |                        |                                              |"Double Line Stereo",                         |
+|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Panchromatic",                               |
+|                        |                        |                                              |"Panchromatic BWD",                           |
+|                        |                        |                                              |"Panchromatic FWD",                           |
+|                        |                        |                                              |"Panchromatic NAD",                           |
+|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"Pansharpen and Multispectral"                |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "Raster Dataset"       |                        |                                              |                                              |
+|                        |                        |                                              |                                              |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "NetCDF"               |                        |"All" (default)                               |"Default"(default),                           |
+|                        |                        |                                              |"Multiband Composite",                        |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "GRIB"                 |                        |"All" (default)                               |"Default"(default),                           |
+|                        |                        |                                              |"Multiband Composite",                        |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "HDF"                  |                        |"All" (default)                               |"Default"(default),                           |
+|                        |                        |                                              |"Multiband Composite",                        |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "ASTER"                |                        |"All" (default), "L1T",                       |"VNIR",                                       |
+|                        |                        |"L1B", "Surface Reflectance"                  |"SWIR",                                       |
+|                        |                        |"Surface Radiance",                           |"TIR",                                        |
+|                        |                        |"Surface emissivity"                          |"Multispectral" (default),                    |
+|                        |                        |"Surface Kinetic Temperature"                 |"TIR - Surface Emissivity",                   |                   
+|                        |                        |"DEM"                                         |"VNIR - Surface Reflectance",                 |
+|                        |                        |"Registered Radiance"                         |"SWIR - Surface Reflectance",                 |
+|                        |                        |                                              |"TIR - Surface kinetic Temperature",          |
+|                        |                        |                                              |"VNIR - Surface Radiance",                    |
+|                        |                        |                                              |"SWIF - Surface Radiance",                    |
+|                        |                        |                                              |"TIR - Surface Radiance",                     |
+|                        |                        |                                              |"VNIR - Registered Radiance",                 |
+|                        |                        |                                              |"VNIR - Registered Radiance",                 |
+|                        |                        |                                              |"SWIR - Registered Radiance",                 |
+|                        |                        |                                              |"TIR - Registered Radiance",                  |
+|                        |                        |                                              |"Global Digital Elevation Model (ASTGTM)",    |
+|                        |                        |                                              |"Digital Elevation Model",                    |
+|                        |                        |                                              |"All Bands"                                   |
+|                        |                        |                                              |                                              |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "DMCii"                |                        |"All" (default), "L1R", "L1T"                 |"Multispectral" (default),                    |
+|                        |                        |                                              |"ALL",                                        |
+|                        |                        |                                              |"Pseudocolor"                                 |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "RapidEye"             |                        |"All", "Level1B",                             |"Multispectral" (default)                     |
+|                        |                        |"Level3A", "Level3B"                          |                                              |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "SkySat"               |[0.41, 0.16, 0.13, 0.3] |"All", "Basic", "Ortho"                       |"All Bands",                                  |
+|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Panchromatic",                               |
+|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"All Bands",                                  |
+|                        |                        |                                              |"Skysat Pansharpen",                          |
+|                        |                        |                                              |"Visual"                                      |
+|                        |                        |                                              |"Pansharpen and Multispectral"                |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
 
-            # Usage Example: To create an image collection.
+.. code-block:: python
+
+            # Usage Example 1: To create an image collection.
             image_item_list = [<Item title:"YUN_0040.JPG" type:Image owner:admin>,
                                <Item title:"YUN_0041.JPG" type:Image owner:admin>,
                                <Item title:"YUN_0042.JPG" type:Image owner:admin>,
@@ -2520,6 +3035,16 @@ def create_image_collection(image_collection,
                                                       raster_type_name="UAV/UAS",
                                                       raster_type_params=params,
                                                       out_sr=32632)
+
+    .. code-block:: python
+
+        # Usage Example 2: This example creates a dynamic image layer in AGOL from the datasets detected in the input folder.
+
+        img_coll_result = create_image_collection(image_collection="imageCollection",
+                                                  input_rasters="C:\\data",
+                                                  raster_type_name="Raster Dataset",
+                                                  gis=gis,
+                                                  tiles_only=False)
 
     """
 
@@ -2577,7 +3102,18 @@ def add_image(image_collection,
     raster_type_name                     Required string. The name of the raster type to use for adding data to 
                                          the image collection.
 
-                                         Choice list: ['UAV/UAS', 'Aerial', 'ScannedAerial', 'Landsat 7 EMT+', 'Landsat 8', 'Sentinel-2', 'ZY3-SASMAC', 'ZY3-CRESDA']
+                                         Choice list: [
+                                         "ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV"
+                                         "GF-2 PMS", "GRIB", "HDF","IKONOS", "KOMPSAT-2", "KOMPSAT-3", "Landsat 1-5 MSS"
+                                         "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "NetCDF", "Pleiades-1"
+                                         "QuickBird", "RapidEye", "Raster Dataset", "Sentinel-2"," SkySat"
+                                         "SPOT 5", "SPOT 6", "SPOT 7", "UAV/UAS", "WordView-1"
+                                         "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "Aerial", "ScannedAerial",
+                                         "ZY3-CRESDA"]         
+                                         
+
+                                         Example:
+                                            "QuickBird"
     ------------------                   --------------------------------------------------------------------
     raster_type_params                   Optional dict. Additional raster type specific parameters.
         
@@ -2587,6 +3123,21 @@ def add_image(image_collection,
                                          Syntax: {"gps": [["image1.jpg", "10", "2", "300"], ["image2.jpg", "10", "3", "300"], ["image3.jpg", "10", "4", "300"]],
                                          "cameraProperties": {"Maker": "Canon", "Model": "5D Mark II", "FocalLength": 20, "PixelSize": 10, "x0": 0, "y0": 0, "columns": 4000, "rows": 3000},
                                          "constantZ": 300,"isAltitudeFlightHeight": "True","dem": {"url": "https://..."}
+
+                                         The dictionary can also contain productType, processingTemplate,
+                                         pansharpenType, filter, pansharpenWeights
+
+                                         Please check the table in create_image_collection documentation (Supported Raster Types), 
+                                         for more details about the product types,
+                                         processing templates, pansharpen weights for each raster type. 
+
+                                         - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", "Mean", "Gram-Schmidt"]
+                                         - Possible values for filter - [None, "Sharpen", "SharpenMore"]
+
+                                         Example:
+                                            {"productType":"All","processingTemplate":"Pansharpen",
+                                            "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
+                                            "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
     ------------------                   --------------------------------------------------------------------
     context                              Optional dict. The context parameter is used to provide additional input parameters.
 
@@ -3571,10 +4122,10 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean. 
-                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
 
-                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     .. code-block:: python
@@ -3645,14 +4196,15 @@ def build_multidimensional_transpose(input_multidimensional_raster,
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
-   delete_tranpose                           Optional boolean. Specifies whether to delete an existing transpose. 
-                                             (Parameter available from 10.9)
+    delete_tranpose                          Optional boolean. Specifies whether to delete an existing transpose.
 
                                                 - True - The transpose, if it exists, will be deleted. 
                                                          No new transpose will be built. 
 
                                                 - False - The transpose will be built. If there is an existing transpose, 
                                                           it will be overwritten. This is the default. 
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS object. the GIS on which this tool runs. If not specified, 
                                              the active GIS is used.
@@ -3927,10 +4479,10 @@ def aggregate_multidimensional_raster(input_multidimensional_raster,
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean. 
-                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
 
-                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -4051,9 +4603,11 @@ def generate_trend_raster(input_multidimensional_raster,
 
                                              - HARMONIC : Fits the pixel values for a variable along a harmonic trend line.
 
-                                             - MANN-KENDALL :
+                                             - MANN-KENDALL : Variable pixel values will be evaluated using the Mann-Kendall trend test. 
+                                                              Option available in ArcGIS Image Server 10.9 and higher.
                                              
-                                             - SEASONAL-KENDALL : 
+                                             - SEASONAL-KENDALL : Variable pixel values will be evaluated using the Seasonal-Kendall trend test.
+                                                                  Option available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
     frequency                                Optional Integer. 
 
@@ -4136,18 +4690,20 @@ def generate_trend_raster(input_multidimensional_raster,
     ------------------------------------     --------------------------------------------------------------------
     rmse                                     Optional Boolean. Default value is True. Specifies whether the root 
                                              mean square error (RMSE) of the trend fit line will be calculated.
-                                             Available in ArcGIS Image Server 10.8.1 and higher.
+                                             Parameter available  in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     r2                                       Optional Boolean. Default value is False. Specifies whether the 
                                              R-squared goodness-of-fit statistic for the trend fit line will be calculated. 
-                                             Available in ArcGIS Image Server 10.8.1 and higher.
+                                             Parameter available  in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     slope_p_value                            Optional Boolean. Default value is False. Specifies whether the 
                                              p-value statistic for the slope coefficient of the trend line will be calculated. 
-                                             Available in ArcGIS Image Server 10.8.1 and higher.
+                                             Parameter available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
     seasonal_period                          Optional String. Specifies the seasonal period. Default - "DAYS"
                                              Possible Options - "DAYS", "MONTHS"
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
@@ -4163,10 +4719,10 @@ def generate_trend_raster(input_multidimensional_raster,
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean. 
-                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
 
-                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -4345,10 +4901,10 @@ def predict_using_trend_raster(input_multidimensional_raster,
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean. 
-                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
 
-                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -4557,10 +5113,10 @@ def find_argument_statistics(input_raster,
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean. 
-                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
 
-                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -4712,10 +5268,10 @@ def linear_spectral_unmixing(input_raster,
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean. 
-                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
 
-                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -4936,10 +5492,10 @@ def subset_multidimensional_raster(input_multidimensional_raster,
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean. 
-                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
 
-                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -5178,6 +5734,7 @@ def optimal_path_as_line(input_destination_data,
                          path_type="EACH_ZONE", 
                          output_feature_name=None, 
                          context=None, 
+                         create_network_paths='DESTINATIONS_TO_SOURCES',
                          *, 
                          gis=None, 
                          future=False, 
@@ -5245,11 +5802,31 @@ def optimal_path_as_line(input_destination_data,
                                              Alternatively, you can pass in the name of the output feature layer  that should be created by this method to be used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not specified, the currently active connection
+    context                                  Optional dict. Context contains additional settings that affect task execution.
+    ------------------------------------     --------------------------------------------------------------------
+    create_network_paths                     Optional string or boolean. Specifies whether complete, and possibly 
+                                             overlapping, paths from the destinations to the sources are calculated 
+                                             or if  nonoverlapping network paths are created.
+
+                                             `DESTINATIONS_TO_SOURCES` (False): Complete paths from the destinations 
+                                              to the sources are calculated, which can be overlapping.  This is default.
+
+                                             `NETWORK_PATHS` (True): Nonoverlapping network paths are calculated.
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Keyword only parameter. Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return: Output Feature Layer Item
@@ -5264,6 +5841,7 @@ def optimal_path_as_line(input_destination_data,
                                                           destination_field=destination_field, 
                                                           path_type=path_type, 
                                                           context=context,
+                                                          create_network_paths=create_network_paths,
                                                           future=future,
                                                           **kwargs)
 
@@ -5397,6 +5975,13 @@ def optimal_region_connections(input_region_data,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return: Returns the following as a named tuple - output_optimum_network_features, output_neighbor_network_features
@@ -5532,19 +6117,25 @@ def analyze_changes_using_ccdc(input_multidimensional_raster=None,
     ------------------------------------     --------------------------------------------------------------------
     input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
                                              Portal Item can be passed.
+
+                                             The input multidimensional raster must have at least 12 slices, spanning at least 1 year.
     ------------------------------------     --------------------------------------------------------------------
     bands_for_detecting_change               Optional List. The band IDs to use for change detection.
                                              If no band IDs are provided, all the bands from the input raster dataset will be used.
+                                             Each element in the list should be within the range 1 to n where n is the 
+                                             number of bands of the input raster.
 
                                              Example:
-                                                  [0,1,2,3,4,6]
+                                                  [1,2,3,4,6]
     ------------------------------------     --------------------------------------------------------------------
     bands_for_temporal_masking               Optional List. The band IDs of the green band and the SWIR band, to be used to 
                                              mask for cloud, cloud shadow and snow. If band IDs are not provided, no 
                                              masking will occur.
+                                             Each element in the list should be within the range 1 to n where n is 
+                                             the number of bands of the input raster.
 
                                              Example:
-                                                [0,1,2]
+                                                [1,2]
     ------------------------------------     --------------------------------------------------------------------
     chi_squared_threshold                    Optional Float. The chi-square change probability threshold. If an 
                                              observation has a calculated change probability that is above this 
@@ -5620,11 +6211,18 @@ def analyze_changes_using_ccdc(input_multidimensional_raster=None,
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
 
-                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return: Imagery layer item
@@ -5676,6 +6274,23 @@ def detect_change_using_change_analysis_raster(input_change_analysis_raster=None
                                                max_number_of_changes=1, 
                                                output_name=None,
                                                context=None,
+                                               segment_date='BEGINNING_OF_SEGMENT', 
+                                               change_direction='ALL', 
+                                               filter_by_year=False, 
+                                               min_year=None, 
+                                               max_year=None, 
+                                               filter_by_duration=False, 
+                                               min_duration=None, 
+                                               max_duration=None, 
+                                               filter_by_magnitude=False, 
+                                               min_magnitude=None, 
+                                               max_magnitude=None,
+                                               filter_by_start_value=None,
+                                               min_start_value=None,
+                                               max_start_value=None,
+                                               filter_by_end_value=None,
+                                               min_end_value=None,
+                                               max_end_value=None,
                                                *,
                                                gis=None,
                                                future=False,
@@ -5683,31 +6298,36 @@ def detect_change_using_change_analysis_raster(input_change_analysis_raster=None
 
     """
     Function generates a raster containing pixel change information using the 
-    output change analysis raster from the arcgis.raster.analytics.analyze_changes_using_ccdc function.
+    output change analysis raster from the arcgis.raster.analytics.analyze_changes_using_ccdc 
+    or arcgis.raster.analytics.analyze_changes_using_landtrendr function.
     Function available in ArcGIS Image Server 10.8.1 and higher.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_change_analysis_raster             Required ImageryLayer object. The raster generated from the analyze_changes_using_ccdc .
+    input_change_analysis_raster             Required ImageryLayer object. The raster generated from the analyze_changes_using_ccdc or analyze_changes_using_landtrendr.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
     change_type                              Optional String. Specifies the change information to calculate.
 
-                                                - TIME_OF_LATEST_CHANGE - Each pixel will contain the date of the most recent change for that pixel in the time series.
+                                                - TIME_OF_LATEST_CHANGE - Each pixel will contain the date of the most recent change for that pixel in the time series. This is the default.
                                                 - TIME_OF_EARLIEST_CHANGE - Each pixel will contain the date of the earliest change for that pixel in the time series.
                                                 - TIME_OF_LARGEST_CHANGE - Each pixel will contain the date of the most significant change for that pixel in the time series.
                                                 - NUM_OF_CHANGES - Each pixel will contain the total number of times the pixel changed in the time series.
+                                                - TIME_OF_LONGEST_CHANGE - Each pixel will contain the date of change at the end of the longest transition segment in the time series. Option available in ArcGIS Image Server 10.9 and higher.
+                                                - TIME_OF_SHORTEST_CHANGE - Each pixel will contain the date of change at the end of the shortest transition segment in the time series. Option available in ArcGIS Image Server 10.9 and higher.
+                                                - TIME_OF_FASTEST_CHANGE - Each pixel will contain the date of change at the end of the transition that occurred most quickly. Option available in ArcGIS Image Server 10.9 and higher.
+                                                - TIME_OF_SLOWEST_CHANGE - Each pixel will contain the date of change at the end of the transition that occurred most slowly. Option available in ArcGIS Image Server 10.9 and higher.
 
                                              Example:
-                                                  "TIME_OF_LATEST_CHANGE"
+                                                "TIME_OF_LATEST_CHANGE"
     ------------------------------------     --------------------------------------------------------------------
     max_number_of_changes                    Optional Integer. The maximum number of changes per pixel that will 
-                                             be calculated when the change_type parameter is set to 
-                                             TIME_OF_LATEST_CHANGE, TIME_OF_EARLIEST_CHANGE, or TIME_OF_LARGEST_CHANGE. 
-                                             This number corresponds to the number of bands in the output raster. 
+                                             be calculated. This number corresponds to the number of bands in the output raster. 
                                              The default is 1, meaning only one change date will be calculated, 
                                              and the output raster will contain only one band.
+
+                                             This parameter is not available when the change_type parameter is set to NUM_OF_CHANGES.
 
                                              Example:
                                                 3
@@ -5764,17 +6384,198 @@ def detect_change_using_change_analysis_raster(input_change_analysis_raster=None
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
+    segment_date                             Optional string. Specifies whether to extract the date at the beginning 
+                                             of a change segment, or the end. 
+
+                                             This parameter is available only when the input change analysis raster is 
+                                             the output from the arcgis.raster.analytics.analyze_changes_using_landtrendr function.
+
+                                                - BEGINNING_OF_SEGMENT - Extract the date at the beginning of a change segment. This is the default.
+                                                - END_OF_SEGMENT - Extract the date at the end of a change segment. 
+
+                                             Example:
+                                                "END_OF_SEGMENT"
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    change_direction                         Optional string. The direction of change to be included in the analysis. 
+                                             For example, choose Increasing to only extract date of change information for 
+                                             periods where the change is in the positive or increasing direction. 
+
+                                             This parameter is available only when the input change analysis raster 
+                                             is the output from the analyze_changes_using_landtrendr function. 
+
+                                                - ALL - All change directions will be included in the output. This is the default.
+                                                - INCREASE - Only change in the positive or increasing direction will be included in the output.
+                                                - DECREASE - Only change in the negative or decreasing direction will be included in the output. 
+
+                                             Example:
+                                                "DECREASE"
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_year                           Optional boolean. Specifies whether to filter by a range of years.
+
+                                                - True - Filter results such that only changes that occurred within a specific range of years is included in the output. 
+                                                - False - Do not filter results by year. This is the default.
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_year                                 Optional int. The earliest year to use to filter results. This parameter 
+                                             is required if the filter_by_year parameter is set to True. 
+
+                                             Example:
+                                                2000
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_year                                 Optional int. The latest year to use to filter results. This parameter 
+                                             is required if the filter_by_year parameter is set to True. 
+
+                                             Example:
+                                                2005
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_duration                       Optional boolean. Specifies whether to filter by the change duration. 
+                                             This parameter is available only when the input change analysis raster 
+                                             is the output from the analyze_changes_using_landtrendr function.
+
+                                                - True - Filter results by duration such that only the changes that lasted a given amount of time will be included in the output. 
+                                                - False - Do not filter results by duration. This is the default. 
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_duration                             Optional float. The minimum number of consecutive years to include in 
+                                             the results. This parameter is required if the filter_by_duration parameter 
+                                             is set to True 
+
+                                             Example:
+                                                2
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_duration                             Optional float. The maximum number of consecutive years to include 
+                                             in the results. This parameter is required if the filter_by_duration 
+                                             parameter is set to True 
+
+                                             Example:
+                                                4
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_magnitude                      Optional boolean. Specifies whether to filter by change magnitude.
+
+                                                - True - Filter results by magnitude such that only the changes of a given magnitude will be included in the output.
+                                                - False - Do not filter results by magnitude. This is the default. 
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_magnitude                            Optional float. The minimum magnitude to include in the results. 
+                                             This parameter is required if the filter_by_magnitude 
+                                             parameter is set to True. 
+
+                                             Example:
+                                                0.25
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_magnitude                            Optional float. The maximum magnitude to include in the results. 
+                                             This parameter is required if the filter_by_magnitude parameter is set 
+                                             to True.
+
+                                             Example:
+                                                3
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_start_value                    Optional boolean. Specifies whether to filter by start value. This 
+                                             parameter is available only when the input change analysis raster 
+                                             is the output from the arcgis.raster.analytics.analyze_changes_using_landtrendr function. 
+
+                                                - True - Filter results by start value so that only the change that starts with value defined by a range.
+                                                - False - Do not filter by start value. This is the default.
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_start_value                          Optional float. The minimum value that defines the range of start value. 
+                                             This parameter is required if the filter_by_start_value parameter is set 
+                                             to True.
+
+                                             Example:
+                                                0.75
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_start_value                          Optional float. The maximum value that defines the range of start value. 
+                                             This parameter is required if the filter_by_start_value parameter is 
+                                             set to True.
+
+                                             Example:
+                                                0.9
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_end_value                      Optional boolean. Specifies whether to filter by end value. This parameter 
+                                             is available only when the input change analysis raster is the output 
+                                             from the arcgis.raster.analytics.analyze_changes_using_landtrendr function.
+
+                                                - True - Filter results by end value so that only the change that ends with value defined by a range.
+                                                - False - Do not filter results by end value. This is the default. 
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_end_value                            Optional float. The minimum value that defines the range of end value. 
+                                             This parameter is required if the filter_by_end_value parameter is set 
+                                             to True.
+
+                                             Example:
+                                                -0.12
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_end_value                            Optional float. The maximum value that defines the range of end value. 
+                                             This parameter is required if the filter_by_end_value parameter is set 
+                                             to True.
+
+                                             Example:
+                                                0.35
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
 
-                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return: Imagery layer item
@@ -5802,6 +6603,23 @@ def detect_change_using_change_analysis_raster(input_change_analysis_raster=None
     return gis._tools.rasteranalysis.detect_change_using_change_analysis_raster(input_change_analysis_raster=input_change_analysis_raster,
                                                                                 change_type=change_type,
                                                                                 max_number_of_changes=max_number_of_changes,
+                                                                                segment_date=segment_date, 
+                                                                                change_direction=change_direction, 
+                                                                                filter_by_year=filter_by_year, 
+                                                                                min_year=min_year, 
+                                                                                max_year=max_year, 
+                                                                                filter_by_duration=filter_by_duration, 
+                                                                                min_duration=min_duration, 
+                                                                                max_duration=max_duration, 
+                                                                                filter_by_magnitude=filter_by_magnitude, 
+                                                                                min_magnitude=min_magnitude, 
+                                                                                max_magnitude=max_magnitude,
+                                                                                filter_by_start_value=filter_by_start_value,
+                                                                                min_start_value=min_start_value,
+                                                                                max_start_value=max_start_value,
+                                                                                filter_by_end_value=filter_by_end_value,
+                                                                                min_end_value=min_end_value,
+                                                                                max_end_value=max_end_value,
                                                                                 output_name=output_name,
                                                                                 context=context,
                                                                                 future=future,
@@ -5874,12 +6692,6 @@ def manage_multidimensional_raster(target_multidimensional_raster,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
-    ------------------------------------     --------------------------------------------------------------------
-    tiles_only                               Keyword only parameter. Optional boolean. 
-                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
-
-                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
 
     :return:
@@ -6017,6 +6829,13 @@ def sample(input_rasters,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return: Feature Layer or Table object
@@ -6043,6 +6862,384 @@ def sample(input_rasters,
                                             future=future,
                                             **kwargs)
 
+
+def merge_multidimensional_rasters(input_multidimensional_rasters,
+                                   resolve_overlap_method='FIRST',
+                                   output_name=None, 
+                                   context=None,
+                                   *,
+                                   gis=None,
+                                   future=False,
+                                   **kwargs):
+
+    """
+    Function merges several multidimensional rasters spatially, or across variables and dimensions into one.  
+    Function available in ArcGIS Image Server 10.9 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_multidimensional_rasters           Required list of ImageryLayer object. List of input multidimensional rasters to be combined.
+    ------------------------------------     --------------------------------------------------------------------
+    resolve_overlap_method                   Optional string. Specifies the method used to handle overlapping pixels when merging rasters in the combined datasets. 
+
+                                               - FIRST - The pixel value in the overlapping areas will be the value from the first raster in the list of input rasters. This is the default.
+
+                                               - LAST - The pixel value in the overlapping areas will be the value from the last raster in the list of input rasters.
+
+                                               - MIN - The pixel value in the overlapping areas will be the minimum value of the overlapping pixels.
+
+                                               - MAX - The pixel value in the overlapping areas will be the maximum value of the overlapping pixels.
+
+                                               - MEAN - The pixel value in the overlapping areas will be the average of the overlapping pixels.
+
+                                               - SUM - The pixel value in the overlapping areas will be the total sum of the overlapping pixels.
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  context contains additional settings that affect task execution. 
+
+                                             context parameter overwrites values set through arcgis.env parameter
+                                         
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+                                            
+                                                Example: 
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6, 
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be 
+                                                projected into the output spatial reference.
+                                                
+                                                Example: 
+                                                    {"outSR": {spatial reference}}
+
+                                              - Snap Raster (snapRaster): The output raster will have its 
+                                                cells aligned with the specified snap raster.
+                                                        
+                                                Example: 
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                                specified by cell size.
+
+                                                Example:
+                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total 
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+
+                                              - Resampling Method (resamplingMethod): The output raster will be 
+                                                resampled to method specified.
+                                                The supported values are: Bilinear, Nearest, Cubic.
+
+                                                Example:
+                                                    {'resamplingMethod': "Nearest"} 
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ====================================     ====================================================================
+
+    :return:
+        The output imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1: Merge two multidimensional rasters with different variables..
+
+        merge_mdim_rasters_op = merge_multidimensional_rasters(input_multidimensional_rasters=[input_multidimensional_raster_var1, input_multidimensional_raster_var2],
+                                                               resolve_overlap_method="FIRST",
+                                                               gis=gis)
+
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.merge_multidimensional_rasters(input_multidimensional_rasters=input_multidimensional_rasters,
+                                                                    resolve_overlap_method=resolve_overlap_method,
+                                                                    output_name=output_name, 
+                                                                    context=context,
+                                                                    future=future,
+                                                                    **kwargs)
+
+def analyze_changes_using_landtrendr(input_multidimensional_raster,
+                                      processing_band=None, 
+                                      snapping_date='06-30', 
+                                      max_num_segments=5, 
+                                      vertex_count_overshoot=2, 
+                                      spike_threshold=0.9, 
+                                      recovery_threshold=0.25, 
+                                      prevent_one_year_recovery=True, 
+                                      increasing_recovery_trend=True, 
+                                      min_num_observations=6, 
+                                      best_model_proportion=1.25, 
+                                      pvalue_threshold=0.01, 
+                                      output_other_bands=False,
+                                      output_name=None,
+                                      context=None,
+                                      *,
+                                      gis=None,
+                                      future=False,
+                                      **kwargs):
+
+    """
+    Function evaluates changes in pixel values over time using the Landsat-based detection of trends 
+    in disturbance and recovery (LandTrendr) method and generates a change analysis raster containing the model results.
+    Function available in ArcGIS Image Server 10.9 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
+                                             Portal Item can be passed.
+    ------------------------------------     --------------------------------------------------------------------
+    processing_band                          Optional string. The band to use for segmenting the pixel value 
+                                             trajectories over time. Choose the band that will best capture the 
+                                             changes in the feature you want to observe. 
+
+                                             If no band value is specified and the input is multiband imagery, 
+                                             the first band in the multiband image will be used. 
+
+                                             Example:
+                                                  "Band_1"
+    ------------------------------------     --------------------------------------------------------------------
+    snapping_date                            Optional string. The date used to select a slice for each year in the 
+                                             input multidimensional dataset. The slice with the date closest to 
+                                             the snapping date will be selected. This parameter is required if 
+                                             the input dataset contains sub-yearly data. 
+
+                                             The default is "06-30" (or June 30), approximately midway through a calendar year. 
+
+                                             Example:
+                                                "06-30"
+    ------------------------------------     --------------------------------------------------------------------
+    max_num_segments                         Optional int. The maximum number of segments to be fitted to the 
+                                             time series for each pixel. The default is 5. 
+
+                                             Example:
+                                                5
+    ------------------------------------     --------------------------------------------------------------------
+    vertex_count_overshoot                   Optional int. The number of additional vertices beyond 
+                                             max_num_segments + 1 that can be used to fit the model during 
+                                             the initial stage of identifying vertices. Later in the modeling 
+                                             process, the number of additional vertices will be reduced to 
+                                             max_num_segments + 1. The default is 2. 
+
+                                             Example:
+                                                2
+    ------------------------------------     --------------------------------------------------------------------
+    spike_threshold                          Optional float. The threshold to use for dampening spikes or anomalies 
+                                             in the pixel value trajectory. The value must range between 0 and 1, 
+                                             where 1 means no dampening. The default is 0.9. 
+
+                                             Example:
+                                                0.9
+    ------------------------------------     --------------------------------------------------------------------
+    recovery_threshold                       Optional float. The recovery threshold value, in years. If a segment 
+                                             has a recovery rate that is faster than 1/recovery threshold, the segment 
+                                             is discarded and not included in the time series model. The value must 
+                                             range between 0 and 1. The default is 0.25. 
+
+                                             Example:
+                                                0.25
+    ------------------------------------     --------------------------------------------------------------------
+    prevent_one_year_recovery                Optional boolean. Specifies whether segments that exhibit a one year 
+                                             recovery will be excluded. 
+
+                                                - True - Segments that exhibit a one year recovery will be excluded. This is the default. 
+
+                                                - False - Segments that exhibit a one year recovery will not be excluded. 
+
+                                             Example:
+                                                True
+    ------------------------------------     --------------------------------------------------------------------
+    increasing_recovery_trend                Optional boolean. Specifies whether the recovery has an increasing (positive) trend. 
+
+                                                - True - The recovery has an increasing trend. This is the default. 
+
+                                                - False - The recovery has a decreasing trend. 
+
+                                             Example:
+                                                True
+    ------------------------------------     --------------------------------------------------------------------
+    min_num_observations                     Optional int. The minimum number of valid observations required to 
+                                             perform fitting. The number of years in the input multidimensional 
+                                             dataset must be equal to or greater than this value. The default is 6. 
+
+                                             Example:
+                                                6
+    ------------------------------------     --------------------------------------------------------------------
+    best_model_proportion                    Optional float. The best model proportion value. During the model 
+                                             selection process, the tool will calculate the p-value for each 
+                                             model and select a model that has the most vertices while 
+                                             maintaining the smallest (most significant) p-value based on this 
+                                             proportion value. A value of 1 means the model has the lowest 
+                                             p-value but may not have a high number of vertices. 
+                                             The default is 1.25. 
+
+                                             Example:
+                                                1.25
+    ------------------------------------     --------------------------------------------------------------------
+    pvalue_threshold                         Optional float. The p-value threshold for a model to be selected. 
+                                             After the vertices are detected in the initial stage of the model 
+                                             fitting, the tool will fit each segment and calculate the p-value 
+                                             to determine the significance of the model. On the next iteration, 
+                                             the model will decrease the number of segments by one and 
+                                             recalculate the p-value. This will continue and, if the p-value 
+                                             is smaller than the value specified in this parameter, the model 
+                                             will be selected and the tool will stop searching for a better model. 
+                                             If no such model is selected, the tool will select a model with a 
+                                             p-value smaller than the lowest p-value × best model proportion value. 
+                                             The default is 0.01. 
+
+                                             Example:
+                                                0.01
+    ------------------------------------     --------------------------------------------------------------------
+    output_other_bands                       Optional boolean. Specifies whether other bands will be included in the 
+                                             segmentation process.
+
+                                                - True - Other bands will be included. The segmentation and vertices information from the initial segmentation band specified in the processing_band parameter will also be fitted to the remaining bands in the multiband images. The model results will include the segmentation band first, then the remaining bands. 
+
+                                                - False - Other bands will not be included. This is the default. 
+
+                                             Example:
+                                                2
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional. If not provided, an Image Service is created by the method and used as the output raster. 
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution. 
+
+                                             context parameter overwrites values set through arcgis.env parameter
+                                         
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+                                            
+                                                Example: 
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6, 
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be 
+                                                projected into the output spatial reference.
+                                                
+                                                Example: 
+                                                    {"outSR": {spatial reference}}
+
+                                              - Snap Raster (snapRaster): The output raster will have its 
+                                                cells aligned with the specified snap raster.
+                                                        
+                                                Example: 
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                                specified by cell size.
+
+                                                Example:
+                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total 
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS object. If not specified, the currently active connection
+                                             is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             On AGOL, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output on AGOL, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter on enterprise and will generate Dynamic Imagery Layer by default. 
+    ====================================     ====================================================================
+
+    :return: Imagery layer item
+
+    .. code-block:: python
+
+            # Usage Example 1: 
+            analyze_changes_using_landtrendr_op = analyze_changes_using_landtrendr(input_multidimensional_raster=input_multidimensional_raster,
+                                                                               processing_band="Band_1")
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.analyze_changes_using_landtrendr(input_multidimensional_raster=input_multidimensional_raster,
+                                                                       processing_band=processing_band, 
+                                                                       snapping_date=snapping_date, 
+                                                                       max_num_segments=max_num_segments, 
+                                                                       vertex_count_overshoot=vertex_count_overshoot, 
+                                                                       spike_threshold=spike_threshold, 
+                                                                       recovery_threshold=recovery_threshold, 
+                                                                       prevent_one_year_recovery=prevent_one_year_recovery, 
+                                                                       increasing_recovery_trend=increasing_recovery_trend, 
+                                                                       min_num_observations=min_num_observations, 
+                                                                       best_model_proportion=best_model_proportion, 
+                                                                       pvalue_threshold=pvalue_threshold, 
+                                                                       output_other_bands=output_other_bands,
+                                                                       output_name=output_name,
+                                                                       context=context,
+                                                                       future=future,
+                                                                       **kwargs)
 
 #def transfer_files(input_files, 
 #                   output_datastore=None, 
@@ -6130,4 +7327,160 @@ def sample(input_rasters,
 #                                                    context=context,
 #                                                    future=future,
 #                                                    **kwargs)
+def zonal_statistics_as_table(input_zone_raster_or_features, 
+                              input_value_raster, 
+                              zone_field, 
+                              ignore_nodata=True, 
+                              statistic_type='ALL', 
+                              percentile_values=[90],
+                              process_as_multidimensional=False,
+                              percentile_interpolation_type="AUTO_DETECT",
+                              output_name=None, 
+                              context=None,
+                              *,
+                              gis=None,
+                              future=False,
+                              **kwargs):
 
+    """
+    Calculates  the values of a raster within the zones of another dataset and reports the results to a table.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_zone_raster_or_features            Required. The input that defines the zones. Both raster and feature 
+                                             can be used for the zone input.
+    ------------------------------------     --------------------------------------------------------------------
+    input_value_raster                       Required raster. Raster that contains the values on which to summarize a statistic.
+    ------------------------------------     --------------------------------------------------------------------
+    zone_field                               Required parameter.  The field that defines each zone. It can be an 
+                                             integer or a string field of the zone dataset.
+    ------------------------------------     --------------------------------------------------------------------
+    ignore_nodata                            Optional boolean. Denotes whether NoData values in the value input 
+                                             will influence the results of the zone that they fall within.
+                                             true - Within any particular zone, only cells that have a value in 
+                                             the input value raster will be used in determining the output value 
+                                             for that zone. NoData cells in the value raster will be ignored in 
+                                             the statistic calculation. This is the default.
+                                             
+                                             false - Within any particular zone, if any NoData cells exist in the 
+                                             value raster, it is deemed that there is insufficient information to 
+                                             perform statistical calculations for all the cells in that zone; 
+                                             therefore, the entire zone will receive the NoData value on the output raster.
+    ------------------------------------     --------------------------------------------------------------------
+    statistic_type                           Optional string.  Choose the statistic to calculate.The available options 
+                                             when the value raster is integer are ALL, MEAN, MAJORITY, MAXIMUM, MEDIAN, 
+                                             MINIMUM, MINORITY, PERCENTILE, RANGE, STD, SUM, VARIETY,  
+                                             MIN_MAX, MEAN_STD, and  MIN_MAX_MEAN.
+                                             If the value raster is float, the options are ALL, MEAN, MAXIMUM, MINIMUM, 
+                                             RANGE, STD, and SUM.
+
+                                             ALL- All of the statistics will be calculated. 
+                                             This is the default.
+
+                                             MEAN-Calculates the average of all cells in the raster layer to be summarized that
+                                             belong to the same zone as the output cell.
+
+                                             MAJORITY- Determines the value that occurs most often of all cells in the raster 
+                                             layer to be summarized that belong to the same zone as the output cell.
+
+                                             MAXIMUM- Determines the largest value of all cells in the raster layer 
+                                             to be summarized that belong to the same zone as the output cell.
+
+                                             MEDIAN- Determines the median value of all cells in the raster layer 
+                                             to be summarized that belong to the same zone as the output cell.
+
+                                             MINIMUM- Determines the smallest value of all cells in the raster 
+                                             layer to be summarized that belong to the same zone as the output cell.
+
+                                             MINORITY- Determines the value that occurs least often of all cells in 
+                                             the raster layer to be summarized that belong to the same zone as the 
+                                             output cell.
+
+                                             PERCENTILE - Calculates a percentile of all cells in the value raster 
+                                             that belong to the same zone as the output cell. The 90th percentile is calculated by default. 
+                                             You can specify other values (from 0 to 100) using the Percentile Values parameter.
+
+                                             RANGE- Calculates the difference between the largest and smallest value of all 
+                                             cells in the raster layer to be summarized that belong to the same zone 
+                                             as the output cell.
+
+                                             STD - Calculates the standard deviation of all cells in 
+                                             the raster layer to be summarized that belong to the same zone as the output cell.
+
+                                             SUM- Calculates the total value of all cells in the raster layer to be 
+                                             summarized that belong to the same zone as the output cell.
+
+                                             VARIETY- Calculates the number of unique values for all cells in the raster 
+                                             layer to be summarized that belong to the same zone as the output cell.
+
+                                             MIN_MAX - Both the minimum and maximum statistics are calculated.
+
+                                             MEAN_STD -  Both the mean and standard deviation statistics 
+                                             are calculated.
+
+                                             MIN_MAX_MEAN - The minimum, maximum and mean statistics are calculated.
+    ------------------------------------     --------------------------------------------------------------------
+    percentile_values                        Optional list of double values.
+                                             The percentile to calculate. The default is 90, for the 90th percentile.
+                                             The values can range from 0 to 100. The 0th percentile is essentially 
+                                             equivalent to the Minimum statistic, and the 100th Percentile is equivalent to 
+                                             Maximum. A value of 50 will produce essentially the same result as the Median statistic.
+                                             This option is only available if the Statistics Type parameter is set to PERCENTILE or ALL.
+    ------------------------------------     --------------------------------------------------------------------
+    process_as_multidimensional              Optional bool, Determines how the input rasters will be processed if they 
+                                             are multidimensional.
+                                             False - Statistics will be calculated from the current slice of a 
+                                             multidimensional image service. This is the default.
+                                             True - Statistics will be calculated for all dimensions (such as time or depth) 
+                                             of a multidimensional image service.
+    ------------------------------------     --------------------------------------------------------------------
+    percentile_interpolation_type            Optional str. Determines the type of percentile interpolation type when the 
+                                             number of values from the input value raster to be calculated are even.
+
+                                                - AUTO_DETECT - If the input value raster has integer pixel type, the 
+                                                                NEAREST method is used. If the input value raster 
+                                                                has floating point pixel type, then the LINEAR 
+                                                                method is used. This is the default.
+                                                - NEAREST - Nearest value to the desired percentile. In this case, 
+                                                            the output pixel type is same as that of the input value 
+                                                            raster.
+                                                - LINEAR - Weighted average of two surrounding values from the 
+                                                            desired percentile. In this case, the output pixel 
+                                                            type is floating point.
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional string. Name of the output feature item or table item to be created.
+                                             If not provided, a random name is generated by the method and used as 
+                                             the output name. 
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS object. If not specified, the currently active connection
+                                             is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ====================================     ====================================================================
+
+    :return: Feature Layer
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.rasteranalysis.zonal_statistics_as_table(input_zone_raster_or_features=input_zone_raster_or_features, 
+                                                               input_value_raster=input_value_raster, 
+                                                               output_name=output_name,
+                                                               zone_field=zone_field, 
+                                                               ignore_nodata=ignore_nodata, 
+                                                               statistic_type=statistic_type, 
+                                                               percentile_values=percentile_values,
+                                                               process_as_multidimensional=process_as_multidimensional,
+                                                               percentile_interpolation_type=percentile_interpolation_type,
+                                                               context=context,
+                                                               future=future,
+                                                               **kwargs)

@@ -92,6 +92,8 @@ class LicenseManager(BasePortalAdmin):
             for purchase in purchases:
                 licenses.append(License(gis=self._gis, info=purchase))
         return licenses
+
+
     #----------------------------------------------------------------------
     @property
     def bundles(self):
@@ -274,7 +276,7 @@ class Bundle(object):
         }
         us = []
         for user in users:
-            if isinstance(users, str):
+            if isinstance(user, str):
                 us.append(user)
             elif isinstance(user, User):
                 us.append(user.username)
@@ -314,7 +316,7 @@ class Bundle(object):
         self._users = None
         self._properties = None
         for user in users:
-            if isinstance(users, str):
+            if isinstance(user, str):
                 us.append(user)
             elif isinstance(user, User):
                 us.append(user.username)
@@ -428,6 +430,39 @@ class License(object):
                 user_entitlements += res['userEntitlements']
         return user_entitlements
     #----------------------------------------------------------------------
+    def check(self, user) -> list:
+        """
+        Checks if the entitlement is assigned or not.
+
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        user                required string, the name of the user you want to
+                            examine the entitlements for.
+        ===============     ====================================================
+
+        :returns: list
+        """
+        if hasattr(user, 'username'):
+            user = user.username
+        if 'listing' in self.properties:
+            item_id = self.properties['listing']['itemId']
+        else:
+            return []
+        #elif 'provision' in self.properties and 'itemId' in self.properties['provision']:
+        #    item_id = self.properties['provision']['itemId']
+
+        url = "%scontent/listings/%s/userEntitlements/%s" % (
+            self._gis._portal.resturl,
+            item_id,
+            user)
+        params = {'f' : 'json'}
+        resp = self._con.get(url, params)
+        if 'userEntitlements' in resp and resp['userEntitlements'] and \
+           'entitlements' in resp['userEntitlements']:
+            return resp['userEntitlements']['entitlements']
+        return []
+    #----------------------------------------------------------------------
     def user_entitlement(self, username):
         """
         checks if a user has the entitlement assigned to them
@@ -535,11 +570,11 @@ class License(object):
                                   entitlements=[],
                                   suppress_email=suppress_email)
         elif isinstance(entitlements, list):
-            es = self.user_entitlement(username=username)
+            es = self.check(user=username)
 
-            if 'entitlements' in es:
-                lookup = {e.lower() : e for e in es['entitlements']}
-                es = [e.lower() for e in es['entitlements']]
+            if len(es) > 0:
+                lookup = {e.lower() : e for e in es}
+                es = [e.lower() for e in es]
                 if isinstance(entitlements, str):
                     entitlements = [entitlements]
                 entitlements = list(set(es) - set([e.lower() for e in entitlements]))

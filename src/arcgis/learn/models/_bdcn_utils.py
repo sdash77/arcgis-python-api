@@ -189,7 +189,7 @@ def crop(data1, data2, crop_h, crop_w):
     data = data1[:, :, crop_h:crop_h+h2, crop_w:crop_w+w2]
     return data
 
-def cross_entropy_loss2d(inputs, targets, cuda=False, balance=1.1):
+def cross_entropy_loss2d(inputs, targets, balance=1.1):
 
     n, c, h, w = inputs.size()
     weights = np.zeros((n, c, h, w))
@@ -200,15 +200,14 @@ def cross_entropy_loss2d(inputs, targets, cuda=False, balance=1.1):
         valid = neg + pos
         weights[i, t == 1] = neg * 1. / valid
         weights[i, t == 0] = pos * balance / valid
-    weights = torch.Tensor(weights)
-    if cuda:
-        weights = weights.cuda()
+    weights = torch.Tensor(weights).to(targets.device)
+
     loss = nn.BCELoss(weights, reduction='sum')(inputs, targets.type(torch.float))
     return loss
 
 def bdcn_loss(out, labels):
     loss = 0
     for k in range(10):
-        loss += 0.5*cross_entropy_loss2d(out[k], labels, True)/labels.shape[0]#devide by batch size
-    loss += 1.1*cross_entropy_loss2d(out[-1], labels, True)/labels.shape[0]
+        loss += 0.5*cross_entropy_loss2d(out[k], labels)/labels.shape[0]#devide by batch size
+    loss += 1.1*cross_entropy_loss2d(out[-1], labels)/labels.shape[0]
     return loss

@@ -200,6 +200,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#Based on https://github.com/facebookresearch/detectron2/blob/master/projects/PointRend
+
 import numpy as np
 from typing import Dict
 import torch
@@ -329,6 +331,161 @@ def get_uncertain_point_coords_with_randomness(
     return point_coords
 
 
+def generate_regular_grid_point_coords(R, side_size, device):
+    """
+    Generate regular square grid of points in [0, 1] x [0, 1] coordinate space.
+
+    Args:
+        R (int): The number of grids to sample, one for each region.
+        side_size (int): The side size of the regular grid.
+        device (torch.device): Desired device of returned tensor.
+
+    Returns:
+        (Tensor): A tensor of shape (R, side_size^2, 2) that contains coordinates
+            for the regular grids.
+    """
+    aff = torch.tensor([[[0.5, 0, 0.5], [0, 0.5, 0.5]]], device=device)
+    r = F.affine_grid(aff, torch.Size((1, 1, side_size, side_size)), align_corners=False)
+    return r.view(1, -1, 2).expand(R, -1, -1)
+
+def point_sample_fine_grained_features(features_list, feature_scales, boxes, point_coords):
+    """
+    Get features from feature maps in `features_list` that correspond to specific point coordinates
+        inside each bounding box from `boxes`.
+
+    Args:
+        features_list (list[Tensor]): A list of feature map tensors to get features from.
+        feature_scales (list[float]): A list of scales for tensors in `features_list`.
+        boxes (list[Boxes]): A list of I Boxes  objects that contain R_1 + ... + R_I = R boxes all
+            together.
+        point_coords (Tensor): A tensor of shape (R, P, 2) that contains
+            [0, 1] x [0, 1] box-normalized coordinates of the P sampled points.
+
+    Returns:
+        point_features (Tensor): A tensor of shape (R, C, P) that contains features sampled
+            from all features maps in feature_list for P sampled points for all R boxes in `boxes`.
+        point_coords_wrt_image (Tensor): A tensor of shape (R, P, 2) that contains image-level
+            coordinates of P points.
+    """
+    cat_boxes = torch.cat(boxes, dim=0)
+    num_boxes = [len(b) for b in boxes]
+    point_coords_wrt_image = get_point_coords_wrt_image(cat_boxes, point_coords)
+    split_point_coords_wrt_image = torch.split(point_coords_wrt_image, num_boxes)
+    point_features = []
+    for idx_img, point_coords_wrt_image_per_image in enumerate(split_point_coords_wrt_image):
+        point_features_per_image = []
+        for idx_feature, feature_map in enumerate(features_list):
+            h, w = feature_map.shape[-2:]
+            scale = torch.tensor([w, h]) / feature_scales[idx_feature]
+            scale = scale.to(feature_map.device)
+            point_coords_scaled = point_coords_wrt_image_per_image / scale
+            point_features_per_image.append(
+                point_sample(
+                    feature_map[idx_img].unsqueeze(0),
+                    point_coords_scaled.unsqueeze(0),
+                    align_corners=False,
+                )
+                .squeeze(0)
+                .transpose(1, 0)
+            )
+        point_features.append(torch.cat(point_features_per_image, dim=1))
+
+    return torch.cat(point_features, dim=0), point_coords_wrt_image
+
+def get_point_coords_wrt_image(boxes_coords, point_coords):
+    """
+    Convert box-normalized [0, 1] x [0, 1] point cooordinates to image-level coordinates.
+
+    Args:
+        boxes_coords (Tensor): A tensor of shape (R, 4) that contains bounding boxes.
+            coordinates.
+        point_coords (Tensor): A tensor of shape (R, P, 2) that contains
+            [0, 1] x [0, 1] box-normalized coordinates of the P sampled points.
+
+    Returns:
+        point_coords_wrt_image (Tensor): A tensor of shape (R, P, 2) that contains
+            image-normalized coordinates of P sampled points.
+    """
+    with torch.no_grad():
+        point_coords_wrt_image = point_coords.clone()
+        point_coords_wrt_image[:, :, 0] = point_coords_wrt_image[:, :, 0] * (
+            boxes_coords[:, None, 2] - boxes_coords[:, None, 0]
+        )
+        point_coords_wrt_image[:, :, 1] = point_coords_wrt_image[:, :, 1] * (
+            boxes_coords[:, None, 3] - boxes_coords[:, None, 1]
+        )
+        point_coords_wrt_image[:, :, 0] += boxes_coords[:, None, 0]
+        point_coords_wrt_image[:, :, 1] += boxes_coords[:, None, 1]
+    return point_coords_wrt_image
+
+def roi_mask_point_loss(mask_logits, instances, points_coord):
+    """
+    Compute the point-based loss for instance segmentation mask predictions.
+
+    Args:
+        mask_logits (Tensor): A tensor of shape (R, C, P) or (R, 1, P) for class-specific or
+            class-agnostic, where R is the total number of predicted masks in all images, C is the
+            number of foreground classes, and P is the number of points sampled for each mask.
+            The values are logits.
+        instances (list[Instances]): A list of N Instances, where N is the number of images
+            in the batch. These instances are in 1:1 correspondence with the `mask_logits`. So, i_th
+            elememt of the list contains R_i objects and R_1 + ... + R_N is equal to R.
+            The ground-truth labels (class, box, mask, ...) associated with each instance are stored
+            in fields.
+        points_coords (Tensor): A tensor of shape (R, P, 2), where R is the total number of
+            predicted masks and P is the number of points for each mask. The coordinates are in
+            the image pixel coordinate space, i.e. [0, H] x [0, W].
+    Returns:
+        point_loss (Tensor): A scalar tensor containing the loss.
+    """
+    with torch.no_grad():
+        cls_agnostic_mask = mask_logits.size(1) == 1
+        total_num_masks = mask_logits.size(0)
+
+        gt_classes = []
+        gt_mask_logits = []
+        idx = 0
+        for instances_per_image in instances:
+            if instances_per_image['gt_masks'].shape[0] == 0:
+                continue
+
+            if not cls_agnostic_mask:
+                gt_classes_per_image = instances_per_image['gt_classes'].to(dtype=torch.int64)
+                gt_classes.append(gt_classes_per_image)
+
+            gt_bit_masks = instances_per_image['gt_masks']
+            h, w = instances_per_image['gt_masks'].shape[-2:]#instances_per_image.gt_masks.image_size
+            scale = torch.tensor([w, h], dtype=torch.float, device=gt_bit_masks.device)
+            points_coord_grid_sample_format = (
+                points_coord[idx : idx + instances_per_image['gt_masks'].shape[0]] / scale
+            )
+            idx += instances_per_image['gt_masks'].shape[0]
+            gt_mask_logits.append(
+                point_sample(
+                    gt_bit_masks.to(torch.float32).unsqueeze(1),
+                    points_coord_grid_sample_format,
+                    align_corners=False,
+                ).squeeze(1)
+            )
+
+    if len(gt_mask_logits) == 0:
+        return mask_logits.sum() * 0
+
+    gt_mask_logits = torch.cat(gt_mask_logits)
+    assert gt_mask_logits.numel() > 0, gt_mask_logits.shape
+
+    if cls_agnostic_mask:
+        mask_logits = mask_logits[:, 0]
+    else:
+        indices = torch.arange(total_num_masks)
+        gt_classes = torch.cat(gt_classes, dim=0)
+        mask_logits = mask_logits[indices, gt_classes]
+
+    point_loss = F.binary_cross_entropy_with_logits(
+        mask_logits, gt_mask_logits.to(dtype=torch.float32), reduction="mean"
+    )
+    return point_loss
+
 def PointRend_target_transform(targets, point_coords):
 
     point_targets = (
@@ -353,6 +510,19 @@ def c2_msra_fill(module: nn.Module):
     """
     # pyre-ignore
     nn.init.kaiming_normal_(module.weight, mode="fan_out", nonlinearity="relu")
+    if module.bias is not None:  # pyre-ignore
+        nn.init.constant_(module.bias, 0)
+
+def c2_xavier_fill(module: nn.Module):
+    """
+    Initialize `module.weight` using the "XavierFill" implemented in Caffe2.
+    Also initializes `module.bias` to 0.
+    Args:
+        module (torch.nn.Module): module to initialize.
+    """
+    # Caffe2 implementation of XavierFill in fact
+    # corresponds to kaiming_uniform_ in PyTorch
+    nn.init.kaiming_uniform_(module.weight, a=1)  # pyre-ignore
     if module.bias is not None:  # pyre-ignore
         nn.init.constant_(module.bias, 0)
 
@@ -436,7 +606,7 @@ class StandardPointHead(nn.Module):
     takes both fine-grained and coarse prediction features as its input.
     """
 
-    def __init__(self, num_classes, input_channels):
+    def __init__(self, num_classes, input_channels, coarse_pred_each_layer=False):
         """
         The following attributes are parsed from config:
             fc_dim: the output dimension of each FC layers
@@ -448,7 +618,7 @@ class StandardPointHead(nn.Module):
         fc_dim                      = 256
         num_fc                      = 3
         cls_agnostic_mask           = False
-        self.coarse_pred_each_layer = False
+        self.coarse_pred_each_layer = coarse_pred_each_layer
 
         fc_dim_in = input_channels + num_classes
         self.fc_layers = []

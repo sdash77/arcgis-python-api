@@ -1,15 +1,21 @@
 import os
 import sys
 import json
-from fastai.vision import *
 import arcgis
 from arcgis.learn import FeatureClassifier
 import arcpy
-import torch
 prf_root_dir = os.path.join(os.path.dirname(__file__), os.pardir)
 sys.path.append(prf_root_dir)
 import numpy as np
 from .util import normalize_batch
+
+try:
+    from fastai.vision import *
+    import torch
+    HAS_PYTORCH_FA = True
+
+except Exception as e:
+    HAS_PYTORCH_FA = False
 
 imagenet_stats = ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
@@ -25,6 +31,9 @@ def denorm(x, mean=imagenet_mean, std=imagenet_std):
 class ChildObjectDetector:
 
     def initialize(self, model, model_as_file):
+        if not HAS_PYTORCH_FA:
+            raise Exception('PyTorch (version 1.1.0 or above) and fast.ai (version 1.0.54 or above) libraries are not installed. Install PyTorch using "conda install pytorch=1.1.0 fastai=1.0.54".')
+
         if model_as_file:
             with open(model, 'r') as f:
                 self.emd = json.load(f)
@@ -47,7 +56,7 @@ class ChildObjectDetector:
         if "MetaDataMode" in self.emd and self.emd["MetaDataMode"] == "MultiLabeled_Tiles":
             required_parameters.append(
                 {
-                    'name': 'threshold',
+                    'name': 'score_threshold',
                     'dataType': 'numeric',
                     'value': 0.5,
                     'required': False,
@@ -66,7 +75,7 @@ class ChildObjectDetector:
         else:
             self.batch_size = int(self.emd['BatchSize'])
 
-        self.thresh = float(scalars.get('threshold', 0.5))   # Default 0.5 threshold
+        self.thresh = float(scalars.get('score_threshold', 0.5))   # Default 0.5 threshold
 
         return {
             # CropSizeFixed is a boolean value parameter (1 or 0) in the emd file, representing whether the size of
@@ -128,11 +137,12 @@ class ChildObjectDetector:
                 # Select the class labels >= threshold and convert them to a comma separated string
                 class_idxs = np.where(pred >= self.thresh)[0]
                 lbls = [class_map[idx] for idx in class_idxs]
-                lbls_string = ",".join(lbls)
+                lbls_string = ";".join(lbls)
                 labels.append(lbls_string)
 
                 # Select all confidences and convert them to a comma separated string
                 scores = [str(p.item()) for p in pred]
+                # scores = [str(pred[idx].tolist()) for idx in class_idxs]
                 scores_string = ";".join(scores)
                 confidences.append(scores_string)
 
@@ -144,6 +154,6 @@ class ChildObjectDetector:
             labels = [class_map[c] for c in class_idxs]
 
         # Appending this ring for all the features in the batch
-        rings = [[[[0, 0], [0, width - 1], [height - 1, width - 1], [height - 1, 0]]] for i in range(batch)]
+        rings = [[[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]] for i in range(batch)]
 
         return rings, confidences, labels

@@ -106,8 +106,25 @@ def aggregate_points(point_layer,
                                 context='{"extent":{"xmin":-8609738.077325115,"ymin":4743483.445485223,"xmax":-8594030.268012533,"ymax":4752206.821338257,"spatialReference":{"wkid":102100,"latestWkid":3857}}}')
 
     """
-    kwargs = locals()
+
     gis = _arcgis.env.active_gis if gis is None else gis
+    kwargs = {
+        "point_layer" : point_layer,
+        "polygon_layer" : polygon_layer,
+        "keep_boundaries_with_no_points" : keep_boundaries_with_no_points,
+        "summary_fields" : summary_fields,
+        "group_by_field" : group_by_field,
+        "minority_majority" : minority_majority,
+        "percent_points" : percent_points,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "future" : future,
+        "bin_type" : bin_type,
+        "bin_size" : bin_size,
+        "bin_size_unit" : bin_size_unit
+    }
     params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.aggregate_points,
                                      **kwargs)
     return gis._tools.featureanalysis.aggregate_points(**params)
@@ -327,9 +344,32 @@ def summarize_nearby(sum_nearby_layer,
                           shape_units=None,
                           output_name='nearest hospitals to schools')
     """
-    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.summarize_nearby,
+    kwargs = {
+        "sum_nearby_layer" : sum_nearby_layer,
+        "summary_layer" : summary_layer,
+        "near_type" : near_type,
+        "distances" : distances,
+        "units" : units,
+        "time_of_day" : time_of_day,
+        "time_zone_for_time_of_day" : time_zone_for_time_of_day,
+        "return_boundaries" : return_boundaries,
+        "sum_shape" : sum_shape,
+        "shape_units" : shape_units,
+        "summary_fields" : summary_fields,
+        "group_by_field" : group_by_field,
+        "minority_majority" :minority_majority,
+        "percent_shape" : percent_shape,
+        "summary_fields" : summary_fields,
+        "group_by_field" : group_by_field,
+        "minority_majority" : minority_majority,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "future" : future
+    }
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis.summarize_nearby,
                                      **kwargs)
     if isinstance(near_type, str):
         if near_type != 'StraightLine':
@@ -413,8 +453,19 @@ def summarize_center_and_dispersion(
 
     """
 
-    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
+    kwargs = {
+        "analysis_layer" : analysis_layer,
+        "summarize_type" : summarize_type,
+        "ellipse_size" : ellipse_size,
+        "weight_field" : weight_field,
+        "group_field" : group_field,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "future" : future
+    }
     params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.summarize_center_and_dispersion, **kwargs)
     return gis._tools.featureanalysis.summarize_center_and_dispersion(**params)
 #--------------------------------------------------------------------------
@@ -545,8 +596,25 @@ def summarize_within(sum_within_layer,
                                              output_name='summarize accidents within each county',
                                              context={"extent":{"xmin":-13160690.837046918,"ymin":4041586.5461609075,"xmax":-13132466.464352652,"ymax":4058001.397985127,"spatialReference":{"wkid":102100,"latestWkid":3857}}})
     """
-    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
+    kwargs = {
+        "sum_within_layer" : sum_within_layer,
+        "summary_layer" : summary_layer,
+        "sum_shape" : sum_shape,
+        "shape_units" : shape_units,
+        "summary_fields" : summary_fields,
+        "group_by_field" : group_by_field,
+        "minority_majority" : minority_majority,
+        "percent_shape" : percent_shape,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "estimate" : estimate,
+        "future" : future,
+        "bin_type" : bin_type,
+        "bin_size" : bin_size,
+        "bin_size_unit" : bin_size_unit
+    }
     params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.summarize_within, **kwargs)
     if not estimate is None:
         params['estimate'] = estimate
@@ -661,7 +729,21 @@ def join_features(target_layer,
                                                       output_name='join features',
                                                       context={"extent":{"xmin":-9375809.87305117,"ymin":4031882.3806860778,"xmax":-9370182.196843527,"ymax":4034872.9794178144,"spatialReference":{"wkid":102100,"latestWkid":3857}}}, )
     """
-    kwargs = locals()
+    kwargs = {
+        "target_layer" : target_layer,
+        "join_layer" : join_layer,
+        "spatial_relationship" : spatial_relationship,
+        "spatial_relationship_distance" : spatial_relationship_distance,
+        "spatial_relationship_distance_units" : spatial_relationship_distance_units,
+        "attribute_relationship" : attribute_relationship,
+        "join_operation" : join_operation,
+        "summary_fields" : summary_fields,
+        "output_name" : output_name,
+        "context" : context,
+        "gis" : gis,
+        "future" : future,
+        "join_type" : join_type
+    }
     gis = _arcgis.env.active_gis if gis is None else gis
     params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.join_features, **kwargs)
     if not estimate is None:

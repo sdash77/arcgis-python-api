@@ -34,7 +34,7 @@ import torch
 from torchvision import models
 
 import math
-from fastai.callbacks.hooks import hook_outputs
+from fastai.callbacks.hooks import hook_outputs, hook_output
 from fastai.vision.learner import create_body
 from fastai.callbacks.hooks import model_sizes
 from fastai.vision import flatten_model
@@ -210,7 +210,7 @@ class PSPNet(nn.Module):
     """
     Vanilla PSPNet
     """
-    def __init__(self, num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, pointrend=False):
+    def __init__(self, num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, pointrend=False, keep_dilation=False):
         super(PSPNet, self).__init__()        
         self.pointrend = pointrend
         self.vgg = False
@@ -231,7 +231,7 @@ class PSPNet(nn.Module):
             modify_dilation_index = -5
             self.vgg = True
         else:
-            if self.pointrend:
+            if self.pointrend and not keep_dilation:
                 modify_dilation_index = -1
             else:
                 modify_dilation_index = -2
@@ -245,7 +245,7 @@ class PSPNet(nn.Module):
             hooks = [hookable_modules[i-1] for i, module in enumerate(hookable_modules) if isinstance(module, nn.MaxPool2d)]
 
         else:
-            hooks = [hookable_modules[-2], hookable_modules[-3], hookable_modules[-4]]
+            hooks = [hookable_modules[-2], hookable_modules[-4]]
 
         custom_idx = 0
         for i, module in enumerate(hookable_modules[modify_dilation_index:]): 
@@ -299,7 +299,7 @@ class PSPNet(nn.Module):
                 point_num_channels = self.hook[-3].stored.shape[1] + self.hook[-4].stored.shape[1]
                 stride = chip_size / self.hook[-1].stored.shape[2]  
             else:
-                point_num_channels = self.hook[1].stored.shape[1] + self.hook[2].stored.shape[1]
+                point_num_channels = self.hook[1].stored.shape[1]
                 stride = chip_size / feature_sizes[-1][2]
 
             subdivision_steps = math.log(stride, 2)
@@ -317,15 +317,19 @@ class PSPNet(nn.Module):
         x = self.backbone(x)
         features = self.hook.stored
 
-        x = self.ppm(x)
-        x = self.final(x)
+        if self.vgg:
+            x = self.ppm(features[-1])
+            x = self.final(x)
+        else:
+            x = self.ppm(x)
+            x = self.final(x)
 
         if self.pointrend:
             
             if self.vgg:
                 pointrend_out = self.pointrend_head(x, [features[-4], features[-3]])
             else:
-                pointrend_out = self.pointrend_head(x, [features[2], features[1]])
+                pointrend_out = self.pointrend_head(x, [features[1]])
 
         result = F.interpolate(x, x_size[2:], mode='bilinear', align_corners=True)        
 
@@ -356,9 +360,9 @@ class DummyDistributed:
     def __getitem__(self, item):
         return eval('self.' + item)
 
-def _pspnet_learner(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, pointrend=False, **kwargs):
+def _pspnet_learner(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, pointrend=False, keep_dilation=False, **kwargs):
     "Build psp_net learner from `data` and `arch`."
-    model = to_device(PSPNet(data.c, backbone, chip_size, pyramid_sizes, pretrained, pointrend), data.device)
+    model = to_device(PSPNet(data.c, backbone, chip_size, pyramid_sizes, pretrained, pointrend, keep_dilation), data.device)
     if not _isnotebook() and arcgis_os.name=='posix':
         distributed_prep = DummyDistributed()
         _set_ddp_multigpu(distributed_prep)
@@ -370,13 +374,13 @@ def _pspnet_learner(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), 
         learn = Learner(data, model, **kwargs)
     return learn
 
-def _pspnet_learner_with_unet(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, unet_aux_loss=False, **kwargs):
+def _pspnet_learner_with_unet(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, unet_aux_loss=False, vggv2=True, **kwargs):
     "Build psunet learner from `data` and `arch`."
     model = unet.DynamicUnet(encoder=_pspnet_unet(data.c, backbone, chip_size, pyramid_sizes, pretrained), n_classes=data.c, last_cross=False)
 
     if unet_aux_loss:
         model = _add_auxillary_branch_to_psunet(model, chip_size, data.c)
-    else:
+    elif vggv2:
         model = PSPUnet(model)
     if not _isnotebook() and arcgis_os.name=='posix':
         distributed_prep = DummyDistributed()

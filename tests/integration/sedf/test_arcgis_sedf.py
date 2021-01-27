@@ -232,6 +232,15 @@ if HAS_ARCPY:
             df.spatial.set_geometry("SHAPE")
             self.assertTrue(_is_geoenabled(df))
         #----------------------------------------------------------------------
+        def test_df_geom_to_sdf_inplace(self):
+            """test initialization and returning dataframe from set_geometry method"""
+            from arcgis.geometry import Geometry, Polygon
+            df = pd.DataFrame(data=self._attributes, columns=self._col)
+            geoms = [Geometry(g) for g in self.geom_ptgeoms]
+            df['SHAPE'] = geoms
+            new_df = df.spatial.set_geometry("SHAPE", inplace=False)
+            self.assertTrue(_is_geoenabled(new_df))
+        #----------------------------------------------------------------------
         def test_spatial_propeties(self):
             """tests the properties off of the 'spatial' namespace"""
             from arcgis.geometry import Geometry, Polygon
@@ -701,6 +710,24 @@ if HAS_ARCPY:
             r = df.SHAPE.geom.snap_to_line(pt)
             assert r.dtype.name.lower() == "geometry"
             assert isinstance(r[0], Geometry)
+        # ----------------------------------------------------------------------
+        #@unittest.SkipTest
+        def test_to_methods_with_timedelta(self):
+            """test GeoAccessor 'to' methods with Timedelta column"""
+            from arcgis.features import FeatureSet, FeatureCollection
+            lst = [
+                [0, pd.Timedelta(20, unit='sec'),
+                 Geometry({'x': -92.31105, 'y': 38.906534, 'spatialReference': {'wkid': 4326}})],
+                [0, pd.Timedelta(2, unit='min'),
+                 Geometry({'x': -1.2, 'y': 1.2, 'spatialReference': {'wkid': 4326}})]
+            ]
+            sdf = pd.DataFrame(lst, columns=['FID', 'elapsed_time', 'SHAPE'])
+            ga = sdf.spatial
+            isinstance(ga, GeoAccessor)
+            fs = ga.to_featureset()
+            fc = ga.to_feature_collection(name='feature set with timedelta')
+            assert isinstance(fs, FeatureSet)
+            assert isinstance(fc, FeatureCollection)
         #------------------------------------------------------------------
         #@unittest.SkipTest
         def test_symmetric_difference(self):

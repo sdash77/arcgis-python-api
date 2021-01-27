@@ -1,17 +1,17 @@
 import os
 import json
-import torch
 import traceback
 
 HAS_TRANSFORMER = True
 
 try:
+    import torch
     from transformers import AutoModelForSequenceClassification
-    from ._arcgis_transformer import ArcGISTransformer
+    from ._arcgis_transformer import ArcGISTransformer, transformer_seq_length
 except Exception as e:
     transformer_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_TRANSFORMER = False
-
+    transformer_seq_length = 512
     class ArcGISTransformer:
         pass
 
@@ -27,17 +27,16 @@ backbone_models_map = {
                  'flaubert/flaubert_large_cased'),
     'xlm-roberta': ('xlm-roberta-base', 'xlm-roberta-large'),
     'longformer': ('allenai/longformer-base-4096',),
+    'mobilebert': ('google/mobilebert-uncased',),
     'electra': ('google/electra-base-discriminator', 'google/electra-base-generator'),
     'bart': ('facebook/bart-base', 'facebook/bart-large'),
     'camembert': ('camembert-base',)
 }
 
 transformer_architectures = ['BERT', 'RoBERTa', 'DistilBERT', 'ALBERT', 'FlauBERT', 'CamemBERT',
-                             'XLNet', 'XLM', 'XLM-RoBERTa', 'Bart', 'ELECTRA', 'Longformer']
+                             'XLNet', 'XLM', 'XLM-RoBERTa', 'Bart', 'ELECTRA', 'Longformer', 'MobileBERT']
 
 backbone_models_reverse_map = {x:key for key, val in backbone_models_map.items() for x in val}
-
-transformer_seq_length = 512
 
 
 class TransformerForTextClassification(ArcGISTransformer):
@@ -46,7 +45,7 @@ class TransformerForTextClassification(ArcGISTransformer):
 
     def __init__(self, architecture, pretrained_model_name, config=None, pretrained_model_path=None,
                  seq_len=transformer_seq_length):
-        super().__init__(architecture, pretrained_model_name, config, pretrained_model_path)
+        super().__init__(architecture, pretrained_model_name, config, pretrained_model_path, task="classification")
         self._seq_len = seq_len
         self._max_seq_len = None
 
@@ -87,7 +86,7 @@ class TransformerForTextClassification(ArcGISTransformer):
             return backbone_models_map[architecture.lower()]
         else:
             return f"Error, wrong architecture name - {architecture} supplied. " \
-                   f"PLease choose from {cls._supported_backbones}"
+                   f"Please choose from {cls._supported_backbones}"
 
     def save(self, model_path):
         """
@@ -167,7 +166,7 @@ class TransformerForTextClassification(ArcGISTransformer):
             self._transformer = AutoModelForSequenceClassification.\
                 from_pretrained(self._transformer_pretrained_model_name, config=self._config)
 
-    def predict_class(self, text, is_multilabel_problem=False, thresh=None):
+    def predict_class(self, text, device, is_multilabel_problem=False, thresh=None):
         """
         Method to predict the class labels for an input text
 
@@ -180,9 +179,9 @@ class TransformerForTextClassification(ArcGISTransformer):
 
         :return: the predicted label and the corresponding confidence score.
         """
-        device_type = next(self._transformer.parameters()).device.type
-        device = torch.device("cuda:0" if device_type == "cuda" else "cpu")
-        sequence = torch.tensor([self._tokenizer.encode(text, max_length=self._max_seq_len)]).to(device)
+        # device_type = next(self._transformer.parameters()).device.type
+        # device = torch.device("cuda:0" if device_type == "cuda" else "cpu")
+        sequence = torch.tensor([self._tokenizer.encode(text, max_length=self._max_seq_len, truncation=True)]).to(device)
         logits = self._transformer(sequence)[0]
         if is_multilabel_problem:
             results = torch.sigmoid(logits)[0]

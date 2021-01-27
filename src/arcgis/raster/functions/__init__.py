@@ -27,6 +27,7 @@ from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, 
 from .utility import _raster_input_rft, _get_raster_ra_rft, _input_rft, _find_object_ref, \
                      _python_variable_name
 from arcgis.features.layer import FeatureLayer as _FeatureLayer
+from .._RasterInfo import RasterInfo
 import logging
 _LOGGER = logging.getLogger(__name__)
 from datetime import datetime
@@ -94,15 +95,17 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     newlyr._temporal_filter = layer._temporal_filter
     newlyr._mosaic_rule = layer._mosaic_rule
     newlyr._filtered = layer._filtered
-    newlyr._extent = layer._extent
     newlyr._uses_gbl_function = layer._uses_gbl_function
     newlyr._raster_info = layer._raster_info
 
-    newlyr._lazy_token = layer._token
-    newlyr._refresh()
-    newlyr._hydrated = True
-    if layer._extent==layer.properties.extent:
-        newlyr._extent = newlyr.properties.extent
+    if hasattr(layer, "_lazy_token"):
+        newlyr._lazy_token = layer._lazy_token
+    else:
+        newlyr._lazy_token = layer._token
+
+    if layer._extent_set:
+        newlyr._extent = layer._extent
+        newlyr._extent_set = layer._extent_set
 
     return newlyr
 
@@ -139,15 +142,16 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
     newlyr._temporal_filter = layer._temporal_filter
     newlyr._mosaic_rule = layer._mosaic_rule
     newlyr._filtered = layer._filtered
-    newlyr._extent = layer._extent
     newlyr._uses_gbl_function = layer._uses_gbl_function
     newlyr._raster_info = layer._raster_info
 
-    newlyr._lazy_token = layer._token
-    newlyr._refresh()
-    newlyr._hydrated = True
-    if layer._extent==layer.properties.extent:
-        newlyr._extent = newlyr.properties.extent
+    if hasattr(layer, "_lazy_token"):
+        newlyr._lazy_token = layer._lazy_token
+    else:
+        newlyr._lazy_token = layer._token
+    if layer._extent_set:
+        newlyr._extent = layer._extent
+        newlyr._extent_set = layer._extent_set
     return newlyr
 
 def _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2=None, variable_name='Raster'):
@@ -158,7 +162,10 @@ def _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2=None, varia
         function_chain_ra['rasterFunctionArguments']['Raster2'] = raster_ra2
 
     if layer._datastore_raster:
-        newlyr= Raster(layer._uri, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        if isinstance(layer._uri, dict) or isinstance(layer._uri,bytes):
+            newlyr= Raster(function_chain_ra, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        else:
+            newlyr= Raster(layer._uri, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
     else:
         newlyr = Raster(layer._url, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
 
@@ -166,13 +173,18 @@ def _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2=None, varia
         try:            
             import arcpy, json
             arcpylyr=arcpy.ia.Apply(layer._uri,json.dumps(function_chain_ra))
-            newlyr = Raster(str(arcpylyr), is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
-        except:
-            pass
+            newlyr = Raster(arcpylyr, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        except Exception as err:
+            _LOGGER.warning(err)
 
     #newlyr.properties = layer.properties
     newlyr._engine_obj._fn = function_chain
     newlyr._engine_obj._fnra = function_chain_ra
+
+    if (hasattr(layer, '_datastore_raster')) and layer._datastore_raster:
+        if not isinstance(layer._uri, dict) and not isinstance(layer._uri,bytes):
+            newlyr._engine_obj._fn  = function_chain_ra
+
     newlyr._engine_obj._where_clause = layer._where_clause
     newlyr._engine_obj._spatial_filter = layer._spatial_filter
     newlyr._engine_obj._temporal_filter = layer._temporal_filter
@@ -180,28 +192,45 @@ def _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2=None, varia
     newlyr._engine_obj._filtered = layer._filtered
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
+    #newlyr._engine_obj.extent = layer.extent
+    if hasattr(layer, "_lazy_token"):
+        newlyr._engine_obj._lazy_token = layer._lazy_token
+    else:
+        if layer._engine!=_ArcpyRaster:
+            newlyr._lazy_token = layer._token
 
-    if layer._do_not_hydrate:
-        newlyr._engine_obj.token = layer.token
+    if layer._extent_set:
+        newlyr._engine_obj._extent = layer._extent
+        newlyr._engine_obj._extent_set = layer._extent_set
 
     return newlyr
 
 def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
 
     if layer._datastore_raster:
-        newlyr= Raster(layer._uri, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        if isinstance(layer._uri, dict) or isinstance(layer._uri,bytes):
+            newlyr= Raster(function_chain_ra, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        else:
+            newlyr= Raster(layer._uri, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
     else:
         newlyr = Raster(layer._url, is_multidimensional= layer._is_multidimensional, engine= layer._engine,  gis=layer._gis)
 
     if layer._engine==_ArcpyRaster:
-        import arcpy, json
-        arcpylyr=arcpy.ia.Apply(layer._uri,json.dumps(function_chain_ra))
-        newlyr = Raster(str(arcpylyr), is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
-
+        try:
+            import arcpy, json
+            arcpylyr=arcpy.ia.Apply(layer._uri,json.dumps(function_chain_ra))
+            newlyr = Raster(arcpylyr, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        except Exception as err:
+            _LOGGER.warning(err)
 
     #newlyr.properties = layer.properties
     newlyr._engine_obj._fn = function_chain
     newlyr._engine_obj._fnra = function_chain_ra
+
+    if (hasattr(layer, '_datastore_raster')) and layer._datastore_raster:
+        if not isinstance(layer._uri, dict) and not isinstance(layer._uri,bytes):
+            newlyr._engine_obj._fn  = function_chain_ra
+
     newlyr._engine_obj._where_clause = layer._where_clause
     newlyr._engine_obj._spatial_filter = layer._spatial_filter
     newlyr._engine_obj._temporal_filter = layer._temporal_filter
@@ -209,9 +238,16 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
     newlyr._engine_obj._filtered = layer._filtered
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
+    newlyr._engine_obj.extent = layer.extent
+    if hasattr(layer, "_lazy_token"):
+        newlyr._engine_obj._lazy_token = layer._lazy_token
+    else:
+        if layer._engine!=_ArcpyRaster:
+            newlyr._lazy_token = layer._token
 
-    if layer._do_not_hydrate:
-        newlyr._engine_obj.token = layer.token
+    if layer._extent_set:
+        newlyr._engine_obj._extent = layer._extent
+        newlyr._engine_obj._extent_set = layer._extent_set
 
     return newlyr
 
@@ -537,7 +573,13 @@ def band_arithmetic(raster, band_indexes=None, astype=None, method=0):
                    20 = IronOxide,
                    21 = FerrousMinerals,
                    22 = ClayMinerals,
-                   23 = WNDWI
+                   23 = WNDWI,
+                   24 = BAI,
+                   25 = NBR,
+                   26 = NDBI,
+                   27 = NDMI,
+                   28 = NDSI,
+                   29 = MNDWI
 
     :return: band_arithmetic applied to the input raster
     """
@@ -896,6 +938,94 @@ def wndwi(raster, band_indexes="2 5 6 0.5", astype=None):
     """
     return band_arithmetic(raster, band_indexes, astype, 23)
 
+def bai(raster, band_indexes="3 4", astype=None):
+    """
+    The Burn Area Index (BAI) uses the reflectance values in the red and NIR portion of the spectrum to identify
+    the areas of the terrain affected by fire.
+
+    BAI = 1/((0.1 -RED)^2 + (0.06 - NIR)^2)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Red NIR", e.g., "3 4" or [3,4]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 24)
+
+def nbr(raster, band_indexes="7 5", astype=None):
+    """
+    The Normalized Burn Ratio Index (NBRI) uses the NIR and SWIR bands to emphasize burned areas,
+    while mitigating illumination and atmospheric effects. Your images should be corrected to reflectance values
+    before using this index.
+
+    NBR = (NIR - SWIR) / (NIR+ SWIR)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "SWIR NIR", e.g., "7 5" or [7,5]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 25)
+
+def ndbi(raster, band_indexes="6 5", astype=None):
+    """
+    The Normalized Difference Built-up Index (NDBI) uses the NIR and SWIR bands to emphasize  man-made built-up areas.
+    It is ratio based to mitigate the effects of terrain illumination differences as well as atmospheric effects.
+
+    NDBI = (SWIR - NIR) / (SWIR + NIR)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "SWIR NIR", e.g., "6 5" or [6,5]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 26)
+
+def ndmi(raster, band_indexes="5 6", astype=None):
+    """
+    The Normalized Difference Moisture Index (NDMI) is sensitive to the moisture levels in vegetation.
+    It is used to monitor droughts as well as monitor fuel levels in fire-prone areas. It uses NIR and SWIR bands to
+    create a ratio designed to mitigate illumination and atmospheric effects.
+
+    NDMI = (NIR - SWIR1)/(NIR + SWIR1)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR SWIR1", e.g., "5 6" or [5,6]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 27)
+
+def ndsi(raster, band_indexes="4 6", astype=None):
+    """
+    The Normalized Difference Snow Index (NDSI) is designed to use MODIS (band 4 and band 6) and
+    Landsat TM (band 2 and band 5) for identification of snow cover while ignoring cloud cover. Since it is ratio based,
+    it also mitigates atmospheric effects.
+
+    NDSI = (Green - SWIR) / (Green + SWIR)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Green SWIR", e.g., "4 6" or [4,6]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 28)
+
+def mndwi(raster, band_indexes="3 6", astype=None):
+    """
+    The Modified Normalized Difference Water Index (MNDWI) uses green and SWIR bands for the enhancement 
+    of open water features. It also diminishes built-up area features that are often correlated with open
+    water in other indices.
+
+    MNDWI = (Green - SWIR) / (Green + SWIR)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Green SWIR", e.g., "3 6" or [3,6]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 29)
+
 def expression(raster, expression="(B3 - B1 / B3 + B1)", astype=None):
     """
     Use a single-line algebraic formula to create a single-band output. The supported operators are -, +, /, *, and unary -.
@@ -996,7 +1126,7 @@ def colormap(raster, colormap_name=None, colormap=None, colorramp=None, astype=N
     :param colorramp: Can be a string specifiying color ramp name like <Black To White|Yellow To Red|Slope|more..>
                       or a color ramp object. 
                       For more information about colorramp object, see color ramp object at
-                      http://resources.arcgis.com/en/help/arcgis-rest-api/#/Color_ramp_objects/02r3000001m0000000/)
+                      https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
     :param astype: output pixel type
     :return: the colorized raster
     """
@@ -1025,12 +1155,14 @@ def colormap(raster, colormap_name=None, colormap=None, colorramp=None, astype=N
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def composite_band(rasters, astype=None):
+def composite_band(rasters, astype=None, cellsize_type='MaxOf'):
     """
     Combines multiple images to form a multiband image.
 
     :param rasters: input rasters
     :param astype: output pixel type
+    :param cellsize_type: The cell size used to create the output raster.
+                          one of "FirstOf", "MinOf", "MaxOf "MeanOf", "LastOf"
     :return: the multiband image
     """
     layer, raster, raster_ra = _raster_input(rasters)
@@ -1045,6 +1177,20 @@ def composite_band(rasters, astype=None):
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
+
+    cellsize_types = {
+        "firstof" : 0,
+        "minof" : 1,
+        "maxof" : 2,
+        "meanof" : 3,
+        "lastof" : 4
+    }      
+
+    if cellsize_type is not None:
+        if isinstance(cellsize_type, str):
+            template_dict["rasterFunctionArguments"]['CellsizeType'] = cellsize_types[cellsize_type.lower()]
+        elif isinstance(cellsize_type,int):
+            template_dict["rasterFunctionArguments"]['CellsizeType'] = cellsize_type
 
     return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
 
@@ -1275,29 +1421,39 @@ def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, 
 
 
 def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_factor=None, z_offset=None, constant_z=None,
-              correct_geoid=None, astype=None):
+              correct_geoid=None, astype=None, tolerance=None, dem= None):
     """
     The geometric function transforms the image (for example, orthorectification) based on a sensor definition and a
     terrain model.This function was added at 10.1.The arguments for the geometric function are as follows:
 
-    :param raster: input raster
+    :param raster: The input raster.
     :param geodata_transforms: Please refer to the Geodata Transformations documentation for more details.
-    :param append_geodata_xform: boolean
-    :param z_factor: double
-    :param z_offset: double
-    :param constant_z: double
-    :param correct_geoid: boolean
-    :param astype: output pixel type
-    :return: the output raster
+    :param append_geodata_xform: Optional boolean. Indicates whether the geodata transformation is appended to the existing one from the input raster.
+    :param z_factor: Optional double. Satellite rational polynomial coefficients (RPCs) are scaled for 
+                     elevation datasets with vertical units in meters. If your elevation uses other 
+                     vertical units, enter a Z Factor to rescale to meters. For example, if your 
+                     elevation units are in feet, you would use a value of 0.3048 to convert your 
+                     elevation units from feet to meters.
+    :param z_offset: Optional double. The base value to be added to the elevation value in the DEM. 
+                     This could be used to offset elevation values that do not start at sea level.
+    :param constant_z: Optional double. Specify a constant elevation to use for the Geometric function.
+    :param correct_geoid: Optional boolean. Set it to True to apply the geoid (EGM96) correction to the z-values, 
+                          unless your DEM is already referenced to ellipsoidal heights.
+    :param tolerance: Optional double. Specify the maximum tolerable error in the geometric function, given in number of pixels.
+    :param dem: Optional Raster. Specify the DEM to use for the Geometric function
 
     """
 
-    layer, raster, raster_ra = _raster_input(raster)
+    layer1, raster_1, raster_ra1 = _raster_input(raster)
+
+    layer2=None
+    if dem is not None:
+        layer2, raster_2, raster_ra2 = _raster_input(raster, dem)
 
     template_dict = {
         "rasterFunction": "Geometric",
         "rasterFunctionArguments": {
-            "Raster": raster
+            "Raster": raster_1
         },
         "variableName": "Raster"
     }
@@ -1317,8 +1473,13 @@ def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_fact
         template_dict["rasterFunctionArguments"]["ConstantZ"] = constant_z
     if correct_geoid is not None:
         template_dict["rasterFunctionArguments"]["CorrectGeoid"] = correct_geoid
+    if tolerance is not None:
+        template_dict["rasterFunctionArguments"]["Tolerance"] = tolerance
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    if dem is not None:
+        template_dict["rasterFunctionArguments"]["DEM"] = raster_2
+        return _clone_layer(layer1, template_dict, raster_ra1, raster_ra2)
+    return _clone_layer(layer1, template_dict, raster_ra1)
 
 
 def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_power=None, psz_factor=None,
@@ -1391,7 +1552,7 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
     The arguments for the local function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param operation: int see reference at http://resources.arcgis.com/en/help/arcobjects-net/componenthelp/index.html#//004000000149000000
+    :param operation: int see reference at https://desktop.arcgis.com/en/arcobjects/latest/net/webframe.htm#esriGeoAnalysisFunctionEnum.htm
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param astype: output pixel type
@@ -2869,7 +3030,7 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
     :param colorramp: string, specifying color ramp name like <Black To White|Yellow To Red|Slope|more..>
                       or a color ramp object. 
                       For more information about colorramp object, see color ramp object at
-                      http://resources.arcgis.com/en/help/arcgis-rest-api/#/Color_ramp_objects/02r3000001m0000000/)
+                      https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
     :param hillshade_type: new at 10.8.1. int, 0 = traditional, 1 = multi - directional; default is 0
     :return: the output raster
 
@@ -2974,11 +3135,14 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
     :param kernel_rows: int (e.g. 3)
     :param stat_type: int or string.
                       There are four types of focal statistical functions:
-                      1=Min, 2=Max, 3=Mean, 4=StandardDeviation
+                      1=Min, 2=Max, 3=Mean, 4=StandardDeviation, 5=Median, 6=Majority, 7=Minority
                       -Min-Calculates the minimum value of the pixels within the neighborhood
                       -Max-Calculates the maximum value of the pixels within the neighborhood
                       -Mean-Calculates the average value of the pixels within the neighborhood. This is the default.
                       -StandardDeviation-Calculates the standard deviation value of the pixels within the neighborhood
+                      -Median-Calculates the median value of pixels within the neighborhood.
+                      -Majority-Calculates the majority value, or the value that occurs most frequently, of the pixels within the neighborhood.
+                      -Minority-Calculates the minority value, or the value that occurs least frequently, of the pixels within the neighborhood.
     :param columns: int (e.g. 3). The number of pixel rows to use in your focal neighborhood dimension.
     :param rows: int (e.g. 3). The number of pixel columns to use in your focal neighborhood dimension.
     :param fill_no_data_only: bool
@@ -2988,7 +3152,7 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
     .. note::
         The focal_statistics() function is different from the focal_stats() function in the following aspects:
 
-        The focal_statistics() function supports  Minimum, Maximum, Mean, and Standard Deviation.
+        The focal_statistics() function supports  Minimum, Maximum, Mean, and Standard Deviation, Median, Majority, Minority.  
         The focal_stats() function supports Mean, Majority, Maximum, Median, Minimum, Minority, Range, Standard deviation, Sum, and Variety.
 
         The focal_statistics() function supports only Rectangle.
@@ -3004,7 +3168,7 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
 
     layer, raster, raster_ra = _raster_input(raster)
 
-    statistics_types = ["Min", "Max", "Mean", "StandardDeviation"]
+    statistics_types = ["Min", "Max", "Mean", "StandardDeviation", "Median", "Majority", "Minority"]
 
     template_dict = {
         "rasterFunction": "Statistics",
@@ -4381,7 +4545,7 @@ def constant_raster(constant, raster_info, gis=None):
     Creates a virtual raster with a single pixel value.
 
     :param constant: Required list. The value of the constant to be added to the virtual raster.
-    :param raster_info: Required Raster info dictionary or ImageryLayer object to set the properties of the output raster.
+    :param raster_info: Required Raster info dictionary or arcgis.raster.RasterInfo object or ImageryLayer object to set the properties of the output raster.
                         if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
 
                         Example for RasterInfo dict - 
@@ -4424,6 +4588,8 @@ def constant_raster(constant, raster_info, gis=None):
         layer_raster_info = {}
         if isinstance(raster_info, ImageryLayer):
             layer_raster_info = copy.deepcopy(raster_info.raster_info)
+        elif isinstance(raster_info, RasterInfo):
+            layer_raster_info = copy.deepcopy(raster_info.to_dict())
         else:
             layer_raster_info = copy.deepcopy(raster_info)
         if "pixelType" in layer_raster_info.keys():
@@ -4450,7 +4616,7 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
     """
     Creates a virtual raster with random values for each cell.
 
-    :param raster_info: Required Raster info dictionary or ImageryLayer object to set the properties of the output raster.
+    :param raster_info: Required Raster info dictionary or arcgis.raster.RasterInfo object or ImageryLayer object to set the properties of the output raster.
                         if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
 
                         Example for RasterInfo dict - 
@@ -4588,6 +4754,8 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
         layer_raster_info = {}
         if isinstance(raster_info, ImageryLayer):
             layer_raster_info = copy.deepcopy(raster_info.raster_info)
+        elif isinstance(raster_info, RasterInfo):
+            layer_raster_info = copy.deepcopy(raster_info.to_dict())
         else:
             layer_raster_info = copy.deepcopy(raster_info)
         if "pixelType" in layer_raster_info.keys():
@@ -5696,17 +5864,35 @@ def compute_change(raster1,
 
 def detect_change_using_change_analysis_raster(raster, 
                                                change_type="TIME_OF_LATEST_CHANGE", 
-                                               max_number_of_changes=1):
+                                               max_number_of_changes=1,
+                                               segment_date="BEGINNING_OF_SEGMENT",
+                                               change_direction="ALL",
+                                               filter_by_year=False,
+                                               min_year=None,
+                                               max_year=None,
+                                               filter_by_duration=False,
+                                               min_duration=None,
+                                               max_duration=None,
+                                               filter_by_magnitude=False,
+                                               min_magnitude=None,
+                                               max_magnitude=None,
+                                               filter_by_start_value=False,
+                                               min_start_value=None,
+                                               max_start_value=None,
+                                               filter_by_end_value=False,
+                                               min_end_value=None,
+                                               max_end_value=None):
 
     """
     Function generates a raster containing pixel change information using the 
-    output change analysis raster from the arcgis.raster.analytics.analyze_changes_using_ccdc function.
+    output change analysis raster from the arcgis.raster.analytics.analyze_changes_using_ccdc function
+    or arcgis.raster.analytics.analyze_changes_using_landtrendr function.
     Function available in ArcGIS Image Server 10.8.1 and higher.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    raster                                   Required ImageryLayer object. The raster generated from the analyze_changes_using_ccdc.
+    raster                                   Required ImageryLayer object. The raster generated from the analyze_changes_using_ccdc or analyze_changes_using_landtrendr.
     ------------------------------------     --------------------------------------------------------------------
     change_type                              Optional String. Specifies the change information to calculate.
 
@@ -5714,19 +5900,196 @@ def detect_change_using_change_analysis_raster(raster,
                                                 - TIME_OF_EARLIEST_CHANGE (1) - Each pixel will contain the date of the earliest change for that pixel in the time series.
                                                 - TIME_OF_LARGEST_CHANGE (2) - Each pixel will contain the date of the most significant change for that pixel in the time series.
                                                 - NUM_OF_CHANGES (3) - Each pixel will contain the total number of times the pixel changed in the time series.
+                                                - TIME_OF_LONGEST_CHANGE (4) - Each pixel will contain the date of change at the end of the longest transition segment in the time series. Option available in ArcGIS Image Server 10.9 and higher.
+                                                - TIME_OF_SHORTEST_CHANGE (5) - Each pixel will contain the date of change at the end of the shortest transition segment in the time series. Option available in ArcGIS Image Server 10.9 and higher.
+                                                - TIME_OF_FASTEST_CHANGE (6) - Each pixel will contain the date of change at the end of the transition that occurred most quickly. Option available in ArcGIS Image Server 10.9 and higher.
+                                                - TIME_OF_SLOWEST_CHANGE (7) - Each pixel will contain the date of change at the end of the transition that occurred most slowly. Option available in ArcGIS Image Server 10.9 and higher.
 
                                              Example:
-                                                  "TIME_OF_LATEST_CHANGE"
+                                                "TIME_OF_LATEST_CHANGE"
     ------------------------------------     --------------------------------------------------------------------
     max_number_of_changes                    Optional Integer. The maximum number of changes per pixel that will 
-                                             be calculated when the change_type parameter is set to 
-                                             TIME_OF_LATEST_CHANGE, TIME_OF_EARLIEST_CHANGE, or TIME_OF_LARGEST_CHANGE. 
-                                             This number corresponds to the number of bands in the output raster. 
+                                             be calculated. This number corresponds to the number of bands in the output raster. 
                                              The default is 1, meaning only one change date will be calculated, 
                                              and the output raster will contain only one band.
 
+                                             This parameter is not available when the change_type parameter is set to NUM_OF_CHANGES.
+
                                              Example:
                                                 3
+    ------------------------------------     --------------------------------------------------------------------
+    segment_date                             Optional string. Specifies whether to extract the date at the beginning 
+                                             of a change segment, or the end. 
+
+                                             This parameter is available only when the input change analysis raster is 
+                                             the output from the arcgis.raster.analytics.analyze_changes_using_landtrendr function.
+
+                                                - BEGINNING_OF_SEGMENT - Extract the date at the beginning of a change segment. This is the default.
+                                                - END_OF_SEGMENT - Extract the date at the end of a change segment. 
+
+                                             Example:
+                                                "END_OF_SEGMENT"
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    change_direction                         Optional string. The direction of change to be included in the analysis. 
+                                             For example, choose Increasing to only extract date of change information for 
+                                             periods where the change is in the positive or increasing direction. 
+
+                                             This parameter is available only when the input change analysis raster 
+                                             is the output from the analyze_changes_using_landtrendr function.
+
+                                                - ALL - All change directions will be included in the output. This is the default. 
+                                                - INCREASE - Only change in the positive or increasing direction will be included in the output. 
+                                                - DECREASE - Only change in the negative or decreasing direction will be included in the output. 
+
+                                             Example:
+                                                "DECREASE"
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_year                           Optional boolean. Specifies whether to filter by a range of years. 
+
+                                                - True - Filter results such that only changes that occurred within a specific range of years is included in the output. 
+                                                - False - Do not filter results by year. This is the default.
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_year                                 Optional int. The earliest year to use to filter results. This parameter 
+                                             is required if the filter_by_year parameter is set to True. 
+
+                                             Example:
+                                                2000
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_year                                 Optional int. The latest year to use to filter results. This parameter 
+                                             is required if the filter_by_year parameter is set to True. 
+
+                                             Example:
+                                                2005
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_duration                       Optional boolean. Specifies whether to filter by the change duration. 
+                                             This parameter is available only when the input change analysis raster 
+                                             is the output from the analyze_changes_using_landtrendr function.
+
+                                                - True - Filter results by duration such that only the changes that lasted a given amount of time will be included in the output.
+                                                - False - Do not filter results by duration. This is the default. 
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_duration                             Optional float. The minimum number of consecutive years to include in 
+                                             the results. This parameter is required if the filter_by_duration parameter 
+                                             is set to True 
+
+                                             Example:
+                                                2
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_duration                             Optional float. The maximum number of consecutive years to include 
+                                             in the results. This parameter is required if the filter_by_duration 
+                                             parameter is set to True 
+
+                                             Example:
+                                                4
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_magnitude                      Optional boolean. Specifies whether to filter by change magnitude. 
+
+                                                - True - Filter results by magnitude such that only the changes of a given magnitude will be included in the output.
+                                                - False - Do not filter results by magnitude. This is the default. 
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_magnitude                            Optional float. The minimum magnitude to include in the results. 
+                                             This parameter is required if the filter_by_magnitude 
+                                             parameter is set to True. 
+
+                                             Example:
+                                                0.25
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_magnitude                            Optional float. The maximum magnitude to include in the results. 
+                                             This parameter is required if the filter_by_magnitude parameter is set 
+                                             to True.
+
+                                             Example:
+                                                3
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_start_value                    Optional boolean. Specifies whether to filter by start value. This 
+                                             parameter is available only when the input change analysis raster 
+                                             is the output from the arcgis.raster.analytics.analyze_changes_using_landtrendr function. 
+
+                                                - True - Filter results by start value so that only the change that starts with value defined by a range.
+                                                - False - Do not filter by start value. This is the default.
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_start_value                          Optional float. The minimum value that defines the range of start value. 
+                                             This parameter is required if the filter_by_start_value parameter is set 
+                                             to True.
+
+                                             Example:
+                                                0.75
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_start_value                          Optional float. The maximum value that defines the range of start value. 
+                                             This parameter is required if the filter_by_start_value parameter is 
+                                             set to True.
+
+                                             Example:
+                                                0.9
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    filter_by_end_value                      Optional boolean. Specifies whether to filter by end value. This parameter 
+                                             is available only when the input change analysis raster is the output 
+                                             from the arcgis.raster.analytics.analyze_changes_using_landtrendr function.
+
+                                                - True - Filter results by end value so that only the change that ends with value defined by a range.
+                                                - False - Do not filter results by end value. This is the default. 
+
+                                             Example:
+                                                True
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    min_end_value                            Optional float. The minimum value that defines the range of end value. 
+                                             This parameter is required if the filter_by_end_value parameter is set 
+                                             to True.
+
+                                             Example:
+                                                -0.12
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    max_end_value                            Optional float. The maximum value that defines the range of end value. 
+                                             This parameter is required if the filter_by_end_value parameter is set 
+                                             to True.
+
+                                             Example:
+                                                0.35
+
+                                             Parameter available in ArcGIS Image Server 10.9 and higher.
     ====================================     ====================================================================
 
     :return: Imagery layer
@@ -5749,7 +6112,11 @@ def detect_change_using_change_analysis_raster(raster,
             'TIME_OF_LATEST_CHANGE': 0,
             'TIME_OF_EARLIEST_CHANGE': 1,
             'TIME_OF_LARGEST_CHANGE' : 2,
-            'NUM_OF_CHANGES' : 3
+            'NUM_OF_CHANGES' : 3,
+            'TIME_OF_LONGEST_CHANGE' : 4,
+            'TIME_OF_SHORTEST_CHANGE' : 5,
+            'TIME_OF_FASTEST_CHANGE' : 6,
+            'TIME_OF_SLOWEST_CHANGE' : 7
         }
 
         if isinstance(change_type, str):
@@ -5761,6 +6128,83 @@ def detect_change_using_change_analysis_raster(raster,
 
     if max_number_of_changes is not None:
         template_dict["rasterFunctionArguments"]['MaxNumberChanges'] = max_number_of_changes
+
+    if segment_date is not None:
+        segment_date_types = {
+            'BEGINNING_OF_SEGMENT': 0,
+            'END_OF_SEGMENT': 1
+        }
+
+        if isinstance(segment_date, str):
+            in_segment_date = segment_date_types[segment_date.upper()]
+        else:
+            in_segment_date = segment_date
+
+        template_dict["rasterFunctionArguments"]['SegmentDate'] = in_segment_date
+
+    if change_direction is not None:
+        change_direction_types = {
+            'ALL': 0,
+            'INCREASE': 1,
+            'DECREASE':2
+        }
+
+        if isinstance(change_direction, str):
+            in_change_direction = change_direction_types[change_direction.upper()]
+        else:
+            in_change_direction = change_direction
+
+        template_dict["rasterFunctionArguments"]['ChangeDirection'] = in_change_direction
+
+    if isinstance(filter_by_year, bool):
+        template_dict["rasterFunctionArguments"]['FilterByYear'] = filter_by_year
+
+        if filter_by_year:
+            if min_year is not None:
+                template_dict["rasterFunctionArguments"]['MinimumYear'] = min_year
+
+            if max_year is not None:
+                template_dict["rasterFunctionArguments"]['MaximumYear'] = max_year
+
+    if isinstance(filter_by_duration, bool):
+        template_dict["rasterFunctionArguments"]['FilterByDuration'] = filter_by_duration
+
+        if filter_by_duration:
+            if min_duration is not None:
+                template_dict["rasterFunctionArguments"]['MinimumDuration'] = min_duration
+
+            if max_duration is not None:
+                template_dict["rasterFunctionArguments"]['MaximumDuration'] = max_duration
+
+    if isinstance(filter_by_magnitude, bool):
+        template_dict["rasterFunctionArguments"]['FilterByMagnitude'] = filter_by_magnitude
+
+        if filter_by_magnitude:
+            if min_magnitude is not None:
+                template_dict["rasterFunctionArguments"]['MinimumMagnitude'] = min_magnitude
+
+            if max_magnitude is not None:
+                template_dict["rasterFunctionArguments"]['MaximumMagnitude'] = max_magnitude
+
+    if isinstance(filter_by_start_value, bool):
+        template_dict["rasterFunctionArguments"]['FilterByStartValue'] = filter_by_start_value
+
+        if filter_by_start_value:
+            if min_start_value is not None:
+                template_dict["rasterFunctionArguments"]['MinimumStartValue'] = min_start_value
+
+            if max_start_value is not None:
+                template_dict["rasterFunctionArguments"]['MaximumStartValue'] = max_start_value
+
+    if isinstance(filter_by_end_value, bool):
+        template_dict["rasterFunctionArguments"]['FilterByEndValue'] = filter_by_end_value
+
+        if filter_by_end_value:
+            if min_end_value is not None:
+                template_dict["rasterFunctionArguments"]['MinimumEndValue'] = min_end_value
+
+            if max_end_value is not None:
+                template_dict["rasterFunctionArguments"]['MaximumEndValue'] = max_end_value
 
     return _clone_layer(layer, template_dict, raster_ra)
 
@@ -6414,7 +6858,7 @@ class RFT:
                   "or the template is invalid."
                   "(Ensure that the user account has access to Raster Utilities of the server. "
                   "To share the Raster utilities to all user accounts. Please refer Sharing Raster Utilities section in "
-                  "https://esri.github.io/arcgis-python-api/apidoc/html/arcgis.raster.functions.RFT.html)")
+                  "https://esri.github.io/arcgis-python-api/apidoc/html/arcgis.raster.functions.RFT.html )")
 
     @property
     def __doc__(self):
@@ -6472,14 +6916,8 @@ class RFT:
                     if layer._engine_obj.url is None:
                         return None
                     if layer._engine==_ArcpyRaster:
-                        try:
-                            import arcpy, json
-                            arcpylyr=arcpy.ia.Apply(layer._engine_obj._uri,json.dumps(layer._engine_obj._fnra))
-                            layer = Raster(str(arcpylyr), is_multidimensional= layer._engine_obj._is_multidimensional, engine= layer._engine, gis=layer._engine_obj._gis)
-                            return layer
+                        return _clone_layer_raster_without_copy(layer._engine_obj, self._template, self._template)
 
-                        except:
-                            raise
                 else:
                     self._template = layer._fnra
                     if layer.url is None:
@@ -6497,13 +6935,8 @@ class RFT:
                 if layer._engine_obj.url is None:
                     return None
                 if layer._engine==_ArcpyRaster:
-                    try:
-                        import arcpy, json
-                        arcpylyr=arcpy.ia.Apply(layer._engine_obj._uri,json.dumps(layer._engine_obj._fnra))
-                        layer = Raster(str(arcpylyr), is_multidimensional= layer._engine_obj._is_multidimensional, engine= layer._engine, gis=layer._engine_obj._gis)
-                        return layer
-                    except:
-                        raise
+                    return _clone_layer_raster_without_copy(layer._engine_obj, self._template, self._template)
+
             else:
                 self._template = layer._fnra
                 if layer.url is None:
@@ -6540,7 +6973,10 @@ class RFT:
         task_url, job_info, job_id = _analysis_job(gptool, task, params)
         job_info = _analysis_job_status(gptool, task_url, job_info)
         job_values = _analysis_job_results(gptool, task_url, job_info)
-        result = gptool._con.post(job_values["outputRasterFunction"]["url"],{},token=gptool._token)
+        if gis._con._product == "AGOL":
+            result = gptool._con.get(job_values["outputRasterFunction"]["url"],{},token=gptool._token)
+        else:
+            result = gptool._con.post(job_values["outputRasterFunction"]["url"],{},token=gptool._token)
         return result
 
     def _apply_argument(self, input_dict,arg_dict):
@@ -6919,7 +7355,10 @@ class RFT:
             complete_rft_dict = self._apply_argument(rft_dict,arg_dict_copy)
 
         if self._local_raster is not None:
-            newlyr = Raster(self._local_raster._url, is_multidimensional=self._local_raster._is_multidimensional,gis=self._local_raster._gis)
+            if self._local_raster._engine == _ArcpyRaster:
+                newlyr = Raster(self._local_raster._uri, is_multidimensional=self._local_raster._is_multidimensional,gis=self._local_raster._gis)
+            else:
+                newlyr = Raster(complete_rft_dict, is_multidimensional=self._local_raster._is_multidimensional, gis=self._gis)
             self._local_raster = None
             newlyr._engine_obj._fn = complete_rft_dict
             newlyr._engine_obj._fnra = complete_rft_dict

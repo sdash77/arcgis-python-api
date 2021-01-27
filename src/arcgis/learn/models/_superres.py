@@ -35,6 +35,7 @@ class SuperResolution(ArcGISModel):
     backbone                Optional function. Backbone CNN model to be used for
                             creating the base of the `UnetClassifier`, which
                             is `resnet34` by default.
+                            Compatible backbones: 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152'
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -43,7 +44,8 @@ class SuperResolution(ArcGISModel):
     :returns: `SuperResolution` Object
     """
     def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
-        super().__init__(data, backbone)
+        super().__init__(data, backbone, **kwargs)
+        self._check_dataset_support(data)
         feat_loss = create_loss(self._device.type)
         data.c = 3
         self.learn = unet_learner(data, arch=self._backbone, wd=1e-3, loss_func=feat_loss, callback_fns=LossMetrics, blur=True, norm_type=NormType.Weight)
@@ -78,8 +80,8 @@ class SuperResolution(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
+        emd_path                Required string. Path to Deep Learning Package
+                                (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from `prepare_data` function or None for
@@ -142,11 +144,12 @@ class SuperResolution(ArcGISModel):
         return {'psnr_metric': '{0:1.4e}'.format(psnr_ssim[0]),
                 'ssim_metric': '{0:1.4e}'.format(psnr_ssim[1])}
 
-    def _get_emd_params(self):
+    def _get_emd_params(self, save_inference_file):
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_superres"
-        _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+        _emd_template["InferenceFunction"] = "ArcGISSuperResolution.py"
+        _emd_template["ModelType"] = "SuperResolution"
         _emd_template["downsample_factor"] = self._data.downsample_factor
         return _emd_template
 
@@ -217,6 +220,15 @@ class SuperResolution(ArcGISModel):
         pred_img = self.learn.predict(img)[0]
         self.learn.data = temp_databunch
         return pred_img
+
+    @property
+    def  supported_datasets(self):
+        """ Supported dataset types for this model. """
+        return SuperResolution._supported_datasets()
+
+    @staticmethod
+    def _supported_datasets():
+        return ['Export_Tiles', 'superres'] 
 
 
 
