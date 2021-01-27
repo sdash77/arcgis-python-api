@@ -1267,10 +1267,10 @@ class ImageryLayer(Layer):
         newlyr._extent = self._extent
         newlyr._extent_set = self._extent_set
 
-        # newlyr._where_clause = self._where_clause
-        # newlyr._spatial_filter = self._spatial_filter
-        # newlyr._temporal_filter = self._temporal_filter
-        # newlyr._filtered = self._filtered
+        newlyr._where_clause = self._where_clause
+        newlyr._spatial_filter = self._spatial_filter
+        newlyr._temporal_filter = self._temporal_filter
+        newlyr._filtered = self._filtered
 
         return newlyr
 
@@ -4696,6 +4696,11 @@ class ImageryLayer(Layer):
     def __le__(self, other):
         from arcgis.raster.functions import less_than_equal
         return less_than_equal([self, other])
+
+
+    def __deepcopy__(self, memo=None):
+        newlyr = self._clone_layer()
+        return newlyr
 
         # Raster.Raster.__pos__ = unaryPos         # +v
 # Raster.Raster.__abs__ = Functions.Abs    # abs(v)

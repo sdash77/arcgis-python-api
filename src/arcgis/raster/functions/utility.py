@@ -186,7 +186,9 @@ def _get_raster(raster):
             raster = raster._fn
         else:
             oids = raster.filtered_rasters()
-            if oids is None:
+            if oids is None and raster.mosaic_rule is not None:
+                raster = _get_raster_ra(raster)
+            elif oids is None:
                 raster = '$$'
             elif len(oids) == 1:
                 raster = '$' + str(oids[0])
