@@ -2,7 +2,7 @@
 This is 10.8.1+ Functionality Tests for Notebook Server
 """
 import sys
-sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_3774\src")
+
 import unittest
 import os, json
 import arcgis
@@ -23,10 +23,10 @@ except:
                  "Cannot connect to Testing Server and/or Portal")
 class TestGISAdminAllTasks1081(unittest.TestCase):
     #----------------------------------------------------------------------
-    def test_user_search(self):    
+    def test_user_search(self):
         tasks = gis.users.me.tasks
         assert isinstance(tasks, TaskManager)
-        assert tasks.search(types="ExecuteNotebook,UpdateInsightsWorkbook")    
+        assert tasks.search(types="ExecuteNotebook,UpdateInsightsWorkbook")
     #----------------------------------------------------------------------
     def test_list_all_tasks(self):
         """tests listing all the tasks"""
@@ -62,7 +62,7 @@ class TestUserScheduleTasks1081(unittest.TestCase):
         user = gis.users.me
         st = user.tasks
         items = gis.content.search("owner: %s" % user.username, item_type='Notebook')
-        
+
         if len(items) > 0:
             task = st.create(title='props_test', task_type="ExecuteNotebook", item=items[0], cron='2 2 2 2 ?')
             assert task.enable(enabled=True)
@@ -90,7 +90,7 @@ class TestUserScheduleTasks1081(unittest.TestCase):
         isinstance(st, TaskManager)
         items = gis.content.search("owner: %s" % gis.users.me.username, item_type='Notebook')
         if len(items) > 0:
-            
+
             item = items[0]
             itemid = item.itemid
             t1 = st.create(title='t1', task_type="ExecuteNotebook", item=item, cron='* * * * ?')

@@ -44,7 +44,7 @@ class SnapShot(object):
 
         :returns: Item
         """
-        return self._sm._covert(
+        return self._sm._convert(
             item=self._item,
             snapshot=self.properties['resourceKey'],
             title=title)
@@ -126,7 +126,7 @@ class SnapshotManager(object):
 
         """
         if isinstance(item, Item) and item.type.lower() == 'notebook':
-            url = f"{self._url}/convert"
+            url = f"{self._url}/convertToItem"
             params = {
                 "f" : "json",
                 "itemId" : item.id,
@@ -157,15 +157,13 @@ class SnapshotManager(object):
 
 
         """
-
         if isinstance(item, Item) and item.type.lower() == 'notebook':
             url = f"{self._url}/download"
             params = {
-                "f" : "json",
-                "itemId" : item,
+                "itemId" : item.itemid,
                 "resourceKey" : snapshot,
             }
-            return self._gis._con.get(url, params)
+            return self._gis._con.post(url, params, try_json=False)
         else:
             raise ValueError("`item` must be a Notebook")
     #----------------------------------------------------------------------
