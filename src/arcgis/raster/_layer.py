@@ -2042,7 +2042,7 @@ class ImageryLayer(Layer):
                               .. note :: An image coordinate system ID can be specified
                               using 0:icsid; for example, 0:64. The extra 0: is used to avoid
                               conflicts with wkid
-        -----------------     --------------------------------------------------------------------
+        =================     ====================================================================
 
         :returns: dictionary, The result of this operation includes x and y values for the column
                   and row of each input geometry. It also includes a z value for the height at given
@@ -2074,7 +2074,7 @@ class ImageryLayer(Layer):
         muldidef              optional array. Multidimensional definition used for querying 
                               dimensional slices of the input image service.
                               See https://developers.arcgis.com/documentation/common-data-types/multidimensional-definition.htm
-        -----------------     --------------------------------------------------------------------
+        =================     ====================================================================
 
         .. code-block:: python
 
@@ -2116,7 +2116,7 @@ class ImageryLayer(Layer):
                               each variable. If not specified, it will return statistics for the 
                               whole image service. Eligible variable names can be queried from 
                               multidimensional_info property of the Imagery Layer object.
-        -----------------     --------------------------------------------------------------------
+        =================     ====================================================================
 
         .. code-block:: python
 
@@ -2159,20 +2159,20 @@ class ImageryLayer(Layer):
                               each variable. It will return histograms for the whole ImageryLayer
                               if not specified.
                               This parameter is available from 10.8.1
-        -----------------     --------------------------------------------------------------------
+        =================     ====================================================================
 
         :return:
             my_hist = imagery_layer.histograms(variable="water_temp")
 
             Structure of the return value:
-            [
-             {
-              "size":256,
-              "min":560,
-              "max":24568,
-              counts: [10,99,56,42200,125,....] #length of this list corresponds 'size'
-             }
+            [{"size":256,
+            "min":560,
+            "max":24568,
+            counts: [10,99,56,42200,125,....]
+            }
             ]
+
+            #length of this list corresponds 'size'
 
         """
         if self.properties.hasHistograms:
@@ -3131,53 +3131,53 @@ class ImageryLayer(Layer):
         * The mosaic method, e.g. how the selected rasters are ordered.
         * The mosaic operation, e.g. how overlapping pixels at the same location are resolved.
 
-        =================     ====================================================================
-        **Argument**          **Description**
-        -----------------     --------------------------------------------------------------------
-        method                optional string. Determines how the selected rasters are ordered.
-                              str, can be none,center,nadir,northwest,seamline,viewpoint,
-                              attribute,lock-raster
-                              required if method is: center,nadir,northwest,seamline, optional
-                              otherwise. If no method is passed "none" method is used, which uses
-                              the order of records to sort
-                              If sort_by and optionally sort_val parameters are specified,
-                              "attribute" method is used
-                              If lock_rasters are specified, "lock-raster" method is used
-                              If a viewpt parameter is passed, "viewpoint" method is used.
-        -----------------     --------------------------------------------------------------------
-        sort_by               optional string. field name when sorting by attributes
-        -----------------     --------------------------------------------------------------------
-        sort_val              optional string. A constant value defining a reference or base value
-                              for the sort field when sorting by attributes
-        -----------------     --------------------------------------------------------------------
-        lock_rasters          optional, an array of raster Ids. All the rasters with the given
-                              list of raster Ids are selected to participate in the mosaic. The
-                              rasters will be visible at all pixel sizes regardless of the minimum
-                              and maximum pixel size range of the locked rasters.
-        -----------------     --------------------------------------------------------------------
-        viewpt                optional point, used as view point for viewpoint mosaicking method
-        -----------------     --------------------------------------------------------------------
-        asc                   optional bool, indicate whether to use ascending or descending
-                              order. Default is ascending order.
-        -----------------     --------------------------------------------------------------------
-        where                 optional string. where clause to define a subset of rasters used in
-                              the mosaic, be aware that the rasters may not be visible at all
-                              scales
-        -----------------     --------------------------------------------------------------------
-        fids                  optional list of objectids, use the raster id list to define a
-                              subset of rasters used in the mosaic, be aware that the rasters may
-                              not be visible at all scales.
-        -----------------     --------------------------------------------------------------------
-        muldidef              optional array. multidemensional definition used for filtering by
-                              variable/dimensions.
-                              See https://developers.arcgis.com/documentation/common-data-types/multidimensional-definition.htm
-        -----------------     --------------------------------------------------------------------
-        op                    optional string, first,last,min,max,mean,blend,sum mosaic operation
-                              to resolve overlap pixel values: from first or last raster, use the
-                              min, max or mean of the pixel values, or blend them.
-        -----------------     --------------------------------------------------------------------
-        item_rendering_rule   optional item rendering rule, applied on items before mosaicking.
-        =================     ====================================================================
+        =======================  =======================================================================
+        **Argument**             **Description**
+        -----------------------  -----------------------------------------------------------------------
+            method               optional string. Determines how the selected rasters are ordered.
+                                 str, can be none,center,nadir,northwest,seamline,viewpoint,
+                                 attribute,lock-raster
+                                 required if method is: center,nadir,northwest,seamline, optional
+                                 otherwise. If no method is passed "none" method is used, which uses
+                                 the order of records to sort
+                                 If sort_by and optionally sort_val parameters are specified,
+                                 "attribute" method is used
+                                 If lock_rasters are specified, "lock-raster" method is used
+                                 If a viewpt parameter is passed, "viewpoint" method is used.
+        -----------------------  -----------------------------------------------------------------------
+        sort_by                  optional string. field name when sorting by attributes
+        -----------------------  -----------------------------------------------------------------------
+        sort_val                 optional string. A constant value defining a reference or base value
+                                 for the sort field when sorting by attributes
+        -----------------------  -----------------------------------------------------------------------
+        lock_rasters             optional, an array of raster Ids. All the rasters with the given
+                                 list of raster Ids are selected to participate in the mosaic. The
+                                 rasters will be visible at all pixel sizes regardless of the minimum
+                                 and maximum pixel size range of the locked rasters.
+        -----------------------  -----------------------------------------------------------------------
+        viewpt                   optional point, used as view point for viewpoint mosaicking method
+        -----------------------  -----------------------------------------------------------------------
+        asc                      optional bool, indicate whether to use ascending or descending
+                                 order. Default is ascending order.
+        -----------------------  -----------------------------------------------------------------------
+        where                    optional string. where clause to define a subset of rasters used in
+                                 the mosaic, be aware that the rasters may not be visible at all
+                                 scales
+        -----------------------  -----------------------------------------------------------------------
+        fids                     optional list of objectids, use the raster id list to define a
+                                 subset of rasters used in the mosaic, be aware that the rasters may
+                                 not be visible at all scales.
+        -----------------------  -----------------------------------------------------------------------
+        muldidef                 optional array. multidemensional definition used for filtering by
+                                 variable/dimensions.
+                                 See https://developers.arcgis.com/documentation/common-data-types/multidimensional-definition.htm
+        -----------------------  -----------------------------------------------------------------------
+        op                       optional string, first,last,min,max,mean,blend,sum mosaic operation
+                                 to resolve overlap pixel values: from first or last raster, use the
+                                 min, max or mean of the pixel values, or blend them.
+        -----------------------  -----------------------------------------------------------------------
+        item_rendering_rule      optional item rendering rule, applied on items before mosaicking.
+        =======================  =======================================================================
 
         :return: a mosaic rule defined in the format at
             https://developers.arcgis.com/documentation/common-data-types/mosaic-rules.htm
