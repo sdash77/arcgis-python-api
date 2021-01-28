@@ -22,6 +22,7 @@ from arcgis.mapping._basemap_definitions import basemap_dict
 from arcgis.mapping._scenelyrs import SceneLayer
 from arcgis.mapping.forms import FormCollection
 from arcgis._impl.common._utils import _lazy_property
+from arcgis.mapping import export_map
 try:
     from traitlets import HasTraits, observe
     from arcgis.widgets._mapview._traitlets_extension import ObservableDict
@@ -1606,6 +1607,52 @@ class WebMap(HasTraits, collections.OrderedDict):
             data["events"].append({"type":self.events.type, "actions":self.events.synced_widgets})
 
         return data
+
+    def print(self, file_format, dpi=92, output_dimensions=[500,500], extent=None, scale=None,
+              rotation=None, spatial_reference=None, layout_template="MAP_ONLY", time_extent=None,
+              layout_options=None):
+        """
+        Prints the WebMap object to a file.
+
+        Note: about configuration
+
+        Parameters
+
+        Layout options
+        :return:
+        """
+
+        # compose map options
+        if extent is None:
+            extent = self._extent
+        if spatial_reference is None:
+            spatial_reference = self._default_spatial_reference
+
+        map_options = {'extent': extent,
+                       'scale': scale,
+                       'rotation': rotation,
+                       'spatialReference': spatial_reference,
+                       'time': time_extent}
+
+        if layout_options:
+            map_options['layoutOptions']: layout_options
+
+        # compose export options
+        export_options = {'dpi': dpi,
+                          'outputSize': output_dimensions}
+
+        # compose combined JSON
+        print_options = {'mapOptions': map_options,
+                         'operationalLayers': self._webmapdict['operationalLayers'],
+                         'baseMap': self._basemap,
+                         'exportOptions': export_options}
+
+        # execute printing
+        result = export_map(web_map_as_json=print_options, format=file_format,
+                            layout_template=layout_template)
+
+        # process output
+        return result.url
 
 ###########################################################################
 class PackagingJob(object):
