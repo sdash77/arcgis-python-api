@@ -1128,5 +1128,6 @@ class TabularDataObject(object):
         class_object._encoder_mapping = encoder_mapping
         class_object._is_empty = True
         class_object._procs = procs
+        class_object.path = Path(os.path.abspath('.'))
 
         return class_object

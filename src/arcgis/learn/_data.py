@@ -6,7 +6,8 @@ import xml.etree.ElementTree as ET
 import math
 import sys
 import json 
-import logging      
+import logging
+import tempfile
 import types
 import traceback
 
@@ -423,6 +424,19 @@ def _extract_bands_tfm(tensor_batch, band_indices):
     y_batch = tensor_batch[1]
     return (x_batch, y_batch)
 
+def _make_folder(path):
+    path = os.path.abspath(path)
+    if not os.path.exists(os.path.dirname(path)):
+        _make_folder(os.path.dirname(path))
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+_models_dir = 'models'
+def _prepare_working_dir(path):
+    path = os.path.abspath(path)
+    _make_folder(os.path.join(path, _models_dir))
+    temp_folder = tempfile.TemporaryDirectory(prefix=os.path.join(path, 'arcgisTemp_'))
+    return temp_folder
 
 def prepare_textdata(
         path,
@@ -436,7 +450,8 @@ def prepare_textdata(
         batch_size=8,
         process_labels=False,
         remove_html_tags=False,
-        remove_urls=False
+        remove_urls=False,
+        working_dir=None
     ):
     """
     Prepares a text data object from the files present at data folder
@@ -492,6 +507,9 @@ def prepare_textdata(
     ---------------------   -------------------------------------------------
     remove_urls             Optional boolean. If true, remove urls from text.
                             Default value is False.
+    ---------------------   -------------------------------------------
+    working_dir             Optional string. Sets the default path to be used as
+                            a prefix for saving trained models and checkpoints.
     =====================   =================================================
 
     :returns: `TextData` object
@@ -515,7 +533,7 @@ def prepare_textdata(
         arcgis.env._processorType = "CPU"
 
     if task == "classification":
-        return TextDataObject.prepare_data_for_classification(
+        data = TextDataObject.prepare_data_for_classification(
             path,
             text_columns,
             label_columns,
@@ -530,7 +548,7 @@ def prepare_textdata(
         )
     
     elif task.lower() == "sequence_translation":
-        return TextDataObject.prepare_data_for_seq2seq(
+        data = TextDataObject.prepare_data_for_seq2seq(
             path,
             text_columns,
             label_columns,
@@ -548,6 +566,12 @@ def prepare_textdata(
         logger.error(f"Wrong task - {task} provided. This function can handle only `classification` and 'sequence_translation' task currently")
         raise Exception(f"Wrong task - {task} provided. This function can handle only `classification` and 'sequence_translation' task currently")
 
+    if working_dir is None:
+        working_dir = ''
+    temp_folder = _prepare_working_dir(working_dir)
+    data.path = Path(os.path.abspath(working_dir))
+    data._temp_folder = temp_folder
+    return data
 
 def prepare_tabulardata(
         input_features=None,
@@ -560,7 +584,8 @@ def prepare_tabulardata(
         val_split_pct=0.1,
         seed=42,
         batch_size=64,
-        index_field=None
+        index_field=None,
+        working_dir=None
     ):
 
     """
@@ -648,6 +673,9 @@ def prepare_tabulardata(
                             which will be used as index field for the data.
                             Used for Time Series, to visualize values on the
                             x-axis.
+    ---------------------   -------------------------------------------
+    working_dir             Optional string. Sets the default path to be used as
+                            a prefix for saving trained models and checkpoints.
     =====================   ===========================================
 
     :returns: `TabularData` object
@@ -701,7 +729,7 @@ def prepare_tabulardata(
                 else:
                     column_transforms_mapping[column].append(transform[1])
 
-    return TabularDataObject.prepare_data_for_layer_learner(
+    data = TabularDataObject.prepare_data_for_layer_learner(
         input_features,
         variable_predict,
         feature_variables=explanatory_variables,
@@ -716,6 +744,14 @@ def prepare_tabulardata(
         column_transforms_mapping=column_transforms_mapping
     )
 
+    if working_dir is None:
+        working_dir = ''
+    temp_folder = _prepare_working_dir(working_dir)
+    data.path = Path(os.path.abspath(working_dir))
+    data._temp_folder = temp_folder
+
+    return data
+
 
 def prepare_data(path,
                  class_mapping=None, 
@@ -727,6 +763,7 @@ def prepare_data(path,
                  seed=42, 
                  dataset_type=None, 
                  resize_to=None,
+                 working_dir=None,
                  **kwargs):
     """
     Prepares a data object from training sample exported by the 
@@ -804,6 +841,9 @@ def prepare_data(path,
                             size and then crops images of size equal to chip_size.
                             Note: If resize_to is less than chip_size, the
                             resize_to is used as chip_size.
+    ---------------------   -------------------------------------------
+    working_dir             Optional string. Sets the default path to be used as
+                            a prefix for saving trained models and checkpoints.
     =====================   ===========================================
 
     **Keyword Arguments**
@@ -1350,8 +1390,18 @@ def prepare_data(path,
             batch_size = 8
         encoding = kwargs.get("encoding", "UTF-8")
         ner_architecture = kwargs.get("ner_architecture", "spacy")
-        return _NERData(dataset_type=dataset_type, path=path, class_mapping=class_mapping, seed=seed,
+        data = _NERData(dataset_type=dataset_type, path=path, class_mapping=class_mapping, seed=seed,
                                 val_split_pct=val_split_pct, batch_size=batch_size, encoding=encoding)
+        if working_dir is not None:
+            data.working_dir = path = Path(os.path.abspath(working_dir))
+        else:
+            path = os.path.abspath(data.path)
+            data.working_dir = None
+        if os.path.isfile(path):
+            path = os.path.dirname(path)
+        data._temp_folder = _prepare_working_dir(path)
+
+        return data
     elif dataset_type == "PointCloud":
         from ._utils.pointcloud_data import Transform3d
         if transforms is None:
@@ -1360,7 +1410,11 @@ def prepare_data(path,
             transform_fn = None
         else:
             transform_fn = transforms
-        return pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type, transform_fn, **kwargs)
+        data = pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type, transform_fn, **kwargs)
+        if working_dir is not None:
+            data.path = Path(os.path.abspath(working_dir))
+        data._temp_folder = _prepare_working_dir(data.path)
+        return data
     elif dataset_type == "ImageCaptioning":
         from ._utils.image_captioning_data import prepare_captioning_dataset
         return prepare_captioning_dataset(path,
@@ -1770,5 +1824,11 @@ def prepare_data(path,
             logger.warning("Please check your dataset. " + str(not_label_count[0]) + " images dont have the corresponding label files.")
 
     data._image_space_used = _image_space_used
+
+    if working_dir is not None:
+        data.path = Path(os.path.abspath(working_dir))
+    else:
+        data.path = Path(os.path.dirname(os.path.abspath(data.path)))
+    data._temp_folder = _prepare_working_dir(data.path)
 
     return data

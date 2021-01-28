@@ -157,7 +157,7 @@ class SequenceToSequence(ArcGISModel):
         from fastai.layers import LabelSmoothingCrossEntropy, FlattenedLoss
         # loss_func = FlattenedLoss(LabelSmoothingCrossEntropy, axis=-1)
 
-        self.learn = SequenceToSequenceLearner(databunch, model, metrics=metrics, loss_func = loss_func)
+        self.learn = SequenceToSequenceLearner(databunch, model, metrics=metrics, loss_func = loss_func, path=data.path)
 
         if pretrained_path is not None:
             self.load(pretrained_path)
@@ -265,9 +265,6 @@ class SequenceToSequence(ArcGISModel):
         """
         if '\\' in str(name_or_path) or '/' in str(name_or_path):
             name_or_path = str(_get_emd_path(name_or_path))
-        else:
-            name_or_path = Path('models') / name_or_path
-            name_or_path = str(_get_emd_path(name_or_path))
         return super().load(name_or_path)
 
     def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, compute_metrics=True,
@@ -312,7 +309,14 @@ class SequenceToSequence(ArcGISModel):
         from ..models._arcgis_model import _create_zip
         zip_files = kwargs.pop('zip_files', True)
         overwrite = kwargs.pop('overwrite', False)
-        path = super().save(name_or_path, framework, publish=False, gis=None, compute_metrics=compute_metrics,
+        if '\\' in name_or_path or '/' in name_or_path:
+            path = name_or_path
+        else:
+            path = os.path.join(self._data.path, 'models', name_or_path)
+            if not os.path.exists(os.path.dirname(path)):
+                os.mkdir(os.path.dirname(path))
+
+        path = super().save(path, framework, publish=False, gis=None, compute_metrics=compute_metrics,
                             save_optimizer=save_optimizer, zip_files=False, **kwargs)
 
         self._save_df_to_html(path)

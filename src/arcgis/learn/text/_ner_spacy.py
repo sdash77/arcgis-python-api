@@ -59,7 +59,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
             self._is_empty = False
             self._address_tag = data._address_tag
             self._has_address = data._has_address
-            self.path = data.path
+            self.path = data.working_dir
             self.data = data
             self.train_ds = data.train_ds
             self.val_ds = data.val_ds
@@ -94,7 +94,10 @@ class _SpacyEntityRecognizer(ArcGISModel):
         num_it = 10
         smoothening = 4
 
-        self.model.to_disk('tmp')  # caches the current model state
+        checkpoint_path = os.path.join(self.path, os.path.basename(self._data._temp_folder.name), 'tmp')
+        if not os.path.exists(os.path.dirname(checkpoint_path)):
+            os.mkdir(os.path.dirname(checkpoint_path))
+        self.model.to_disk(checkpoint_path)  # caches the current model state
         if self._trained:
             temp_optimizer = self.optimizer  # preserving the current state of the model for later load
         trained = self._trained  # preserving the current state of the model for later load
@@ -116,8 +119,8 @@ class _SpacyEntityRecognizer(ArcGISModel):
         self._trained = trained
         self.recorder = recorder
         import spacy, shutil
-        self.model = spacy.load('tmp')
-        shutil.rmtree('tmp', ignore_errors=True)
+        self.model = spacy.load(checkpoint_path)
+        shutil.rmtree(checkpoint_path, ignore_errors=True)
         return lr
 
     def unfreeze(self):
@@ -364,6 +367,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
             self._publish_dlpk((emd_path / emd_path.stem).with_suffix('.dlpk'), gis=gis,
                                overwrite=kwargs.get('overwrite', False))
         print(f'Model has been saved to {str(emd_path)}')
+        return emd_path
 
     def load(self, name_or_path):
         """
