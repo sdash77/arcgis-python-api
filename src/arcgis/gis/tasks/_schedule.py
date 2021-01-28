@@ -451,7 +451,7 @@ class TaskManager(object):
         title                  Optional String. The title of the scheduled task.
         ------------------     --------------------------------------------------------------------
         parameters             Optional Dict. Optional collection of Key/Values that will be given
-                               to the notebook.  The dictionary will be added to the task run
+                               to the task.  The dictionary will be added to the task run
                                request. This parameter is required for `ExecuteSceneCook` tasks.
 
                                Example
