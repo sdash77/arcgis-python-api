@@ -70,7 +70,7 @@ class SystemManager(object):
     def recent_statistics(self):
         """
         returns statistics about the current state of the notebook server
-        
+
         :returns: Dictionary
         """
         try:
@@ -184,6 +184,37 @@ class SystemManager(object):
         """
         url = self._url + "/jobs"
         params = {'f' : 'json'}
+        res = self._con.get(url, params)
+        if "asyncJobs" in res:
+            return res["asyncJobs"]
+        return res
+    #----------------------------------------------------------------------
+    def list_jobs(self, num:int=100, details:bool=False) -> list:
+        """
+        This resource is a collection of all the administrative jobs
+        (asynchronous operations) created within your site. When operations
+        that support asynchronous execution are run, ArcGIS Notebook Server
+        creates a new job entry that can be queried for its current status
+        and messages. This is used for Notebook Server 10.9+
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        details                Optional Bool.  For 10.9+ Notebook Servers, to get the expanded
+                               details of a Job, set the details to `True`. `False` will provide
+                               back a shortened job status.
+        ------------------     --------------------------------------------------------------------
+        num                    Optional Integer.  The number of jobs to return.  The default is 100.
+                               This is only valid on 10.9+.
+        ==================     ====================================================================
+
+        :returns: list
+
+        """
+        url = self._url + "/jobs"
+        params = {'f' : 'json',
+                  'detail' : details,
+                  'num' : num}
         res = self._con.get(url, params)
         if "asyncJobs" in res:
             return res["asyncJobs"]

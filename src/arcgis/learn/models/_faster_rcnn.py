@@ -432,7 +432,7 @@ class FasterRCNN(ModelExtension):
             ds_tfms = (train_tfms, val_tfms)
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
-                sd = ImageList([], path=emd_path.parent.parent).split_by_idx([])
+                sd = ImageList([], path=emd_path.parent.parent.parent).split_by_idx([])
                 data = sd.label_const(0, label_cls=ObjectDetectionCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
             # Add 1 for background class
             data.c += 1

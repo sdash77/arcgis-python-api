@@ -170,7 +170,7 @@ def geocode_locations(input_layer,
 
     params = {
         "input_layer" : input_layer,
-        "geocode_service_url" : geocode_service_url,
+        #"geocode_service" : geocode_service,
         "geocode_parameters" : geocode_parameters,
     #    "source_country" : source_country,
         "category" : category,

@@ -39,6 +39,7 @@ def _get_learner_object(data, layers, emb_szs, ps, emb_drop, pretrained_path):
     if pretrained_path:
         learn = load_learner(os.path.dirname(pretrained_path),
                              os.path.basename(pretrained_path).split('.')[0] + "_exported.pth")
+        learn.path = data.path
         if not data._is_empty:
             learn.data = data._databunch
     else:
@@ -48,7 +49,7 @@ def _get_learner_object(data, layers, emb_szs, ps, emb_drop, pretrained_path):
 
         model = TabularModel(emb_szs, len(databunch.cont_names), out_sz=databunch.c, layers=layers, ps=ps, emb_drop=emb_drop,
                              y_range=None, use_bn=False)
-        learn = Learner(databunch, model, model_dir=tempfile.TemporaryDirectory().name)
+        learn = Learner(databunch, model, path=data.path)
 
     return learn
 
@@ -179,9 +180,11 @@ class FullyConnectedNetwork(ArcGISModel):
         """
 
         if '\\' in name_or_path or '/' in name_or_path:
-            path = name_or_path
+            path = os.path.abspath(name_or_path)
         else:
-            path = os.path.join(os.getcwd(), name_or_path)
+            path = os.path.join(self._data.path, 'models', name_or_path)
+            if not os.path.exists(os.path.dirname(path)):
+                os.mkdir(os.path.dirname(path))
 
         if not os.path.exists(path):
             os.mkdir(path)

@@ -318,7 +318,7 @@ class SingleShotDetector(ArcGISModel):
             backbone = emd["ModelParameters"].get("backbone", "ResNet50")
 
         data_passed = True
-        # Create an image databunch for when loading the model using emd (without training data)
+        # Create an image Staunch for when loading the model using emd (without training data)
         if data is None:
             data_passed = False
             train_tfms = []
@@ -328,7 +328,7 @@ class SingleShotDetector(ArcGISModel):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
                 
-                sd = ImageList([], path=emd_path.parent.parent).split_by_idx([])
+                sd = ImageList([], path=emd_path.parent.parent.parent).split_by_idx([])
                 data = sd.label_const(0, label_cls=ObjectDetectionCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
 
             data.chip_size = chip_size
