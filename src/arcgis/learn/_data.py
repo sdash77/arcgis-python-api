@@ -992,14 +992,6 @@ def prepare_data(path,
         if class_mapping.get(None):
             del class_mapping[None]
 
-        # Multispectral support from EMD 
-        # Not Implemented Yet
-        if emd.get('bands', None) is not None: 
-            _bands = emd.get['bands'] # Not Implemented
-            
-        if emd.get('imagery_type', None) is not None: 
-            _imagery_type = emd.get['imagery_type'] # Not Implemented        
-
     elif dataset_type in ['PASCAL_VOC_rectangles', 'KITTI_rectangles'] and not has_esri_files:
         if class_mapping is None:
             class_mapping = _get_class_mapping(path / 'labels', dataset_type=dataset_type)
@@ -1023,24 +1015,50 @@ def prepare_data(path,
         imagery_type = kwargs.get('imagery_type')
     elif _imagery_type is not None:
         imagery_type = _imagery_type
+
+    _infered = False
+    sensor_name = 'ms'
     if "InputRastersProps" in emd and kwargs.get('imagery_type', None) is None:
         sensor_name = emd["InputRastersProps"]["SensorName"]
         if len(emd["AllTilesStats"])!=3:
-            if not (len(emd["AllTilesStats"]) == 4 and emd["InputRastersProps"]["BandNames"][3].lower() == 'alpha'):
+            _infered = True
+            if len(emd["AllTilesStats"]) == 4 and emd["InputRastersProps"]["BandNames"][3].lower() == 'alpha':
+                imagery_type = 'RGB'
+            else:
                 imagery_type = sensor_name
-        else:
-            # Check by band names
-            band_mapping = {i:b.lower() for i, b in enumerate(emd["InputRastersProps"]["BandNames"])}
-            for b in emd["WellKnownBandNames (FYI, these band names can be used in ExtractBands)"]:
-                if b.lower() in [
-                    "red",
-                    "green",
-                    "blue"
-                ]:
-                    continue
-                if b.lower() in band_mapping:
-                    imagery_type = sensor_name
-                    break
+
+    if not _infered and HAS_GDAL and kwargs.get('imagery_type', None) is None:
+        ## Handle case where imagery has 3 bands but is not 8 bit unsigned, trigger multispectral workflow for that.
+        ## Handle case where imagery is exported with ArcGIS Pro < 2.7
+        ## https://gdal.org/api/raster_c_api.html?highlight=gdal%20gdt_byte#_CPPv4N12GDALDataType8GDT_ByteE
+        ##
+        try:
+            import gdal
+            _im_path = str(path/(line.split()[0]).replace('\\', os.sep))
+            ds = gdal.Open(_im_path)
+            if ds.RasterCount!=3 \
+                or ds.GetRasterBand(1).DataType != gdal.GDT_Byte:
+                imagery_type = sensor_name
+            _infered = True
+        except:
+            pass
+
+    if not _infered and "InputRastersProps" in emd and kwargs.get('imagery_type', None) is None:
+        # Check by band names
+        band_mapping = {i:b.lower() for i, b in enumerate(emd["InputRastersProps"]["BandNames"])}
+        for b in emd["WellKnownBandNames (FYI, these band names can be used in ExtractBands)"]:
+            if b.lower() in [
+                "red",
+                "green",
+                "blue"
+            ]:
+                continue
+            if b.lower() in band_mapping:
+                imagery_type = sensor_name
+                _infered = True
+                break
+
+        if not _infered:
             # Check by values
             for stat in emd["AllTilesStats"]:
                 if stat["Min"] < 0 or stat["Max"] > 255:

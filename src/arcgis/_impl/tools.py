@@ -5813,6 +5813,8 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         output_service = gis.content.create_service(output_name, create_params=create_parameters,
                                                           service_type="imageService", folder=folder)
+        if output_service is None:
+            raise RuntimeError("Unable to create service")
         description = "Image Service generated from running the " + task + " tool."
         item_properties = {
             "description": description,
@@ -8828,6 +8830,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         if "context" in context_param.keys():
             context = context_param['context']
 
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
         if not isinstance(input_raster, str) and not isinstance(input_raster, list):
             input_raster = self._layer_input(input_layer=input_raster)
 
@@ -8845,8 +8849,6 @@ class _RasterAnalysisTools(BaseAnalytics):
             if isinstance (input_raster,dict) and isinstance(raster_type, dict):
                 input_raster.update({"rasterType":raster_type})
 
-
-        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
         gpjob = self._tbx.copy_raster(input_raster=input_raster,
                                       output_name=output_raster,
                                       output_cellsize=output_cellsize,

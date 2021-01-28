@@ -830,7 +830,8 @@ class ArcGISModel(object):
         if getattr(self._data, '_dataset_type', None) == 'Classified_Tiles':
             if not getattr(self, "_is_edge_detection", False):
                 if not getattr(self, "_orient_data", False):
-                    _emd_template['per_class_metrics'] = self.per_class_metrics().to_json()
+                    if compute_metrics:
+                        _emd_template['per_class_metrics'] = self.per_class_metrics().to_json()
         return _emd_template
 
     @staticmethod

@@ -220,7 +220,7 @@ def expand_outputs(preds,trues):
     return encoded_trues
 
 
-def dice(preds, *targs, eps=1e-8, iou=False, soft=False, ignore_classes=[0], weighted=False, **kwargs, ):
+def dice(preds, *targs, eps=1e-8, iou=False, soft=False, ignore_classes=[0], weighted=False, average ='micro', **kwargs, ):
     """
     Calculates dice coefficient over a batch.
     =====================   ===========================================
@@ -249,6 +249,11 @@ def dice(preds, *targs, eps=1e-8, iou=False, soft=False, ignore_classes=[0], wei
     weighted=False          Optional Bool.
                             Not implemented
                             Default False.
+    ---------------------   -------------------------------------------
+    average='micro'         Optional str.
+                            'micro': micro dice coefficient is calculate.
+                            'macro': macro dice coefficient is calculate.
+                            Default 'micro'.                            
     =====================   ===========================================
     :returns: Dice Coefficient->Rank 0 torch.tensor
     """
@@ -283,19 +288,25 @@ def dice(preds, *targs, eps=1e-8, iou=False, soft=False, ignore_classes=[0], wei
         preds = preds.argmax(dim=1)
         preds = torch.nn.functional.one_hot(preds, classes).permute(0, 3, 1, 2)
 
-    preds = preds.contiguous().float().view(num, classes, -1)[:, keep_classes, :].view(num, -1)
-    encoded_targs = encoded_targs.float().view(num, classes, -1)[:, keep_classes, :].view(num, -1)
-    intersection = calculate_intersection(preds, encoded_targs, mode='mean')
-    union = calculate_union(preds, encoded_targs, intersection, mode='mean')
-
-    if not iou:
-        score = 2. * intersection / (union + intersection + eps)
-    else:
-        score = intersection / (union + eps)
-
-    score[union == 0.] = 1.
-    mean_per_img = score.mean(dim=0)
-    return mean_per_img.mean()
+    if average == 'macro':
+        preds= preds.contiguous().float().view(num, classes, -1)[:,keep_classes,:]
+        encoded_targs = encoded_targs.float().view(num, classes, -1)[:,keep_classes,:]
+        intersection = calculate_intersection(preds, encoded_targs, mode='per_class')
+        union = calculate_union(preds, encoded_targs, intersection, mode='per_class')
+        if not iou: score = 2. * intersection / (union + intersection + eps)
+        else: score = intersection / (union + eps)
+        return (score.sum(1)/((union!=0).sum(1).float()+1e-08)).mean()
+        
+    if average == 'micro':
+        preds= preds.contiguous().float().view(num, classes, -1)[:,keep_classes,:].view(num,-1)
+        encoded_targs = encoded_targs.float().view(num, classes, -1)[:,keep_classes,:].view(num,-1)
+        intersection = calculate_intersection(preds, encoded_targs, mode='mean')
+        union = calculate_union(preds, encoded_targs, intersection, mode='mean')
+        if not iou: score = 2. * intersection / (union + intersection + eps)
+        else: score = intersection / (union + eps)
+        score = score[union != 0.]
+        mean_per_img = score.mean(dim=0)
+        return mean_per_img
 
 # Below loss functions are implementations from https://github.com/simongrest/farm-pin-crop-detection-challenge 
 class FocalLoss(nn.Module):
@@ -316,11 +327,12 @@ class FocalLoss(nn.Module):
             return torch.mean(F_loss)
 
 class DiceLoss(nn.Module):
-    def __init__(self, crit, pct, weighted_dice):
+    def __init__(self, crit, pct, weighted_dice, dice_average):
         super().__init__()
         self.crit = crit
         self.pct = pct
         self.weighted_dice = weighted_dice
+        self.dice_average = dice_average
     
     def forward(self, inputs, targets, **kwargs):
         weighted = self.weighted_dice
@@ -332,7 +344,7 @@ class DiceLoss(nn.Module):
         dice_complement = self.crit(inputs, targets)
         if isinstance(inputs, tuple): # handling for aux_loss=True 
             inputs=inputs[0]
-        dice_c=dice(inputs, targets, soft=True, weighted=weighted, ignore_classes=ignore_mapped_class)
+        dice_c=dice(inputs, targets, soft=True, weighted=weighted, ignore_classes=ignore_mapped_class, average=self.dice_average)
         
         dice_loss = torch.clamp(1 - dice_c,0,1)
         loss = (1-self.pct) * dice_complement + self.pct * dice_loss

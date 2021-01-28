@@ -152,13 +152,12 @@ def calculate_metrics(preds, targs, mode,  ignore_classes=[]):
     """
     Calculates precision, recall and f1 scores.
     """
-    # import pdb; pdb.set_trace();
     preds, targs = prepare_output_for_metrics(preds, targs, ignore_classes, mode)
     intersection = calculate_intersection(preds, targs, mode)
-    union = calculate_union(preds, targs, intersection, mode)
-    TP, FP, FN = confusion_matrix(preds, targs, intersection, mode) 
-    precision = calculate_precision(TP, FP, eps=1e-08)
-    recall = calculate_recall(TP, FN, eps=1e-08)
+    # union = calculate_union(preds, targs, intersection, mode)
+    tp, fp, fn = confusion_matrix(preds, targs, intersection, mode) 
+    precision = calculate_precision(tp, fp, eps=1e-08)
+    recall = calculate_recall(tp, fn, eps=1e-08)
     f1 = calculate_f1(precision, recall, eps=1e-08)
     return precision, recall, f1
 
@@ -179,15 +178,17 @@ def per_class_metrics(self,
     """
     Computes per class precision, recall and f1 scores 
     """
+    mode = 'per_class'
     import pandas as pd
     dl = kwargs.get('dl', None)
     postprocess_type = kwargs.get('postprocess_type', None)
     ignore_mapped_class = kwargs.get('ignore_mapped_class', ignore_classes)
     keep_classes = [c for i,c in  enumerate(self._data.classes) if i not in ignore_mapped_class]
     model = self.learn.model.eval()
-    precision_list = []
-    recall_list = []
-    f1_list = []
+    valid_class_len = len(self._data.classes)-len(ignore_classes)
+    tp_counts=torch.zeros(valid_class_len)
+    fp_counts=torch.zeros(valid_class_len)
+    fn_counts=torch.zeros(valid_class_len)
     for batch in self._data.valid_dl if dl is None else dl:
         x, y = batch
         y = y.to('cpu')
@@ -197,22 +198,16 @@ def per_class_metrics(self,
             else:
                 predictions = model(x).detach().to('cpu')
             if postprocess_type == 'CD':
-                predictions, y = post_process_CD(predictions, 
-                                                 y, 
-                                                 n_classes=len(self._data.classes))
-
-            precision, recall, f1 = calculate_metrics(predictions, 
-                                                      y, 
-                                                      mode='per_class', 
-                                                      ignore_classes=ignore_mapped_class)
-            precision_list.append(precision.mean(0))
-            recall_list.append(recall.mean(0))
-            f1_list.append(f1.mean(0))
-
-    precision=torch.stack(tuple(precision_list)).mean(0)  
-    recall=torch.stack(tuple(recall_list)).mean(0)   
-    f1=torch.stack(tuple(f1_list)).mean(0)     
-
+                predictions, y = post_process_CD(predictions, y, n_classes=len(self._data.classes))
+            predictions , y = prepare_output_for_metrics(predictions, y, ignore_classes, mode)    
+            intersection = calculate_intersection(predictions , y, mode)
+            tp, fp, fn = confusion_matrix(predictions , y, intersection, mode)
+            tp_counts = tp_counts + tp.sum(0)
+            fp_counts = fp_counts + fp.sum(0)
+            fn_counts = fn_counts + fn.sum(0)
+    precision = calculate_precision(tp_counts, fp_counts)
+    recall = calculate_recall(tp_counts, fn_counts)
+    f1 = calculate_f1(precision, recall)
     columns = keep_classes
     df= pd.DataFrame(columns=columns)
     df.loc['precision'] = precision.tolist()
