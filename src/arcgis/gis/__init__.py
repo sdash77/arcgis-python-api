@@ -792,6 +792,12 @@ class GIS(object):
         self._product_version = [int(i) for i in self._portal.get_version().split('.')]
         return self._product_version
     #----------------------------------------------------------------------
+    def _registered_servers(self):
+        """returns servers registered with enterprise/portal"""
+        params = {'f' : 'json'}
+        url = f"{self._portal.resturl}portals/self/servers"
+        return self._con.get(url, params=params)
+    #----------------------------------------------------------------------
     @property
     def org_settings(self):
         """
