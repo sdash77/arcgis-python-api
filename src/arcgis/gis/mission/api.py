@@ -39,18 +39,30 @@ class MissionJob(object):
         """
         Returns the status
 
-        :returns: string when not finished, else a `Mission`
+        :returns: string
         """
         resp = self._con.get(self._url, {'f' : 'json'})
-        if resp['status'] != "COMPLETED":
-
+        try:
             return resp['status']
-        else:
-            url = f"{self._url.split('/jobs/')[0]}/missions/{resp['customAttributes']['missionId']}"
-            return Mission(url=url, gis=self._gis)
+        except:
+            return "UNKNOWN"
+    # ---------------------------------------------------------------------
+    def result(self) -> "Mission":
+        """Returns the results of the process"""
+        if self.status.upper() == 'COMPLETED':
+            resp = self._con.get(self._url, {'f' : 'json'})
+            if self.properties['type'] == "addMission":
+                url = f"{self._url.split('/jobs/')[0]}/missions/{resp['customAttributes']['missionId']}"
+                return Mission(url=url, gis=self._gis)
+            else:
+                return self.properties
+        return None
 
 ###########################################################################
 class MissionReport(object):
+    """
+
+    """
     _properties = None
     _url = None
     _con = None
@@ -125,7 +137,7 @@ class Mission(object):
                 self._dictionary_check(value)
             else:
                 if isinstance(value, str) and \
-                   value.lower().find('/featureserver/'):
+                   value.lower().find('/featureserver/') > -1:
                     i[key] = Service(url=value, server=self._gis)
     # ---------------------------------------------------------------------
     @cached_property
@@ -292,26 +304,3 @@ class MissionCatalog():
         return [Mission(url=f"{url}/{j['id']}", gis=self._gis) for j in resp["results"]]
 
 
-if __name__ == "__main__":
-    from arcgis.gis import GIS
-    gis = GIS(url="https://wdctyint0000399.esri.com/portal",
-              username="achapadmin",
-              password="Password.1234",
-              verify_cert=False,
-              trust_env=True)
-    mc = MissionCatalog(gis=gis)
-    print(mc.missions)
-    print(mc.missions[0].properties)
-    print(mc.jobs)
-    print(mc.properties)
-    import uuid
-    job = mc.create_mission(title=f'test_ms_{uuid.uuid4().hex[:3]}')
-    print(job.status)
-    print(job.status)
-    import time
-    while not isinstance(job.status, Mission) and job.status not in ['FAILED']:
-        print(job.status)
-        time.sleep(2)
-    print(job.status)
-    print(job.properties)
-    print()
