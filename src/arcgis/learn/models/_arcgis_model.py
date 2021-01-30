@@ -87,6 +87,17 @@ def nostdout():
     sys.stdout = save_stdout
 
 
+def _get_device():
+
+    if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif getattr(arcgis.env, "_processorType", "") == "CPU":
+        device = torch.device("cpu")
+    else:
+        device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
+    return device
+    
 class _EmptyDS(object):
     def __init__(self, size):
         self.size = (size, size)

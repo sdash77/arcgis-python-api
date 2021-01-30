@@ -1,6 +1,6 @@
 from pathlib import Path
 import json
-from ._arcgis_model import _EmptyData, _change_tail, ArcGISModel
+from ._arcgis_model import _EmptyData, _change_tail, ArcGISModel, _get_device
 from ._codetemplate import code, image_classifier_prf
 import warnings
 import arcgis
@@ -247,7 +247,7 @@ class ModelExtension(ArcGISModel):
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore", UserWarning)
                     sd = ImageList([], path=emd_path.parent.parent).split_by_idx([])
-                    data = sd.label_const(0, label_cls=ObjectDetectionCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
+                    data = sd.label_const(0, label_cls=ObjectDetectionCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch(device=_get_device()).normalize(imagenet_stats)
                 # Add 1 for background class
                 data.c += 1
             else:

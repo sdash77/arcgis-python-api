@@ -1,4 +1,4 @@
-from ._arcgis_model import ArcGISModel
+from ._arcgis_model import ArcGISModel, _get_device
 from pathlib import Path
 import json
 from ._codetemplate import code
@@ -117,7 +117,6 @@ class RetinaNet(ArcGISModel):
         if pretrained_path is not None:
             self.load(str(pretrained_path))
         self._arcgis_init_callback() # make first conv weights learnable
-        self.learn.model = self.learn.model.to(self._device)
 
     def __str__(self):
         return self.__repr__()
@@ -223,7 +222,7 @@ class RetinaNet(ArcGISModel):
                 warnings.simplefilter("ignore", UserWarning)
                 
                 sd = ImageList([], path=emd_path.parent.parent.parent).split_by_idx([])
-                data = sd.label_const(0, label_cls=ObjectDetectionCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
+                data = sd.label_const(0, label_cls=ObjectDetectionCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch(device=_get_device()).normalize(imagenet_stats)
 
             data.chip_size = chip_size
             data.class_mapping = class_mapping
