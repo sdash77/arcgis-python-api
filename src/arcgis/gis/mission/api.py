@@ -1,5 +1,3 @@
-import sys
-sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_5552\src")
 from arcgis.gis._impl._con import Connection
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import Item
@@ -57,60 +55,6 @@ class MissionJob(object):
             else:
                 return self.properties
         return None
-
-###########################################################################
-class MissionReport(object):
-    """
-
-    """
-    _properties = None
-    _url = None
-    _con = None
-    _gis = None
-    _status = None
-    _item = None
-    # ---------------------------------------------------------------------
-    def __init__(self, url:str, gis:"GIS", status:str, item_id:str, **kwargs) -> "MissionReport":
-        self._url = url
-        self._gis = gis
-        self._con = gis._con
-        self._status = status
-        self._itemid = item_id
-    # ---------------------------------------------------------------------
-    def __str__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
-    # ---------------------------------------------------------------------
-    def __repr__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
-    # ---------------------------------------------------------------------
-    @cached_property
-    def properties(self):
-        if self._properties is None:
-            try:
-                self._properties = PropertyMap(self._con.get(self._url, {'f' : 'json'}))
-            except:
-                self._properties = PropertyMap(self._con.post(self._url, {'f' : 'json'}))
-        return self._properties
-    # ---------------------------------------------------------------------
-    @property
-    def status(self) -> str:
-        """
-        returns the report status
-
-        :return: str
-        """
-        return self._status
-    # ---------------------------------------------------------------------
-    @cached_property
-    def item(self) -> str:
-        """
-        returns the report status
-
-        :return: str
-        """
-        return Item(self._gis, self.properties['itemId'])
-
-
 ###########################################################################
 class Mission(object):
     """
@@ -170,8 +114,40 @@ class Mission(object):
             'async' : False
         }
         url = f"{self._url}/delete"
-        return self._con.post(url, params)
+        res = self._con.post(url, params)
+        if res.get('status') or res.get('success'):
+            return res.get('status') or res.get('success')
+        return res
+    # ---------------------------------------------------------------------
+    def add_message(self, message:dict):
+        """
+        Adds a message to the current `Mission`
 
+        :return: bool
+        """
+        url = f"{self._url}/addMessages"
+        params = {
+            'f' : 'json',
+            'features' : message
+        }
+        res = self._con.post(url, params)
+        if res.get('status') or res.get('success'):
+            return res.get('status') or res.get('success')
+        return res
+    # ---------------------------------------------------------------------
+    @property
+    def reports(self) -> list:
+        """
+        Returns a List of Mission Report Items associated with the `Mission`
+
+        :returns: List[Item]
+
+        """
+        url = f"{self._url}/reports"
+        params = {'f' : 'json'}
+        res = self._con.get(url, params)
+        return [Item(gis=self._gis, itemid=r['itemId']) \
+                for r in res['reports'] if r.get('itemId')]
 ###########################################################################
 class MissionCatalog():
     """
