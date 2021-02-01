@@ -4300,7 +4300,7 @@ class MapImageLayer(Layer):
                      levels,
                      export_by="LevelID",
                      tile_package=False,
-                     export_extent="DEFAULT",
+                     export_extent=None,
                      optimize_for_size=True,
                      compression=75,
                      area_of_interest=None,
@@ -4442,13 +4442,13 @@ class MapImageLayer(Layer):
             params = {"f": "json"}
             job_response = self._con.post(path, params)
 
-            if "status" in job_response:
-                status = job_response.get("status")
+            if "status" in job_response or 'jobStatus' in job_response:
+                status = job_response.get("status") or job_response.get("jobStatus")
                 while not status == 'esriJobSucceeded':
                     time.sleep(5)
 
                     job_response = self._con.post(path, params)
-                    status = job_response.get("status")
+                    status = job_response.get("status") or job_response.get("jobStatus")
                     if status in ['esriJobFailed',
                                   'esriJobCancelling',
                                   'esriJobCancelled',
@@ -4458,29 +4458,39 @@ class MapImageLayer(Layer):
             else:
                 raise Exception("No job results.")
 
-            allResults = job_response['results']
-
-            for k, v in allResults.items():
-                if k == "out_service_url":
-                    value = v.value
-                    params = {
-                        "f": "json"
-                    }
-                    gpRes = self._con.get(path=value, params=params)
-                    if tile_package == True:
-                        files = []
-                        for f in gpRes['files']:
-                            name = f['name']
-                            dlURL = f['url']
-                            files.append(
-                                self._con.get(dlURL, params,
-                                              out_folder=tempfile.gettempdir(),
-                                              file_name=name))
-                        return files
+            if 'results' in job_response:
+                
+                allResults = job_response['results']
+    
+                for k, v in allResults.items():
+                    if k == "out_service_url":
+                        value = v.value
+                        params = {
+                            "f": "json"
+                        }
+                        gpRes = self._con.get(path=value, params=params)
+                        if tile_package == True:
+                            files = []
+                            for f in gpRes['files']:
+                                name = f['name']
+                                dlURL = f['url']
+                                files.append(
+                                    self._con.get(dlURL, params,
+                                                  out_folder=tempfile.gettempdir(),
+                                                  file_name=name))
+                            return files
+                        else:
+                            return gpRes['folders']
                     else:
-                        return gpRes['folders']
+                        return None
+            elif 'output' in job_response:
+                allResults = job_response['output']
+                if allResults['itemId']:
+                    return Item(gis=self._gis, itemid=allResults['itemId'])
                 else:
-                    return None
+                    return [self._con.get(url, try_json=False) for url in allResults['outputUrl']]
+            else:
+                raise Exception(job_response)
 ###########################################################################
 
 class Events(object):
