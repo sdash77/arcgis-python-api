@@ -4305,6 +4305,7 @@ class MapImageLayer(Layer):
                      compression=75,
                      area_of_interest=None,
                      asynchronous=False,
+                     storage_format=None,
                      **kwargs
                      ):
         """
@@ -4390,6 +4391,11 @@ class MapImageLayer(Layer):
         asynchronous           optional boolean. Default False, this value ensures the returns are
                                returned to the user instead of the user having the check the job
                                status manually.
+        ------------------     --------------------------------------------------------------------
+        storage_format         optional string. Specifies the type of tile package that will be created.
+
+                               `tpk` - Tiles are stored using Compact storage format. It is supported across the ArcGIS platform.
+                               `tpkx` - Tiles are stored using CompactV2 storage format, which provides better performance on network shares and cloud store directories. This improved and simplified package structure type is supported by newer versions of ArcGIS products such as ArcGIS Online 7.1, ArcGIS Enterprise 10.7, and ArcGIS Runtime 100.5. This is the default.
         ==================     ====================================================================
 
         :returns: path to download file is asynchronous is False. If True, a dictionary is returned.
@@ -4402,8 +4408,22 @@ class MapImageLayer(Layer):
             "optimizeTilesForSize": optimize_for_size,
             "compressionQuality": compression ,
             "exportBy": export_by,
-            "levels": levels
+            "levels": levels,
+
+
         }
+        if not storage_format is None:
+            storage_lu = {
+
+                "esriMapCacheStorageModeCompact" : "esriMapCacheStorageModeCompact",
+                "esrimapcachestoragemodecompact" : "esriMapCacheStorageModeCompact",
+                "esriMapCacheStorageModeCompactV2" : "esriMapCacheStorageModeCompactV2",
+                "esrimapcachestoragemodecompactv2" : "esriMapCacheStorageModeCompactV2",
+                "tpk" : "esriMapCacheStorageModeCompact",
+                "tpkx" : "esriMapCacheStorageModeCompactV2"
+
+            }
+            params['storageFormat'] = storage_lu[str(storage_format).lower()]
         if len(kwargs) > 0:
             for k,v in kwargs.items():
                 params[k] = v
