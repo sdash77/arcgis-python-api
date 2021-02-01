@@ -56,6 +56,8 @@ class SnapShot(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
+        title                  Optional string. The Item's title.
+        ------------------     --------------------------------------------------------------------
         preserve               Optional Bool. If True, the current notebook version is preserved as a snapshot.
         ------------------     --------------------------------------------------------------------
         description            Optional String. Text describing the restoration point.
@@ -64,6 +66,7 @@ class SnapShot(object):
         :return: dict
         """
         return self._sm._restore(item=self._item,
+                                 title=title,
                                  snapshot=self.properties['resourceKey'],
                                  preserve=preserve,
                                  description=description)
@@ -233,7 +236,7 @@ class SnapshotManager(object):
         else:
             raise ValueError("`item` must be a Notebook")
     #----------------------------------------------------------------------
-    def _restore(self, item, snapshot, preserve=True, description=None):
+    def _restore(self, item, snapshot, preserve=True, description=None, title=None):
         """
         Rolls back the notebook to a previous snapshot state
 
@@ -248,6 +251,8 @@ class SnapshotManager(object):
                                default is false.
         ------------------     --------------------------------------------------------------------
         description            Optional String. Text describing the restoration point.
+        ------------------     --------------------------------------------------------------------
+        title                  Optional string. The title of the item's restored snapshot.
         ==================     ====================================================================
 
         :return: dict
@@ -258,6 +263,7 @@ class SnapshotManager(object):
             "resourceKey" : snapshot,
             "preserveCurrentAsSnapshot" : preserve,
             "description" : description or "",
+            "title" : title or "",
             "f": "json"
             }
             url = f"{self._url}/restore"
