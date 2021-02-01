@@ -4488,7 +4488,10 @@ class MapImageLayer(Layer):
                 if allResults['itemId']:
                     return Item(gis=self._gis, itemid=allResults['itemId'])
                 else:
-                    return [self._con.get(url, try_json=False) for url in allResults['outputUrl']]
+                    if self._gis._portal.is_arcgisonline:
+                        return [self._con.get(url, try_json=False, add_token=False) for url in allResults['outputUrl']]
+                    else:
+                        return [self._con.get(url, try_json=False) for url in allResults['outputUrl']]
             else:
                 raise Exception(job_response)
 ###########################################################################
