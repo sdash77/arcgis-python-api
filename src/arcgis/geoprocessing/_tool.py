@@ -50,9 +50,10 @@ def _import_code(code, name, verbose=False, add_to_sys_modules=False, choice_lis
 
     Returns a newly generated module.
     """
-    import sys,imp
+    import sys
+    import importlib, types
 
-    module = imp.new_module(name)
+    module = types.ModuleType(name)
 
     if verbose:
         print(code)
