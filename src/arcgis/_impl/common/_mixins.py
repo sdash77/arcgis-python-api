@@ -4,8 +4,10 @@ Mixin Classes for Attr-support.
 Copyright (c) 2013 Brendan Curran-Johnson
 https://github.com/bcj/AttrDict
 """
+from collections import OrderedDict
 from abc import ABCMeta, abstractmethod
-from collections import Mapping, MutableMapping, Sequence, OrderedDict
+from collections.abc import (Mapping, MutableMapping,
+                             Sequence)
 import re
 import json
 import six
@@ -314,7 +316,7 @@ class AttrOrderedDict(OrderedDict, MutableAttr):
 
 class PropertyMap(MutableAttr):
     """
-    A collection of property names and values providing access as attributes (ag, property.key) as well as dictionary keys (property['key']). 
+    A collection of property names and values providing access as attributes (ag, property.key) as well as dictionary keys (property['key']).
     Can be converted to dict using dict(obj). Makes it easy to get and set values of properties held in a dictionary.
     """
     def __init__(self, items=None, sequence_type=list):

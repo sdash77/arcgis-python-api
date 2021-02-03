@@ -3396,8 +3396,10 @@ class GeoAccessor(object):
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         HASPYPROJ = True
         try:
-            import imp
-            imp.find_module('pyproj')
+            import importlib
+            i = importlib.util.find_spec('pyproj')
+            if i is None:
+                raise ImportError("Cannot find pyproj.")
         except ImportError:
             HASPYPROJ = False
         try:
