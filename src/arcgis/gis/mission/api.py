@@ -6,6 +6,7 @@ from arcgis._impl.backport import cached_property
 from functools import lru_cache
 ###########################################################################
 class MissionJob(object):
+    """Represents a Single `Job` operation for Mission Server"""
     _properties = None
     _url = None
     _con = None
@@ -134,6 +135,54 @@ class Mission(object):
         if res.get('status') or res.get('success'):
             return res.get('status') or res.get('success')
         return res
+    # ---------------------------------------------------------------------
+    def add_reports(self,
+                    title:str,
+                    description:str=None,
+                    tags:str=None,
+                    questions:dict=None,
+                    display_field:str=None,
+                    drawing_info:dict=None,
+                    locale:str='en',
+                    save_as_template:bool=False) -> dict:
+        """
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        title	               Required String. The name of the report.
+        ------------------     --------------------------------------------------------------------
+        description	       Optional String. Mission report description.
+        ------------------     --------------------------------------------------------------------
+        tags	               Optional String. Comma-separated list of user defined tags that
+                               describe the mission report.
+        ------------------     --------------------------------------------------------------------
+        questions              Optional Dict. Dictionary containing questions and their fields.
+                               Available question types: Single Line Text, Single Choice, Number,
+                               Image, Multiline Text, Dropdown, Multiple Choice, and Date/Time.
+                               See https://doc.arcgis.com/en/survey123/browser/create-surveys/quickreferencecreatesurveys.htm#GUID-2D96112F-85B1-4C41-9C6F-A85BB6026A51 for details.
+        ------------------     --------------------------------------------------------------------
+        display_field          Optional String. The name to display for the report
+        ------------------     --------------------------------------------------------------------
+        locale                 Optional String. A valid IETF BCP 47 language tag
+        ------------------     --------------------------------------------------------------------
+        save_as_template       Optional Boolean. Shares the report as a template.
+        ==================     ====================================================================
+
+        :returns: Dict
+        """
+        params = {
+            "title" : title,
+            "description" : description or "",
+            "tags" : tags or "report",
+            "questions" : questions or "",
+            "displayField" : display_field or "",
+            "drawingInfo" : drawing_info or "",
+            "shareAsTemplate": save_as_template,
+            "locale" : locale,
+            'f' : 'json'
+        }
+        url = f"{self._url}/reports/add"
+        return self._con.post(url, params)
     # ---------------------------------------------------------------------
     @property
     def reports(self) -> list:
