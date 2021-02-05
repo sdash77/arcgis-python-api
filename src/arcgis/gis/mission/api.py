@@ -256,7 +256,9 @@ class MissionCatalog():
                        tags:str=None,
                        extent:list=None,
                        template_item:"Item"=None,
-                       locale:str='en') -> MissionJob:
+                       locale:str='en',
+                       base_map:dict=None,
+                       wm_description:str=None) -> MissionJob:
         """
 
         Creates a new `Mission` on the enterprise.
@@ -285,6 +287,10 @@ class MissionCatalog():
         templateWebMapId	Optional. String. The ID of the web map to use as a template for the mission.
         ------------------     --------------------------------------------------------------------
         locale	               Optional String. Default = 'en', must be a valid IETF BCP 47 language tag.
+        ------------------     --------------------------------------------------------------------
+        base_map               Optional dict. The desired base map for the mission.
+        ------------------     --------------------------------------------------------------------
+        wm_description         Optional string. The description of the web map added to the mission.
         ==================     ====================================================================
 
 
@@ -303,6 +309,8 @@ class MissionCatalog():
             "tags" : tags or "",
             "extent" : extent or "-180,-90,180,90",
             "locale" : locale or "en",
+            "baseMap" : base_map or "",
+            "webMapDescription" : wm_description,
             "f" : "json"
         }
         resp = self._con.post(url, params)
