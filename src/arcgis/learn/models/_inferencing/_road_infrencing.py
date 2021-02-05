@@ -22,6 +22,7 @@ except Exception:
 def split_tensor(tensor, tile_size, stride): 
     # based on # https://discuss.pytorch.org/t/seemlessly-blending-tensors-together/65235/9
     mask = torch.ones_like(tensor)
+    number_of_bands = tensor.shape[1]
     softmax_mask = torch.ones_like(tensor[0][0].unsqueeze(0).unsqueeze(0))
 
     unfold  = nn.Unfold(kernel_size=(tile_size, tile_size), stride=stride)
@@ -29,7 +30,7 @@ def split_tensor(tensor, tile_size, stride):
     mask_p  = unfold(softmax_mask)
     patches = unfold(tensor)
 
-    patches = patches.reshape(3, tile_size, tile_size, -1).permute(3, 0, 1, 2)
+    patches = patches.reshape(number_of_bands, tile_size, tile_size, -1).permute(3, 0, 1, 2)
     if tensor.is_cuda:
         patches_base = torch.zeros(patches.size(), device=tensor.get_device())
     else: 

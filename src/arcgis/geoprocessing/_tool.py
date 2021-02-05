@@ -50,9 +50,10 @@ def _import_code(code, name, verbose=False, add_to_sys_modules=False, choice_lis
 
     Returns a newly generated module.
     """
-    import sys,imp
+    import sys
+    import importlib, types
 
-    module = imp.new_module(name)
+    module = types.ModuleType(name)
 
     if verbose:
         print(code)
@@ -238,7 +239,7 @@ def _generate_param(name_param, param_dval, param_name, param_type):
 
 
 def _strip_html(text):
-    return re.sub("&lt; */? *\w+ */?\ *&gt;", "", text)
+    return re.sub(r"&lt; */? *\w+ */?\ *&gt;", "", text)
 
 def _inspect_tool(taskprops, map_as_result):
     # is map is a result, additional synthetic parameter is added
@@ -815,12 +816,12 @@ class Toolbox(_AsyncResource):
             helpstring = '\n'
             if 'docstring' in taskprops:
                 docstring = taskprops['docstring']
-                text_docstring = re.sub("&lt; */? *\w+ */?\ *&gt;", "", docstring)
+                text_docstring = re.sub(r"&lt; */? *\w+ */?\ *&gt;", "", docstring)
                 helpstring = helpstring + ". " + text_docstring
 
             if 'description' in taskprops:
                 description = taskprops['description']
-                text_description = re.sub("&lt; */? *\w+ */?\ *&gt;", "", description)
+                text_description = re.sub(r"&lt; */? *\w+ */?\ *&gt;", "", description)
                 helpstring += ' \n \n' + text_description
 
             helpstring = helpstring + "\n\nParameters:"

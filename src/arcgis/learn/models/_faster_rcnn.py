@@ -11,7 +11,7 @@ try:
     from fastai.torch_core import split_model_idx
     from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
-    from ._arcgis_model import _resnet_family
+    from ._arcgis_model import _resnet_family, _get_device
 
     HAS_FASTAI = True
 
@@ -432,8 +432,8 @@ class FasterRCNN(ModelExtension):
             ds_tfms = (train_tfms, val_tfms)
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
-                sd = ImageList([], path=emd_path.parent.parent).split_by_idx([])
-                data = sd.label_const(0, label_cls=ObjectDetectionCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
+                sd = ImageList([], path=emd_path.parent.parent.parent).split_by_idx([])
+                data = sd.label_const(0, label_cls=ObjectDetectionCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch(device=_get_device()).normalize(imagenet_stats)
             # Add 1 for background class
             data.c += 1
             data.chip_size = chip_size

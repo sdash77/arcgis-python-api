@@ -262,7 +262,9 @@ class MLModel(object):
         if '\\' in name_or_path or '/' in name_or_path:
             path = name_or_path
         else:
-            path = os.path.join(os.getcwd(), name_or_path)
+            path = os.path.join(self._data.path, 'models',name_or_path)
+            if not os.path.exists(os.path.dirname(path)):
+                os.mkdir(os.path.dirname(path))
 
         if not os.path.exists(os.path.dirname(path)):
             raise Exception("Path doesn't exist")

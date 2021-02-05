@@ -116,7 +116,7 @@ class TimeSeriesModel(ArcGISModel):
                 model = model_arch_ob(data_bunch.features, data_bunch.c, **kwargs).to(self._device)
                 if model_arch.lower() in ['resnet', 'fcn']:
                     del kwargs['device']
-            self.learn = Learner(data_bunch, model, model_dir=tempfile.TemporaryDirectory().name)
+            self.learn = Learner(data_bunch, model, path=data.path)
             self.learn.data = data_bunch
 
         self.learn.layer_groups = split_model_idx(self.learn.model, [1])
@@ -233,9 +233,11 @@ class TimeSeriesModel(ArcGISModel):
         """
 
         if '\\' in name_or_path or '/' in name_or_path:
-            path = name_or_path
+            path = os.path.abspath(name_or_path)
         else:
-            path = os.path.join(os.getcwd(), name_or_path)
+            path = os.path.join(self._data.path, 'models', name_or_path)
+            if not os.path.exists(os.path.dirname(path)):
+                os.mkdir(os.path.dirname(path))
 
         if not os.path.exists(path):
             os.mkdir(path)
@@ -243,7 +245,6 @@ class TimeSeriesModel(ArcGISModel):
         base_file_name = os.path.basename(path)
 
         TimeSeriesModel._save_encoders(self._data._column_transforms_mapping, path, base_file_name)
-
         self.learn.export(os.path.join(path, os.path.basename(path) + '_exported.pth'))
         from IPython.utils import io
         with io.capture_output() as captured:

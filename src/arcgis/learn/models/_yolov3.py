@@ -8,7 +8,7 @@ import statistics
 from pathlib import Path
 from ._codetemplate import code
 from .._data import _raise_fastai_import_error
-from ._arcgis_model import ArcGISModel
+from ._arcgis_model import ArcGISModel, _get_device
 
 HAS_OPENCV = True
 HAS_FASTAI = True
@@ -590,8 +590,8 @@ class YOLOv3(ArcGISModel):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
                 
-                sd = ImageList([], path=emd_path.parent.parent).split_by_idx([])
-                data = sd.label_const(0, label_cls=ObjectDetectionCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
+                sd = ImageList([], path=emd_path.parent.parent.parent).split_by_idx([])
+                data = sd.label_const(0, label_cls=ObjectDetectionCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch(device=_get_device()).normalize(imagenet_stats)
 
             data.chip_size = chip_size
             data.class_mapping = class_mapping

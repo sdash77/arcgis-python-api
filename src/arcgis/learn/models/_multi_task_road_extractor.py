@@ -320,8 +320,10 @@ class MultiTaskRoadExtractor(ArcGISModel):
             self._model,
             loss_func=self._loss_f,
             metrics=[pixel_accuracy, road_iou, dice_coeff],
-            **learner_kwargs,
+            **learner_kwargs
         )
+        if hasattr(self._data,'path'):
+            self.learn.path=self._data.path
         self.learn.model = self.learn.model.to(self._device)
         _set_multigpu_callback(self)
         if pretrained_path is not None:

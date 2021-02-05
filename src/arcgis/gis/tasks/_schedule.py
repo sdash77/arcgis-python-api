@@ -84,8 +84,8 @@ class Run(BaseTask):
         status                 Optional String. The status of the run.  The allowed values are:
                                `scheduled`, `executing`, `succeeded`, `failed`, or `skipped`.
         ------------------     --------------------------------------------------------------------
-        description            Optional String. Updates the descriptive message associated with the 
-                               current `Run`. 
+        description            Optional String. Updates the descriptive message associated with the
+                               current `Run`.
         ==================     ====================================================================
 
         :returns: Bool
@@ -156,16 +156,16 @@ class Task(BaseTask):
     def enable(self, enabled:bool) -> bool:
         """
         The `enable` method allows administrators to enable or disable the scheduled task..
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        enabled                Required Boolean.  If True, the status of the task is set to active. 
+        enabled                Required Boolean.  If True, the status of the task is set to active.
                                If False, the task is set active to False.
         ==================     ====================================================================
-        
+
         :returns: Bool
-        
+
         """
         params = {'f' : 'json'}
         if enabled == True:
@@ -216,7 +216,7 @@ class Task(BaseTask):
         ------------------     --------------------------------------------------------------------
         item                   Optional Item. The item to update the schedule for.
         ------------------     --------------------------------------------------------------------
-        cron                   Optional String. The executution time syntax. 
+        cron                   Optional String. The executution time syntax.
         ------------------     --------------------------------------------------------------------
         task_type              Optional String. The type of task. Two valid options are `ExecuteNotebook` or `UpdateInsightsWorkbook`.
         ------------------     --------------------------------------------------------------------
@@ -236,7 +236,7 @@ class Task(BaseTask):
         ==================     ====================================================================
 
         :returns: bool or Dict on error.
-        
+
         """
         SPECIALS = {"reboot":   '@reboot',
                     "hourly":   '0 * * * *',
@@ -380,8 +380,8 @@ class TaskManager(object):
         ================  ===============================================================================
 
         :returns: List of Tasks
-        
-        """        
+
+        """
         if item is None and \
            active is None and \
            types is None:
@@ -435,9 +435,12 @@ class TaskManager(object):
 
                                Example to run a task weekly, use: `0 0 * * 0`
         ------------------     --------------------------------------------------------------------
-        task_type              Required String. The platform to execute the notebook on.  For
-                               notebook server tasks use: `ExecuteNotebook`, for Insights notebook
-                               use: `UpdateInsightsWorkbook`.
+        task_type              Required String. The type of task, either executing a notebook or
+                               updating an Insights workbook, that will be executed against the
+                               specified item.  For notebook server tasks use: `ExecuteNotebook`,
+                               for Insights notebook use: `UpdateInsightsWorkbook`. Use
+                               `ExecuteSceneCook` to cook scene tiles. Use `ExecuteWorkflowManager`
+                               to run workflow manager tasks.
         ------------------     --------------------------------------------------------------------
         occurences             Optional Integer. The total number of instance that can run at a single time.
         ------------------     --------------------------------------------------------------------
@@ -448,7 +451,20 @@ class TaskManager(object):
         title                  Optional String. The title of the scheduled task.
         ------------------     --------------------------------------------------------------------
         parameters             Optional Dict. Optional collection of Key/Values that will be given
-                               to the notebook.
+                               to the task.  The dictionary will be added to the task run
+                               request. This parameter is required for `ExecuteSceneCook` tasks.
+
+                               Example
+
+                               ```
+                               {
+                                   "service_url": <scene service URL>,
+                                   "num_of_caching_service_instances": 2, //2 instances are required
+                                   "layer": "{<list of scene layers to cook>}", //The default is all layers
+                                   "update_mode": "PARTIAL_UPDATE_NODES"
+                               }
+                               ```
+
         ==================     ====================================================================
 
         :returns: Task

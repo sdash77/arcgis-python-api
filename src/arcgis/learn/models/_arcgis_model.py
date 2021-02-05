@@ -87,6 +87,17 @@ def nostdout():
     sys.stdout = save_stdout
 
 
+def _get_device():
+
+    if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif getattr(arcgis.env, "_processorType", "") == "CPU":
+        device = torch.device("cpu")
+    else:
+        device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
+    return device
+    
 class _EmptyDS(object):
     def __init__(self, size):
         self.size = (size, size)
@@ -94,7 +105,7 @@ class _EmptyDS(object):
 
 class _EmptyData():
     def __init__(self, path, c, loss_func, chip_size, train_ds=True):
-        self.path = path
+        self.path = path.parent
         if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
             self.device = torch.device("cuda")
         elif getattr(arcgis.env, "_processorType", "") == "CPU":
@@ -451,6 +462,8 @@ class ArcGISModel(object):
         if not hasattr(data, 'class_mapping') and hasattr(data, 'classes'):
             data.class_mapping = {v: v for v in data.classes}
 
+        if data is not None and getattr(data, 'path', None) is None:
+            data.path = Path(os.path.abspath('.'))
         self.learn = None
         self._data = data
         self._learning_rate = None
@@ -531,6 +544,8 @@ class ArcGISModel(object):
         Helps in choosing the optimum learning rate for training the model.
         """
         self._check_requisites()
+        temp = self.learn.model_dir
+        self.learn.model_dir = os.path.basename(self._data._temp_folder.name)
         try:
             metrics = self.learn.metrics
             self.learn.metrics = []
@@ -539,7 +554,17 @@ class ArcGISModel(object):
             # if some error comes in lr_find
             raise e
         finally:
+            self.learn.model_dir = temp
             self.learn.metrics = metrics
+            tmp_file = os.path.join(self.learn.path, os.path.basename(self._data._temp_folder.name), 'tmp.pth')
+            try:
+                if os.path.exists(tmp_file):
+                    os.remove(tmp_file)
+            except Exception as e:
+                raise e
+
+        #
+        self.learn.model_dir = temp
 
         from IPython.display import clear_output
         clear_output()
@@ -985,6 +1010,7 @@ class ArcGISModel(object):
         post_processed = kwargs.get('post_processed', True)  # True, False
         quantized = kwargs.get('quantized', False)  # True, False
         temp = self.learn.path
+        temp1 = self.learn.model_dir
         if '\\' in name_or_path or '/' in name_or_path:
             path = Path(name_or_path)
             name = path.parts[-1]
@@ -995,7 +1021,7 @@ class ArcGISModel(object):
                 os.makedirs(self.learn.path)
         else:
             # fixing fastai bug
-            self.learn.path = self.learn.path.parent
+            # self.learn.path = self.learn.path.parent
             self.learn.model_dir = Path(self.learn.model_dir) / name_or_path
             if not os.path.exists(self.learn.path / self.learn.model_dir):
                 os.makedirs(self.learn.path / self.learn.model_dir)
@@ -1030,7 +1056,7 @@ class ArcGISModel(object):
         finally:
 
             self.learn.path = temp
-            self.learn.model_dir = 'models'
+            self.learn.model_dir = temp1
 
         _emd_template = self._create_emd_template(saved_path.with_suffix('.pth'), compute_metrics, save_inference_file)
 
@@ -1291,9 +1317,10 @@ class ArcGISModel(object):
             self.learn.model_dir = ''
         else:
             # fixing fastai bug
-            self.learn.path = self.learn.path.parent
+            # self.learn.path = self.learn.path.parent
             self.learn.model_dir = Path(self.learn.model_dir) / name_or_path
             name = name_or_path
+
 
         try:
             self.learn.load(name, purge=False)

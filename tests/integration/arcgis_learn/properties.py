@@ -390,7 +390,7 @@ data = {
     },
     "pointcnn": {
         "model_name": "pointcnn",
-        "datapath": "pointcnn_data",
+        "datapath": os.path.join("pointcnn_data", "input"),
         "model": PointCNN,
         "model_test": "pointcnn_test",
         "prepare_data": {

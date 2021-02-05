@@ -252,6 +252,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         self._address_tag = self._data._address_tag
         self._mixed_precision = kwargs.get('mixed_precision', False)
         self._seq_len = kwargs.get('seq_len', transformer_seq_length)
+        self.path = getattr(data, 'working_dir', data.path)
         self._create_text_learner_object(
             data, backbone, kwargs.get('pretrained_path', None), mixed_precision=self._mixed_precision, seq_len=self._seq_len)
 
@@ -312,7 +313,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         precision = partial(TransformerForEntityRecognition.precision_score, average=self.stats)
         metrics = [precision, recall, f1]
 
-        self.learn = Learner(databunch, model, loss_func=loss_func, metrics=metrics)
+        self.learn = Learner(databunch, model, loss_func=loss_func, metrics=metrics, path=self.path)
 
         if pretrained_path is not None:
             self.load(pretrained_path)
@@ -415,7 +416,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         if '\\' in str(name_or_path) or '/' in str(name_or_path):
             name_or_path = str(_get_emd_path(name_or_path))
         else:
-            name_or_path = Path('models') / name_or_path
+            name_or_path = os.path.join(self.path, 'models', name_or_path)
             name_or_path = str(_get_emd_path(name_or_path))
         return super().load(name_or_path)
 
