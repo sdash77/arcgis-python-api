@@ -198,7 +198,7 @@ class FeatureClassifier(ArcGISModel):
 
     @staticmethod
     def _supported_datasets():
-        return ['Labeled_Tiles', 'MultiLabeled_Tiles']
+        return ['Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet']
 
     def show_results(self, rows=5, **kwargs):
         """

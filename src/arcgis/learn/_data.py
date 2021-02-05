@@ -1059,10 +1059,15 @@ def prepare_data(path,
     _infered = False
     sensor_name = 'ms'
     if "InputRastersProps" in emd and kwargs.get('imagery_type', None) is None:
-        sensor_name = emd["InputRastersProps"]["SensorName"]
-        if len(emd["AllTilesStats"])!=3:
+        sensor_name = emd["InputRastersProps"].get("SensorName", None)
+        nbands = 3
+        if stats.get("NumBands", None) is not None:
+            nbands = stats.get("NumBands")
+        elif emd.get("AllTilesStats", None) is not None:
+            nbands = len(emd.get("AllTilesStats"))
+        if nbands != 3:
             _infered = True
-            if len(emd["AllTilesStats"]) == 4 and emd["InputRastersProps"]["BandNames"][3].lower() == 'alpha':
+            if nbands == 4 and emd["InputRastersProps"]["BandNames"][3].lower() == 'alpha':
                 imagery_type = 'RGB'
             else:
                 imagery_type = sensor_name
