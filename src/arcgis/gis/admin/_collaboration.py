@@ -1047,6 +1047,27 @@ class Collaboration(dict):
         con = self._portal.con
         return con.post(path=data_path, postdata=params)
     #----------------------------------------------------------------------
+    def sync_status(self, workspace_id:str) -> list:
+        """
+        Provides a status summary of each scheduled sync for items in a collaboration workspace.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        workspace_id                    Required string. Workspace ID to examine `sync` jobs.
+        ===========================     ====================================================================
+
+        :returns: List[Dict]
+
+        """
+        params = {
+            'f' : 'json'
+        }
+        data_path = f"{self._basepath}/workspaces/{workspace_id}/syncStatus"
+        con = self._portal.con
+        resp = con.get(path=data_path, postdata=params)
+        return resp.get('status') or resp
+    #----------------------------------------------------------------------
     def sync_details(self, workspace_id, sync_id):
         """
         Provides a detailed description of status for a selected sync ID.
@@ -1054,7 +1075,7 @@ class Collaboration(dict):
         ===========================     ====================================================================
         **Argument**                    **Description**
         ---------------------------     --------------------------------------------------------------------
-        workspace_id                    Required string. Workspace ID to remove from the link.
+        workspace_id                    Required string. Workspace ID to examine `sync` jobs.
         ---------------------------     --------------------------------------------------------------------
         sync_id                         Required String. When a sync is performed, an ID is generated to
                                         track the status of the synchronization of the collaboration.
