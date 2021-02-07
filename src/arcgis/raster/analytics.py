@@ -2237,6 +2237,17 @@ def classify(input_raster,
 
                                                 Example:
                                                     {'resamplingMethod': "Nearest"} 
+
+                                            - processAsMultidimensional - Specifies whether to process the input as a multidimensional raster.
+
+                                                - False - The input will not be processed as a multidimensional raster. 
+                                                  If the input is multidimensional, only the slice that is currently 
+                                                  displayed will be processed. 
+                                                - True - The input will be processed as a multidimensional raster and all 
+                                                  slices will be processed to produce a new multidimensional raster.
+                                                         
+                                                Example:
+                                                    {'processAsMultidimensional': True}
     --------------------------------     --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional GIS object. If not specified, the currently active connection
                                          is used.
@@ -2424,6 +2435,7 @@ def train_classifier(input_raster,
                      classifier_parameters,
                      segmented_raster=None,
                      segment_attributes="COLOR;MEAN",
+                     dimension_value_field=None,
                      *,
                      gis=None,
                      future=False,
@@ -2489,6 +2501,14 @@ def train_classifier(input_raster,
                                          Example:
                                             "COLOR; MEAN"
     --------------------------------     --------------------------------------------------------------------
+    dimension_value_field                Contains dimension values in the input training sample feature class.
+
+                                         This parameter is required to classify a time series of raster data 
+                                         using the change analysis raster output from the 
+                                         analyze_changes_using_ccdc and analyze_changes_using_landtrendr function.
+
+                                         Parameter available in ArcGIS Image Server 10.9 and higher.
+    --------------------------------     --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional GIS object. If not specified, the currently active connection
                                          is used.
     --------------------------------     --------------------------------------------------------------------
@@ -2506,6 +2526,7 @@ def train_classifier(input_raster,
                                                      classifier_parameters=classifier_parameters,
                                                      segmented_raster=segmented_raster,
                                                      segment_attributes=segment_attributes,
+                                                     dimension_value_field=dimension_value_field,
                                                      future=future,
                                                      **kwargs)
 
