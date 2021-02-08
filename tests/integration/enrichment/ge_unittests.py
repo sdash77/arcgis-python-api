@@ -18,6 +18,7 @@ from arcgis.features import SpatialDataFrame
 ########################################################################
 PROFILES = ['your_kubernetes_profile', 'your_online_profile', 'your_enterprise_profile']#
 VERIFY = False
+_ADD_ITEM_SETUP = {}
 ########################################################################
 if not 'your_kubernetes_profile' in ProfileManager().list():
     from arcgis.gis import GIS
@@ -25,13 +26,58 @@ if not 'your_kubernetes_profile' in ProfileManager().list():
               username='admin',
               password='esri.agp',
               profile='your_kubernetes_profile')
+def _setup_ge_service(gis:GIS):
+    """configures the site's GeoEnrichment if not present"""
+    item_properties = {
+        "type": "Geoenrichment Service",
+        "url": "https://geoenrich.arcgis.com/arcgis/rest/services/World/GeoenrichmentServer",
+        "title": "AGO World GeoEnrichment (demos_deldev)",
+        "tags": "Tool, Service, Geoenrichment Service, ArcGIS Server",
+        "serviceUsername": "demos_deldev",
+        "servicePassword": "DelDevs.123"
+    }
+    from arcgis.gis import ContentManager
+    cm = gis.content
+    isinstance(cm, ContentManager)
+    item = cm.add(item_properties=item_properties)
+    item.share(org=True)
+    item.protect(True)
+    gis.update_properties({
+        "geoenrichmentService": {"url": item.url}
+    })
+    return item
 
+def _delete_setup_ge_service(item, gis):
+    """configures the site's GeoEnrichment if not present"""
+
+    item.protect(False)
+    item.delete()
+    gis.update_properties({
+        "clearEmptyFields": True,
+        "geoenrichmentService": ""
+    })
+    return None
 if len(PROFILES) > 0:
     ########################################################################
     class ge_unittest(unittest.TestCase):
         """
         AGOL GeoEnrichment Tests
         """
+        ##----------------------------------------------------------------------
+        @classmethod
+        def setUpClass(self):
+            for profile in PROFILES:
+                gis = GIS(profile=profile, verify_cert=False, trust_env=True)
+                if ('geoenrichment' in gis.properties.helperServices and gis.properties.helperServices.geoenrichment.url is None) or \
+                   'geoenrichment' not in gis.properties.helperServices:
+                    item = _setup_ge_service(gis)
+                    _ADD_ITEM_SETUP[profile] = (item, GIS(profile=profile, verify_cert=False, trust_env=True))
+        @classmethod
+        def tearDownClass(self):
+            for profile in PROFILES:
+                if profile in _ADD_ITEM_SETUP:
+                    item, gis = _ADD_ITEM_SETUP[profile]
+                    _delete_setup_ge_service(item, gis)
         ##----------------------------------------------------------------------
         #@unittest.SkipTest
         def test_ge_coutry_list(self):
