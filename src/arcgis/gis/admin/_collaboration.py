@@ -971,6 +971,75 @@ class Collaboration(dict):
         con = self._portal.con
         return con.get(path=data_path, postdata=params)
     #----------------------------------------------------------------------
+    def pause_schedule(self, workspace_id:str) -> bool:
+        """
+        Suspends the scheduling job for synchronized items in a collaboration workspace.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        workspace_id                    Required string. Workspace ID to remove from the link.
+        ===========================     ====================================================================
+
+        :returns: Boolean
+
+        """
+        params = {
+            'f' : 'json'
+        }
+        data_path = "%s/workspaces/%s/schedule/pause" % (self._basepath, workspace_id)
+        con = self._portal.con
+        res = con.post(path=data_path, postdata=params)
+        if 'success' in res:
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
+    def delete_schedule(self, workspace_id:str) -> bool:
+        """
+        Removes the scheduling job for synchronized items in a collaboration workspace.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        workspace_id                    Required string. Workspace ID to remove from the link.
+        ===========================     ====================================================================
+
+        :returns: Boolean
+
+        """
+        params = {
+            'f' : 'json'
+        }
+        data_path = "%s/workspaces/%s/schedule/delete" % (self._basepath, workspace_id)
+        con = self._portal.con
+        res = con.post(path=data_path, postdata=params)
+        if 'success' in res:
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
+    def resume_schedule(self, workspace_id:str) -> bool:
+        """
+        Resumes a paused scheduled synchronization.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        workspace_id                    Required string. Workspace ID to remove from the link.
+        ===========================     ====================================================================
+
+        :returns: Boolean
+
+        """
+        params = {
+            'f' : 'json'
+        }
+        data_path = "%s/workspaces/%s/schedule/resume" % (self._basepath, workspace_id)
+        con = self._portal.con
+        res = con.post(path=data_path, postdata=params)
+        if 'success' in res:
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
     def update_schedule(self, workspace_id, start_time,
                         interval=24, repeat_count=-1):
         """
@@ -1179,7 +1248,9 @@ class Collaboration(dict):
     def update_portal_group_link(self, workspace_id,
                                  portal_id,
                                  enable_realtime_sync=True,
-                                 copy_feature_service_data=True):
+                                 copy_feature_service_data=True,
+                                 copy_by_ref_on_fail=True,
+                                 ):
         """
         The `update_portal_group_link` operation updates the group linked with a
         workspace for a participant in a portal-to-portal collaboration.
@@ -1202,6 +1273,14 @@ class Collaboration(dict):
                                         shared in a group that is linked to a distributed collaboration
                                         workspace. When set to "true" Feature Service data will be copied
                                         to collaboration participants.
+        ---------------------------     --------------------------------------------------------------------
+        copy_by_ref_on_fail             Optional boolean. If the copy feature service data fails, and set to
+                                        `True`, the enterprise will reference the data instead of copying it.
+                                        This is supported on **10.9+**.
+        ---------------------------     --------------------------------------------------------------------
+        enable_bidirectional_sync       Optional boolean. When set to true, edits to shared feature services
+                                        can be allowed two-way to eligible participants.
+                                        This is supported on **10.9+**.
         ===========================     ====================================================================
 
         :returns: dict
@@ -1212,7 +1291,9 @@ class Collaboration(dict):
             'f': 'json',
             'portalGroupId' : portal_id,
             'enableRealtimeSync' : enable_realtime_sync,
-            "copyFeatureServiceData" : copy_feature_service_data
+            "copyFeatureServiceData" : copy_feature_service_data,
+            "copyByRefIfCopyFail" : copy_by_ref_on_fail,
+            "enableFeatureServiceBidirectionalSync" : enable_realtime_sync
         }
 
         con = self._portal.con

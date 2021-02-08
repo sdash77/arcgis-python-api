@@ -4299,12 +4299,13 @@ class MapImageLayer(Layer):
     def export_tiles(self,
                      levels,
                      export_by="LevelID",
-                     tile_package=False,
-                     export_extent="DEFAULT",
+                     tile_package=True,
+                     export_extent=None,
                      optimize_for_size=True,
                      compression=75,
                      area_of_interest=None,
                      asynchronous=False,
+                     storage_format=None,
                      **kwargs
                      ):
         """
@@ -4351,7 +4352,7 @@ class MapImageLayer(Layer):
         tile_package           optiona boolean. Allows exporting either a tile package or a cache
                                raster data set. If the value is true, output will be in tile
                                package format, and if the value is false, a cache raster data
-                               set is returned. The default value is false.
+                               set is returned. The default value is True.
         ------------------     --------------------------------------------------------------------
         export_extent          optional dictionary or string. The extent (bounding box) of the tile
                                package or the cache dataset to be exported. If extent does not
@@ -4390,6 +4391,11 @@ class MapImageLayer(Layer):
         asynchronous           optional boolean. Default False, this value ensures the returns are
                                returned to the user instead of the user having the check the job
                                status manually.
+        ------------------     --------------------------------------------------------------------
+        storage_format         optional string. Specifies the type of tile package that will be created.
+
+                               `tpk` - Tiles are stored using Compact storage format. It is supported across the ArcGIS platform.
+                               `tpkx` - Tiles are stored using CompactV2 storage format, which provides better performance on network shares and cloud store directories. This improved and simplified package structure type is supported by newer versions of ArcGIS products such as ArcGIS Online 7.1, ArcGIS Enterprise 10.7, and ArcGIS Runtime 100.5. This is the default.
         ==================     ====================================================================
 
         :returns: path to download file is asynchronous is False. If True, a dictionary is returned.
@@ -4402,8 +4408,22 @@ class MapImageLayer(Layer):
             "optimizeTilesForSize": optimize_for_size,
             "compressionQuality": compression ,
             "exportBy": export_by,
-            "levels": levels
+            "levels": levels,
+
+
         }
+        if not storage_format is None:
+            storage_lu = {
+
+                "esriMapCacheStorageModeCompact" : "esriMapCacheStorageModeCompact",
+                "esrimapcachestoragemodecompact" : "esriMapCacheStorageModeCompact",
+                "esriMapCacheStorageModeCompactV2" : "esriMapCacheStorageModeCompactV2",
+                "esrimapcachestoragemodecompactv2" : "esriMapCacheStorageModeCompactV2",
+                "tpk" : "esriMapCacheStorageModeCompact",
+                "tpkx" : "esriMapCacheStorageModeCompactV2"
+
+            }
+            params['storageFormat'] = storage_lu[str(storage_format).lower()]
         if len(kwargs) > 0:
             for k,v in kwargs.items():
                 params[k] = v
@@ -4422,13 +4442,13 @@ class MapImageLayer(Layer):
             params = {"f": "json"}
             job_response = self._con.post(path, params)
 
-            if "status" in job_response:
-                status = job_response.get("status")
+            if "status" in job_response or 'jobStatus' in job_response:
+                status = job_response.get("status") or job_response.get("jobStatus")
                 while not status == 'esriJobSucceeded':
                     time.sleep(5)
 
                     job_response = self._con.post(path, params)
-                    status = job_response.get("status")
+                    status = job_response.get("status") or job_response.get("jobStatus")
                     if status in ['esriJobFailed',
                                   'esriJobCancelling',
                                   'esriJobCancelled',
@@ -4438,29 +4458,42 @@ class MapImageLayer(Layer):
             else:
                 raise Exception("No job results.")
 
-            allResults = job_response['results']
-
-            for k, v in allResults.items():
-                if k == "out_service_url":
-                    value = v.value
-                    params = {
-                        "f": "json"
-                    }
-                    gpRes = self._con.get(path=value, params=params)
-                    if tile_package == True:
-                        files = []
-                        for f in gpRes['files']:
-                            name = f['name']
-                            dlURL = f['url']
-                            files.append(
-                                self._con.get(dlURL, params,
-                                              out_folder=tempfile.gettempdir(),
-                                              file_name=name))
-                        return files
+            if 'results' in job_response:
+                
+                allResults = job_response['results']
+    
+                for k, v in allResults.items():
+                    if k == "out_service_url":
+                        value = v.value
+                        params = {
+                            "f": "json"
+                        }
+                        gpRes = self._con.get(path=value, params=params)
+                        if tile_package == True:
+                            files = []
+                            for f in gpRes['files']:
+                                name = f['name']
+                                dlURL = f['url']
+                                files.append(
+                                    self._con.get(dlURL, params,
+                                                  out_folder=tempfile.gettempdir(),
+                                                  file_name=name))
+                            return files
+                        else:
+                            return gpRes['folders']
                     else:
-                        return gpRes['folders']
+                        return None
+            elif 'output' in job_response:
+                allResults = job_response['output']
+                if allResults['itemId']:
+                    return Item(gis=self._gis, itemid=allResults['itemId'])
                 else:
-                    return None
+                    if self._gis._portal.is_arcgisonline:
+                        return [self._con.get(url, try_json=False, add_token=False) for url in allResults['outputUrl']]
+                    else:
+                        return [self._con.get(url, try_json=False) for url in allResults['outputUrl']]
+            else:
+                raise Exception(job_response)
 ###########################################################################
 
 class Events(object):
