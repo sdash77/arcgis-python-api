@@ -144,7 +144,7 @@ class Mission(object):
                     display_field:str=None,
                     drawing_info:dict=None,
                     locale:str='en',
-                    save_as_template:bool=False) -> dict:
+                    share_as_template:bool=False) -> dict:
         """
         ==================     ====================================================================
         **Argument**           **Description**
@@ -165,7 +165,7 @@ class Mission(object):
         ------------------     --------------------------------------------------------------------
         locale                 Optional String. A valid IETF BCP 47 language tag
         ------------------     --------------------------------------------------------------------
-        save_as_template       Optional Boolean. Shares the report as a template.
+        share_as_template      Optional Boolean. Shares the report as a template.
         ==================     ====================================================================
 
         :returns: Dict
@@ -174,10 +174,10 @@ class Mission(object):
             "title" : title,
             "description" : description or "",
             "tags" : tags or "report",
-            "questions" : questions or "",
+            "questions" : questions or [],
             "displayField" : display_field or "",
             "drawingInfo" : drawing_info or "",
-            "shareAsTemplate": save_as_template,
+            "shareAsTemplate": share_as_template,
             "locale" : locale,
             'f' : 'json'
         }
