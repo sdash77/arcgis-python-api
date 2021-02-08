@@ -1,6 +1,6 @@
 import os
 import sys
-sys.path.insert(0, r"C:\SVN\geosaurus_master_kubernetes\src")
+#sys.path.insert(0, r"C:\SVN\geosaurus_master_kubernetes\src")
 import unittest
 import pytest
 import pandas as pd
