@@ -1,10 +1,12 @@
 import pytest
+import sys
 import unittest
 from arcgis.gis import GIS, ContentManager
 
 profiles = [
     'your_online_profile',
-    'your_enterprise_profile'
+    'your_enterprise_profile',
+    'your_kubernetes_profile'
 ]
 wm = {'operationalLayers': [],
       'baseMap': {'baseMapLayers': [{'id': 'defaultBasemap',
