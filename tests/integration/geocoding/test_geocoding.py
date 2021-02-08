@@ -32,6 +32,7 @@ geocode - missing 4 parameters
 
 
 """
+#
 profiles = ['your_enterprise_profile', 'your_online_profile', None, 'your_kubernetes_profile']
 ###########################################################################
 class TestAnalyzeGeocodingInput(unittest.TestCase):
