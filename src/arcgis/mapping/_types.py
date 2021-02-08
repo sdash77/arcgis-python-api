@@ -4299,7 +4299,7 @@ class MapImageLayer(Layer):
     def export_tiles(self,
                      levels,
                      export_by="LevelID",
-                     tile_package=False,
+                     tile_package=True,
                      export_extent=None,
                      optimize_for_size=True,
                      compression=75,
@@ -4352,7 +4352,7 @@ class MapImageLayer(Layer):
         tile_package           optiona boolean. Allows exporting either a tile package or a cache
                                raster data set. If the value is true, output will be in tile
                                package format, and if the value is false, a cache raster data
-                               set is returned. The default value is false.
+                               set is returned. The default value is True.
         ------------------     --------------------------------------------------------------------
         export_extent          optional dictionary or string. The extent (bounding box) of the tile
                                package or the cache dataset to be exported. If extent does not
