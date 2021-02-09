@@ -1,2 +1,2 @@
-from ._sharing import QbertnetesPy
+from ._sharing import KbertnetesPy
 from ._admin import KubernetesAdmin
