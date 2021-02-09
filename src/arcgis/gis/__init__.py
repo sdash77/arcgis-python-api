@@ -10265,6 +10265,8 @@ class Item(dict):
                 fileType = 'fileGeodatabase'
             elif self['type'] == 'Vector Tile Package':
                 fileType = 'vectortilepackage'
+                if output_type is None:
+                    output_type = "VectorTiles"
             elif self['type'] == 'Scene Package':
                 fileType = 'scenePackage'
             elif self['type'] == 'Tile Package':
@@ -11332,7 +11334,7 @@ class Item(dict):
         :return: dict
 
         """
-        if not self.type.lower() in ['application', 'api key']:
+        if self.type.lower() in ['application', 'api key']:
             return None
         if redirect_uris is None:
             redirect_uris = []
