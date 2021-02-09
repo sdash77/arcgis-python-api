@@ -375,7 +375,9 @@ class WebMap(HasTraits, collections.OrderedDict):
                     isinstance(layer, arcgis.features.FeatureCollection) or \
                     isinstance(layer, arcgis.features.FeatureSet)):
                     # Can be either a FeatureLayer or a table: figure it out
-                    if not isinstance(layer, arcgis.features.Table):
+                    if isinstance(layer, arcgis.features.Table):
+                        layer_type = 'Table'
+                    else:
                         layer_type = 'ArcGISFeatureLayer'
                 elif isinstance(layer, arcgis.raster.ImageryLayer):
                     layer_type='ArcGISImageServiceLayer'
@@ -451,7 +453,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             layer_definition['drawingInfo'] = {'renderer':renderer}
         new_layer['layerDefinition'] = layer_definition
 
-        if layer_type:
+        if layer_type and layer_type != "Table": # The JSAPI does not accept "Table" as a valid "layerType"
             new_layer['layerType'] = layer_type
 
         if item_id:
@@ -663,7 +665,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         else:
             # note - no need to add if self._layers was empty as the hydration step above will account for the new layer
             # need this check to avoid duplicating adding a new table to both layers and tables
-            if "layerType" in new_layer and new_layer["layerType"] != "Table":
+            if "layerType" in new_layer:
                 self._layers.append(PropertyMap(new_layer))
 
         # update tables property
@@ -675,8 +677,9 @@ class WebMap(HasTraits, collections.OrderedDict):
             # reverse the layer list - webmap viewer reverses the list always
             self._tables.reverse()
         else:
-            # note - no need to add if self._layers was empty as the hydration step above will account for the new layer
-            self._tables.append(PropertyMap(new_layer))
+            if layer_type == "Table":
+                # note - no need to add if self._layers was empty as the hydration step above will account for the new layer
+                self._tables.append(PropertyMap(new_layer))
 
         return True
 
