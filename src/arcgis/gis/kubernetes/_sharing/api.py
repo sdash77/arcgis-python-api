@@ -21,7 +21,7 @@ __version__ = '1.9.0'
 
 _log = logging.getLogger(__name__)
 
-class QbertnetesPy(object):
+class KbertnetesPy(object):
     """
     Kubernetes Sharing API Implementation
     """

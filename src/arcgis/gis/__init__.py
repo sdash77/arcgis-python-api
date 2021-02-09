@@ -342,8 +342,8 @@ class GIS(object):
                                            client_secret=client_secret,
                                            trust_env=kwargs.get("trust_env", None))
             if self._portal.is_kubernetes:
-                from .kubernetes._sharing import QbertnetesPy
-                self._portal = QbertnetesPy(self._url, self._username,
+                from .kubernetes._sharing import KbertnetesPy
+                self._portal = KbertnetesPy(self._url, self._username,
                                            self._password, self._key_file,
                                            self._cert_file,
                                            proxy_host=self._proxy_host,
