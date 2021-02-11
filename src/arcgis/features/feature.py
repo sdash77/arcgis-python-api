@@ -931,7 +931,6 @@ class FeatureSet(object):
     @staticmethod
     def from_dict(featureset_dict):
         """returns a featureset from a dict"""
-        sr = featureset_dict['spatialReference']
         features = []
         if 'fields' in featureset_dict:
             fields = featureset_dict['fields']
