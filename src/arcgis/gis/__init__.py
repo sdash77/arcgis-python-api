@@ -1228,7 +1228,9 @@ class GroupMigrationManager(object):
                       item_id_list=None,
                       preview_only=False,
                       run_async=False,
-                      overwrite=False):
+                      overwrite=False,
+                      folder_id=None,
+                      folder_owner=None):
         """
         Imports an EPK Item to a Group.  This will import items associated with this group.
 
@@ -1253,7 +1255,10 @@ class GroupMigrationManager(object):
                 params['previewOnly'] = preview_only
             if run_async:
                 params['async'] = run_async
-
+            if folder_id and self._gis.version >= [8,4]:
+                params['folderId'] = folder_id
+            if folder_owner and self._gis.version >= [8,4]:
+                params['folderOwnerUsername'] = folder_owner
             return self._con.post(url,
                                   params,
                                   try_json=try_json)
@@ -1338,7 +1343,9 @@ class GroupMigrationManager(object):
              epk_item,
              item_ids:list=None,
              overwrite:bool=True,
-             future:bool=True):
+             future:bool=True,
+             folder_id:str=None,
+             folder_owner:str=None):
         """
         Imports the EPK content into the current `Group`.
 
@@ -1362,6 +1369,10 @@ class GroupMigrationManager(object):
                           pause the current thread.  When `False` `load` will occur in a synchronous
                           fashion pausing the thread.  If you are loading large amounts of data, set
                           future to `True` to reduce time.
+        ----------------  -------------------------------------------------------------------------------
+        folder_id         Optional String. In ArcGIS Online and Enterprise 10.9+, a user can specify the destination folder ID for the items.
+        ----------------  -------------------------------------------------------------------------------
+        folder_owner      Optional String. In ArcGIS Online and Enterprise 10.9+, a user name of the folder owner.
         ================  ===============================================================================
 
         :returns: dict --or-- Job when future=True
@@ -1374,7 +1385,9 @@ class GroupMigrationManager(object):
                                       item_id_list=item_ids,
                                       preview_only=False,
                                       run_async=True,
-                                      overwrite=overwrite)
+                                      overwrite=overwrite,
+                                      folder_id=folder_id,
+                                      folder_owner=folder_owner)
             executor =  concurrent.futures.ThreadPoolExecutor(1)
             futureobj = executor.submit(self._status, **{"job_id" : res['jobId'], "key": res['key']})
             executor.shutdown(False)
