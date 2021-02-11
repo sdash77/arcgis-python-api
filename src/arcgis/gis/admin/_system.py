@@ -370,6 +370,34 @@ class System(BasePortalAdmin):
         self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
     @property
+    def incremental_backup(self):
+        """
+        Gets/Sets the Incremental Backup for the Enterprise Configuration
+
+
+        :returns: dict
+        """
+        url = "%s/database/settings" % self._url
+        params = {
+            "f" : "json"
+        }
+        return self._con.get(url, params)
+    #----------------------------------------------------------------------
+    @incremental_backup.setter
+    def incremental_backup(self, value:bool):
+        """
+        Gets/Sets the Incremental Backup for the Enterprise Configuration
+
+        :returns: dict
+        """
+        url = "%s/database/settings/edit" % self._url
+        params = {
+            "incrementalBackupEnabled": value,
+            "f" : "json"
+        }
+        return self._con.post(url, params)
+    #----------------------------------------------------------------------
+    @property
     def index_status(self):
         """
         The status resource allows you to view the status of the indexing
