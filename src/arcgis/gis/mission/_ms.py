@@ -5,6 +5,7 @@ from ._logs import LogManager
 from ._system import SystemManager
 from ._machines import MachineManager
 from ._security import SecurityManager
+from .api import MissionCatalog
 ###########################################################################
 class MissionServer(BaseMissionServer):
     """
@@ -15,13 +16,15 @@ class MissionServer(BaseMissionServer):
     _con = None
     _properties = None
     _machinemgr = None
-    _securitymgr = None 
+    _securitymgr = None
     _security = None
     _system = None
     _logs = None
     _machine = None
     #----------------------------------------------------------------------
     def __init__(self, url, gis=None):
+
+        self.catalog = MissionCatalog(gis=gis)
         if url.lower().find("/admin") == -1:
             if url.endswith('/'):
                 url = url[:-1]
@@ -34,7 +37,8 @@ class MissionServer(BaseMissionServer):
         if gis is None:
             raise ValueError("A GIS could not be obtained.")
         self._gis = gis
-        self._con = self._gis._con        
+        self._con = self._gis._con
+
     #----------------------------------------------------------------------
     @property
     def info(self):
@@ -47,7 +51,7 @@ class MissionServer(BaseMissionServer):
         url = self._url + "/info"
         params = {'f' : 'json'}
         res = self._gis._con.get(url, params)
-        return PropertyMap(res)    
+        return PropertyMap(res)
     #----------------------------------------------------------------------
     @property
     def logs(self):

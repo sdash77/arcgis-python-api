@@ -809,6 +809,12 @@ class GIS(object):
         self._product_version = [int(i) for i in self._portal.get_version().split('.')]
         return self._product_version
     #----------------------------------------------------------------------
+    def _registered_servers(self):
+        """returns servers registered with enterprise/portal"""
+        params = {'f' : 'json'}
+        url = f"{self._portal.resturl}portals/self/servers"
+        return self._con.get(url, params=params)
+    #----------------------------------------------------------------------
     @property
     def servers(self) -> dict:
         """
@@ -4241,7 +4247,15 @@ class ContentManager(object):
             raise ValueError("`item_properties` must be  dictionary.")
         if item_id and isinstance(item_id, str) and len(item_id) == 32:
             item_properties['itemIdToCreate'] = item_id
-
+        if isinstance(data, arcgis.features.FeatureCollection):
+            fileType = "Feature Collection"
+            item_properties['text'] = {'layers' : [data._lyr_dict] }
+            data = None
+        elif _is_geoenabled(data) and \
+             hasattr(data, 'spatial'):
+            fileType = "Feature Collection"
+            item_properties['text'] = {'layers' : [data.spatial.to_feature_collection()._lyr_dict] }
+            data = None
         if data is not None:
             title = os.path.splitext(os.path.basename(data))[0]
             extn = os.path.splitext(os.path.basename(data))[1].upper()
@@ -6756,7 +6770,17 @@ class Group(dict):
                     users.append(u)
                 elif isinstance(u, User):
                     users.append(u.username)
-        return self._portal.add_group_users(users, self.groupid, ladmins)
+        n = 25
+        results = {
+                "notAdded": [ ]
+            }
+        if users:
+            users_added = [self._portal.add_group_users(users[i * n:(i + 1) * n], self.groupid, [])['notAdded'] for i in range((len(users) + n - 1) // n )]
+            [results['notAdded'].extend(a) for a in users_added]
+        if ladmins:
+            admins_added =  [self._portal.add_group_users([], self.groupid, ladmins[i * n:(i + 1) * n])['notAdded'] for i in range((len(ladmins) + n - 1) // n )]
+            [results['notAdded'].extend(a) for a in admins_added]
+        return results
 
     def delete_group_thumbnail(self):
         """
@@ -7032,6 +7056,34 @@ class Group(dict):
                                                 self.groupid)
         params = {'f': 'json'}
         return self._gis._con.post(url, params)
+
+    def user_list(self) -> dict:
+        """
+        Returns a dictionary listing users and owners for the `Group`.
+        This is only available on ArcGIS Online and ArcGIS Enterprise 10.9+.
+
+        :returns: dict
+
+        """
+        if self._gis.version >= [8, 4]:
+            url = '%s/community/groups/%s/userList' % (self._gis._portal.resturl,
+                                                       self.groupid)
+            params = {'f': 'json', 'start' : 1, 'num' : 100}
+            res = self._gis._con.get(url, params)
+            users = res['users']
+            owner = res['owner']
+            while res['nextStart'] > -1:
+                params['start'] = res['nextStart']
+                res = self._gis._con.get(url, params)
+                users.extend(res['users'])
+                if res['nextStart'] == -1:
+                    break
+            value = {
+                'owner' : owner,
+                'users' : users
+            }
+            return value
+        return None
 
     def update(self, title=None, tags=None, description=None, snippet=None, access=None,
                is_invitation_only=None, sort_field=None, sort_order=None, is_view_only=None,
@@ -11359,7 +11411,7 @@ class Item(dict):
         :return: dict
 
         """
-        if self.type.lower() in ['application', 'api key']:
+        if not self.type.lower() in ['application', 'api key']:
             return None
         if redirect_uris is None:
             redirect_uris = []

@@ -233,7 +233,11 @@ class APIKeyManager(object):
                 'description' : description or "",
             }
         )
-                
+        if privileges is None:
+            privileges = ["premium:user:geocode:temporary",
+                          "premium:user:networkanalysis:routing",
+                          "premium:user:networkanalysis:servicearea",
+                          "portal:apikey:basemaps"]
         result = api_item.register(app_type='apikey', 
                                    redirect_uris=redirect_uris, 
                                    http_referers=http_referers, 

@@ -8627,6 +8627,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                          classifier_parameters,
                          segmented_raster=None,
                          segment_attributes='COLOR;MEAN',
+                         dimension_value_field=None,
                          future=False,
                          **kwargs):
         """
@@ -8660,11 +8661,21 @@ class _RasterAnalysisTools(BaseAnalytics):
         if segmented_raster is not None:
             segmented_raster = self._layer_input(segmented_raster)
 
-        gpjob = self._tbx.train_classifier(input_raster=input_raster,
-                                           input_training_sample_json=input_training_sample_json,
-                                           classifier_parameters=classifier_parameters,
-                                           segmented_raster=segmented_raster,
-                                           segment_attributes=segment_attributes, gis=gis, future=True)
+        if self._current_version is not None:
+            current_version = self._current_version
+            if((current_version is not None) and current_version<10.9):
+                gpjob = self._tbx.train_classifier(input_raster=input_raster,
+                                                   input_training_sample_json=input_training_sample_json,
+                                                   classifier_parameters=classifier_parameters,
+                                                   segmented_raster=segmented_raster,
+                                                   segment_attributes=segment_attributes, gis=gis, future=True)
+            elif((current_version is not None) and current_version>=10.9):
+                gpjob = self._tbx.train_classifier(input_raster=input_raster,
+                                                   input_training_sample_json=input_training_sample_json,
+                                                   classifier_parameters=classifier_parameters,
+                                                   segmented_raster=segmented_raster,
+                                                   segment_attributes=segment_attributes, dimension_value_field=dimension_value_field,
+                                                   gis=gis, future=True)
         gpjob._is_ra = True
         gpjob._item_properties = False
         if future:
