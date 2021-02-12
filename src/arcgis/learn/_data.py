@@ -888,6 +888,44 @@ def prepare_data(path,
                             Applicable only when dataset_type=IOB, BILUO or ner_json:
                             The encoding to read the csv/json file.
                             Default is 'UTF-8'
+    ---------------------   -------------------------------------------
+    min_points              Optional int. Filter based on minimum points in a block.
+                            Set `min_points=1000` to filter out blocks with less
+                            than 1000 points. Applicable only for
+                            dataset_type='PointCloud'
+    ---------------------   -------------------------------------------
+    classes_of_interest     Optional string. List of classes of interest. 
+                            This will filter blocks based on `classes_of_interest`.
+                            If we have classes [1, 3, 5, 7] in our dataset,
+                            but we are mainly interested in 1 and 3,
+                            Set `classes_of_interest=[1,3]`. Only those blocks
+                            will be considered for training which either 1 or 3
+                            classes in them. 
+                            If remapping of rest of the classes is required
+                            set `background_classcode` to some value.
+                            Applicable only for dataset_type='PointCloud'
+    ---------------------   -------------------------------------------
+    extra_features          Optional List. Contains a list of strings
+                            which tells which extra features to use to
+                            train PointCNN. By default only x,y and z
+                            are considered for training.
+                            Set this to ['intensity', 'numberOfReturns']
+                            if these are to be used in training.
+    ---------------------   -------------------------------------------
+    remap_classes           Optional dictionary {int:int}. Mapping from  
+                            class values to user defined values. 
+                            If we have [1, 3, 5, 7] in our dataset
+                            and we want to map class 5 to 3. Set this 
+                            parameter to `remap_classes={5:3}`.
+                            In training then 5 will also be considered as 3.
+                            Applicable only for dataset_type='PointCloud' 
+    ---------------------   -------------------------------------------
+    background_classcode    Optional int. Default None.
+                            If this is defined it will remap other 
+                            class except `classes_of_interest` to 
+                            `background_classcode` value. Only applicable
+                            when specifying `classes_of_interest`.
+                            Applicable only for dataset_type='PointCloud'.                                                                                                                
     =====================   ===========================================
 
     :returns: data object
@@ -1416,6 +1454,7 @@ def prepare_data(path,
         else:
             transform_fn = transforms
         data = pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type, transform_fn, **kwargs)
+        data._data_path = data.path
         if working_dir is not None:
             data.path = Path(os.path.abspath(working_dir))
         data._temp_folder = _prepare_working_dir(data.path)

@@ -371,7 +371,7 @@ def detect_change(model,
         mean = np.array([0.5] * (len(model_info['ExtractBands']) // 2), dtype=np.float32)
         std = np.array([0.5] * (len(model_info['ExtractBands']) // 2), dtype=np.float32)        
         batch_before = scale_batch(batch_before, model_info, break_extract_bands=True)
-        batch_after = scale_batch(batch_after, model_info, break_extract_bands=True)        
+        batch_after = scale_batch(batch_after, model_info, break_extract_bands=True)            
 
     batch_before = norm(batch_before.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
     batch_after = norm(batch_after.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)

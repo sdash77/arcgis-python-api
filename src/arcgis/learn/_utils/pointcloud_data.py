@@ -34,6 +34,9 @@ import types
 import random
 import logging
 import shutil
+import copy
+from functools import partial
+import re
 logger = logging.getLogger()
 
 try:
@@ -87,6 +90,7 @@ def pad_tensor(cur_tensor, max_points, to_float=True):
         if to_float:
             remaining_tensor = remaining_tensor.float()
         else:
+            cur_tensor = cur_tensor.long()
             remaining_tensor = remaining_tensor.long()
         cur_tensor = torch.cat((cur_tensor, remaining_tensor), dim=0)
     else:
@@ -110,15 +114,15 @@ def concatenate_tensors(read_file, input_keys, tile, max_points):
             if len(cur_tensor.shape) < 2:
                 cur_tensor = cur_tensor[:, None]
 
-            max_val = cur_tensor.new(min_max['max'])
-            min_val = cur_tensor.new(min_max['min'])
-            cur_tensor = cur_tensor = (cur_tensor - min_val) / (max_val )  ## Test with one_hot
+            max_val = cur_tensor.new_tensor(min_max['max'])
+            min_val = cur_tensor.new_tensor(min_max['min'])
+            cur_tensor = (cur_tensor - min_val) / (max_val)  ## Test with one_hot
             cur_tensor, cur_points = pad_tensor(cur_tensor, max_points)
             cat_tensor.append(cur_tensor)
     
-    return torch.cat(cat_tensor, dim=1), cur_points
+    return torch.cat(cat_tensor, dim=1), cur_tensor.new_tensor(cur_points).long()
 
-def remap_classes(class_values):
+def to_remap_classes(class_values):
     flag = False
     if class_values[0] != 0:
         return True
@@ -127,73 +131,321 @@ def remap_classes(class_values):
             return True
     return flag    
 
+def get_class_from_bit_mask(mask):
+    classes_present = set()
+    mask = np.array(mask)
+    i = 0
+    for b in mask:
+        for k in range(8):
+            if b & (1 << k):
+                classes_present.add(i)
+            i += 1
+
+    return classes_present
+
+def get_filter_index(masks,
+                     tiles,
+                     min_points=None, 
+                     classes_of_interest=None,
+                     return_file_index=False
+                     ):
+    """
+    tiles = N, [4000, 5000, 1000]
+    masks = N, [[1,2], [2,5], [1,5]]
+    classes_of_interest=[2]
+    """
+    file_indexes = set([])
+    if min_points is not None:
+        indexes_min_points = set() 
+        for i, t in enumerate(tiles):
+            if t[2] > min_points:
+                indexes_min_points.add(i)
+                file_indexes.add(t[0])
+    else:
+        indexes_min_points = set(range(len(tiles)))
+    
+    skipped_blocks_min_points = len(tiles) - len(indexes_min_points)
+
+    if classes_of_interest is not None:
+        classes_of_interest = set(classes_of_interest)
+        indexes_classes_of_interest = set()
+        for i, m in enumerate(masks):
+            classes_present = get_class_from_bit_mask(m)
+            # print(classes_present, classes_of_interest, classes_present & classes_of_interest)
+            if (classes_present & classes_of_interest):
+                indexes_classes_of_interest.add(i)
+                file_indexes.add(tiles[i][0])
+    else:
+        indexes_classes_of_interest = set(range(len(tiles)))
+
+    skipped_blocks_COI = len(tiles) - len(indexes_classes_of_interest)
+
+    # intersection of two sets is our list of indexes.
+    indexes = list(indexes_min_points & indexes_classes_of_interest)
+
+    if return_file_index:
+        return indexes, skipped_blocks_min_points, skipped_blocks_COI, list(file_indexes)
+    else:
+        return indexes
+
+
+def get_background_classes(class_mapping, classes_of_interests):
+    all_classes = set(class_mapping.keys())
+    classes_of_interests = set(classes_of_interests)
+    bg_classes = all_classes - classes_of_interests
+    return list(bg_classes)
+
+
+def compute_inverse_remap(remap_classes):
+    inverse = {}
+    for k, v in remap_classes.items():
+        inverse.setdefault(v, []).append(k)
+    return inverse
+
+def expand_classes_of_interest(classes_of_interest, inverse_remap_classes):
+    expanded = []
+    for c in classes_of_interest:
+        expanded.extend(inverse_remap_classes.get(c, [c]))
+    return expanded
+
 class PointCloudDataset(Dataset):
-    def __init__(self, path, max_point, extra_dim, class_mapping, **kwargs):
+    def __init__(self, path, class_mapping, json_file, folder='', **kwargs):
         try_import("h5py")
         import h5py
         self.init_kwargs = kwargs
         self.path = Path(path)
-        self.max_point = max_point  ## maximum number of points
-        
-        with open(self.path / 'Statistics.json', 'r') as f:
-            self.statistics = json.load(f)        
-        
-        self.block_size = self.statistics['parameters']['tileSize']
-        self.input_keys = self.statistics['features']  ## Keys to include in training
+        if json_file is None:
+            with open(self.path / folder / 'Statistics.json', 'r') as f:
+                json_file = json.load(f)
+        self.max_point = json_file['parameters']['maxPoints']  ## maximum number of points
+        self.statistics = json_file      
+        self.folder = folder
+        self.features_to_keep = copy.copy(kwargs.get('extra_features', []))
         self.classification_key = kwargs.get('classification_key', 'classification')     ## Key which contain labels
+        self.min_points = kwargs.get('min_points', None)
+        self.remap_classes = kwargs.get('remap_classes', {})
+        self.classes_of_interest = kwargs.get('classes_of_interest', [])
+        self.background_classcode = kwargs.get('background_classcode', None)
+        self.block_size = self.statistics['parameters']['tileSize']
+        self.input_keys = self.statistics['attributes']  # Keys to include in training
+        self.input_keys.pop('rgbType', None)
+        features_present = list(self.input_keys.keys())
+        features_present.remove('xyz')
+        if self.features_to_keep != []:
+            if not all([c in self.input_keys.keys() for c in self.features_to_keep]):
+                raise Exception(f"extra_features {self.features_to_keep} must be a subset of {features_present}")         
+        self.features_to_keep += ['xyz']               
+        self.input_keys = {k: v for k, v in self.input_keys.items() if k in self.features_to_keep}
+        ## It is assumed that the pointcloud will have only X,Y & Z.   
+        extra_dim = sum([len(v['max']) if isinstance(v.get('max'), list) else 1
+                        for k, v in self.input_keys.items()]) - 3        
         self.extra_dim = extra_dim
-        self.total_dim = 3 + extra_dim
+        self.total_dim = 3 + extra_dim  # XYZ + extra dimensions
         self.extra_features = self.input_keys
-        
-        if class_mapping is None:
-            self.class_mapping =  {value['classCode']:idx for idx,value in enumerate(self.statistics['classification']['table'])}
-        else:
-            self.class_mapping = class_mapping
-        ## Helper attributes for remapping
-        self.c = len(self.class_mapping)
-        self.color_mapping = kwargs.get('color_mapping', np.array([np.random.randint(0, 255, 3) for i in range(self.c)])/255)
-        self.remap = False
-        self.remap = remap_classes(list(self.class_mapping.values()))
-        
-        self.classes = list(self.class_mapping.values())
+        self.remap = False        
+        if self.min_points is not None:
+            assert self.min_points < self.max_point, f"min_points({self.min_points}) cannot be greater than max_points({self.max_point}) set during export"
 
-        with h5py.File(self.path / 'ListTable.h5', 'r') as f:
+        if self.classes_of_interest == [] and self.background_classcode is not None:
+            raise Exception("background_classcode can only be used when `classes_of_interest` is passed.")
+        
+        # Class Mapping
+        full_class_mapping = {int(v['classCode']): str(v['classCode']) for v in self.statistics['classification']['table']}
+        orig_classes = list(full_class_mapping.keys())
+        # account for remapping here.
+        if self.remap_classes != {}:
+            self.remap = True
+            mapped_classes = set(self.remap_classes.values())
+            unmapped_classes = set([c for c in full_class_mapping.keys() if c not in self.remap_classes.keys()])
+            all_classes = mapped_classes.union(unmapped_classes)
+            full_class_mapping = {int(c): str(c) for c in all_classes}
+        
+        if self.classes_of_interest != []:
+            filter_classes = True
+            classes_of_interest = self.classes_of_interest
+        else:
+            filter_classes = False
+            classes_of_interest = None
+
+        unexpanded_COI = classes_of_interest
+        if filter_classes:
+            if not all([c in full_class_mapping.keys() for c in unexpanded_COI]):
+                raise Exception(f"classes_of_interest {classes_of_interest} must be a subset of {list(full_class_mapping.keys())}")    
+
+        if class_mapping is None:
+            class_mapping = full_class_mapping
+        else:
+            class_mapping = {k: class_mapping.get(k, v) for k, v in full_class_mapping.items()}
+
+        if self.classes_of_interest != [] and self.background_classcode is not None:
+            # filter class mapping
+            class_mapping = {k: v for k, v in class_mapping.items() if k in self.classes_of_interest}
+            class_mapping[self.background_classcode] = 'background'
+
+        class_mapping = {int(k): str(v) for k, v in class_mapping.items()}
+
+        self.class_mapping = class_mapping
+
+        # self.subset_classes = subset_classes
+        # print(self.class_mapping.keys())
+        important_classes = list(self.class_mapping.keys())
+        self.important_classes = important_classes
+        self.remap_dict = self.remap_classes
+        self.remap_bool = self.remap_classes is not {}
+
+        self.class2idx =  {value: idx for idx, value in enumerate(sorted(list(self.class_mapping.keys())))}
+        ## Helper attributes for remapping
+        self.c = len(self.class2idx)
+        if self.remap is False:
+            self.remap = to_remap_classes(list(self.class2idx.keys()))
+        self.classes = list(self.class2idx.keys())
+
+        if self.background_classcode is not None:
+            self.remap = True
+            ## get classes that belong to background and remap to bg code.
+            bg_classes = get_background_classes(full_class_mapping, classes_of_interest)
+            # map original classes to the index to which bg would have been mapped
+            bg_mapping = {k: self.class2idx[self.background_classcode] for k in bg_classes}
+            self._bg_mapping = bg_mapping
+            # remove bg code from class2idx
+            self.class2idx.pop(self.background_classcode)
+            # merge the original with the bgmapped
+            self.class2idx = {**self.class2idx, **bg_mapping}
+
+        if self.remap_classes != {}:
+            # if remap_classes is {7:25, 3:25}, the inverse will be
+            # {25:[7,3]}
+            inverse_remap_classes = compute_inverse_remap(self.remap_classes)
+            if filter_classes:
+                classes_of_interest = expand_classes_of_interest(classes_of_interest, inverse_remap_classes)
+            # print(inverse_remap_classes)
+            self.repeated_mapping = {}
+            for k, v in inverse_remap_classes.items():
+                for c in v:
+                    self.repeated_mapping[c] = self.class2idx[k]
+            self.class2idx = {**self.class2idx, **self.repeated_mapping}              
+
+        # Color mapping.
+        self.color_mapping = kwargs.get('color_mapping',
+                                        {k: [random.choice(range(256)) for _ in range(3)] 
+                                         for k, _ in self.class_mapping.items()})
+        self.color_mapping = {int(k):v for k, v in self.color_mapping.items()}
+        # filter if classes are less.
+        
+        # filter out mapping of classes i.e not in the data.
+        # in case of remap sometimes we get {remapped_value (out of classes): some value}
+        self.class2idx = {k: v for k,v in self.class2idx.items() if k in orig_classes}
+        # inverse mapping for visualization
+        self.idx2class = {i:c for i, c in enumerate(sorted(self.classes))}
+        self.classes_of_interest = classes_of_interest
+        with h5py.File(self.path / folder / 'ListTable.h5', 'r') as f:
             files = f['Files'][:]
             self.tiles = f['Tiles'][:]
+            orig_num_tiles = len(self.tiles)
+            self.masks = f['Masks'][:]
+            # centers and scales will be required in viz.
+            self.centers = f['Centers'][:]
+            self.scales = f['Scales'][:]
+            if self.min_points is not None or filter_classes:
+                # We should not filter on valid blocks, currently its happening on both.
+                indexes, skip_block_min_points, skip_block_COI, file_indexes = get_filter_index(self.masks, 
+                                                                                self.tiles, 
+                                                                                self.min_points,
+                                                                                classes_of_interest,
+                                                                                True)
+
+                self._skip_block_min_points = skip_block_min_points
+                self._skip_block_COI = skip_block_COI
+                self._total_blocks = len(self.tiles)
+
+                files = files[file_indexes]
+                self.tiles = self.tiles[indexes]
+                if len(self.tiles) == 0:
+                    raise Exception(f"The {folder} set is empty because everything "
+                                     "got filtered out based on `classes_of_interest`")
+                self._frac_remaining = len(self.tiles) / orig_num_tiles
+                self.masks = self.masks[indexes]
+                self.centers = self.centers[indexes]
+                self.scales = self.scales[indexes]
         
         self.relative_files = files
-        self.filenames = [self.path / file.decode() for file in files]
+        self.filenames = [self.path / self.folder / file.decode() for file in files]
         self.h5files = [(h5py.File(filename, 'r')) for filename in self.filenames]
+        self.classes_of_interest = classes_of_interest
     
     def __len__(self):
         return len(self.tiles)
+
+    def _get_file_blocks(self, i):
+        """Gives the xyz, labels by files.
+        used in show_batch for tool.
+
+        Args:
+            i: index of file
+        """
+        assert (i < len(self.h5files))
+        indexes = np.where(self.tiles[:, 0] == i)
+        read_file = self.h5files[i]
+        labels = []
+        xyzs = []
+        xyzs_scaled = []
+        centers = []
+        scales = []
+        for idx in indexes[0]:
+            tile = self.tiles[idx]
+            center = self.centers[idx]
+            scale = self.scales[idx]
+            xyz = read_file['xyz'][tile[1]:tile[1]+tile[2]]
+            xyzs.append(xyz)
+            labels.append(read_file['classification'][tile[1]:tile[1]+tile[2]])
+            xyzs_scaled.append(xyz * scale + center)
+            # centers.append(self.centers[tile[1]:tile[1]+tile[2]])
+            # scales.append(read_file['Scales'][tile[1]:tile[1]+tile[2]])
+        xyzs = np.concatenate(xyzs, axis=0)
+        labels = np.concatenate(labels, axis=0)
+        xyzs_scaled = np.concatenate(xyzs_scaled, axis=0)
+        return xyzs, labels, xyzs_scaled
+
     
-    def __getitem__(self, i):
+    def __getitem__(self, i, return_scaled=False):
         
         tile = self.tiles[i]        
         read_file = self.h5files[tile[0]]
-        
+
+        # we need this in show_results of tool.
+        rescaled_xyz = read_file['xyz'][tile[1]:tile[1]+tile[2]].astype(np.float32) * self.scales[i] + self.centers[i]
+        # print("rescaled_xyz.shape", rescaled_xyz.shape, read_file['xyz'].shape, read_file['xyz'], read_file)
         if self.classification_key in read_file.keys():
-            
             classification, _ = pad_tensor(torch.tensor(read_file[self.classification_key][tile[1]:tile[1]+tile[2]].astype(int)),
                                         self.max_point,
                                         to_float=False
                                         )
             if not self.remap:
-                return concatenate_tensors(read_file, self.input_keys, tile, self.max_point), classification
+                retval = [concatenate_tensors(read_file, self.input_keys, tile, self.max_point),
+                        classification.long()]
             else:
-                return concatenate_tensors(read_file, self.input_keys, tile, self.max_point), remap_labels(classification)                                        
+                retval = [concatenate_tensors(read_file, self.input_keys, tile, self.max_point),
+                        remap_labels(classification, self.class2idx).long()]
+
+            if return_scaled:
+                retval += [rescaled_xyz]
+            
+            return retval
         else:
             logger.warning(f"key `{self.classification_key}` could not be found in the exported files.")
-            return concatenate_tensors(read_file, self.input_keys, tile, self.max_point), None
+            retval = concatenate_tensors(read_file, self.input_keys, tile, self.max_point), None
+
+        return retval
         
     def close(self):
         [file.close() for file in self.h5files]
+
 
 def minmax_scale(pc):
     min_val = np.amin(pc, axis=0)
     max_val = np.amax(pc, axis=0)
     return (pc - min_val[None])/max(max_val - min_val)
+
 
 def recompute_color_mapping(color_mapping, all_classes):
     color_mapping = {int(k):v for k, v in color_mapping.items()}
@@ -203,12 +455,13 @@ def recompute_color_mapping(color_mapping, all_classes):
         raise Exception(f"Keys of your classes in your color_mapping do not match with classes present in data i.e {all_classes}")
     return color_mapping
 
-def class_string(label_array, prefix=''):
-    return [f'{prefix}class: {k}' for k in label_array]
+def class_string(label_array, prefix='', class_mapping=None):
+    label_text = np.vectorize(class_mapping.get)(label_array)
+    return [f'{prefix}class: {k}' for i,k in enumerate(label_text)]
 
-def mask_classes(labels, mask_class, class_mapping=None):
-    if class_mapping is not None:
-        mask_class = [class_mapping[x] for x in mask_class]
+def mask_classes(labels, mask_class, class2idx=None):
+    if class2idx is not None:
+        mask_class = [class2idx[x] for x in mask_class]
     if mask_class == []:
         ## return complete mask
         return labels != None
@@ -282,8 +535,9 @@ def show_point_cloud_batch(self, rows=2, figsize=(6,12), color_mapping=None, **k
     try_import('plotly')
     import plotly.graph_objects as go
     mask_class = kwargs.get('mask_class', [])
+    apply_tfms = kwargs.get('apply_tfms', False)
+    save_txt = kwargs.get('save_txt', False)
     max_display_point = get_max_display_points(self, kwargs)
-    rows = min(rows, self.batch_size)
     color_mapping = self.color_mapping if color_mapping is None else color_mapping
     color_mapping = recompute_color_mapping(color_mapping, self.classes)       
     color_mapping = np.array(list(color_mapping.values())) / 255
@@ -294,26 +548,37 @@ def show_point_cloud_batch(self, rows=2, figsize=(6,12), color_mapping=None, **k
     idx = 0
     file_idx = 0
     while (idx < rows):
-        file = h5_files[file_idx]
-        pc = file['xyz'][:]
-        labels = file['classification'][:]
-        unmapped_labels = labels.copy()
+        # file = h5_files[file_idx]
+        _pc, labels, pc = self._get_file_blocks(file_idx) 
         if self.remap:
-            labels = remap_labels(labels, self.class_mapping) 
-        sample_idxs = mask_classes(labels, mask_class, self.class_mapping if self.remap else None)
+            labels = remap_labels(labels, self.class2idx) 
+            unmapped_labels = remap_labels(labels.copy(), self.idx2class)
+        else:
+             unmapped_labels = labels.copy()
+        sample_idxs = mask_classes(labels, mask_class, self.class2idx if self.remap else None)
         sampled_pc = pc[sample_idxs]
 
         if sampled_pc.shape[0] == 0:
             file_idx += 1
             continue
-        x, y, z = recenter(sampled_pc).transpose(1,0)  ## convert to 3,N so that upacking works
+        
+        if apply_tfms:
+            sampled_pc = self.transform_fn.transform_tool(sampled_pc[None])[0]
+        x, y, z = recenter(sampled_pc).transpose(1, 0)  # convert to 3,N so that upacking works
+
+        if save_txt:
+            import pandas as pd
+            x, y, z = sampled_pc.transpose(1,0)
+            pd.DataFrame(data={'x':x, 'y':y, 'z':z, 'classification':unmapped_labels}).to_csv('temp.txt', index=False, header=False)
+            print('saved at temp.txt in current directory.')
+            return        
 
         if filter_outliers:
-            ## Filter on the basis of std.
+            # Filter on the basis of std.
             mask = filter_pc(pc)
         else:
-            ## all points
-            mask = x > -9999999    
+            # all points
+            mask = x > -999999999    
 
         if sample_idxs.sum() > max_display_point:
             raise_maxpoint_warning(idx, kwargs, logger, max_display_point)
@@ -329,7 +594,7 @@ def show_point_cloud_batch(self, rows=2, figsize=(6,12), color_mapping=None, **k
 
         fig = go.Figure(data=[go.Scatter3d(x=x[mask], y=y[mask], z=z[mask], 
                                         mode='markers', marker=dict(size=1, color=color_list),
-                                        text=class_string(unmapped_labels[sample_idxs][mask]))], layout=layout)
+                                        text=class_string(unmapped_labels[sample_idxs][mask], '', self.class_mapping))], layout=layout)
         fig.show()        
 
         if idx == rows-1:
@@ -402,15 +667,31 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
     try_import('plotly')
     import plotly.graph_objects as go
     mask_class = kwargs.get('mask_class', [])
+    apply_tfms = kwargs.get('apply_tfms', False)
+    save_txt = kwargs.get('save_txt', False)
     rows = min(rows, self.batch_size)
     max_display_point = get_max_display_points(self, kwargs)
     color_mapping = self.color_mapping if color_mapping is None else color_mapping
     color_mapping = recompute_color_mapping(color_mapping, self.classes)       
     color_mapping = np.array(list(color_mapping.values())) / 255
 
+    def is_class_present(classes_of_interest, k, meta):
+        classes_present = set()
+        for u in meta['files'][k]['unique_classes']:
+            classes_present =  classes_present | set(u)
+        classes_present = list(classes_present)
+        return any([p in classes_present for p in classes_of_interest])
+
     idx = 0
     import random
     keys = list(self.meta['files'].keys()).copy()
+
+    if self.classes_of_interest != []:
+        classes_of_interest = self.important_classes
+        keys = [k for k in keys if is_class_present(classes_of_interest, k, self.meta)]
+    
+    if len(keys) == 0:
+        logger.warn('No blocks remains after filtering based on `classes_of_interest`')
     keys = [k for k in keys if 'train' in Path(k).parts]
     random.shuffle(keys)
     
@@ -422,7 +703,7 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
         if num_files == []:
             continue
         if not Path(fn).is_absolute():
-            fn = str(self.path / fn)
+            fn = str(self._data_path / fn)
         idxs = [h5py.File(fn[:-3] + f'_{i}.h5', 'r') for i in num_files]
         pc = []
         labels = []
@@ -435,17 +716,34 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
             
         if pc == []:
             continue         
-       
+        
         pc = np.concatenate(pc, axis=0)
         labels = np.concatenate(labels, axis=0)
-        unmapped_labels = labels.copy()    
         if self.remap:
-            labels = remap_labels(labels, self.class_mapping)  
-        sample_idxs = mask_classes(labels, mask_class, self.class_mapping if self.remap else None)
+            labels = remap_labels(labels, self.class2idx)                                              
+            unmapped_labels = remap_labels(labels.copy(), self.idx2class)
+        else:
+            unmapped_labels = labels.copy()
+
+        sample_idxs = mask_classes(labels, mask_class, self.class2idx if self.remap else None)
         sampled_pc = pc[sample_idxs]
         if sampled_pc.shape[0] == 0:
             continue
-        x, y, z = recenter(sampled_pc).transpose(1,0)       
+
+        if apply_tfms:
+            sampled_pc = self.transform_fn(sampled_pc[None])[0]
+
+        return sampled_pc
+            
+        x, y, z = recenter(sampled_pc).transpose(1,0) 
+
+        if save_txt:
+            import pandas as pd
+            x, y, z = sampled_pc.transpose(1,0)
+            pd.DataFrame(data={'x':x, 'y':y, 'z':z, 'classification':unmapped_labels}).to_csv('temp.txt', index=False, header=False)
+            print('saved at temp.txt in current directory.')
+            return
+      
         if filter_outliers:
             ## Filter on the basis of std.
             mask = filter_pc(pc)
@@ -467,7 +765,8 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
 
         figww = go.Figure(data=[go.Scatter3d(x=x[mask], y=z[mask], z=y[mask], 
                                         mode='markers', marker=dict(size=1, color=color_list),
-                                        text=class_string(unmapped_labels[sample_idxs][mask]))], layout=layout)
+                                        text=class_string(unmapped_labels[sample_idxs][mask], '', self.class_mapping))], 
+                                        layout=layout)
         figww.show()
 
         if idx == rows-1:
@@ -512,6 +811,7 @@ def prepare_las_data(root,
                     ):
     try_import("h5py")
     import h5py
+    drop_classes = kwargs.get('drop_points', [])
     block_size_ = block_size
     batch_size= blocks_per_file
     data = np.zeros((batch_size, max_point_num, 3 + len(extra_features))) #XYZ, Intensity, NumReturns
@@ -699,19 +999,26 @@ def prepare_las_data(root,
                 unnormalized_data = file['unnormalized_data']
                 block_center = file['block_center'][:]
                 file_idxs = []
+                all_unique_classes = []
+                total_points = []
                 for i in range(file['data_num'][:].shape[0]):
-                    if not ((label_seg[i] != GROUND_CLASS).sum().tolist() == 0):
-                        save_file = path_convert / Path(folder).stem /  (fn.stem + f'_{i}' + '.h5')
-                        new_file = h5py.File(save_file, mode='w')
-                        new_file.create_dataset('unnormalized_data', data=unnormalized_data[i])
-                        new_file.create_dataset('data', data=data[i])
-                        new_file.create_dataset('label_seg', data=label_seg[i])
-                        new_file.create_dataset('data_num', data=data_num[i])
-                        new_file.close()
-                        all_classes = all_classes.union(np.unique(label_seg[i][:data_num[i]]).tolist())
-                        file_idxs.append(i)
+                    save_file = path_convert / Path(folder).stem /  (fn.stem + f'_{i}' + '.h5')
+                    new_file = h5py.File(save_file, mode='w')
+                    new_file.create_dataset('unnormalized_data', data=unnormalized_data[i])
+                    new_file.create_dataset('data', data=data[i])
+                    new_file.create_dataset('label_seg', data=label_seg[i])
+                    new_file.create_dataset('data_num', data=data_num[i])
+                    new_file.close()
+                    unique_classes = np.unique(label_seg[i][:data_num[i]]).tolist()
+                    all_classes = all_classes.union(unique_classes)
+                    all_unique_classes.append(unique_classes)
+                    total_points.append(int(data_num[i]))
+                    file_idxs.append(i)
                 meta_file['files'][os.path.join(*fn.parts[-2:])] = {'idxs':file_idxs,
-                                                'block_center':block_center.tolist()}
+                                                'block_center':block_center.tolist(),
+                                                'unique_classes': all_unique_classes,
+                                                'total_points': total_points
+                                                }
                 file.close()
                 os.remove(fn)
         meta_file['num_classes'] = len(all_classes)
@@ -744,120 +1051,316 @@ def open_h5py_tensor(fn, keys=['data']):
     
 ## It also stores the label so that we don't have to open the file twice.
 class DataStore():
+    indexes = False
     pass
     
 class PointCloudItemList(ItemList):
     def __init__(self, items, **kwargs):
+        if DataStore.indexes is False and (not isinstance(DataStore.indexes, list)):
+                DataStore.indexes = kwargs.get('extra_feat_indexes', None)
+        kwargs.pop('extra_feat_indexes', None)
         super().__init__(items, **kwargs)
-        
         self.keys = ['data', 'label_seg', 'data_num']
         
     def get(self, i):
+        indexes = DataStore.indexes
         data = self.open(self.items[i])
         DataStore.i = i
         DataStore.data = data
-        return (data[0], data[2])
+        if indexes is None:
+            return (data[0], data[2])
+        else:
+            return (data[0][:, indexes], data[2])
         
     def open(self, fn):
         return open_h5py_tensor(fn, keys=self.keys)
 
-def remap_labels(labels, class_mapping):
+def remap_labels(labels, class2idx):
+    """
+    Remaps labels from non-contigous space to contiguous.
+    """
     if isinstance(labels, torch.Tensor):
         remapped_label = torch.zeros_like(labels)
     else:
         remapped_label = np.zeros_like(labels)
-    for k,v in class_mapping.items():
+    for k,v in class2idx.items():
         remapped_label[labels == k] = v
     return remapped_label
     
 class PointCloudLabelList(ItemList):
-    def __init__(self, items, remap=False, class_mapping={}, **kwargs):
+    def __init__(self, 
+                 items, 
+                 remap=False, 
+                 class2idx={}, 
+                 **kwargs):
         super().__init__(items, **kwargs)
         self.key = 'label_seg'
         self.remap = remap
-        self.class_mapping = class_mapping
+        self.class2idx = class2idx
         
     def get(self, i):
+        labels = DataStore.data[1].long()
         if self.remap:
-            # import pdb; pdb.set_trace();
-            return remap_labels(DataStore.data[1].long(), self.class_mapping)
+            return remap_labels(labels, 
+                                self.class2idx)
         else:
-            return DataStore.data[1].long()
+            return labels
     
     def analyze_pred(self, pred):
         return pred.argmax(dim=1)
         
 PointCloudItemList._label_cls = PointCloudLabelList
 
-## Prepare data called in _data.py
+def filter_files(fname, meta, classes_to_check, min_points):
+    idx = int(str(fname)[-4])
+    fname = Path(fname)
+    # Do not filter validation files.
+    if fname.parent.name != 'train':
+        return True
+    
+    key = os.path.join(fname.parent.name, re.sub('_[0-9]+\.h5','',fname.name) + '.h5')
+    # print(key, fname.name, idx)
+    classes_present = meta['files'][key]['unique_classes'][idx]
+    is_present_COI = any([k in classes_present for k in classes_to_check])
+    if classes_to_check == []:
+        is_present_COI = True
+    is_present_min_points = meta['files'][key]['total_points'][idx] > min_points
+    is_present = is_present_COI and is_present_min_points
+    return is_present
 
+# Prepare data called in _data.py
 def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type='PointCloud', transform_fn=None, **kwargs):
     try_imports(['h5py', 'plotly', 'laspy'])
     databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
     if (path / 'Statistics.json').exists():
         dataset_type = "PointCloud"
+        already_split = False
+    if (path / 'train' / 'Statistics.json').exists() and (path / 'val' / 'Statistics.json').exists():
+        dataset_type = "PointCloud"
+        already_split = True        
     elif (path / 'meta.json').exists():
         dataset_type = "PointCloud_TF"
     else:
         dataset_type = "Unknown"
 
+
+    extra_features = kwargs.get('extra_features', None)
+
     if dataset_type == 'PointCloud':
-        with open(path / 'Statistics.json') as f:
-            json_file = json.load(f)
+        if already_split:
+            # write code to merge json.
+            # TODO:: CHANGE THIS TO MERGE TRAIN and VAL statistics
+            with open(path/ 'train' / 'Statistics.json') as f:
+                json_file = json.load(f)
+              
+            pointcloud_dataset_train = PointCloudDataset(path, class_mapping, json_file, folder='train', **kwargs)
+            pointcloud_dataset_val = PointCloudDataset(path, class_mapping, json_file, folder='val', **kwargs)
+            train_dl = DataLoader(pointcloud_dataset_train, batch_size=batch_size, **databunch_kwargs)
+            valid_dl = DataLoader(pointcloud_dataset_val, batch_size=batch_size, **databunch_kwargs)
+            device = get_device()
+            data = DataBunch(train_dl, valid_dl, device=device)
+            data.show_batch = types.MethodType(show_point_cloud_batch, data)
+            data.path = data.train_ds.path
 
-        max_points = json_file['parameters']['numberOfPointsInEachTile']
 
-        ## It is assumed that the pointcloud will have only X,Y & Z.
-        extra_dim = sum([len(v['max']) if isinstance(v['max'], list) else 1 for k,v in json_file['features'].items()]) - 3
-        pointcloud_dataset = PointCloudDataset(path, max_points, extra_dim, class_mapping, **kwargs)
+            data.subset_classes = []
+            data.remap_dict = {}
+            data.remap_bool = False
+            data.important_classes = []
+            data.remap = data.train_ds.remap
 
-        # Splitting in train and test based on files.
-        total_files = len(pointcloud_dataset.filenames)
-        total_files_idxs = list(range(total_files))
-        random.shuffle(total_files_idxs)
-        total_val_files = int(val_split_pct * total_files)
-        val_files = total_files_idxs[-total_val_files:]
-        if total_val_files == 0:
-            raise Exception("No files could be added to validation dataset. Please increase the value of `val_split_pct`")
-        tile_file_indices = pointcloud_dataset.tiles[:, 0]
-        val_indices = torch.from_numpy(np.isin(tile_file_indices, val_files)).nonzero()
-        train_indices = torch.from_numpy(np.logical_not(np.isin(tile_file_indices, val_files))).nonzero()
-        train_sampler = SubsetRandomSampler(train_indices)
-        val_sampler = SubsetRandomSampler(val_indices)
-        train_dl = DataLoader(pointcloud_dataset, batch_size=batch_size, sampler=train_sampler, **databunch_kwargs)
-        valid_dl = DataLoader(pointcloud_dataset, batch_size=batch_size, sampler=val_sampler, **databunch_kwargs)
-        device = get_device()
-        data = DataBunch(train_dl, valid_dl, device=device)
-        data.show_batch = types.MethodType(show_point_cloud_batch, data)
-        data.path = data.train_ds.path
-        data.val_files = val_files
+            # data.val_files = val_files                        
+        else:
+            with open(path / 'Statistics.json') as f:
+                json_file = json.load(f)
+
+            max_points = json_file['parameters']['maxPoints']
+            pointcloud_dataset = PointCloudDataset(path, class_mapping, json_file, **kwargs)
+            # Splitting in train and test based on files.
+            total_files = len(pointcloud_dataset.filenames)
+            total_files_idxs = list(range(total_files))
+            random.shuffle(total_files_idxs)
+            total_val_files = int(val_split_pct * total_files)
+            val_files = total_files_idxs[-total_val_files:]
+            if total_val_files == 0:
+                raise Exception("No files could be added to validation dataset. Please increase the value of `val_split_pct`")
+            tile_file_indices = pointcloud_dataset.tiles[:, 0]
+            val_indices = torch.from_numpy(np.isin(tile_file_indices, val_files)).nonzero()
+            train_indices = torch.from_numpy(np.logical_not(np.isin(tile_file_indices, val_files))).nonzero()
+            train_sampler = SubsetRandomSampler(train_indices)
+            val_sampler = SubsetRandomSampler(val_indices)
+            train_dl = DataLoader(pointcloud_dataset, batch_size=batch_size, sampler=train_sampler, **databunch_kwargs)
+            valid_dl = DataLoader(pointcloud_dataset, batch_size=batch_size, sampler=val_sampler, **databunch_kwargs)
+            device = get_device()
+            data = DataBunch(train_dl, valid_dl, device=device)
+            data.show_batch = types.MethodType(show_point_cloud_batch, data)
+            data.path = data.train_ds.path
+            data.val_files = val_files
 
     elif dataset_type == 'PointCloud_TF':
         with open(Path(path) / 'meta.json', 'r') as f:
             meta = json.load(f)
-        classes = meta['classes']
-        remap = remap_classes(classes)
-        class_mapping = class_mapping if class_mapping is not None else {v:k for k,v in enumerate(classes)}
-        src = PointCloudItemList.from_folder(path, ['.h5'])
+        classes = sorted(meta['classes'])
+        remap_classes = kwargs.get('remap_classes', {})
+        min_points = kwargs.get('min_points', 0)
+        classes_of_interest = kwargs.get('classes_of_interest', [])
+        background_classcode = kwargs.get('background_classcode', None)
+        if background_classcode is not None and classes_of_interest != []:
+            raise Exception("`background_classcode can only be used when `classes_of_interest` is passed.")
+
+        if remap_classes != {}:
+            to_be_remapped = list(remap_classes.keys())
+            if not all([c in classes for c in to_be_remapped]):
+                raise Exception(f"Remapping keys {to_be_remapped} must be a subset of classes available i.e {list(classes)}")
+
+        remap = False
+
+        keys = list(meta['files'].keys())
+        prepare_data_feature_warning = False
+        if 'unique_classes' not in meta['files'][keys[0]].keys():
+            old_exported_data_warning = True
+        else:
+            old_exported_data_warning = False
+
+        full_class_mapping = {int(v):str(v) for v in classes}
+        orig_classes = list(full_class_mapping.keys())
+        # account for remapping here.
+        if remap_classes != {}:
+            remap = True
+            mapped_classes = set(remap_classes.values())
+            unmapped_classes = set([c for c in full_class_mapping.keys() if c not in remap_classes.keys()])
+            all_classes = mapped_classes.union(unmapped_classes)
+            full_class_mapping = {int(c): str(c) for c in all_classes}
+        
+        filter_classes = classes_of_interest != []       
+
+        unexpanded_COI = classes_of_interest
+        if filter_classes:
+            if not all([c in full_class_mapping.keys() for c in unexpanded_COI]):
+                raise Exception(f"classes_of_interest {classes_of_interest} must be a subset of {list(full_class_mapping.keys())}")
+
+        # class mapping is string to integer.
+        if class_mapping is None:
+            class_mapping = full_class_mapping
+        else:
+            class_mapping = {int(k): class_mapping.get(k, v) for k, v in full_class_mapping.items()}            
+
+        if classes_of_interest != [] and background_classcode is not None:
+            # filter class mapping
+            class_mapping = {k: v for k, v in class_mapping.items() if k in classes_of_interest}
+            class_mapping[background_classcode] = 'background'
+
+        class_mapping = {int(k): str(v) for k, v in class_mapping.items()}
+
+        important_classes = list(class_mapping.keys())
+        important_classes = important_classes
+        remap_dict = remap_classes
+        remap_bool = remap_classes is not {}        
+
+        class2idx =  {value: idx for idx, value in enumerate(sorted(list(class_mapping.keys())))}
+        ## Helper attributes for remapping
+        c = len(class2idx)
+        if remap is False:
+            remap = to_remap_classes(list(class2idx.keys()))
+        classes = list(class2idx.keys())
+
+
+        if background_classcode is not None:
+            remap = True
+            ## get classes that belong to background and remap to bg code.
+            bg_classes = get_background_classes(full_class_mapping, classes_of_interest)
+            # map original classes to the index to which bg would have been mapped
+            bg_mapping = {k: class2idx[background_classcode] for k in bg_classes}
+            _bg_mapping = bg_mapping
+            # remove bg code from class2idx
+            class2idx.pop(background_classcode)
+            # merge the original with the bgmapped
+            class2idx = {**class2idx, **bg_mapping}
+
+        if remap_classes != {}:
+            # if remap_classes is {7:25, 3:25}, the inverse will be
+            # {25:[7,3]}
+            inverse_remap_classes = compute_inverse_remap(remap_classes)
+            if filter_classes:
+                classes_of_interest = expand_classes_of_interest(classes_of_interest, inverse_remap_classes)
+            # print(inverse_remap_classes)
+            repeated_mapping = {}
+            for k, v in inverse_remap_classes.items():
+                for c in v:
+                    repeated_mapping[c] = class2idx[k]
+            class2idx = {**class2idx, **repeated_mapping}
+               
+
+        # Color mapping.
+        color_mapping = kwargs.get('color_mapping',
+                                        {k: [random.choice(range(256)) for _ in range(3)] 
+                                            for k, _ in class_mapping.items()})
+        color_mapping = {int(k):v for k, v in color_mapping.items()}
+        idx2class = {i:c for i, c in enumerate(sorted(classes))}
+        class2idx = {k: v for k,v in class2idx.items() if k in orig_classes}
+        extra_features = meta['extra_features']
+        string_mapped_features = {
+            'numberOfReturns': 'num_returns',
+            'returnNumber' : 'return_num',
+        }
+        inverse_string_mapped_features = {v: k for k, v in string_mapped_features.items()}        
+        extra_features_users = kwargs.get('extra_features', [])
+
+
+
+        extra_features_filtered = [f for i, f in enumerate(extra_features) if inverse_string_mapped_features.get(f[0], f[0]) in extra_features_users]
+        extra_feature_keys = [f[0] for f in extra_features_filtered]
+        extra_features_keys_mapped = [inverse_string_mapped_features.get(f, f) for f in extra_feature_keys]        
+        # +3 to adjust for xyz.
+        extra_feat_indexes = [i + 3 for i, f in enumerate(extra_features) if inverse_string_mapped_features.get(f[0], f[0]) in extra_features_users]
+        if not all([c in extra_features_keys_mapped for c in extra_features_users]):
+            raise Exception(f"extra_features {extra_features_users} must be a subset of {extra_features_keys_mapped}")       
+        extra_feat_indexes = [0, 1, 2] + extra_feat_indexes
+        src = PointCloudItemList.from_folder(path, ['.h5'], extra_feat_indexes=extra_feat_indexes)
+        if classes_of_interest != [] or min_points > 0:
+            if old_exported_data_warning:
+                logger.warning("You are using exported data from an older version of the library. "
+                               "Ignoring `classes_of_interest` and `min_points` parameters. "
+                               "To use these features, please export your data again."
+                              )
+            else:
+                src = src.filter_by_func(partial(filter_files, 
+                                                meta=meta, 
+                                                classes_to_check=classes_of_interest,
+                                                min_points=min_points
+                                                ))
+                                             
         train_idxs = [i for i,p in enumerate(src.items) if p.parent.name == 'train']
         val_idxs = [i for i,p in enumerate(src.items) if p.parent.name == 'val']
         src = src.split_by_idxs(train_idxs, val_idxs)\
-            .label_from_func(lambda x: x, remap=remap, class_mapping=class_mapping)
+                 .label_from_func(lambda x: x, 
+                                 remap=remap, 
+                                 class2idx=class2idx)
         device = get_device()
         data = src.databunch(bs=batch_size, device=device, **databunch_kwargs)
         data.meta = meta
+        data.subset_classes = [classes_of_interest, background_classcode]
+        data.remap_dict = remap_classes
+        data.remap_bool = remap_bool
+        data.classes_of_interest = classes_of_interest
+        data.background_classcode = background_classcode
+        data.important_classes = classes_of_interest
         data.remap = remap
-        data.classes =  classes
-        data.c = data.meta['num_classes']
+        data.classes =  list(class_mapping.keys())
+        data.c = len(class_mapping)
         data.show_batch = types.MethodType(show_point_cloud_batch_TF, data)
-        data.color_mapping = kwargs.get('color_mapping', {k:[random.choice(range(256)) for _ in range(3)]  for k,_ in data.class_mapping.items()})
+        data.color_mapping = color_mapping
         data.color_mapping = {int(k):v for k, v in data.color_mapping.items()}
         data.color_mapping = recompute_color_mapping(data.color_mapping, data.classes)
-        data.class_mapping = class_mapping
+        data.class2idx = class2idx
+        data.idx2class = idx2class
         data.max_point = data.meta['max_point']
-        data.extra_dim = data.meta['num_extra_dim']
+        data.extra_dim = len(extra_features_users)
         data.extra_features = data.meta['extra_features']
+        data.extra_feat_indexes = extra_feat_indexes
+        data.features_to_keep = extra_features_keys_mapped
         data.block_size = data.meta['block_size']
+        data.class_mapping = class_mapping
         ## To accomodate save function to save in correct directory
         data.path = data.path / 'train' 
     else:
@@ -870,7 +1373,11 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
     data._image_space_used = None
     data.dataset_type = dataset_type
     data.transform_fn = transform_fn
+    data.init_kwargs = kwargs
     return data
+
+def prediction_remap_classes(labels, reclassify_classes, inverse_class2idx):
+    labels = np.vectorize(inverse_class2idx.get)(labels)
 
 def read_xyz_label_from_las(filename_las):
     try_import('laspy')
@@ -961,43 +1468,44 @@ def write_resulting_las(in_las_filename,
     false_positives = [0] * num_classes
     true_positives = [0] * num_classes
     false_negatives = [0] * num_classes
-    inverse_class_mapping = {v:k for k,v in data.class_mapping.items()}
+    if hasattr(data, 'idx2class'):
+        inverse_class2idx = data.idx2class
+    else:
+        inverse_class2idx = {v:k for k,v in data.class2idx.items()} 
     shutil.copy(in_las_filename, out_las_filename)
-    f = laspy.file.File(in_las_filename, mode='r')    
-    f_out = laspy.file.File(out_las_filename, mode='rw')
-    i = 0
-    classification = []
-    warn_flag = False
-    
-    ## remap classes
-    old_labels = labels.copy()
-    labels = prediction_remap_classes(labels, reclassify_classes, inverse_class_mapping)
-
-    if print_metrics:
-        for p in f:
-            p = f[i]
-            current_class = inverse_class_mapping[old_labels[i]] 
-            if reclassify_classes != {}:
-                current_class = reclassify_classes[current_class]       
-            try:
-                false_positives[old_labels[i]] += int(p.classification != current_class)
-                true_positives[old_labels[i]] += int(p.classification == current_class)
-                false_negatives[data.class_mapping[p.classification]] += int(p.classification != current_class)
-            except (IndexError, KeyError) as _:
-                warn_flag = True
-
-            i += 1
-
-    if selective_classify != []:
-        #current_class if current_class in selective_classify else p.classification
-        labels = prediction_selective_classify(labels, f, selective_classify)
-
-    if preserve_classes != []:
-        labels = preserved_overwrite(f_out, labels, preserve_classes)
+    with laspy.file.File(in_las_filename, mode='r') as f:
+        with laspy.file.File(out_las_filename, mode='rw') as f_out:
+            i = 0
+            classification = []
+            warn_flag = False
             
-    f.close()
-    f_out.classification = labels.tolist()
-    f_out.close()
+            ## remap classes
+            old_labels = labels.copy()
+            labels = prediction_remap_classes(labels, reclassify_classes, inverse_class2idx)
+
+            if print_metrics:
+                for p in f:
+                    p = f[i]
+                    current_class = inverse_class2idx[old_labels[i]] 
+                    if reclassify_classes != {}:
+                        current_class = reclassify_classes[current_class]       
+                    try:
+                        false_positives[old_labels[i]] += int(p.classification != current_class)
+                        true_positives[old_labels[i]] += int(p.classification == current_class)
+                        false_negatives[data.class2idx[p.classification]] += int(p.classification != current_class)
+                    except (IndexError, KeyError) as _:
+                        warn_flag = True
+
+                    i += 1
+
+            if selective_classify != []:
+                #current_class if current_class in selective_classify else p.classification
+                labels = prediction_selective_classify(labels, f, selective_classify)
+
+            if preserve_classes != []:
+                labels = preserved_overwrite(f_out, labels, preserve_classes)
+
+            f_out.classification = labels.tolist()
 
     # if print_metrics and warn_flag:
     #     logger.warning(f"Some classes in your las file {in_las_filename} do not match the classes the model is trained on")
@@ -1073,6 +1581,12 @@ def inference_las(path,
         if len(list(path.glob('*.las'))) == 0:
             raise Exception(f"The given path({path}) contains no las files.")
 
+        reclassify_classes = remap_classes
+        if reclassify_classes != {}:
+            if not all([k in pointcnn_model._data.classes for k in reclassify_classes.keys()]):
+                raise Exception(f"`remap_classes` dictionary keys are not present in dataset with classes {pointcnn_model._data.classes}.")
+            reclassify_classes = {k:reclassify_classes.get(k, k) for k in pointcnn_model._data.class2idx}
+
         if out_path is None:
             out_path = path / 'results'
         else:    
@@ -1114,6 +1628,8 @@ def inference_las(path,
             with h5py.File(filename, 'r') as data_h5:
                 has_indices = 'indices_split_to_full' in data_h5
                 data = data_h5['data'][...].astype(np.float32)  
+                if hasattr(pointcnn_model._data, 'extra_feat_indexes'):
+                    data = data[:,:, pointcnn_model._data.extra_feat_indexes]
                 data_num =  data_h5['data_num'][...].astype(np.int32)
                 indices_split_to_full = data_h5['indices_split_to_full'][...]
             batch_num = data.shape[0]
@@ -1215,19 +1731,22 @@ def inference_las(path,
                                                                                     preserve_classes)
                 global_false_positives = np.add(global_false_positives, false_positives)
                 global_true_positives = np.add(global_true_positives, true_positives)
-                global_false_negatives = np.add(global_false_negatives, false_negatives)
+                global_false_negatives = np.add(global_false_negatives, false_negatives)   
 
         if print_metrics:
-            index = ['precision', 'recall', 'f1_score']
-            inverse_class_mapping = {v:k for k,v in pointcnn_model._data.class_mapping.items()}
+            index = ['precision', 'recall', 'f1_score']        
+            if hasattr(pointcnn_model._data, 'idx2class'):
+                inverse_class2idx = pointcnn_model._data.idx2class
+            else:
+                inverse_class2idx = {v:k for k,v in pointcnn_model._data.class2idx.items()}        
             unique_mapped_classes = np.unique(np.array(list(reclassify_classes.values())))
             if len(unique_mapped_classes) == len(pointcnn_model._data.classes) or remap_classes == {}:
                 precision, recall, f_1 = calculate_metrics(global_false_positives, global_true_positives, global_false_negatives)
                 data = [precision, recall, f_1]
-                column_names = [inverse_class_mapping[cval] for cval in range(pointcnn_model._data.c)]
+                column_names = [inverse_class2idx[cval] for cval in range(pointcnn_model._data.c)]
                 if reclassify_classes != {}:
-                    remapping_class_mapping = {v:reclassify_classes[k] for k,v in pointcnn_model._data.class_mapping.items()}
-                    column_names = [remapping_class_mapping[cval] for cval in range(pointcnn_model._data.c)]
+                    remapping_class2idx = {v:reclassify_classes[k] for k,v in pointcnn_model._data.class2idx.items()}
+                    column_names = [remapping_class2idx[cval] for cval in range(pointcnn_model._data.c)]
                 df = pd.DataFrame(data, columns=column_names, index=index)
             else:
                 inverse_reclassify_classes = {}
@@ -1235,7 +1754,7 @@ def inference_las(path,
                     current_value = inverse_reclassify_classes.get(v, [])
                     current_value.append(k)
                     inverse_reclassify_classes[v] = current_value   
-                map_dict = {u: [pointcnn_model._data.class_mapping[k] for k in inverse_reclassify_classes[u]] for u in unique_mapped_classes}
+                map_dict = {u: [pointcnn_model._data.class2idx[k] for k in inverse_reclassify_classes[u]] for u in unique_mapped_classes}
                 global_false_positives =  recompute_globals(global_false_positives, map_dict)
                 global_true_positives = recompute_globals(global_true_positives, map_dict)
                 global_false_negatives = recompute_globals(global_false_negatives, map_dict)
@@ -1246,11 +1765,12 @@ def inference_las(path,
 
             from IPython.display import display
             display(df)
+
     except KeyboardInterrupt:
         remove_temp_files(path, out_path)
-        raise
+        raise 
 
-    remove_temp_files(path, out_path)      
+    remove_temp_files(path, out_path) 
 
     return out_path
 
@@ -1275,15 +1795,6 @@ def get_title_text(idx, save_html, max_display_point):
     if save_html:
         title_text = f'Ground Truth / Predictions (Displaying randomly sampled {max_display_point} points.)' if idx==0 else ''
     return title_text
-
-def inverse_remap_predictions(predictions, class_mapping):
-    if isinstance(predictions, torch.Tensor):
-        remapped_predictions = torch.zeros_like(predictions)
-    else:
-        remapped_predictions = np.zeros_like(predictions).astype(int)
-    for k,v in class_mapping.items():
-        remapped_predictions[predictions == v] = k
-    return remapped_predictions    
 
 def show_results(self, rows, color_mapping=None, **kwargs):
 
@@ -1359,7 +1870,7 @@ def show_results(self, rows, color_mapping=None, **kwargs):
         if num_files == []:
             continue
         if not Path(fn).is_absolute():
-            fn = str(self._data.path / fn)            
+            fn = str(self._data._data_path / fn)            
         idxs = [h5py.File(fn[:-3] + f'_{i}.h5', 'r') for i in num_files]
         pc = []
         labels = []
@@ -1376,7 +1887,7 @@ def show_results(self, rows, color_mapping=None, **kwargs):
             max_point_num = self._data.max_point
             sample_num = self.sample_point_num
             batch_size = 1 * math.ceil(max_point_num / sample_num) 
-            data = data[None]
+            data = data[:, self._data.extra_feat_indexes][None]
             batch_idx = 0
             points_batch = data[[batch_idx] * batch_size, ...]
             point_num = data_num
@@ -1389,13 +1900,14 @@ def show_results(self, rows, color_mapping=None, **kwargs):
             continue         
                 
         pc = np.concatenate(pc, axis=0)
-        labels = np.concatenate(labels, axis=0)
-        unmapped_labels = labels.copy().astype(int)
+        labels = np.concatenate(labels, axis=0)       
+        unmapped_labels = labels.copy().astype(int)        
         if self._data.remap:
-            labels = remap_labels(labels, self._data.class_mapping)
+            labels = remap_labels(labels, self._data.class2idx)
+            unmapped_labels = remap_labels(labels.copy().astype(int), self._data.idx2class)
         pred_class = np.concatenate(pred_class, axis=0).astype(int)
-        unmapped_pred_class = inverse_remap_predictions(pred_class, self._data.class_mapping)
-        sample_idxs = mask_classes(labels, mask_class, self._data.class_mapping if self._data.remap else None)
+        unmapped_pred_class = remap_labels(pred_class.copy().astype(int), self._data.idx2class)
+        sample_idxs = mask_classes(labels, mask_class, self._data.class2idx if self._data.remap else None)
         sampled_pc = pc[sample_idxs]
         if sampled_pc.shape[0] == 0:
             continue
@@ -1419,11 +1931,11 @@ def show_results(self, rows, color_mapping=None, **kwargs):
 
         fig.add_trace(go.Scatter3d(x=x[mask], y=z[mask], z=y[mask], 
                                         mode='markers', marker=dict(size=1, color=color_list_true),
-                                        text=class_string(unmapped_labels[sample_idxs][mask])), row=1, col=1)
+                                        text=class_string(unmapped_labels[sample_idxs][mask], class_mapping=self._data.class_mapping)), row=1, col=1)
 
         fig.add_trace(go.Scatter3d(x=x[mask], y=z[mask], z=y[mask], 
                                         mode='markers', marker=dict(size=1, color=color_list_pred),
-                                        text=class_string(unmapped_pred_class[sample_idxs][mask], prefix='pred_')), row=1, col=2)
+                                        text=class_string(unmapped_pred_class[sample_idxs][mask], prefix='pred_', class_mapping=self._data.class_mapping)), row=1, col=2)
 
         title_text = get_title_text(idx, save_html, max_display_point)
 
@@ -1437,6 +1949,23 @@ def show_results(self, rows, color_mapping=None, **kwargs):
             title_x=0.5
         )
 
+        fig2 = go.FigureWidget(fig)
+
+        def cam_change(layout, camera):
+            if fig2.layout.scene2.camera == camera:
+                return
+            else:
+                fig2.layout.scene2.camera = camera
+
+        def cam_change2(layout, camera):
+            if fig2.layout.scene.camera == camera:
+                return
+            else:
+                fig2.layout.scene.camera = camera        
+        
+        fig2.layout.scene.on_change(cam_change, 'camera')
+        fig2.layout.scene2.on_change(cam_change2, 'camera')        
+
         if save_html:
             save_path = Path(save_path)
             plotly.io.write_html(fig, str(save_path / 'show_results.html'))
@@ -1444,7 +1973,8 @@ def show_results(self, rows, color_mapping=None, **kwargs):
             # fig.write_image(str(save_path / 'show_results.png'))
             return
         else:
-            fig.show()
+            from IPython.display import display
+            display(fig2)
 
         if idx == rows-1:
             break
@@ -1492,8 +2022,29 @@ def compute_precision_recall(self):
     precision, recall, f_1 = calculate_metrics(false_positives, true_positives, false_negatives)
     data = [precision, recall, f_1]
     index = ['precision', 'recall', 'f1_score']
-    inverse_class_mapping = {v:k for k,v in self._data.class_mapping.items()} 
-    df = pd.DataFrame(data, columns=[inverse_class_mapping[cval] for cval in range(self._data.c)], index=index) 
+    if hasattr(self._data, 'idx2class'):
+        inverse_class2idx = self._data.idx2class
+    else:
+        inverse_class2idx = {v:k for k,v in self._data.class2idx.items()} 
+    class_mapping = self._data.class_mapping
+    # columns = [f'{inverse_class2idx[cval]} ({class_mapping[inverse_class2idx[cval]]})' for cval in range(self._data.c)]
+    # # check whether the class mapping was specified by user.
+    # for x, c in class_mapping.items():
+    #     x = int(x)
+    #     try:
+    #         c = int(c)
+    #         if x != c:
+    #             none_cm = False
+    #         else:
+    #             none_cm = True
+    #     except ValueError:
+    #         none_cm = False
+            
+    # if none_cm:
+    #     columns = [f'{inverse_class2idx[cval]}' for cval in range(self._data.c)]
+    columns = [f'{inverse_class2idx[cval]}' for cval in range(self._data.c)]
+    columns =  [f'{self._data.class_mapping[int(cval)]}' for cval in columns]
+    df = pd.DataFrame(data, columns=columns, index=index) 
     return df
 
 def gauss_clip(mu, sigma, clip):
@@ -1550,9 +2101,13 @@ def augment(points, xforms, range=None):
     points_xformed = points@xforms
     if range is None:
         return points_xformed
-    
-    jitter_data = range * points.new(np.random.randn(*points_xformed.shape))
-    jitter_clipped = torch.clamp(jitter_data, -5 * range, 5 * range)
+
+    if isinstance(points, torch.Tensor):
+        jitter_data = range * points.new(np.random.randn(*points_xformed.shape))
+        jitter_clipped = torch.clamp(jitter_data, -5 * range, 5 * range)             
+    else:
+        jitter_data = range * np.random.randn(*points_xformed.shape)
+        jitter_clipped = np.clip(jitter_data, -5 * range, 5 * range)   
     return points_xformed + jitter_clipped
 
 class Transform3d(object):
@@ -1598,8 +2153,26 @@ class Transform3d(object):
         self.jitter = jitter
 
     def __call__(self, x_in):
-        xforms, _ = get_xforms(x_in.shape[0], rotation_range=self.rotation_range, scaling_range=self.scaling_range, order=self.order)
-        return augment(x_in[:, :, :3], x_in.new(xforms), x_in.new(np.array(self.jitter)))
+        xforms, _ = get_xforms(x_in.shape[0],
+                               rotation_range=self.rotation_range,
+                               scaling_range=self.scaling_range, 
+                               order=self.order)
+        
+        if isinstance(x_in, torch.Tensor):
+            return augment(x_in[:, :, :3], x_in.new(xforms), x_in.new(np.array(self.jitter)))
+        else:
+            return augment(x_in[:, :, :3], xforms, np.array(self.jitter))
+
+    def transform_tool(self, x_in):
+        if isinstance(x_in, torch.Tensor):
+            inp = x_in.clone()
+        else:
+            inp = x_in.copy()
+        inp = inp[:, :, :3]
+        # convert to xzy
+        inp = inp[:, :, [0, 2, 1]]
+        return self(inp)[:, :, [0, 2, 1]]
+
 
 def save_h5(filename, labels_pred, confidences_pred):
     try_import('h5py')
@@ -1609,31 +2182,33 @@ def save_h5(filename, labels_pred, confidences_pred):
         filename.parent.mkdir(parents=True, exist_ok=True)
 
     filename_pred = filename.parent / (filename.stem + '_pred.h5')
-    file = h5py.File(filename_pred, 'w')
-    file.create_dataset('label_seg', data=labels_pred)
-    file.create_dataset('confidence', data=confidences_pred)
-    file.close()
+    with h5py.File(filename_pred, 'w') as file:
+        file.create_dataset('label_seg', data=labels_pred)
+        file.create_dataset('confidence', data=confidences_pred)
 
 
-def predict_h5(self, path, output_path, print_metrics=False):
+def predict_h5(self, path, output_path, **kwargs):
     """
     self: PointCNN object
     path: path/to/h5/files/exported/by/tool
     """
     path = Path(path)
     if output_path is None:
-        output_path = path / 'results'
+        output_path = path.parent / 'results'
     else:
         output_path = Path(output_path)
 
-    point_cloud_dataset = PointCloudDataset(path, max_point=self._data.max_point, extra_dim=self._data.extra_dim, class_mapping=self._data.class_mapping)
+    progressor = kwargs.get('progressor', None)
+
+    features_to_keep = copy.copy(self._data.features_to_keep)
+    features_to_keep.remove('xyz')
+    point_cloud_dataset = PointCloudDataset(path, None, None, '', extra_features=features_to_keep)
+    if progressor is not None:
+        progressor.set_total_blocks(len(point_cloud_dataset))
     batch_size = 1 * math.ceil(self._data.max_point / self.sample_point_num)   
     max_point_num = self._data.max_point
 
-    folder_name = Path(point_cloud_dataset.relative_files[0].decode()).parts[0]
-    name_txt_path = path / folder_name / 'Name.txt'
-    (output_path / folder_name).mkdir(parents=True, exist_ok=True)
-    shutil.copy(str(name_txt_path), str(output_path / folder_name))
+    output_path.mkdir(parents=True, exist_ok=True)
 
     current_file_name = ''
     for i in progress_bar(range(len(point_cloud_dataset))):
@@ -1644,7 +2219,10 @@ def predict_h5(self, path, output_path, print_metrics=False):
         if fname != current_file_name:
             low = 0
             if i!=0:
-                save_h5(output_path / point_cloud_dataset.relative_files[int(tile[0] - 1)].decode(), labels_pred, confidences_pred)
+                save_h5(output_path / point_cloud_dataset.relative_files[int(tile[0] - 1)].decode(),
+                        labels_pred,
+                        confidences_pred
+                        )
             current_file_name = fname
             batch_num, _ = h5_file['xyz'].shape
             labels_pred = np.full(batch_num, -1, dtype=np.int8)
@@ -1653,21 +2231,20 @@ def predict_h5(self, path, output_path, print_metrics=False):
         (data, point_num), classification = point_cloud_dataset[i]
         data = data[None]
         points_batch = data[[0] * batch_size]
-        predictions = get_predictions(self, data, 0, points_batch, self.sample_point_num, batch_size, point_num)
+        predictions = get_predictions(self, data, 0, points_batch, self.sample_point_num, batch_size, point_num.cpu().item())
         high = low + point_num
-        labels_pred[low:high] = np.array([label for label, _ in predictions])
+        labels_pred[low:high] = np.array([self._data.idx2class[label] for label, _ in predictions])
         confidences_pred[low:high] = np.array([confidence for _, confidence in predictions])
         low = high
 
         if i == (len(point_cloud_dataset) - 1):
-            save_h5(output_path / point_cloud_dataset.relative_files[tile[0]].decode(), labels_pred, confidences_pred)
+            save_h5(output_path / point_cloud_dataset.relative_files[tile[0]].decode(),
+                    labels_pred,
+                    confidences_pred,
+                    )    
 
-        if print_metrics:
-            if classification is None and i == 0:
-                logger.warning("classification codes are not present in the h5 file.")
-            else:
-                pass        
-
+        if progressor is not None:
+            progressor.current_block(i)
 
     return output_path
 
@@ -1709,7 +2286,7 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     mask_class              Optional array of integers. Array containing
-                            class values to mask. Default value is [0].    
+                            class values to mask. Default value is [].    
     ---------------------   -------------------------------------------
     width                   Optional integer. Width of the plot. Default 
                             value is 750.
@@ -1741,14 +2318,14 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
     if save_html:
         max_display_point = 20000
     ## dataset tiles Get all files from the tiles
-    tile_file_indices = self._data.train_ds.tiles[:, 0]
+    tile_file_indices = data.valid_ds.tiles[:, 0]
     ## iterate: on files
-    for idx, file_idx in enumerate(data.val_files):
+    for idx, _ in enumerate(data.h5files):
         ## Create subplot
         fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'scene'}, {'type': 'scene'}]])
 
         # read that file
-        indices = (tile_file_indices == file_idx).nonzero()[0]  
+        indices = (tile_file_indices == idx).nonzero()[0]  
 
         ## predict on each block by iterating.
         pred_batch_size = 1 * math.ceil(self._data.max_point / self.sample_point_num) 
@@ -1756,26 +2333,35 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
         pc = []
         pred_class = []
         for block_idx in indices:
-            (block, point_num), classification = data.train_ds[block_idx]
+            (block, point_num), classification, scaled_block = data.valid_ds.__getitem__(block_idx, return_scaled=True)
+            # print(block.shape, point_num, self.sample_point_num, scaled_block.shape)
             block = block[None]
             points_batch = block[[0] * 1]
-            predictions = np.array(get_predictions(self, block, 0, points_batch, self.sample_point_num, pred_batch_size, point_num))
+            predictions = np.array(get_predictions(self, block, 0, points_batch, self.sample_point_num, pred_batch_size, point_num.cpu().item()))
             pred_class.append(predictions[:point_num, 0])
-            pc.append(block[0, :point_num].cpu().numpy())
+            # pc.append(block[0, :point_num].cpu().numpy())
+            pc.append(scaled_block[:point_num])
             labels.append(classification[:point_num].cpu().numpy())
 
-        labels = np.concatenate(labels)
+        labels = np.concatenate(labels)       
         pc = np.concatenate(pc)
         pred_class = np.concatenate(pred_class, axis=0)
-
-        unmapped_labels = labels.copy().astype(int)
-        unmapped_predictions = inverse_remap_predictions(pred_class, self._data.class_mapping)
+        # print("pc.shape", pc.shape)
+        # print(np.unique(labels), np.unique(pred_class))         
+        # filter classes between train and recalssify
+        # if self.subset_classes != []:
+        #     labels = filter_classes(labels,
+        #                 self._data.subset_classes,
+        #                 self._data.remap_dict,
+        #                 self._data.remap_bool)
+        unmapped_labels = remap_labels(labels.copy().astype(int), data.idx2class)
+        unmapped_predictions = remap_labels(pred_class, data.idx2class) 
         ## remapping the labels from 0-N
-        if self._data.remap:
-            labels = remap_labels(labels, self._data.class_mapping)
+        # if self._data.remap:
+        #     labels = remap_labels(labels, self._data.class2idx)
 
         ## sample points
-        sample_idxs = mask_classes(labels, mask_class, self._data.class_mapping if self._data.remap else None)
+        sample_idxs = mask_classes(labels, mask_class, self._data.class2idx if self._data.remap else None)
         sampled_pc = pc[sample_idxs]
         if sampled_pc.shape[0] == 0:
             continue  
@@ -1790,30 +2376,49 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
         ## Apply cmap
         color_list_true =  color_mapping[labels[sample_idxs]][mask].tolist()
         color_list_pred = color_mapping[pred_class[sample_idxs].astype(int)][mask].tolist()        
-
+        # print(x[mask].shape, y[mask].shape)
         ## Plot
-        scene=dict(aspectmode='data')
+        scene = dict(aspectmode='data')
+        scene2 = dict(aspectmode='data')
 
 
         fig.add_trace(go.Scatter3d(x=x[mask], y=y[mask], z=z[mask], 
-                                        mode='markers', marker=dict(size=1, color=color_list_true),
-                                        text=class_string(unmapped_labels[sample_idxs][mask])), row=1, col=1)
+                                   mode='markers', marker=dict(size=1, color=color_list_true),
+                                   text=class_string(unmapped_labels[sample_idxs][mask], '', data.class_mapping)), row=1, col=1)
 
         fig.add_trace(go.Scatter3d(x=x[mask], y=y[mask], z=z[mask], 
-                                        mode='markers', marker=dict(size=1, color=color_list_pred),
-                                        text=class_string(unmapped_predictions[sample_idxs][mask], prefix='pred_')), row=1, col=2)
+                                   mode='markers', marker=dict(size=1, color=color_list_pred),
+                                   text=class_string(unmapped_predictions[sample_idxs][mask], 'pred_', data.class_mapping)), row=1, col=2)
 
-
+        
         title_text = get_title_text(idx, save_html, max_display_point)
         fig.update_layout(
             scene=scene,
-            scene2=scene,
+            scene2=scene2,
             title_text=title_text,
             width=kwargs.get('width', 750),
             height=kwargs.get('width', 512),
             showlegend=False,
             title_x=0.5
         )
+
+        fig2 = go.FigureWidget(fig)
+
+        def cam_change(layout, camera):
+            if fig2.layout.scene2.camera == camera:
+                return
+            else:
+                fig2.layout.scene2.camera = camera
+
+        def cam_change2(layout, camera):
+            if fig2.layout.scene.camera == camera:
+                return
+            else:
+                fig2.layout.scene.camera = camera        
+        
+        fig2.layout.scene.on_change(cam_change, 'camera')
+        fig2.layout.scene2.on_change(cam_change2, 'camera')
+
 
         if save_html:
             save_path = Path(save_path)
@@ -1822,7 +2427,8 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
             # fig.write_image(str(save_path / 'show_results.png'))
             return
         else:
-            fig.show()
-
+            from IPython.display import display
+            display(fig2)
+        
         if idx == rows-1:
             break
