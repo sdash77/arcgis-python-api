@@ -5,8 +5,8 @@ arcgis.raster.utils module
 
 generate_direct_access_url
 __________________________
-.. autofunction:: arcgis.raster.functions.generate_direct_access_url
+.. autofunction:: arcgis.raster.utils.generate_direct_access_url
 
 upload_imagery_to_agol_userstore
 ________________________________
-.. autofunction:: arcgis.raster.functions.upload_imagery_to_agol_userstore
+.. autofunction:: arcgis.raster.utils.upload_imagery_to_agol_userstore
