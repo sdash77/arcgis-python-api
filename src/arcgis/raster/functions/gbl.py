@@ -665,16 +665,9 @@ def zonal_statistics(in_zone_data,
                              set to PERCENTILE.
     :param percentile_interpolation_type: Optional str. Determines the type of percentile interpolation type when the 
                                           number of values from the input value raster to be calculated are even.
-                                            - AUTO_DETECT - If the input value raster has integer pixel type, the 
-                                                            NEAREST method is used. If the input value raster 
-                                                            has floating point pixel type, then the LINEAR 
-                                                            method is used. This is the default.
-                                            - NEAREST - Nearest value to the desired percentile. In this case, 
-                                                        the output pixel type is same as that of the input value 
-                                                        raster.
-                                            - LINEAR - Weighted average of two surrounding values from the 
-                                                        desired percentile. In this case, the output pixel 
-                                                        type is floating point.
+                                            - AUTO_DETECT - If the input value raster has integer pixel type, the NEAREST method is used. If the input value raster has floating point pixel type, then the LINEAR method is used. This is the default.
+                                            - NEAREST - Nearest value to the desired percentile. In this case, the output pixel type is same as that of the input value raster.
+                                            - LINEAR - Weighted average of two surrounding values from the desired percentile. In this case, the output pixel type is floating point.
 
                                           Parameter available in ArcGIS Image Server 10.9 and higher.
     :return: output raster with function applied
@@ -907,11 +900,10 @@ def flow_distance(input_stream_raster,
 
     Parameters
     ----------
-    :param input_stream_raster:Required.  An input raster that represents a linear stream network
+    :param input_stream_raster: Required.  An input raster that represents a linear stream network
     :param input_surface_raster: Required. The input raster representing a continuous surface.
     :param input_flow_direction_raster: Optional. The input raster that shows the direction of flow out of each cell.
-    :param distance_type: Optional. VERTICAL or HORIZONTAL distance to compute; if not
-                                 specified, VERTICAL distance is computed.
+    :param distance_type: Optional. VERTICAL or HORIZONTAL distance to compute; if not specified, VERTICAL distance is computed.
     :param flow_direction_type: Optional String; Defines the type of the input flow direction raster.
 
                                 D8 - The input flow direction raster is of type D8. This is the default.

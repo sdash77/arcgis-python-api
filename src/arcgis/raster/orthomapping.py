@@ -244,12 +244,12 @@ def alter_processing_states(image_collection, new_states, *, gis=None, future=Fa
                            blockadjustment, dem, gcp, seamlines, colorcorrection, adjust_index, imagetype
 
                            Example:
-                           {"blockadjustment": "raw",
-                            "dem": "Dense_Natual_Neighbor",
-                            "seamlines":"VORONOI",
-                            "colorcorrection":"SingleColor",
-                            "imagetype": "UAV/UAS",
-                            "adjust_index": 0}
+                               | {"blockadjustment": "raw",
+                               |  "dem": "Dense_Natual_Neighbor",
+                               |  "seamlines":"VORONOI",
+                               |  "colorcorrection":"SingleColor",
+                               |  "imagetype": "UAV/UAS",
+                               |  "adjust_index": 0}
     ------------------     --------------------------------------------------------------------
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
@@ -435,63 +435,61 @@ def match_control_points(image_collection, control_points, similarity='High', co
                            -- pointID (int) - The ID of the point within the control point table.
 
                            -- type (int)    - The type of the control point as determined by its numeric value
+
                                                  1: Tie Point 
                                                  2: Ground Control Point.
                                                  3: Check Point
 
-                           -- status (int)  - The status of the point. A value of 0 indicates that the point will
-                                                 not be used in computation. A non-zero value indicates otherwise.
-
-                           
+                           -- status (int)  - The status of the point. A value of 0 indicates that the point will not be used in computation. A non-zero value indicates otherwise.
 
                            -- imageID (int) - Image identification using the ObjectID from the mosaic dataset footprint table.
 
                            Example:
-                           [{
-                           "status": 1,
-                           "type": 2,
-                           "x": -117.0926538,
-                           "y": 34.00704253,
-                           "z": 634.2175,
-                           "spatialReference": {
-                               "wkid": 4326
-                           }, // default WGS84
-                           "imagePointSpatialReference": {}, // default ICS
-                           "pointId": 1,
-                           "xyAccuracy": "0.008602325",
-                           "zAccuracy": "0.015",
-                           "imagePoints": [{
-                               "imageID": 1,
-                               "x": 2986.5435987557084,
-                               "y": -2042.5193648409431,
-                               "u": 3057.4580682832734,
-                               "v": -1909.1506872159698
-                           },
-                           {
-                               "imageID": 2,
-                               "x": 1838.2814361401108,
-                               "y": -2594.5280063817972,
-                               "u": 3059.4079724863363,
-                               "v": -2961.292545463305
-                           },
-                           {
-                               "imageID": 12,
-                               "x": 5332.855578204663,
-                               "y": -2533.2805429751907,
-                               "u": 614.2338676573158,
-                               "v": -165.10836768947297
-                           },
-                           {
-                               "imageID": 13,
-                               "x": 4932.0895715254455,
-                               "y": -1833.8401744114287,
-                               "u": 616.9396928182223,
-                               "v": -1243.1445126959693
-                           }]
-                           },
-                           …
-                           …
-                           ] 
+                               | [{
+                               | "status": 1,
+                               | "type": 2,
+                               | "x": -117.0926538,
+                               | "y": 34.00704253,
+                               | "z": 634.2175,
+                               | "spatialReference": {
+                               |     "wkid": 4326
+                               | }, // default WGS84
+                               | "imagePointSpatialReference": {}, // default ICS
+                               | "pointId": 1,
+                               | "xyAccuracy": "0.008602325",
+                               | "zAccuracy": "0.015",
+                               | "imagePoints": [{
+                               |     "imageID": 1,
+                               |     "x": 2986.5435987557084,
+                               |     "y": -2042.5193648409431,
+                               |     "u": 3057.4580682832734,
+                               |     "v": -1909.1506872159698
+                               | },
+                               | {
+                               |     "imageID": 2,
+                               |     "x": 1838.2814361401108,
+                               |     "y": -2594.5280063817972,
+                               |     "u": 3059.4079724863363,
+                               |     "v": -2961.292545463305
+                               | },
+                               | {
+                               |     "imageID": 12,
+                               |     "x": 5332.855578204663,
+                               |     "y": -2533.2805429751907,
+                               |     "u": 614.2338676573158,
+                               |     "v": -165.10836768947297
+                               | },
+                               | {
+                               |     "imageID": 13,
+                               |     "x": 4932.0895715254455,
+                               |     "y": -1833.8401744114287,
+                               |     "u": 616.9396928182223,
+                               |     "v": -1243.1445126959693
+                               | }]
+                               | },
+                               | …
+                               | …
+                               | ] 
     ------------------     --------------------------------------------------------------------
     similarity             Optional string. Choose the tolerance level for your control point matching. 
 
@@ -757,11 +755,9 @@ def compute_control_points(image_collection, reference_image=None, image_locatio
                                             The following are the available options:
                                             Low, Medium, High
 
-                                            Low- GPS accuracy of 20 to 50 meters, and the tool uses a maximum of 4 
-                                                 by 12 images. 
+                                            Low- GPS accuracy of 20 to 50 meters, and the tool uses a maximum of 4 by 12 images. 
 
-                                            Medium- GPS accuracy of 10 to 20 meters, and the tool uses a maximum of 
-                                                     4 by 6 images. 
+                                            Medium- GPS accuracy of 10 to 20 meters, and the tool uses a maximum of 4 by 6 images. 
 
                                             High- GPS accuracy of 0 to 10 meters, and the tool uses a maximum of 4 by 3 images.
 
@@ -771,10 +767,11 @@ def compute_control_points(image_collection, reference_image=None, image_locatio
                                             Default is High
     ------------------------------------    --------------------------------------------------------------------
     context                                 Optional dictionary. Context contains additional environment settings that affect 
-                                            output control points generation. Possible keys and their possible values are: 
+                                            output control points generation. 
+                                            
+                                            Possible keys and their possible values are: 
 
-                                            pointSimilarity- Sets LOW, MEDIUM, or HIGH tolerance for computing control points 
-                                                             with varying levels of potential error.
+                                            pointSimilarity- Sets LOW, MEDIUM, or HIGH tolerance for computing control points with varying levels of potential error.
                                                              
                                                              LOW tolerance will produce the most control point, but may have a higher 
                                                              level of error. 
@@ -785,14 +782,14 @@ def compute_control_points(image_collection, reference_image=None, image_locatio
                                                              MEDIUM tolerance will set the similarity tolerance to medium.
 
                                             pointDensity- Sets the number of tie points (LOW, MEDIUM, or HIGH), to be created. 
+                                                          
                                                           LOW point density will create the fewest number of tie points. 
 
                                                           MEDIUM point density will create a moderate number of tie points.
                                                           
                                                           HIGH point density will create the highest number of tie points.
 
-                                            pointDistribution- Randomly generates points that are better for overlapping areas 
-                                                               with irregular shapes.
+                                            pointDistribution- Randomly generates points that are better for overlapping areas with irregular shapes.
                                                                
                                                                RANDOM- will generate points that are better for overlapping areas 
                                                                with irregular shapes. 
@@ -990,63 +987,61 @@ def edit_control_points(image_collection, control_points, *, gis=None, future=Fa
                            -- pointID (int) - The ID of the point within the control point table.
 
                            -- type (int)    - The type of the control point as determined by its numeric value
+
                                                  1: Tie Point 
                                                  2: Ground Control Point.
                                                  3: Check Point
 
-                           -- status (int)  - The status of the point. A value of 0 indicates that the point will
-                                                 not be used in computation. A non-zero value indicates otherwise.
-
-                           
+                           -- status (int)  - The status of the point. A value of 0 indicates that the point will not be used in computation. A non-zero value indicates otherwise.
 
                            -- imageID (int) - Image identification using the ObjectID from the mosaic dataset footprint table.
 
                            Example:
-                           [{
-                           "status": 1,
-                           "type": 2,
-                           "x": -117.0926538,
-                           "y": 34.00704253,
-                           "z": 634.2175,
-                           "spatialReference": {
-                               "wkid": 4326
-                           }, // default WGS84
-                           "imagePointSpatialReference": {}, // default ICS
-                           "pointId": 1,
-                           "xyAccuracy": "0.008602325",
-                           "zAccuracy": "0.015",
-                           "imagePoints": [{
-                               "imageID": 1,
-                               "x": 2986.5435987557084,
-                               "y": -2042.5193648409431,
-                               "u": 3057.4580682832734,
-                               "v": -1909.1506872159698
-                           },
-                           {
-                               "imageID": 2,
-                               "x": 1838.2814361401108,
-                               "y": -2594.5280063817972,
-                               "u": 3059.4079724863363,
-                               "v": -2961.292545463305
-                           },
-                           {
-                               "imageID": 12,
-                               "x": 5332.855578204663,
-                               "y": -2533.2805429751907,
-                               "u": 614.2338676573158,
-                               "v": -165.10836768947297
-                           },
-                           {
-                               "imageID": 13,
-                               "x": 4932.0895715254455,
-                               "y": -1833.8401744114287,
-                               "u": 616.9396928182223,
-                               "v": -1243.1445126959693
-                           }]
-                           },
-                           …
-                           …
-                           ] 
+                               | [{
+                               | "status": 1,
+                               | "type": 2,
+                               | "x": -117.0926538,
+                               | "y": 34.00704253,
+                               | "z": 634.2175,
+                               | "spatialReference": {
+                               |     "wkid": 4326
+                               | }, // default WGS84
+                               | "imagePointSpatialReference": {}, // default ICS
+                               | "pointId": 1,
+                               | "xyAccuracy": "0.008602325",
+                               | "zAccuracy": "0.015",
+                               | "imagePoints": [{
+                               |     "imageID": 1,
+                               |     "x": 2986.5435987557084,
+                               |     "y": -2042.5193648409431,
+                               |     "u": 3057.4580682832734,
+                               |     "v": -1909.1506872159698
+                               | },
+                               | {
+                               |     "imageID": 2,
+                               |     "x": 1838.2814361401108,
+                               |     "y": -2594.5280063817972,
+                               |     "u": 3059.4079724863363,
+                               |     "v": -2961.292545463305
+                               | },
+                               | {
+                               |     "imageID": 12,
+                               |     "x": 5332.855578204663,
+                               |     "y": -2533.2805429751907,
+                               |     "u": 614.2338676573158,
+                               |     "v": -165.10836768947297
+                               | },
+                               | {
+                               |     "imageID": 13,
+                               |     "x": 4932.0895715254455,
+                               |     "y": -1833.8401744114287,
+                               |     "u": 616.9396928182223,
+                               |     "v": -1243.1445126959693
+                               | }]
+                               | },
+                               | …
+                               | …
+                               | ] 
 
 
     ------------------     --------------------------------------------------------------------
@@ -1338,31 +1333,31 @@ def generate_orthomosaic(image_collection,
 
                                            Example:
 
-                                           {
-                                             "outSR": {"wkid": 3516}, 
-                                             "extent": {"xmin": 470614.263139, 
-                                                       "ymin": 8872849.409968, 
-                                                       "xmax": 532307.351827, 
-                                                       "ymax": 8920205.372412, 
-                                                       "spatialReference": {"wkid": 32628}},
-                                             "clippingGeometry": {},
-                                             "orthoMosaicAsOvr": False,
-                                             "seamlinesMethod": "VORONOI", 
-                                             "minRegionSize": 100, 
-                                             "pixelSize": "", 
-                                             "blendType": "Both", 
-                                             "blendWidth": None, 
-                                             "blendUnit": "Pixels", 
-                                             "requestSize": 1000, 
-                                             "minThinnessRatio": 0.05, 
-                                             "maxSliverSize": 20
-                                             "colorCorrectionMethod": "DODGING", 
-                                             "dodgingSurface": "Single_Color", 
-                                             "referenceImg": {"url": https://..."}, 
-                                             "skipRows": 10, 
-                                             "skipCols": 10, 
-                                             "reCalculateSats": "OVERWRITE"
-                                            }      
+                                               | {
+                                               |   "outSR": {"wkid": 3516}, 
+                                               |   "extent": {"xmin": 470614.263139, 
+                                               |             "ymin": 8872849.409968, 
+                                               |             "xmax": 532307.351827, 
+                                               |             "ymax": 8920205.372412, 
+                                               |             "spatialReference": {"wkid": 32628}},
+                                               |   "clippingGeometry": {},
+                                               |   "orthoMosaicAsOvr": False,
+                                               |   "seamlinesMethod": "VORONOI", 
+                                               |   "minRegionSize": 100, 
+                                               |   "pixelSize": "", 
+                                               |   "blendType": "Both", 
+                                               |   "blendWidth": None, 
+                                               |   "blendUnit": "Pixels", 
+                                               |   "requestSize": 1000, 
+                                               |   "minThinnessRatio": 0.05, 
+                                               |   "maxSliverSize": 20
+                                               |   "colorCorrectionMethod": "DODGING", 
+                                               |   "dodgingSurface": "Single_Color", 
+                                               |   "referenceImg": {"url": https://..."}, 
+                                               |   "skipRows": 10, 
+                                               |   "skipCols": 10, 
+                                               |   "reCalculateSats": "OVERWRITE"
+                                               |  }      
     -----------------------------------    --------------------------------------------------------------------
     gis                                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ===================================    ====================================================================
