@@ -503,6 +503,7 @@ def _upload_imagery_agol(files, gis=None, direct_access_url=None):
     except:
         print("Install Azure library packages for Python. (version - azure-storage-blob-12.5.0) \
         (https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install)")
+    gis = _arcgis.env.active_gis if gis is None else gis
     if direct_access_url is None:
         sas_url = _generate_direct_access_url(gis)
     else:
