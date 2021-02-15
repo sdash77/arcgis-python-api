@@ -1,5 +1,5 @@
 arcgis.raster.utils module
-==============================
+==========================
 
 .. automodule:: arcgis.raster.utils
 
