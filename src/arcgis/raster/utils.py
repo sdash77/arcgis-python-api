@@ -2,7 +2,7 @@ from arcgis.raster import _util
 
 def generate_direct_access_url(expiration=None, *, gis=None):
     '''
-    Helper function to get the direct access url for user's rasterStore on ArcGIS Online.
+    Function to get the direct access url for user's rasterStore on ArcGIS Online.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
