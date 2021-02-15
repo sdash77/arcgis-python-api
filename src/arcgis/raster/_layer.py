@@ -4470,6 +4470,10 @@ class ImageryLayer(Layer):
                 data = np.expand_dims(data, axis=2)
             elif len(data) == 3:
                 data = np.transpose(data, axes=[1, 2, 0])
+
+            if data.dtype  == "float":
+                if data.min() < 0 or 1 < data.max():
+                    data = np.uint8(data)
             return data
 
     def _get_service_info(self, rendering_rule=None):
