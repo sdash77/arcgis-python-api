@@ -189,6 +189,22 @@ class GAJob(object):
         return self._gpjob.task
     #----------------------------------------------------------------------
     @property
+    def ellapse_time(self):
+        """
+        Returns the Ellapse Time for the Job
+        """
+        return self._gpjob.ellapse_time
+    #----------------------------------------------------------------------
+    @property
+    def messages(self):
+        """
+        Returns the service's messages
+
+        :returns: List
+        """
+        return self._gpjob.messages
+    #----------------------------------------------------------------------
+    @property
     def messages(self):
         """
         returns the GP messages
