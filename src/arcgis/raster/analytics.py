@@ -1231,39 +1231,39 @@ def summarize_raster_within(input_zone_layer,
                                              statistic_type can be one of the following:
                                              ['Mean', 'Majority', 'Maximum', 'Median', 'Minimum', 'Minority', 'Range', 'STD', 'SUM', 'Variety', 'Percentile']
 
-                                             Mean: Calculates the average of all cells in the value raster that belongs to 
+                                             - Mean: Calculates the average of all cells in the value raster that belongs to \
                                              the same zone as the output cell. This is the default.
 
-                                             Majority: Determines the majority value of all cells in the value raster that belongs to 
+                                             - Majority: Determines the majority value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             Maximum: Determines the largest value of all cells in the value raster that belongs to 
+                                             - Maximum: Determines the largest value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             Median: Finds the median value of all cells in the value raster that belongs to 
+                                             - Median: Finds the median value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             Minimum: Finds the smallest value of all cells in the value raster that belongs to 
+                                             - Minimum: Finds the smallest value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             Minority: Determines the minority value of all cells in the value raster that belongs to 
+                                             - Minority: Determines the minority value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             Range: Finds the range of all cells in the value that belongs to 
+                                             - Range: Finds the range of all cells in the value that belongs to \
                                              the same zone as the output zone.
 
-                                             Sum: Adds the total value of all cells in the value raster that belongs to 
+                                             - Sum: Adds the total value of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             STD: Finds the standard deviation of all cells in the value raster that belongs to 
+                                             - STD: Finds the standard deviation of all cells in the value raster that belongs to \
                                              the same zone as the output cell.
 
-                                             Variety: Finds the variety of all cells in the value raster that belong to 
+                                             - Variety: Finds the variety of all cells in the value raster that belong to \
                                              the same zone as the output cell.
 
-                                             Percentile: Finds a percentile of all cells in the value raster that 
-                                             belong to the same zone as the output cell. The 90th percentile 
-                                             is calculated by default. You can specify other values (from 0 to 100) 
+                                             - Percentile: Finds a percentile of all cells in the value raster that \
+                                             belong to the same zone as the output cell. The 90th percentile \
+                                             is calculated by default. You can specify other values (from 0 to 100) \
                                              using the percentile_value parameter.
 
                                              If the input_raster_layer_to_summarize is floating-point type, the zonal calculations 
@@ -1332,10 +1332,10 @@ def summarize_raster_within(input_zone_layer,
     process_as_multidimensional              Optional bool, Process as multidimensional if set to True, 
                                              if the input is multidimensional raster.
                                              
-                                             True - Statistics will be calculated from the current slice of a 
+                                             - True - Statistics will be calculated from the current slice of a \
                                              multidimensional image service. This is the default.
                                              
-                                             False - Statistics will be calculated for all dimensions 
+                                             - False - Statistics will be calculated for all dimensions \
                                              (such as time or depth) of a multidimensional image service.
                                              Parameter available in ArcGIS Image Server 10.8.1 and higher.
     ------------------------------------     --------------------------------------------------------------------
@@ -1469,9 +1469,9 @@ def convert_raster_to_feature(input_raster,
     create_multipart_features                Optional boolean. Specifies whether the output polygons will consist of 
                                              single-part or multipart features.
 
-                                             True: Specifies that multipart features will be created based on polygons that have the same value.
+                                             - True: Specifies that multipart features will be created based on polygons that have the same value.
 
-                                             False: Specifies that individual features will be created for each polygon. This is the default.
+                                             - False: Specifies that individual features will be created for each polygon. This is the default.
     ------------------------------------     --------------------------------------------------------------------
     max_vertices_per_feature                 Optional int. The vertex limit used to subdivide a polygon into smaller polygons. 
     ------------------------------------     --------------------------------------------------------------------
@@ -3136,7 +3136,8 @@ def add_image(image_collection,
                                          The process of add rasters to the image collection can be
                                          controlled by specifying additional raster type arguments.
                                          
-                                         Syntax: {"gps": [["image1.jpg", "10", "2", "300"], ["image2.jpg", "10", "3", "300"], ["image3.jpg", "10", "4", "300"]],
+                                         Syntax: 
+                                         {"gps": [["image1.jpg", "10", "2", "300"], ["image2.jpg", "10", "3", "300"], ["image3.jpg", "10", "4", "300"]],
                                          "cameraProperties": {"Maker": "Canon", "Model": "5D Mark II", "FocalLength": 20, "PixelSize": 10, "x0": 0, "y0": 0, "columns": 4000, "rows": 3000},
                                          "constantZ": 300,"isAltitudeFlightHeight": "True","dem": {"url": "https://..."}
 
@@ -3827,19 +3828,19 @@ def determine_travel_costpath_as_polyline(input_source_data,
                                              A string describing the path type, which can either be BEST_SINGLE, 
                                              EACH_CELL, or EACH_ZONE.
 
-                                             BEST_SINGLE: For all cells on the input destination data, the 
-                                             least-cost path is derived from the cell with the minimum of 
+                                             - BEST_SINGLE: For all cells on the input destination data, the \
+                                             least-cost path is derived from the cell with the minimum of \
                                              the least-cost paths to source cells. This is the default.
 
-                                             EACH_CELL: For each cell with valid values on the input 
-                                             destination data, at least-cost path is determined and saved 
-                                             on the output raster. With this option, each cell of the input 
-                                             destination data is treated separately, and a least-cost path 
+                                             - EACH_CELL: For each cell with valid values on the input \
+                                             destination data, at least-cost path is determined and saved \
+                                             on the output raster. With this option, each cell of the input \
+                                             destination data is treated separately, and a least-cost path \
                                              is determined for each from cell.
 
-                                             EACH_ZONE: For each zone on the input destination data, 
-                                             a least-cost path is determined and saved on the output raster. 
-                                             With this option, the least-cost path for each zone begins at 
+                                             - EACH_ZONE: For each zone on the input destination data, \
+                                             a least-cost path is determined and saved on the output raster. \
+                                             With this option, the least-cost path for each zone begins at \
                                              the cell with the lowest cost distance weighting in the zone.
     ------------------------------------     --------------------------------------------------------------------
     output_polyline_name                     Optional. If not provided, a feature layer is created by the method 
@@ -5596,19 +5597,19 @@ def costpath_as_polyline(input_destination_data,
                                              A string describing the path type, which can either be BEST_SINGLE, 
                                              EACH_CELL, or EACH_ZONE.
 
-                                             BEST_SINGLE: For all cells on the input destination data, the 
-                                             least-cost path is derived from the cell with the minimum of 
+                                             - BEST_SINGLE: For all cells on the input destination data, the \
+                                             least-cost path is derived from the cell with the minimum of \
                                              the least-cost paths to source cells. This is the default.
 
-                                             EACH_CELL: For each cell with valid values on the input 
-                                             destination data, at least-cost path is determined and saved 
-                                             on the output raster. With this option, each cell of the input 
-                                             destination data is treated separately, and a least-cost path 
+                                             - EACH_CELL: For each cell with valid values on the input \
+                                             destination data, at least-cost path is determined and saved \
+                                             on the output raster. With this option, each cell of the input \
+                                             destination data is treated separately, and a least-cost path \
                                              is determined for each from cell.
 
-                                             EACH_ZONE: For each zone on the input destination data, 
-                                             a least-cost path is determined and saved on the output raster. 
-                                             With this option, the least-cost path for each zone begins at 
+                                             - EACH_ZONE: For each zone on the input destination data, \
+                                             a least-cost path is determined and saved on the output raster. \
+                                             With this option, the least-cost path for each zone begins at \
                                              the cell with the lowest cost distance weighting in the zone.
     ------------------------------------     --------------------------------------------------------------------
     destination_field                        Optional. If not provided, a feature layer is created by the method 
@@ -5817,9 +5818,9 @@ def optimal_path_as_line(input_destination_data,
                                              overlapping, paths from the destinations to the sources are calculated 
                                              or if  nonoverlapping network paths are created.
 
-                                             `DESTINATIONS_TO_SOURCES` (False): Complete paths from the destinations to the sources are calculated, which can be overlapping.  This is default.
+                                             - `DESTINATIONS_TO_SOURCES` (False): Complete paths from the destinations to the sources are calculated, which can be overlapping.  This is default.
 
-                                             `NETWORK_PATHS` (True): Nonoverlapping network paths are calculated.
+                                             - `NETWORK_PATHS` (True): Nonoverlapping network paths are calculated.
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
@@ -6765,25 +6766,29 @@ def sample(input_rasters,
                                              Example:
                                                 "FID"
     ------------------------------------     --------------------------------------------------------------------
-    acquisition_definition                   Optional dictionary. Specify the time, depth or other acquisition 
+    acquisition_definition                   | Optional dictionary. Specify the time, depth or other acquisition \
                                              data associated with the location features.
-                                             Only the following combinations are supported: 
-                                             - Dimension + Start field or value
-                                             - Dimension + Start field or value + End field or value
-                                             - Dimension + Start field or value + Relative value or days before + Relative value or days after
+                                             
+                                             Only the following combinations are supported:
+
+                                                - Dimension + Start field or value
+                                                - Dimension + Start field or value + End field or value
+                                                - Dimension + Start field or value + Relative value or days before + Relative value or days after
+                                              
                                              Relative value or days before and Relative value or days after only support non-negative values.
+                                             
                                              Statistics will be calculated for variables within this dimension range. 
                                              
                                              Syntax: a list of dictionary objects.
-                                             [{"dimension":  "Dimension",
-                                             "startFieldOrVal": "Start field or value", 
-                                             "endFieldOrVal": "End field or value", 
-                                             "relValOrDaysBefore": "Relative value or days before", 
-                                             "relValOrDaysAfter": "Relative value or days after"}]
+                                                | [{"dimension":  "Dimension",
+                                                | "startFieldOrVal": "Start field or value", 
+                                                | "endFieldOrVal": "End field or value", 
+                                                | "relValOrDaysBefore": "Relative value or days before", 
+                                                | "relValOrDaysAfter": "Relative value or days after"}]
                                              Example:
-                                             [{"dimension":  "Dimension",
-                                             "startFieldOrVal": "1999-01-01T00:00:00", 
-                                             "endFieldOrVal": "2019-01-01T00:00:00"}]
+                                                | [{"dimension":  "Dimension",
+                                                | "startFieldOrVal": "1999-01-01T00:00:00", 
+                                                | "endFieldOrVal": "2019-01-01T00:00:00"}]
     ------------------------------------     --------------------------------------------------------------------
     statistics_type                          Optional string.
                                              The type of statistic to be calculated.
@@ -7357,68 +7362,70 @@ def zonal_statistics_as_table(input_zone_raster_or_features,
     ------------------------------------     --------------------------------------------------------------------
     ignore_nodata                            Optional boolean. Denotes whether NoData values in the value input 
                                              will influence the results of the zone that they fall within.
-                                             true - Within any particular zone, only cells that have a value in 
-                                             the input value raster will be used in determining the output value 
-                                             for that zone. NoData cells in the value raster will be ignored in 
+                                             
+                                             - True - Within any particular zone, only cells that have a value in \
+                                             the input value raster will be used in determining the output value \
+                                             for that zone. NoData cells in the value raster will be ignored in \
                                              the statistic calculation. This is the default.
                                              
-                                             false - Within any particular zone, if any NoData cells exist in the 
-                                             value raster, it is deemed that there is insufficient information to 
-                                             perform statistical calculations for all the cells in that zone; 
+                                             - False - Within any particular zone, if any NoData cells exist in the \
+                                             value raster, it is deemed that there is insufficient information to \
+                                             perform statistical calculations for all the cells in that zone; \
                                              therefore, the entire zone will receive the NoData value on the output raster.
     ------------------------------------     --------------------------------------------------------------------
     statistic_type                           Optional string.  Choose the statistic to calculate.The available options 
                                              when the value raster is integer are ALL, MEAN, MAJORITY, MAXIMUM, MEDIAN, 
                                              MINIMUM, MINORITY, PERCENTILE, RANGE, STD, SUM, VARIETY,  
                                              MIN_MAX, MEAN_STD, and  MIN_MAX_MEAN.
+
                                              If the value raster is float, the options are ALL, MEAN, MAXIMUM, MINIMUM, 
                                              RANGE, STD, and SUM.
 
-                                             ALL- All of the statistics will be calculated. 
+                                             - ALL - All of the statistics will be calculated. \
                                              This is the default.
 
-                                             MEAN-Calculates the average of all cells in the raster layer to be summarized that
+                                             - MEAN - Calculates the average of all cells in the raster layer to be summarized that \
                                              belong to the same zone as the output cell.
 
-                                             MAJORITY- Determines the value that occurs most often of all cells in the raster 
+                                             - MAJORITY - Determines the value that occurs most often of all cells in the raster \
                                              layer to be summarized that belong to the same zone as the output cell.
 
-                                             MAXIMUM- Determines the largest value of all cells in the raster layer 
+                                             - MAXIMUM - Determines the largest value of all cells in the raster layer \
                                              to be summarized that belong to the same zone as the output cell.
 
-                                             MEDIAN- Determines the median value of all cells in the raster layer 
+                                             - MEDIAN - Determines the median value of all cells in the raster layer \
                                              to be summarized that belong to the same zone as the output cell.
 
-                                             MINIMUM- Determines the smallest value of all cells in the raster 
+                                             - MINIMUM - Determines the smallest value of all cells in the raster \
                                              layer to be summarized that belong to the same zone as the output cell.
 
-                                             MINORITY- Determines the value that occurs least often of all cells in 
-                                             the raster layer to be summarized that belong to the same zone as the 
+                                             - MINORITY - Determines the value that occurs least often of all cells in \
+                                             the raster layer to be summarized that belong to the same zone as the \
                                              output cell.
 
-                                             PERCENTILE - Calculates a percentile of all cells in the value raster 
-                                             that belong to the same zone as the output cell. The 90th percentile is calculated by default. 
+                                             - PERCENTILE - Calculates a percentile of all cells in the value raster \
+                                             that belong to the same zone as the output cell. The 90th percentile is calculated by default. \
                                              You can specify other values (from 0 to 100) using the Percentile Values parameter.
 
-                                             RANGE- Calculates the difference between the largest and smallest value of all 
-                                             cells in the raster layer to be summarized that belong to the same zone 
+                                             - RANGE - Calculates the difference between the largest and smallest value of all \
+                                             cells in the raster layer to be summarized that belong to the same zone \
                                              as the output cell.
 
-                                             STD - Calculates the standard deviation of all cells in 
+                                             - STD - Calculates the standard deviation of all cells in \
                                              the raster layer to be summarized that belong to the same zone as the output cell.
 
-                                             SUM- Calculates the total value of all cells in the raster layer to be 
+                                             - SUM - Calculates the total value of all cells in the raster layer to be \
                                              summarized that belong to the same zone as the output cell.
 
-                                             VARIETY- Calculates the number of unique values for all cells in the raster 
+                                             - VARIETY- Calculates the number of unique values for all cells in the raster \
                                              layer to be summarized that belong to the same zone as the output cell.
 
-                                             MIN_MAX - Both the minimum and maximum statistics are calculated.
+                                             - MIN_MAX - Both the minimum and maximum statistics are calculated.
 
-                                             MEAN_STD -  Both the mean and standard deviation statistics 
+                                             - MEAN_STD -  Both the mean and standard deviation statistics \
                                              are calculated.
 
-                                             MIN_MAX_MEAN - The minimum, maximum and mean statistics are calculated.
+                                             - MIN_MAX_MEAN - The minimum, maximum and mean statistics are calculated.
     ------------------------------------     --------------------------------------------------------------------
     percentile_values                        Optional list of double values.
                                              The percentile to calculate. The default is 90, for the 90th percentile.
@@ -7429,9 +7436,10 @@ def zonal_statistics_as_table(input_zone_raster_or_features,
     ------------------------------------     --------------------------------------------------------------------
     process_as_multidimensional              Optional bool, Determines how the input rasters will be processed if they 
                                              are multidimensional.
-                                             False - Statistics will be calculated from the current slice of a 
+
+                                             - False - Statistics will be calculated from the current slice of a \
                                              multidimensional image service. This is the default.
-                                             True - Statistics will be calculated for all dimensions (such as time or depth) 
+                                             - True - Statistics will be calculated for all dimensions (such as time or depth) \
                                              of a multidimensional image service.
     ------------------------------------     --------------------------------------------------------------------
     percentile_interpolation_type            Optional str. Determines the type of percentile interpolation type when the 

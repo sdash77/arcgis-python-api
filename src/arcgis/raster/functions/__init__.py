@@ -1125,10 +1125,10 @@ def colormap(raster, colormap_name=None, colormap=None, colorramp=None, astype=N
 
     :param raster: input raster
     :param colormap_name: colormap name, if one of Random | NDVI | Elevation | Gray
-    :param colormap: [
-                     [<value1>, <red1>, <green1>, <blue1>], //[int, int, int, int]
-                     [<value2>, <red2>, <green2>, <blue2>]
-                     ],
+    :param colormap: | [
+                     | [<value1>, <red1>, <green1>, <blue1>], //[int, int, int, int]
+                     | [<value2>, <red2>, <green2>, <blue2>]
+                     | ],
     :param colorramp: Can be a string specifiying color ramp name like <Black To White|Yellow To Red|Slope|more..>
                       or a color ramp object. 
                       For more information about colorramp object, see color ramp object at
@@ -1556,7 +1556,7 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
     The arguments for the local function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param operation: int see reference at https://desktop.arcgis.com/en/arcobjects/latest/net/webframe.htm#esriGeoAnalysisFunctionEnum.htm
+    :param operation: int. see reference `here <https://desktop.arcgis.com/en/arcobjects/latest/net/webframe.htm#esriGeoAnalysisFunctionEnum.htm>`__.
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param astype: output pixel type
@@ -3140,14 +3140,16 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
     :param kernel_rows: int (e.g. 3)
     :param stat_type: int or string.
                       There are four types of focal statistical functions:
+                      
                       1=Min, 2=Max, 3=Mean, 4=StandardDeviation, 5=Median, 6=Majority, 7=Minority
-                      -Min-Calculates the minimum value of the pixels within the neighborhood
-                      -Max-Calculates the maximum value of the pixels within the neighborhood
-                      -Mean-Calculates the average value of the pixels within the neighborhood. This is the default.
-                      -StandardDeviation-Calculates the standard deviation value of the pixels within the neighborhood
-                      -Median-Calculates the median value of pixels within the neighborhood.
-                      -Majority-Calculates the majority value, or the value that occurs most frequently, of the pixels within the neighborhood.
-                      -Minority-Calculates the minority value, or the value that occurs least frequently, of the pixels within the neighborhood.
+
+                      - Min - Calculates the minimum value of the pixels within the neighborhood
+                      - Max - Calculates the maximum value of the pixels within the neighborhood
+                      - Mean - Calculates the average value of the pixels within the neighborhood. This is the default.
+                      - StandardDeviation - Calculates the standard deviation value of the pixels within the neighborhood
+                      - Median - Calculates the median value of pixels within the neighborhood.
+                      - Majority - Calculates the majority value, or the value that occurs most frequently, of the pixels within the neighborhood.
+                      - Minority - Calculates the minority value, or the value that occurs least frequently, of the pixels within the neighborhood.
     :param columns: int (e.g. 3). The number of pixel rows to use in your focal neighborhood dimension.
     :param rows: int (e.g. 3). The number of pixel columns to use in your focal neighborhood dimension.
     :param fill_no_data_only: bool
@@ -3739,7 +3741,7 @@ def identity(raster):
     (http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/identity-function.htm)
 
     :param raster: the input raster / imagery layer
-    :return: the innput raster
+    :return: the input raster
     """
  
     layer, raster, raster_ra = _raster_input(raster)
@@ -4072,8 +4074,8 @@ def weighted_overlay(rasters, fields, influences, remaps, eval_from, eval_to):
     :param influences: array of double, Each input raster is weighted according to its importance, or 
 				       its influence. The sum of the influence weights must equal 1
     :param remaps: array of strings, Each value in an input raster is assigned a new value based on the remap. The remap value can be a valid value or a NoData value.    
-	:param eval_from: required, numeric value of evaluation scale from
-	:param eval_to: required, numeric value of evaluation scale to
+    :param eval_from: required, numeric value of evaluation scale from
+    :param eval_to: required, numeric value of evaluation scale to
     :return: output raster with function applied
     """
 
@@ -4157,36 +4159,36 @@ def focal_stats(raster, neighborhood_type=1 , width=3, height=3,
                       1=Majority, 2=Maximum, 3=Mean , 4=Median, 5= Minimum, 6 = Minority,
                       7=Range, 8=Standard deviation, 9=Sum, 10=Variety, 12=Percentile
 
-                          Majority = Calculates the majority (value that occurs most often) of the cells in the neighborhood.
+                          - Majority = Calculates the majority (value that occurs most often) of the cells in the neighborhood.
 
-                          Maximum = Calculates the maximum (largest value) of the cells in the neighborhood.
+                          - Maximum = Calculates the maximum (largest value) of the cells in the neighborhood.
 
-                          Mean = Calculates the mean (average value) of the cells in the neighborhood.
+                          - Mean = Calculates the mean (average value) of the cells in the neighborhood.
 
-                          Median = Calculates the median of the cells in the neighborhood.
+                          - Median = Calculates the median of the cells in the neighborhood.
 
-                          Minimum = Calculates the minimum (smallest value) of the cells in the neighborhood.
+                          - Minimum = Calculates the minimum (smallest value) of the cells in the neighborhood.
 
-                          Minority = Calculates the minority (value that occurs least often) of the cells in the neighborhood.
+                          - Minority = Calculates the minority (value that occurs least often) of the cells in the neighborhood.
 
-                          Range = Calculates the range (difference between largest and smallest value) of the cells in the neighborhood.
+                          - Range = Calculates the range (difference between largest and smallest value) of the cells in the neighborhood.
 
-                          Standard deviation =  Calculates the standard deviation of the cells in the neighborhood.
+                          - Standard deviation =  Calculates the standard deviation of the cells in the neighborhood.
 
-                          Sum = Calculates the sum (total of all values) of the cells in the neighborhood.
+                          - Sum = Calculates the sum (total of all values) of the cells in the neighborhood.
 
-                          Variety = Calculates the variety (the number of unique values) of the cells in the neighborhood.
+                          - Variety = Calculates the variety (the number of unique values) of the cells in the neighborhood.
 
-                          Percentile = Calculates a specified percentile of the cells in the neighborhood.
+                          - Percentile = Calculates a specified percentile of the cells in the neighborhood.
 
     :param ignore_no_data: boolean, default is True.
 
-                        True - Specifies that if a NoData value exists within a neighborhood, 
-                        the NoData value will be ignored. Only cells within the neighborhood 
-                        that have data values will be used in determining the output value. 
+                        - True - Specifies that if a NoData value exists within a neighborhood, \
+                        the NoData value will be ignored. Only cells within the neighborhood \
+                        that have data values will be used in determining the output value. \
                         This is the default.
 
-                        False - Specifies that if any cell in a neighborhood has a value of 
+                        - False - Specifies that if any cell in a neighborhood has a value of \
                         NoData, the output for the processing cell will be NoData.
     :param percentile_value: float, default is 90. Denotes which percentile to calculate when the stat_type is Percentile.   
                              The value can range from 0 to 100.
@@ -4563,18 +4565,18 @@ def constant_raster(constant, raster_info, gis=None):
 
                         Example for RasterInfo dict - 
 
-                        {'bandCount': 3,'extent': {"xmin": 4488761.95,
-                        "ymin": 5478609.805,
-                        "xmax": 4489727.05,
-                        "ymax": 5479555.305,
+                        {'bandCount': 3, 'extent': {"xmin": 4488761.95, 
+                        "ymin": 5478609.805, 
+                        "xmax": 4489727.05, 
+                        "ymax": 5479555.305, 
                         "spatialReference": {
-                        "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
-                        GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\",DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
-                        SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],PRIMEM[\"Greenwich\",0.0],
-                        UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],
-                        PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
-                        PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
-                        PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
+                        "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\", 
+                        GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\", DATUM[\"D_Deutsches_Hauptdreiecksnetz\", 
+                        SPHEROID[\"Bessel_1841\", 6377397.155,299.1528128]], PRIMEM[\"Greenwich\", 0.0], 
+                        UNIT[\"Degree\", 0.0174532925199433]], PROJECTION[\"Transverse_Mercator\"], 
+                        PARAMETER[\"false_easting\", 4500000.0], PARAMETER[\"false_northing\", 0.0], 
+                        PARAMETER[\"central_meridian\", 12.0], PARAMETER[\"scale_factor\", 1.0], 
+                        PARAMETER[\"latitude_of_origin\", 0.0], UNIT[\"Meter\", 1.0]]"
                         }}, 
                         'pixelSizeX': 0.0999999999999614, 
                         'pixelSizeY': 0.1, 
@@ -4634,18 +4636,18 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
 
                         Example for RasterInfo dict - 
 
-                        {'bandCount': 3,'extent': {"xmin": 4488761.95,
-                        "ymin": 5478609.805,
-                        "xmax": 4489727.05,
-                        "ymax": 5479555.305,
+                        {'bandCount': 3, 'extent': {"xmin": 4488761.95, 
+                        "ymin": 5478609.805, 
+                        "xmax": 4489727.05, 
+                        "ymax": 5479555.305, 
                         "spatialReference": {
-                        "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
-                        GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\",DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
-                        SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],PRIMEM[\"Greenwich\",0.0],
-                        UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],
-                        PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
-                        PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
-                        PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
+                        "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\", 
+                        GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\", DATUM[\"D_Deutsches_Hauptdreiecksnetz\", 
+                        SPHEROID[\"Bessel_1841\", 6377397.155,299.1528128]], PRIMEM[\"Greenwich\",0.0], 
+                        UNIT[\"Degree\", 0.0174532925199433]], PROJECTION[\"Transverse_Mercator\"], 
+                        PARAMETER[\"false_easting\", 4500000.0], PARAMETER[\"false_northing\", 0.0], 
+                        PARAMETER[\"central_meridian\", 12.0], PARAMETER[\"scale_factor\", 1.0], 
+                        PARAMETER[\"latitude_of_origin\", 0.0], UNIT[\"Meter\", 1.0]]"
                         }}, 
                         'pixelSizeX': 0.0999999999999614, 
                         'pixelSizeY': 0.1, 
@@ -4664,23 +4666,23 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
                            Geometric = 8
                            NegativeBinomial = 9
 
-                        Uniform - A uniform distribution with the defined range.
+                        - Uniform - A uniform distribution with the defined range.
 
-                        UniformInteger - An integer distribution with the defined range.
+                        - UniformInteger - An integer distribution with the defined range.
 
-                        Normal - A normal distribution with a defined {normal_mean} and {std_dev}. 
+                        - Normal - A normal distribution with a defined {normal_mean} and {std_dev}. 
 
-                        Exponential - An exponential distribution with a defined {exp_mean}.
+                        - Exponential - An exponential distribution with a defined {exp_mean}.
 
-                        Poisson - A Poisson distribution with a defined {Mean}.
+                        - Poisson - A Poisson distribution with a defined {Mean}.
 
-                        Gamma - A gamma distribution with a defined {alpha} and {beta}.
+                        - Gamma - A gamma distribution with a defined {alpha} and {beta}.
                                 
-                        Binomial - A binomial distribution with a defined {N} and {probability}.
+                        - Binomial - A binomial distribution with a defined {N} and {probability}.
 
-                        Geometric - A geometric distribution with a defined {probability}. 
+                        - Geometric - A geometric distribution with a defined {probability}. 
 
-                        NegativeBinomial - A Pascal distribution with a defined {r} and {probability}.
+                        - NegativeBinomial - A Pascal distribution with a defined {r} and {probability}.
 
     :param min_uniform: Optional float. The default value is 0.0
     :param max_uniform: Optional float. The default value is 1.0
@@ -5292,11 +5294,12 @@ def s1_radiometric_calibration(raster, calibration_type=None):
 
                    The function will use the LUT file either to apply the thermal correction or to 
                    remove the correction, depending on the contents of the LUT.
-    :param calibration_type: Optional string or int. one of four calibration types: 
-                             "beta_nought" (0) - produces an output containing the radar brightness coefficient.
-                             "sigma_nought" (1) - the backscatter returned to the antenna from a unit area on the ground, related to ground range.
-                             "gamma" (2) - measurement of emitted and returned energy useful for determining antenna patterns.
-                              None - Specify None to not apply a correction. This is the default.
+    :param calibration_type: Optional string or int. one of four calibration types:
+    
+                             - "beta_nought" (0) - produces an output containing the radar brightness coefficient.
+                             - "sigma_nought" (1) - the backscatter returned to the antenna from a unit area on the ground, related to ground range.
+                             - "gamma" (2) - measurement of emitted and returned energy useful for determining antenna patterns.
+                             - None - Specify None to not apply a correction. This is the default.
 
     :return: output raster 
     """
@@ -5735,6 +5738,7 @@ def compute_change(raster1,
                                              To evaluate change from time 1 (earlier) to time 2 (later), enter the time 2 raster.
     ------------------------------------     --------------------------------------------------------------------
     method                                   Optional string. Specifies the method to be used.
+
                                              - DIFFERENCE : The mathematical difference, or subtraction, between the pixel values in the input rasters will be calculated. This is the default.
                                              - RELATIVE_DIFFERENCE : The difference in pixel values, accounting for the magnitudes of the values being compared, will be calculated.
                                              - CATEGORICAL_DIFFERENCE : The difference between two categorical or thematic rasters will be calculated, where the output contains class transitions that occurred between the two rasters.
@@ -5751,7 +5755,9 @@ def compute_change(raster1,
                                              Required if method is CATEGORICAL_DIFFERENCE.
     ------------------------------------     --------------------------------------------------------------------
     filter_method                            Optional string. Default value is "CHANGED_PIXELS_ONLY" (1).
+                                             
                                              Possible options are:
+
                                              - ALL
                                              - CHANGED_PIXELS_ONLY
                                              - UNCHANGED_PIXELS_ONLY
@@ -6304,9 +6310,9 @@ def apparent_reflectance(raster, radiance_gain_values = None, radiance_bias_valu
                                              by scientific users for complex modeling and technical 
                                              remote-sensing applications.
 
-                                                False - The function returns apparent reflectance values. This is the default.
+                                                - False - The function returns apparent reflectance values. This is the default.
                                                 
-                                                True - The function returns 32-bit floating-point values, which most commonly are in the range of 0.0 to 1.0. No data clipping is performed if this option is selected.
+                                                - True - The function returns 32-bit floating-point values, which most commonly are in the range of 0.0 to 1.0. No data clipping is performed if this option is selected.
     ------------------------------------     --------------------------------------------------------------------
     scale_factor                             Optional int. Your apparent reflectance output value can be expressed 
                                              as an integer. The scaling factor is multiplied by the albedo to 

@@ -279,13 +279,25 @@ class ImageryLayerCacheManager(_GISResource):
         """
         This operation updates a Tile Service's properties
 
-        Inputs:
-           service_definition - updates a service definition
-           min_scale - sets the services minimum scale for caching
-           max_scale - sets the service's maximum scale for caching
-           source_item_id - The Source Item ID is the GeoWarehouse Item ID of the map service
-           export_tiles_allowed - sets the value to let users export tiles
-           max_export_tile_count - sets the maximum amount of tiles to be exported from a single call.
+        =====================     ====================================================
+        **Argument**              **Description**
+        ---------------------     ----------------------------------------------------
+        service_definition        updates a service definition
+        ---------------------     ----------------------------------------------------
+        min_scale                 sets the services minimum scale for caching
+        ---------------------     ----------------------------------------------------
+        max_scale                 sets the service's maximum scale for caching
+        ---------------------     ----------------------------------------------------
+        source_item_id            The Source Item ID is the GeoWarehouse Item ID of the map service
+        ---------------------     ----------------------------------------------------
+        export_tiles_allowed      sets the value to let users export tiles
+        ---------------------     ----------------------------------------------------
+        max_export_tile_count     sets the maximum amount of tiles to be exported from a single call. \
+                                  Deletes tiles for the current cache
+        =====================     ====================================================
+
+        :returns:
+           boolean
         """
         params = {
             "f": "json",
@@ -4818,7 +4830,7 @@ class Raster():
                                              Example:
                                                 path = r"/path/to/raster"
 
-                                                path = "https://sample.arcgisonline.com/arcgis/rest/services/CharlotteLAS/ImageServer"
+                                                path = "https://myserver/arcgis/rest/services/CharlotteLAS/ImageServer"
     ------------------------------------     --------------------------------------------------------------------
     is_multidimensional                      Optional boolean. Determines whether the input raster will be 
                                              treated as multidimensional. 
@@ -8103,9 +8115,9 @@ class RasterCollection():
                                                     The query_boundary parameter is honoured only when the RasterCollection 
                                                     is created from a list of Rasters.
 
-                                                    True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+                                                    - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
                                                     
-                                                    False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
+                                                    - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
                                                     
                                                     By default, query_boundary is set to True, i.e, SHAPE field will be added.
 
@@ -8221,9 +8233,9 @@ class RasterCollection():
                                                         boundary/geometry of the raster. The query_boundary parameter is honoured 
                                                         only when the RasterCollection is created from a list of Rasters.
 
-                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
 
-                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
 
                                                         Example:
 
@@ -8268,9 +8280,9 @@ class RasterCollection():
                                                         boundary/geometry of the raster. The query_boundary parameter is honoured 
                                                         only when the RasterCollection is created from a list of Rasters.
 
-                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
 
-                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
 
                                                         Example:
 
@@ -8327,9 +8339,9 @@ class RasterCollection():
                                                         boundary/geometry of the raster. The query_boundary parameter is honoured 
                                                         only when the RasterCollection is created from a list of Rasters.
 
-                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
 
-                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
 
                                                         Example:
 
@@ -8366,9 +8378,9 @@ class RasterCollection():
                                                         boundary/geometry of the raster. The query_boundary parameter is honoured 
                                                         only when the RasterCollection is created from a list of Rasters.
 
-                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
 
-                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
 
                                                         Example:
 
@@ -8436,9 +8448,9 @@ class RasterCollection():
                                                         boundary/geometry of the raster. The query_boundary parameter is honoured 
                                                         only when the RasterCollection is created from a list of Rasters.
 
-                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
 
-                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
 
                                                         Example:
 
@@ -8506,9 +8518,9 @@ class RasterCollection():
                                                         boundary/geometry of the raster. The query_boundary parameter is honoured 
                                                         only when the RasterCollection is created from a list of Rasters.
 
-                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
 
-                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
 
                                                         Example:
 
@@ -8842,9 +8854,9 @@ class RasterCollection():
                                                         boundary/geometry of the raster. The query_boundary parameter is honoured 
                                                         only when the RasterCollection is created from a list of Rasters.
 
-                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
 
-                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
 
                                                         Example:
 
@@ -8881,9 +8893,9 @@ class RasterCollection():
                                                         boundary/geometry of the raster. The query_boundary parameter is honoured 
                                                         only when the RasterCollection is created from a list of Rasters.
 
-                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
 
-                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
 
                                                         Example:
 
@@ -11195,84 +11207,138 @@ class RasterManager(object):
         raster files are copied. The service_url is required input for the
         following raster types: Image Layer, Map Service, WCS, and WMS.
 
-        Inputs:
+        ===============================     ====================================================================
+        **Arguments**                       **Description**
+        -------------------------------     --------------------------------------------------------------------
+        item_ids                            The upload items (raster files) to be added. Either item_ids or \ 
+                                            service_url is needed to perform this operation.
+                                             
+                                            Syntax:
 
-        item_ids - The upload items (raster files) to be added. Either item_ids or service_url is needed to perform this operation.
-            Syntax: item_ids=<itemId1>,<itemId2>
-            
-            Example: item_ids=ib740c7bb-e5d0-4156-9cea-12fa7d3a472c,ib740c7bb-e2d0-4106-9fea-12fa7d3a482c
-        service_url - The URL of the service to be added. The image layer \
-         will add this URL to the mosaic dataset. Either item_ids or \
-         service_url is needed to perform this operation. The service URL is \
-         required for the following raster types: Image Layer, Map Service, WCS, and WMS.
-            Example: service_url=http://myserver/arcgis/services/Portland/ImageServer
-        raster_type - The type of raster files being added. Raster types \
-         define the metadata and processing template for raster files to be \
-         added. Allowed values are listed in image layer resource.
-            Example: Raster Dataset,CADRG/ECRG,CIB,DTED,Image Layer,Map Service,NITF,WCS,WMS
-        compute_statistics - If true, statistics for the rasters will be computed. The default is false.
-            Values: false,true
-        build_pyramids - If true, builds pyramids for the rasters. The default is false.
-                Values: false,true
-        build_thumbnail	 - If true, generates a thumbnail for the rasters. The default is false.
-                Values: false,true
-        minimum_cell_size_factor - The factor (times raster resolution) used \
-         to populate the MinPS field (maximum cell size above which the \
-         raster is visible).
-                Syntax: minimum_cell_size_factor=<minimum_cell_size_factor>
+                                                item_ids=<itemId1>,<itemId2>
+                                            
+                                            Example:
+
+                                                item_ids=ib740c7bb-e5d0-4156-9cea-12fa7d3a472c, \ 
+                                                ib740c7bb-e2d0-4106-9fea-12fa7d3a482c
+        -------------------------------     --------------------------------------------------------------------
+        service_url                         The URL of the service to be added. The image layer \
+                                            will add this URL to the mosaic dataset. Either item_ids or \
+                                            service_url is needed to perform this operation. The service URL is \
+                                            required for the following raster types: Image Layer, Map Service, \
+                                            WCS, and WMS.
+                                            
+                                            Example: 
+
+                                                service_url= http://myserver/arcgis/services/Portland/ImageServer
+        -------------------------------     --------------------------------------------------------------------
+        raster_type                         The type of raster files being added. Raster types \
+                                            define the metadata and processing template for raster files to be \
+                                            added. Allowed values are listed in image layer resource.
+                                            
+                                            Example: 
+
+                                                Raster Dataset, CADRG/ECRG, CIB,DTED, Image Layer, Map Service, \
+                                                NITF, WCS, WMS
+        -------------------------------     --------------------------------------------------------------------
+        compute_statistics                  If true, statistics for the rasters will be computed. \
+                                            The default is false.
+                                            
+                                            Values: 
+
+                                                false,true
+        -------------------------------     --------------------------------------------------------------------
+        build_pyramids                      If true, builds pyramids for the rasters. The default is false.
+                                            
+                                            Values: 
+
+                                                false,true
+        -------------------------------     --------------------------------------------------------------------
+        build_thumbnail                     If true, generates a thumbnail for the rasters. The default is false.
+                                            
+                                            Values:
+
+                                                false,true
+        -------------------------------     --------------------------------------------------------------------
+        minimum_cell_size_factor            The factor (times raster resolution) used \
+                                            to populate the MinPS field (maximum cell size above which the \
+                                            raster is visible).
+                                            
+                                            Syntax:
+
+                                                minimum_cell_size_factor=<minimum_cell_size_factor>
                 
-                Example: minimum_cell_size_factor=0.1
-        maximum_cell_size_factor - The factor (times raster resolution) used \
-         to populate MaxPS field (maximum cell size below which raster is \
-         visible).
-                Syntax: maximum_cell_size_factor=<maximum_cell_size_factor>
+                                            Example:
 
-                Example: maximum_cell_size_factor=10
-        attributes - Any attribute for the added rasters.
-                Syntax:
+                                                minimum_cell_size_factor=0.1
+        -------------------------------     --------------------------------------------------------------------
+        maximum_cell_size_factor            The factor (times raster resolution) used \
+                                            to populate MaxPS field (maximum cell size below which raster is visible).
+                                            
+                                            Syntax:
 
-                    | {
-                    |   "<name1>" : <value1>,
-                    |   "<name2>" : <value2>
-                    | }
+                                                maximum_cell_size_factor=<maximum_cell_size_factor>
+
+                                            Example:
+
+                                                maximum_cell_size_factor=10
+        -------------------------------     --------------------------------------------------------------------
+        attributes                          Any attribute for the added rasters.
+
+                                            Syntax:
+
+                                              | {
+                                              |   "<name1>" : <value1>,
+                                              |   "<name2>" : <value2>
+                                              | }
                 
-                Example:
+                                            Example:
 
-                    | {
-                    |   "MinPS": 0,
-                    |   "MaxPS": 20;
-                    |   "Year" : 2002,
-                    |   "State" : "Florida"
-                    | }
-        geodata_transforms - The geodata transformations applied on the \
-         added rasters. A geodata transformation is a mathematical model \
-         that performs a geometric transformation on a raster; it defines \
-         how the pixels will be transformed when displayed or accessed. \
-         Polynomial, projective, identity, and other transformations are \
-         available. The geodata transformations are applied to the dataset \
-         that is added.
-                Syntax:
+                                              | {
+                                              |   "MinPS": 0,
+                                              |   "MaxPS": 20;
+                                              |   "Year" : 2002,
+                                              |   "State" : "Florida"
+                                              | }
+        -------------------------------     --------------------------------------------------------------------
+        geodata_transforms                  The geodata transformations applied on the \
+                                            added rasters. A geodata transformation is a mathematical model \
+                                            that performs a geometric transformation on a raster; it defines \
+                                            how the pixels will be transformed when displayed or accessed. \
+                                            Polynomial, projective, identity, and other transformations are \
+                                            available. The geodata transformations are applied to the dataset \
+                                            that is added.
 
-                    | [
-                    | {
-                    |   "geodataTransform" : "<geodataTransformName1>",
-                    |   "geodataTransformArguments" : {<geodataTransformArguments1>}
-                    |   },
-                    |   {
-                    |   "geodataTransform" : "<geodataTransformName2>",
-                    |   "geodataTransformArguments" : {<geodataTransformArguments2>}
-                    |   }
-                    | ]
-         The syntax of the geodataTransformArguments property varies based \
-         on the specified geodataTransform name. See Geodata Transformations \
-         documentation for more details.
-        geodata_transform_apply_method - This parameter defines how to apply the provided geodataTransform. The default is esriGeodataTransformApplyAppend.
-                Values: 
-                esriGeodataTransformApplyAppend |
-                esriGeodataTransformApplyReplace |
-                esriGeodataTransformApplyOverwrite
+                                            Syntax:
 
+                                              | [
+                                              | {
+                                              |   "geodataTransform" : "<geodataTransformName1>",
+                                              |   "geodataTransformArguments" : {<geodataTransformArguments1>}
+                                              |   },
+                                              |   {
+                                              |   "geodataTransform" : "<geodataTransformName2>",
+                                              |   "geodataTransformArguments" : {<geodataTransformArguments2>}
+                                              |   }
+                                              | ]
+
+                                            The syntax of the geodataTransformArguments property varies based \
+                                            on the specified geodataTransform name. See Geodata Transformations \
+                                            documentation for more details.
+        -------------------------------     --------------------------------------------------------------------
+        geodata_transform_apply_method      This parameter defines how to apply the provided geodataTransform. \
+                                            The default is esriGeodataTransformApplyAppend.
+
+                                            Values: 
+
+                                                esriGeodataTransformApplyAppend |
+                                                esriGeodataTransformApplyReplace |
+                                                esriGeodataTransformApplyOverwrite
+        ===============================     ====================================================================
+
+        :returns: dictionary
         """
+
         return self._service._add_rasters(raster_type,
                                           item_ids,
                                           service_url,
