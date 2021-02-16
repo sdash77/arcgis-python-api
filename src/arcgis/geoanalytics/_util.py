@@ -198,15 +198,6 @@ class GAJob(object):
     @property
     def messages(self):
         """
-        Returns the service's messages
-
-        :returns: List
-        """
-        return self._gpjob.messages
-    #----------------------------------------------------------------------
-    @property
-    def messages(self):
-        """
         returns the GP messages
 
         :returns: List
