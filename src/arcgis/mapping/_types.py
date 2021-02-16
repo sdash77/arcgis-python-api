@@ -22,6 +22,8 @@ from arcgis.mapping._basemap_definitions import basemap_dict
 from arcgis.mapping._scenelyrs import SceneLayer
 from arcgis.mapping.forms import FormCollection
 from arcgis._impl.common._utils import _lazy_property
+# from arcgis.mapping import export_map
+
 try:
     from traitlets import HasTraits, observe
     from arcgis.widgets._mapview._traitlets_extension import ObservableDict
@@ -1609,6 +1611,162 @@ class WebMap(HasTraits, collections.OrderedDict):
             data["events"].append({"type":self.events.type, "actions":self.events.synced_widgets})
 
         return data
+
+    def print(self, file_format, extent, dpi=92, output_dimensions=(500, 500), scale=None,
+              rotation=None, spatial_reference=None, layout_template="MAP_ONLY", time_extent=None,
+              layout_options=None):
+        """
+        Prints the WebMap object to a printable file such as PDF, PNG32, JPG. The render and print operations happen
+        server side (ArcGIS Online or Enterprise) and not on the client. This method takes the state of
+        the web map, renders and returns either a page layout or a map without page surrounds of the specified extent
+        in raster or vector format.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        file_format            Required String. Specifies the output file format. Valid types
+                                include ``PNG8`` | ``PNG32`` | ``JPG`` | ``GIF`` | ``PDF`` | ``EPS``
+                                 | ``SVG`` | ``SVGZ``.
+        ------------------     --------------------------------------------------------------------
+        extent                 Required dictionary. Specify the extent to be printed. Example:
+                                ``{'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                                    'xmin': -15199645.40582486,
+                                    'ymin': 3395607.5273594954,
+                                    'xmax': -11354557.134968376,
+                                    'ymax': 5352395.451459487}``
+                                The spatial reference of the extent object is optional; when it is
+                                not provided, it is assumed to be in the map's spatial reference.
+                                When the aspect ratio of the map extent is different than the size
+                                of the map on the output page or the ``output_dimensions``,
+                                you might notice more features on the output map.
+        ------------------     --------------------------------------------------------------------
+        dpi                    Optional integer. Specify the print resolution of the output file.
+                                dpi stands for 'dots per inch'. A higher number implies better
+                                resolution and a larger file size.
+        ------------------     --------------------------------------------------------------------
+        output_dimensions      Optional tuple of integers. Specify the dimensions of the output file.
+                                in pixels. If the ``layout_template`` is not ``MAP_ONLY``, the
+                                specific layout template chosen takes precedence over this pararmeter.
+        ------------------     --------------------------------------------------------------------
+        scale                  Optional float. Specify the map scale to be printed. The map scale
+                                at which you want your map to be printed. This parameteer is optional
+                                but recommended for getting optimal results. The scale property is
+                                especially useful when map services in this web map have
+                                scale-dependent layers or reference scales set. Since the map that
+                                you are viewing on the web app may be smaller than the size of the
+                                output map (for example, 8.5 x 11 in. or A4 size), the scale of the
+                                output map will be different and you could see differences in
+                                features and/or symbols in the web application as compared with
+                                the output map.
+
+                                When scale is used, it takes precedence over the extent, but the
+                                output map is drawn at the requested scale centered on the center
+                                of the extent.
+        ------------------     --------------------------------------------------------------------
+        rotation               Optional float. Specify the number of degrees by which the map frame
+                                will be rotated, measured counterclockwise from the north. To rotate
+                                 clockwise, use a negative value.
+        ------------------     --------------------------------------------------------------------
+        spatial_reference      Optional dictionary. Specify the spatial reference in which map should
+                                be printed. When not specified, the following is the order of
+                                precedence:
+
+                                 - read from the ``extent`` parameter
+                                 - read from the base map layer of your web map
+                                 - read from the ``layout_template`` chosen.
+        ------------------     --------------------------------------------------------------------
+        layout_template        Optional string. The default value ``MAP_ONLY`` does not use any
+                                template. Some example values: ``A4 Landscape`` | ``Letter ANSI A Portrait``
+                                To get the list of available templates run
+                                ``arcgis.mapping.get_layout_templates()``.
+        ------------------     --------------------------------------------------------------------
+        time_extent            Optional list. If there is a time-aware layer and you want it
+                                to be drawn at a specified time, specify this property. This order
+                                list can have one or two elements. Add two elements (``startTime``
+                                followed by ``endTime``) to represent a time extent, or provide
+                                only one time element to represent a time instant. Times are always
+                                in UTC.
+
+                                Example: ``[1199145600000, 1230768000000]`` to represent Tuesday,
+                                1 January 2008 00:00:00 UTC to Thursday, 1 January 2009 00:00:00 UTC
+        ------------------     --------------------------------------------------------------------
+        layout_options         Optional dictionary. This defines settings for different available
+                                page layout elements and is only needed when an available
+                                ``layout_template`` is chosen. Page layout elements include title,
+                                copyright text, scale bar, author name, and custom text elements.
+                                For more details, see https://developers.arcgis.com/rest/services-reference/exportwebmap-specification.htm#ESRI_SECTION1_58F5F403FCF048C2A5EBEF921BB97A10
+        ==================     ====================================================================
+
+        :return: URL to the file which can be downloaded and printed.
+
+        .. code-block:: python
+
+                # USAGE EXAMPLE 1: Printing a web map to a JPG file of desired extent.
+
+                from arcgis.mapping import WebMap
+                from arcgis.gis import GIS
+
+                # connect to your GIS and get the web map item
+                gis = GIS(url, username, password)
+                wm_item = gis.content.get('1234abcd_web map item id')
+
+                # create a WebMap object from the existing web map item
+                wm = WebMap(wm_item)
+
+                # create an empty web map
+                wm2 = WebMap()
+                wm2.add_layer(<desired Item or Layer object>)
+
+                # set extent
+                redlands_extent = {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                                     'xmin': -13074746.000753032,
+                                     'ymin': 4020957.451106308,
+                                     'xmax': -13014666.49652086,
+                                     'ymax': 4051532.26242039}
+
+                # print
+                printed_file_url = wm.print(file_format='JPG', extent=redlands_extent)
+                printed_file2_url = wm2.print(file_format='PNG32', extent=redlands_extent)
+
+                # Display the result in a notebook:
+                from IPython.display import Image
+                Image(printed_file_url)
+
+                # Download file to disk
+                import requests
+                with requests.get(printed_file_url) as resp:
+                    with open('./output_file.png', 'wb') as file_handle:
+                        file_handle.write(resp.content)
+
+        """
+        from ._utils import export_map
+
+        # compose map options
+        map_options = {'extent': extent,
+                       'scale': scale,
+                       'rotation': rotation,
+                       'spatialReference': spatial_reference,
+                       'time': time_extent}
+
+        if layout_options:
+            map_options['layoutOptions']: layout_options
+
+        # compose export options
+        export_options = {'dpi': dpi,
+                          'outputSize': output_dimensions}
+
+        # compose combined JSON
+        print_options = {'mapOptions': map_options,
+                         'operationalLayers': self._webmapdict['operationalLayers'],
+                         'baseMap': self._basemap,
+                         'exportOptions': export_options}
+
+        # execute printing
+        result = export_map(web_map_as_json=print_options, format=file_format,
+                            layout_template=layout_template)
+
+        # process output
+        return result.url
 
 ###########################################################################
 class PackagingJob(object):
