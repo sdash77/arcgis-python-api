@@ -218,7 +218,10 @@ class Feature(object):
     def from_dict(cls, feature, sr=None):
         """:return: a feature from a dict"""
         geom = feature['geometry'] if 'geometry' in feature else None
-        if sr and not 'spatialReference' in geom:
+        if geom and \
+           sr and \
+           isinstance(geom, dict) and \
+           not 'spatialReference' in geom:
             geom['spatialReference'] = sr
 
         attribs = feature['attributes'] if 'attributes' in feature else None
