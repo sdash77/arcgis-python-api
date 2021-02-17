@@ -2589,7 +2589,7 @@ def create_image_collection(image_collection,
                                          The function can create hosted imagery layers on enterprise and AGOL from 
                                          local raster datasets by uploading the data to the server.
     ------------------                   --------------------------------------------------------------------
-    raster_type_name                     |Required string. The name of the raster type to use for adding data to \
+    raster_type_name                     | Required string. The name of the raster type to use for adding data to \
                                          the image collection.
 
                                          Choice list: [
