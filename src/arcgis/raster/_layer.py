@@ -8556,6 +8556,10 @@ class RasterCollection():
                                                         boundary/geometry of the raster. The query_boundary parameter is honoured 
                                                         only when the RasterCollection is created from a list of Rasters.
 
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
+
                                                         Example:
 
                                                         {"query_boundary":True}
@@ -8674,9 +8678,17 @@ class RasterCollection():
         and for band 4; a four-band raster is returned. Band numbers are matched 
         between raster items using the band index, so the items in the raster 
         collection must follow the same band order.
-        
-        :returns: a Raster object
 
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
+
+                                                    - True : The method will include all valid pixels and ignore any NoData pixels. This is the default.
+                                                    - False : The method will result in NoData if there are any NoData values.
+        ====================================     ====================================================================
+
+        :returns: a Raster object
         """
         return self._ras_coll_engine_obj.median(ignore_nodata=ignore_nodata)
 
