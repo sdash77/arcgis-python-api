@@ -138,22 +138,30 @@ class PointCNN(ArcGISModel):
             data.emd = emd
             for key, value in emd['DataAttributes'].items():
                 setattr(data, key, value)
+
             ## backward compatibility.
             if not hasattr(data, 'class_mapping'):
                 data.class_mapping = class_mapping
+                if not hasattr(data, 'class2idx'):
+                    data.class2idx = class_mapping   
             if not hasattr(data, 'color_mapping'):
                 data.color_mapping = color_mapping
             if not hasattr(data, 'classes'):
-                data.classes = list(class_mapping.values())
+                data.classes = list(class2idx.values())    
+            if not hasattr(data, 'class2idx'):
+                data.class2idx = data.class_mapping                        
 
-            data.class_mapping = {int(k): int(v) for k, v in data.class_mapping.items()}
+
+            data.class2idx = {int(k): int(v) for k, v in data.class2idx.items()}
+            if hasattr(data, 'idx2class'):
+                data.idx2class = {int(k): int(v) for k, v in data.idx2class.items()}
+
             data.color_mapping = {int(k): v for k, v in data.color_mapping.items()}
-
 
             ## Below are the lines to make save function work
             data.chip_size = None
             data._image_space_used = None
-            data.dataset_type = 'PointCloud'                 
+            data.dataset_type = 'PointCloud'              
 
         return cls(data, **model_params, pretrained_path=str(model_file))
 
@@ -268,17 +276,29 @@ class PointCNN(ArcGISModel):
         _emd_template['DataAttributes']['max_point'] = self._data.max_point
         _emd_template['DataAttributes']['extra_features'] = self._data.extra_features
         _emd_template['DataAttributes']['extra_dim'] = self._data.extra_dim
-        _emd_template['DataAttributes']['class_mapping'] = self._data.class_mapping
+        _emd_template['DataAttributes']['class2idx'] = self._data.class2idx
         _emd_template['DataAttributes']['color_mapping'] = self._data.color_mapping
         _emd_template['DataAttributes']['remap'] = self._data.remap
         _emd_template['DataAttributes']['classes'] = self._data.classes
+        _emd_template['DataAttributes']['subset_classes'] = self._data.subset_classes
+        _emd_template['DataAttributes']['class_mapping'] = self._data.class_mapping
+        _emd_template['DataAttributes']['remap_dict'] = self._data.remap_dict
+        _emd_template['DataAttributes']['remap_bool'] = self._data.remap_bool
+        _emd_template['DataAttributes']['important_classes'] = self._data.important_classes
+        _emd_template['DataAttributes']['idx2class'] = self._data.idx2class
+        _emd_template['DataAttributes']['features_to_keep'] = self._data.features_to_keep
+        _emd_template['DataAttributes']['pc_type'] = self._data.pc_type
+        _emd_template['DataAttributes']['background_classcode'] = self._data.background_classcode
+        if self._data.pc_type == 'PointCloud_TF':
+            _emd_template['DataAttributes']['extra_feat_indexes'] = self._data.extra_feat_indexes
+
 
         _emd_template['Classes'] = []
         class_data = {}
-        for i, class_name in enumerate(self._data.classes):  # 0th index is background
+        for i, class_name in enumerate(self._data.classes):
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
-            class_data["Value"] = inverse_class_mapping[i]
-            class_data["Name"] = class_name
+            class_data["Value"] = class_name
+            class_data["Name"] = self._data.class_mapping[class_name]
             color = [random.choice(range(256)) for i in range(3)] if is_no_color(self._data.color_mapping) else \
                 self._data.color_mapping[class_name]
             class_data["Color"] = np.array(color).astype(int).tolist()
@@ -432,5 +452,5 @@ class PointCNN(ArcGISModel):
         :returns: Path where files are dumped.
         """
         
-        return predict_h5(self, path, output_path)        
+        return predict_h5(self, path, output_path, **kwargs)        
         

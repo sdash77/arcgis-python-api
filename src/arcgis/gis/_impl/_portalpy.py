@@ -374,7 +374,7 @@ class Portal(object):
 
         postdata['itemid'] = itemid
         if text is not None:
-            postdata['test'] = text
+            postdata['text'] = text
 
         postdata['fileType'] = fileType
 

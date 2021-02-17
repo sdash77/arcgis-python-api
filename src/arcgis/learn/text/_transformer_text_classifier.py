@@ -30,11 +30,13 @@ backbone_models_map = {
     'mobilebert': ('google/mobilebert-uncased',),
     'electra': ('google/electra-base-discriminator', 'google/electra-base-generator'),
     'bart': ('facebook/bart-base', 'facebook/bart-large'),
-    'camembert': ('camembert-base',)
+    'camembert': ('camembert-base',),
+    'funnel': ('funnel-transformer/small', 'funnel-transformer/small-base', 'funnel-transformer/medium',
+               'funnel-transformer/medium-base')
 }
 
-transformer_architectures = ['BERT', 'RoBERTa', 'DistilBERT', 'ALBERT', 'FlauBERT', 'CamemBERT',
-                             'XLNet', 'XLM', 'XLM-RoBERTa', 'Bart', 'ELECTRA', 'Longformer', 'MobileBERT']
+transformer_architectures = ['BERT', 'RoBERTa', 'DistilBERT', 'ALBERT', 'FlauBERT', 'CamemBERT', 'XLNet',
+                             'XLM', 'XLM-RoBERTa', 'Bart', 'ELECTRA', 'Longformer', 'MobileBERT', 'Funnel']
 
 backbone_models_reverse_map = {x:key for key, val in backbone_models_map.items() for x in val}
 
@@ -61,6 +63,13 @@ class TransformerForTextClassification(ArcGISTransformer):
         id2label attribute (which is a dictionary) of the model config
         """
         self._config.id2label = {int(x): y for x, y in self._config.id2label.items()}
+        """
+        The `funnel` transformer has 2 type of attention `relative_shift` & `factorized`. The transformer 
+        config uses `relative_shift` attention type by default. When tested the text classifier model 
+        on twitter dataset, we were getting errors while training the model. Seems like a bug in the 
+        library. Hence using the `factorized` attention type here.
+        """
+        if 'funnel' in self._transformer_pretrained_model_name: self._config.attention_type = "factorized"
 
     def _set_max_seq_length(self):
         """

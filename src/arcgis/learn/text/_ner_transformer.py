@@ -43,11 +43,14 @@ backbone_models_map = {
     'mobilebert': ('google/mobilebert-uncased',),
     'camembert': ('camembert-base',),
     'flaubert': ('flaubert/flaubert_small_cased', 'flaubert/flaubert_base_cased', 'flaubert/flaubert_base_uncased',
-                 'flaubert/flaubert_large_cased')
+                 'flaubert/flaubert_large_cased'),
+    'funnel': ('funnel-transformer/small', 'funnel-transformer/small-base', 'funnel-transformer/medium',
+               'funnel-transformer/medium-base')
+
 }
 
-transformer_architectures = ['BERT', 'RoBERTa', 'DistilBERT', 'ALBERT', 'CamemBERT', 'MobileBERT',
-                             'XLNet', 'XLM', 'XLM-RoBERTa', 'FlauBERT', 'ELECTRA', 'Longformer']
+transformer_architectures = ['BERT', 'RoBERTa', 'DistilBERT', 'ALBERT', 'CamemBERT', 'MobileBERT', 'XLNet',
+                             'XLM', 'XLM-RoBERTa', 'FlauBERT', 'ELECTRA', 'Longformer', 'Funnel']
 
 backbone_models_reverse_map = {x:key for key, val in backbone_models_map.items() for x in val}
 
