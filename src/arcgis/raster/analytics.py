@@ -2564,30 +2564,32 @@ def create_image_collection(image_collection,
     ==================                   ====================================================================
     **Argument**                         **Description**
     ------------------                   --------------------------------------------------------------------
-    image_collection                     Required, the name of the image collection to create.
+    image_collection                     | Required, the name of the image collection to create.
                   
-                                         The image collection can be an existing image service, in 
-                                         which the function will create a mosaic dataset and the existing 
+                                         | The image collection can be an existing image service, in \
+                                         which the function will create a mosaic dataset and the existing \
                                          hosted image service will then point to the new mosaic dataset.
 
-                                         If the image collection does not exist, a new multi-tenant
+                                         | If the image collection does not exist, a new multi-tenant \
                                          service will be created.
 
-                                         This parameter can be the Item representing an existing image_collection
-                                         or it can be a string representing the name of the image_collection
+                                         | This parameter can be the Item representing an existing image_collection \
+                                         or it can be a string representing the name of the image_collection \
                                          (either existing or to be created.)
     ------------------                   --------------------------------------------------------------------
     input_rasters                        Required, the list of input rasters to be added to
                                          the image collection being created. This parameter can
                                          be any one of the following:
+
                                          - List of portal Items of the images
                                          - An image service URL
                                          - Shared data path (this path must be accessible by the server)
                                          - Name of a folder on the portal
+
                                          The function can create hosted imagery layers on enterprise and AGOL from 
                                          local raster datasets by uploading the data to the server.
     ------------------                   --------------------------------------------------------------------
-    raster_type_name                     Required string. The name of the raster type to use for adding data to 
+    raster_type_name                     |Required string. The name of the raster type to use for adding data to \
                                          the image collection.
 
                                          Choice list: [
@@ -2637,17 +2639,19 @@ def create_image_collection(image_collection,
     out_sr                               Optional integer. Additional parameters of the service.
                             
                                          The following additional parameters can be specified:
-                                         - Spatial reference of the image_collection; The well-known ID of 
-                                         the spatial reference or a spatial reference dictionary object for the 
+
+                                         - Spatial reference of the image_collection; The well-known ID of \
+                                         the spatial reference or a spatial reference dictionary object for the \
                                          input geometries.
+
                                          If the raster type name is set to "UAV/UAS", the spatial reference of the
                                          output image collection will be determined by the raster type parameters defined.
     ------------------                   --------------------------------------------------------------------
-    context                              Optional dict. The context parameter is used to provide additional input parameters.
+    context                              | Optional dict. The context parameter is used to provide additional input parameters.
     
-                                         Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
+                                         | Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
                                         
-                                         use ``image_collection_properties`` key to set value for imageCollectionType.
+                                         | use ``image_collection_properties`` key to set value for imageCollectionType.
 
                                          .. note::
 
@@ -2657,22 +2661,22 @@ def create_image_collection(image_collection,
                                             property based on the type of images in the image collection using the following keywords. 
                                             If the imageCollectionType is not set, it defaults to "UAV/UAS"
 
-                                         If ``byref`` is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
+                                         | If ``byref`` is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
 
-                                         The context parameter can also be used to specify whether to build overviews,
+                                         | The context parameter can also be used to specify whether to build overviews, \
                                          build footprints, to specify pixel value that represents the NoData etc.
 
 
                                          Example:
-                                            {"buildFootprints":True,                                            
-                                            "footprintsArguments":{"method":"RADIOMETRY","minValue":1,"maxValue":5,
-                                            "shrinkDistance":50,"skipOverviews":True,"updateBoundary":True,
-                                            "maintainEdge":False,"simplification":None,"numVertices":20,
-                                            "minThinnessRatio":0.05,"maxSliverSize":20,"requestSize":2000,
-                                            "minRegionSize":100},
-                                            "defineNodata":True,                                            
-                                            "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
-                                            "buildOverview":True}
+                                            | {"buildFootprints":True,                                            
+                                            | "footprintsArguments":{"method":"RADIOMETRY","minValue":1,"maxValue":5,
+                                            | "shrinkDistance":50,"skipOverviews":True,"updateBoundary":True,
+                                            | "maintainEdge":False,"simplification":None,"numVertices":20,
+                                            | "minThinnessRatio":0.05,"maxSliverSize":20,"requestSize":2000,
+                                            | "minRegionSize":100},
+                                            | "defineNodata":True,                                            
+                                            | "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
+                                            | "buildOverview":True}
     ------------------                   --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------                   --------------------------------------------------------------------
