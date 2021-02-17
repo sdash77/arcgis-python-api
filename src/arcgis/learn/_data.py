@@ -10,6 +10,7 @@ import logging
 import tempfile
 import types
 import traceback
+import copy
 
 from ._utils.env import ARCGIS_ENABLE_TF_BACKEND
 
@@ -438,6 +439,84 @@ def _prepare_working_dir(path):
     temp_folder = tempfile.TemporaryDirectory(prefix=os.path.join(path, 'arcgisTemp_'))
     return temp_folder
 
+def merge_emd_and_stats(data_folders):
+    emd_store = {}
+    stats_store = {}
+    for i, data_folder in enumerate(data_folders):
+        json_file = data_folder / 'esri_model_definition.emd'
+        if json_file.exists():
+            with open(json_file) as f:
+                emd = json.load(f)
+                emd_store[i] = emd
+            with open(data_folder / 'esri_accumulated_stats.json') as f:
+                stats_store[i] = json.load(f)
+    emd_keys = list(emd_store.keys())
+    #
+    for i, k in enumerate(emd_keys[:-1]):
+        if 'BandNames' in emd_store[k].get('InputRastersProps', {}):
+            props_matched = emd_store[k]['InputRastersProps']['BandNames'] == \
+                            emd_store[emd_keys[i + 1]]['InputRastersProps'][
+                                'BandNames']
+            if not props_matched:
+                logger = logging.getLogger()
+                logger.warning(
+                    f'"InputRastersProps" does not match between {data_folders[emd_keys[i]]} and {data_folders[emd_keys[i + 1]]}')
+    # Create master EMD and esri_accumulated_stats
+    emd = emd_store[emd_keys[0]]
+    eas = stats_store[emd_keys[0]]
+    _class_hash = {x['Value']: x for x in emd['Classes']}
+    for k in emd_keys[1:]:
+        _emd = emd_store[k]
+        for class_entry in _emd['Classes']:
+            if class_entry['Value'] not in _class_hash:
+                _class_hash[class_entry['Value']] = class_entry
+        #
+        _eas = stats_store[k]
+        for i in range(len(eas.get('BandStatsState', []))):
+            eas['BandStatsState'][i]['Min'] = min(eas['BandStatsState'][i]['Min'], _eas['BandStatsState'][i]['Min'])
+            eas['BandStatsState'][i]['Max'] = max(eas['BandStatsState'][i]['Max'], _eas['BandStatsState'][i]['Max'])
+            eas['BandStatsState'][i]['M1'] = ((eas['BandStatsState'][i]['M1'] * eas['BandStatsState'][i]['Num']) + (
+                    _eas['BandStatsState'][i]['M1'] * _eas['BandStatsState'][i]['Num'])) / (
+                                                     eas['BandStatsState'][i]['Num'] +
+                                                     _eas['BandStatsState'][i]['Num'])  # Mean
+            eas['BandStatsState'][i]['M2'] = eas['BandStatsState'][i]['M2'] + _eas['BandStatsState'][i][
+                'M2']  # Variance
+            eas['BandStatsState'][i]['Num'] = eas['BandStatsState'][i]['Num'] + _eas['BandStatsState'][i][
+                'Num']  # Number of pixels
+        eas['NumClasses'] = max(eas['NumClasses'], _eas['NumClasses'])
+        eas['NumTiles'] += _eas['NumTiles']
+        #
+        stats_key1 = None
+        stats_key1_1 = None
+        stats_key2 = None
+        stats_key2_1 = None
+        if 'ClassPixelStats' in eas:
+            stats_key1 = 'ClassPixelStats'
+            stats_key1_1 = 'NumPixelsPerClass'
+        elif 'FeatureStats' in eas:
+            stats_key1 = 'FeatureStats'
+            stats_key1_1 = 'NumFeaturesPerClass'
+        if 'ClassPixelStats' in _eas:
+            stats_key2 = 'ClassPixelStats'
+            stats_key2_1 = 'NumPixelsPerClass'
+        elif 'FeatureStats' in _eas:
+            stats_key2 = 'FeatureStats'
+            stats_key2_1 = 'NumFeaturesPerClass'
+        if stats_key1 is not None and stats_key2 is not None:
+            eas[stats_key1]["NumImagesTotal"] += _eas[stats_key2]["NumImagesTotal"]
+            for i in range(eas[stats_key1].get('NumClasses', 0)):
+                eas[stats_key1]["NumImagesPerClass"][i] += _eas[stats_key2]["NumImagesPerClass"][i]
+                eas[stats_key1][stats_key1_1][i] += _eas[stats_key2][stats_key2_1][i]
+    #
+    for i in range(len(eas.get('BandStatsState', []))):
+        emd['AllTilesStats'][i]['Min'] = eas['BandStatsState'][i]['Min']
+        emd['AllTilesStats'][i]['Max'] = eas['BandStatsState'][i]['Max']
+        emd['AllTilesStats'][i]['Mean'] = eas['BandStatsState'][i]['M1']
+        emd['AllTilesStats'][i]['StdDev'] = (eas['BandStatsState'][i]['M2'] / eas['BandStatsState'][i]['Num']) ** .5
+    emd['Classes'] = [_class_hash[x] for x in sorted(_class_hash)]
+    path = Path(data_folders[emd_keys[0]])  # First folder that has esri files
+    return emd, eas, path
+
 def prepare_textdata(
         path,
         task,
@@ -779,7 +858,7 @@ def prepare_data(path,
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    path                    Required string. Path to data directory.
+    path                    Required string. Path to data directory or a list of paths.
     ---------------------   -------------------------------------------
     class_mapping           Optional dictionary. Mapping from id to
                             its string label.
@@ -973,6 +1052,23 @@ def prepare_data(path,
         if resize_to < chip_size:
             chip_size = resize_to
 
+    # Multi Folder training support
+    data_folders = None
+    emd_in = kwargs.get('emd', None)
+    eas_in = kwargs.get('eas', None)
+    emd = None
+    eas = None
+    images_df = kwargs.get('images_df', None)
+    if isinstance(path, (list, tuple)):
+        data_folders = [Path(x) for x in path]
+        emd, eas, path = merge_emd_and_stats(data_folders)
+        if working_dir is None:
+            working_dir = os.getcwd()
+    if emd_in is not None:
+        emd = copy.deepcopy(emd_in)
+    if eas_in is not None:
+        eas = copy.deepcopy(eas_in)
+
     has_esri_files = _check_esri_files(path)
 
     # For change detection export data using export tiles format.
@@ -1015,14 +1111,15 @@ def prepare_data(path,
     if dataset_type is None and not has_esri_files:
         raise Exception("Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid esri files")
     elif dataset_type is None and has_esri_files:
-        with open(stats_file) as f:
-            stats = json.load(f)
-            dataset_type = stats['MetaDataMode']
+        if data_folders is None:
+            with open(stats_file) as f:
+                stats = json.load(f)
+        else:
+            stats = eas
+        dataset_type = stats['MetaDataMode']
 
     if dataset_type not in ["Imagenet", "superres", "Export_Tiles"] and has_esri_files:
-        with open(stats_file) as f:
-            stats = json.load(f)
-            dataset_type = stats['MetaDataMode']
+        dataset_type = stats['MetaDataMode']
 
         with open(path / 'map.txt') as f:
             while True:
@@ -1038,8 +1135,11 @@ def prepare_data(path,
         right = line.split()[1].split('.')[-1].lower()
 
         json_file = path / 'esri_model_definition.emd'
-        with open(json_file) as f:
-            emd = json.load(f)
+        if data_folders is None:
+            with open(json_file) as f:
+                emd = json.load(f)
+        else:
+            pass  # emd already in memory
 
         # Create Class Mapping from EMD if not specified by user
         ## Validate user defined class_mapping keys with emd (issue #3064)
@@ -1096,7 +1196,7 @@ def prepare_data(path,
 
     _infered = False
     sensor_name = 'ms'
-    if "InputRastersProps" in emd and kwargs.get('imagery_type', None) is None:
+    if has_esri_files and "InputRastersProps" in emd and kwargs.get('imagery_type', None) is None:
         sensor_name = emd["InputRastersProps"].get("SensorName", None)
         nbands = 3
         if stats.get("NumBands", None) is not None:
@@ -1126,7 +1226,7 @@ def prepare_data(path,
         except:
             pass
 
-    if not _infered and "InputRastersProps" in emd and kwargs.get('imagery_type', None) is None:
+    if has_esri_files and not _infered and "InputRastersProps" in emd and kwargs.get('imagery_type', None) is None:
         # Check by band names
         band_mapping = {i:b.lower() for i, b in enumerate(emd["InputRastersProps"]["BandNames"])}
         for b in emd["WellKnownBandNames (FYI, these band names can be used in ExtractBands)"]:
@@ -1213,10 +1313,58 @@ def prepare_data(path,
         if color_mapping.get(0):
             del color_mapping[0]
 
-        data = (ArcGISInstanceSegmentationItemList.from_folder(path/'images')
-            .filter_by_func(remove_image_without_label)
-            .split_by_rand_pct(val_split_pct, seed=seed)
-            .label_from_func(get_y_func, chip_size=chip_size, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping, index_dir=index_dir))
+        if data_folders is None and images_df is None:
+            data = (ArcGISInstanceSegmentationItemList.from_folder(path / 'images')
+                    .filter_by_func(remove_image_without_label)
+                    .split_by_rand_pct(val_split_pct, seed=seed)
+                    .label_from_func(get_y_func, chip_size=chip_size, classes=['NoData'] + list(class_mapping.values()),
+                                     class_mapping=class_mapping, color_mapping=color_mapping, index_dir=index_dir))
+        else:
+            if images_df is not None:
+                # images_df should have two columns 0, 1
+                ## column 0 --> images
+                ## column 1 --> labels
+                ## Note: Please supply absolute Paths
+                ##
+                src = ArcGISInstanceSegmentationItemList.from_df(images_df, 'images')
+                src.items = images_df[images_df.columns[0]].values
+                src = src.split_by_rand_pct(val_split_pct, seed=seed)
+                if len(images_df.columns) > 1:
+                    src = src.label_from_df(
+                        chip_size=chip_size,
+                        classes=(['NoData'] + list(class_mapping.values())),
+                        class_mapping=class_mapping,
+                        color_mapping=color_mapping,
+                        index_dir=index_dir
+                    )
+                else:
+                    src = src.label_from_func(
+                        get_y_func,
+                        chip_size=chip_size,
+                        classes=(['NoData'] + list(class_mapping.values())),
+                        class_mapping=class_mapping,
+                        color_mapping=color_mapping,
+                        index_dir=index_dir
+                    )
+            else:
+                # MultiFolder Training
+                imageslist = []
+                for data_folder in data_folders:
+                    imageslist.append(ArcGISInstanceSegmentationItemList.from_folder(data_folder / 'images').items)
+                src = ArcGISInstanceSegmentationItemList(np.concatenate(imageslist)) \
+                    .filter_by_func(remove_image_without_label) \
+                    .split_by_rand_pct(val_split_pct, seed=seed) \
+                    .label_from_func(
+                    get_y_func,
+                    chip_size=chip_size,
+                    classes=(['NoData'] + list(class_mapping.values())),
+                    class_mapping=class_mapping,
+                    color_mapping=color_mapping,
+                    index_dir=index_dir
+                )
+                src.path = os.path.abspath('images')
+            data = src
+        #
         _show_batch_multispectral = show_batch_rcnn_masks
         
         if transforms is None:
@@ -1266,15 +1414,55 @@ def prepare_data(path,
             color_mapping = {j:[random.choice(range(256)) for i in range(3)] for j in class_mapping.keys()}
             
         # TODO : Handle NoData case
-
-        data = ArcGISSegmentationItemList.from_folder(path/'images')\
-            .filter_by_func(remove_image_without_label)\
-            .split_by_rand_pct(val_split_pct, seed=seed)\
-            .label_from_func(
-                get_y_func, classes=(['NoData'] + list(class_mapping.values())),
+        if data_folders is None and images_df is None:
+            data = ArcGISSegmentationItemList.from_folder(path / 'images') \
+                .filter_by_func(remove_image_without_label) \
+                .split_by_rand_pct(val_split_pct, seed=seed) \
+                .label_from_func(
+                get_y_func,
+                classes=(['NoData'] + list(class_mapping.values())),
                 class_mapping=class_mapping,
                 color_mapping=color_mapping
             )
+        else:
+            if images_df is not None:
+                # imagesdf should have two columns 0, 1
+                ## column 0 --> images
+                ## column 1 --> labels
+                ## Note: Please supply absolute Paths
+                ##
+                src = ArcGISSegmentationItemList.from_df(images_df, 'images')
+                src.items = images_df[images_df.columns[0]].values
+                src = src.split_by_rand_pct(val_split_pct, seed=seed)
+                if len(images_df.columns) > 1:
+                    src = src.label_from_df(
+                        class_mapping=class_mapping,
+                        color_mapping=color_mapping,
+                        classes=(['NoData'] + list(class_mapping.values()))
+                    )
+                else:
+                    src = src.label_from_func(
+                        get_y_func,
+                        classes=(['NoData'] + list(class_mapping.values())),
+                        class_mapping=class_mapping,
+                        color_mapping=color_mapping
+                    )
+            else:
+                # MultiFolder Training
+                imageslist = []
+                for data_folder in data_folders:
+                    imageslist.append(ArcGISSegmentationItemList.from_folder(data_folder / 'images').items)
+                src = ArcGISSegmentationItemList(np.concatenate(imageslist)) \
+                    .filter_by_func(remove_image_without_label) \
+                    .split_by_rand_pct(val_split_pct, seed=seed) \
+                    .label_from_func(
+                    get_y_func,
+                    classes=(['NoData'] + list(class_mapping.values())),
+                    class_mapping=class_mapping,
+                    color_mapping=color_mapping
+                )
+            data = src
+        #
         _show_batch_multispectral = show_batch_classified_tiles
 
         def classified_tiles_collate_fn(samples): # The default fastai collate_fn was causing memory leak on tensors
@@ -1301,6 +1489,7 @@ def prepare_data(path,
     elif dataset_type in ['PASCAL_VOC_rectangles', 'KITTI_rectangles']:
 
         def image_without_label(imagefile, dataset_type, not_label_count=[0]):
+            imagefile = Path(imagefile)
             if dataset_type == 'KITTI_rectangles':
                 label_suffix='.txt'
             else:
@@ -1318,10 +1507,28 @@ def prepare_data(path,
             dataset_type=dataset_type
         )
 
-        data = ObjectDetectionItemList.from_folder(path / 'images') \
-            .filter_by_func(remove_image_without_label) \
-            .split_by_rand_pct(val_split_pct, seed=seed) \
-            .label_from_func(get_y_func)
+        if data_folders is None and images_df is None:
+            data = ObjectDetectionItemList.from_folder(path / 'images') \
+                .filter_by_func(remove_image_without_label) \
+                .split_by_rand_pct(val_split_pct, seed=seed) \
+                .label_from_func(get_y_func)
+        else:
+            if images_df is not None:
+                src = ObjectDetectionItemList.from_df(images_df, 'images')
+                src.items = images_df[images_df.columns[0]].values
+                src = src.split_by_rand_pct(val_split_pct, seed=seed) \
+                        .label_from_func(get_y_func)
+            else:
+                # MultiFolder Training
+                imageslist = []
+                for data_folder in data_folders:
+                    imageslist.append(ObjectDetectionItemList.from_folder(data_folder / 'images').items)
+                src = ObjectDetectionItemList(np.concatenate(imageslist)) \
+                    .filter_by_func(remove_image_without_label) \
+                    .split_by_rand_pct(val_split_pct, seed=seed) \
+                    .label_from_func(get_y_func)
+            data = src
+        #
         _show_batch_multispectral = show_batch_pascal_voc_rectangles
 
 
@@ -1366,9 +1573,26 @@ def prepare_data(path,
                 \na folder "images" should be present in the supplied path to work with "Imagenet" data_type. """
                 )
 
-        data = ArcGISImageList.from_folder(path / 'images') \
-            .split_by_rand_pct(val_split_pct, seed=42) \
-            .label_from_func(get_y_func)
+        if data_folders is None and images_df is None:
+            data = ArcGISImageList.from_folder(path / 'images') \
+                .split_by_rand_pct(val_split_pct, seed=seed) \
+                .label_from_func(get_y_func)
+        else:
+            if images_df is not None:
+                src = ArcGISImageList.from_df(images_df, 'images')
+                src.items = images_df[images_df.columns[0]].values
+                src = src.split_by_rand_pct(val_split_pct, seed=seed) \
+                        .label_from_func(get_y_func)
+            else:
+                # MultiFolder Training
+                imageslist = []
+                for data_folder in data_folders:
+                    imageslist.append(ArcGISImageList.from_folder(data_folder / 'images').items)
+                src = ArcGISImageList(np.concatenate(imageslist)) \
+                    .split_by_rand_pct(val_split_pct, seed=seed) \
+                    .label_from_func(get_y_func)
+            data = src
+        #
         _show_batch_multispectral = show_batch_labeled_tiles
 
         if dataset_type == 'Imagenet':
@@ -1732,9 +1956,7 @@ def prepare_data(path,
             raise Exception(message)
 
     if has_esri_files:
-        with open(stats_file) as f:
-            stats = json.load(f)
-            data._dataset_type = stats['MetaDataMode']
+        data._dataset_type = stats['MetaDataMode']
     else:
         data._dataset_type = dataset_type
     
@@ -1749,27 +1971,25 @@ def prepare_data(path,
 
     ## For calculating loss from inverse of frquency.
     if dataset_type == 'Classified_Tiles':
-        with open(stats_file) as f:
-            stats_json = json.load(f)
-            pixel_stats = stats_json.get('ClassPixelStats', None)
-            if pixel_stats is not None:
-                data.num_pixels_per_class = pixel_stats.get('NumPixelsPerClass', None)
-            else:
-                data.num_pixels_per_class = None
+        pixel_stats = stats.get('ClassPixelStats', stats.get('FeatureStats', None))
+        if pixel_stats is not None:
+            data.num_pixels_per_class = pixel_stats.get('NumPixelsPerClass', pixel_stats.get('NumFeaturesPerClass', None))
+        else:
+            data.num_pixels_per_class = None
 
-           ## Might want to change the variable name
-            if data.num_pixels_per_class is not None:
-                num_pixels_per_class = np.array(data.num_pixels_per_class, dtype=np.int64)
-                if num_pixels_per_class.sum() < 0:
-                    data.overflow_encountered = True
-                    data.class_weight = None
-                else:
-                    _num_pixels_per_class = np.copy(num_pixels_per_class)
-                    _num_pixels_per_class[_num_pixels_per_class==0]=1
-                    data.class_weight = num_pixels_per_class.sum() / _num_pixels_per_class
-                    data.class_weight[num_pixels_per_class==0]=0
-            else:
+       ## Might want to change the variable name
+        if data.num_pixels_per_class is not None:
+            num_pixels_per_class = np.array(data.num_pixels_per_class, dtype=np.int64)
+            if num_pixels_per_class.sum() < 0:
+                data.overflow_encountered = True
                 data.class_weight = None
+            else:
+                _num_pixels_per_class = np.copy(num_pixels_per_class)
+                _num_pixels_per_class[_num_pixels_per_class==0]=1
+                data.class_weight = num_pixels_per_class.sum() / _num_pixels_per_class
+                data.class_weight[num_pixels_per_class==0]=0
+        else:
+            data.class_weight = None
 
     data.class_mapping = class_mapping
     data.color_mapping = color_mapping
