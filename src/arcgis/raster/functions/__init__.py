@@ -521,8 +521,8 @@ def aspect(raster):
     aspect identifies the downslope direction of the maximum rate of change in value from each cell to its neighbors.
     Aspect can be thought of as the slope direction. The values of the output raster will be the compass direction of
     the aspect. For more information, see
-    <a href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/aspect-function.htm">Aspect function</a>
-    and <a href="http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/how-aspect-works.htm">How Aspect works</a>.
+    `Aspect function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/aspect-function.htm>`__
+    and `How Aspect works <http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/how-aspect-works.htm>`__.
 
     :param raster: the input raster / imagery layer
     :return: aspect applied to the input raster
@@ -632,6 +632,7 @@ def savi(raster, band_indexes="4 3 0.33", astype=None):
 def tsavi(raster, band_indexes= "4 3 0.33 0.50 1.50", astype=None):
     """
     Transformed Soil Adjusted Vegetation Index
+
     TSAVI = (s(NIR-s*Red-a))/(a*NIR+Red-a*s+X*(1+s^2))
 
     :param raster: the input raster / imagery layer
@@ -644,6 +645,7 @@ def tsavi(raster, band_indexes= "4 3 0.33 0.50 1.50", astype=None):
 def msavi(raster, band_indexes="4 3", astype=None):
     """
     Modified Soil Adjusted Vegetation Index
+    
     MSAVI2 = (1/2)*(2(NIR+1)-sqrt((2*NIR+1)^2-8(NIR-Red)))
 
     :param raster: the input raster / imagery layer
@@ -656,11 +658,13 @@ def msavi(raster, band_indexes="4 3", astype=None):
 def gemi(raster, band_indexes="4 3", astype=None):
     """
     Global Environmental Monitoring Index
+
     GEMI = eta*(1-0.25*eta)-((Red-0.125)/(1-Red))
+    
     where eta = (2*(NIR^2-Red^2)+1.5*NIR+0.5*Red)/(NIR+Red+0.5)
 
     :param raster: the input raster / imagery layer
-    :param band_indexes:"NIR Red", e.g., "4 3" or [4,3]
+    :param band_indexes: "NIR Red", e.g., "4 3" or [4,3]
     :param astype: output pixel type
     :return: output raster
     """
@@ -672,7 +676,7 @@ def pvi(raster, band_indexes="4 3 0.3 0.5", astype=None):
     PVI = (NIR-a*Red-b)/(sqrt(1+a^2))
 
     :param raster: the input raster / imagery layer
-    :param band_indexes:"NIR Red a b", e.g., "4 3 0.3 0.5" or [4,3,0.3,0.5]
+    :param band_indexes: "NIR Red a b", e.g., "4 3 0.3 0.5" or [4,3,0.3,0.5]
     :param astype: output pixel type
     :return: output raster
     """
@@ -681,10 +685,11 @@ def pvi(raster, band_indexes="4 3 0.3 0.5", astype=None):
 def gvitm(raster, band_indexes= "1 2 3 4 5 6", astype=None):
     """
     Green Vegetation Index - Landsat TM
+
     GVITM = -0.2848*Band1-0.2435*Band2-0.5436*Band3+0.7243*Band4+0.0840*Band5-0.1800*Band7
 
     :param raster: the input raster / imagery layer
-    :param band_indexes:"NIR Red", e.g., "4 3" or [4,3]
+    :param band_indexes: "NIR Red", e.g., "4 3" or [4,3]
     :param astype: output pixel type
     :return: output raster
     """
@@ -693,12 +698,13 @@ def gvitm(raster, band_indexes= "1 2 3 4 5 6", astype=None):
 def sultan(raster, band_indexes="1 2 3 4 5 6", astype=None):
     """
     Sultan's Formula (transform to 3 band 8 bit image)
-        Band 1 = (Band5 / Band6) x 100
-        Band 2 = (Band5 / Band1) x 100
-        Band 3 = (Band3 / Band4) x (Band5 / Band4) x 100
+
+        | Band 1 = (Band5 / Band6) x 100
+        | Band 2 = (Band5 / Band1) x 100
+        | Band 3 = (Band3 / Band4) x (Band5 / Band4) x 100
 
     :param raster: the input raster / imagery layer
-    :param band_indexes:"Band1 Band2 Band3 Band4 Band5 Band6", e.g., "1 2 3 4 5 6" or [1,2,3,4,5,6]
+    :param band_indexes: "Band1 Band2 Band3 Band4 Band5 Band6", e.g., "1 2 3 4 5 6" or [1,2,3,4,5,6]
     :param astype: output pixel type
     :return: output raster
     """
@@ -1119,10 +1125,10 @@ def colormap(raster, colormap_name=None, colormap=None, colorramp=None, astype=N
 
     :param raster: input raster
     :param colormap_name: colormap name, if one of Random | NDVI | Elevation | Gray
-    :param colormap: [
-                     [<value1>, <red1>, <green1>, <blue1>], //[int, int, int, int]
-                     [<value2>, <red2>, <green2>, <blue2>]
-                     ],
+    :param colormap: | [
+                     | [<value1>, <red1>, <green1>, <blue1>], //[int, int, int, int]
+                     | [<value2>, <red2>, <green2>, <blue2>]
+                     | ],
     :param colorramp: Can be a string specifiying color ramp name like <Black To White|Yellow To Red|Slope|more..>
                       or a color ramp object. 
                       For more information about colorramp object, see color ramp object at
@@ -1227,7 +1233,7 @@ def convolution(raster, kernel=None, astype=None):
     """
     The Convolution function performs filtering on the pixel values in an image, which can be used for sharpening an
     image, blurring an image, detecting edges within an image, or other kernel-based enhancements. For more information,
-     see Convolution function at http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/convolution-function.htm
+    see Convolution function at http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/convolution-function.htm
 
     :param raster: input raster
     :param kernel: well known kernel from arcgis.raster.kernels or user defined kernel passed as a list of list
@@ -1341,8 +1347,8 @@ def NDVI(raster, visible_band=2, ir_band=1, astype=None):
 def elevation_void_fill(raster, max_void_width=0, astype=None):
     """
     The elevation_void_fill function is used to create pixels where holes exist in your elevation. Refer to
-    <a href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/elevation-void-fill-function.htm">
-    this conceptual help</a> on how it works. The arguments for the elevation_void_fill function are as follows:
+    `this conceptual help <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/elevation-void-fill-function.htm>`__
+    on how it works. The arguments for the elevation_void_fill function are as follows:
 
     :param raster: input raster
     :param max_void_width: number. Maximum void width to fill. 0: fill all
@@ -1487,8 +1493,8 @@ def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_
     """
     A hillshade is a grayscale 3D model of the surface taking the sun's relative position into account to shade the image.
     For more information, see
-    <a href='http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/hillshade-function.htm'>hillshade
-    function</a> and <a href="http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/how-hillshade-works.htm">How hillshade works.</a>
+    `hillshade function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/hillshade-function.htm>`__ and `How hillshade works <http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/how-hillshade-works.htm>`__.
+    
     The arguments for the hillshade function are as follows:
 
     :param dem: input DEM
@@ -1542,17 +1548,15 @@ def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_
 def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", astype=None, process_as_multiband=None):
     """
     The local function allows you to perform bitwise, conditional, logical, mathematical, and statistical operations on
-    a pixel-by-pixel basis. For more information, see
-    <a href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/local-function.htm">local function</a>.
+    a pixel-by-pixel basis. For more information, see `local function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/local-function.htm>`__.
 
     License:At 10.5, you must license your ArcGIS Server as ArcGIS Server 10.5.1 Enterprise Advanced or
-     ArcGIS Image Server to use this resource.
-     At versions prior to 10.5, the hosting ArcGIS Server needs to have a Spatial Analyst license.
+    ArcGIS Image Server to use this resource. At versions prior to 10.5, the hosting ArcGIS Server needs to have a Spatial Analyst license.
 
     The arguments for the local function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
-    :param operation: int see reference at https://desktop.arcgis.com/en/arcobjects/latest/net/webframe.htm#esriGeoAnalysisFunctionEnum.htm
+    :param operation: int. see reference `here <https://desktop.arcgis.com/en/arcobjects/latest/net/webframe.htm#esriGeoAnalysisFunctionEnum.htm>`__.
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param astype: output pixel type
@@ -2654,8 +2658,8 @@ def floor_divide(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype
 
 def con(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     """
-    The con operation.Performs a conditional if/else evaluation on each of the input cells of an input raster.
-	For more information see, http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/con-.htm
+    The con operation.Performs a conditional if/else evaluation on each of the input cells of an input raster. For more information see, http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/con-.htm
+    
     The arguments for this function are as follows:
 
     :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
@@ -2748,10 +2752,11 @@ def mask(raster, no_data_values=None, included_ranges=None, no_data_interpretati
 def ml_classify(raster, signature, astype=None):
     """
     The ml_classify function allows you to perform a supervised classification using the maximum likelihood classification
-     algorithm. The hosting ArcGIS Server needs to have a Spatial Analyst license.LicenseLicense:At 10.5, you must license
-     your ArcGIS Server as ArcGIS Server 10.5.1 Enterprise Advanced or ArcGIS Image Server to use this resource.
-     At versions prior to 10.5, the hosting ArcGIS Server needs to have a Spatial Analyst license.
-     The arguments for the ml_classify function are as follows:
+    algorithm. The hosting ArcGIS Server needs to have a Spatial Analyst license.LicenseLicense:At 10.5, you must license
+    your ArcGIS Server as ArcGIS Server 10.5.1 Enterprise Advanced or ArcGIS Image Server to use this resource.
+    At versions prior to 10.5, the hosting ArcGIS Server needs to have a Spatial Analyst license.
+    
+    The arguments for the ml_classify function are as follows:
 
     :param raster: input raster
     :param signature: string. a signature string returned from computeClassStatistics (GSG)
@@ -2855,7 +2860,7 @@ def remap(raster, input_ranges=None, output_values=None, geometry_type=None, geo
           allow_unmatched=None, astype=None):
     """
     The remap function allows you to change or reclassify the pixel values of the raster data. For more information,
-    see <a href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/remap-function.htm">remap function</a>.
+    see `remap function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/remap-function.htm>`__.
 
     The arguments for the remap function are as follows:
 
@@ -3012,8 +3017,7 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
                   psz_factor=None, remove_edge_effect=None, astype=None, colorramp=None, hillshade_type=0):
     """
     Shaded relief is a color 3D model of the terrain, created by merging the images from the Elevation-coded and
-    Hillshade methods. For more information, see
-    <a href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/shaded-relief-function.htm">Shaded relief</a> function.
+    Hillshade methods. For more information, see `Shaded relief <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/shaded-relief-function.htm>`__ function.
 
     The arguments for the shaded_relief function are as follows:
 
@@ -3077,8 +3081,9 @@ def slope(dem, z_factor=None, slope_type=None, ps_power=None, psz_factor=None, r
           astype=None):
     """
     slope represents the rate of change of elevation for each pixel. For more information, see
-    <a href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/slope-function.htm">slope function</a>
-    and <a href="http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/how-slope-works.htm">How slope works</a>.
+    `slope function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/slope-function.htm>`__
+    and `How slope works <http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/how-slope-works.htm>`__.
+    
     The arguments for the slope function are as follows:
 
     :param dem: input DEM
@@ -3126,8 +3131,8 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
                fill_no_data_only=None, astype=None):
     """
     The focal_statistics function calculates focal statistics for each pixel of an image based on a defined focal neighborhood.
-    For more information, see
-    <a href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/statistics-function.htm">statistics function</a>.
+    For more information, see `statistics function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/statistics-function.htm>`__.
+    
     The arguments for the statistics function are as follows:
 
     :param raster: input raster
@@ -3135,14 +3140,16 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
     :param kernel_rows: int (e.g. 3)
     :param stat_type: int or string.
                       There are four types of focal statistical functions:
+                      
                       1=Min, 2=Max, 3=Mean, 4=StandardDeviation, 5=Median, 6=Majority, 7=Minority
-                      -Min-Calculates the minimum value of the pixels within the neighborhood
-                      -Max-Calculates the maximum value of the pixels within the neighborhood
-                      -Mean-Calculates the average value of the pixels within the neighborhood. This is the default.
-                      -StandardDeviation-Calculates the standard deviation value of the pixels within the neighborhood
-                      -Median-Calculates the median value of pixels within the neighborhood.
-                      -Majority-Calculates the majority value, or the value that occurs most frequently, of the pixels within the neighborhood.
-                      -Minority-Calculates the minority value, or the value that occurs least frequently, of the pixels within the neighborhood.
+
+                      - Min - Calculates the minimum value of the pixels within the neighborhood
+                      - Max - Calculates the maximum value of the pixels within the neighborhood
+                      - Mean - Calculates the average value of the pixels within the neighborhood. This is the default.
+                      - StandardDeviation - Calculates the standard deviation value of the pixels within the neighborhood
+                      - Median - Calculates the median value of pixels within the neighborhood.
+                      - Majority - Calculates the majority value, or the value that occurs most frequently, of the pixels within the neighborhood.
+                      - Minority - Calculates the minority value, or the value that occurs least frequently, of the pixels within the neighborhood.
     :param columns: int (e.g. 3). The number of pixel rows to use in your focal neighborhood dimension.
     :param rows: int (e.g. 3). The number of pixel columns to use in your focal neighborhood dimension.
     :param fill_no_data_only: bool
@@ -3205,7 +3212,7 @@ def stretch(raster, stretch_type=0, min=None, max=None, num_stddev=None, statist
             astype=None):
     """
     The stretch function enhances an image through multiple stretch types. For more information, see
-    <a href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/stretch-function.htm">stretch function</a>.
+    `stretch function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/stretch-function.htm>`__.
 
     Gamma stretch works with all stretch types. The Gamma parameter is needed when UseGamma is set to true. Min and Max
     can be used to define output minimum and maximum. DRA is used to get statistics from the extent in the export_image request.
@@ -3299,7 +3306,9 @@ def stretch(raster, stretch_type=0, min=None, max=None, num_stddev=None, statist
 def threshold(raster, astype=None):
     """
     The binary threshold function produces the binary image. It uses the Otsu method and assumes the input image to have
-     a bi-modal histogram. The arguments for the threshold function are as follows:
+    a bi-modal histogram. 
+    
+    The arguments for the threshold function are as follows:
 
     :param raster: input raster
     :param astype: output pixel type
@@ -3330,13 +3339,16 @@ def transpose_bits(raster, input_bit_positions=None, output_bit_positions=None, 
                    constant_fill_value=None, fill_raster=None, astype=None):
     """
     The transpose_bits function performs a bit operation. It extracts bit values from the source data and assigns them
-    to new bits in the output data.The arguments for the transpose_bits function are as follows:
+    to new bits in the output data.
+    
+    The arguments for the transpose_bits function are as follows:
 
     If constant_fill_check is False, it assumes there is an input fill_raster. If an input fill_raster is not given,
     it falls back constant_fill_check to True and looks for constant_fill_value.
     Filling is used to initialize pixel values of the output raster.
     Landsat 8 has a quality assessment band. The following are the example input and output bit positions to extract
     confidence levels by mapping them to 0-3:
+
     * Landsat 8 Water: {"input_bit_positions":[4,5],"output_bit_positions":[0,1]}
     * Landsat 8 Cloud Shadow: {"input_bit_positions":[6,7],"output_bit_positions":[0,1]}
     * Landsat 8 Vegetation: {"input_bit_positions":[8,9],"output_bit_positions":[0,1]}
@@ -3387,7 +3399,10 @@ def transpose_bits(raster, input_bit_positions=None, output_bit_positions=None, 
 
 def unit_conversion(raster, from_unit=None, to_unit=None, astype=None):
     """
-    The unit_conversion function performs unit conversions.The arguments for the unit_conversion function are as follows:
+    The unit_conversion function performs unit conversions. 
+    
+    The arguments for the unit_conversion function are as follows:
+    
     from_unit and to_unit take the following str values:
     Speed Units: MetersPerSecond, KilometersPerHour, Knots, FeetPerSecond, MilesPerHour
     Temperature Units: Celsius,Fahrenheit,Kelvin
@@ -3451,7 +3466,9 @@ def unit_conversion(raster, from_unit=None, to_unit=None, astype=None):
 def vector_field_renderer(raster, is_uv_components=None, reference_system=None, mass_flow_angle_representation=None,
                           calculation_method="Vector Average", symbology_name="Single Arrow", astype=None):
     """
-    The vector_field_renderer function symbolizes a U-V or Magnitude-Direction raster.The arguments for the vector_field_renderer function are as follows:
+    The vector_field_renderer function symbolizes a U-V or Magnitude-Direction raster.
+    
+    The arguments for the vector_field_renderer function are as follows:
 
     :param raster: input raster
     :param is_uv_components: bool
@@ -3500,7 +3517,7 @@ def apply(raster, fn_name, **kwargs):
     template and are not known through the API. A client can simply provide the name of the raster function template
     only or, optionally, provide arguments to overwrite the default values.
     For more information about authoring server-side raster function templates, see
-    <a href="http://server.arcgis.com/en/server/latest/publish-services/windows/server-side-raster-functions.htm">Server-side raster functions</a>.
+    `Server-side raster functions <http://server.arcgis.com/en/server/latest/publish-services/windows/server-side-raster-functions.htm>`__.
 
     :param raster: the input raster, or imagery layer
     :param fn_name: name of the server side raster function template, See imagery layer properties.rasterFunctionInfos
@@ -3627,7 +3644,7 @@ def complex(raster):
 
 
 def colormap_to_rgb(raster):
-    """"
+    """
     The function is designed to work with single band image service that has
     internal colormap. It will convert the image into a three-band 8-bit RGB
     raster. This function takes no arguments except an input raster. For 
@@ -3683,7 +3700,7 @@ def statistics_histogram(raster, statistics=None, histograms=None):
 
 
 def tasseled_cap(raster):
-    """"
+    """
     The function is designed to analyze and map vegetation and urban development
     changes detected by various satellite sensor systems. It is known as the 
     Tasseled Cap transformation due to the shape of the graphical distribution
@@ -3724,7 +3741,7 @@ def identity(raster):
     (http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/identity-function.htm)
 
     :param raster: the input raster / imagery layer
-    :return: the innput raster
+    :return: the input raster
     """
  
     layer, raster, raster_ra = _raster_input(raster)
@@ -4049,18 +4066,16 @@ def pansharpen(pan_raster,
 def weighted_overlay(rasters, fields, influences, remaps, eval_from, eval_to):
                
     """
-    The WeightedOverlay function allows you to overlay several rasters using a common 
-	measurement scale and weights each according to its importance. For more information, see
+    The WeightedOverlay function allows you to overlay several rasters using a common measurement scale and weights each according to its importance. For more information, see
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/weighted-overlay-function.htm
 
     :param raster: array of rasters
     :param fields: array of string fields of the input rasters to be used for weighting.				 
     :param influences: array of double, Each input raster is weighted according to its importance, or 
 				       its influence. The sum of the influence weights must equal 1
-    :param remaps: array of strings, Each value in an input raster is assigned a new value based on the 
-				   remap. The remap value can be a valid value or a NoData value.    
-	:param eval_from: required, numeric value of evaluation scale from
-	:param eval_to: required, numeric value of evaluation scale to
+    :param remaps: array of strings, Each value in an input raster is assigned a new value based on the remap. The remap value can be a valid value or a NoData value.    
+    :param eval_from: required, numeric value of evaluation scale from
+    :param eval_to: required, numeric value of evaluation scale to
     :return: output raster with function applied
     """
 
@@ -4085,8 +4100,7 @@ def weighted_overlay(rasters, fields, influences, remaps, eval_from, eval_to):
 def weighted_sum(rasters, fields, weights):
                
     """
-    The WeightedSum function allows you to overlay several rasters, multiplying each by their 
-	given weight and summing them together.  For more information, see
+    The WeightedSum function allows you to overlay several rasters, multiplying each by their given weight and summing them together.  For more information, see
     http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/weighted-sum-function.htm
 
     :param raster: array of rasters
@@ -4145,36 +4159,36 @@ def focal_stats(raster, neighborhood_type=1 , width=3, height=3,
                       1=Majority, 2=Maximum, 3=Mean , 4=Median, 5= Minimum, 6 = Minority,
                       7=Range, 8=Standard deviation, 9=Sum, 10=Variety, 12=Percentile
 
-                          Majority = Calculates the majority (value that occurs most often) of the cells in the neighborhood.
+                          - Majority = Calculates the majority (value that occurs most often) of the cells in the neighborhood.
 
-                          Maximum = Calculates the maximum (largest value) of the cells in the neighborhood.
+                          - Maximum = Calculates the maximum (largest value) of the cells in the neighborhood.
 
-                          Mean = Calculates the mean (average value) of the cells in the neighborhood.
+                          - Mean = Calculates the mean (average value) of the cells in the neighborhood.
 
-                          Median = Calculates the median of the cells in the neighborhood.
+                          - Median = Calculates the median of the cells in the neighborhood.
 
-                          Minimum = Calculates the minimum (smallest value) of the cells in the neighborhood.
+                          - Minimum = Calculates the minimum (smallest value) of the cells in the neighborhood.
 
-                          Minority = Calculates the minority (value that occurs least often) of the cells in the neighborhood.
+                          - Minority = Calculates the minority (value that occurs least often) of the cells in the neighborhood.
 
-                          Range = Calculates the range (difference between largest and smallest value) of the cells in the neighborhood.
+                          - Range = Calculates the range (difference between largest and smallest value) of the cells in the neighborhood.
 
-                          Standard deviation =  Calculates the standard deviation of the cells in the neighborhood.
+                          - Standard deviation =  Calculates the standard deviation of the cells in the neighborhood.
 
-                          Sum = Calculates the sum (total of all values) of the cells in the neighborhood.
+                          - Sum = Calculates the sum (total of all values) of the cells in the neighborhood.
 
-                          Variety = Calculates the variety (the number of unique values) of the cells in the neighborhood.
+                          - Variety = Calculates the variety (the number of unique values) of the cells in the neighborhood.
 
-                          Percentile = Calculates a specified percentile of the cells in the neighborhood.
+                          - Percentile = Calculates a specified percentile of the cells in the neighborhood.
 
     :param ignore_no_data: boolean, default is True.
 
-                        True - Specifies that if a NoData value exists within a neighborhood, 
-                        the NoData value will be ignored. Only cells within the neighborhood 
-                        that have data values will be used in determining the output value. 
+                        - True - Specifies that if a NoData value exists within a neighborhood, \
+                        the NoData value will be ignored. Only cells within the neighborhood \
+                        that have data values will be used in determining the output value. \
                         This is the default.
 
-                        False - Specifies that if any cell in a neighborhood has a value of 
+                        - False - Specifies that if any cell in a neighborhood has a value of \
                         NoData, the output for the processing cell will be NoData.
     :param percentile_value: float, default is 90. Denotes which percentile to calculate when the stat_type is Percentile.   
                              The value can range from 0 to 100.
@@ -4280,6 +4294,7 @@ def raster_collection_function(raster, item_function=None,
                                ):
     """
     Creates a new raster by applying item, aggregation and processing function
+
     :param raster: Input Imagery Layer. The image service the layer is based on should be a mosaic dataset
     :param item_function: The raster function template to be applied on each item of the mosaic dataset. 
                           Create an RFT object out of the raster function template item on the portal and 
@@ -4550,18 +4565,18 @@ def constant_raster(constant, raster_info, gis=None):
 
                         Example for RasterInfo dict - 
 
-                        {'bandCount': 3,'extent': {"xmin": 4488761.95,
-                        "ymin": 5478609.805,
-                        "xmax": 4489727.05,
-                        "ymax": 5479555.305,
+                        {'bandCount': 3, 'extent': {"xmin": 4488761.95, 
+                        "ymin": 5478609.805, 
+                        "xmax": 4489727.05, 
+                        "ymax": 5479555.305, 
                         "spatialReference": {
-                        "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
-                        GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\",DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
-                        SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],PRIMEM[\"Greenwich\",0.0],
-                        UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],
-                        PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
-                        PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
-                        PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
+                        "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\", 
+                        GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\", DATUM[\"D_Deutsches_Hauptdreiecksnetz\", 
+                        SPHEROID[\"Bessel_1841\", 6377397.155,299.1528128]], PRIMEM[\"Greenwich\", 0.0], 
+                        UNIT[\"Degree\", 0.0174532925199433]], PROJECTION[\"Transverse_Mercator\"], 
+                        PARAMETER[\"false_easting\", 4500000.0], PARAMETER[\"false_northing\", 0.0], 
+                        PARAMETER[\"central_meridian\", 12.0], PARAMETER[\"scale_factor\", 1.0], 
+                        PARAMETER[\"latitude_of_origin\", 0.0], UNIT[\"Meter\", 1.0]]"
                         }}, 
                         'pixelSizeX': 0.0999999999999614, 
                         'pixelSizeY': 0.1, 
@@ -4621,18 +4636,18 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
 
                         Example for RasterInfo dict - 
 
-                        {'bandCount': 3,'extent': {"xmin": 4488761.95,
-                        "ymin": 5478609.805,
-                        "xmax": 4489727.05,
-                        "ymax": 5479555.305,
+                        {'bandCount': 3, 'extent': {"xmin": 4488761.95, 
+                        "ymin": 5478609.805, 
+                        "xmax": 4489727.05, 
+                        "ymax": 5479555.305, 
                         "spatialReference": {
-                        "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
-                        GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\",DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
-                        SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],PRIMEM[\"Greenwich\",0.0],
-                        UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],
-                        PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
-                        PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
-                        PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
+                        "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\", 
+                        GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\", DATUM[\"D_Deutsches_Hauptdreiecksnetz\", 
+                        SPHEROID[\"Bessel_1841\", 6377397.155,299.1528128]], PRIMEM[\"Greenwich\",0.0], 
+                        UNIT[\"Degree\", 0.0174532925199433]], PROJECTION[\"Transverse_Mercator\"], 
+                        PARAMETER[\"false_easting\", 4500000.0], PARAMETER[\"false_northing\", 0.0], 
+                        PARAMETER[\"central_meridian\", 12.0], PARAMETER[\"scale_factor\", 1.0], 
+                        PARAMETER[\"latitude_of_origin\", 0.0], UNIT[\"Meter\", 1.0]]"
                         }}, 
                         'pixelSizeX': 0.0999999999999614, 
                         'pixelSizeY': 0.1, 
@@ -4651,23 +4666,23 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
                            Geometric = 8
                            NegativeBinomial = 9
 
-                        Uniform - A uniform distribution with the defined range.
+                        - Uniform - A uniform distribution with the defined range.
 
-                        UniformInteger - An integer distribution with the defined range.
+                        - UniformInteger - An integer distribution with the defined range.
 
-                        Normal - A normal distribution with a defined {normal_mean} and {std_dev}. 
+                        - Normal - A normal distribution with a defined {normal_mean} and {std_dev}. 
 
-                        Exponential - An exponential distribution with a defined {exp_mean}.
+                        - Exponential - An exponential distribution with a defined {exp_mean}.
 
-                        Poisson - A Poisson distribution with a defined {Mean}.
+                        - Poisson - A Poisson distribution with a defined {Mean}.
 
-                        Gamma - A gamma distribution with a defined {alpha} and {beta}.
+                        - Gamma - A gamma distribution with a defined {alpha} and {beta}.
                                 
-                        Binomial - A binomial distribution with a defined {N} and {probability}.
+                        - Binomial - A binomial distribution with a defined {N} and {probability}.
 
-                        Geometric - A geometric distribution with a defined {probability}. 
+                        - Geometric - A geometric distribution with a defined {probability}. 
 
-                        NegativeBinomial - A Pascal distribution with a defined {r} and {probability}.
+                        - NegativeBinomial - A Pascal distribution with a defined {r} and {probability}.
 
     :param min_uniform: Optional float. The default value is 0.0
     :param max_uniform: Optional float. The default value is 1.0
@@ -5279,11 +5294,12 @@ def s1_radiometric_calibration(raster, calibration_type=None):
 
                    The function will use the LUT file either to apply the thermal correction or to 
                    remove the correction, depending on the contents of the LUT.
-    :param calibration_type: Optional string or int. one of four calibration types: 
-                             "beta_nought" (0) - produces an output containing the radar brightness coefficient.
-                             "sigma_nought" (1) - the backscatter returned to the antenna from a unit area on the ground, related to ground range.
-                             "gamma" (2) - measurement of emitted and returned energy useful for determining antenna patterns.
-                              None - Specify None to not apply a correction. This is the default.
+    :param calibration_type: Optional string or int. one of four calibration types:
+    
+                             - "beta_nought" (0) - produces an output containing the radar brightness coefficient.
+                             - "sigma_nought" (1) - the backscatter returned to the antenna from a unit area on the ground, related to ground range.
+                             - "gamma" (2) - measurement of emitted and returned energy useful for determining antenna patterns.
+                             - None - Specify None to not apply a correction. This is the default.
 
     :return: output raster 
     """
@@ -5588,8 +5604,7 @@ def aggregate(raster,
     
     :param ignore_nodata: Optional Boolean. Specifies whether NoData values are ignored.
 
-                            - True : The function will include all valid pixels and ignore any NoData pixels.
-                                     This is the default.
+                            - True : The function will include all valid pixels and ignore any NoData pixels. This is the default.
                             - False : The function will result in NoData if there are any NoData values.
     :return: the output raster with function applied on it
     """
@@ -5723,6 +5738,7 @@ def compute_change(raster1,
                                              To evaluate change from time 1 (earlier) to time 2 (later), enter the time 2 raster.
     ------------------------------------     --------------------------------------------------------------------
     method                                   Optional string. Specifies the method to be used.
+
                                              - DIFFERENCE : The mathematical difference, or subtraction, between the pixel values in the input rasters will be calculated. This is the default.
                                              - RELATIVE_DIFFERENCE : The difference in pixel values, accounting for the magnitudes of the values being compared, will be calculated.
                                              - CATEGORICAL_DIFFERENCE : The difference between two categorical or thematic rasters will be calculated, where the output contains class transitions that occurred between the two rasters.
@@ -5739,15 +5755,18 @@ def compute_change(raster1,
                                              Required if method is CATEGORICAL_DIFFERENCE.
     ------------------------------------     --------------------------------------------------------------------
     filter_method                            Optional string. Default value is "CHANGED_PIXELS_ONLY" (1).
+                                             
                                              Possible options are:
+
                                              - ALL
                                              - CHANGED_PIXELS_ONLY
                                              - UNCHANGED_PIXELS_ONLY
     ------------------------------------     --------------------------------------------------------------------
     define_transition_colors                 Optional string. Defines the method used to assign color for the output classes
+
                                              - AVERAGE : The color of the pixel will be the average of the color of its original class and the color of its final class.
                                              - FROM_COLOR : The color of the pixel will be the color of its original class.
-                                             - TO_COLOR :The color of the pixel will be the color of its final class.
+                                             - TO_COLOR : The color of the pixel will be the color of its final class.
     ------------------------------------     --------------------------------------------------------------------
     extent_type                              Optional string.  One of "FirstOf", "IntersectionOf" "UnionOf", "LastOf"
     ------------------------------------     --------------------------------------------------------------------
@@ -6291,11 +6310,9 @@ def apparent_reflectance(raster, radiance_gain_values = None, radiance_bias_valu
                                              by scientific users for complex modeling and technical 
                                              remote-sensing applications.
 
-                                                False - The function returns apparent reflectance values. 
-                                                        This is the default.
-                                                True - The function returns 32-bit floating-point values, 
-                                                       which most commonly are in the range of 0.0 to 1.0. 
-                                                       No data clipping is performed if this option is selected.
+                                                - False - The function returns apparent reflectance values. This is the default.
+                                                
+                                                - True - The function returns 32-bit floating-point values, which most commonly are in the range of 0.0 to 1.0. No data clipping is performed if this option is selected.
     ------------------------------------     --------------------------------------------------------------------
     scale_factor                             Optional int. Your apparent reflectance output value can be expressed 
                                              as an integer. The scaling factor is multiplied by the albedo to 
@@ -6566,10 +6583,10 @@ def reproject(raster, spatial_reference=None, x_cell_size=0, y_cell_size=0, x_re
     spatial_reference                    Optional dict. The coordinate system used to reproject the data.
 
                                          Example:
-                                         {
-                                            "wkid" : 4176,
-                                            "latestWkid" : 4176
-                                          }
+                                            | {
+                                            |    "wkid" : 4176,
+                                            |    "latestWkid" : 4176
+                                            | }
     --------------------------------     --------------------------------------------------------------------
     x_cell_size                          Optional.The x-dimension to which the data should be resampled. 
                                          This is optional. If the value is 0 or less, the output envelope 

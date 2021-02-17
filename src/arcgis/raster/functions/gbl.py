@@ -167,13 +167,13 @@ def euclidean_distance(in_source_data,
     :param distance_method: Optional String; Determines whether to calculate the distance using a planar (flat earth) 
                             or a geodesic (ellipsoid) method.
 
-                            Planar - Planar measurements use 2D Cartesian mathematics to calculate 
-                            length and area. The option is only available when measuring in a 
-                            projected coordinate system and the 2D plane of that coordinate system 
+                            - Planar - Planar measurements use 2D Cartesian mathematics to calculate \
+                            length and area. The option is only available when measuring in a \
+                            projected coordinate system and the 2D plane of that coordinate system \
                             will be used as the basis for the measurements. This is the default.
 
-                            Geodesic - The shortest line between two points on the earth's surface 
-                            on a spheroid (ellipsoid). Therefore, regardless of input or output 
+                            - Geodesic - The shortest line between two points on the earth's surface \
+                            on a spheroid (ellipsoid). Therefore, regardless of input or output \
                             projection, the results do not change.
 
                             .. note::
@@ -266,13 +266,13 @@ def euclidean_allocation(in_source_data,
     :param distance_method: Optional String; Determines whether to calculate the distance using a planar (flat earth) 
                             or a geodesic (ellipsoid) method.
 
-                            Planar - Planar measurements use 2D Cartesian mathematics to calculate 
-                            length and area. The option is only available when measuring in a 
-                            projected coordinate system and the 2D plane of that coordinate system 
+                            - Planar - Planar measurements use 2D Cartesian mathematics to calculate \
+                            length and area. The option is only available when measuring in a \
+                            projected coordinate system and the 2D plane of that coordinate system \
                             will be used as the basis for the measurements. This is the default.
 
-                            Geodesic - The shortest line between two points on the earth's surface 
-                            on a spheroid (ellipsoid). Therefore, regardless of input or output 
+                            - Geodesic - The shortest line between two points on the earth's surface \
+                            on a spheroid (ellipsoid). Therefore, regardless of input or output \
                             projection, the results do not change.
 
                             .. note::
@@ -391,10 +391,10 @@ def cost_distance(in_source_data,
     :param source_direction: Optional. Defines the direction of the traveler when applying the source resistance rate and the source
                             starting cost.
 
-                            FROM_SOURCE - The source resistance rate and source starting cost will be applied beginning
+                            - FROM_SOURCE - The source resistance rate and source starting cost will be applied beginning \
                             at the input source and moving out to the nonsource cells. This is the default.
 
-                            TO_SOURCE - The source resistance rate and source starting cost will be applied beginning at
+                            - TO_SOURCE - The source resistance rate and source starting cost will be applied beginning at \
                             each nonsource cell and moving back to the input source.
 
                             Either specify the FROM_SOURCE or TO_SOURCE keyword, which will be applied to all sources,
@@ -518,10 +518,10 @@ def cost_allocation(in_source_data,
     :param source_direction: Optional. Defines the direction of the traveler when applying the source resistance rate and the source
                             starting cost.
 
-                            FROM_SOURCE - The source resistance rate and source starting cost will be applied beginning
+                            - FROM_SOURCE - The source resistance rate and source starting cost will be applied beginning \
                             at the input source and moving out to the nonsource cells. This is the default.
 
-                            TO_SOURCE - The source resistance rate and source starting cost will be applied beginning at
+                            - TO_SOURCE - The source resistance rate and source starting cost will be applied beginning at \
                             each nonsource cell and moving back to the input source.
 
                             Either specify the FROM_SOURCE or TO_SOURCE keyword, which will be applied to all sources,
@@ -607,52 +607,50 @@ def zonal_statistics(in_zone_data,
     :param ignore_no_data: Optional bool. Denotes whether NoData values in the Value Raster will influence the results
                             of the zone that they fall within.
 
-                            True - Within any particular zone, only pixels that have a value in the Value
-                            Raster will be used in determining the output value for that zone. NoData
-                            pixels in the Value Raster will be ignored in the statistic calculation.
+                            - True - Within any particular zone, only pixels that have a value in the Value \
+                            Raster will be used in determining the output value for that zone. NoData \
+                            pixels in the Value Raster will be ignored in the statistic calculation. This is the default.
 
-                            This is the default.
-
-                            False - Within any particular zone, if any NoData pixels exist in the Value
-                            Raster, it is deemed that there is insufficient information to perform
-                            statistical calculations for all the pixels in that zone; therefore, the
+                            - False - Within any particular zone, if any NoData pixels exist in the Value \
+                            Raster, it is deemed that there is insufficient information to perform \
+                            statistical calculations for all the pixels in that zone; therefore, the \
                             entire zone will receive the NoData value on the output raster.
     :param statistics_type: Optional str. Statistic type to be calculated. Default is MEAN
 
-                            MEAN-Calculates the average of all pixels in the Value Raster that belong to
+                            - MEAN-Calculates the average of all pixels in the Value Raster that belong to \
                             the same zone as the output pixel.
 
-                            MAJORITY-Determines the value that occurs most often of all pixels in the
+                            - MAJORITY-Determines the value that occurs most often of all pixels in the \
                             Value Raster that belong to the same zone as the output pixel.
 
-                            MAXIMUM-Determines the largest value of all pixels in the Value Raster
+                            - MAXIMUM-Determines the largest value of all pixels in the Value Raster \
                             that belong to the same zone as the output pixel.
 
-                            MEDIAN-Determines the median value of all pixels in the Value Raster
+                            - MEDIAN-Determines the median value of all pixels in the Value Raster \
                             that belong to the same zone as the output pixel.
 
-                            MINIMUM-Determines the smallest value of all pixels in the Value Raster
+                            - MINIMUM-Determines the smallest value of all pixels in the Value Raster \
                             that belong to the same zone as the output pixel.
 
-                            MINORITY-Determines the value that occurs least often of all pixels in
+                            - MINORITY-Determines the value that occurs least often of all pixels in \
                             the Value Raster that belong to the same zone as the output pixel.
 
-                            RANGE-Calculates the difference between the largest and smallest value
-                            of all pixels in the Value Raster that belong to the same zone as the
+                            - RANGE-Calculates the difference between the largest and smallest value \
+                            of all pixels in the Value Raster that belong to the same zone as the \
                             output pixel.
 
-                            STD-Calculates the standard deviation of all pixels in
+                            - STD-Calculates the standard deviation of all pixels in \
                             the Value Rasterthat belong to the same zone as the output pixel.
 
-                            SUM-Calculates the total value of all pixels in the Value Raster that
+                            - SUM-Calculates the total value of all pixels in the Value Raster that \
                             belong to the same zone as the output pixel.
 
-                            VARIETY-Calculates the number of unique values for all pixels in the
+                            - VARIETY-Calculates the number of unique values for all pixels in the \
                             Value Raster that belong to the same zone as the output pixel.
 
-                            PERCENTILE -  Calculates a percentile of all cells in the value raster that 
-                            belong to the same zone as the output cell. The 90th percentile 
-                            is calculated by default. You can specify other values (from 0 to 100) 
+                            - PERCENTILE -Calculates a percentile of all cells in the value raster that \
+                            belong to the same zone as the output cell. The 90th percentile \
+                            is calculated by default. You can specify other values (from 0 to 100) \
                             using the percentile_value parameter.
 
     :param process_as_multidimensional: Optional bool, Process as multidimensional if set to True. (If the input is multidimensional raster.)
@@ -665,16 +663,9 @@ def zonal_statistics(in_zone_data,
                              set to PERCENTILE.
     :param percentile_interpolation_type: Optional str. Determines the type of percentile interpolation type when the 
                                           number of values from the input value raster to be calculated are even.
-                                            - AUTO_DETECT - If the input value raster has integer pixel type, the 
-                                                            NEAREST method is used. If the input value raster 
-                                                            has floating point pixel type, then the LINEAR 
-                                                            method is used. This is the default.
-                                            - NEAREST - Nearest value to the desired percentile. In this case, 
-                                                        the output pixel type is same as that of the input value 
-                                                        raster.
-                                            - LINEAR - Weighted average of two surrounding values from the 
-                                                        desired percentile. In this case, the output pixel 
-                                                        type is floating point.
+                                            - AUTO_DETECT - If the input value raster has integer pixel type, the NEAREST method is used. If the input value raster has floating point pixel type, then the LINEAR method is used. This is the default.
+                                            - NEAREST - Nearest value to the desired percentile. In this case, the output pixel type is same as that of the input value raster.
+                                            - LINEAR - Weighted average of two surrounding values from the desired percentile. In this case, the output pixel type is floating point.
 
                                           Parameter available in ArcGIS Image Server 10.9 and higher.
     :return: output raster with function applied
@@ -777,15 +768,15 @@ def least_cost_path(in_source_data,
     :param path_type: Optional. A keyword defining the manner in which the values and zones on the input destination
                             data will be interpreted in the cost path calculations:
 
-                            EACH_CELL-A least-cost path is determined for each pixel with valid values on the
-                            input destination data, and saved on the output raster. Each cell of the input
+                            - EACH_CELL-A least-cost path is determined for each pixel with valid values on the \
+                            input destination data, and saved on the output raster. Each cell of the input \
                             destination data is treated separately, and a least-cost path is determined for each from cell.
 
-                            EACH_ZONE-A least-cost path is determined for each zone on the input destination data and
-                            saved on the output raster. The least-cost path for each zone begins at the pixel with the
+                            - EACH_ZONE-A least-cost path is determined for each zone on the input destination data and \
+                            saved on the output raster. The least-cost path for each zone begins at the pixel with the \
                             lowest cost distance weighting in the zone.
 
-                            BEST_SINGLE-For all pixels on the input destination data, the least-cost path is derived
+                            - BEST_SINGLE-For all pixels on the input destination data, the least-cost path is derived \
                             from the pixel with the minimum of the least-cost paths to source cells.
     :param max_distance: Optional. The threshold that the accumulative cost values cannot exceed. If an accumulative cost
                             distance exceeds this value, the output value for the pixel location will be NoData.
@@ -823,10 +814,10 @@ def least_cost_path(in_source_data,
     :param source_direction: Optional. Defines the direction of the traveler when applying the source resistance rate and the source
                             starting cost.
 
-                            FROM_SOURCE - The source resistance rate and source starting cost will be applied beginning
+                            - FROM_SOURCE - The source resistance rate and source starting cost will be applied beginning \
                             at the input source and moving out to the nonsource cells. This is the default.
 
-                            TO_SOURCE - The source resistance rate and source starting cost will be applied beginning at
+                            - TO_SOURCE - The source resistance rate and source starting cost will be applied beginning at \
                             each nonsource cell and moving back to the input source.
 
                             Either specify the FROM_SOURCE or TO_SOURCE keyword, which will be applied to all sources,
@@ -907,31 +898,30 @@ def flow_distance(input_stream_raster,
 
     Parameters
     ----------
-    :param input_stream_raster:Required.  An input raster that represents a linear stream network
+    :param input_stream_raster: Required.  An input raster that represents a linear stream network
     :param input_surface_raster: Required. The input raster representing a continuous surface.
     :param input_flow_direction_raster: Optional. The input raster that shows the direction of flow out of each cell.
-    :param distance_type: Optional. VERTICAL or HORIZONTAL distance to compute; if not
-                                 specified, VERTICAL distance is computed.
+    :param distance_type: Optional. VERTICAL or HORIZONTAL distance to compute; if not specified, VERTICAL distance is computed.
     :param flow_direction_type: Optional String; Defines the type of the input flow direction raster.
 
-                                D8 - The input flow direction raster is of type D8. This is the default.
+                                - D8 - The input flow direction raster is of type D8. This is the default.
 
-                                MFD - The input flow direction raster is of type Multi Flow Direction (MFD).
+                                - MFD - The input flow direction raster is of type Multi Flow Direction (MFD).
 
-                                Dinf - The input flow direction raster is of type D-Infinity (DINF).
+                                - Dinf - The input flow direction raster is of type D-Infinity (DINF).
     :param statistics_type: Optional String; Determines the statistics type used to compute flow distance 
                             over multiple flow paths. 
                             If there is only a single flow path from each cell to a cell on the stream, 
                             all statistics types produce the same result.
 
-                            MINIMUM - Where multiple flow paths exist, minimum flow distance in computed. 
+                            - MINIMUM - Where multiple flow paths exist, minimum flow distance in computed. \
                             This is the default.
 
-                            WEIGHTED_MEAN - Where multiple flow paths exist, a weighted mean of flow distance 
-                            is computed. Flow proportion from a cell to its downstream neighboring cells are 
+                            - WEIGHTED_MEAN - Where multiple flow paths exist, a weighted mean of flow distance \
+                            is computed. Flow proportion from a cell to its downstream neighboring cells are \
                             used as weights for computing weighted mean.
 
-                            MAXIMUM - When multiple flow paths exist, maximum flow distance is computed.
+                            - MAXIMUM - When multiple flow paths exist, maximum flow distance is computed.
     :return: output raster with function applied
     """
     layer1, input_stream_raster, raster_ra1 = _raster_input(input_stream_raster)
@@ -1580,27 +1570,28 @@ def kernel_density(in_features,
     :param search_radius:             Optional. The search radius within which to calculate density. Units are
                                       based on the linear unit of the projection.
     :param area_unit_scale_factor:    Optional. The desired area units of the output density values.
-                                        -SQUARE_MAP_UNITS-For the square of the linear units of the output spatial reference.
 
-                                        -SQUARE_MILES-For (U.S.) miles.
+                                        - SQUARE_MAP_UNITS-For the square of the linear units of the output spatial reference.
 
-                                        -SQUARE_KILOMETERS-For kilometers.
+                                        - SQUARE_MILES-For (U.S.) miles.
 
-                                        -ACRES For (U.S.) acres.
+                                        - SQUARE_KILOMETERS-For kilometers.
 
-                                        -HECTARES-For hectares.
+                                        - ACRES For (U.S.) acres.
 
-                                        -SQUARE_METERS-For meters.
+                                        - HECTARES-For hectares.
 
-                                        -SQUARE_YARDS-For (U.S.) yards.
+                                        - SQUARE_METERS-For meters.
 
-                                        -SQUARE_FEET-For (U.S.) feet.
+                                        - SQUARE_YARDS-For (U.S.) yards.
 
-                                        -SQUARE_INCHES-For (U.S.) inches.
+                                        - SQUARE_FEET-For (U.S.) feet.
 
-                                        -SQUARE_CENTIMETERS-For centimeters.
+                                        - SQUARE_INCHES-For (U.S.) inches.
 
-                                        -SQUARE_MILLIMETERS-For millimeters.
+                                        - SQUARE_CENTIMETERS-For centimeters.
+
+                                        - SQUARE_MILLIMETERS-For millimeters.
     :param out_cell_values: Optional. Determines what the values in the output raster represent.
 
                             - DENSITIES-The output values represent the predicted density value. This is the default.
@@ -1705,16 +1696,16 @@ def cost_path(in_destination_data,
     :param path_type:               Optional. A keyword defining the manner in which the values and zones on the input destination
                                     data will be interpreted in the cost path calculations.
 
-                                    EACH_CELL - For each cell with valid values on the input destination data, a least-cost
-                                    path is determined and saved on the output raster. With this option, each cell of the 
-                                    input destination data is treated separately, and a least-cost path is determined for 
+                                    - EACH_CELL - For each cell with valid values on the input destination data, a least-cost \
+                                    path is determined and saved on the output raster. With this option, each cell of the \
+                                    input destination data is treated separately, and a least-cost path is determined for \
                                     each from cell.
 
-                                    EACH_ZONE - For each zone on the input destination data, a least-cost path is determined
-                                    and saved on the output raster. With this option, the least-cost path for each zone 
+                                    - EACH_ZONE - For each zone on the input destination data, a least-cost path is determined \
+                                    and saved on the output raster. With this option, the least-cost path for each zone \
                                     begins at the cell with the lowest cost distance weighting in the zone.
 
-                                    BEST_SINGLE - For all cells on the input destination data, the least-cost path is derived 
+                                    - BEST_SINGLE - For all cells on the input destination data, the least-cost path is derived \
                                     from the cell with the minimum of the least-cost paths to source cells.
     :param destination_field:       Optional. The field used to obtain values for the destination locations. Input feature data must
                                     contain at least one valid field.
@@ -1784,13 +1775,13 @@ def euclidean_direction(in_source_data,
     :param distance_method: Optional String; Determines whether to calculate the distance using a planar (flat earth) 
                             or a geodesic (ellipsoid) method.
 
-                            Planar - Planar measurements use 2D Cartesian mathematics to calculate 
-                            length and area. The option is only available when measuring in a 
-                            projected coordinate system and the 2D plane of that coordinate system 
+                            - Planar - Planar measurements use 2D Cartesian mathematics to calculate \
+                            length and area. The option is only available when measuring in a \
+                            projected coordinate system and the 2D plane of that coordinate system \
                             will be used as the basis for the measurements. This is the default.
 
-                            Geodesic - The shortest line between two points on the earth's surface 
-                            on a spheroid (ellipsoid). Therefore, regardless of input or output 
+                            - Geodesic - The shortest line between two points on the earth's surface \
+                            on a spheroid (ellipsoid). Therefore, regardless of input or output \
                             projection, the results do not change.
 
                             .. note::
@@ -1898,10 +1889,10 @@ def cost_backlink(in_source_data,
     :param source_direction: Optional. Defines the direction of the traveler when applying the source resistance rate and the source
                             starting cost.
 
-                            FROM_SOURCE - The source resistance rate and source starting cost will be applied beginning
+                            - FROM_SOURCE - The source resistance rate and source starting cost will be applied beginning \
                             at the input source and moving out to the nonsource cells. This is the default.
 
-                            TO_SOURCE - The source resistance rate and source starting cost will be applied beginning at
+                            - TO_SOURCE - The source resistance rate and source starting cost will be applied beginning at \
                             each nonsource cell and moving back to the input source.
 
                             Either specify the FROM_SOURCE or TO_SOURCE keyword, which will be applied to all sources,
@@ -1971,36 +1962,36 @@ def region_group(in_raster,
                                      connectivity between cells that define a region.
                                      The default is FOUR.
 
-                                      FOUR - Connectivity is evaluated for the four nearest (orthogonal) 
+                                      - FOUR - Connectivity is evaluated for the four nearest (orthogonal) \
                                       neighbors of each input cell.
 
-                                      EIGHT - Connectivity is evaluated for the eight nearest neighbors 
+                                      - EIGHT - Connectivity is evaluated for the eight nearest neighbors \
                                       (both orthogonal and diagonal) of each input cell.
 
 
     :param zone_connectivity:  Optional. Defines which cell values should be considered when testing for connectivity.
                                The default is WITHIN.
 
-                                WITHIN - Connectivity for a region is evaluated for input cells that are part of 
-                                the same zone (cell value). The only cells that can be grouped are cells 
-                                from the same zone that meet the spatial requirements of connectivity 
+                                - WITHIN - Connectivity for a region is evaluated for input cells that are part of \
+                                the same zone (cell value). The only cells that can be grouped are cells \
+                                from the same zone that meet the spatial requirements of connectivity \
                                 specified by the number_of_neighbor_cells parameter (four or eight).
 
-                                CROSS - Connectivity for a region is evaluated between cells of any value, 
-                                except for the zone cells identified to be excluded by the 
-                                excluded_value parameter, and subject to the spatial requirements 
+                                - CROSS - Connectivity for a region is evaluated between cells of any value, \
+                                except for the zone cells identified to be excluded by the \
+                                excluded_value parameter, and subject to the spatial requirements \
                                 specified by the number_of_neighbor_cells parameter.
 
     :param add_link: Optional. Specifies whether a link field will be added to the table of the output 
                      when the zone_connectivity parameter is set to WITHIN. It is ignored if that 
                      parameter is set to CROSS.
 
-                      ADD_LINK - A LINK field will be added to the table of the output raster. 
-                      This field stores the value of the zone to which the cells of each region 
-                      in the output belong, according to the connectivity rule defined in 
+                      - ADD_LINK - A LINK field will be added to the table of the output raster. \
+                      This field stores the value of the zone to which the cells of each region \
+                      in the output belong, according to the connectivity rule defined in \
                       the number_of_neighbor_cells parameter. This is the default.
 
-                      NO_LINK - A LINK field will not be added. The attribute table for the output 
+                      - NO_LINK - A LINK field will not be added. The attribute table for the output \
                       raster will only contain the Value and Count fields.
 
     :param excluded_value: Optional. A value that excludes all cells of that zone value from the 
@@ -2828,13 +2819,13 @@ def euclidean_back_direction(in_source_data,
     :param distance_method: Optional. Optional String; Determines whether to calculate the distance using a planar (flat earth) 
                             or a geodesic (ellipsoid) method.
 
-                            Planar - Planar measurements use 2D Cartesian mathematics to calculate 
-                            length and area. The option is only available when measuring in a 
-                            projected coordinate system and the 2D plane of that coordinate system 
+                            - Planar - Planar measurements use 2D Cartesian mathematics to calculate \
+                            length and area. The option is only available when measuring in a \
+                            projected coordinate system and the 2D plane of that coordinate system \
                             will be used as the basis for the measurements. This is the default.
 
-                            Geodesic - The shortest line between two points on the earth's surface 
-                            on a spheroid (ellipsoid). Therefore, regardless of input or output 
+                            - Geodesic - The shortest line between two points on the earth's surface \
+                            on a spheroid (ellipsoid). Therefore, regardless of input or output \
                             projection, the results do not change.
 
                             .. note::
@@ -2907,10 +2898,10 @@ def flow_length(input_flow_direction_raster,
                                         The flow direction raster can be created by running the Flow Direction function.
     :param direction_measurement: Optional String. The direction of measurement along the flow path.
 
-                                  DOWNSTREAM - Calculates the downslope distance along the flow path, 
+                                  - DOWNSTREAM - Calculates the downslope distance along the flow path, \
                                   from each cell to a sink or outlet on the edge of the raster. this is the default.
 
-                                  UPSTREAM - Calculates the longest upslope distance along the flow path, 
+                                  - UPSTREAM - Calculates the longest upslope distance along the flow path, \
                                   from each cell to the top of the drainage divide.
 
     :param input_weight_raster: An optional input raster for applying a weight to each cell.
@@ -3063,15 +3054,15 @@ def stream_order(input_stream_raster,
                                         Direction function.
     :param order_method: Optional. The method used for assigning stream order.
 
-                          STRAHLER - The method of stream ordering proposed by Strahler in 1952. 
-                          Stream order only increases when streams of the same order intersect. 
-                          Therefore, the intersection of a first-order and second-order link will 
-                          remain a second-order link, rather than creating a third-order link. 
+                          - STRAHLER - The method of stream ordering proposed by Strahler in 1952. \
+                          Stream order only increases when streams of the same order intersect. \
+                          Therefore, the intersection of a first-order and second-order link will \
+                          remain a second-order link, rather than creating a third-order link. \
                           This is the default.
 
-                          SHREVE - The method of stream ordering by magnitude, proposed by Shreve 
-                          in 1967. All links with no tributaries are assigned a magnitude (order) 
-                          of one. Magnitudes are additive downslope. When two links intersect, 
+                          - SHREVE - The method of stream ordering by magnitude, proposed by Shreve \
+                          in 1967. All links with no tributaries are assigned a magnitude (order) \
+                          of one. Magnitudes are additive downslope. When two links intersect, \
                           their magnitudes are added and assigned to the downslope link.
 
     :return: output raster with function applied
@@ -3282,13 +3273,13 @@ def distance_accumulation(in_source_data,
     :param distance_method: Optional String; Determines whether to calculate the distance using a planar (flat earth) 
                             or a geodesic (ellipsoid) method.
 
-                            Planar - Planar measurements use 2D Cartesian mathematics to calculate 
-                            length and area. The option is only available when measuring in a 
-                            projected coordinate system and the 2D plane of that coordinate system 
+                            - Planar - Planar measurements use 2D Cartesian mathematics to calculate \
+                            length and area. The option is only available when measuring in a \
+                            projected coordinate system and the 2D plane of that coordinate system \
                             will be used as the basis for the measurements. This is the default.
 
-                            Geodesic - The shortest line between two points on the earth's surface 
-                            on a spheroid (ellipsoid). Therefore, regardless of input or output 
+                            - Geodesic - The shortest line between two points on the earth's surface \
+                            on a spheroid (ellipsoid). Therefore, regardless of input or output \
                             projection, the results do not change.
 
                             .. note::
@@ -3560,13 +3551,13 @@ def distance_allocation(in_source_data,
     :param distance_method: Optional String; Determines whether to calculate the distance using a planar (flat earth) 
                             or a geodesic (ellipsoid) method.
 
-                            Planar - Planar measurements use 2D Cartesian mathematics to calculate 
-                            length and area. The option is only available when measuring in a 
-                            projected coordinate system and the 2D plane of that coordinate system 
+                            - Planar - Planar measurements use 2D Cartesian mathematics to calculate \
+                            length and area. The option is only available when measuring in a \
+                            projected coordinate system and the 2D plane of that coordinate system \
                             will be used as the basis for the measurements. This is the default.
 
-                            Geodesic - The shortest line between two points on the earth's surface 
-                            on a spheroid (ellipsoid). Therefore, regardless of input or output 
+                            - Geodesic - The shortest line between two points on the earth's surface \
+                            on a spheroid (ellipsoid). Therefore, regardless of input or output \
                             projection, the results do not change.
 
                             .. note::
@@ -3762,18 +3753,16 @@ def optimal_path_as_raster(in_destination_data,
     :param path_type: Optional string. A keyword defining the manner in which the values and zones on the input destination
                       data will be interpreted in the cost path calculations.
 
-                      EACH_ZONE - For each zone on the input destination data, a least-cost path is determined
-                      and saved on the output raster. With this option, the least-cost path for each zone 
-                      begins at the cell with the lowest cost distance weighting in the zone.
+                      - EACH_ZONE - For each zone on the input destination data, a least-cost path is determined \
+                      and saved on the output raster. With this option, the least-cost path for each zone \
+                      begins at the cell with the lowest cost distance weighting in the zone. This is the default.
 
-                      This is the default.
-
-                      BEST_SINGLE - For all cells on the input destination data, the least-cost path is derived 
+                      - BEST_SINGLE - For all cells on the input destination data, the least-cost path is derived \
                       from the cell with the minimum of the least-cost paths to source cells.
 
-                      EACH_CELL - For each cell with valid values on the input destination data, a least-cost
-                      path is determined and saved on the output raster. With this option, each cell of the 
-                      input destination data is treated separately, and a least-cost path is determined for 
+                      - EACH_CELL - For each cell with valid values on the input destination data, a least-cost \
+                      path is determined and saved on the output raster. With this option, each cell of the \
+                      input destination data is treated separately, and a least-cost path is determined for \
                       each from cell.
 
     :return: output raster with function applied
