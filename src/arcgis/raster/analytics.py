@@ -2603,30 +2603,31 @@ def create_image_collection(image_collection,
                                          Example:
                                             "QuickBird"
     ------------------                   --------------------------------------------------------------------
-    raster_type_params                   Optional dict. Additional ``raster_type`` specific parameters.
+    raster_type_params                   | Optional dict. Additional ``raster_type`` specific parameters.
         
-                                         The process of add rasters to the image collection can be
+                                         | The process of add rasters to the image collection can be \
                                          controlled by specifying additional raster type arguments.
 
-                                         The raster type parameters argument is a dictionary.
+                                         | The raster type parameters argument is a dictionary.
 
-                                         The dictionary can contain productType, processingTemplate,
-                                         pansharpenType, Filter, pansharpenWeights, ConstantZ,
-                                         dem, zoffset, CorrectGeoid, ZFactor, StretchType,
+                                         | The dictionary can contain productType, processingTemplate, \
+                                         pansharpenType, Filter, pansharpenWeights, ConstantZ, \
+                                         dem, zoffset, CorrectGeoid, ZFactor, StretchType, \
                                          ScaleFactor, ValidRange
 
-                                         Please check the table below (Supported Raster Types), 
-                                         for more details about the product types,
+                                         | Please check the table below (Supported Raster Types), \
+                                         for more details about the product types, \
                                          processing templates, pansharpen weights for each raster type. 
 
                                          - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", "Esri", "Mean", "Gram-Schmidt"]
                                          - Possible values for filter - [None, "Sharpen", "SharpenMore"]
                                          - Value for StretchType dictionary can be as follows:
+
                                            - "None"
                                            - "MinMax; <min>; <max>"
                                            - "PercentMinMax; <MinPercent>; <MaxPercent>"
                                            - "StdDev; <NumberOfStandardDeviation>"
-                                           - Example: {"StretchType": "MinMax; <min>; <max>"}
+                                           Example: {"StretchType": "MinMax; <min>; <max>"}
 
                                          Example:
                                             {"productType":"All","processingTemplate":"Pansharpen",
