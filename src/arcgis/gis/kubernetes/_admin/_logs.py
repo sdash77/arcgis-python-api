@@ -223,7 +223,7 @@ class LogManager(_BaseKube):
             "num" : num
         }
         params['start'] = 1
-        url = "{url}/queryFilter".format(url=self._url)
+        url = "{url}/query".format(url=self._url)
         if start_time is not None and \
            isinstance(start_time, datetime):
             params['startTime'] = start_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
