@@ -3260,13 +3260,13 @@ def add_image(image_collection,
                                             
                                          | Use ``image_collection_properties`` key to set value for imageCollectionType.
 
-                                         | .. note::
+                                         .. note::
 
-                                         |   The "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service. 
-                                         |   Based on the image collection type, the orthomapping system service will choose different algorithm for adjustment. 
-                                         |   Therefore, if the image collection is created by reference, the requester should set this 
-                                         |   property based on the type of images in the image collection using the following keywords. 
-                                         |   If the imageCollectionType is not set, it defaults to "UAV/UAS"
+                                           The "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service. 
+                                           Based on the image collection type, the orthomapping system service will choose different algorithm for adjustment. 
+                                           Therefore, if the image collection is created by reference, the requester should set this 
+                                           property based on the type of images in the image collection using the following keywords. 
+                                           If the imageCollectionType is not set, it defaults to "UAV/UAS"
  
                                          | If byref is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
     ------------------                   --------------------------------------------------------------------
