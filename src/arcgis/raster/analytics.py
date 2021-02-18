@@ -1037,37 +1037,36 @@ def copy_raster(input_raster,
     build_transpose                      Optional bool, if set to true, transforms the output multidimensional 
                                          raster. Valid only if process_as_multidimensional is set to True.
     --------------------------------     --------------------------------------------------------------------
-    context                              context contains additional settings that affect task execution. 
+    context                              | context contains additional settings that affect task execution. 
 
-                                         context parameter overwrites values set through arcgis.env parameter
+                                         | context parameter overwrites values set through arcgis.env parameter
                                          
-                                         This function has the following settings:
+                                         | This function has the following settings:
 
-                                          - Output Spatial Reference (outSR): The output raster will be 
+                                         | - Output Spatial Reference (outSR): The output raster will be 
                                             projected into the output spatial reference.
                                                 
                                             Example: 
                                                 {"outSR": {spatial reference}}
 
 
-                                         The context parameter can also be used to specify whether to
-                                         build footprints, pixel value that represents the NoData,
-                                         resamplingMethod etc.
+                                         | The context parameter can also be used to specify whether to
+                                         | build footprints, pixel value that represents the NoData,
+                                         | resamplingMethod etc.
 
 
                                          Example:
-                                            {"buildFootprints":True,
-                                            "footprintsArguments":{"method":"RADIOMETRY","minValue":1,
-                                            "maxValue":5,
-                                            "shrinkDistance":50,"skipOverviews":True,"updateBoundary":True,
-                                            "maintainEdge":False,"simplification":None,"numVertices":20,
-                                            "minThinnessRatio":0.05,"maxSliverSize":20,"requestSize":2000,
-                                            "minRegionSize":100},
-                                            "defineNodata":True,
-                                            "noDataArguments":{"noDataValues":[500],"numberOfBand":99,
-                                            "compositeValue":True}}
+                                            | {"buildFootprints":True,                                            
+                                            | "footprintsArguments":{"method":"RADIOMETRY","minValue":1,"maxValue":5,
+                                            | "shrinkDistance":50,"skipOverviews":True,"updateBoundary":True,
+                                            | "maintainEdge":False,"simplification":None,"numVertices":20,
+                                            | "minThinnessRatio":0.05,"maxSliverSize":20,"requestSize":2000,
+                                            | "minRegionSize":100},
+                                            | "defineNodata":True,                                            
+                                            | "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
+                                            | "buildOverview":True}
     --------------------------------     --------------------------------------------------------------------
-    raster_type_name                     Required string. The name of the raster type to use for adding data to 
+    raster_type_name                     | Required string. The name of the raster type to use for adding data to 
                                          the mosaic dataset.
 
 
@@ -1084,34 +1083,34 @@ def copy_raster(input_raster,
                                          Example:
                                             "QuickBird"
     --------------------------------     --------------------------------------------------------------------
-    raster_type_params                   Optional dict. Additional ``raster_type`` specific parameters.
-
+    raster_type_params                   | Optional dict. Additional ``raster_type`` specific parameters.
         
-                                         The process of add rasters to the mosaic datset can be
+                                         | The process of add rasters to the image collection can be \
                                          controlled by specifying additional raster type arguments.
 
+                                         | The raster type parameters argument is a dictionary.
 
-                                         The raster type parameters argument is a dictionary.
-
-
-                                         The dictionary can contain productType, processingTemplate,
-                                         pansharpenType, Filter, pansharpenWeights, ConstantZ,
-                                         dem, zoffset, CorrectGeoid, ZFactor, StretchType,
+                                         | The dictionary can contain productType, processingTemplate, \
+                                         pansharpenType, Filter, pansharpenWeights, ConstantZ, \
+                                         dem, zoffset, CorrectGeoid, ZFactor, StretchType, \
                                          ScaleFactor, ValidRange
 
-                                         Please check the table below (Supported Raster Types), 
-                                         for more details about the product types,
+                                         | Please check the table below (Supported Raster Types), \
+                                         for more details about the product types, \
                                          processing templates, pansharpen weights for each raster type. 
 
                                          - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", "Esri", "Mean", "Gram-Schmidt"]
                                          - Possible values for filter - [None, "Sharpen", "SharpenMore"]
                                          - Value for StretchType dictionary can be as follows:
+
                                            - "None"
                                            - "MinMax; <min>; <max>"
                                            - "PercentMinMax; <MinPercent>; <MaxPercent>"
                                            - "StdDev; <NumberOfStandardDeviation>"
-                                           - Example: {"StretchType": "MinMax; <min>; <max>"}
-
+                                           Example: {"StretchType": "MinMax; <min>; <max>"}
+                                         - Value for ValidRange dictionary can be as follows:
+                                           - "<MaskMinValue>, <MaskMaxValue>"
+                                           Example: {"ValidRange": "10, 200"}
 
                                          Example:
                                             {"productType":"All","processingTemplate":"Pansharpen",
@@ -2630,6 +2629,9 @@ def create_image_collection(image_collection,
                                            - "PercentMinMax; <MinPercent>; <MaxPercent>"
                                            - "StdDev; <NumberOfStandardDeviation>"
                                            Example: {"StretchType": "MinMax; <min>; <max>"}
+                                         - Value for ValidRange dictionary can be as follows:
+                                           - "<MaskMinValue>, <MaskMaxValue>"
+                                           Example: {"ValidRange": "10, 200"}
 
                                          Example:
                                             {"productType":"All","processingTemplate":"Pansharpen",
@@ -3198,7 +3200,7 @@ def add_image(image_collection,
                                          The image collection must be an existing image collection.
                                          This is the output image collection (mosaic dataset) item or url or uri.
     ------------------                   --------------------------------------------------------------------
-    raster_type_name                     Required string. The name of the raster type to use for adding data to 
+    raster_type_name                     | Required string. The name of the raster type to use for adding data to 
                                          the image collection.
 
                                          Choice list: [
@@ -3214,53 +3216,59 @@ def add_image(image_collection,
                                          Example:
                                             "QuickBird"
     ------------------                   --------------------------------------------------------------------
-    raster_type_params                   Optional dict. Additional raster type specific parameters.
+    raster_type_params                   | Optional dict. Additional ``raster_type`` specific parameters.
         
-                                         The process of add rasters to the image collection can be
+                                         | The process of add rasters to the image collection can be \
                                          controlled by specifying additional raster type arguments.
+
+                                         | The raster type parameters argument is a dictionary.
                                          
                                          Syntax: {"gps": [["image1.jpg", "10", "2", "300"], ["image2.jpg", "10", "3", "300"], ["image3.jpg", "10", "4", "300"]],
                                          "cameraProperties": {"Maker": "Canon", "Model": "5D Mark II", "FocalLength": 20, "PixelSize": 10, "x0": 0, "y0": 0, "columns": 4000, "rows": 3000},
                                          "constantZ": 300,"isAltitudeFlightHeight": "True","dem": {"url": "https://..."}
 
-                                         The dictionary can contain productType, processingTemplate,
-                                         pansharpenType, Filter, pansharpenWeights, ConstantZ,
-                                         dem, zoffset, CorrectGeoid, ZFactor, StretchType,
+                                         | The dictionary can contain productType, processingTemplate, \
+                                         pansharpenType, Filter, pansharpenWeights, ConstantZ, \
+                                         dem, zoffset, CorrectGeoid, ZFactor, StretchType, \
                                          ScaleFactor, ValidRange
 
-                                         Please check the table below (Supported Raster Types), 
-                                         for more details about the product types,
+                                         | Please check the table below (Supported Raster Types), \
+                                         for more details about the product types, \
                                          processing templates, pansharpen weights for each raster type. 
 
                                          - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", "Esri", "Mean", "Gram-Schmidt"]
                                          - Possible values for filter - [None, "Sharpen", "SharpenMore"]
                                          - Value for StretchType dictionary can be as follows:
+
                                            - "None"
                                            - "MinMax; <min>; <max>"
                                            - "PercentMinMax; <MinPercent>; <MaxPercent>"
                                            - "StdDev; <NumberOfStandardDeviation>"
-                                           - Example: {"StretchType": "MinMax; <min>; <max>"}
+                                           Example: {"StretchType": "MinMax; <min>; <max>"}
+                                         - Value for ValidRange dictionary can be as follows:
+                                           - "<MaskMinValue>, <MaskMaxValue>"
+                                           Example: {"ValidRange": "10, 200"}
 
                                          Example:
                                             {"productType":"All","processingTemplate":"Pansharpen",
                                             "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
                                             "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
     ------------------                   --------------------------------------------------------------------
-    context                              Optional dict. The context parameter is used to provide additional input parameters.
+    context                              | Optional dict. The context parameter is used to provide additional input parameters.
 
-                                         Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":'True'}
+                                         | Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":'True'}
                                             
-                                         Use ``image_collection_properties`` key to set value for imageCollectionType.
+                                         | Use ``image_collection_properties`` key to set value for imageCollectionType.
 
-                                         .. note::
+                                         | .. note::
 
-                                            The "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service. 
-                                            Based on the image collection type, the orthomapping system service will choose different algorithm for adjustment. 
-                                            Therefore, if the image collection is created by reference, the requester should set this 
-                                            property based on the type of images in the image collection using the following keywords. 
-                                            If the imageCollectionType is not set, it defaults to "UAV/UAS"
+                                         |   The "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service. 
+                                         |   Based on the image collection type, the orthomapping system service will choose different algorithm for adjustment. 
+                                         |   Therefore, if the image collection is created by reference, the requester should set this 
+                                         |   property based on the type of images in the image collection using the following keywords. 
+                                         |   If the imageCollectionType is not set, it defaults to "UAV/UAS"
  
-                                         If byref is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
+                                         | If byref is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
     ------------------                   --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------                   --------------------------------------------------------------------
