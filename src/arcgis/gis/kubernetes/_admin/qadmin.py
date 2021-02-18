@@ -18,6 +18,7 @@ class KubernetesAdmin(_BaseKube):
     _sp = None
     _mode = None
     _idp = None
+    _security = None
     _services = None
     _license = None
     _metadata = None
@@ -230,3 +231,17 @@ class KubernetesAdmin(_BaseKube):
                                     gis=self._con,
                                     initialize=True)
         return self._uploads
+    #----------------------------------------------------------------------
+    @property
+    def security(self) -> "KubeSecurity":
+        """
+        Gets an object to work with the site's security settings
+
+        :returns: KubeSecurity
+        """
+        if self._security is None:
+            from arcgis.gis.kubernetes._admin._security import KubeSecurity
+            url = self._url + "/security"
+            self._security = KubeSecurity(url=url,
+                                          gis=self._gis)
+        return self._security
