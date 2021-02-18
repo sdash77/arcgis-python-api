@@ -254,8 +254,9 @@ class KubeOrgLicense():
         :return: Boolean
 
         """
+        params = {'f' : 'json'}
         url = self._url + "/importLicense"
-        file = {'file' : file}
+        file = {'file' : license_file}
         res = self._con.post(url, params, files=file)
         if "status" in res:
             return res["status"] == "success"
