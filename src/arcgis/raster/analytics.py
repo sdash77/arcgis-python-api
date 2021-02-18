@@ -1037,37 +1037,36 @@ def copy_raster(input_raster,
     build_transpose                      Optional bool, if set to true, transforms the output multidimensional 
                                          raster. Valid only if process_as_multidimensional is set to True.
     --------------------------------     --------------------------------------------------------------------
-    context                              context contains additional settings that affect task execution. 
+    context                              | context contains additional settings that affect task execution. 
 
-                                         context parameter overwrites values set through arcgis.env parameter
+                                         | context parameter overwrites values set through arcgis.env parameter
                                          
-                                         This function has the following settings:
+                                         | This function has the following settings:
 
-                                          - Output Spatial Reference (outSR): The output raster will be 
+                                         | - Output Spatial Reference (outSR): The output raster will be 
                                             projected into the output spatial reference.
                                                 
                                             Example: 
                                                 {"outSR": {spatial reference}}
 
 
-                                         The context parameter can also be used to specify whether to
-                                         build footprints, pixel value that represents the NoData,
-                                         resamplingMethod etc.
+                                         | The context parameter can also be used to specify whether to
+                                         | build footprints, pixel value that represents the NoData,
+                                         | resamplingMethod etc.
 
 
                                          Example:
-                                            {"buildFootprints":True,
-                                            "footprintsArguments":{"method":"RADIOMETRY","minValue":1,
-                                            "maxValue":5,
-                                            "shrinkDistance":50,"skipOverviews":True,"updateBoundary":True,
-                                            "maintainEdge":False,"simplification":None,"numVertices":20,
-                                            "minThinnessRatio":0.05,"maxSliverSize":20,"requestSize":2000,
-                                            "minRegionSize":100},
-                                            "defineNodata":True,
-                                            "noDataArguments":{"noDataValues":[500],"numberOfBand":99,
-                                            "compositeValue":True}}
+                                            | {"buildFootprints":True,                                            
+                                            | "footprintsArguments":{"method":"RADIOMETRY","minValue":1,"maxValue":5,
+                                            | "shrinkDistance":50,"skipOverviews":True,"updateBoundary":True,
+                                            | "maintainEdge":False,"simplification":None,"numVertices":20,
+                                            | "minThinnessRatio":0.05,"maxSliverSize":20,"requestSize":2000,
+                                            | "minRegionSize":100},
+                                            | "defineNodata":True,                                            
+                                            | "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
+                                            | "buildOverview":True}
     --------------------------------     --------------------------------------------------------------------
-    raster_type_name                     Required string. The name of the raster type to use for adding data to 
+    raster_type_name                     | Required string. The name of the raster type to use for adding data to 
                                          the mosaic dataset.
 
 
@@ -1084,29 +1083,35 @@ def copy_raster(input_raster,
                                          Example:
                                             "QuickBird"
     --------------------------------     --------------------------------------------------------------------
-    raster_type_params                   Optional dict. Additional ``raster_type`` specific parameters.
-
+    raster_type_params                   | Optional dict. Additional ``raster_type`` specific parameters.
         
-                                         The process of add rasters to the mosaic datset can be
+                                         | The process of add rasters to the image collection can be \
                                          controlled by specifying additional raster type arguments.
 
+                                         | The raster type parameters argument is a dictionary.
 
-                                         The raster type parameters argument is a dictionary.
+                                         | The dictionary can contain productType, processingTemplate, \
+                                         pansharpenType, Filter, pansharpenWeights, ConstantZ, \
+                                         dem, zoffset, CorrectGeoid, ZFactor, StretchType, \
+                                         ScaleFactor, ValidRange
 
-
-                                         The dictionary can contain productType, processingTemplate,
-                                         pansharpenType, filter, pansharpenWeights, constantZ
-
-
-                                         Please check the table in create_image_collection documentation
-                                         (Supported Raster Types), for more details about the product types,
+                                         | Please check the table below (Supported Raster Types), \
+                                         for more details about the product types, \
                                          processing templates, pansharpen weights for each raster type. 
 
-
-                                         - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", 
-                                           "Mean", "Gram-Schmidt"]
+                                         - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", "Esri", "Mean", "Gram-Schmidt"]
                                          - Possible values for filter - [None, "Sharpen", "SharpenMore"]
+                                         - Value for StretchType dictionary can be as follows:
 
+                                           - "None"
+                                           - "MinMax; <min>; <max>"
+                                           - "PercentMinMax; <MinPercent>; <MaxPercent>"
+                                           - "StdDev; <NumberOfStandardDeviation>"
+                                           Example: {"StretchType": "MinMax; <min>; <max>"}
+                                         - Value for ValidRange dictionary can be as follows:
+
+                                           - "<MaskMinValue>, <MaskMaxValue>"
+                                           Example: {"ValidRange": "10, 200"}
 
                                          Example:
                                             {"productType":"All","processingTemplate":"Pansharpen",
@@ -2552,17 +2557,17 @@ def create_image_collection(image_collection,
     ==================                   ====================================================================
     **Argument**                         **Description**
     ------------------                   --------------------------------------------------------------------
-    image_collection                     Required, the name of the image collection to create.
+    image_collection                     | Required, the name of the image collection to create.
                   
-                                         The image collection can be an existing image service, in 
-                                         which the function will create a mosaic dataset and the existing 
+                                         | The image collection can be an existing image service, in \
+                                         which the function will create a mosaic dataset and the existing \
                                          hosted image service will then point to the new mosaic dataset.
 
-                                         If the image collection does not exist, a new multi-tenant
+                                         | If the image collection does not exist, a new multi-tenant \
                                          service will be created.
 
-                                         This parameter can be the Item representing an existing image_collection
-                                         or it can be a string representing the name of the image_collection
+                                         | This parameter can be the Item representing an existing image_collection \
+                                         or it can be a string representing the name of the image_collection \
                                          (either existing or to be created.)
     ------------------                   --------------------------------------------------------------------
     input_rasters                        Required, the list of input rasters to be added to
@@ -2577,7 +2582,7 @@ def create_image_collection(image_collection,
                                          The function can create hosted imagery layers on enterprise and AGOL from 
                                          local raster datasets by uploading the data to the server.
     ------------------                   --------------------------------------------------------------------
-    raster_type_name                     Required string. The name of the raster type to use for adding data to 
+    raster_type_name                     | Required string. The name of the raster type to use for adding data to \
                                          the image collection.
 
                                          Choice list: [
@@ -2593,22 +2598,35 @@ def create_image_collection(image_collection,
                                          Example:
                                             "QuickBird"
     ------------------                   --------------------------------------------------------------------
-    raster_type_params                   Optional dict. Additional ``raster_type`` specific parameters.
+    raster_type_params                   | Optional dict. Additional ``raster_type`` specific parameters.
         
-                                         The process of add rasters to the image collection can be
+                                         | The process of add rasters to the image collection can be \
                                          controlled by specifying additional raster type arguments.
 
-                                         The raster type parameters argument is a dictionary.
+                                         | The raster type parameters argument is a dictionary.
 
-                                         The dictionary can contain productType, processingTemplate,
-                                         pansharpenType, filter, pansharpenWeights, constantZ
+                                         | The dictionary can contain productType, processingTemplate, \
+                                         pansharpenType, Filter, pansharpenWeights, ConstantZ, \
+                                         dem, zoffset, CorrectGeoid, ZFactor, StretchType, \
+                                         ScaleFactor, ValidRange
 
-                                         Please check the table below (Supported Raster Types), 
-                                         for more details about the product types,
+                                         | Please check the table below (Supported Raster Types), \
+                                         for more details about the product types, \
                                          processing templates, pansharpen weights for each raster type. 
 
-                                         - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", "Mean", "Gram-Schmidt"]
+                                         - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", "Esri", "Mean", "Gram-Schmidt"]
                                          - Possible values for filter - [None, "Sharpen", "SharpenMore"]
+                                         - Value for StretchType dictionary can be as follows:
+
+                                           - "None"
+                                           - "MinMax; <min>; <max>"
+                                           - "PercentMinMax; <MinPercent>; <MaxPercent>"
+                                           - "StdDev; <NumberOfStandardDeviation>"
+                                           Example: {"StretchType": "MinMax; <min>; <max>"}
+                                         - Value for ValidRange dictionary can be as follows:
+
+                                           - "<MaskMinValue>, <MaskMaxValue>"
+                                           Example: {"ValidRange": "10, 200"}
 
                                          Example:
                                             {"productType":"All","processingTemplate":"Pansharpen",
@@ -2618,17 +2636,19 @@ def create_image_collection(image_collection,
     out_sr                               Optional integer. Additional parameters of the service.
                             
                                          The following additional parameters can be specified:
-                                         - Spatial reference of the image_collection; The well-known ID of 
-                                         the spatial reference or a spatial reference dictionary object for the 
+
+                                         - Spatial reference of the image_collection; The well-known ID of \
+                                         the spatial reference or a spatial reference dictionary object for the \
                                          input geometries.
+
                                          If the raster type name is set to "UAV/UAS", the spatial reference of the
                                          output image collection will be determined by the raster type parameters defined.
     ------------------                   --------------------------------------------------------------------
-    context                              Optional dict. The context parameter is used to provide additional input parameters.
+    context                              | Optional dict. The context parameter is used to provide additional input parameters.
     
-                                         Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
+                                         | Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
                                         
-                                         use ``image_collection_properties`` key to set value for imageCollectionType.
+                                         | use ``image_collection_properties`` key to set value for imageCollectionType.
 
                                          .. note::
 
@@ -2638,22 +2658,22 @@ def create_image_collection(image_collection,
                                             property based on the type of images in the image collection using the following keywords. 
                                             If the imageCollectionType is not set, it defaults to "UAV/UAS"
 
-                                         If ``byref`` is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
+                                         | If ``byref`` is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
 
-                                         The context parameter can also be used to specify whether to build overviews,
+                                         | The context parameter can also be used to specify whether to build overviews, \
                                          build footprints, to specify pixel value that represents the NoData etc.
 
 
                                          Example:
-                                            {"buildFootprints":True,                                            
-                                            "footprintsArguments":{"method":"RADIOMETRY","minValue":1,"maxValue":5,
-                                            "shrinkDistance":50,"skipOverviews":True,"updateBoundary":True,
-                                            "maintainEdge":False,"simplification":None,"numVertices":20,
-                                            "minThinnessRatio":0.05,"maxSliverSize":20,"requestSize":2000,
-                                            "minRegionSize":100},
-                                            "defineNodata":True,                                            
-                                            "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
-                                            "buildOverview":True}
+                                            | {"buildFootprints":True,                                            
+                                            | "footprintsArguments":{"method":"RADIOMETRY","minValue":1,"maxValue":5,
+                                            | "shrinkDistance":50,"skipOverviews":True,"updateBoundary":True,
+                                            | "maintainEdge":False,"simplification":None,"numVertices":20,
+                                            | "minThinnessRatio":0.05,"maxSliverSize":20,"requestSize":2000,
+                                            | "minRegionSize":100},
+                                            | "defineNodata":True,                                            
+                                            | "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
+                                            | "buildOverview":True}
     ------------------                   --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------                   --------------------------------------------------------------------
@@ -2681,98 +2701,160 @@ def create_image_collection(image_collection,
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
 | **Raster Type**        | **pansharpenWeights**  | **productType**                              |**processingTemplate**                        |
 +========================+========================+==============================================+==============================================+
-| "QuickBird"            |[0.85, 0.7, 0.35, 1]    |"All" (default), "Basic",                     |"All Bands",                                  |
+| "QuickBird"            |"0.85, 0.7, 0.35, 1"    |"All" (default), "Basic",                     |"All Bands",                                  |
 |                        |                        |"Orthorectified",                             |"Multispectral",                              |
 |                        |                        |"Standard Orthoready",                        |"Multispectral AComp",                        |
 |                        |                        |"Standard"                                    |"Panchromatic",                               |
 |                        |                        |                                              |"Panchromatic AComp",                         |
-|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"Pansharpen",                                 |
 |                        |                        |                                              |"Pansharpen AComp",                           |
-|                        |                        |                                              |"Pansharpen and Multispectral"                |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default)      |
 |                        |                        |                                              |                                              |
 |                        |                        +----------------------------------------------+----------------------------------------------+
-|                        |                        |"Orthorectified Acomp"                        |"Multispectral AComp" (default),              |
-|                        |                        |                                              |"Panchromatic AComp",                         |
-|                        |                        |                                              |"Pansharpen AComp"                            |
-|                        |                        +----------------------------------------------+----------------------------------------------+
-|                        |                        |"Standard AComp"                              |"Multispectral AComp" (default),              |
-|                        |                        |                                              |"Panchromatic AComp",                         |
-|                        |                        |                                              |"Pansharpen AComp"                            |
-|                        |                        +----------------------------------------------+----------------------------------------------+
-|                        |                        |"Standard OrthoreadyAcomp"                    |"Multispectral AComp" (default),              |
-|                        |                        |                                              |"Panchromatic AComp",                         |
-|                        |                        |                                              |"Pansharpen AComp"                            |
+|                        |                        |"Orthorectified Acomp",                       |"Multispectral AComp" (default),              |
+|                        |                        |"Standard AComp",                             |"Panchromatic AComp",                         |
+|                        |                        |"Standard OrthoreadyAcomp"                    |"Pansharpen AComp"                            |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-|"DubaiSat-2"            |[0.166,0.167,0.167,0.5] | "All" (default), "Geo", "Radio"              |"All Bands", "Multispectral",                 |
+|"DubaiSat-2"            |"0.166,0.167,0.167,0.5" | "All" (default), "Geo", "Radio"              |"All Bands", "Multispectral",                 |
 |                        |                        |                                              |"Panchromatic",                               | 
-|                        |                        |                                              |"Pansharpen (default)",                       |
-|                        |                        |                                              |"Pansharpen and Multispectral"                |    
+|                        |                        |                                              |"Pansharpen",                                 |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default)      |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-|"GF-1 PMS"              |[0.2501,0.3646,0,0.3853]| "All" (default), "LEVEL 1"                   |"All Bands", "Multispectral" ,                |
+|"GF-1 PMS"              |"0.2501,0.3646,0,0.3853"| "All" (default), "LEVEL 1"                   |"All Bands", "Multispectral" ,                |
 |                        |                        |                                              |"Panchromatic",                               | 
-|                        |                        |                                              |"Pansharpen" (default),                       |
-|                        |                        |                                              |"Pansharpen and Multispectral"                |    
+|                        |                        |                                              |"Pansharpen",                                 |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default)      |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
 |"GF-1 WFV"              |                        | "All" (default), "LEVEL 1"                   |"Multispectral" (default)                     |
 |                        |                        |                                              |                                              |
-|                        |                        |                                              |                                              |    
+|                        |                        |                                              |                                              |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-|"GF-2 PMS"              |[0.2501,0.3646,0,0.3853]| "All" (default), "LEVEL 1"                   |"All Bands", "Multispectral" ,                |
+|"GF-2 PMS"              |"0.2501,0.3646,0,0.3853"| "All" (default), "LEVEL 1"                   |"All Bands", "Multispectral" ,                |
 |                        |                        |                                              |"Panchromatic",                               | 
-|                        |                        |                                              |"Pansharpen" (default),                       |
-|                        |                        |                                              |"Pansharpen and Multispectral"                |   
+|                        |                        |                                              |"Pansharpen",                                 |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default)      |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-|"KOMPSAT-2"             |[0.166,0.167,0.167,0.5] | "All" (default), "KOMPSAT-2 Scene 1A",       |"All Bands", "Multispectral",                 |
+|"KOMPSAT-2"             |"0.166,0.167,0.167,0.5" | "All" (default), "KOMPSAT-2 Scene 1A",       |"All Bands", "Multispectral",                 |
 |                        |                        | "KOMPSAT-2 Scene 2A"                         |"Panchromatic",                               | 
-|                        |                        |                                              |"Pansharpen" (default),                       |
-|                        |                        |                                              |"Pansharpen and Multispectral"                |   
+|                        |                        |                                              |"Pansharpen",                                 |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default)      |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-|"KOMPSAT-3"             |[0.166,0.167,0.167,0.5] | "All" (default), "Level 1G", "Level 1O"      |"All Bands", "Multispectral" ,                |
+|"KOMPSAT-3"             |"0.166,0.167,0.167,0.5" | "All" (default), "Level 1G", "Level 1O"      |"All Bands", "Multispectral" ,                |
 |                        |                        | "Level 1R"                                   |"Panchromatic",                               | 
-|                        |                        |                                              |"Pansharpen" (default),                       |
-|                        |                        |                                              |"Pansharpen and Multispectral"                |   
+|                        |                        |                                              |"Pansharpen",                                 |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default)      |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-|"Landsat 8"             |[0.42, 0.51, 0.07, 0.0] | "All" (default), "Level1"                    |"All Bands",                                  |
+|"Landsat 8"             |"0.42, 0.51, 0.07, 0.0" |"All" (default)                               |"All Bands",                                  |
 |                        |                        |                                              |"Brightness Temperature",                     |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
 |                        |                        |                                              |"Multispectral",                              |
-|                        |                        |                                              |"Panchromatic", "Pansharpen" (default),       |
+|                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
+|                        |                        |                                              |"SnowIce", "Spectral Indices",                |
+|                        |                        |                                              |"Surface Reflectance", "Thermal",             |
+|                        |                        |                                              |"Top of Atmosphere Reflectance",              |
+|                        |                        |                                              |"Vegetation", "Water"                         |
+|                        |                        |                                              |"Surface Temperature"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Level1"                                      |"All Bands",                                  |
+|                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
+|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
+|                        |                        |                                              |"SnowIce",                                    |
+|                        |                        |                                              |"Thermal",                                    |
+|                        |                        |                                              |"Vegetation", "Water"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Surface Reflectance"                         |"Surface Reflectance"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Spectral Indices"                            |"Spectral Indices"                            |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Top of Atmosphere Reflectance"               |"Top of Atmosphere Reflectance"               |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Brightness Temperature"                      |"Brightness Temperature"                      |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Surface Temperature"                         |"Surface Temperature"                         |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+|"Landsat 7 ETM+"        |"0.11, 0.14, 0.14, 0.61"| "All" (default)                              |"All Bands",                                  |
+|                        |                        |                                              |"Brightness Temperature",                     |
+|                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
+|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
+|                        |                        |                                              |"SnowIce", "Spectral Indices",                |
+|                        |                        |                                              |"Surface Reflectance", "Thermal",             |
+|                        |                        |                                              |"Top of Atmosphere Reflectance",              |
+|                        |                        |                                              |"Vegetation", "Water"                         |
+|                        |                        |                                              |"Surface Temperature"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Level1"                                      |"All Bands",                                  |
+|                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
+|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
+|                        |                        |                                              |"SnowIce",                                    |
+|                        |                        |                                              |"Thermal",                                    |
+|                        |                        |                                              |"Vegetation", "Water"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Surface Reflectance"                         |"Surface Reflectance"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Spectral Indices"                            |"Spectral Indices"                            |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Top of Atmosphere Reflectance"               |"Top of Atmosphere Reflectance"               |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Brightness Temperature"                      |"Brightness Temperature"                      |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Surface Temperature"                         |"Surface Temperature"                         |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+|"Landsat 4-5 TM"        |                        | "All" (default)                              |"All Bands",                                  |
+|                        |                        |                                              |"Brightness Temperature",                     |
+|                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
+|                        |                        |                                              |"Multispectral" (default),                    |
+|                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
 |                        |                        |                                              |"Pansharpen and Multispectral", "QA",         |
 |                        |                        |                                              |"SnowIce", "Spectral Indices",                |
 |                        |                        |                                              |"Surface Reflectance", "Thermal",             |
 |                        |                        |                                              |"Top of Atmosphere Reflectance",              |
-|                        |                        |                                              |"Vegetation", "Water"                         |                            
-|                        |                        |                                              |                                              |   
-+------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-|"Landsat 7 ETM+"        |[0.11, 0.14, 0.14, 0.61]| "All" (default), "Level1"                    |"All Bands",                                  |
-|                        |                        |                                              |"Brightness Temperature",                     |
-|                        |                        |                                              |"Multispectral",                              |
-|                        |                        |                                              |"Panchromatic", "Pansharpen" (default),       |
-|                        |                        |                                              |"Pansharpen and Multispectral",               |
-|                        |                        |                                              |"Spectral Indices",                           |
-|                        |                        |                                              |"Surface Reflectance", "Thermal",             |
-|                        |                        |                                              |"Top of Atmosphere Reflectance",              |  
-+------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-|"Landsat 4-5 TM"        |                        | "All" (default), "Level1"                    |"All Bands",                                  |
-|                        |                        |                                              |"Brightness Temperature",                     |
+|                        |                        |                                              |"Vegetation", "Water"                         |
+|                        |                        |                                              |"Surface Temperature"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Level1"                                      |"All Bands",                                  |
+|                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
 |                        |                        |                                              |"Multispectral" (default),                    |
-|                        |                        |                                              |"Spectral Indices",                           |
-|                        |                        |                                              |"Surface Reflectance", "Thermal",             |
-|                        |                        |                                              |"Top of Atmosphere Reflectance",              |  
+|                        |                        |                                              |"Panchromatic", "Pansharpen" ,                |
+|                        |                        |                                              |"Pansharpen and Multispectral", "QA",         |
+|                        |                        |                                              |"SnowIce",                                    |
+|                        |                        |                                              |"Thermal",                                    |
+|                        |                        |                                              |"Vegetation", "Water"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Surface Reflectance"                         |"Surface Reflectance"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Spectral Indices"                            |"Spectral Indices"                            |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Top of Atmosphere Reflectance",              |"Top of Atmosphere Reflectance",              |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Brightness Temperature",                     |"Brightness Temperature",                     |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Surface Temperature"                         |"Surface Temperature"                         |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
 |"Landsat 1-5 MSS"       |                        | "All" (default), "Level1"                    |"All Bands",                                  |
 |                        |                        |                                              |"Multispectral" (default),                    |
-|                        |                        |                                              |"Pseudocolor", "Thermal",                     |
+|                        |                        |                                              |"Pseudocolor", "Thermal", "QA"                |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+ 
-| "Sentinel-2"           |[0.85, 0.7, 0.35, 1]    |"ALL" (default)                               |"All Bands",                                  |
-|                        |                        |                                              |"BOA Reflectance-10m" (default),              |
+| "Sentinel-2"           |"0.85, 0.7, 0.35, 1"    |"ALL" (default)                               |"All Bands",                                  |
+|                        |                        |                                              |"BOA Reflectance-10m",                        |
 |                        |                        |                                              |"BOA Reflectance-20m",                        |
 |                        |                        |                                              |"BOA Reflectance-60m",                        |
-|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Multispectral" (default),                    |
 |                        |                        |                                              |"Multispectral-10m",                          |
 |                        |                        |                                              |"Multispectral-20m",                          |
 |                        |                        |                                              |"Multispectral-60m",                          |
-|                        |                        |                                              |"True Color"                                  |
+|                        |                        |                                              |"True Color",                                 |
+|                        |                        |                                              |"SCL-20m",                                    |
+|                        |                        |                                              |"SCL-60m"                                     |
+|                        |                        |                                              |"Aerosol Optical Thickness",                  |
+|                        |                        |                                              |"Water Vapour",                               |
+|                        |                        |                                              |"BOA Reflectance"                             |
 |                        |                        +----------------------------------------------+----------------------------------------------+
 |                        |                        |"Level1"                                      |"Multispectral" (default),                    |
 |                        |                        |                                              |"Multispectral-10m",                          |
@@ -2784,67 +2866,76 @@ def create_image_collection(image_collection,
 |                        |                        |                                              |"BOA Reflectance-10m",                        |
 |                        |                        |                                              |"BOA Reflectance-20m",                        |
 |                        |                        |                                              |"BOA Reflectance-60m"                         |
+|                        |                        |                                              |"Aerosol Optical Thickness",                  |
+|                        |                        |                                              |"Water Vapour",                               |
+|                        |                        |                                              |"BOA Reflectance"                             |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+ 
-| "GeoEye-1"             |[0.41, 0.16, 0.13, 0.3] |"All" (default), "Basic",                     |"All Bands",                                  |
+| "GeoEye-1"             |"0.41, 0.16, 0.13, 0.3" |"All" (default), "Basic",                     |"All Bands",                                  |
 |                        |                        |"Geo", "GeoProfessional"                      |"Multispectral",                              |
 |                        |                        |"Orthorectified",                             |"Multispectral AComp",                        |
 |                        |                        |"Standard",                                   |"Panchromatic",                               |
 |                        |                        |"Standard Orthoready",                        |"Panchromatic AComp",                         |
-|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"Pansharpen",                                 |
 |                        |                        |                                              |"Pansharpen AComp",                           |
-|                        |                        |                                              |"Pansharpen and Multispectral"                |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default)      |
 |                        |                        |                                              |                                              |
 |                        |                        +----------------------------------------------+----------------------------------------------+
-|                        |                        |"Orthorectified Acomp"                        |"Multispectral AComp" (default),              |
-|                        |                        |                                              |"Panchromatic AComp",                         |
-|                        |                        |                                              |"Pansharpen AComp"                            |
-|                        |                        +----------------------------------------------+----------------------------------------------+
-|                        |                        |"Standard AComp"                              |"Multispectral AComp" (default),              |
-|                        |                        |                                              |"Panchromatic AComp",                         |
-|                        |                        |                                              |"Pansharpen AComp"                            |
-|                        |                        +----------------------------------------------+----------------------------------------------+
-|                        |                        |"Standard Orthoready Acomp"                   |"Multispectral AComp" (default),              |
-|                        |                        |                                              |"Panchromatic AComp",                         |
-|                        |                        |                                              |"Pansharpen AComp"                            |
+|                        |                        |"Orthorectified Acomp",                       |"Multispectral AComp" (default),              |
+|                        |                        |"Standard AComp",                             |"Panchromatic AComp",                         |
+|                        |                        |"Standard OrthoreadyAcomp"                    |"Pansharpen AComp"                            |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-| "Pleiades-1"           |[0.9, 0.75, 0.5, 0.5]   |"All" (default), "Basic",                     |"All Bands",                                  |
-|                        |                        |"Geo", "GeoProfessional"                      |"Multispectral",                              |
-|                        |                        |"Orthorectified",                             |"Multispectral AComp",                        |
-|                        |                        |"Standard",                                   |"Panchromatic",                               |
-|                        |                        |"Standard Orthoready",                        |"Panchromatic AComp",                         |
-|                        |                        |                                              |"Pansharpen" (default),                       |
-|                        |                        |                                              |"Pansharpen AComp",                           |
-|                        |                        |                                              |"Pansharpen and Multispectral"                |
-|                        |                        |                                              |                                              |
+| "Pleiades-1"           |"0.9, 0.75, 0.5, 0.5"   |"All" (default), "ORTHO",                     |"All Bands",                                  |
+|                        |                        |"PRIMARY", "PROJECTED"                        |"Multispectral",                              |
+|                        |                        |                                              |"Multispectral Display",                      | 
+|                        |                        |                                              |"Multispectral Reflectance",                  |
+|                        |                        |                                              |"Panchromatic",                               |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen"                                  |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default),     |
+|                        |                        |                                              |"Pansharpen Display",                         |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
 |                        |                        +----------------------------------------------+----------------------------------------------+
-|                        |                        |"Orthorectified Acomp"                        |"Multispectral AComp" (default),              |
-|                        |                        |                                              |"Panchromatic AComp",                         |
-|                        |                        |                                              |"Pansharpen AComp"                            |
+|                        |                        |"ORTHO DISPLAY"                               |"Multispectral Display" (default),            |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Pansharpen Display"                          |
 |                        |                        +----------------------------------------------+----------------------------------------------+
-|                        |                        |"Standard AComp"                              |"Multispectral AComp" (default),              |
-|                        |                        |                                              |"Panchromatic AComp",                         |
-|                        |                        |                                              |"Pansharpen AComp"                            |
+|                        |                        |"ORTHO REFLECTANCE"                           |"Multispectral Reflectance" (default),        |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
 |                        |                        +----------------------------------------------+----------------------------------------------+
-|                        |                        |"Standard Orthoready Acomp"                   |"Multispectral AComp" (default),              |
-|                        |                        |                                              |"Panchromatic AComp",                         |
-|                        |                        |                                              |"Pansharpen AComp"                            |
+|                        |                        |"PRIMARY DISPLAY"                             |"Multispectral Display" (default),            |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Pansharpen Display"                          |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"PRIMARY REFLECTANCE"                         |"Multispectral Reflectance" (default),        |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"PROJECTED DISPLAY"                           |"Multispectral Display" (default),            |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Pansharpen Dispplay"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"PROJECTED REFLECTANCE"                       |"Multispectral Reflectance" (default),        |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-| "SPOT 5"               |[0.166,0.167,0.167,0.5] |"All" (default), "SPOT Scene 1A",             |"All Bands",                                  |
+| "SPOT 5"               |"0.166,0.167,0.167,0.5" |"All" (default), "SPOT Scene 1A",             |"All Bands",                                  |
 |                        |                        |"SPOT Scene 2A", "SPOTView Ortho"             |"Multispectral",                              |
 |                        |                        |                                              |"Panchromatic",                               |
-|                        |                        |                                              |"Pansharpen" (default),                       |
-|                        |                        |                                              |"Pansharpen and Multispectral",               |
+|                        |                        |                                              |"Pansharpen",                                 |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default),     |
 |                        |                        |                                              |"Pseudocolor"                                 |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-| "SPOT 6"               |[0.45, 0.55, 0, 0]      |"All" (default), "ORTHO",                     |"All Bands",                                  |
+| "SPOT 6"               |"0.45, 0.55, 0, 0"      |"All" (default), "ORTHO",                     |"All Bands",                                  |
 |                        |                        |"PRIMARY", "PROJECTED"                        |"Multispectral",                              |
 |                        |                        |                                              |"Multispectral Display",                      | 
 |                        |                        |                                              |"Multispectral Reflectance",                  |
 |                        |                        |                                              |"Panchromatic",                               |
 |                        |                        |                                              |"Panchromatic Display",                       |
 |                        |                        |                                              |"Panchromatic Reflectance",                   |
-|                        |                        |                                              |"Pansharpen" (default),                       |
-|                        |                        |                                              |"Pansharpen and Multispectral",               |
+|                        |                        |                                              |"Pansharpen",                                 |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default),     |
 |                        |                        |                                              |"Pansharpen Display",                         |
 |                        |                        |                                              |"Pansharpen Reflectance"                      |
 |                        |                        +----------------------------------------------+----------------------------------------------+
@@ -2872,15 +2963,15 @@ def create_image_collection(image_collection,
 |                        |                        |                                              |"Panchromatic Reflectance",                   |
 |                        |                        |                                              |"Pansharpen Reflectance"                      |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-| "SPOT 7"               |[0.45, 0.55, 0, 0]      |"All" (default), "ORTHO",                     |"All Bands",                                  |
+| "SPOT 7"               |"0.45, 0.55, 0, 0"      |"All" (default), "ORTHO",                     |"All Bands",                                  |
 |                        |                        |"PRIMARY", "PROJECTED"                        |"Multispectral",                              |
 |                        |                        |                                              |"Multispectral Display",                      | 
 |                        |                        |                                              |"Multispectral Reflectance",                  |
 |                        |                        |                                              |"Panchromatic",                               |
 |                        |                        |                                              |"Panchromatic Display",                       |
 |                        |                        |                                              |"Panchromatic Reflectance",                   |
-|                        |                        |                                              |"Pansharpen" (default),                       |
-|                        |                        |                                              |"Pansharpen and Multispectral",               |
+|                        |                        |                                              |"Pansharpen"                                  |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default),     |
 |                        |                        |                                              |"Pansharpen Display",                         |
 |                        |                        |                                              |"Pansharpen Reflectance"                      |
 |                        |                        +----------------------------------------------+----------------------------------------------+
@@ -2908,94 +2999,84 @@ def create_image_collection(image_collection,
 |                        |                        |                                              |"Panchromatic Reflectance",                   |
 |                        |                        |                                              |"Pansharpen Reflectance"                      |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-| "IKONOS"               |[0.378, 0.211, 0, 0.411]|"All" (default), "Geo",                       |"All Bands",                                  |
+| "IKONOS"               |"0.378, 0.211, 0, 0.411"|"All" (default), "Geo",                       |"All Bands",                                  |
 |                        |                        |"GeoProfessional",                            |"Multispectral",                              |
 |                        |                        |                                              |"Panchromatic",                               |
-|                        |                        |                                              |"Pansharpen" (default),                       |
-|                        |                        |                                              |"Pansharpen and Multispectral"                |
+|                        |                        |                                              |"Pansharpen"                                  |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default),     |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
 | "WorldView-1"          |                        |"All" (default), "Basic",                     |"Panchromatic" (default)                      |
 |                        |                        |"Orthorectified", "Standard",                 |                                              |
 |                        |                        |"Standard Orthoready"                         |                                              |
 |                        |                        |                                              |                                              |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-| "WorldView-2"          |[0.39, 0.23, 0.21, 0.17]|"All" (default), "Basic",                     |"All Bands",                                  |
+| "WorldView-2"          |"0.39, 0.23, 0.21, 0.17"|"All" (default), "Basic",                     |"All Bands",                                  |
 |                        |                        |"Orthorectified",                             |"Multispectral",                              |
 |                        |                        |"Standard Orthoready",                        |"Multispectral AComp"                         |
 |                        |                        |"Standard"                                    |"Panchromatic",                               |
 |                        |                        |                                              |"Panchromatic AComp",                         |
-|                        |                        |                                              |"Pansharpen" (default),                       |
 |                        |                        |                                              |"Pansharpen AComp",                           |
-|                        |                        |                                              |"Pansharpen and Multispectral"                |
-|                        |                        |                                              |                                              |
+|                        |                        |                                              |"Pansharpen"                                  |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default)      |
 |                        |                        +----------------------------------------------+----------------------------------------------+
-|                        |                        |"Orthorectified Acomp"                        |"Multispectral AComp" (default),              |
-|                        |                        |                                              |"Panchromatic AComp",                         |
-|                        |                        |                                              |"Pansharpen AComp"                            |
-|                        |                        +----------------------------------------------+----------------------------------------------+
-|                        |                        |"Standard AComp"                              |"Multispectral AComp" (default),              |
-|                        |                        |                                              |"Panchromatic AComp",                         |
-|                        |                        |                                              |"Pansharpen AComp"                            |
-|                        |                        +----------------------------------------------+----------------------------------------------+
-|                        |                        |"Standard OrthoreadyAcomp"                    |"Multispectral AComp" (default),              |
-|                        |                        |                                              |"Panchromatic AComp",                         |
-|                        |                        |                                              |"Pansharpen AComp"                            |
+|                        |                        |"Orthorectified Acomp",                       |"Multispectral AComp" (default),              |
+|                        |                        |"Standard AComp",                             |"Panchromatic AComp",                         |
+|                        |                        |"Standard OrthoreadyAcomp"                    |"Pansharpen AComp"                            |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-| "WorldView-3"          |[0.38, 0.25, 0.2, 0.16] |"All" (default), "Basic",                     |"All Bands",                                  |
+| "WorldView-3"          |"0.38, 0.25, 0.2, 0.16" |"All" (default), "Basic",                     |"All Bands",                                  |
 |                        |                        |"Orthorectified",                             |"Multispectral",                              |
 |                        |                        |"Standard Orthoready",                        |"Multispectral AComp"                         |
 |                        |                        |"Standard"                                    |"Panchromatic" ,                              |
 |                        |                        |                                              |"Panchromatic AComp",                         |
-|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"Pansharpen",                                 |
 |                        |                        |                                              |"Pansharpen AComp",                           |
-|                        |                        |                                              |"Pansharpen and Multispectral"                |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default),     |
 |                        |                        |                                              |"SWIR"                                        |
 |                        |                        +----------------------------------------------+----------------------------------------------+
-|                        |                        |"Orthorectified Acomp"                        |"Multispectral AComp" (default),              |
-|                        |                        |                                              |"Panchromatic AComp"                          |
-|                        |                        |                                              |"Pansharpen AComp"                            |
-|                        |                        +----------------------------------------------+----------------------------------------------+
-|                        |                        |"Standard AComp"                              |"Multispectral AComp" (default),              |
-|                        |                        |                                              |"Panchromatic AComp"                          |
-|                        |                        |                                              |"Pansharpen AComp"                            |
-|                        |                        +----------------------------------------------+----------------------------------------------+
-|                        |                        |"Standard OrthoreadyAcomp"                    |"Multispectral AComp" (default),              |
-|                        |                        |                                              |"Panchromatic AComp"                          |
-|                        |                        |                                              |"Pansharpen AComp"                            |
+|                        |                        |"Orthorectified Acomp",                       |"Multispectral AComp" (default),              |
+|                        |                        |"Standard AComp",                             |"Panchromatic AComp",                         |
+|                        |                        |"Standard OrthoreadyAcomp"                    |"Pansharpen AComp"                            |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-| "WorldView-4"          |[0.39, 0.23, 0.21, 0.17]|"All" (default), "Basic",                     |"All Bands"                                   |
+| "WorldView-4"          |"0.39, 0.23, 0.21, 0.17"|"All" (default), "Basic",                     |"All Bands"                                   |
 |                        |                        |"Standard OrthoReady"                         |"Multispectral",                              |
 |                        |                        |                                              |"Panchromatic"                                |
-|                        |                        |                                              |"Pansharpen" (default),                       |
-|                        |                        |                                              |"Pansharpen and Multispectral"                |
+|                        |                        |                                              |"Pansharpen" ,                                |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default),     |
+|                        |                        |                                              |"Multispectral AComp",                        |
+|                        |                        |                                              |"Panchromatic AComp",                         |
+|                        |                        |                                              |"Pansharpen AComp"                            |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-| "ZY3-SASMAC"           |[0.329, 0.509, 0, 0.162]|"All" (default), "LEVEL1"                     |"All Bands"                                   |
+| "ZY3-SASMAC"           |"0.329, 0.509, 0, 0.162"|"All" (default), "LEVEL1"                     |"All Bands"                                   |
 |                        |                        |                                              |"Double Line Stereo",                         |
 |                        |                        |                                              |"Multispectral",                              |
 |                        |                        |                                              |"Panchromatic",                               |
 |                        |                        |                                              |"Panchromatic BWD",                           |
 |                        |                        |                                              |"Panchromatic FWD",                           |
 |                        |                        |                                              |"Panchromatic NAD",                           |
-|                        |                        |                                              |"Pansharpen" (default),                       |
-|                        |                        |                                              |"Pansharpen and Multispectral"                |
+|                        |                        |                                              |"Pansharpen"                                  |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default)      |
+|                        |                        |                                              |"Three Line Stereo"                           |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
 | "Raster Dataset"       |                        |                                              |                                              |
 |                        |                        |                                              |                                              |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
 | "NetCDF"               |                        |"All" (default)                               |"Default"(default),                           |
 |                        |                        |                                              |"Multiband Composite",                        |
+|                        |                        |                                              |"Vector Field"                                |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
 | "GRIB"                 |                        |"All" (default)                               |"Default"(default),                           |
 |                        |                        |                                              |"Multiband Composite",                        |
+|                        |                        |                                              |"Vector Field"                                |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
 | "HDF"                  |                        |"All" (default)                               |"Default"(default),                           |
 |                        |                        |                                              |"Multiband Composite",                        |
+|                        |                        |                                              |"Vector Field"                                |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-| "ASTER"                |                        |"All" (default), "L1T",                       |"VNIR",                                       |
+| "ASTER"                |                        |"All" (default), "L1T",                       |"VNIR" (default),                             |
 |                        |                        |"L1B", "Surface Reflectance"                  |"SWIR",                                       |
 |                        |                        |"Surface Radiance",                           |"TIR",                                        |
-|                        |                        |"Surface emissivity"                          |"Multispectral" (default),                    |
-|                        |                        |"Surface Kinetic Temperature"                 |"TIR - Surface Emissivity",                   |                   
+|                        |                        |"Surface Emissivity"                          |"Multispectral" (default),                    |
+|                        |                        |"Surface Kinetic Temperature"                 |"TIR - Surface Emissivity",                   |
 |                        |                        |"DEM"                                         |"VNIR - Surface Reflectance",                 |
 |                        |                        |"Registered Radiance"                         |"SWIR - Surface Reflectance",                 |
 |                        |                        |                                              |"TIR - Surface kinetic Temperature",          |
@@ -3009,7 +3090,6 @@ def create_image_collection(image_collection,
 |                        |                        |                                              |"Global Digital Elevation Model (ASTGTM)",    |
 |                        |                        |                                              |"Digital Elevation Model",                    |
 |                        |                        |                                              |"All Bands"                                   |
-|                        |                        |                                              |                                              |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
 | "DMCii"                |                        |"All" (default), "L1R", "L1T"                 |"Multispectral" (default),                    |
 |                        |                        |                                              |"ALL",                                        |
@@ -3018,14 +3098,14 @@ def create_image_collection(image_collection,
 | "RapidEye"             |                        |"All", "Level1B",                             |"Multispectral" (default)                     |
 |                        |                        |"Level3A", "Level3B"                          |                                              |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-| "SkySat"               |[0.41, 0.16, 0.13, 0.3] |"All", "Basic", "Ortho"                       |"All Bands",                                  |
+| "SkySat"               |"0.41, 0.16, 0.13, 0.3" |"All", "Basic", "Ortho"                       |"All Bands",                                  |
 |                        |                        |                                              |"Multispectral",                              |
 |                        |                        |                                              |"Panchromatic",                               |
-|                        |                        |                                              |"Pansharpen" (default),                       |
+|                        |                        |                                              |"Pansharpen" ,                                |
 |                        |                        |                                              |"All Bands",                                  |
 |                        |                        |                                              |"Skysat Pansharpen",                          |
 |                        |                        |                                              |"Visual"                                      |
-|                        |                        |                                              |"Pansharpen and Multispectral"                |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default)      |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
 
 .. code-block:: python
@@ -3115,7 +3195,7 @@ def add_image(image_collection,
                                          The image collection must be an existing image collection.
                                          This is the output image collection (mosaic dataset) item or url or uri.
     ------------------                   --------------------------------------------------------------------
-    raster_type_name                     Required string. The name of the raster type to use for adding data to 
+    raster_type_name                     | Required string. The name of the raster type to use for adding data to 
                                          the image collection.
 
                                          Choice list: [
@@ -3131,46 +3211,61 @@ def add_image(image_collection,
                                          Example:
                                             "QuickBird"
     ------------------                   --------------------------------------------------------------------
-    raster_type_params                   Optional dict. Additional raster type specific parameters.
+    raster_type_params                   | Optional dict. Additional ``raster_type`` specific parameters.
         
-                                         The process of add rasters to the image collection can be
+                                         | The process of add rasters to the image collection can be \
                                          controlled by specifying additional raster type arguments.
+
+                                         | The raster type parameters argument is a dictionary.
                                          
                                          Syntax: 
                                          {"gps": [["image1.jpg", "10", "2", "300"], ["image2.jpg", "10", "3", "300"], ["image3.jpg", "10", "4", "300"]],
                                          "cameraProperties": {"Maker": "Canon", "Model": "5D Mark II", "FocalLength": 20, "PixelSize": 10, "x0": 0, "y0": 0, "columns": 4000, "rows": 3000},
                                          "constantZ": 300,"isAltitudeFlightHeight": "True","dem": {"url": "https://..."}
 
-                                         The dictionary can also contain productType, processingTemplate,
-                                         pansharpenType, filter, pansharpenWeights
+                                         | The dictionary can contain productType, processingTemplate, \
+                                         pansharpenType, Filter, pansharpenWeights, ConstantZ, \
+                                         dem, zoffset, CorrectGeoid, ZFactor, StretchType, \
+                                         ScaleFactor, ValidRange
 
-                                         Please check the table in create_image_collection documentation (Supported Raster Types), 
-                                         for more details about the product types,
+                                         | Please check the table below (Supported Raster Types), \
+                                         for more details about the product types, \
                                          processing templates, pansharpen weights for each raster type. 
 
-                                         - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", "Mean", "Gram-Schmidt"]
+                                         - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", "Esri", "Mean", "Gram-Schmidt"]
                                          - Possible values for filter - [None, "Sharpen", "SharpenMore"]
+                                         - Value for StretchType dictionary can be as follows:
+
+                                           - "None"
+                                           - "MinMax; <min>; <max>"
+                                           - "PercentMinMax; <MinPercent>; <MaxPercent>"
+                                           - "StdDev; <NumberOfStandardDeviation>"
+                                           Example: {"StretchType": "MinMax; <min>; <max>"}
+                                         - Value for ValidRange dictionary can be as follows:
+
+                                           - "<MaskMinValue>, <MaskMaxValue>"
+                                           Example: {"ValidRange": "10, 200"}
 
                                          Example:
                                             {"productType":"All","processingTemplate":"Pansharpen",
                                             "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
                                             "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
     ------------------                   --------------------------------------------------------------------
-    context                              Optional dict. The context parameter is used to provide additional input parameters.
+    context                              | Optional dict. The context parameter is used to provide additional input parameters.
 
-                                         Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":'True'}
+                                         | Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":'True'}
                                             
-                                         Use ``image_collection_properties`` key to set value for imageCollectionType.
+                                         | Use ``image_collection_properties`` key to set value for imageCollectionType.
 
                                          .. note::
 
-                                            The "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service. 
-                                            Based on the image collection type, the orthomapping system service will choose different algorithm for adjustment. 
-                                            Therefore, if the image collection is created by reference, the requester should set this 
-                                            property based on the type of images in the image collection using the following keywords. 
-                                            If the imageCollectionType is not set, it defaults to "UAV/UAS"
+                                           The "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service. 
+                                           Based on the image collection type, the orthomapping system service will choose different algorithm for adjustment. 
+                                           Therefore, if the image collection is created by reference, the requester should set this 
+                                           property based on the type of images in the image collection using the following keywords. 
+                                           If the imageCollectionType is not set, it defaults to "UAV/UAS"
  
-                                         If byref is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
+                                         | If byref is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
     ------------------                   --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------                   --------------------------------------------------------------------
