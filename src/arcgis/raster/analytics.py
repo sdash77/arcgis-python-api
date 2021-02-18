@@ -1109,6 +1109,7 @@ def copy_raster(input_raster,
                                            - "StdDev; <NumberOfStandardDeviation>"
                                            Example: {"StretchType": "MinMax; <min>; <max>"}
                                          - Value for ValidRange dictionary can be as follows:
+
                                            - "<MaskMinValue>, <MaskMaxValue>"
                                            Example: {"ValidRange": "10, 200"}
 
@@ -2630,6 +2631,7 @@ def create_image_collection(image_collection,
                                            - "StdDev; <NumberOfStandardDeviation>"
                                            Example: {"StretchType": "MinMax; <min>; <max>"}
                                          - Value for ValidRange dictionary can be as follows:
+
                                            - "<MaskMinValue>, <MaskMaxValue>"
                                            Example: {"ValidRange": "10, 200"}
 
@@ -3246,6 +3248,7 @@ def add_image(image_collection,
                                            - "StdDev; <NumberOfStandardDeviation>"
                                            Example: {"StretchType": "MinMax; <min>; <max>"}
                                          - Value for ValidRange dictionary can be as follows:
+
                                            - "<MaskMinValue>, <MaskMaxValue>"
                                            Example: {"ValidRange": "10, 200"}
 
