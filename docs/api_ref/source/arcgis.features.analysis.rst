@@ -2,16 +2,16 @@
 
 arcgis.features.analysis module
 =======================================
-**Feature Input**	
+**Feature Input**
 
- All standard spatial analysis tools accept features as input. Features can be specified in one of the following ways:	
+ All standard spatial analysis tools accept features as input. Features can be specified in one of the following ways:
     * Item (of type :class:`Feature Layer Collection<arcgis.features.FeatureLayerCollection>` or :class:`Feature Collection<arcgis.features.FeatureCollection>`) - only the first feature layer is used
     * Instance of :class:`Feature Layer<arcgis.features.FeatureLayer>`, :class:`Feature Layer Collection<arcgis.features.FeatureLayerCollection>`, or :class:`Feature Collection<arcgis.features.FeatureCollection>`
-    * Feature Service URL as a string, 	
+    * Feature Service URL as a string,
     * Python dict in the format outlined in the REST API `featureCollection <https://developers.arcgis.com/rest/analysis/api-reference/feature-input.htm>`_
 
- For point feature layers, the following inputs may additonally be used for convenience:	
-    * (lat, long) pair for point feature layer	
+ For point feature layers, the following inputs may additonally be used for convenience:
+    * (lat, long) pair for point feature layer
     * dict with 'location' as key (eg result from geocoding)
 
 .. automodule:: arcgis.features.analysis
@@ -20,10 +20,14 @@ aggregate_points
 --------------
 .. autofunction:: arcgis.features.analysis.aggregate_points
 
- 
+
 calculate_density
 --------------
 .. autofunction:: arcgis.features.analysis.calculate_density
+
+choose_best_facilities
+--------------
+.. autofunction:: arcgis.features.find_locations.choose_best_facilities
 
 connect_origins_to_destinations
 --------------
