@@ -3024,6 +3024,10 @@ class ImageryLayer(Layer):
 
         if time is not None:
             params['time'] = _set_time_param(time)
+
+        if isinstance(process_as_multidimensional, bool):
+            params['processAsMultidimensional'] = process_as_multidimensional
+
         if self._datastore_raster:
             params["Raster"]=self._uri
             if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
