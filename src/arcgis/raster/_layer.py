@@ -3007,9 +3007,9 @@ class ImageryLayer(Layer):
 
 
         if mosaic_rule is not None:
-            params["moasiacRule"] = mosaic_rule
+            params["mosaicRule"] = mosaic_rule
         elif self._mosaic_rule is not None:
-            params["moasiacRule"] = self._mosaic_rule
+            params["mosaicRule"] = self._mosaic_rule
 
         if not rendering_rule is None:
             params["renderingRule"] = rendering_rule
@@ -3138,7 +3138,7 @@ class ImageryLayer(Layer):
         if not mosaic_rule is None:
             params["mosaicRule"] = mosaic_rule
         elif self._mosaic_rule is not None:
-            params["moasiacRule"] = self._mosaic_rule
+            params["mosaicRule"] = self._mosaic_rule
         if not pixel_size is None:
             params["pixelSize"] = pixel_size
         if not return_first_value_only is None:
