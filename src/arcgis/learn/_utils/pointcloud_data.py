@@ -732,8 +732,6 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
 
         if apply_tfms:
             sampled_pc = self.transform_fn(sampled_pc[None])[0]
-
-        return sampled_pc
             
         x, y, z = recenter(sampled_pc).transpose(1,0) 
 
@@ -1205,7 +1203,7 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         min_points = kwargs.get('min_points', 0)
         classes_of_interest = kwargs.get('classes_of_interest', [])
         background_classcode = kwargs.get('background_classcode', None)
-        if background_classcode is not None and classes_of_interest != []:
+        if background_classcode is not None and classes_of_interest == []:
             raise Exception("`background_classcode can only be used when `classes_of_interest` is passed.")
 
         if remap_classes != {}:
