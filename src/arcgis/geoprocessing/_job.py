@@ -540,8 +540,11 @@ class RAJob(GPJob):
         try:
             return self._gpjob.result()
         except Exception as e:
-            if self._item:
+            from arcgis.gis import Item
+            if isinstance(self._item, Item):
                 self._item.delete()
+            elif isinstance(self._item, (tuple, list)):
+                [i.delete() for i in self._item if isinstance(i, Item)]
             raise e
     #----------------------------------------------------------------------
     def cancel(self):

@@ -6103,7 +6103,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     def build_footprints(self,
                          image_collection=None,
@@ -6161,7 +6161,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     def build_overview(self,
                        image_collection,
@@ -6396,7 +6396,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     def calculate_statistics(self,
                              image_collection,
@@ -6438,7 +6438,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs
     def calculate_travel_cost(self,
@@ -6515,7 +6515,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #Done: Format Inputs/ Outputs
     def classify(self,
@@ -6571,8 +6571,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return RAJob(gpjob)
-        return gpjob.result()
+            return RAJob(gpjob, output_service)
+        return RAJob(gpjob, output_service).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs
     def classify_pixels_using_deep_learning(self,
@@ -6691,8 +6691,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return RAJob(gpjob)
-        return gpjob.result()
+            return RAJob(gpjob, output_service)
+        return RAJob(gpjob, output_service).result()
     #----------------------------------------------------------------------
     def convert_feature_to_raster(self,
                                   input_feature,
@@ -6868,8 +6868,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
 
         if future:
-            return RAJob(gpjob)
-        return gpjob.result()
+            return RAJob(gpjob, output_service)
+        return RAJob(gpjob, output_service).result()
     #----------------------------------------------------------------------
     #Done: Format Inputs/ Outputs
     def create_image_collection(self,
@@ -7017,8 +7017,9 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return RAJob(gpjob)
-        return gpjob.result()
+            item = Item(self._gis, json.loads(image_collection)['itemId'])
+            return RAJob(gpjob, item)
+        return RAJob(gpjob, item).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs
     def create_viewshed(self,
@@ -7057,10 +7058,11 @@ class _RasterAnalysisTools(BaseAnalytics):
         input_observer_features = self._layer_input(input_observer_features)
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
-
+        output_layers = [output_service]
         above_ground_level_raster=None
         if above_ground_level_output_name is not None:
             above_ground_level_raster, above_ground_level_service = self._set_output_raster(output_name=above_ground_level_output_name, task=task, output_properties=kwargs)
+            output_layers.append(above_ground_level_service)
 
         gpjob = self._tbx.create_viewshed(input_elevation_surface=input_elevation_surface,
                                           input_observer_features=input_observer_features,
@@ -7084,8 +7086,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return RAJob(gpjob)
-        return gpjob.result()
+            return RAJob(gpjob, output_layers)
+        return RAJob(gpjob, output_layers).result()
     #----------------------------------------------------------------------
     def delete_image(self,
                      image_collection,
@@ -7126,7 +7128,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #Done: Format Inputs/ Outputs, doc
     def delete_image_collection(self, image_collection, future=False, **kwargs):
@@ -7161,7 +7163,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = False
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #Done: Format Inputs/ Outputs, doc
     def detect_objects_using_deep_learning(self, input_raster, model, output_objects=None, model_arguments=None,
@@ -7325,8 +7327,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         gpjob._return_item = output_service
         if future:
-            return RAJob(gpjob)
-        return gpjob.result()
+            return RAJob(gpjob, output_service)
+        return RAJob(gpjob, output_service).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def determine_optimum_travel_cost_network(self, input_regions_raster_or_features,
@@ -7437,7 +7439,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def determine_travel_cost_paths_to_destinations(self, input_destination_raster_or_features,
@@ -7465,7 +7467,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         if future:
             return gpjob
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def determine_travel_costpath_as_polyline(self, input_source_raster_or_features, input_cost_raster,
@@ -7613,7 +7615,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #Done: Format Inputs/ Outputs, doc
     def export_training_data_for_deep_learning(self, input_raster, output_location,
@@ -7844,7 +7846,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def fill(self, input_surface_raster, output_name=None,
@@ -7864,7 +7866,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def flow_accumulation(self, input_flow_direction_raster,
@@ -7890,7 +7892,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def flow_direction(self, input_surface_raster,
@@ -7969,8 +7971,12 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return RAJob(gpjob)
-        return gpjob.result()
+            if output_drop_raster:
+                return RAJob(gpjob, [output_flow_direction_service, output_drop_service])
+            return RAJob(gpjob, output_flow_direction_service)
+        if output_drop_raster:
+            return RAJob(gpjob, [output_flow_direction_service, output_drop_service]).result()
+        return RAJob(gpjob, output_flow_direction_service).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def flow_distance(self, input_stream_raster, input_surface_raster, output_name=None,
@@ -7990,7 +7996,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     def generate_raster(self,
                         raster_function,
@@ -8080,7 +8086,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def generate_table(self, raster_function, output_table_name=None,
@@ -8099,7 +8105,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def install_deep_learning_model(self, model_package, future=False, **kwargs):
@@ -8128,7 +8134,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = False
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def interpolate_points(self, input_point_features,
@@ -8295,7 +8301,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = False
         if future:
             return gpjob
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     def list_deep_learning_models(self, future=False, **kwargs):
         """
@@ -8311,7 +8317,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = False
         if future:
             return gpjob
-        return gpjob.result()
+        return RAJob(gpjob).result()
 
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
@@ -8339,7 +8345,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def query_deep_learning_model_info(self, model,
@@ -8367,7 +8373,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = False
         if future:
             return gpjob
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #Done: Format Inputs/ Outputs, doc
     def segment(self, input_raster,
@@ -8505,7 +8511,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     def summarize_raster_within(self,
                                 input_zone_layer,
@@ -8703,7 +8709,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = False
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
 
     def transfer_files(self,
@@ -8756,7 +8762,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = False
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def uninstall_deep_learning_model(self, model_item_id, future=False, **kwargs):
@@ -8784,7 +8790,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = False
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def watershed(self,
@@ -8812,7 +8818,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     def copy_raster(self,
                     input_raster=None,
@@ -9186,7 +9192,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
 
     def generate_trend_raster(self,
                               input_multidimensional_raster=None,
@@ -9857,7 +9863,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
 
 
     def classify_objects_using_deep_learning(self,
@@ -10010,8 +10016,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         gpjob._return_item = output_service
         if future:
-            return RAJob(gpjob)
-        return gpjob.result()
+            return RAJob(gpjob, output_service)
+        return RAJob(gpjob, output_service).result()
 
     def define_nodata(self,
                       input_raster,
@@ -10061,7 +10067,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
 
     def optimal_path_as_line(self,
                              input_destination_raster_or_features,
@@ -10198,8 +10204,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return RAJob(gpjob)
-        return gpjob.result()
+            return RAJob(gpjob, output_polyline_service)
+        return RAJob(gpjob, output_polyline_service).result()
 
     def optimal_region_connections(self,
                                    input_region_raster_or_features,
@@ -10349,8 +10355,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return RAJob(gpjob)
-        return gpjob.result()
+            return RAJob(gpjob, [output_optimal_lines_service, output_neighbor_connections_service])
+        return RAJob(gpjob, [output_optimal_lines_service, output_neighbor_connections_service]).result()
 
     def distance_accumulation(self,
                                input_source_raster_or_features,
@@ -10459,18 +10465,19 @@ class _RasterAnalysisTools(BaseAnalytics):
 
 
         output_distance_accumulation_raster, output_distance_accumulation_service = self._set_output_raster(output_name=output_distance_accumulation_raster_name, task=task, output_properties=kwargs)
-
+        output_layers = [output_distance_accumulation_service]
         output_source_direction_raster=None
         if output_source_direction_raster_name is not None:
             output_source_direction_raster, output_source_direction_service = self._set_output_raster(output_name=output_source_direction_raster_name, task=task, output_properties=kwargs)
-
+            output_layers.append(output_source_direction_service)
         output_source_location_raster=None
         if output_source_location_raster_name is not None:
             output_source_location_raster, out_allocation_service = self._set_output_raster(output_name=output_source_location_raster_name, task=task,  output_properties=kwargs)
-
+            output_layers.append(out_allocation_service)
         output_back_direction_raster=None
         if output_back_direction_raster_name is not None:
             output_back_direction_raster, out_back_direction_service = self._set_output_raster(output_name=output_back_direction_raster_name, task=task,  output_properties=kwargs)
+            output_layers.append(out_back_direction_service)
 
 
         gpjob = self._tbx.distance_accumulation(input_source_raster_or_features=input_source_raster_or_features,
@@ -10495,12 +10502,10 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                  future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
-        item = None
-        i
         if future:
-            return RAJob(gpjob, item=item)
+            return RAJob(gpjob, output_layers)
 
-        return RAJob(gpjob, item=item).result()
+        return RAJob(gpjob, output_layers).result()
 
 
     def distance_allocation(self,
@@ -10611,22 +10616,26 @@ class _RasterAnalysisTools(BaseAnalytics):
 
 
         output_distance_allocation_raster, output_distance_accumulation_service = self._set_output_raster(output_name=output_distance_allocation_raster_name, task=task, output_properties=kwargs)
-
+        output_layers = [output_distance_accumulation_service]
         output_distance_accumulation_raster=None
         if output_distance_accumulation_raster_name is not None:
             output_distance_accumulation_raster, output_distance_accumulation_service = self._set_output_raster(output_name=output_distance_accumulation_raster_name, task=task, output_properties=kwargs)
+            output_layers.append(output_distance_accumulation_service)
 
         output_source_direction_raster=None
         if output_source_direction_raster_name is not None:
             output_source_direction_raster, output_source_direction_service = self._set_output_raster(output_name=output_source_direction_raster_name, task=task, output_properties=kwargs)
+            output_layers.append(output_source_direction_service)
 
         output_source_location_raster=None
         if output_source_location_raster_name is not None:
             output_source_location_raster, out_allocation_service = self._set_output_raster(output_name=output_source_location_raster_name, task=task,  output_properties=kwargs)
-
+            output_layers.append(out_allocation_service)
         output_back_direction_raster=None
         if output_back_direction_raster_name is not None:
             output_back_direction_raster, out_back_direction_service = self._set_output_raster(output_name=output_back_direction_raster_name, task=task,  output_properties=kwargs)
+            output_layers.append(out_back_direction_service)
+
 
 
         gpjob = self._tbx.distance_allocation(input_source_raster_or_features=input_source_raster_or_features,
@@ -10652,11 +10661,10 @@ class _RasterAnalysisTools(BaseAnalytics):
                                              future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
-        item = None
-        if future:
-            return RAJob(gpjob, item=item)
 
-        return RAJob(gpjob, item=item).result()
+        if future:
+            return RAJob(gpjob, output_layers)
+        return RAJob(gpjob, output_layers).result()
 
 
     def analyze_changes_using_ccdc(self,
@@ -10951,7 +10959,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
 
     def sample(self,
                in_rasters,
@@ -11071,7 +11079,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
 
     def compute_accuracyfor_object_detection(self,
                                              detected_features,
@@ -11172,7 +11180,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
 
     def merge_multidimensional_rasters(self,
                                        input_multidimensional_rasters,
@@ -11548,7 +11556,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
-        return gpjob.result()
+        return RAJob(gpjob).result()
 ###########################################################################
 class _GeoanalyticsTools(_AsyncService):
     """
