@@ -556,7 +556,14 @@ class RAJob(GPJob):
 
         :returns: boolean
         """
-        return self._gpjob.cancel()
+        res = self._gpjob.cancel()
+        if self.cancelled():
+            from arcgis.gis import Item
+            if isinstance(self._item, Item):
+                self._item.delete()
+            elif isinstance(self._item, (tuple, list)):
+                [i.delete() for i in self._item if isinstance(i, Item)]
+        return res
     #----------------------------------------------------------------------
     def cancelled(self):
         """
