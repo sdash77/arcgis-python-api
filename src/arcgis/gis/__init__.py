@@ -10111,6 +10111,7 @@ class Item(dict):
                                      'Map2FeatureCollection', 'MobileApp2Code',
                                      'Service2Data', 'Service2Service', 'WorkforceMap2FeatureService',
                                      'TrackView2Map', 'SurveyAddIn2Data', 'Theme2Story',
+                                     'Solution2Item','APIKey2Item',
                                      'WebStyle2DesktopStyle', 'Map2FeatureCollectionMobileApp2Code'])
 
     _RELATIONSHIP_DIRECTIONS = frozenset(['forward', 'reverse'])
