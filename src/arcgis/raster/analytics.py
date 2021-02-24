@@ -2862,8 +2862,7 @@ def create_image_collection(image_collection,
 |                        |                        |                                              |"Multispectral-60m",                          |
 |                        |                        |                                              |"True Color"                                  |
 |                        |                        +----------------------------------------------+----------------------------------------------+
-|                        |                        |"Level2"                                      |"All Bands",                                  |
-|                        |                        |                                              |"BOA Reflectance-10m",                        |
+|                        |                        |"Level2"                                      |"BOA Reflectance-10m",                        |
 |                        |                        |                                              |"BOA Reflectance-20m",                        |
 |                        |                        |                                              |"BOA Reflectance-60m"                         |
 |                        |                        |                                              |"Aerosol Optical Thickness",                  |
