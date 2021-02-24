@@ -407,11 +407,12 @@ class TfLearner():
         root = tf.train.Checkpoint(model=self.model)
         root.restore(str(self.path/self.model_dir/f'{name}-1'))
     
-    def get_preds(self, ds_type:DatasetType=DatasetType.Valid, with_loss:bool=False, n_batch:Optional[int]=None, pbar:Optional[PBar]=None) -> List[Tensor]:
+    def get_preds(self, ds_type:DatasetType=DatasetType.Valid, activ=None, with_loss:bool=False, n_batch:Optional[int]=None, pbar:Optional[PBar]=None) -> List[Tensor]:
         "Return predictions and targets on `ds_type` dataset."
         lf = self.loss_func if with_loss else None
+        activ = activ if activ else _loss_func2activ(self.loss_func)
         return tf_get_preds(self.model, self.dl(ds_type), cb_handler=CallbackHandler(self.callbacks),
-                         activ=_loss_func2activ(self.loss_func), loss_func=lf, n_batch=n_batch, pbar=pbar)
+                         activ=activ, loss_func=lf, n_batch=n_batch, pbar=pbar)
 
     def pred_batch(self, ds_type:DatasetType=DatasetType.Valid, batch:Tuple=None, reconstruct:bool=False, with_dropout:bool=False) -> List[Tensor]:
         if batch is not None:
