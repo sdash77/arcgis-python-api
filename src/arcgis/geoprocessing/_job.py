@@ -524,7 +524,7 @@ class RAJob(GPJob):
         return self._gpjob.status
     #----------------------------------------------------------------------
     @property
-    def ellapse_time(self):
+    def elapse_time(self):
         """
         Returns the Ellapse Time for the Job
         """
