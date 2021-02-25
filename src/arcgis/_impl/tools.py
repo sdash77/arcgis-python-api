@@ -7466,7 +7466,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
+            return RAJob(gpjob)
         return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
@@ -8316,7 +8316,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = False
         if future:
-            return gpjob
+            return RAJob(gpjob)
         return RAJob(gpjob).result()
 
     #----------------------------------------------------------------------
@@ -8372,7 +8372,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = False
         if future:
-            return gpjob
+            return RAJob(gpjob)
         return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #Done: Format Inputs/ Outputs, doc
