@@ -6951,7 +6951,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         """
         task = "CreateImageCollection"
         gis = self._gis
-
+        output_service = None
         image_collection_properties = None
         use_input_rasters_by_ref = None
 
@@ -7017,9 +7017,9 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            item = Item(self._gis, json.loads(image_collection)['itemId'])
-            return RAJob(gpjob, item)
-        return RAJob(gpjob, item).result()
+
+            return RAJob(gpjob, output_service)
+        return RAJob(gpjob, output_service).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs
     def create_viewshed(self,
