@@ -187,12 +187,14 @@ class Survey():
         return save_file
     #----------------------------------------------------------------------
     def generate_report(self, report_template:Item, where:str="1=1", utc_offset:str="+00:00",
-                        report_title:str=None, folder_id:str=None) -> str:
+                        report_title:str=None, package_name:str=None, output_format:str="docx", folder_id:str=None, merge_files:str=None,
+                        survey_item:"Item"=None, webmap_item:"Item"=None,
+                        map_scale:float=None, locale:str="en") -> str:
         """
         Creates a MS Word Report.  The `generate_report` method allows users to either save the
         report to the enterprise or export it directly to disk.
 
-        To save to disk, do not specify a `report_title`. This is the default behavior.
+        To save to disk, do not specify a `folder_id`. 
 
         ================  ===============================================================
         **Argument**      **Description**
@@ -206,10 +208,40 @@ class Survey():
         utc_offset        Optional String.  This is the time offset from UTC to match the
                           users timezone. Example: EST - "+04:00"
         ----------------  ---------------------------------------------------------------
-        report_title      Optional String. If provided, the report will persist on
-                          enterprise with the title of this name.
+        report_title      Optional String. Specify the file name (without extension) of the 
+                          result report file. For example, if outputFormat is .pdf, input: 
+                          "abc" -> output: "abc.pdf"; input: "abc.docx" -> output: "abc.docx.pdf".
+                          
+                          If packageFiles is true, outputReportName will be used for report files 
+                          inside the packaged file. If mergeFiles is either nextPage or continuous, 
+                          outputReportName will be used as the merged file name.
+        ----------------  ---------------------------------------------------------------
+        package_name      Optional String. Specify the file name (without extension)of the 
+                          packaged file when packageFiles is true, for example, <outputPackageName>.zip.
+        ----------------  ---------------------------------------------------------------
+        output_format     Optional string. Currently only docx and pdf are supported.                   
         ----------------  ---------------------------------------------------------------
         folder_id         Optional String. The folder ID of the user's content.
+        ----------------  ---------------------------------------------------------------
+        merge_files       Optional String. Specify if print multiple records into a single
+                          report file (merged mode) or multiple files (split mode), and if
+                          in merge mode, start the next record on a new page or continue
+                          with the current page. Note: A merged file larger than 500MB
+                          will be split into mulitple files.
+
+                          + `none` - Print multiple records in split mode, each record becomes a separated report file. This is the default value.
+                          + `nextPage` - Print multiple records in merge mode, the content of the next record starts on the next new page.
+                          + `continuous` - Print multiple records in merge mode, the content of the next record starts on the same page of the previous record.
+        ----------------  ---------------------------------------------------------------
+        survey_item       Optional Item. Survey `Item`, to make the operation survey awareness.
+        ----------------  ---------------------------------------------------------------
+        webmap_item       Optional Item. Specify the base map for printing task when printing
+                          a point/polyline/polygon. This takes precedence over the map set for
+                          each question inside a survey.
+        ----------------  ---------------------------------------------------------------
+        map_scale         Optional Float. Specify the map scale when printing, the map will center on the feature geometry.
+        ----------------  ---------------------------------------------------------------
+        locale            Optional String. Specify the locale setting to format number and date values. 
         ================  ===============================================================
 
         :Returns: Item or string
@@ -220,24 +252,36 @@ class Survey():
 
         url = "https://{base}/api/featureReport/createReport/submitJob".format(base=self._baseurl)
         params = {
-            "outputFormat" : "docx",
+            "outputFormat" : output_format,
             "queryParameters" : where,
             "portalUrl" : self._si._gis._url,
             "templateItemId" : report_template.id,
-            "outputFileName" : "%s_report_%s" % (self._si.title.replace(" ", "_"), uuid.uuid4().hex[:6]),
+            "outputReportName" : report_title,
+            "outputPackageName" : package_name,
             "surveyItemId" : self._si.id,
-            "featureLayerUrl" : self._ssi.layers[0]._url.replace("_fieldworker", ""),
+            "featureLayerUrl" : self._ssi.layers[0]._url,
             "utcOffset" : utc_offset,
             "uploadInfo" : json.dumps(None),
             "f": "json",
-            "username": self._si._gis.users.me.username
+            'token' : self._si._gis._con.token,
+            "username": self._si._gis.users.me.username,
+            "locale" : locale
         }
-        if report_title:
+        if merge_files:
+            params['mergeFiles'] = merge_files
+        if map_scale and isinstance(map_scale, (int, float)):
+            params['mapScale'] = map_scale
+        if webmap_item and isinstance(webmap_item, Item):
+            params['webmapItemId'] = webmap_item.itemid
+        if survey_item and isinstance(survey_item, Item):
+            params['surveyItemId'] = survey_item.itemid
+        if merge_files == 'nextPage' or merge_files == 'continuous':
+            params['package_name'] = ''
+        if folder_id:
             params['uploadInfo'] = json.dumps({"type":"arcgis",
                                                "packageFiles":True,
                                                "parameters":{
-                                                   "title": report_title,
-                                                   "folderId": folder_id}
+                                                   "folderId":folder_id}
                                                }
                                               )
         #1). Submit the request.
@@ -251,8 +295,10 @@ class Survey():
 
         :returns: list of `Items`
         """
-        return self._si.related_items(direction='forward',
-                                      rel_type='Survey2Data')
+        related_items = self._si.related_items(direction='forward', rel_type='Survey2Data')
+        report_templates = [t for t in related_items if t.type == "Microsoft Word"]
+        
+        return report_templates
     @property
     def reports(self) -> List:
         """returns a list of generated reports"""
@@ -260,11 +306,19 @@ class Survey():
             'owner: %s AND type:"Microsoft Word" AND tags:"Survey 123"' % self._ssi._gis.users.me.username,
             max_items=10000, outside_org=False)
     #----------------------------------------------------------------------
-    def create_report_template(self):
+    def create_report_template(self, template_type:str=None):
         """
         The `create_report_template` creates a simple default template that
         can be downloaded locally, editted and uploaded back up as a report
         template.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        template_type     Optional String. Specify which sections to include in the template. 
+                          Acceptable types are `individual`, `summary`, and `summaryIndividual`.
+                          Default is `individual`.
+        ================  ===============================================================
 
         :returns: string
 
@@ -276,14 +330,277 @@ class Survey():
             "surveyItemId": self._si.id,
             "portalUrl": gis._url,
             "username": gis.users.me.username,
+
             "f" : "json"
         }
+        if template_type:
+            params['contentType'] = template_type
         res = gis._con.post(url, params,
                             try_json=False,
                             out_folder=tempfile.gettempdir(),
-                            file_name="template.docx")
+                            file_name=f"template_{uuid.uuid4().hex[:5]}")
         return res
     #----------------------------------------------------------------------
+    
+    def check_template_syntax(self, template_file:str=None):
+        
+        """
+        A sync operation to check any syntax which will lead to a failure
+        when generating reports in the given feature.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        template_file     Required String. The report template file which syntax to be checked.
+        ================  ===============================================================
+        
+        :returns: dictionary {Success or Failure}
+        """
+        
+        url = "https://{base}/api/featureReport/checkTemplateSyntax".format(base=self._baseurl)
+        file = {'templateFile': (os.path.basename(template_file), open(template_file, 'rb'))}
+        gis = self._si._gis
+        params = {
+            
+            "featureLayerUrl": self._ssi.layers[0].url,
+            "surveyItemId": self._si.id,
+            "token": self._si._gis._con.token,
+            "portalUrl": self._si._gis._url,
+            "f": "json"
+        }
+        
+        check = gis._con.post(url, params, files=file)
+        return check
+    #----------------------------------------------------------------------
+    
+    def upload_report_template(self, template_file:str=None, template_name:str=None):
+        """
+        Check report template syntax to idenfify any syntax which will lead to a failure
+        when generating reports in the given feature. Uploads the report to the organization 
+        and associates it with the survey. 
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        template_file     Required String. The report template file which syntax to be checked, and uploaded.
+        ----------------  ---------------------------------------------------------------
+        template_name     Optional String. If provided the resulting item will use the provided name, otherwise 
+                          the name of the docx file will be used. 
+        ================  ===============================================================
+        
+        :returns: item {Success) or string (Failure}
+        """
+        
+        url = "https://{base}/api/featureReport/checkTemplateSyntax".format(base=self._baseurl)
+        file = {'templateFile': (os.path.basename(template_file), open(template_file, 'rb'))}
+        gis = self._si._gis
+        params = {
+            
+            "featureLayerUrl": self._ssi.layers[0].url,
+            "surveyItemId": self._si.id,
+            "token": self._si._gis._con.token,
+            "portalUrl": self._si._gis._url,
+            "f": "json"
+        }
+        
+        check = gis._con.post(url, params, files=file)
+        def findTemplateName(template_file):
+            part = template_file.split("\\")
+            name = part[-1].split(".")[0]
+            return name
+        
+        if check["success"] == True:
+            if template_name:
+                file_name = template_name
+            else:
+                file_name = findTemplateName(template_file)
+            
+            properties = {"title": file_name, "type": "Microsoft Word", "tags": "Survey123,Print Template,Feature Report Template",
+            "typeKeywords": "Survey123,Survey123 Hub,Print Template,Feature Report Template", "snippet": "Report template"}
+            survey_folder_id = self._si.ownerFolder
+            user = gis.users.get(gis.properties.user.username)
+            user_folders = user.folders
+            survey_folder = next((f for f in user_folders if f['id'] == survey_folder_id), 0)
+            folder = survey_folder['title']
+            #folder = "Survey-" + self._si.title
+            template_item = gis.content.add(item_properties=properties, data=template_file, folder=folder)
+            add_relationship = self._si.add_relationship(template_item, 'Survey2Data')
+        else:
+            return check["details"][0]["description"]
+        
+        return template_item
+    #----------------------------------------------------------------------
+    
+    def update_report_template(self, template_file:str=None):
+        """
+        Check report template syntax to idenfify any syntax which will lead to a failure
+        when generating reports in the given feature and updates existing Report template Org item. 
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        template_file     Required String. The report template file which syntax to be checked, and uploaded.
+                          The updated template name must match the name of the existing template item.
+        ================  ===============================================================
+        
+        :returns: item {Success) or string (Failure}
+        """
+        
+        url = "https://{base}/api/featureReport/checkTemplateSyntax".format(base=self._baseurl)
+        file = {'templateFile': (os.path.basename(template_file), open(template_file, 'rb'))}
+        gis = self._si._gis
+        params = {
+            
+            "featureLayerUrl": self._ssi.layers[0].url,
+            "surveyItemId": self._si.id,
+            "token": self._si._gis._con.token,
+            "portalUrl": self._si._gis._url,
+            "f": "json"
+        }
+        
+        check = gis._con.post(url, params, files=file)
+        def findTemplateName(template_file):
+            part = template_file.split("\\")
+            name = part[-1].split(".")[0]
+            return name
+        
+        if check["success"] == True:
+            file_name = findTemplateName(template_file)
+            template_item = gis.content.search(query="title:" + file_name, item_type="Microsoft Word")
+            update = template_item[0].update(item_properties={}, data=template_file)
+        else:
+            return check["details"][0]["description"]
+        
+        return template_item  
+    #----------------------------------------------------------------------
+    
+    def estimate(self, report_template:Item, where:str="1=1"):
+        """
+        An operation to estimate how many credits are required for a task
+        with the given parameters. 
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        report_template   Required Item.  The report template Item.
+        ----------------  ---------------------------------------------------------------
+        where             Optional String. This is the select statement used to export
+                          part or whole of the dataset. If the filtered result has more 
+                          than one feature/record, the request will be considered as a 
+                          batch printing. Currently, one individual report will be 
+                          generated for each feature/record. 
+        ================  ===============================================================
+        
+        :returns: dictionary {totalRecords, cost(in credits)}
+        """
+        
+        gis = self._si._gis
+        if isinstance(where, str):
+            where = {"where" : where}
+
+        url = "https://{base}/api/featureReport/estimateCredits".format(base=self._baseurl)
+        params = {
+            "featureLayerUrl": self._ssi.layers[0].url,
+            "queryParameters": where,
+            "templateItemId" : report_template.id,
+            "token": self._si._gis._con.token,
+            "surveyItemId": self._si.id,
+            "portalUrl": self._si._gis._url,
+            "f": "json"        
+        }
+        
+        estimate = gis._con.get(url,params)
+        return estimate
+    #----------------------------------------------------------------------    
+        
+    def create_sample_report(self, report_template:Item, where:str="1=1", utc_offset:str="+00:00",
+                        report_title:str=None, merge_files:str=None, 
+                        survey_item:"Item"=None, webmap_item:"Item"=None,
+                        map_scale:float=None, locale:str="en") -> str:
+                        
+        """
+        Similar task to generate_report for creating test sample report, and refining
+        a report template before generating any formal report. 
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        report_template   Required Item.  The report template Item.
+        ----------------  ---------------------------------------------------------------
+        where             Optional String. This is the select statement used to export
+                          part or whole of the dataset.  If the record count is > 1, then
+                          the item must be saved to your organization.
+        ----------------  ---------------------------------------------------------------
+        utc_offset        Optional String.  This is the time offset from UTC to match the
+                          users timezone. Example: EST - "+04:00"
+        ----------------  ---------------------------------------------------------------
+        report_title      Optional String. Specify the file name (without extension) of the 
+                          result report file. For example, if outputFormat is .pdf, input: 
+                          "abc" -> output: "abc.pdf"; input: "abc.docx" -> output: "abc.docx.pdf".
+                          
+                          If packageFiles is true, outputReportName will be used for report files 
+                          inside the packaged file. If mergeFiles is either nextPage or continuous, 
+                          outputReportName will be used as the merged file name.        
+        ----------------  ---------------------------------------------------------------
+        merge_files       Optional String. Specify if print multiple records into a single
+                          report file (merged mode) or multiple files (split mode), and if
+                          in merge mode, start the next record on a new page or continue
+                          with the current page. Note: A merged file larger than 500MB
+                          will be split into mulitple files.
+
+                          + `none` - Print multiple records in split mode, each record becomes a separated report file. This is the default value.
+                          + `nextPage` - Print multiple records in merge mode, the content of the next record starts on the next new page.
+                          + `continuous` - Print multiple records in merge mode, the content of the next record starts on the same page of the previous record.
+        ----------------  ---------------------------------------------------------------
+        survey_item       Optional Item. Survey `Item`, to make the operation survey awareness.
+        ----------------  ---------------------------------------------------------------
+        webmap_item       Optional Item. Specify the base map for printing task when printing
+                          a point/polyline/polygon. This takes precedence over the map set for
+                          each question inside a survey.
+        ----------------  ---------------------------------------------------------------
+        map_scale         Optional Float. Specify the map scale when printing, the map will center on the feature geometry.
+        ----------------  ---------------------------------------------------------------
+        locale            Optional String. Specify the locale setting to format number and date values. 
+        ================  ===============================================================
+
+        :Returns: string
+
+        """                
+        
+        if isinstance(where, str):
+            where = {"where" : where}
+
+        url = "https://{base}/api/featureReport/createSampleReport/submitJob".format(base=self._baseurl)
+        params = {
+            
+            "queryParameters" : where,
+            "portalUrl" : self._si._gis._url,
+            "templateItemId" : report_template.id,
+            "surveyItemId" : self._si.id,
+            "featureLayerUrl" : self._ssi.layers[0].url,
+            "utcOffset" : utc_offset,
+            "f": "json",
+            'token' : self._si._gis._con.token,
+            'locale' : locale
+        }
+        if merge_files:
+            params['mergeFiles'] = merge_files
+        if map_scale and isinstance(map_scale, (int, float)):
+            params['mapScale'] = map_scale
+        if webmap_item and isinstance(webmap_item, Item):
+            params['webmapItemId'] = webmap_item.itemid
+        if survey_item and isinstance(survey_item, Item):
+            params['surveyItemId'] = survey_item.itemid
+        if merge_files == 'nextPage' or merge_files == 'continuous':
+            params['package_name'] = ''
+        if report_title:
+            params['outputReportName'] = report_title 
+            
+        #1). Submit the request.
+        submit = self._si._gis._con.post(url, params)
+        return self._check_status(res=submit, status_type='generate_report')
+    #----------------------------------------------------------------------
+    
     def _check_status(self, res, status_type):
         """checks the status of a Survey123 operation"""
         jid = res['jobId']
