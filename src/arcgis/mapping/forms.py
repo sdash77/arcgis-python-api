@@ -568,6 +568,8 @@ class FormInfo:
                 element.input_type = self._get_default_input_type(matching_field)
             else:
                 raise ValueError("Not a valid field type to add to the form")
+            if self._is_geometry_field(element.field_name):
+                raise ValueError("Cannot add a geometry field to the form")
             if not self._validate_unrestricted_field_name(element.field_name.lower()):
                 raise ValueError("Cannot add a GPS metadata or editor tracking fields to the form")
             for form_el in self._form_elements:
@@ -584,6 +586,13 @@ class FormInfo:
     def _validate_unrestricted_field_name(self, field_name):
         """Validates the field is not a GPS metdata, edit, or id field."""
         return "esrignss" not in field_name and "esrisnsr" not in field_name and field_name not in self._edit_fields and field_name not in self._id_fields
+
+    def _is_geometry_field(self, field_name):
+        return "geometryProperties" in self.feature_layer.properties and (
+            ("shapeAreaFieldName" in self.feature_layer.properties["geometryProperties"] and
+             self.feature_layer.properties["geometryProperties"]["shapeAreaFieldName"] == field_name) or
+            ("shapeLengthFieldName" in self.feature_layer.properties["geometryProperties"] and
+             self.feature_layer.properties["geometryProperties"]["shapeAreaFieldName"] == field_name))
 
     def _get_id_fields(self):
         """Returns the id fields in lower case."""
