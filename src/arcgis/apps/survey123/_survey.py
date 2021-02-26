@@ -342,7 +342,7 @@ class Survey():
         return res
     #----------------------------------------------------------------------
     
-    def checkTemplateSyntax(self, template_file:str=None):
+    def check_template_syntax(self, template_file:str=None):
         
         """
         A sync operation to check any syntax which will lead to a failure
@@ -373,7 +373,7 @@ class Survey():
         return check
     #----------------------------------------------------------------------
     
-    def uploadReportTemplate(self, template_file:str=None, template_name:str=None):
+    def upload_report_template(self, template_file:str=None, template_name:str=None):
         """
         Check report template syntax to idenfify any syntax which will lead to a failure
         when generating reports in the given feature. Uploads the report to the organization 
@@ -431,8 +431,50 @@ class Survey():
         return template_item
     #----------------------------------------------------------------------
     
-    # This function runs into issue https://devtopia.esri.com/Beijing-R-D-Center/feature-report/issues/162 will need to move back to Prod url once 3.12 releases. 
-    def estimateCredits(self, report_template:Item, where:str="1=1"):
+    def update_report_template(self, template_file:str=None):
+        """
+        Check report template syntax to idenfify any syntax which will lead to a failure
+        when generating reports in the given feature and updates existing Report template Org item. 
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        template_file     Required String. The report template file which syntax to be checked, and uploaded.
+                          The updated template name must match the name of the existing template item.
+        ================  ===============================================================
+        
+        :returns: item {Success) or string (Failure}
+        """
+        
+        url = "https://{base}/api/featureReport/checkTemplateSyntax".format(base=self._baseurl)
+        file = {'templateFile': (os.path.basename(template_file), open(template_file, 'rb'))}
+        gis = self._si._gis
+        params = {
+            
+            "featureLayerUrl": self._ssi.layers[0].url,
+            "surveyItemId": self._si.id,
+            "token": self._si._gis._con.token,
+            "portalUrl": self._si._gis._url,
+            "f": "json"
+        }
+        
+        check = gis._con.post(url, params, files=file)
+        def findTemplateName(template_file):
+            part = template_file.split("\\")
+            name = part[-1].split(".")[0]
+            return name
+        
+        if check["success"] == True:
+            file_name = findTemplateName(template_file)
+            template_item = gis.content.search(query="title:" + file_name, item_type="Microsoft Word")
+            update = template_item[0].update(item_properties={}, data=template_file)
+        else:
+            return check["details"][0]["description"]
+        
+        return template_item  
+    #----------------------------------------------------------------------
+    
+    def estimate(self, report_template:Item, where:str="1=1"):
         """
         An operation to estimate how many credits are required for a task
         with the given parameters. 
@@ -456,8 +498,8 @@ class Survey():
         if isinstance(where, str):
             where = {"where" : where}
 
-        #url = "https://{base}/api/featureReport/estimateCredits".format(base=self._baseurl)
-        url = "https://survey123beta.arcgis.com/api/featureReport/estimateCredits"
+        url = "https://{base}/api/featureReport/estimateCredits".format(base=self._baseurl)
+        #url = "https://survey123.arcgis.com/api/featureReport/estimateCredits"
         params = {
             "featureLayerUrl": self._ssi.layers[0].url,
             "queryParameters": where,
@@ -472,7 +514,7 @@ class Survey():
         return estimate
     #----------------------------------------------------------------------    
         
-    def createSampleReport(self, report_template:Item, where:str="1=1", utc_offset:str="+00:00",
+    def create_sample_report(self, report_template:Item, where:str="1=1", utc_offset:str="+00:00",
                         report_title:str=None, merge_files:str=None, 
                         survey_item:"Item"=None, webmap_item:"Item"=None,
                         map_scale:float=None, locale:str="en") -> str:
