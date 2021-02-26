@@ -4,9 +4,9 @@
 #-------------------------------------------------------------------------------
 import unittest
 import os
-from integration.dino_utils.dino_precondition_checks import PreconditionChecks
-from integration.dino_utils.dino_precondition_checks import PortalUtils
-from integration.dino_utils.dino_configs import DinoConfigs
+from ..dino_utils.dino_precondition_checks import PreconditionChecks
+from ..dino_utils.dino_precondition_checks import PortalUtils
+from ..dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import datetime
 import tempfile
@@ -2322,6 +2322,384 @@ class Test_Item_arcgis_online(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
+class Test_Item_arcgis_kubernetes(unittest.TestCase):
+    """
+    Test to check if a Item object works with ArcGIS Online org
+    """
+    @classmethod
+    def setUpClass(cls):
+        """
+        Check if portal can be reached
+        Get class test asset location
+        :return:
+        """
+
+        # region Read config data
+        _conf_reader = ConfigParser()
+        _conf_reader.read(DinoConfigs.portal_list_file, 'UTF-8')
+
+        cls.portal_url = _conf_reader['kubeportal']['url']
+        cls.portal_username = _conf_reader['kubeportal']['admin_user']
+        cls.portal_password = _conf_reader['kubeportal']['admin_password']
+
+        _conf_reader2 = ConfigParser()
+        _conf_reader2.read(DinoConfigs.root_init_file, 'UTF-8')
+
+        cls.qalab_base_path = _conf_reader2['test_data']['qalab_base_path']
+        cls.qalab_data_path = cls.qalab_base_path + _conf_reader2['test_data']['qalab_dataprep']
+        cls.qalab_cls_path = cls.qalab_base_path + _conf_reader2['test_data']['qalab_Item_cls']
+        # endregion
+
+        # region precondition checks and sign in
+        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
+        if not r1:
+            cls.class_skip = True
+
+        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
+        if cls.gis is None:
+            cls.class_skip = True
+        # endregion
+
+        # region publish necessary web layers
+        cls.one_to_many_csv_item = PortalUtils.search_portal_item(cls.gis, "set1_overwrite_manyHFS_csv", "CSV")
+        if not cls.one_to_many_csv_item:
+            # upload csv item
+            csv_path = os.path.join(cls.qalab_cls_path, "set1_overwrite_manyHFS_csv.csv")
+            cls.one_to_many_csv_item = cls.gis.content.add({}, data=csv_path)
+            print("CSV item added")
+            cls.assertIsNotNone(cls.one_to_many_csv_item, "Cannot add csv item")
+
+        cls.one_to_many_wfl_item_1 = PortalUtils.search_portal_item(cls.gis, "set1_overwrite_manyHFS_csv_1",
+                                                                    "Feature Layer")
+        if not cls.one_to_many_wfl_item_1:
+            # publish the csv item - 1
+            cls.one_to_many_wfl_item_1 = cls.one_to_many_csv_item.publish(
+                publish_parameters={'name': 'set1_overwrite_manyHFS_csv_1'})
+            cls.assertIsNotNone(cls.one_to_many_wfl_item_1, "Cannot publish CSV into a feature service")
+            print("Published " + 'set1_overwrite_manyHFS_csv_1')
+            cls.one_to_many_wfl_item_1.update({'title': 'set1_overwrite_manyHFS_csv_1'})
+
+        cls.one_to_many_wfl_item_2 = PortalUtils.search_portal_item(cls.gis, "set1_overwrite_manyHFS_csv_2",
+                                                                    "Feature Layer")
+        if not cls.one_to_many_wfl_item_2:
+            # publish the csv item - 2
+            cls.one_to_many_wfl_item_2 = cls.one_to_many_csv_item.publish(
+                publish_parameters={'name': 'set1_overwrite_manyHFS_csv_2'})
+            cls.assertIsNotNone(cls.one_to_many_wfl_item_2, "Cannot publish CSV into a feature service")
+            print("Published " + 'set1_overwrite_manyHFS_csv_2')
+            cls.one_to_many_wfl_item_2.update({'title': 'set1_overwrite_manyHFS_csv_2'})
+        # endregion
+
+        # region print banner
+        print("==================================================================")
+        print("Beginning tests in Test_Item_kubernetes_builtin class")
+        # endregion
+
+    def setUp(self):
+        test_skip = False  # reset the skip flag
+        print("Test: " + self._testMethodName)
+        self.namePrefix = "dino_Item_"
+
+        # region delete old outputs
+        self.test_case_name = self.namePrefix + self._testMethodName
+        search_result = PortalUtils.search_portal_item(self.gis, self.test_case_name, None)
+
+        if search_result is not None:
+            delete_result = PortalUtils.delete_portal_item(self.gis, search_result)
+            if not delete_result[0]:
+                test_skip = True  # cannot run test case if old output is not deleted
+                print("Failed to delete old test output: " + str(delete_result[1]))
+            else:
+                print("setUp : deleted old output. Proceeding to test case")
+        else:
+            print("setUp: not old outputs found. Proceeding to test case")
+        # endregion
+
+        t = datetime.datetime.now()
+        self.time_stamp = str.format("Time stamp: {0}_{1}_{2}_{3}_{4}_{5}", str(t.year),
+                                     str(t.month), str(t.day), str(t.hour), str(t.minute), str(t.second))
+        print("Time stamp: " + self.time_stamp)
+
+    def tearDown(self):
+        print("------------------------------------------------------------------\n")
+
+    def test_publish_vtpk(self):
+        vtpk_package_name = "set2_vtpk_worldgreen.vtpk"
+
+        #region delete old service on portal
+        service_title = os.path.splitext(vtpk_package_name)[0]
+        old_sr = PortalUtils.search_portal_item(self.gis, service_title, 'Vector Tile Service')
+        if old_sr is not None:
+            delete_result = PortalUtils.delete_portal_item(self.gis, old_sr)
+            if not delete_result:
+                self.fail('Cannot delete old service output. Skipping test.')
+        #endregion
+
+        try:
+            # search for vtpk item
+            sr = self.gis.content.search(vtpk_package_name, item_type = 'Vector Tile Package', max_items = 1)
+            if sr is not None and len(sr) > 0:
+                vtpk_item = sr[0]
+                print("Old VTPK item found and will be used")
+
+            else:
+                print("Old VTPK not found on portal. Adding new")
+                file_path = os.path.join(self.qalab_data_path, "packages", vtpk_package_name)
+                vtpk_item = self.gis.content.add({'type': 'Vector Tile Package'}, file_path)
+
+            # publish vtpk item
+            publish_output = vtpk_item.publish()
+
+            #validate
+            if publish_output is None:
+                self.fail("Failed to publish VTPK item")
+            else:
+                #validate return type
+                self.assertIsInstance(publish_output, arcgis.gis.Item, "item.publish does not return "
+                                        "an Item upon success. Instead it returns: " + str(type(publish_output)))
+
+                # validate item's type is vector tile service
+                self.assertEqual(publish_output.type, 'Vector Tile Service', 'Publishing VPTK does not create an item '
+                                                                             'of type Vector Tile Service')
+
+                #validate service item has layers
+                self.assertTrue(len(publish_output.layers) > 0, "No layers found in Vector Tile Service")
+                print("Passed: VTPK successfully published as VTS")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + str(testException))
+
+    def test_publish_spk(self):
+        spk_package_name = "set2_spk_SD3dbuildings.spk"
+
+        #region delete old service on portal
+        service_title = os.path.splitext(spk_package_name)[0]
+        old_sr = PortalUtils.search_portal_item(self.gis, service_title, 'Scene Service')
+        if old_sr is not None:
+            delete_result = PortalUtils.delete_portal_item(self.gis, old_sr)
+            if not delete_result:
+                self.fail('Cannot delete old service output. Skipping test.')
+        #endregion
+
+        try:
+            # search for spk item
+            sr = self.gis.content.search(spk_package_name, item_type='Scene Package', max_items=1)
+            if sr is not None and len(sr) > 0:
+                spk_item = sr[0]
+                print("Old SPK item found and will be used")
+
+            else:
+                print("Old SPK not found on portal. Adding new")
+                file_path = os.path.join(self.qalab_data_path, "packages", spk_package_name)
+                spk_item = self.gis.content.add({'type': 'Scene Package'}, file_path)
+
+            # publish vtpk item
+            publish_output = spk_item.publish()
+
+            # validate
+            if publish_output is None:
+                self.fail("Failed to publish SPK item")
+            else:
+                # validate return type
+                self.assertIsInstance(publish_output, arcgis.gis.Item, "item.publish does not return "
+                                                                       "an Item upon success. Instead it returns: " + str(
+                    type(publish_output)))
+
+                # validate item's type is vector tile service
+                self.assertEqual(publish_output.type, 'Scene Service', 'Publishing SPK does not create an item '
+                                                                             'of type Scene Service')
+
+                # # validate service item has layers
+                # self.assertTrue(len(publish_output.layers) > 0, "No layers found in Scene Service")
+                print("Passed: SPK successfully published as WSL")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_publish_tpk(self):
+        tpk_package_name = "set2_tpk_SD.tpk"
+
+        # region delete old service on portal
+        service_title = os.path.splitext(tpk_package_name)[0]
+        old_sr = PortalUtils.search_portal_item(self.gis, service_title, 'Map Service')
+        if old_sr is not None:
+            delete_result = PortalUtils.delete_portal_item(self.gis, old_sr)
+            if not delete_result:
+                self.fail('Cannot delete old service output. Skipping test.')
+        # endregion
+
+        try:
+            # search for spk item
+            sr = self.gis.content.search(tpk_package_name, item_type='Tile Package', max_items=1)
+            if sr is not None and len(sr) > 0:
+                tpk_item = sr[0]
+                print("Old TPK item found and will be used")
+
+            else:
+                print("Old TPK not found on portal. Adding new")
+                file_path = os.path.join(self.qalab_data_path, "packages", tpk_package_name)
+                tpk_item = self.gis.content.add({'type': 'Tile Package'}, file_path)
+
+            # publish tpk item
+            publish_output = tpk_item.publish()
+
+            # validate
+            if publish_output is None:
+                self.fail("Failed to publish TPK item")
+            else:
+                # validate return type
+                self.assertIsInstance(publish_output, arcgis.gis.Item, "item.publish does not return "
+                                                                       "an Item upon success. Instead it returns: " + str(
+                    type(publish_output)))
+
+                # validate item's type is vector tile service
+                self.assertEqual(publish_output.type, 'Map Service', 'Publishing TPK does not create an item '
+                                                                     'of type Map Service')
+
+                # # validate service item has layers
+                # self.assertTrue(len(publish_output.layers) > 0, "No layers found in Map Service")
+                print("Passed: TPK successfully published as WTL")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_publish_shp(self):
+        zip_package_name = "set1_line.zip"
+
+        # region delete old service on portal
+        service_title = os.path.splitext(zip_package_name)[0]
+        for service_type in ['Feature Service', 'Map Service']:
+            old_sr = PortalUtils.search_portal_item(self.gis, service_title, service_type)
+            if old_sr is not None:
+                delete_result = PortalUtils.delete_portal_item(self.gis, old_sr)
+                if not delete_result:
+                    self.fail('Cannot delete old service output. Skipping test.')
+        # endregion
+
+        try:
+            # search for spk item
+            sr = self.gis.content.search(zip_package_name, item_type='Shapefile', max_items=1)
+            if sr is not None and len(sr) > 0:
+                zip_item = sr[0]
+                print("Old Zipped item found and will be used")
+
+            else:
+                print("Old zip not found on portal. Adding new")
+                file_path = os.path.join(self.qalab_data_path, "shp", zip_package_name)
+                zip_item = self.gis.content.add({"type":"Shapefile"}, file_path)
+
+            # publish tpk item
+            publish_output = zip_item.publish()
+
+            # validate
+            if publish_output is None:
+                self.fail("Failed to publish ZIP item")
+            else:
+                # validate return type
+                self.assertIsInstance(publish_output, arcgis.gis.Item, "item.publish does not return "
+                                                                       "an Item upon success. Instead it returns: " +
+                                      str(type(publish_output)))
+
+                # validate item's type is vector tile service
+                self.assertEqual(publish_output.type, 'Feature Service', 'Publishing SHP does not create an item '
+                                                                         'of type Map Service')
+
+                # # validate service item has layers
+                # self.assertTrue(len(publish_output.layers) > 0, "No layers found in Map Service")
+                print("Passed: Shapefile successfully published as HFL")
+
+            tile_item = publish_output.create_tile_service('Set1_Line_Shp', 1500000, 40000)
+            print(tile_item)
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_publish_fgdb(self):
+        zip_package_name = "set2_USAcities.zip"
+
+        # region delete old service on portal
+        service_title = os.path.splitext(zip_package_name)[0]
+        for service_type in ['Feature Service', 'Map Service']:
+            old_sr = PortalUtils.search_portal_item(self.gis, service_title, service_type)
+            if old_sr is not None:
+                delete_result = PortalUtils.delete_portal_item(self.gis, old_sr)
+                if not delete_result:
+                    self.fail('Cannot delete old service output. Skipping test.')
+        # endregion
+
+        try:
+            # search for spk item
+            sr = self.gis.content.search(zip_package_name, item_type='File Geodatabase', max_items=1)
+            if sr is not None and len(sr) > 0:
+                zip_item = sr[0]
+                print("Old Zipped item found and will be used")
+
+            else:
+                print("Old zip not found on portal. Adding new")
+                file_path = os.path.join(self.qalab_data_path, "fgdb", zip_package_name)
+                zip_item = self.gis.content.add({"type":"File Geodatabase"}, file_path)
+
+            # publish tpk item
+            publish_output = zip_item.publish()
+
+            # validate
+            if publish_output is None:
+                self.fail("Failed to publish ZIP item")
+            else:
+                # validate return type
+                self.assertIsInstance(publish_output, arcgis.gis.Item, "item.publish does not return "
+                                                                       "an Item upon success. Instead it returns: " +
+                                      str(type(publish_output)))
+
+                # validate item's type is vector tile service
+                self.assertEqual(publish_output.type, 'Feature Service', 'Publishing SHP does not create an item '
+                                                                         'of type Map Service')
+
+                # # validate service item has layers
+                # self.assertTrue(len(publish_output.layers) > 0, "No layers found in Map Service")
+                print("Passed: File Geodatabase successfully published as HFL")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @classmethod
+    def tearDownClass(cls):
+        print("\n==================================================================")
 #TestModule
 def tearDownModule():
     print("**End GIS module Tests**")
