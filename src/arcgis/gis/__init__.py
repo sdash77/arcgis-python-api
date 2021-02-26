@@ -3186,9 +3186,8 @@ class UserManager(object):
             A few things that will be helpful to know.
 
             1. The query syntax has quite a few features that can't
-               be adequately described here.  The query syntax is
-               available in ArcGIS help.  A short version of that URL
-               is http://bitly.com/1fJ8q31.
+               be adequately described here.  Please refer the ArcGIS REST
+               API reference from here: https://developers.arcgis.com/rest/users-groups-and-items/group-search.htm.
 
             2. Searching without specifying a query parameter returns
                a list of all users in your organization.
