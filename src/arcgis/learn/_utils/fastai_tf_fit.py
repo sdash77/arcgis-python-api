@@ -410,7 +410,7 @@ class TfLearner():
     def get_preds(self, ds_type:DatasetType=DatasetType.Valid, activ=None, with_loss:bool=False, n_batch:Optional[int]=None, pbar:Optional[PBar]=None) -> List[Tensor]:
         "Return predictions and targets on `ds_type` dataset."
         lf = self.loss_func if with_loss else None
-        activ = activ if activ else _loss_func2activ(self.loss_func)
+        activ = ifnone(activ, _loss_func2activ(self.loss_func))
         return tf_get_preds(self.model, self.dl(ds_type), cb_handler=CallbackHandler(self.callbacks),
                          activ=activ, loss_func=lf, n_batch=n_batch, pbar=pbar)
 
