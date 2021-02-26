@@ -500,7 +500,7 @@ def _upload_imagery_agol(files, gis=None, direct_access_url=None):
 
     try:
         from azure.storage.blob import ContainerClient
-        from azure.core.exceptions import ClientAuthenticationError
+        from azure.core.exceptions import ClientAuthenticationError, ServiceResponseError, ServiceRequestError
     except:
         print("Install Azure library packages for Python. (version - azure-storage-blob-12.5.0) \
         (https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install)")
@@ -532,10 +532,11 @@ def _upload_imagery_agol(files, gis=None, direct_access_url=None):
                                     blob.upload_blob(data, blob_type="BlockBlob")
                                 url = blob.url.split("?", 1)[0]
                                 url_list.append(url)
-                            except ClientAuthenticationError:
+                            except (ClientAuthenticationError, ServiceResponseError, ServiceRequestError) as err:
                                 if direct_access_url is None:
                                     sas_url = _generate_direct_access_url(gis)
                                     container = ContainerClient.from_container_url(sas_url)
+                                    continue
                                 else:
                                     raise
                             except Exception as err:
@@ -550,10 +551,11 @@ def _upload_imagery_agol(files, gis=None, direct_access_url=None):
                             blob.upload_blob(data, blob_type="BlockBlob")
                         url = blob.url.split("?", 1)[0]
                         url_list.append(url)
-                    except ClientAuthenticationError:
+                    except (ClientAuthenticationError, ServiceResponseError, ServiceRequestError) as err:
                         if direct_access_url is None:
                             sas_url = _generate_direct_access_url(gis)
                             container = ContainerClient.from_container_url(sas_url)
+                            continue
                         else:
                             raise
                     except Exception as err:
