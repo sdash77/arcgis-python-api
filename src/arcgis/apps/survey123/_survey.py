@@ -338,7 +338,7 @@ class Survey():
         res = gis._con.post(url, params,
                             try_json=False,
                             out_folder=tempfile.gettempdir(),
-                            file_name="template.docx")
+                            file_name=f"template_{uuid.uuid4().hex[:5]}")
         return res
     #----------------------------------------------------------------------
     
@@ -499,7 +499,6 @@ class Survey():
             where = {"where" : where}
 
         url = "https://{base}/api/featureReport/estimateCredits".format(base=self._baseurl)
-        #url = "https://survey123.arcgis.com/api/featureReport/estimateCredits"
         params = {
             "featureLayerUrl": self._ssi.layers[0].url,
             "queryParameters": where,
