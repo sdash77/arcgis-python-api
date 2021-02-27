@@ -4465,12 +4465,25 @@ class ImageryLayer(Layer):
             if result != 0:
                 raise RuntimeError('decoding bytes from imagery service failed.')
             # transpose
-            if data.shape[0]>3 and len(data.shape)==3:
-                data = data[0:3] #Extract first 3 bands
-            if len(data) == 2:
-                data = np.expand_dims(data, axis=2)
-            elif len(data) == 3:
-                data = np.transpose(data, axes=[1, 2, 0])
+            if self.properties.hasMultidimensions:
+                if len(data) == 2:
+                    data = np.expand_dims(np.expand_dims(data, axis=2), axis=0)
+                elif  len(data) == 3:
+                    if len(self.slices) == 1:
+                        data = np.expand_dims(np.transpose(data, [1, 2, 0]), axis=0)
+                    else:
+                        data = np.expand_dims(np.transpose(data, [2, 0, 1]), axis=3)	
+                elif len(data) == 4:
+                    data = np.transpose(data, [3, 1, 2, 0])
+                else:
+                    return data
+            else:
+                if data.shape[0]>3 and len(data.shape)==3:
+                    data = data[0:3] #Extract first 3 bands
+                if len(data) == 2:
+                    data = np.expand_dims(data, axis=2)
+                elif len(data) == 3:
+                    data = np.transpose(data, axes=[1, 2, 0])
             return data
 
     def _get_service_info(self, rendering_rule=None):
