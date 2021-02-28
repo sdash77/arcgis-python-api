@@ -913,27 +913,26 @@ class ImageryLayer(Layer):
                                           2
         ----------------------------    --------------------------------------------------------------------
         slice_id                        optional int. The slice ID of multidimensional raster. The identify 
-                                        operation will be performed for the specified slice.
-                                        To get the slice index use slices method on the ImageryLayer object.
+                                        operation will be performed for the specified slice. To get the slice 
+                                        ID use slices method on the ImageryLayer object.
                                         
-                                        This parameter is available from 10.9 if the image service uses ArcObjects11 or ArcObjectsRasterRendering as the service provider.
+                                        Added at 10.9 for image services which use ArcObjects11 or ArcObjectsRasterRendering 
+                                        as the service provider.
                                         
                                         Example:
                                           1
         ----------------------------    --------------------------------------------------------------------
-        process_as_multidimensional     optional boolean. Process as multidimensional if set to True, 
-                                        if the input is multidimensional raster.
+        process_as_multidimensional     optional boolean. Specifies whether to process the image service as a 
+                                        multidimensional image service.
                                         
-                                            - False - It will return pixel values of specific rendering rule \
-                                                      and mosaic rule at the given geometry.
-                                            - True - It will treat the image service as a multidimensional raster, \
-                                                     and it will return pixel values from all slices along with \
-                                                     additional properties describing the slices.
+                                            - False - Pixel values of the specified rendering rules and mosaic \
+                                                      rule at the specified geometry will be returned. This is the default.
+                                            - True - The image service is treated as a multidimensional raster, \
+                                                     and pixel values from all slices, along with additional properties \
+                                                     describing the slices, will be returned.
                                         
-                                        This parameter is available from 10.9 if the image service uses ArcObjects11 or ArcObjectsRasterRendering as the service provider.
-                                        
-                                        Example:
-                                          True
+                                        Added at 10.9 for image services which use ArcObjects11 or ArcObjectsRasterRendering 
+                                        as the service provider.
         ============================    ====================================================================
 
         :returns: dictionary
@@ -2579,19 +2578,17 @@ class ImageryLayer(Layer):
                                         
                                         Added at 10.8
         ----------------------------    --------------------------------------------------------------------
-        process_as_multidimensional     optional boolean. Process as multidimensional if set to True, 
-                                        if the input is multidimensional raster.
+        process_as_multidimensional     optional boolean. Specifies whether to process the image service as 
+                                        a multidimensional image service.
                                         
-                                            - False - Statistics and histograms will be computed from the first slice \
-                                                      of a multidimensional image service.
-                                            - True - It will treat the image service as a multidimensional raster, \
-                                                     and it will compute statistics and histograms of pixel values \
-                                                     from all selected slices.
+                                            - False - Statistics and histograms of pixel values from only the \
+                                                      first slice is computed. This is the default.
+                                            - True - The image service is treated as a multidimensional raster, \
+                                                     and statistics and histograms of pixel values from all selected \
+                                                     slices are computed.
                                         
-                                        This parameter is available from 10.9 if the image service uses ArcObjects11 or ArcObjectsRasterRendering as the service provider.
-                                        
-                                        Example:
-                                          True
+                                        Added at 10.9 for image services which use ArcObjects11 or ArcObjectsRasterRendering 
+                                        as the service provider.
         ============================    ====================================================================
 
         :returns: dictionary
@@ -2954,18 +2951,16 @@ class ImageryLayer(Layer):
                                         
                                         Added at 10.8
         ----------------------------    --------------------------------------------------------------------
-        process_as_multidimensional     optional boolean. Process as multidimensional if set to True, 
-                                        if the input is multidimensional raster.
+        process_as_multidimensional     optional boolean. Specifies whether to process the image service as a 
+                                        multidimensional image service.
                                         
-                                            - False - Histograms will be computed from the first slice \
-                                                      of a multidimensional image service.
-                                            - True - It will treat the image service as a multidimensional raster, \
-                                                     and it will compute histograms of pixel values from all selected slices.
+                                            - False - The histogram of pixel values from only the first slice \
+                                                      is computed. This is the default.
+                                            - True - The image service is treated as a multidimensional raster, \
+                                                     and histograms of pixel values from all selected slices are computed.
                                         
-                                        This parameter is available from 10.9 if the image service uses ArcObjects11 or ArcObjectsRasterRendering as the service provider.
-                                        
-                                        Example:
-                                          True
+                                        Added at 10.9 for image services which use ArcObjects11 or ArcObjectsRasterRendering 
+                                        as the service provider.
         ============================    ====================================================================
 
         :returns: dict
