@@ -1361,8 +1361,8 @@ def export_point_dataset(data_path,
                            `extra_features=[('intensity', 5000, 0), 
                            ('num_returns', 5, 0)]`. 
                            The default behavior has changed from v1.8.0. 
-                           Default: [].               
-    ==================     ======================================================
+                           Default: [].
+    ------------------     ------------------------------------------------------                           
     """
 
     from ._utils.pointcloud_data import  prepare_las_data

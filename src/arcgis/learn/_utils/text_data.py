@@ -423,6 +423,7 @@ class TextDataObject:
         """
         Do some pre-processing on the dataframe columns
         """
+        dataframe[text_cols].fillna("", inplace=True)
         dataframe[text_cols] = dataframe.apply(
             lambda row: TextDataObject.process_text(row[text_cols], remove_html_tags, remove_urls), axis=1)
         if process_labels:

@@ -329,6 +329,9 @@ class TabularDataObject(object):
         if self._is_empty:
             return None
 
+        if self._procs is not None and not isinstance(self._procs, list):
+            self._procs = []
+
         return TabularDataObject._prepare_databunch(
             self._dataframe,
             self._field_mapping,
@@ -365,11 +368,11 @@ class TabularDataObject(object):
                 SimpleImputer(strategy='constant')
             )
 
-            _procs = make_column_transformer(
+            self._procs = make_column_transformer(
                 (numerical_transformer, self._continuous_variables),
                 (categorical_transformer, self._categorical_variables))
-        else:
-            _procs = self._procs
+
+        _procs = self._procs
 
         self._encoder_mapping = None
         if self._categorical_variables:
@@ -636,7 +639,7 @@ class TabularDataObject(object):
 
         return data
 
-    def _process_data(self, dataframe):
+    def _process_data(self, dataframe, fit=True):
         if not HAS_NUMPY:
             raise Exception("This module requires numpy.")
 
@@ -652,17 +655,20 @@ class TabularDataObject(object):
                 SimpleImputer(strategy='constant')
             )
 
-            _procs = make_column_transformer(
+            self._procs = make_column_transformer(
                 (numerical_transformer, self._continuous_variables),
                 (categorical_transformer, self._categorical_variables))
-        else:
-            _procs = self._procs
+
+        _procs = self._procs
 
         if self._encoder_mapping:
             for variable, encoder in self._encoder_mapping.items():
                 dataframe[variable] = np.array(encoder.fit_transform(dataframe[variable]), dtype='int64')
 
-        processed_data = _procs.fit_transform(dataframe)
+        if fit:
+            processed_data = _procs.fit_transform(dataframe)
+        else:
+            processed_data = _procs.transform(dataframe)
 
         return processed_data
 

@@ -445,9 +445,12 @@ def _v2_create_service(gis, service_name, folder_name, spatial_ref, item_propert
     :param spatial_ref: The spatial reference to use
     :return: The service item
     """
+    capabilities = ['Query', 'Editing', 'Create', 'Update', 'Delete', 'Sync']
+    if not gis.properties.isPortal:
+        capabilities.append('ChangeTracking')
     create_params = {
         "name": service_name,
-        "capabilities": 'Query,Editing,Create,Update,Delete,Sync',
+        "capabilities": ",".join(capabilities),
         "spatialReference": spatial_ref,
         "syncRowsMovedOutsideFilter": True,
         "preserveLayerIds": True

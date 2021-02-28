@@ -279,14 +279,25 @@ class ImageryLayerCacheManager(_GISResource):
         """
         This operation updates a Tile Service's properties
 
-        Inputs:
-           service_definition - updates a service definition
-           min_scale - sets the services minimum scale for caching
-           max_scale - sets the service's maximum scale for caching
-           source_item_id - The Source Item ID is the GeoWarehouse Item ID of the map service
-           export_tiles_allowed - sets the value to let users export tiles
-           max_export_tile_count - sets the maximum amount of tiles to be exported
-             from a single call.
+        =====================     ====================================================
+        **Argument**              **Description**
+        ---------------------     ----------------------------------------------------
+        service_definition        updates a service definition
+        ---------------------     ----------------------------------------------------
+        min_scale                 sets the services minimum scale for caching
+        ---------------------     ----------------------------------------------------
+        max_scale                 sets the service's maximum scale for caching
+        ---------------------     ----------------------------------------------------
+        source_item_id            The Source Item ID is the GeoWarehouse Item ID of the map service
+        ---------------------     ----------------------------------------------------
+        export_tiles_allowed      sets the value to let users export tiles
+        ---------------------     ----------------------------------------------------
+        max_export_tile_count     sets the maximum amount of tiles to be exported from a single call. \
+                                  Deletes tiles for the current cache
+        =====================     ====================================================
+
+        :returns:
+           boolean
         """
         params = {
             "f": "json",
@@ -321,14 +332,15 @@ class ImageryLayerCacheManager(_GISResource):
         extent              optional dictionary,  If specified, the tiles within
                             this extent will be deleted or will be deleted based
                             on the service's full extent.
+                            
                             Example:
-                            6224324.092137296,487347.5253569535,
-                            11473407.698535524,4239488.369818687
-                            the minx, miny, maxx, maxy values or,
-                            {"xmin":6224324.092137296,"ymin":487347.5253569535,
-                            "xmax":11473407.698535524,"ymax":4239488.369818687,
-                            "spatialReference":{"wkid":102100}} the JSON
-                            representation of the Extent object.
+                                | 6224324.092137296,487347.5253569535,
+                                | 11473407.698535524,4239488.369818687
+                                | the minx, miny, maxx, maxy values or,
+                                | {"xmin":6224324.092137296,"ymin":487347.5253569535,
+                                | "xmax":11473407.698535524,"ymax":4239488.369818687,
+                                | "spatialReference":{"wkid":102100}} the JSON
+                                | representation of the Extent object.
         ---------------     ----------------------------------------------------
         levels              required string, The level to delete.
                             Example, 0-5,10,11-20 or 1,2,3 or 0-5
@@ -997,24 +1009,24 @@ class ImageryLayer(Layer):
         measure_operation     optional string or dict. Specifies the type of measure being
                               performed.
 
-                              Values: Point, DistanceAndAngle,AreaAndPerimeter,HeightFromBaseAndTop,
+                              Values: Point, DistanceAndAngle, AreaAndPerimeter, HeightFromBaseAndTop,
                               HeightFromBaseAndTopShadow,
-                              HeightFromTopAndTopShadow,Centroid,
-                              Point3D,DistanceAndAngle3D,
-                              AreaAndPerimeter3D,Centroid3D
+                              HeightFromTopAndTopShadow, Centroid,
+                              Point3D, DistanceAndAngle3D,
+                              AreaAndPerimeter3D, Centroid3D
 
                               Different measureOperation types require different from and to
                               geometries:
-                               - Point and Point3D-Require only
+                               - Point and Point3D-Require only \
                                  from_geometry, type: {Point}
-                               - DistanceAndAngle, DistanceAndAngle3D,
-                               HeightFromBaseAndTop,
-                               HeightFromBaseAndTopShadow, and
-                               HeightFromTopAndTopShadow - Require both
+                               - DistanceAndAngle, DistanceAndAngle3D, \
+                               HeightFromBaseAndTop, \
+                               HeightFromBaseAndTopShadow, and \
+                               HeightFromTopAndTopShadow - Require both \
                                from_geometry and to_geometry, type: {Point}
-                               - AreaAndPerimeter,
-                                 AreaAndPerimeter3D, Centroid, and
-                                 Centroid3D - Require only from_geometry,
+                               - AreaAndPerimeter, \
+                                 AreaAndPerimeter3D, Centroid, and \
+                                 Centroid3D - Require only from_geometry, \
                                  type: {Polygon}, {Envelope}
                               Supported measure operations can be derived from the
                               mensurationCapabilities in the image layer root resource.
@@ -1645,9 +1657,10 @@ class ImageryLayer(Layer):
               true_curves=False,
               as_df=False,
               raster_query=None):
-        """ queries an imagery layer by applying the filter specified by the user. The result of this operation is
-         either a set of features or an array of raster IDs (if return_ids_only is set to True),
-         count (if return_count_only is set to True), or a set of field statistics (if out_statistics is used).
+        """
+        queries an imagery layer by applying the filter specified by the user. The result of this operation is
+        either a set of features or an array of raster IDs (if return_ids_only is set to True),
+        count (if return_count_only is set to True), or a set of field statistics (if out_statistics is used).
 
         ==============================  ====================================================================
         **Arguments**                   **Description**
@@ -2758,21 +2771,21 @@ class ImageryLayer(Layer):
                             ArcGIS REST API.
 
                             :Syntax:
-                            {
-                                "classes":  [  // An list of classes
-                                  {
-                                    "id" : <id>,
-                                    "name" : "<name>",
-                                    "geometry" : <geometry> //polygon
-                                  },
-                                  {
-                                    "id" : <id>,
-                                    "name" : "<name>",
-                                   "geometry" : <geometry>  //polygon
-                                  }
-                                  ...
-                                  ]
-                            }
+                            | {
+                            |     "classes":  [  // An list of classes
+                            |       {
+                            |         "id" : <id>,
+                            |         "name" : "<name>",
+                            |         "geometry" : <geometry> //polygon
+                            |       },
+                            |       {
+                            |         "id" : <id>,
+                            |         "name" : "<name>",
+                            |        "geometry" : <geometry>  //polygon
+                            |       }
+                            |       ...
+                            |       ]
+                            | }
 
         ---------------     --------------------------------------------------------------------
         mosaic_rule         optional string. Specifies the mosaic rule when defining how
@@ -4464,26 +4477,16 @@ class ImageryLayer(Layer):
                 data[valid_mask]=np.nan
             if result != 0:
                 raise RuntimeError('decoding bytes from imagery service failed.')
-            # transpose
-            if self.properties.hasMultidimensions:
-                if len(data) == 2:
-                    data = np.expand_dims(np.expand_dims(data, axis=2), axis=0)
-                elif  len(data) == 3:                    
-                    if len(self.slices) == 1:
-                        data = np.expand_dims(np.transpose(data, [1, 2, 0]), axis=0)
-                    else:
-                        data = np.expand_dims(np.transpose(data, [2, 0, 1]), axis=3)
-                elif len(data) == 4:
-                    data = np.transpose(data, [3, 1, 2, 0])
-                else:
-                    return data
-            else:
-                if data.shape[0]>3 and len(data.shape)==3:
-                    data = data[0:3] #Extract first 3 bands
-                if len(data) == 2:
-                    data = np.expand_dims(data, axis=2)
-                elif len(data) == 3:
-                    data = np.transpose(data, axes=[1, 2, 0])
+            if data.shape[0]>3 and len(data.shape)==3:
+                data = data[0:3] #Extract first 3 bands
+            if len(data) == 2:
+                data = np.expand_dims(data, axis=2)
+            elif len(data) == 3:
+                data = np.transpose(data, axes=[1, 2, 0])
+
+            if data.dtype  == "float":
+                if data.min() < 0 or 1 < data.max():
+                    data = np.uint8(data)
             return data
 
     def _get_service_info(self, rendering_rule=None):
@@ -4817,7 +4820,7 @@ class Raster():
                                              Example:
                                                 path = r"/path/to/raster"
 
-                                                path = "https://sample.arcgisonline.com/arcgis/rest/services/CharlotteLAS/ImageServer"
+                                                path = "https://myserver/arcgis/rest/services/CharlotteLAS/ImageServer"
     ------------------------------------     --------------------------------------------------------------------
     is_multidimensional                      Optional boolean. Determines whether the input raster will be 
                                              treated as multidimensional. 
@@ -5709,18 +5712,18 @@ class Raster():
         =================     ====================================================================
 
         :returns: dictionary. (Dictionary at each index represents the statistics of the corresponding band.)
-                  [{
-                      "min": 0,
-                      "max": 9,
-                      "mean": 3.271703916996627,
-                      "standardDeviation": 1.961013669880657,
-                      "median": 4,
-                      "mode": 4,
-                      "skipX": 1,
-                      "skipY": 1,
-                      "count": 2004546
-                    }]
 
+                      | [{
+                      |     "min": 0,
+                      |     "max": 9,
+                      |     "mean": 3.271703916996627,
+                      |     "standardDeviation": 1.961013669880657,
+                      |     "median": 4,
+                      |     "mode": 4,
+                      |     "skipX": 1,
+                      |     "skipY": 1,
+                      |     "count": 2004546
+                      |   }]
 
         .. code-block:: python
 
@@ -8102,10 +8105,9 @@ class RasterCollection():
                                                     The query_boundary parameter is honoured only when the RasterCollection 
                                                     is created from a list of Rasters.
 
-                                                    True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+                                                    - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
                                                     
-                                                    False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. 
-                                                           (Creation of RasterCollection would be faster)
+                                                    - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
                                                     
                                                     By default, query_boundary is set to True, i.e, SHAPE field will be added.
 
@@ -8221,10 +8223,9 @@ class RasterCollection():
                                                         boundary/geometry of the raster. The query_boundary parameter is honoured 
                                                         only when the RasterCollection is created from a list of Rasters.
 
-                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
 
-                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. 
-                                                               (Creation of RasterCollection would be faster)
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
 
                                                         Example:
 
@@ -8269,10 +8270,9 @@ class RasterCollection():
                                                         boundary/geometry of the raster. The query_boundary parameter is honoured 
                                                         only when the RasterCollection is created from a list of Rasters.
 
-                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
 
-                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. 
-                                                               (Creation of RasterCollection would be faster)
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
 
                                                         Example:
 
@@ -8329,10 +8329,9 @@ class RasterCollection():
                                                         boundary/geometry of the raster. The query_boundary parameter is honoured 
                                                         only when the RasterCollection is created from a list of Rasters.
 
-                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
 
-                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. 
-                                                               (Creation of RasterCollection would be faster)
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
 
                                                         Example:
 
@@ -8369,10 +8368,9 @@ class RasterCollection():
                                                         boundary/geometry of the raster. The query_boundary parameter is honoured 
                                                         only when the RasterCollection is created from a list of Rasters.
 
-                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
 
-                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. 
-                                                               (Creation of RasterCollection would be faster)
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
 
                                                         Example:
 
@@ -8440,10 +8438,9 @@ class RasterCollection():
                                                         boundary/geometry of the raster. The query_boundary parameter is honoured 
                                                         only when the RasterCollection is created from a list of Rasters.
 
-                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
 
-                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. 
-                                                               (Creation of RasterCollection would be faster)
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
 
                                                         Example:
 
@@ -8511,10 +8508,9 @@ class RasterCollection():
                                                         boundary/geometry of the raster. The query_boundary parameter is honoured 
                                                         only when the RasterCollection is created from a list of Rasters.
 
-                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
 
-                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. 
-                                                               (Creation of RasterCollection would be faster)
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
 
                                                         Example:
 
@@ -8549,6 +8545,10 @@ class RasterCollection():
                                                         to the RasterCollection. The value in the SHAPE field represents the 
                                                         boundary/geometry of the raster. The query_boundary parameter is honoured 
                                                         only when the RasterCollection is created from a list of Rasters.
+
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
 
                                                         Example:
 
@@ -8624,8 +8624,7 @@ class RasterCollection():
         ------------------------------------     --------------------------------------------------------------------
         ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
 
-                                                    - True : The method will include all valid pixels and ignore any NoData pixels.
-                                                             This is the default.
+                                                    - True : The method will include all valid pixels and ignore any NoData pixels. This is the default.
                                                     - False : The method will result in NoData if there are any NoData values.
         ====================================     ====================================================================
 
@@ -8650,8 +8649,7 @@ class RasterCollection():
         ------------------------------------     --------------------------------------------------------------------
         ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
 
-                                                    - True : The method will include all valid pixels and ignore any NoData pixels.
-                                                             This is the default.
+                                                    - True : The method will include all valid pixels and ignore any NoData pixels. This is the default.
                                                     - False : The method will result in NoData if there are any NoData values.
         ====================================     ====================================================================
 
@@ -8670,9 +8668,17 @@ class RasterCollection():
         and for band 4; a four-band raster is returned. Band numbers are matched 
         between raster items using the band index, so the items in the raster 
         collection must follow the same band order.
-        
-        :returns: a Raster object
 
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
+
+                                                    - True : The method will include all valid pixels and ignore any NoData pixels. This is the default.
+                                                    - False : The method will result in NoData if there are any NoData values.
+        ====================================     ====================================================================
+
+        :returns: a Raster object
         """
         return self._ras_coll_engine_obj.median(ignore_nodata=ignore_nodata)
 
@@ -8694,8 +8700,7 @@ class RasterCollection():
         ------------------------------------     --------------------------------------------------------------------
         ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
 
-                                                    - True : The method will include all valid pixels and ignore any NoData pixels.
-                                                             This is the default.
+                                                    - True : The method will include all valid pixels and ignore any NoData pixels. This is the default.
                                                     - False : The method will result in NoData if there are any NoData values.
         ====================================     ====================================================================
 
@@ -8722,8 +8727,7 @@ class RasterCollection():
         ------------------------------------     --------------------------------------------------------------------
         ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
 
-                                                    - True : The method will include all valid pixels and ignore any NoData pixels.
-                                                             This is the default.
+                                                    - True : The method will include all valid pixels and ignore any NoData pixels. This is the default.
                                                     - False : The method will result in NoData if there are any NoData values.
         ====================================     ====================================================================
 
@@ -8749,8 +8753,7 @@ class RasterCollection():
         ------------------------------------     --------------------------------------------------------------------
         ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
 
-                                                    - True : The method will include all valid pixels and ignore any NoData pixels.
-                                                             This is the default.
+                                                    - True : The method will include all valid pixels and ignore any NoData pixels. This is the default.
                                                     - False : The method will result in NoData if there are any NoData values.
         ====================================     ====================================================================
 
@@ -8811,13 +8814,13 @@ class RasterCollection():
         statistic_type                           Required string. The statistic used to compare the input collection 
                                                  or list of quality rasters.
 
-                                                    MAX - The highest pixel value in the input quality rasters will 
+                                                    MAX - The highest pixel value in the input quality rasters will \
                                                           be the pixel value in the output raster. This is the default.
 
-                                                    MEDIAN - The median pixel value in the input quality rasters 
+                                                    MEDIAN - The median pixel value in the input quality rasters \
                                                              will be the pixel value in the output raster.
 
-                                                    MIN - The minimum pixel value in the input quality rasters 
+                                                    MIN - The minimum pixel value in the input quality rasters \
                                                           will be the pixel value in the output raster.
 
                                                     For example, to mosaic the input raster collection such that 
@@ -8853,10 +8856,9 @@ class RasterCollection():
                                                         boundary/geometry of the raster. The query_boundary parameter is honoured 
                                                         only when the RasterCollection is created from a list of Rasters.
 
-                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
 
-                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. 
-                                                               (Creation of RasterCollection would be faster)
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
 
                                                         Example:
 
@@ -8893,10 +8895,9 @@ class RasterCollection():
                                                         boundary/geometry of the raster. The query_boundary parameter is honoured 
                                                         only when the RasterCollection is created from a list of Rasters.
 
-                                                        True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
 
-                                                        False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. 
-                                                               (Creation of RasterCollection would be faster)
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
 
                                                         Example:
 
@@ -11208,84 +11209,138 @@ class RasterManager(object):
         raster files are copied. The service_url is required input for the
         following raster types: Image Layer, Map Service, WCS, and WMS.
 
-        Inputs:
+        ===============================     ====================================================================
+        **Arguments**                       **Description**
+        -------------------------------     --------------------------------------------------------------------
+        item_ids                            The upload items (raster files) to be added. Either item_ids or \ 
+                                            service_url is needed to perform this operation.
+                                             
+                                            Syntax:
 
-        item_ids - The upload items (raster files) to be added. Either
-         item_ids or service_url is needed to perform this operation.
-            Syntax: item_ids=<itemId1>,<itemId2>
-            Example: item_ids=ib740c7bb-e5d0-4156-9cea-12fa7d3a472c,
-                             ib740c7bb-e2d0-4106-9fea-12fa7d3a482c
-        service_url - The URL of the service to be added. The image layer
-         will add this URL to the mosaic dataset. Either item_ids or
-         service_url is needed to perform this operation. The service URL is
-         required for the following raster types: Image Layer, Map
-         Service, WCS, and WMS.
-            Example: service_url=http://myserver/arcgis/services/Portland/ImageServer
-        raster_type - The type of raster files being added. Raster types
-         define the metadata and processing template for raster files to be
-         added. Allowed values are listed in image layer resource.
-            Example: Raster Dataset,CADRG/ECRG,CIB,DTED,Image Layer,Map Service,NITF,WCS,WMS
-        compute_statistics - If true, statistics for the rasters will be
-         computed. The default is false.
-            Values: false,true
-        build_pyramids - If true, builds pyramids for the rasters. The
-         default is false.
-                Values: false,true
-        build_thumbnail	 - If true, generates a thumbnail for the rasters.
-         The default is false.
-                Values: false,true
-        minimum_cell_size_factor - The factor (times raster resolution) used
-         to populate the MinPS field (maximum cell size above which the
-         raster is visible).
-                Syntax: minimum_cell_size_factor=<minimum_cell_size_factor>
-                Example: minimum_cell_size_factor=0.1
-        maximum_cell_size_factor - The factor (times raster resolution) used
-         to populate MaxPS field (maximum cell size below which raster is
-         visible).
-                Syntax: maximum_cell_size_factor=<maximum_cell_size_factor>
-                Example: maximum_cell_size_factor=10
-        attributes - Any attribute for the added rasters.
-                Syntax:
-                {
-                  "<name1>" : <value1>,
-                  "<name2>" : <value2>
-                }
-                Example:
-                {
-                  "MinPS": 0,
-                  "MaxPS": 20;
-                  "Year" : 2002,
-                  "State" : "Florida"
-                }
-        geodata_transforms - The geodata transformations applied on the
-         added rasters. A geodata transformation is a mathematical model
-         that performs a geometric transformation on a raster; it defines
-         how the pixels will be transformed when displayed or accessed.
-         Polynomial, projective, identity, and other transformations are
-         available. The geodata transformations are applied to the dataset
-         that is added.
-                Syntax:
-                [
-                {
-                  "geodataTransform" : "<geodataTransformName1>",
-                  "geodataTransformArguments" : {<geodataTransformArguments1>}
-                  },
-                  {
-                  "geodataTransform" : "<geodataTransformName2>",
-                  "geodataTransformArguments" : {<geodataTransformArguments2>}
-                  }
-                ]
-         The syntax of the geodataTransformArguments property varies based
-         on the specified geodataTransform name. See Geodata Transformations
-         documentation for more details.
-        geodata_transform_apply_method - This parameter defines how to apply
-         the provided geodataTransform. The default is
-         esriGeodataTransformApplyAppend.
-                Values: esriGeodataTransformApplyAppend |
-                esriGeodataTransformApplyReplace |
-                esriGeodataTransformApplyOverwrite
+                                                item_ids=<itemId1>,<itemId2>
+                                            
+                                            Example:
 
+                                                item_ids=ib740c7bb-e5d0-4156-9cea-12fa7d3a472c, \ 
+                                                ib740c7bb-e2d0-4106-9fea-12fa7d3a482c
+        -------------------------------     --------------------------------------------------------------------
+        service_url                         The URL of the service to be added. The image layer \
+                                            will add this URL to the mosaic dataset. Either item_ids or \
+                                            service_url is needed to perform this operation. The service URL is \
+                                            required for the following raster types: Image Layer, Map Service, \
+                                            WCS, and WMS.
+                                            
+                                            Example: 
+
+                                                service_url= http://myserver/arcgis/services/Portland/ImageServer
+        -------------------------------     --------------------------------------------------------------------
+        raster_type                         The type of raster files being added. Raster types \
+                                            define the metadata and processing template for raster files to be \
+                                            added. Allowed values are listed in image layer resource.
+                                            
+                                            Example: 
+
+                                                Raster Dataset, CADRG/ECRG, CIB,DTED, Image Layer, Map Service, \
+                                                NITF, WCS, WMS
+        -------------------------------     --------------------------------------------------------------------
+        compute_statistics                  If true, statistics for the rasters will be computed. \
+                                            The default is false.
+                                            
+                                            Values: 
+
+                                                false,true
+        -------------------------------     --------------------------------------------------------------------
+        build_pyramids                      If true, builds pyramids for the rasters. The default is false.
+                                            
+                                            Values: 
+
+                                                false,true
+        -------------------------------     --------------------------------------------------------------------
+        build_thumbnail                     If true, generates a thumbnail for the rasters. The default is false.
+                                            
+                                            Values:
+
+                                                false,true
+        -------------------------------     --------------------------------------------------------------------
+        minimum_cell_size_factor            The factor (times raster resolution) used \
+                                            to populate the MinPS field (maximum cell size above which the \
+                                            raster is visible).
+                                            
+                                            Syntax:
+
+                                                minimum_cell_size_factor=<minimum_cell_size_factor>
+                
+                                            Example:
+
+                                                minimum_cell_size_factor=0.1
+        -------------------------------     --------------------------------------------------------------------
+        maximum_cell_size_factor            The factor (times raster resolution) used \
+                                            to populate MaxPS field (maximum cell size below which raster is visible).
+                                            
+                                            Syntax:
+
+                                                maximum_cell_size_factor=<maximum_cell_size_factor>
+
+                                            Example:
+
+                                                maximum_cell_size_factor=10
+        -------------------------------     --------------------------------------------------------------------
+        attributes                          Any attribute for the added rasters.
+
+                                            Syntax:
+
+                                              | {
+                                              |   "<name1>" : <value1>,
+                                              |   "<name2>" : <value2>
+                                              | }
+                
+                                            Example:
+
+                                              | {
+                                              |   "MinPS": 0,
+                                              |   "MaxPS": 20;
+                                              |   "Year" : 2002,
+                                              |   "State" : "Florida"
+                                              | }
+        -------------------------------     --------------------------------------------------------------------
+        geodata_transforms                  The geodata transformations applied on the \
+                                            added rasters. A geodata transformation is a mathematical model \
+                                            that performs a geometric transformation on a raster; it defines \
+                                            how the pixels will be transformed when displayed or accessed. \
+                                            Polynomial, projective, identity, and other transformations are \
+                                            available. The geodata transformations are applied to the dataset \
+                                            that is added.
+
+                                            Syntax:
+
+                                              | [
+                                              | {
+                                              |   "geodataTransform" : "<geodataTransformName1>",
+                                              |   "geodataTransformArguments" : {<geodataTransformArguments1>}
+                                              |   },
+                                              |   {
+                                              |   "geodataTransform" : "<geodataTransformName2>",
+                                              |   "geodataTransformArguments" : {<geodataTransformArguments2>}
+                                              |   }
+                                              | ]
+
+                                            The syntax of the geodataTransformArguments property varies based \
+                                            on the specified geodataTransform name. See Geodata Transformations \
+                                            documentation for more details.
+        -------------------------------     --------------------------------------------------------------------
+        geodata_transform_apply_method      This parameter defines how to apply the provided geodataTransform. \
+                                            The default is esriGeodataTransformApplyAppend.
+
+                                            Values: 
+
+                                                esriGeodataTransformApplyAppend |
+                                                esriGeodataTransformApplyReplace |
+                                                esriGeodataTransformApplyOverwrite
+        ===============================     ====================================================================
+
+        :returns: dictionary
         """
+
         return self._service._add_rasters(raster_type,
                                           item_ids,
                                           service_url,
@@ -11307,8 +11362,9 @@ class RasterManager(object):
         -----------------     --------------------------------------------------------------------
         raster_ids            required string. The object IDs of a raster catalog items to be
                               removed. This is a comma seperated string.
-                              example 1: raster_ids='1,2,3,4' # Multiple IDs
-                              example 2: raster_ids='10' # single ID
+
+                              | example 1: raster_ids='1,2,3,4' # Multiple IDs
+                              | example 2: raster_ids='10' # single ID
         =================     ====================================================================
 
         :returns: dictionary
@@ -11386,10 +11442,11 @@ class RasterManager(object):
                                   polynomial, projective, or identity transformations. The geodata
                                   transformations will be applied to the updated dataset.
         ------------------------  --------------------------------------------------------------------
-        apply_method              optional string. Defines how to apply the provided geodataTransform.
+        apply_method              optional string. Defines how to apply the provided geodataTransform. \
                                   The default is esriGeodataTransformApplyAppend.
-                                  Values: esriGeodataTransformApplyAppend,
-                                      esriGeodataTransformApplyReplace,
+                                  
+                                  Values: esriGeodataTransformApplyAppend, \
+                                      esriGeodataTransformApplyReplace, \
                                       esriGeodataTransformApplyOverwrite
         ========================  ====================================================================
 

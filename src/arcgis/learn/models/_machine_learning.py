@@ -672,7 +672,7 @@ class MLModel(object):
             if column not in fields_needed:
                 processed_dataframe = processed_dataframe.drop(column, axis=1)
 
-        processed_numpy = self._data._process_data(processed_dataframe.reindex(sorted(processed_dataframe.columns), axis=1))
+        processed_numpy = self._data._process_data(processed_dataframe.reindex(sorted(processed_dataframe.columns), axis=1), fit=False)
         predictions = self._predict(processed_numpy)
         dataframe["prediction_results"] = predictions
 
@@ -810,7 +810,7 @@ class MLModel(object):
 
         processed_df = pd.DataFrame(data=np.array(processed_data), columns=sorted(raster_data))
 
-        processed_numpy = self._data._process_data(processed_df)
+        processed_numpy = self._data._process_data(processed_df, fit=False)
 
         predictions = self._predict(processed_numpy)
 

@@ -603,7 +603,7 @@ def _upload_imagery_enterprise(files, raster_type_name=None, gis=None):
                             item_id = res['item']['itemID']
                             res = {}
                             if append_path:
-                                item_id_dict = {"itemId":item_id, "path":fp}
+                                item_id_dict = {"itemId":item_id, "path":path}
                                 item_ids_list.append(item_id_dict)
                                 item_id_dict={}
                             else:

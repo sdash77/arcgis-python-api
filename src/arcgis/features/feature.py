@@ -215,9 +215,15 @@ class Feature(object):
 
     # ----------------------------------------------------------------------
     @classmethod
-    def from_dict(cls, feature):
+    def from_dict(cls, feature, sr=None):
         """:return: a feature from a dict"""
         geom = feature['geometry'] if 'geometry' in feature else None
+        if geom and \
+           sr and \
+           isinstance(geom, dict) and \
+           not 'spatialReference' in geom:
+            geom['spatialReference'] = sr
+
         attribs = feature['attributes'] if 'attributes' in feature else None
         if 'centroid' in feature:
             if attribs is None:
@@ -928,15 +934,16 @@ class FeatureSet(object):
     @staticmethod
     def from_dict(featureset_dict):
         """returns a featureset from a dict"""
-
         features = []
         if 'fields' in featureset_dict:
             fields = featureset_dict['fields']
         else:
             fields = []
         if 'features' in featureset_dict:
+            sr = featureset_dict.get('spatialReference', None)
             for feat in featureset_dict['features']:
-                features.append(Feature.from_dict(feat))
+
+                features.append(Feature.from_dict(feat, sr=sr))
         return FeatureSet(
             features=features, fields=fields,
             has_z=featureset_dict['hasZ'] if 'hasZ' in featureset_dict else False,

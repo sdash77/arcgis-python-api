@@ -790,15 +790,18 @@ def choose_best_facilities(goal='Allocate',
                                              Choice list:['Allocate', 'MinimizeImpedance', 'MaximizeCoverage', 'MaximizeCapacitatedCoverage', 'PercentCoverage']
 
                                              Default value is 'Allocate'.
+
     -------------------------------------    ---------------------------------------------------------
-    demand_locations_layer                   Required point feature layer. A point layer specifying the locations that have demand for facilities. See :ref:`Feature Input<FeatureInput>`.
+    demand_locations_layer                   Required point feature layer. A point layer specifying the locations
+                                             that have demand for facilities. See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------    ---------------------------------------------------------
     demand                                   Optional float. The amount of demand available at every demand locations.
 
                                              The default value is 1.0.
     -------------------------------------    ---------------------------------------------------------
-    demand_field                             Optional string. A numeric field on the ``demand_locations_layer`` representing the
-                                             amount of demand available at each demand location. If specified, the ``demand`` parameter is ignored.
+    demand_field                             Optional string. A numeric field on the ``demand_locations_layer``
+                                             representing the amount of demand available at each demand location.
+                                             If specified, the ``demand`` parameter is ignored.
     -------------------------------------    ---------------------------------------------------------
     max_travel_range                         Optional float. Specify the maximum travel time or distance allowed
                                              between a demand location and the facility it is allocated to.
@@ -818,7 +821,10 @@ def choose_best_facilities(goal='Allocate',
     -------------------------------------    ---------------------------------------------------------
     travel_mode                              Specify the mode of transportation for the analysis.
 
-                                             Choice list: ['Driving Distance', 'Driving Time', 'Rural Driving Distance', 'Rural Driving Time', 'Trucking Distance', 'Trucking Time', 'Walking Distance', 'Walking Time']
+                                             Choice list: ['Driving Distance', 'Driving Time', 'Rural Driving Distance',
+                                                           'Rural Driving Time', 'Trucking Distance', 'Trucking Time',
+                                                           'Walking Distance', 'Walking Time']
+
     -------------------------------------    ---------------------------------------------------------
     time_of_day                              Optional datetime.datetime. Specify whether travel times
                                              should consider traffic conditions. To use traffic in the
@@ -853,6 +859,7 @@ def choose_best_facilities(goal='Allocate',
                                              * Friday - 1/5/1990
                                              * Saturday - 1/6/1990
                                              * Sunday - 1/7/1990
+
                                              Set the time and date as datetime.datetime.
 
                                              For example, to solve for 1:03 p.m. on Thursdays, set the
@@ -890,50 +897,89 @@ def choose_best_facilities(goal='Allocate',
     travel_direction                         Optional string. Specify whether to measure travel times or distances
                                              from facilities to demand locations or from demand locations to facilities.
 
-                                             Choice list:['FacilityToDemand', 'DemandToFacility']
+                                             Choice list: ['FacilityToDemand', 'DemandToFacility']
+
     -------------------------------------    ---------------------------------------------------------
     required_facilities_layer                Optional point feature layer. A point layer specifying one or more locations that act as facilities
                                              by providing some kind of service. Facilities specified by this parameter
                                              are required to be part of the output solution and will be used before any
                                              facilities from the ``candidate_facilities_layer`` when allocating demand locations.
     -------------------------------------    ---------------------------------------------------------
-    required_facilities_capacity             Optional float. Specify how much demand every facility in the ``required_facilities_layer`` is capable of supplying.
+    required_facilities_capacity             Optional float. Specify how much demand every facility in the ``required_facilities_layer``
+                                             is capable of supplying.
 
                                              The default value is unlimited (2,147,483,647).
+
     -------------------------------------    ---------------------------------------------------------
-    required_facilities_capacity_field       Optional string. A field on the required_facilities_layer representing how much demand each facility in the ``required_facilities_layer`` is capable of supplying. This parameter takes precedence when ``required_facilities_capacity`` parameter is also specified.
+    required_facilities_capacity_field       Optional string. A field on the required_facilities_layer
+                                             representing how much demand each facility in the
+                                             ``required_facilities_layer`` is capable of supplying. This
+                                             parameter takes precedence when ``required_facilities_capacity``
+                                             parameter is also specified.
     -------------------------------------    ---------------------------------------------------------
-    candidate_facilities_layer               Optional point layer. A point layer specifying one or more locations that act as facilities by providing some kind of service. Facilities specified by this parameter are not required to be part of the output solution and will be used only after all the facilities from the ``candidate_facilities_layer`` have been used when allocating demand locations.
+    candidate_facilities_layer               Optional point layer. A point layer specifying one or more
+                                             locations that act as facilities by providing some kind of
+                                             service. Facilities specified by this parameter are not
+                                             required to be part of the output solution and will be used
+                                             only after all the facilities from the
+                                             ``candidate_facilities_layer`` have been used when
+                                             allocating demand locations.
+
     -------------------------------------    ---------------------------------------------------------
-    candidate_count                          Optional integer. The number of candidate facilities to choose when allocating demand locations. Note that the sum of the features in the ``required_facilities_capacity`` and the value specified for ``candidate_count`` cannot exceed 100.
+    candidate_count                          Optional integer. The number of candidate facilities to
+                                             choose when allocating demand locations. Note that the sum
+                                             of the features in the ``required_facilities_capacity``
+                                             and the value specified for ``candidate_count`` cannot
+                                             exceed 100.
 
                                              The default value is 1.
+
     -------------------------------------    ---------------------------------------------------------
-    candidate_facilities_capacity            Optional float. Specify how much demand every facility in the ``candidate_facilities_layer`` is capable of supplying.
+    candidate_facilities_capacity            Optional float. Specify how much demand every facility in
+                                             the ``candidate_facilities_layer`` is capable of supplying.
 
                                              The default value is unlimited (2,147,483,647.0).
+
     -------------------------------------    ---------------------------------------------------------
-    candidate_facilities_capacity_field      Optional string. A field on the ``candidate_facilities_layer`` representing how much demand each facility in the ``candidate_facilities_layer`` is capable of supplying. This parameter takes precedence when ``candidate_facilities_capacity`` parameter is also specified.
+    candidate_facilities_capacity_field      Optional string. A field on the ``candidate_facilities_layer``
+                                             representing how much demand each facility in the
+                                             ``candidate_facilities_layer`` is capable of supplying. This
+                                             parameter takes precedence when ``candidate_facilities_capacity``
+                                             parameter is also specified.
     -------------------------------------    ---------------------------------------------------------
-    percent_demand_coverage                  Optional float. Specify the percentage of the total demand that you want the chosen and required facilities to capture.
+    percent_demand_coverage                  Optional float. Specify the percentage of the total demand
+                                             that you want the chosen and required facilities to capture.
 
                                              The default value is 100.
     -------------------------------------    ---------------------------------------------------------
-    output_name                              Optional string. If provided, the method will create a feature layer of the results. You define the name of the layer. If ``output_name`` is not supplied, the method will return a feature collection.
+    output_name                              Optional string. If provided, the method will create a
+                                             feature layer of the results. You define the name of the
+                                             layer. If ``output_name`` is not supplied, the method will
+                                             return a feature collection.
     -------------------------------------    ---------------------------------------------------------
-    context                                  Optional string. Additional settings such as processing extent and output spatial reference. For ``choose_best_facilities``, there are two settings.
+    context                                  Optional string. Additional settings such as processing
+                                             extent and output spatial reference. For
+                                             ``choose_best_facilities``, there are two settings.
 
-                                             #. Extent (``extent``)-a bounding box that defines the analysis area. Only those features in the input layer that intersect the bounding box will be enriched.
-                                             #. Output Spatial Reference (``outSR``)-the output features will be projected into the output spatial reference.
-    -------------------------------------    ---------------------------------------------------------
-    gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    -------------------------------------    ---------------------------------------------------------
-    estimate                                 Optional boolean. Is true, the number of credits needed to run the operation will be returned as a float.
-    -------------------------------------    ---------------------------------------------------------
-    point_barrier_layer                      Optional layer. Specify one or more point features that act as temporary restrictions (in other words, barriers) when traveling on the underlying streets.
+                                             #. Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the input layer that intersect the bounding box will be enriched.
+                                             #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
 
-                                             A point barrier can model a fallen tree, an accident, a downed electrical line, or anything that completely blocks traffic at a specific position along
-                                             the street. Travel is permitted on the street but not through the barrier. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------------------    ---------------------------------------------------------
+    gis                                      Optional, the GIS on which this tool runs. If not
+                                             specified, the active GIS is used.
+    -------------------------------------    ---------------------------------------------------------
+    estimate                                 Optional boolean. Is true, the number of credits needed
+                                             to run the operation will be returned as a float.
+    -------------------------------------    ---------------------------------------------------------
+    point_barrier_layer                      Optional layer. Specify one or more point features that
+                                             act as temporary restrictions (in other words, barriers)
+                                             when traveling on the underlying streets.
+
+                                             A point barrier can model a fallen tree, an accident, a
+                                             downed electrical line, or anything that completely blocks
+                                             traffic at a specific position along the street. Travel is
+                                             permitted on the street but not through the barrier.
+                                             See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------    ---------------------------------------------------------
     line_barrier_layer                       Optional layer. Specify one or more line features that prohibit travel anywhere the lines intersect the streets.
 
@@ -943,7 +989,7 @@ def choose_best_facilities(goal='Allocate',
     polygon_barrier_layer                    Optional string. Specify one or more polygon features that completely restrict travel on the streets intersected by the polygons.
 
                                              One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.
-    -------------------------------------    ------------------------------------------------------------------------------------------------------
+    -------------------------------------    ---------------------------------------------------------
     future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =====================================    =========================================================
 

@@ -1228,7 +1228,9 @@ class GroupMigrationManager(object):
                       item_id_list=None,
                       preview_only=False,
                       run_async=False,
-                      overwrite=False):
+                      overwrite=False,
+                      folder_id=None,
+                      folder_owner=None):
         """
         Imports an EPK Item to a Group.  This will import items associated with this group.
 
@@ -1253,7 +1255,10 @@ class GroupMigrationManager(object):
                 params['previewOnly'] = preview_only
             if run_async:
                 params['async'] = run_async
-
+            if folder_id and self._gis.version >= [8,4]:
+                params['folderId'] = folder_id
+            if folder_owner and self._gis.version >= [8,4]:
+                params['folderOwnerUsername'] = folder_owner
             return self._con.post(url,
                                   params,
                                   try_json=try_json)
@@ -1338,7 +1343,9 @@ class GroupMigrationManager(object):
              epk_item,
              item_ids:list=None,
              overwrite:bool=True,
-             future:bool=True):
+             future:bool=True,
+             folder_id:str=None,
+             folder_owner:str=None):
         """
         Imports the EPK content into the current `Group`.
 
@@ -1362,6 +1369,10 @@ class GroupMigrationManager(object):
                           pause the current thread.  When `False` `load` will occur in a synchronous
                           fashion pausing the thread.  If you are loading large amounts of data, set
                           future to `True` to reduce time.
+        ----------------  -------------------------------------------------------------------------------
+        folder_id         Optional String. In ArcGIS Online and Enterprise 10.9+, a user can specify the destination folder ID for the items.
+        ----------------  -------------------------------------------------------------------------------
+        folder_owner      Optional String. In ArcGIS Online and Enterprise 10.9+, a user name of the folder owner.
         ================  ===============================================================================
 
         :returns: dict --or-- Job when future=True
@@ -1374,7 +1385,9 @@ class GroupMigrationManager(object):
                                       item_id_list=item_ids,
                                       preview_only=False,
                                       run_async=True,
-                                      overwrite=overwrite)
+                                      overwrite=overwrite,
+                                      folder_id=folder_id,
+                                      folder_owner=folder_owner)
             executor =  concurrent.futures.ThreadPoolExecutor(1)
             futureobj = executor.submit(self._status, **{"job_id" : res['jobId'], "key": res['key']})
             executor.shutdown(False)
@@ -3173,9 +3186,8 @@ class UserManager(object):
             A few things that will be helpful to know.
 
             1. The query syntax has quite a few features that can't
-               be adequately described here.  The query syntax is
-               available in ArcGIS help.  A short version of that URL
-               is http://bitly.com/1fJ8q31.
+               be adequately described here.  Please refer the ArcGIS REST
+               API reference from here: https://developers.arcgis.com/rest/users-groups-and-items/group-search.htm.
 
             2. Searching without specifying a query parameter returns
                a list of all users in your organization.
@@ -4214,7 +4226,15 @@ class ContentManager(object):
             raise ValueError("`item_properties` must be  dictionary.")
         if item_id and isinstance(item_id, str) and len(item_id) == 32:
             item_properties['itemIdToCreate'] = item_id
-
+        if isinstance(data, arcgis.features.FeatureCollection):
+            fileType = "Feature Collection"
+            item_properties['text'] = {'layers' : [data._lyr_dict] }
+            data = None
+        elif _is_geoenabled(data) and \
+             hasattr(data, 'spatial'):
+            fileType = "Feature Collection"
+            item_properties['text'] = {'layers' : [data.spatial.to_feature_collection()._lyr_dict] }
+            data = None
         if data is not None:
             title = os.path.splitext(os.path.basename(data))[0]
             extn = os.path.splitext(os.path.basename(data))[1].upper()
@@ -6729,7 +6749,17 @@ class Group(dict):
                     users.append(u)
                 elif isinstance(u, User):
                     users.append(u.username)
-        return self._portal.add_group_users(users, self.groupid, ladmins)
+        n = 25
+        results = {
+                "notAdded": [ ]
+            }
+        if users:
+            users_added = [self._portal.add_group_users(users[i * n:(i + 1) * n], self.groupid, [])['notAdded'] for i in range((len(users) + n - 1) // n )]
+            [results['notAdded'].extend(a) for a in users_added]
+        if ladmins:
+            admins_added =  [self._portal.add_group_users([], self.groupid, ladmins[i * n:(i + 1) * n])['notAdded'] for i in range((len(ladmins) + n - 1) // n )]
+            [results['notAdded'].extend(a) for a in admins_added]
+        return results
 
     def delete_group_thumbnail(self):
         """
@@ -7005,6 +7035,34 @@ class Group(dict):
                                                 self.groupid)
         params = {'f': 'json'}
         return self._gis._con.post(url, params)
+
+    def user_list(self) -> dict:
+        """
+        Returns a dictionary listing users and owners for the `Group`.
+        This is only available on ArcGIS Online and ArcGIS Enterprise 10.9+.
+
+        :returns: dict
+
+        """
+        if self._gis.version >= [8, 4]:
+            url = '%s/community/groups/%s/userList' % (self._gis._portal.resturl,
+                                                       self.groupid)
+            params = {'f': 'json', 'start' : 1, 'num' : 100}
+            res = self._gis._con.get(url, params)
+            users = res['users']
+            owner = res['owner']
+            while res['nextStart'] > -1:
+                params['start'] = res['nextStart']
+                res = self._gis._con.get(url, params)
+                users.extend(res['users'])
+                if res['nextStart'] == -1:
+                    break
+            value = {
+                'owner' : owner,
+                'users' : users
+            }
+            return value
+        return None
 
     def update(self, title=None, tags=None, description=None, snippet=None, access=None,
                is_invitation_only=None, sort_field=None, sort_order=None, is_view_only=None,
@@ -10052,6 +10110,7 @@ class Item(dict):
                                      'Map2FeatureCollection', 'MobileApp2Code',
                                      'Service2Data', 'Service2Service', 'WorkforceMap2FeatureService',
                                      'TrackView2Map', 'SurveyAddIn2Data', 'Theme2Story',
+                                     'Solution2Item','APIKey2Item',
                                      'WebStyle2DesktopStyle', 'Map2FeatureCollectionMobileApp2Code'])
 
     _RELATIONSHIP_DIRECTIONS = frozenset(['forward', 'reverse'])
@@ -10265,6 +10324,8 @@ class Item(dict):
                 fileType = 'fileGeodatabase'
             elif self['type'] == 'Vector Tile Package':
                 fileType = 'vectortilepackage'
+                if output_type is None:
+                    output_type = "VectorTiles"
             elif self['type'] == 'Scene Package':
                 fileType = 'scenePackage'
             elif self['type'] == 'Tile Package':
@@ -11332,7 +11393,7 @@ class Item(dict):
         :return: dict
 
         """
-        if not self.type.lower() in ['application', 'api key']:
+        if self.type.lower() in ['application', 'api key']:
             return None
         if redirect_uris is None:
             redirect_uris = []

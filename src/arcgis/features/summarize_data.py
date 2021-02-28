@@ -634,7 +634,9 @@ def join_features(target_layer,
                   gis=None,
                   estimate=False,
                   future=False,
-                  join_type='INNER'):
+                  join_type='INNER',
+                  records_to_match=None
+                  ):
     """
     .. image:: _static/images/join_features/join_features.png
 
@@ -715,6 +717,9 @@ def join_features(target_layer,
     future                                                                                           Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
     join_type                                                                                        Optional String.  Determines the type of join performed on the datasets.  The allowed values are INNER or LEFT.
+    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
+    records_to_match                                                                                 Optional Dict. Defines how two features are joined.
+                                                                                                     Example: {"groupByFields":"","orderByFields":"objectid ASC","topCount":1}
     ============================================================================================     =================================================================================================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else feature collection.
@@ -742,7 +747,8 @@ def join_features(target_layer,
         "context" : context,
         "gis" : gis,
         "future" : future,
-        "join_type" : join_type
+        "join_type" : join_type,
+        "records_to_match" : records_to_match
     }
     gis = _arcgis.env.active_gis if gis is None else gis
     params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.join_features, **kwargs)

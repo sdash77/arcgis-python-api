@@ -177,12 +177,12 @@ class TextClassifier(ArcGISModel):
             metrics = [accuracy_multi]
             loss_func = nn.BCEWithLogitsLoss()
             # self.learn = Learner(databunch, model, opt_func=opt_func, loss_func=loss_func, metrics=metrics)
-            self.learn = Learner(databunch, model, loss_func=loss_func, metrics=metrics)
+            self.learn = Learner(databunch, model, loss_func=loss_func, metrics=metrics, path=data.path)
         else:
             metrics = [accuracy, error_rate]
 
             # self.learn = Learner(databunch, model, opt_func=opt_func, metrics=metrics)
-            self.learn = Learner(databunch, model, metrics=metrics)
+            self.learn = Learner(databunch, model, metrics=metrics, path=data.path)
 
         if pretrained_path is not None:
             self.load(pretrained_path)

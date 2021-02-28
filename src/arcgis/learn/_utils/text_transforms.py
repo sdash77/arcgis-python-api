@@ -48,7 +48,8 @@ models_subwords_map = {
     "roberta": ("Ġ", True),
     "longformer": ("Ġ", True),
     "bart": ("Ġ", True),
-    "mobilebert": ("##", False)
+    "mobilebert": ("##", False),
+    "funnel": ("##", False)
 }
 
 

@@ -108,7 +108,7 @@ class GPJob(object):
     def messages(self):
         """
         Returns the service's messages
-        
+
         :returns: List
         """
         url = self._url + "/jobs/%s" % self._jobid
@@ -424,7 +424,7 @@ class GPJob(object):
             iids = []
             for key in result._fields:
                 value = getattr(result, key)
-                if self.task in ['AggregatePoints', 'ConnectOriginsToDestinations', 
+                if self.task in ['AggregatePoints', 'ConnectOriginsToDestinations',
                                  'SummarizeNearby', "InterpolatePoints"] and \
                    isinstance(value, dict) and 'featureSet' in value:
                     r[key] = arcgis.features.FeatureCollection(value)
@@ -465,3 +465,126 @@ class GPJob(object):
             return value
         return result
 
+class RAJob(GPJob):
+    """
+    Represents a Single Raster Geoprocessing Job.  The `RAJob` class allows for the asynchronous operation
+    of any geoprocessing task.  To request a GPJob task, the code must be called with `future=True`
+    or else the operation will occur synchronously.  This class is not intended for users to call
+    directly.
+
+
+    ================  ===============================================================
+    **Argument**      **Description**
+    ----------------  ---------------------------------------------------------------
+    gpjob
+    ----------------  ---------------------------------------------------------------
+    item
+    ================  ===============================================================
+
+    """
+    _item = None
+    _gpjob = None
+    #----------------------------------------------------------------------
+    def __init__(self, gpjob:GPJob, item:"Item"=None):
+        """
+        initializer
+        """
+        self._gpjob = gpjob
+        self._item = item
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return "<%s Raster Analysis Job: %s>" % (self.task, self._jobid)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return "<%s Raster Analysis Job: %s>" % (self.task, self._jobid)
+    #----------------------------------------------------------------------
+    @property
+    def task(self):
+        """Returns the task name.
+        :returns: string
+        """
+        return self._gpjob.task
+    #----------------------------------------------------------------------
+    @property
+    def messages(self):
+        """
+        Returns the service's messages
+
+        :returns: List
+        """
+        return self._gpjob.messages
+    #----------------------------------------------------------------------
+    @property
+    def status(self):
+        """
+        returns the GP status
+
+        :returns: String
+        """
+        return self._gpjob.status
+    #----------------------------------------------------------------------
+    @property
+    def elapse_time(self):
+        """
+        Returns the Ellapse Time for the Job
+        """
+        return self._gpjob.ellapse_time
+    #----------------------------------------------------------------------
+    def result(self):
+        """
+        Return the value returned by the call. If the call hasn't yet completed
+        then this method will wait.
+
+        :returns: object
+        """
+        try:
+            return self._gpjob.result()
+        except Exception as e:
+            from arcgis.gis import Item
+            if isinstance(self._item, Item):
+                self._item.delete()
+            elif isinstance(self._item, (tuple, list)):
+                [i.delete() for i in self._item if isinstance(i, Item)]
+            raise e
+    #----------------------------------------------------------------------
+    def cancel(self):
+        """
+        Attempt to cancel the call. If the call is currently being executed
+        or finished running and cannot be cancelled then the method will
+        return False, otherwise the call will be cancelled and the method
+        will return True.
+
+        :returns: boolean
+        """
+        res = self._gpjob.cancel()
+        if self.cancelled():
+            from arcgis.gis import Item
+            if isinstance(self._item, Item):
+                self._item.delete()
+            elif isinstance(self._item, (tuple, list)):
+                [i.delete() for i in self._item if isinstance(i, Item)]
+        return res
+    #----------------------------------------------------------------------
+    def cancelled(self):
+        """
+        Return True if the call was successfully cancelled.
+
+        :returns: boolean
+        """
+        return self._gpjob.cancelled()
+    #----------------------------------------------------------------------
+    def running(self):
+        """
+        Return True if the call is currently being executed and cannot be cancelled.
+
+        :returns: boolean
+        """
+        return self._gpjob.running()
+    #----------------------------------------------------------------------
+    def done(self):
+        """
+        Return True if the call was successfully cancelled or finished running.
+
+        :returns: boolean
+        """
+        return self._gpjob.done()

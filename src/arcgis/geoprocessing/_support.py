@@ -429,7 +429,10 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
     else: # synchronous
         exec_url = url + "/" + task_name + "/execute"
         if add_token:
-            resp = gptool._con.post(exec_url, gp_params, token=gptool._token)
+            try:
+                resp = gptool._con.post(exec_url, gp_params, token=gptool._token)
+            except:
+                resp = gptool._con.post(exec_url, gp_params)
         else:
             resp = gptool._con.post(exec_url, gp_params)
 
