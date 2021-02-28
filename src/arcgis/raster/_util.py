@@ -476,12 +476,16 @@ def build_query_string(field_name, operator, field_values):
     else:
         raise ValueError('invalid operator value')
 
-def _generate_direct_access_url(gis=None):
+def _generate_direct_access_url(gis=None, expiration=None):
     """helper fn to get the direct access url for azure storage"""
     gis = _arcgis.env.active_gis if gis is None else gis
     url = "%s/sharing/rest/content/users/%s/generateDirectAccessUrl" % (gis._portal.url,
                                                                  gis._username)
     params = {"f" : "json", "storeType":"rasterStore"}
+    if expiration is not None:
+        params.update({"expiration":expiration})
+    else:
+        params.update({"expiration":1440})
     res = gis._portal.con.post(url, params)
     if isinstance(res, dict):
         if "url" in res.keys():
@@ -491,7 +495,7 @@ def _generate_direct_access_url(gis=None):
     else:
         raise RuntimeError("Couldn't generate direct access url")
     
-def _upload_imagery_agol(files, gis=None):
+def _upload_imagery_agol(files, gis=None, direct_access_url=None):
     """uploads a file to the image layer to AGOL and returns the list of urls"""
 
     try:
@@ -499,7 +503,11 @@ def _upload_imagery_agol(files, gis=None):
     except:
         print("Install Azure library packages for Python. (version - azure-storage-blob-12.5.0) \
         (https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install)")
-    sas_url = _generate_direct_access_url(gis)
+    gis = _arcgis.env.active_gis if gis is None else gis
+    if direct_access_url is None:
+        sas_url = _generate_direct_access_url(gis)
+    else:
+        sas_url = direct_access_url
     container = ContainerClient.from_container_url(sas_url)
     if not isinstance(files,list):
         files = [files]
