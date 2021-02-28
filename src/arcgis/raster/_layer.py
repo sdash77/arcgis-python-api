@@ -4468,11 +4468,11 @@ class ImageryLayer(Layer):
             if self.properties.hasMultidimensions:
                 if len(data) == 2:
                     data = np.expand_dims(np.expand_dims(data, axis=2), axis=0)
-                elif  len(data) == 3:
+                elif  len(data) == 3:                    
                     if len(self.slices) == 1:
                         data = np.expand_dims(np.transpose(data, [1, 2, 0]), axis=0)
                     else:
-                        data = np.expand_dims(np.transpose(data, [2, 0, 1]), axis=3)	
+                        data = np.expand_dims(np.transpose(data, [2, 0, 1]), axis=3)
                 elif len(data) == 4:
                     data = np.transpose(data, [3, 1, 2, 0])
                 else:
