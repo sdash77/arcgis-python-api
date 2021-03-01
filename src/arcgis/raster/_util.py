@@ -500,6 +500,7 @@ def _upload_imagery_agol(files, gis=None, direct_access_url=None):
 
     try:
         from azure.storage.blob import ContainerClient
+        from azure.core.exceptions import ClientAuthenticationError, ServiceResponseError, ServiceRequestError
     except:
         print("Install Azure library packages for Python. (version - azure-storage-blob-12.5.0) \
         (https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install)")
@@ -516,7 +517,6 @@ def _upload_imagery_agol(files, gis=None, direct_access_url=None):
     for file in files:
         current_time = int(time.time())
         prefix =  "_images/"+str(current_time)+"/"
-
         if os.path.exists(file):
             if(os.path.isdir(file)):
                 folder = os.path.basename(file)
@@ -525,19 +525,42 @@ def _upload_imagery_agol(files, gis=None, direct_access_url=None):
                     for f in f_names:
                         blobname = prefix + (root+"/"+f)[basename_len+1:].replace(os.sep, '/')
                         filepath = os.path.join(root, f)
-                        blob=container.get_blob_client(blobname)
-                        url = blob.url.split("?", 1)[0]
-                        url_list.append(url)
-                        with open(filepath, "rb") as data:
-                            blob.upload_blob(data, blob_type="BlockBlob")
-
+                        while True:
+                            try:
+                                blob=container.get_blob_client(blobname)
+                                with open(filepath, "rb") as data:
+                                    blob.upload_blob(data, blob_type="BlockBlob")
+                                url = blob.url.split("?", 1)[0]
+                                url_list.append(url)
+                            except (ClientAuthenticationError, ServiceResponseError, ServiceRequestError) as err:
+                                if direct_access_url is None:
+                                    sas_url = _generate_direct_access_url(gis)
+                                    container = ContainerClient.from_container_url(sas_url)
+                                    continue
+                                else:
+                                    raise
+                            except Exception as err:
+                                raise err
+                            break
             else:
                 blobname = prefix+os.path.basename(file).replace(os.sep, '/')
-                blob=container.get_blob_client(blobname)
-                with open(file, "rb") as data:
-                    blob.upload_blob(data, blob_type="BlockBlob")
-                url = blob.url.split("?", 1)[0]
-                url_list.append(url)
+                while True:
+                    try:
+                        blob=container.get_blob_client(blobname)
+                        with open(file, "rb") as data:
+                            blob.upload_blob(data, blob_type="BlockBlob")
+                        url = blob.url.split("?", 1)[0]
+                        url_list.append(url)
+                    except (ClientAuthenticationError, ServiceResponseError, ServiceRequestError) as err:
+                        if direct_access_url is None:
+                            sas_url = _generate_direct_access_url(gis)
+                            container = ContainerClient.from_container_url(sas_url)
+                            continue
+                        else:
+                            raise
+                    except Exception as err:
+                        raise err
+                    break
 
     return url_list
 
