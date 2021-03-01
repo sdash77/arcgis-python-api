@@ -56,14 +56,7 @@ class FormCollection:
     def __init__(self, parent):
         self._parent = parent
         self._index = 0
-        if isinstance(parent, arcgis.mapping.WebMap):
-            self.forms = self._get_forms_from_webmap(parent)
-        elif isinstance(parent, Item):
-            if parent.type != "Feature Layer Collection":
-                raise ValueError("Item must be feature layer collection to have forms")
-            self.forms = self._get_forms_from_item(parent)
-        else:
-            raise ValueError("Parent item must be webmap or feature layer collection")
+        self._refresh_forms(parent)
 
     def __getitem__(self, key):
         return self.forms[key]
@@ -77,6 +70,16 @@ class FormCollection:
         else:
             self._index += 1
             return self.forms[self._index - 1]
+
+    def _refresh_forms(self, parent):
+        if isinstance(parent, arcgis.mapping.WebMap):
+            self.forms = self._get_forms_from_webmap(parent)
+        elif isinstance(parent, Item):
+            if parent.type != "Feature Layer Collection":
+                raise ValueError("Item must be feature layer collection to have forms")
+            self.forms = self._get_forms_from_item(parent)
+        else:
+            raise ValueError("Parent item must be webmap or feature layer collection")
 
     def get(self, item_id=None, title=None, layer_id=None):
         """
@@ -100,6 +103,7 @@ class FormCollection:
         """
         if item_id is None and title is None and layer_id is None:
             raise ValueError("Please pass at least one parameter into the function")
+        self._refresh_forms(self._parent)
         if self.forms:
             for form in self.forms:
                 # item id is optional in the webmap spec, so we need to try/except
@@ -568,6 +572,8 @@ class FormInfo:
                 element.input_type = self._get_default_input_type(matching_field)
             else:
                 raise ValueError("Not a valid field type to add to the form")
+            if self._is_geometry_field(element.field_name):
+                raise ValueError("Cannot add a geometry field to the form")
             if not self._validate_unrestricted_field_name(element.field_name.lower()):
                 raise ValueError("Cannot add a GPS metadata or editor tracking fields to the form")
             for form_el in self._form_elements:
@@ -584,6 +590,13 @@ class FormInfo:
     def _validate_unrestricted_field_name(self, field_name):
         """Validates the field is not a GPS metdata, edit, or id field."""
         return "esrignss" not in field_name and "esrisnsr" not in field_name and field_name not in self._edit_fields and field_name not in self._id_fields
+
+    def _is_geometry_field(self, field_name):
+        return "geometryProperties" in self.feature_layer.properties and (
+            ("shapeAreaFieldName" in self.feature_layer.properties["geometryProperties"] and
+             self.feature_layer.properties["geometryProperties"]["shapeAreaFieldName"].lower() == field_name.lower()) or
+            ("shapeLengthFieldName" in self.feature_layer.properties["geometryProperties"] and
+             self.feature_layer.properties["geometryProperties"]["shapeLengthFieldName"].lower() == field_name.lower()))
 
     def _get_id_fields(self):
         """Returns the id fields in lower case."""
