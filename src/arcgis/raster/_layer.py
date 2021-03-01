@@ -4956,8 +4956,10 @@ class Raster():
         if not isinstance(is_multidimensional, bool):
             raise TypeError('is_multidimensional must be boolean type')
         if engine is not None:
-             engine = _get_engine(engine)
-             self._engine=engine
+            if engine not in ['arcpy', 'image_server']:
+                raise RuntimeError('Invalid engine: parameter engine should be either "arcpy" or "image_server"')
+            engine = _get_engine(engine)
+            self._engine=engine
         else:
             if isinstance(path, RasterInfo):
                 engine=_ArcpyRaster
@@ -7274,7 +7276,7 @@ class _ArcpyRaster(Raster,ImageryLayer):
         else:
             if isinstance(path, str):
                 if ("https://"  in path or "http://"  in path): #To provide access to secured service
-                    if self._token is not None:
+                    if "ImageServer" in path and self._token is not None:
                         self._raster = arcpy.ia.Raster(path+"?token="+self._token, is_multidimensional)
                     else:
                         self._raster = arcpy.ia.Raster(path, is_multidimensional)
@@ -7296,7 +7298,7 @@ class _ArcpyRaster(Raster,ImageryLayer):
 
         lyr_dict =  { 'type' : type(self).__name__, 'url' : url }
         if ("https://"  in url or "http://"  in url):
-            if self._token is not None:
+            if "ImageServer" in url and self._token is not None:
                 lyr_dict['serviceToken'] = self._token
 
         return lyr_dict
