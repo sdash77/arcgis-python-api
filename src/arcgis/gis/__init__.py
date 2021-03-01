@@ -7507,6 +7507,38 @@ class User(dict):
                                gis=self._gis)
         return None
     #----------------------------------------------------------------------
+    def generate_direct_access_url(self, store_type:str) -> str:
+        """
+        Creates a direct access URL for uploading large files to datafile share, notebook workspaces or raster stores.
+
+        **Available in ArcGIS Online Only**
+
+        =====================  =========================================================
+        **Argument**           **Description**
+        ---------------------  ---------------------------------------------------------
+        store_type             Optional String. The type of upload URL to generate.
+                               Types: `big_data_file`, 'notebook', or 'raster`.
+        =====================  =========================================================
+
+        :returns: str
+
+        """
+        if self._gis._portal.is_arcgisonline == False:
+            return None
+        _lu = {
+            'big_data_file' : 'bigDataFileShare',
+            'notebook' : 'notebookWorkspace',
+            'raster' : 'rasterStore'
+        }
+        url = f"{self._gis._portal.resturl}content/users/{self.username}/generateDirectAccessUrl"
+        params = {
+            'f' : 'json',
+            'expiration' : 1440,
+            'storeType' : _lu[store_type.lower()]
+        }
+        return self._portal.con.get(url, params)
+
+    #----------------------------------------------------------------------
     @property
     def provisions(self):
         """
