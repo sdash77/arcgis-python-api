@@ -485,7 +485,7 @@ def _generate_direct_access_url(gis=None, expiration=None):
     if expiration is not None:
         params.update({"expiration":expiration})
     else:
-        params.update({"expiration":60})
+        params.update({"expiration":1440})
     res = gis._portal.con.post(url, params)
     if isinstance(res, dict):
         if "url" in res.keys():
