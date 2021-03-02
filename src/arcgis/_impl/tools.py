@@ -11559,6 +11559,104 @@ class _RasterAnalysisTools(BaseAnalytics):
         return RAJob(gpjob).result()
 
 
+    def compute_change_raster(self,
+                              input_from_raster,
+                              input_to_raster,
+                              compute_change_method='DIFFERENCE',
+                              from_classes=None,
+                              to_classes=None,
+                              filter_method='CHANGED_PIXELS_ONLY',
+                              transition_class_colors='AVERAGE',
+                              output_name=None,
+                              context=None,
+                              future=False,
+                              **kwargs):
+        """
+       input_from_raster: inputFromRaster (str). Required parameter.  
+
+       input_to_raster: inputToRaster (str). Required parameter.  
+
+       output_name: outputName (str). Required parameter.  
+
+       compute_change_method: computeChangeMethod (str). Optional parameter.  
+          Choice list:DIFFERENCE,RELATIVE_DIFFERENCE,CATEGORICAL_DIFFERENCE
+
+       from_classes: fromClasses (str). Optional parameter.  
+
+       to_classes: toClasses (str). Optional parameter.  
+
+       filter_method: filterMethod (str). Optional parameter.  
+          Choice list:ALL,CHANGED_PIXELS_ONLY,UNCHANGED_PIXELS_ONLY
+
+       transition_class_colors: transitionClassColors (str). Optional parameter.  
+          Choice list:AVERAGE,FROM_COLOR,TO_COLOR
+
+       context: context (str). Optional parameter.  
+
+       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        task = "ComputeChangeRaster"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_from_raster = self._layer_input(input_layer=input_from_raster)
+        input_to_raster = self._layer_input(input_layer=input_to_raster)
+
+        if compute_change_method is not None:
+            compute_change_method_allowed_values = self._tbx.choice_list.compute_change_raster["compute_change_method"]
+            if [element.lower() for element in compute_change_method_allowed_values].count(compute_change_method.lower()) <= 0 :
+                raise RuntimeError('compute_change_method can only be one of the following: '+str(compute_change_method_allowed_values))
+            for element in compute_change_method_allowed_values:
+                if compute_change_method.lower() == element.lower():
+                    compute_change_method = element
+
+        if filter_method is not None:
+            filter_method_allowed_values = self._tbx.choice_list.compute_change_raster["filter_method"]
+            if [element.lower() for element in filter_method_allowed_values].count(filter_method.lower()) <= 0 :
+                raise RuntimeError('filter_method can only be one of the following: '+str(filter_method_allowed_values))
+            for element in filter_method_allowed_values:
+                if filter_method.lower() == element.lower():
+                    filter_method = element
+
+        if transition_class_colors is not None:
+            transition_class_colors_allowed_values = self._tbx.choice_list.compute_change_raster["transition_class_colors"]
+            if [element.lower() for element in transition_class_colors_allowed_values].count(transition_class_colors.lower()) <= 0 :
+                raise RuntimeError('transition_class_colors can only be one of the following: '+str(transition_class_colors_allowed_values))
+            for element in transition_class_colors_allowed_values:
+                if transition_class_colors.lower() == element.lower():
+                    transition_class_colors = element
+
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.compute_change_raster(input_from_raster=input_from_raster,
+                                                input_to_raster=input_to_raster,
+                                                compute_change_method=compute_change_method,
+                                                from_classes=from_classes,
+                                                to_classes=to_classes,
+                                                filter_method=filter_method,
+                                                transition_class_colors=transition_class_colors,
+                                                output_name=output_raster,
+                                                context=context,
+                                                gis=self._gis,
+                                                future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+
     def train_deep_learning_model(self,
                                   in_folder=None,
                                   output_name=None, 

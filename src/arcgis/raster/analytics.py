@@ -2690,7 +2690,7 @@ def create_image_collection(image_collection,
     tiles_only                           Keyword only parameter. Optional boolean. 
                                          In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
                                          To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
-
+                                         
                                          Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ==================                   ====================================================================
 
@@ -7578,3 +7578,185 @@ def zonal_statistics_as_table(input_zone_raster_or_features,
                                                                context=context,
                                                                future=future,
                                                                **kwargs)
+
+def compute_change_raster(input_from_raster,
+                          input_to_raster,
+                          compute_change_method='DIFFERENCE',
+                          from_classes=None,
+                          to_classes=None,
+                          filter_method='CHANGED_PIXELS_ONLY',
+                          transition_class_colors='AVERAGE',
+                          output_name=None,
+                          context=None,
+                          *,
+                          gis=None,
+                          future=False,
+                          **kwargs):
+
+    """
+    Function calculates the absolute, relative, or categorical difference between two raster datasets.  
+    Function available in ArcGIS Image Server 10.9 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_from_raster                        Required ImageryLayer object. The initial or earlier raster to be analyzed.
+    ------------------------------------     --------------------------------------------------------------------
+    input_to_raster                          Required ImageryLayer object. The final or later raster to be analyzed. 
+                                             This is the raster that will be compared to the initial raster.
+    ------------------------------------     --------------------------------------------------------------------
+    compute_change_method                    Optional String. Specifies the type of calculation to perform between
+                                             the two rasters.
+
+                                                - DIFFERENCE - The mathematical difference, or subtraction, between the pixel values in the rasters will be calculated. This is the default.
+                                                - RELATIVE_DIFFERENCE - The difference in pixel values, accounting for the quantities of the values being compared, will be calculated.
+                                                - CATEGORICAL_DIFFERENCE  - The difference between two categorical or thematic rasters will be calculated in which the output contains class transitions that occurred between the two rasters.
+
+                                             Example:
+                                                "DIFFERENCE"
+    ------------------------------------     --------------------------------------------------------------------
+    from_classes                             Optional String or List. Class names from the input_from_raster parameter 
+                                             to be included in the computation. If no classes are provided, all classes
+                                             will be included.
+
+                                             This parameter is honoured when the compute_change_method parameter is
+                                             set to CATEGORICAL_DIFFERENCE.
+
+                                             Example:
+                                                ["Water", "Developed"]
+    ------------------------------------     --------------------------------------------------------------------
+    to_classes                               Optional String or List. Class names from the input_to_raster parameter 
+                                             to be included in the computation. If no classes are provided, all classes
+                                             will be included.
+
+                                             This parameter is honoured when the compute_change_method parameter is
+                                             set to CATEGORICAL_DIFFERENCE.
+
+                                             Example:
+                                                ["Water", "Developed"]
+    ------------------------------------     --------------------------------------------------------------------
+    filter_method                            Optional String. Specifies the pixels to be categorized in the output raster.
+
+                                             This parameter is honoured when the compute_change_method parameter is
+                                             set to CATEGORICAL_DIFFERENCE.
+
+                                                - ALL - All pixels will be categorized in the output. This is the default.
+                                                - CHANGED_PIXELS_ONLY - Only the pixels that changed categories will be categorized in the output. All pixels that did not change categories will be grouped in a class called Other.
+                                                - UNCHANGED_PIXELS_ONLY  - Only the pixels that did not change categories will be categorized in the output. All pixels that changed categories will be groups in a class called Other.
+
+                                             Example:
+                                                "ALL"
+    ------------------------------------     --------------------------------------------------------------------
+    transition_class_colors                  Optional String. Specifies the pixels to be categorized in the output raster.
+
+                                             This parameter is honoured when the compute_change_method parameter is
+                                             set to CATEGORICAL_DIFFERENCE.
+
+                                                - AVERAGE - Use an average of the colors of the from class and to class for the output classes. This is the default.
+                                                - FROM_COLOR - Use colors of the from classes for the output.
+                                                - TO_COLOR  - Use the colors of the to classes for the output.
+
+                                             Example:
+                                                "AVERAGE"
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution. 
+
+                                             context parameter overwrites values set through arcgis.env parameter
+                                         
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+                                            
+                                                Example: 
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6, 
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be 
+                                                projected into the output spatial reference.
+                                                
+                                                Example: 
+                                                    {"outSR": {spatial reference}}
+
+                                              - Snap Raster (snapRaster): The output raster will have its 
+                                                cells aligned with the specified snap raster.
+                                                        
+                                                Example: 
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                                specified by cell size.
+
+                                                Example:
+                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total 
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    tiles_only                               Keyword only parameter. Optional boolean. 
+                                             In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                             Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ====================================     ====================================================================
+
+    :return:
+        The output imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1:
+
+        compute_change_raster_op = compute_change_raster(input_from_raster=input_from_raster,
+                                                         input_to_raster=input_to_raster,
+                                                         from_classes="Class1",
+                                                         to_classes="Class2",
+                                                         filter_method="ALL",
+                                                         gis=gis)
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.compute_change_raster(input_from_raster=input_from_raster,
+                                                           input_to_raster=input_to_raster,
+                                                           compute_change_method=compute_change_method,
+                                                           from_classes=from_classes,
+                                                           to_classes=to_classes,
+                                                           filter_method=filter_method,
+                                                           transition_class_colors=transition_class_colors,
+                                                           output_name=output_name,
+                                                           context=context,
+                                                           future=future,
+                                                           **kwargs)

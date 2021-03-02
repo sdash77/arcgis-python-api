@@ -187,3 +187,7 @@ analyze_changes_using_landtrendr
 zonal_statistics_as_table
 -------------------------
 .. autofunction:: arcgis.raster.analytics.zonal_statistics_as_table
+
+compute_change_raster
+-------------------------
+.. autofunction:: arcgis.raster.analytics.compute_change_raster
