@@ -412,7 +412,19 @@ class GPJob(object):
                             item = arcgis.gis.Item(gis=self._gis, itemid=element["id"])
                             output_model_list.append(Model(item))
                 return output_model_list
-
+            elif isinstance(value, dict) and "id" in value:
+                itemid = value["id"]
+                item = arcgis.gis.Item(gis=self._gis, itemid=itemid)
+                if self._item_properties:
+                    _item_properties = {
+                        "properties": {
+                            "jobUrl": self._url + '/jobs/' + self._jobid,
+                            "jobType": "GPServer",
+                            "jobId": self._jobid,
+                            "jobStatus": "completed"
+                        }
+                    }
+                    item.update(item_properties=_item_properties)
         return result
 
 

@@ -244,6 +244,10 @@ list_models
 ^^^^^^^^^^^
 .. autofunction:: arcgis.learn.list_models
 
+train_model
+^^^^^^^^^^^
+.. autofunction:: arcgis.learn.train_model
+
 
 
 
