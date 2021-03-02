@@ -6949,6 +6949,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             The imagery layer item
 
         """
+        kwargs.update({"tiles_only":False})
         task = "CreateImageCollection"
         gis = self._gis
         output_service = None

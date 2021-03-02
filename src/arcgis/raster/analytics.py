@@ -1,7 +1,7 @@
 """
 Functions for calling the Raster Analysis Tools. The RasterAnalysisTools service is used by ArcGIS Server to provide distributed raster analysis.
 
-The Hosted Imagery & Raster Analysis capabilities are available in ArcGIS Online at 8.2 as an invite only Beta through an Early Adopter Program (EAP) 
+The Hosted Imagery & Raster Analysis capabilities are available in ArcGIS Online from 8.2 as an invite only Beta through an Early Adopter Program (EAP). 
 """
 from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, \
                                           _analysis_job_status, _layer_input
@@ -829,7 +829,9 @@ def generate_raster(raster_function,
     ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Keyword only parameter. Optional boolean. 
                                              In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
-                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+                                             
+                                             To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False. This option of creating 
+                                             Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP).
 
                                              Function will not honor tiles_only parameter on ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ====================================     ====================================================================
@@ -2686,12 +2688,6 @@ def create_image_collection(image_collection,
 
                                          Example:
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
-    ------------------                   --------------------------------------------------------------------
-    tiles_only                           Keyword only parameter. Optional boolean. 
-                                         In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
-                                         To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
-                                         
-                                         Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ==================                   ====================================================================
 
     :returns: The imagery layer item
@@ -3138,8 +3134,7 @@ def create_image_collection(image_collection,
         img_coll_result = create_image_collection(image_collection="imageCollection",
                                                   input_rasters="C:\\data",
                                                   raster_type_name="Raster Dataset",
-                                                  gis=gis,
-                                                  tiles_only=False)
+                                                  gis=gis)
 
     """
 
