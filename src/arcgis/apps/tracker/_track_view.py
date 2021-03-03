@@ -76,6 +76,14 @@ class TrackView:
         """The last known locations :class:`~arcgis.features.FeatureLayer`"""
         return self._item.layers[1]
 
+    @_lazy_property
+    def track_lines_layer(self):
+        """The track lines :class:`~arcgis.features.FeatureLayer`"""
+        try:
+            return self._item.layers[2]
+        except IndexError:
+            return None
+
 
 class TrackViewerManager:
     """
@@ -237,6 +245,12 @@ class MobileUserManager:
         self._track_view.last_known_locations_layer.manager.update_definition({
             "viewDefinitionQuery": new_vdq
         })
+        # Older versions of the LTS do not have this layer
+        if self._track_view.track_lines_layer:
+            self._track_view.track_lines_layer.manager.update_definition({
+                "viewDefinitionQuery": new_vdq
+            })
+            self._track_view.track_lines_layer._hydrate()
         # update cached values
         self._track_view.tracks_layer._hydrate()
         self._track_view.last_known_locations_layer._hydrate()

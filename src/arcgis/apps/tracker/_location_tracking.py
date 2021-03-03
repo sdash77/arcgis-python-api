@@ -234,6 +234,9 @@ class LocationTrackingManager:
             definition["timeInfo"] = {"startTimeField": "location_timestamp"}
         item.layers[0].manager.update_definition(definition)
         item.layers[1].manager.update_definition(definition)
+        # Older versions of the LTS may not have this layer
+        if len(item.layers) >= 3:
+            item.layers[2].manager.update_definition(definition)
         if self._gis.properties.isPortal:
             # Set allowOthersToQuery to True - workaround for missing feature in Enterprise 10.7/10.7.1
             arcgis.features.FeatureLayerCollection(item.url, self._gis).manager.update_definition(
@@ -346,6 +349,14 @@ class LocationTrackingManager:
         try:
             return self.item.layers[1]
         except:
+            return None
+
+    @_lazy_property
+    def track_lines_layer(self):
+        """The track lines :class:`~arcgis.features.FeatureLayer`"""
+        try:
+            return self.item.layers[2]
+        except IndexError:
             return None
 
     @property
