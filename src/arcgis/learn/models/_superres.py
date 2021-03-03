@@ -140,9 +140,8 @@ class SuperResolution(ArcGISModel):
     
     @property
     def _model_metrics(self):
-        psnr_ssim = self.compute_metrics(show_progress=True)
-        return {'psnr_metric': '{0:1.4e}'.format(psnr_ssim[0]),
-                'ssim_metric': '{0:1.4e}'.format(psnr_ssim[1])}
+        return self.compute_metrics(show_progress=True)
+         
 
     def _get_emd_params(self, save_inference_file):
         _emd_template = {}
@@ -160,7 +159,8 @@ class SuperResolution(ArcGISModel):
 
         """
         psnr, ssim = compute_metrics(self, self._data.valid_dl, show_progress)
-        return psnr, ssim
+        return {'PSNR': '{0:1.4e}'.format(psnr),
+                'SSIM': '{0:1.4e}'.format(ssim)}
 
     
     def show_results(self, rows=5):

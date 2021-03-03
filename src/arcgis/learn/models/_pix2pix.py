@@ -118,10 +118,7 @@ class Pix2Pix(ArcGISModel):
         
     @property
     def _model_metrics(self):
-        psnr_ssim_fid = self.compute_metrics(show_progress=True)
-        return {'psnr_metric': '{}'.format(psnr_ssim_fid["PSNR"]),
-                'ssim_metric': '{}'.format(psnr_ssim_fid["SSIM"]),
-                'FID': '{}'.format(psnr_ssim_fid["FID"])}
+        return self.compute_metrics(show_progress=True)
 
     def _get_emd_params(self, save_inference_file):
         _emd_template = {}
@@ -192,9 +189,12 @@ class Pix2Pix(ArcGISModel):
 
         """
         psnr, ssim = compute_metrics(self, self._data.valid_dl, show_progress)
-        if self._data.n_channel > 3:
+        if self._data._is_multispectral:
             fid = None
-            return {"PSNR":psnr, "SSIM":ssim}
+            return {"PSNR":'{0:1.4e}'.format(psnr), 
+                    "SSIM":'{0:1.4e}'.format(ssim)}
         else:
             fid = compute_fid_metric(self, self._data)
-            return {"PSNR":psnr, "SSIM":ssim, "FID":fid}
+            return {"PSNR":'{0:1.4e}'.format(psnr), 
+                    "SSIM":'{0:1.4e}'.format(ssim), 
+                    "FID":'{0:1.4e}'.format(fid)}

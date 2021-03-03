@@ -952,11 +952,17 @@ class ArcGISModel(object):
             <p><b>Score:</b> {emd_template.get('score')}</p>
         """
 
-        if emd_template.get('psnr_metric'):
+        if emd_template.get('PSNR'):
             model_analysis = f"""
-            <p><b>PSNR Metric:</b> {emd_template.get('psnr_metric')}</p>
-            <p><b>SSIM Metric:</b> {emd_template.get('ssim_metric')}</p>
+            <p><b>PSNR Metric:</b> {emd_template.get('PSNR')}</p>
+            <p><b>SSIM Metric:</b> {emd_template.get('SSIM')}</p>
         """
+            # FID is supported for RGB only
+            if emd_template.get('FID'):
+                model_analysis = model_analysis + f"""
+                <p><b>FID Metric:</b> {emd_template.get('FID')}</p>
+                """
+
         if emd_template.get('per_class_metrics'):
             html_table = pd.read_json(emd_template.get('per_class_metrics')).to_html()
             model_analysis = f"""
