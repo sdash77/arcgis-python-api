@@ -14,6 +14,7 @@ try:
     from ._ner_transformer import _TransformerEntityRecognizer
     from .._utils.text_data import TextDataObject
     from .._utils.common import _get_emd_path
+    from transformers import AutoConfig
     HAS_TRANSFORMERS = True
 except Exception as e:
     transformer_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -43,8 +44,10 @@ class EntityRecognizer:
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    data                    Requires data object returned from
-                            ``prepare_data`` function.
+    data                    Optional data object returned from `prepare_data` function.
+                            data object can be `None`, in case where someone wants to use a
+                            Hugging Face Transformer model fine-tuned on entity-recognition
+                            task. In this case the model should be used directly for inference.
     ---------------------   -------------------------------------------
     lang                    Optional string. Language-specific code,
                             named according to the language’s `ISO code <https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes>`_
@@ -60,6 +63,10 @@ class EntityRecognizer:
                             To learn more about the available transformer models or
                             choose models that are suitable for your dataset,
                             kindly visit:- https://huggingface.co/transformers/pretrained_models.html
+
+                            To learn more about the available transformer models fine-tuned
+                            on Named Entity Recognition Task, kindly visit:-
+                            https://huggingface.co/models?pipeline_tag=token-classification
     =====================   ===========================================
 
     **kwargs**
@@ -106,27 +113,41 @@ class EntityRecognizer:
         if create_empty:
             pass
         else:
-            if backbone == "spacy":
+            if data is None:
+                model = EntityRecognizer.from_pretrained(backbone, **kwargs)
+                self._model = model._model
+                self.entities = self._model.entities
+            elif data and backbone == "spacy":
                 if not HAS_SPACY: _raise_spacy_import_error()
                 if data.backbone != "spacy":
                     logging.info("Preparing data for spacy backbone!")
                     data.prepare_data_for_spacy()
                 data_obj = data.get_data_object()
                 self._model = _SpacyEntityRecognizer(data_obj, lang=lang, **kwargs)
-            else:
+            elif data:
                 if not HAS_TRANSFORMERS: _raise_transformers_import_error()
+                model_config = AutoConfig.from_pretrained(backbone)
                 if data.backbone == "spacy":
                     logging.info("Preparing data for transformer backbone!")
-                    data.prepare_data_for_transformer()
+                    if model_config.id2label != {0: 'LABEL_0', 1: 'LABEL_1'}:
+                        label2id, id2label = model_config.label2id, model_config.id2label
+                        # sci-bert has `label2id` mapping as {"LABEL_0": 0, "LABEL_1": 1, "LABEL_10": 10...} and
+                        # `id2label` mapping as {"0": "I-cell_type", "1": "B-DNA", "2": "O"...}, hence this hack
+                        if label2id != {y:x for x, y in id2label.items()} and not any(["-" in x for x in label2id.keys()]):
+                            label2id = {y:x for x, y in id2label.items()}
+                        labels = list(label2id.keys())
+                    else:
+                        labels, label2id = [], None
+                    logging.info(f"Labels - {labels}\n\tlabel2id mappings - {label2id}")
+                    ignore_tag_order = not any(["-" in label for label in labels])
+                    data.prepare_data_for_transformer(ignore_tag_order=ignore_tag_order, label2id=label2id)
                 data_obj = data.get_data_object()
+                kwargs.update({"model_config": model_config})
                 self._model = _TransformerEntityRecognizer(data_obj, backbone, **kwargs)
 
         if create_empty is False:
             self.train_ds = self._model.train_ds
             self.valid_ds = self._model.val_ds
-
-        from IPython.display import clear_output
-        clear_output()
 
     @classmethod
     def available_backbone_models(cls, architecture):
@@ -259,6 +280,69 @@ class EntityRecognizer:
         self.entities = self._model.entities
 
     @classmethod
+    def from_pretrained(cls, backbone, **kwargs):
+        """
+        Creates an EntityRecognizer model object from an already fine-tuned
+        Hugging Face Transformer backbone.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        backbone                Required string. Specify the Hugging Face Transformer
+                                backbone name fine-tuned on Named Entity Recognition(NER)/
+                                Token Classification task.
+
+                                To get more details on available transformer models
+                                fine-tuned on Named Entity Recognition(NER) Task, kindly visit:-
+                                https://huggingface.co/models?pipeline_tag=token-classification
+        =====================   ===========================================
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        verbose                 Optional string. Default set to `error`. The
+                                log level you want to set. It means the amount
+                                of information you want to display while calling
+                                the various methods of this class. Allowed values
+                                are - `debug`, `info`, `warning`, `error` and `critical`.
+        =====================   ===========================================
+
+        :returns: `EntityRecognizer` Object
+        """
+
+        if "spacy" in backbone:
+            error_message = (f"Wrong backbone - `{backbone}` supplied. Only HuggingFace model names fine-tuned on "
+                             "`TokenClassification` tasks are allowed to be passed as `backbone` in the method.")
+            raise Exception(error_message)
+
+        model_config = AutoConfig.from_pretrained(backbone)
+        if model_config.id2label == {0: 'LABEL_0', 1: 'LABEL_1'}:
+            error_message = (f"Wrong backbone - `{backbone}` supplied. This backbone is not fine-tuned on a"
+                             "`TokenClassification` task. Kindly choose an appropriate backbone to call this method."
+                             "Visit:- https://huggingface.co/models?pipeline_tag=token-classification to find models"
+                             " for `NamedEntityRecognition` or `TokenClassification` tasks.")
+            raise Exception(error_message)
+
+        label2id, id2label = model_config.label2id, model_config.id2label
+        # sci-bert has `label2id` mapping as {"LABEL_0": 0, "LABEL_1": 1, "LABEL_10": 10...} and
+        # `id2label` mapping as {"0": "I-cell_type", "1": "B-DNA", "2": "O"...}, hence this hack
+        if label2id != {y: x for x, y in id2label.items()} and not any(["-" in x for x in label2id.keys()]):
+            label2id = {y: x for x, y in id2label.items()}
+
+        model = _TransformerEntityRecognizer._from_pretrained(backbone, label2id, **kwargs)
+
+        clas_object = cls(data=None, backbone=backbone, create_empty=True)
+
+        clas_object._model = model
+        clas_object.entities = clas_object._model.entities
+        clas_object.train_ds = clas_object._model.train_ds
+        clas_object.valid_ds = clas_object._model.val_ds
+
+        return clas_object
+
+    @classmethod
     def from_model(cls, emd_path, data=None):
         """
         Creates an EntityRecognizer model object from a Deep Learning
@@ -293,7 +377,11 @@ class EntityRecognizer:
         else:
             if data and data.backbone == "spacy":
                 logging.info("Preparing data for transformer backbone!")
-                data.prepare_data_for_transformer()
+                labels = set(emd_json["Labels"])
+                label2id = emd_json["Label2Id"]
+                logging.info(f"Labels - {labels}\n\tlabel2id mappings - {label2id}")
+                ignore_tag_order = not any(["-" in label for label in labels])
+                data.prepare_data_for_transformer(ignore_tag_order=ignore_tag_order, label2id=label2id)
             if data: data_obj = data.get_data_object()
             model = _TransformerEntityRecognizer.from_model(emd_path=emd_path, data=data_obj)
 

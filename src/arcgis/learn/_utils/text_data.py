@@ -129,7 +129,9 @@ def copy_metrics(source, target, folder_name):
 
 def extract_entities(tokens, labels):
     prev_label, token_list, entities = labels[0], [tokens[0]], []
+    prev_label = prev_label.split('-')[-1]
     for token_index, (token, label) in enumerate(list(zip(tokens[1:], labels[1:]))):
+        label = label.split('-')[-1]
         if label == 'O':
             if prev_label != 'O': entities.append((token_list, prev_label))
             token_list, prev_label = list(), label
@@ -182,7 +184,8 @@ class TextDataObject:
             unique_tags,
             seed=42,
             batch_size=8,
-            val_split_pct = 0.1
+            val_split_pct = 0.1,
+            label2id=None
         ):
 
         if not HAS_FASTAI:
@@ -203,7 +206,7 @@ class TextDataObject:
         text_data._bs = batch_size
         text_data._unique_tags = unique_tags
         text_data._address_tag = address_tag
-        text_data._label2id = {x: index for index, x in enumerate(unique_tags)}
+        text_data._label2id = label2id if label2id else {x: index for index, x in enumerate(unique_tags)}
 
         text_data._train_tags = tags_collection[:split_index]
         text_data._train_tokens = tokens_collection[:split_index]
@@ -359,6 +362,18 @@ class TextDataObject:
             _raise_fastai_exception(import_exception)
 
         logger = kwargs.get("logger")
+        classes = kwargs.get("classes", None)
+        backbone = kwargs.get("backbone")
+        if classes:
+            label_cols = self._label_cols
+            unique_labels = list(self._train_df[label_cols[0]].unique()) if len(label_cols) == 1 else label_cols
+            if set(classes) != set(unique_labels):
+                error_message = (f"Looks like the - `{backbone}` is fine-tuned on the following labels - "
+                                 f"{classes} and your data consists of the following labels - `{unique_labels}`."
+                                 f"\nPlease use a base model of - `{backbone}` and fine-tune it on your data or use a "
+                                 f"model which is fine-tuned on a data having same labels as - `{unique_labels}`")
+                raise Exception(error_message)
+
         if logger:logger.info(f"Preparing databunch for task type - {self._task}")
         if self._task == "classification":
             self._databunch = TextClasDataBunch.\
@@ -373,6 +388,7 @@ class TextDataObject:
                         label_cols=self._label_cols,
                         bs=self._bs,
                         collate_fn=partial(pad_collate, pad_first=pad_first, pad_idx=pad_idx),
+                        classes=classes,
                         **self.databunch_kwargs
                         )
 
