@@ -115,6 +115,13 @@ MultiTaskRoadExtractor
     :inherited-members:
     :undoc-members:
 
+ConnectNet
+^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.ConnectNet
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 ChangeDetector
 ^^^^^^^^^^^^^^
 .. autoclass:: arcgis.learn.ChangeDetector

@@ -541,7 +541,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
 
         **kwargs**
 
-        =====================   ===========================================def
+        =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         rows                    Number of rows of data to be displayed, if

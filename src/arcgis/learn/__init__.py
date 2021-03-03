@@ -14,7 +14,7 @@ if not LAMBDA_TEXT_CLASSIFICATION:
       PSPNetClassifier, MaskRCNN, DeepLab, PointCNN, ModelExtension, \
       FasterRCNN, SuperResolution, FullyConnectedNetwork, MLModel, YOLOv3, HEDEdgeDetector, \
       BDCNEdgeDetector, ImageCaptioner, TimeSeriesModel, CycleGAN, MultiTaskRoadExtractor, \
-      ChangeDetector, Pix2Pix
+      ChangeDetector, Pix2Pix, ConnectNet
 
     from .text import EntityRecognizer
     from ._utils.pointcloud_data import Transform3d
