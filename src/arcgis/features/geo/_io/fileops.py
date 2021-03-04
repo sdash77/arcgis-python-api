@@ -1,6 +1,7 @@
 """
 IO operations for Feature Classes
 """
+import io
 import os
 import sys
 import uuid
@@ -10,7 +11,9 @@ import datetime
 import ujson as _ujson
 import numpy as np
 import pandas as pd
-
+from contextlib import closing
+import zipfile
+from arcgis.geometry import Geometry
 try:
     import arcpy
     from arcpy import da
@@ -157,6 +160,76 @@ def _from_xy(df, x_column, y_column, sr=None):
 def _ensure_path_string(input_path):
     """Provide hander to facilitate file path inputs to be Path object instances."""
     return str(input_path) if isinstance(input_path, Path) else input_path
+
+def from_url(url:str) -> list:
+    """
+    Loads a `shapefile` from a URL endpoint into a spatially enabled dataframe.
+
+    ===========================     ====================================================================
+    **Argument**                    **Description**
+    ---------------------------     --------------------------------------------------------------------
+    url                             Required String. The web location of the compressed shapefile.
+    ===========================     ====================================================================
+    :returns: List[pd.DataFrame]
+
+    """
+
+    if HASPYSHP == False:
+        raise Exception("pyshp is required to read hosted shapefiles.")
+    import requests
+    r = requests.get(url)
+    with closing(r), zipfile.ZipFile(io.BytesIO(r.content)) as archive:
+        datasets ={}
+        for member in archive.infolist():
+            f_name_in_zip = member.filename
+            filename = f_name_in_zip.split('.')[0]
+            ends_with = os.path.splitext(member.filename)[1]
+            if filename in datasets:
+                if ends_with.lower() in ['.shp', '.dbf', '.prj', '.shx']:
+                    datasets[filename][ends_with.replace(".", "")] = member
+            else:
+                datasets[filename] = { }
+                if ends_with.lower() in ['.shp', '.dbf', '.prj', '.shx']:
+                    datasets[filename][ends_with.replace(".", "")] = member
+        # build readers
+        readers = []
+        for key in datasets.keys():
+            if list(datasets[key].keys()) >=  ['shp', 'dbf']:
+                shx = None
+                if datasets[key].get('shx', None):
+                    shx = io.BytesIO()
+                    shx.write(archive.read(datasets[key].get('shx', None).filename))
+
+
+                shp = io.BytesIO()#
+                shp.write(archive.read(datasets[key].get('shp', None).filename))
+                dbf = io.BytesIO()
+                dbf.write(archive.read(datasets[key].get('dbf', None).filename))
+                readers.append(shapefile.Reader(shp=shp,
+                                                shx=shx,
+                                                dbf=dbf))
+        # construct SeDF from URL based datasets
+        sdfs = []
+        for reader in readers:
+            records = []
+            fields = [field[0] for field in reader.fields if field[0] != 'DeletionFlag']
+            for idx, r in enumerate(reader.shapeRecords()):
+                atr = dict(zip(fields, r.record))
+                g = r.shape.__geo_interface__
+                geom = Geometry(g)
+                atr['SHAPE'] = geom
+                records.append(atr)
+                del atr
+                del r, g
+                del geom
+            sdf = pd.DataFrame(records)
+            sdf.spatial.set_geometry('SHAPE')
+            sdf['OBJECTID'] = range(sdf.shape[0])
+            sdf.reset_index(inplace=True)
+            sdf.spatial._meta.source = url
+            sdfs.append(sdf)
+            del reader
+        return sdfs
 #--------------------------------------------------------------------------
 def read_feather(path, spatial_column="SHAPE", columns=None, use_threads: bool = True) -> pd.DataFrame:
     """
@@ -368,7 +441,7 @@ def from_featureclass(filename, **kwargs):
     ===========================     ====================================================================
     **Argument**                    **Description**
     ---------------------------     --------------------------------------------------------------------
-    filename                        Required string or pathlib.Path. Full path to the feature class
+    filename                        Required string or pathlib.Path. Full path to the feature class or URL (shapefiles only).
     ===========================     ====================================================================
 
     *Optional parameters when ArcPy library is available in the current environment*:
@@ -393,7 +466,11 @@ def from_featureclass(filename, **kwargs):
     import json
 
     filename = _ensure_path_string(filename)
-
+    if filename.find("http://") > -1 or filename.find("https://"):
+        res = from_url(url=filename)
+        if len(res) == 1:
+            return res[0]
+        return res
     if HASARCPY:
         sql_clause = kwargs.pop('sql_clause', (None,None))
         where_clause = kwargs.pop('where_clause', None)
