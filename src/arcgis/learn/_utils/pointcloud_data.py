@@ -432,7 +432,8 @@ class PointCloudDataset(Dataset):
             
             return retval
         else:
-            logger.warning(f"key `{self.classification_key}` could not be found in the exported files.")
+            # removing the warning as it is showing up in the GPtool
+            # logger.warning(f"key `{self.classification_key}` could not be found in the exported files.")
             retval = concatenate_tensors(read_file, self.input_keys, tile, self.max_point), None
 
         return retval

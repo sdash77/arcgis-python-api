@@ -12,6 +12,7 @@ from fastai.callback import Callback
 from fastai.core import first_el , is_listy
 from fastai.torch_core import add_metrics, num_distrib
 import torch.distributed as dist
+import sklearn.metrics as metrics
 
 def farthest_point_sample(pts, npoint):
     """
@@ -474,3 +475,91 @@ class IterationStop(LearnerCallback):
     def on_batch_end(self, **kwargs):
         if (kwargs['iteration'] + 1) % self.stop_iteration==0:
             return {'stop_epoch': True}
+
+def precision(y_pred, y_true):
+    y_true = y_true.cpu().numpy().reshape(-1)
+    y_pred = y_pred.argmax(dim=-1).cpu().numpy().reshape(-1)
+    return torch.tensor(metrics.precision_score(y_true, y_pred, average='macro', zero_division=0))
+
+def recall(y_pred, y_true):
+    y_true = y_true.cpu().numpy().reshape(-1)
+    y_pred = y_pred.argmax(dim=-1).cpu().numpy().reshape(-1)
+    return torch.tensor(metrics.recall_score(y_true, y_pred, average='macro', zero_division=0))
+
+def f1(y_pred, y_true):
+    y_true = y_true.cpu().numpy().reshape(-1)
+    y_pred = y_pred.argmax(dim=-1).cpu().numpy().reshape(-1)
+    return torch.tensor(metrics.f1_score(y_true, y_pred, average='macro', zero_division=0))
+
+def balanced_accuracy(y_pred, y_true):
+    y_true = y_true.cpu().numpy().reshape(-1)
+    y_pred = y_pred.argmax(dim=-1).cpu().numpy().reshape(-1)
+    return torch.tensor(metrics.balanced_accuracy_score(y_true, y_pred))
+
+
+class CalculateClassificationReport(LearnerCallback):
+    def __init__(self, learn):
+        super().__init__(learn)
+        self.learn._epoch_metrics = []
+
+    def on_epoch_begin(self, **kwargs):
+        "Set the inner value to 0."
+        self.val, self.count = {}, 0
+
+    def add_all(self, new_val, size):
+        for k, v in new_val.items():
+            self.val.setdefault(k, {})
+            if k not in ['accuracy', 'macro avg', 'weighted avg']:
+                self.val[k].setdefault('precision', v['precision'])
+                self.val[k]['precision'] += v['precision']
+                self.val[k].setdefault('recall', v['recall'])
+                self.val[k]['recall'] += v['recall']
+                self.val[k].setdefault('f1-score', v['f1-score'])
+                self.val[k]['f1-score'] += v['f1-score']
+                self.val[k].setdefault('count', 0)
+                self.val[k]['count'] += 1
+                # self.val[k]['support'] += v['support']
+
+    def average_all(self):
+        final_val = {}
+        for k, v in self.val.items():
+            if k not in ['accuracy', 'macro avg', 'weighted avg']:
+                final_val[k] = {}
+                final_val[k]['precision'] = v['precision'] / v['count']
+                final_val[k]['recall'] = v['recall'] / v['count']
+                final_val[k]['f1-score'] = v['f1-score'] / v['count']
+                # final_val[k]['support'] = v['support'] / self.count
+        return final_val
+
+    def rename_metrics(self, current_epoch_metrics):
+        idx2class = self.learn.data.idx2class
+        class_mapping = self.learn.data.class_mapping
+        renamed = {}
+        for k, v in current_epoch_metrics.items():
+            cname = class_mapping.get(idx2class.get(int(k), int(k)), str(k))
+            renamed[cname] = {}
+            renamed[cname]['precision'] = v['precision']
+            renamed[cname]['recall'] = v['recall']
+            renamed[cname]['f1-score'] = v['f1-score']
+            # renamed[cname]['support'] = v['support']
+        return renamed
+
+    def on_batch_end(self, last_output, last_target, **kwargs):
+        "Update metric computation with `last_output` and `last_target`."
+        if not kwargs.get('train'):
+            if is_listy(last_target): last_target=last_target[0]
+            size = last_target.size(0)
+            self.count += size
+            last_output = last_output.argmax(-1).cpu().numpy().reshape(-1)
+            last_target = last_target.cpu().numpy().reshape(-1)
+            val = metrics.classification_report(last_output, last_target, zero_division=0, output_dict=True)
+            self.add_all(val, size)
+
+    def on_epoch_end(self, last_metrics, **kwargs):
+        "Set the final result in `last_metrics`."
+        # Lr find case
+        if self.val is {}:
+            return
+        current_epoch_metrics = self.average_all()
+        current_epoch_metrics = self.rename_metrics(current_epoch_metrics)
+        self.learn._epoch_metrics.append(current_epoch_metrics)

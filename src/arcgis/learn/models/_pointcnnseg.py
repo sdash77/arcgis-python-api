@@ -5,8 +5,22 @@ import_exception = None
 try:
     from .._data import _raise_fastai_import_error 
     from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback
-    from ._pointcnn_utils import PointCNNSeg, SamplePointsCallback, CrossEntropyPC, accuracy, accuracy_non_zero, AverageMetric
-    from .._utils.pointcloud_data import get_device, inference_las, show_results, compute_precision_recall, predict_h5, show_results_tool
+    from ._pointcnn_utils import (PointCNNSeg,
+                                  SamplePointsCallback, 
+                                  CrossEntropyPC, 
+                                  accuracy, 
+                                  CalculateClassificationReport,
+                                  accuracy_non_zero, 
+                                  AverageMetric,
+                                  precision,
+                                  recall,
+                                  f1)
+    from .._utils.pointcloud_data import (get_device, 
+                                          inference_las, 
+                                          show_results, 
+                                          compute_precision_recall, 
+                                          predict_h5, 
+                                          show_results_tool)
     from ._unet_utils import is_no_color
     from fastai.basic_train import Learner
     import torch
@@ -82,10 +96,16 @@ class PointCNN(ArcGISModel):
         self._backbone = None
         self.sample_point_num = kwargs.get('sample_point_num', data.max_point)
         self.learn = Learner(data,
-                PointCNNSeg(self.sample_point_num, data.c, data.extra_dim, kwargs.get('encoder_params', None), kwargs.get('dropout', None)),
-                loss_func=CrossEntropyPC(data.c),
-                metrics=[AverageMetric(accuracy)],
-                callback_fns=[partial(SamplePointsCallback, sample_point_num=self.sample_point_num)])
+                             PointCNNSeg(self.sample_point_num, data.c, data.extra_dim, kwargs.get('encoder_params', None), kwargs.get('dropout', None)),
+                             loss_func=CrossEntropyPC(data.c),
+                             metrics=[AverageMetric(accuracy),
+                                      AverageMetric(precision), 
+                                      AverageMetric(recall), 
+                                      AverageMetric(f1)
+                                     ],
+                             callback_fns=[partial(SamplePointsCallback, sample_point_num=self.sample_point_num),
+                                           CalculateClassificationReport,
+                                          ])
         self.encoder_params = self.learn.model.encoder_params
 
         self.learn.model = self.learn.model.to(self._device)
@@ -175,7 +195,8 @@ class PointCNN(ArcGISModel):
 
         """
         Train the model for the specified number of epochs and using the
-        specified learning rates
+        specified learning rates. The precision, recall and f1 scores
+        shown in the training table are macro averaged over all classes.
         
         =====================   ===========================================
         **Argument**            **Description**
