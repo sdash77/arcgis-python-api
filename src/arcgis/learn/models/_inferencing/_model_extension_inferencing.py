@@ -413,6 +413,27 @@ class ChildImageClassifier:
                     }
                 ]
             )
+            if self.json_info.get('ArcGISLearnVersion', False) and self.json_info["ArcGISLearnVersion"] > "1.8.4":
+                required_parameters.extend(
+                [
+                    {
+                        'name': 'threshold',
+                        'dataType': 'numeric',
+                        'value': 0.5,
+                        'required': False,
+                        'displayName': 'Confidence Score Threshold [0.0, 1.0]',
+                        'description': 'Confidence score threshold value [0.0, 1.0]'
+                    },
+                    {
+                        "name": "return_probability_raster",
+                        "dataType": "string",
+                        "required": False,
+                        "value": "False",
+                        "displayName": "Return Probability Raster",
+                        "description": "If True, will return the probability surface of the result.",
+                    }
+                ]
+            )
         else:
             required_parameters.extend(
                 [
@@ -436,8 +457,18 @@ class ChildImageClassifier:
         self.predict_background = scalars.get('predict_background', 'true').lower() in ['true', '1', 't', 'y', 'yes']  ## Default value True
         if self.json_info['IsEdgeDetection']:
             self.thinning = scalars.get('thinning', 'true').lower() in ['true', '1', 't', 'y', 'yes']
+            self.thres = float(scalars.get('threshold', 0.5))  ## Default 0.5 threshold.
+            self.probability_raster = scalars.get("return_probability_raster", "false").lower() in [
+                "true",
+                "1",
+                "t",
+                "y",
+                "yes"
+            ]
         else:
             self.thinning = None
+            self.thres = None
+            self.probability_raster = None
 
         self.rectangle_height, self.rectangle_width = calculate_rectangle_size_from_batch_size(self.batch_size)
         ty, tx = get_tile_size(self.json_info['ImageHeight'], self.json_info['ImageWidth'],
@@ -448,39 +479,45 @@ class ChildImageClassifier:
             'padding': self.padding,
             'tx': tx,
             'ty': ty,
+            'threshold': self.thres,
+            'return_probability_raster': self.probability_raster,
             'fixedTileSize': 1
         }
 
-    def updatePixels(self, tlc, shape, props, **pixelBlocks): # 8 x 224 x 224 x 3
+    def updatePixels(self, tlc, shape, props, **pixelBlocks):  # 8 x 224 x 224 x 3
         input_image = pixelBlocks['raster_pixels'].astype(np.float32)
         batch, batch_height, batch_width = \
             tile_to_batch(input_image,
-                        self.json_info['ImageHeight'],
-                        self.json_info['ImageWidth'],
-                        self.padding,
-                        fixed_tile_size=True,
-                        batch_height=self.rectangle_height,
-                        batch_width=self.rectangle_width)
-        
+                          self.json_info['ImageHeight'],
+                          self.json_info['ImageWidth'],
+                          self.padding,
+                          fixed_tile_size=True,
+                          batch_height=self.rectangle_height,
+                          batch_width=self.rectangle_width)
+
         if "NormalizationStats" in self.json_info:
             img_normed = normalize_batch(batch, self.json_info)
         else:
             img_normed = normalize_batch_imagenetstats(batch.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
 
         semantic_predictions = classify_image(self.model_extension.model_conf,
-                                            self.model,
-                                            img_normed,
-                                            self.device,
-                                            predict_bg=self.predict_background,
-                                            model_info=self.json_info,
-                                            emd_path=self.json_emd_file,
-                                            thinning=self.thinning)
+                                              self.model,
+                                              img_normed,
+                                              self.device,
+                                              predict_bg=self.predict_background,
+                                              model_info=self.json_info,
+                                              emd_path=self.json_emd_file,
+                                              thinning=self.thinning,
+                                              threshold=self.thres,
+                                              prob_raster=self.probability_raster)
 
         semantic_predictions = batch_to_tile(semantic_predictions.cpu().numpy(), batch_height, batch_width)
         return semantic_predictions
 
-def classify_image(model_configuration, model, images, device, predict_bg, model_info, emd_path, thinning):
 
+
+def classify_image(model_configuration, model, images, device, predict_bg, model_info, emd_path, thinning, threshold,
+                   prob_raster):
     if "NormalizationStats" in model_info:
         batch_input = model_configuration.transform_input_multispectral(torch.tensor(images).to(device).float())
     else:
@@ -492,7 +529,10 @@ def classify_image(model_configuration, model, images, device, predict_bg, model
         preds = model_configuration.post_process(pred_batch)
         return torch.stack(preds)
     else:
-        preds = model_configuration.post_process(pred_batch, thinning=thinning)
+        if prob_raster:
+            preds = pred_batch[0].detach()
+        else:
+            preds = model_configuration.post_process(pred_batch, thres=threshold, thinning=thinning)
         if thinning:
             return torch.stack(preds)
         else:

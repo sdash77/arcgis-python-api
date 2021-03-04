@@ -801,7 +801,11 @@ class ArcGISImageClassifier:
     def updateRasterInfo(self, **kwargs):
         kwargs['output_info']['bandCount'] = 1
         #todo: type is determined by the value range of classes in the json file
-        kwargs['output_info']['pixelType'] = 'i4'
+        prob_raster = getattr(self.child_image_classifier,'probability_raster',False)
+        if prob_raster:
+            kwargs['output_info']['pixelType'] = 'f4' # To ensure that output pixels are in prob range 0 to 1
+        else:
+            kwargs['output_info']['pixelType'] = 'i4'
         class_info = self.json_info['Classes']
         attribute_table['features'] = []
         for i, c in enumerate(class_info):
@@ -830,10 +834,11 @@ class ArcGISImageClassifier:
         raster_pixels[np.where(raster_mask == 0)] = 0
         pixelBlocks['raster_pixels'] = raster_pixels
 
-        xx = self.child_image_classifier.updatePixels(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)        
         if self.json_info['ModelName'] == 'MultiTaskRoadExtractor':
+            xx = self.child_image_classifier.detectRoads(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)   
             pixelBlocks['output_pixels'] = xx
         else:
+            xx = self.child_image_classifier.updatePixels(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)   
             tytx = getattr(self.child_image_classifier, 'tytx', self.json_info['ImageHeight'])
             chunks, num_rows, num_cols =  chunk_it(xx.transpose(1, 2, 0), tytx)# self.json_info['ImageHeight'])  # ImageHeight = ImageWidth
             xx = patch_chips(crop_flatten(chunks, self.child_image_classifier.padding), num_rows, num_cols)
