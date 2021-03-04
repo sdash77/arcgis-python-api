@@ -785,6 +785,9 @@ class ArcGISModel(object):
                 backbone = self._orig_backbone.__name__
 
         _emd_template = self._get_emd_params(save_inference_file)
+        if getattr(self, '_data', None) is not None:
+            _emd_template['MinCellSize'] = getattr(self._data, '_emd', {}).get('MinCellSize', None)
+            _emd_template['MaxCellSize'] = getattr(self._data, '_emd', {}).get('MaxCellSize', None)
 
         _emd_template["SupportsVariableTileSize"] = _emd_template.get("SupportsVariableTileSize", False)
         _emd_template["ArcGISLearnVersion"] = ArcGISLearnVersion

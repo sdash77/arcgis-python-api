@@ -1689,6 +1689,11 @@ def prepare_data(path,
         if resize_to is None:
             kwargs_transforms['size'] = img_size
         kwargs_transforms['tfm_y'] = True
+
+        if has_esri_files:
+            json_file = path / 'esri_model_definition.emd'
+            with open(json_file) as f:
+                emd = json.load(f)
         
     elif dataset_type in ['ner_json','BIO','IOB','LBIOU','BILUO']:
         if batch_size == 64:
@@ -2134,5 +2139,8 @@ def prepare_data(path,
     else:
         data.path = Path(os.path.dirname(os.path.abspath(data.path)))
     data._temp_folder = _prepare_working_dir(data.path)
+
+    if has_esri_files:
+        data._emd = emd
 
     return data
