@@ -30,6 +30,9 @@ class TextTranslator:
     target_language         Optional string. The language into which one
                             wishes to translate the input text.
                             Default value is 'en' (English)
+    ---------------------   -------------------------------------------
+    pretrained_path         Optional string. Path to load the model from
+                            offline model files located on the local disk.                             
     =====================   ===========================================
 
     :returns: `TextTranslator` Object
@@ -38,7 +41,7 @@ class TextTranslator:
     #: supported transformer backbones
     supported_backbones = ["MarianMT"]
 
-    def __init__(self, source_language="es", target_language="en"):
+    def __init__(self, source_language="es", target_language="en", pretrained_path=None):
         if not HAS_TRANSFORMER:
             _raise_fastai_import_error(import_exception=transformer_exception)
 
@@ -50,8 +53,12 @@ class TextTranslator:
         self._device_id = _get_device_id()
         self._device = torch.device("cpu" if self._device_id < 0 else "cuda:{}".format(self._device_id))
         self._task = f"translation_{self._source_lang}_to_{self._target_lang}"
-        self._tokenizer = AutoTokenizer.from_pretrained(f"Helsinki-NLP/opus-mt-{source_language}-{target_language}")
-        self.model = AutoModelForSeq2SeqLM.from_pretrained(f"Helsinki-NLP/opus-mt-{source_language}-{target_language}")
+        if pretrained_path:
+            self._tokenizer = AutoTokenizer.from_pretrained(pretrained_path)
+            self.model = AutoModelForSeq2SeqLM.from_pretrained(pretrained_path)
+        else:
+            self._tokenizer = AutoTokenizer.from_pretrained(f"Helsinki-NLP/opus-mt-{source_language}-{target_language}")
+            self.model = AutoModelForSeq2SeqLM.from_pretrained(f"Helsinki-NLP/opus-mt-{source_language}-{target_language}")
         self.model.to(self._device)
 
     def translate(self, text_or_list, **kwargs):
@@ -116,3 +123,20 @@ class TextTranslator:
             if num_return_sequences == 1: result = result[0]
             results.append(result)
         return results
+
+    def save(self, path):
+        """Saves the translator model files on a specified path on the local disk.
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        path                    Required string or list. Path to save  
+                                model files on the local disk.
+        =====================   ===========================================
+        """
+        import os
+        if not os.path.exists(path):
+            os.makedirs(path)
+        self.model.save_pretrained(path)
+        self.model.config.save_pretrained(path)
+        self._tokenizer.save_pretrained(path)
+        return f"Helsinki-NLP/opus-mt-{self._source_lang}-{self._target_lang} has been saved to {path}"
