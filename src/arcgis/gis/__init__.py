@@ -1319,7 +1319,7 @@ class GroupMigrationManager(object):
         if self._gis.users.me.role == 'org_admin':
             url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/export"
             if items and isinstance(items, (list, tuple)):
-                items = ",".join([i.id for i in items])
+                items = ",".join([i.id if isinstance(i, Item) else i for i in items])
             else:
                 items = None
             params = {
@@ -1379,6 +1379,8 @@ class GroupMigrationManager(object):
 
         """
         assert isinstance(epk_item, Item)
+        if isinstance(item_ids, list):
+            item_ids = ",".join([i.id if isinstance(i, Item) else i for i in item_ids])
         if isinstance(epk_item, Item) and \
            epk_item.type == 'Export Package':
             res = self._from_package(item=epk_item,
