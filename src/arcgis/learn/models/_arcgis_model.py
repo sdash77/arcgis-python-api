@@ -718,7 +718,7 @@ class ArcGISModel(object):
         # If tensorboardx is installed write a log with name as timestamp
         if tensorboard and HAS_TENSORBOARDX:
             training_id = time.strftime("log_%Y-%m-%d_%H-%M-%S")
-            log_path = Path(os.path.dirname(self._data.path)) / 'training_log'
+            log_path = Path(self._data.path) / 'training_log'
             abs_path = os.path.abspath(log_path)
             training_id = type(self).__name__ + "_" + training_id
             callbacks.append(
