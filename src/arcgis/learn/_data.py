@@ -1056,7 +1056,6 @@ def prepare_data(path,
     data_folders = None
     emd_in = kwargs.get('emd', None)
     eas_in = kwargs.get('eas', None)
-    emd = None
     eas = None
     images_df = kwargs.get('images_df', None)
     if isinstance(path, (list, tuple)):
@@ -2000,7 +1999,7 @@ def prepare_data(path,
             """
             raise Exception(message)
 
-    if has_esri_files and dataset_type not in ['CycleGAN', 'Pix2Pix', 'ChangeDetection']:
+    if has_esri_files and dataset_type not in ['CycleGAN', 'Pix2Pix', 'ChangeDetection', 'superres']:
         data._dataset_type = stats['MetaDataMode']
     else:
         data._dataset_type = dataset_type
