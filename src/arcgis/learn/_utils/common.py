@@ -195,7 +195,15 @@ class ArcGISMSImage(Image):
             if len(x.shape)==2:
                 x = x.unsqueeze(0)
             if div is not None:
-                x = x / div
+                if isinstance(div, tuple):
+                    min_values, max_values = div
+                    if not isinstance(min_values, torch.Tensor):
+                        min_values, max_values = torch.tensor(min_values), torch.tensor(max_values)
+                    min_values = min_values.to(x).view(-1, 1, 1)
+                    max_values = max_values.to(x).view(-1, 1, 1)
+                    x = (x-min_values) / (max_values-min_values+1e-04)
+                else:
+                    x = x / div
 
         return cls(x)
 
@@ -358,7 +366,7 @@ def predict_batch(self, imagetensor_batch):
 ## Image Stretching Functions start ##
 
 def get_band_percent_minmax(values, min_clip, max_clip):
-    return values[round(values.shape[0] * min_clip)], values[values.shape[0] - round(values.shape[0] * max_clip)]
+    return values[math.floor(values.shape[0] * min_clip)], values[values.shape[0] - math.ceil(values.shape[0] * max_clip)]
 
 def get_percent_minmax(imagetensor_batch, min_clip=0.0025, max_clip=0.005):
     shp = imagetensor_batch.shape

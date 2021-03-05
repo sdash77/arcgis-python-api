@@ -1907,31 +1907,8 @@ def prepare_data(path,
         data._scaled_std_values[data._scaled_std_values == 0]+=1e-02
         
         # Scaling
-        data._min_max_scaler = partial(_tensor_scaler, min_values=data._band_min_values, max_values=data._band_max_values, mode='minmax')
-        data._min_max_scaler_tfm = partial(_tensor_scaler_tfm, min_values=data._band_min_values, max_values=data._band_max_values, mode='minmax')
-        #data.add_tfm(data._min_max_scaler_tfm)
-        
-        # Transforms
-        def _scaling_tfm(x): 
-            ## Scales Fastai Image Scaling | MS Image Values -> 0 - 1 range
-            return x.__class__(data._min_max_scaler_tfm((x.data,None))[0][0])
-        
-        ## Fastai need tfm, order and resolve.
-        class dummy():
-            pass
-        _scaling_tfm.tfm = dummy()
-        _scaling_tfm.tfm.order = 0
-        _scaling_tfm.resolve = dummy
-
-        ## Scaling the images before applying any  other transform
-        if getattr(data.train_ds, 'tfms') is not None:
-            data.train_ds.tfms = [_scaling_tfm] + data.train_ds.tfms
-        else:
-            data.train_ds.tfms = [_scaling_tfm]
-        if getattr(data.valid_ds, 'tfms') is not None:
-            data.valid_ds.tfms = [_scaling_tfm] + data.valid_ds.tfms
-        else:
-            data.valid_ds.tfms = [_scaling_tfm]
+        data.valid_ds.x._div = (data._band_min_values, data._band_max_values)
+        data.train_ds.x._div = (data._band_min_values, data._band_max_values)
 
         # Normalize
         data._do_normalize = True
