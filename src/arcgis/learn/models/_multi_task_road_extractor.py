@@ -422,13 +422,13 @@ class MultiTaskRoadExtractor(ArcGISModel):
         save_callback_params = {
             "monitor": "miou",
             "every": "improvement",
-            "load_best_at_end": False,
         }
         save_callback_params.update(kwargs.get("save_callback_params", {}))
         kwargs.update(save_callback_params=save_callback_params)
         if isinstance(lr, slice):
             lr = lr.stop
-        super().fit(epochs, lr=lr, **kwargs)
+        # setting monitor because earlystopping also uses this value.
+        super().fit(epochs, lr=lr, monitor="miou", **kwargs)
 
     def _get_emd_params(self,save_inference_file):
         _emd_template = {}

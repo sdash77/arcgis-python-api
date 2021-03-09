@@ -1,6 +1,8 @@
 import arcgis
 from pathlib import Path
 import os
+import glob
+import shutil
 import time
 import tempfile
 import json
@@ -15,6 +17,7 @@ import socket
 from functools import wraps
 import traceback
 import inspect
+import types
 
 HAS_FASTAI = True
 HAS_TENSORBOARDX = True
@@ -212,14 +215,22 @@ class SaveModelCallback(TrackerCallback):
         "Compare the value monitored to its best score and maybe save the model."
 
         if self.every == "epoch":
-            self.model.save('{}_{}'.format(self.name, epoch), compute_metrics=False)
+            self.model._save(f'{self.name}_epoch_{epoch}', zip_files=False, save_html=False, compute_metrics=False)
         else:  # every="improvement"
             current = self.get_monitor_value()
             if current is not None and self.operator(current, self.best):
                 if arcgis.env.verbose:
                     print('saving checkpoint.')
+                self.best_epoch = epoch
                 self.best = current
-                self.model._save('{}'.format(self.name), zip_files=False, save_html=False, compute_metrics=False)
+                self.remove_previous()
+                self.model._save(f'{self.name}_epoch_{epoch}', zip_files=False, save_html=False, compute_metrics=False)
+
+    def remove_previous(self):
+        # to avoid creating multiple best checkpoints.
+        saved_path = os.path.join(self.model.learn.path, self.model.learn.model_dir)
+        for p in glob.glob(os.path.join(saved_path, self.name + '*')):
+            shutil.rmtree(p)
 
     def on_train_end(self, **kwargs):
         "Load the best model."
@@ -232,7 +243,7 @@ class SaveModelCallback(TrackerCallback):
                 pass
 
             try:
-                self.model.save('{}'.format(self.name), compute_metrics=False)
+                self.model.save(f'{self.name}_epoch_{self.best_epoch}', compute_metrics=False)
             except:
                 pass
 
@@ -635,7 +646,24 @@ class ArcGISModel(object):
     def _model_metrics(self):
         raise NotImplementedError
 
-    def fit(self, epochs=10, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, tensorboard=False,
+    @property
+    def available_metrics(self):
+        """
+        List of available metrics that are displayed in the training
+        table. Set `monitor` value to be one of these while calling
+        the `fit` method.
+        """
+        return ['valid_loss'] + \
+               [m.__name__ if isinstance(m, types.FunctionType) else m.func.__name__ for m in self.learn.metrics]
+
+    def fit(self, 
+            epochs=10, 
+            lr=None, 
+            one_cycle=True, 
+            early_stopping=False, 
+            checkpoint=True,     # "all", "best", True, False ("best" and True are same.)
+            tensorboard=False,
+            monitor='valid_loss',  # whatever is passed here, earlystopping and checkpointing will use that.
             **kwargs):
         """
         Train the model for the specified number of epochs and using the
@@ -657,13 +685,17 @@ class ArcGISModel(object):
                                 learning rate schedule is used.
         ---------------------   -------------------------------------------
         early_stopping          Optional boolean. Parameter to add early stopping.
-                                If set to 'True' training will stop if validation
-                                loss stops improving for 5 epochs.
+                                If set to 'True' training will stop if parameter
+                                `monitor` value stops improving for 5 epochs.
         ---------------------   -------------------------------------------
-        checkpoint              Optional boolean. Parameter to save the best model
-                                during training. If set to `True` the best model
-                                based on validation loss will be saved during
-                                training.
+        checkpoint              Optional boolean or string.
+                                Parameter to save checkpoint during training.
+                                If set to `True` the best model
+                                based on `monitor` will be saved during
+                                training. If set to 'all', all checkpoints
+                                are saved. If set to False, checkpointing will
+                                be off. Setting this parameter loads the best
+                                model at the end of training.
         ---------------------   -------------------------------------------
         tensorboard             Optional boolean. Parameter to write the training log.
                                 If set to 'True' the log will be saved at
@@ -672,6 +704,13 @@ class ArcGISModel(object):
 
                                 The default value is 'False'.
                                 **Note - Not applicable for Text Models
+        ---------------------   -------------------------------------------
+        monitor                 Optional string. Parameter specifies
+                                which metric to monitor while checkpointing
+                                and early stopping. Defaults to 'valid_loss'. Value
+                                should be one of the metric that is displayed in
+                                the training table. Use `{model_name}.available_metrics`
+                                to list the available metrics to set here.
         =====================   ===========================================
         """
         self._check_requisites()
@@ -703,14 +742,19 @@ class ArcGISModel(object):
 
         callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
         kwargs.pop('callbacks', None)
+        monitored_names = self.available_metrics
+        if monitor not in monitored_names:
+            raise Exception(f"`monitor` must be set to one from {monitored_names}")
+        self.monitor = monitor
         if early_stopping:
-            callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor='valid_loss', min_delta=0.01, patience=5))
+            callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor=monitor, min_delta=0.01, patience=5))
         if checkpoint:
             from datetime import datetime
             now = datetime.now()
-            save_callback_params = kwargs.get("save_callback_params", {"monitor": "valid_loss", "every": "improvement"})
-            # callbacks.append(SaveModelCallback(self, monitor='valid_loss', every='improvement',
-            #                                   name=now.strftime("checkpoint_%Y-%m-%d_%H-%M-%S")))
+            if checkpoint != True and checkpoint != "all":
+                raise Exception("Checkpoint can only be set to a boolean or 'all'")
+            every = "improvement" if checkpoint is True else "epoch"
+            save_callback_params = kwargs.get("save_callback_params", {"monitor": monitor, "every": every})
             callbacks.append(SaveModelCallback(self,
                                                name=now.strftime("checkpoint_%Y-%m-%d_%H-%M-%S"),
                                                **save_callback_params))
@@ -729,6 +773,7 @@ class ArcGISModel(object):
         elif tensorboard:
             warn("Install tensorboardX 2.1 'pip install tensorboardx==2.1' to write training log")
 
+        self._fit_callbacks = callbacks
         if one_cycle:
             self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
         else:
@@ -791,6 +836,13 @@ class ArcGISModel(object):
 
         _emd_template["SupportsVariableTileSize"] = _emd_template.get("SupportsVariableTileSize", False)
         _emd_template["ArcGISLearnVersion"] = ArcGISLearnVersion
+
+        if getattr(self, '_fit_callbacks', None) is not None:
+            checkpoint_callback = [c for c in self._fit_callbacks if isinstance(c, SaveModelCallback)]
+            if checkpoint_callback != []:
+                checkpoint_callback = checkpoint_callback[0]
+                key = getattr(self, 'monitor', 'valid_loss')
+                _emd_template[f'monitored_{key}'] = checkpoint_callback.best.item()
 
         if isinstance(self._learning_rate, slice):
             _emd_lr = slice('{0:1.4e}'.format(self._learning_rate.start), '{0:1.4e}'.format(self._learning_rate.stop))

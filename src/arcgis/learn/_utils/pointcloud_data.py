@@ -564,7 +564,7 @@ def show_point_cloud_batch(self, rows=2, figsize=(6,12), color_mapping=None, **k
             continue
         
         if apply_tfms:
-            sampled_pc = self.transform_fn.transform_tool(sampled_pc[None])[0]
+            sampled_pc = self.transform_fn._transform_tool(sampled_pc[None])[0]
         x, y, z = recenter(sampled_pc).transpose(1, 0)  # convert to 3,N so that upacking works
 
         if save_txt:
@@ -2156,7 +2156,7 @@ class Transform3d(object):
         else:
             return augment(x_in[:, :, :3], xforms, np.array(self.jitter))
 
-    def transform_tool(self, x_in):
+    def _transform_tool(self, x_in):
         if isinstance(x_in, torch.Tensor):
             inp = x_in.clone()
         else:

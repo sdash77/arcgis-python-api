@@ -275,7 +275,7 @@ class SamplePointsCallback(LearnerCallback):
                 if self.learn.data.pc_type == 'PointCloud_TF':
                     last_input[:, :, :3] = self.learn.data.transform_fn(last_input)  
                 if self.learn.data.pc_type == 'PointCloud':
-                    last_input[:, :, :3] = self.learn.data.transform_fn.transform_tool(last_input)
+                    last_input[:, :, :3] = self.learn.data.transform_fn._transform_tool(last_input)
         
         return {'last_input':last_input.contiguous(), 'last_target':last_target.contiguous()}
 

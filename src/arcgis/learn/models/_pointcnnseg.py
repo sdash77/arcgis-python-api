@@ -204,23 +204,27 @@ class PointCNN(ArcGISModel):
         epochs                  Required integer. Number of cycles of training
                                 on the data. Increase it if underfitting.
         ---------------------   -------------------------------------------
-        lr                      Optional float. Learning rate to be used
-                                for training the model. If ``lr=None``, an
-                                optimal learning rate is automatically deduced
+        lr                      Optional float or slice of floats. Learning rate
+                                to be used for training the model. If ``lr=None``,
+                                an optimal learning rate is automatically deduced
                                 for training the model.
         ---------------------   -------------------------------------------
         one_cycle               Optional boolean. Parameter to select 1cycle
-                                learning rate schedule. If set to `False` no 
-                                learning rate schedule is used.       
+                                learning rate schedule. If set to `False` no
+                                learning rate schedule is used.
         ---------------------   -------------------------------------------
         early_stopping          Optional boolean. Parameter to add early stopping.
-                                If set to 'True' training will stop if validation
-                                loss stops improving for 5 epochs.        
+                                If set to 'True' training will stop if parameter
+                                `monitor` value stops improving for 5 epochs.
         ---------------------   -------------------------------------------
-        checkpoint              Optional boolean. Parameter to save the best model
-                                during training. If set to `True` the best model 
-                                based on validation loss will be saved during 
-                                training.
+        checkpoint              Optional boolean or string.
+                                Parameter to save checkpoint during training.
+                                If set to `True` the best model
+                                based on `monitor` will be saved during
+                                training. If set to 'all', all checkpoints
+                                are saved. If set to False, checkpointing will
+                                be off. Setting this parameter loads the best
+                                model at the end of training.
         ---------------------   -------------------------------------------
         tensorboard             Optional boolean. Parameter to write the training log.
                                 If set to 'True' the log will be saved at
@@ -229,6 +233,13 @@ class PointCNN(ArcGISModel):
 
                                 The default value is 'False'.
                                 **Note - Not applicable for Text Models
+        ---------------------   -------------------------------------------
+        monitor                 Optional string. Parameter specifies
+                                which metric to monitor while checkpointing
+                                and early stopping. Defaults to 'valid_loss'. Value
+                                should be one of the metric that is displayed in
+                                the training table. Use `{model_name}.available_metrics`
+                                to list the available metrics to set here.
         =====================   ===========================================
 
         **kwargs**
