@@ -5857,7 +5857,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             if upload_rasters_list != []:
                 from arcgis.raster._util import _upload_imagery_agol, _upload_imagery_enterprise
                 if gis._con._product == "AGOL":
-                    url_list = _upload_imagery_agol(upload_rasters_list, gis)
+                    url_list = _upload_imagery_agol(upload_rasters_list, gis, raster_type_name=raster_type_name)
                 else:
                     item_id_list = _upload_imagery_enterprise(upload_rasters_list, raster_type_name, gis)
                     items_on_server = True

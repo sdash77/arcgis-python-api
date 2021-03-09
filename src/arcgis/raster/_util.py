@@ -495,7 +495,7 @@ def _generate_direct_access_url(gis=None, expiration=None):
     else:
         raise RuntimeError("Couldn't generate direct access url")
     
-def _upload_imagery_agol(files, gis=None, direct_access_url=None):
+def _upload_imagery_agol(files, gis=None, direct_access_url=None, raster_type_name=None):
     """uploads a file to the image layer to AGOL and returns the list of urls"""
 
     try:
@@ -514,24 +514,36 @@ def _upload_imagery_agol(files, gis=None, direct_access_url=None):
         files = [files]
 
     url_list = []
+    url=""
+    set_root=True
     for file in files:
         current_time = int(time.time())
+        current_time_str = str(current_time)
         prefix =  "_images/"+str(current_time)+"/"
         if os.path.exists(file):
             if(os.path.isdir(file)):
+                if raster_type_name is None:
+                    set_root = False
+                elif (file.endswith(".crf") and raster_type_name =="Raster Dataset") or raster_type_name != "Raster Dataset":
+                    set_root = True
                 folder = os.path.basename(file)
                 basename_len=len(os.path.dirname(file))
                 for root,d_names,f_names in os.walk(file):
                     for f in f_names:
                         blobname = prefix + (root+"/"+f)[basename_len+1:].replace(os.sep, '/')
                         filepath = os.path.join(root, f)
+                        path = ("/"+root+"/"+f)[basename_len+1:].replace(os.sep, '/')
                         while True:
                             try:
                                 blob=container.get_blob_client(blobname)
                                 with open(filepath, "rb") as data:
                                     blob.upload_blob(data, blob_type="BlockBlob")
                                 url = blob.url.split("?", 1)[0]
-                                url_list.append(url)
+                                if set_root:
+                                    break
+                                else:
+                                    uri_dict = {"uri":url, "path":path}
+                                    url_list.append(uri_dict)
                             except (ClientAuthenticationError, ServiceResponseError, ServiceRequestError) as err:
                                 if direct_access_url is None:
                                     sas_url = _generate_direct_access_url(gis)
@@ -542,6 +554,10 @@ def _upload_imagery_agol(files, gis=None, direct_access_url=None):
                             except Exception as err:
                                 raise err
                             break
+                if set_root:
+                    if url !="":
+                        url = url[0:url.find(current_time_str)+len(current_time_str)]
+                        url_list.append(url)
             else:
                 blobname = prefix+os.path.basename(file).replace(os.sep, '/')
                 while True:
