@@ -702,7 +702,15 @@ class MLModel(object):
         if prediction_type == "dataframe":
             return dataframe
 
-        return dataframe.spatial.to_featurelayer(output_name, gis)
+        if 'SHAPE' in list(dataframe.columns):
+            return dataframe.spatial.to_featurelayer(output_name, gis)
+        else:
+            import tempfile
+            with tempfile.TemporaryDirectory() as tmpdir:
+                table_file = os.path.join(tmpdir, output_name + '.xlsx')
+                dataframe.to_excel(table_file, index=False, header=True)
+                online_table = gis.content.add({'type': 'Microsoft Excel', 'overwrite': True}, table_file)
+                return online_table.publish(overwrite=True)
 
     def _predict_rasters(self, output_folder_path, rasters, match_field_names=None):
 
