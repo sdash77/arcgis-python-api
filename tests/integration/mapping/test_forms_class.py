@@ -344,8 +344,82 @@ class Test_Forms(unittest.TestCase):
             self.assertEqual(form.elements[0].description, "test")
             self.assertEqual(form.elements[0].hint, "the name")
             self.assertEqual(form.elements[0].editable, True)
+            self.assertEqual(form.elements[0].input_type, "text-box")
             with self.assertRaises(ValueError):
                 form_element.field_name = "blah"
+
+        except AssertionError as assertErrorException:
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_field_input_type_defaults(self):
+        try:
+            form = self.forms.get(title="Shelters")
+            # Test Defaults
+            # string - no cvd
+            form_element = FormFieldElement(label="Facility Name", field_name="facname")
+            form.add(form_element)
+            self.assertEqual(form.elements[0].input_type["type"], "text-box")
+
+            # integer - no cvd
+            form_element = FormFieldElement(label="Shelter Capacity", field_name="sheltcap")
+            form.add(form_element)
+            self.assertEqual(form.elements[1].input_type["type"], "text-box")
+
+            # string - with cvd
+            form_element = FormFieldElement(label="Hours Operation", field_name="hoursoper")
+            form.add(form_element)
+            self.assertEqual(form.elements[2].input_type["type"], "combo-box")
+
+            # integer - with cvd
+            form_element = FormFieldElement(label="Facility Type", field_name="factype")
+            form.add(form_element)
+            self.assertEqual(form.elements[3].input_type["type"], "combo-box")
+
+            # date - cvd unsupported
+            form_element = FormFieldElement(label="Open Date", field_name="opendate")
+            form.add(form_element)
+            self.assertEqual(form.elements[4].input_type["type"], "datetime-picker")
+
+        except AssertionError as assertErrorException:
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_field_input_type_default_overrides(self):
+        try:
+            form = self.forms.get(title="Shelters")
+            # Test Default Overrides
+            # string - no cvd
+            form_element = FormFieldElement(label="Facility Name", field_name="facname", input_type="text-area")
+            form.add(form_element)
+            self.assertEqual(form.elements[0].input_type, "text-area")
+
+            # integer - no cvd
+            form_element = FormFieldElement(label="Shelter Capacity", field_name="sheltcap", input_type="text-area")
+            form.add(form_element)
+            self.assertEqual(form.elements[1].input_type, "text-area")
+
+            # string - with cvd
+            form_element = FormFieldElement(label="Hours Operation", field_name="hoursoper", input_type="radio-buttons")
+            form.add(form_element)
+            self.assertEqual(form.elements[2].input_type, "radio-buttons")
+
+            # integer - with cvd
+            form_element = FormFieldElement(label="Facility Type", field_name="factype", input_type="radio-buttons")
+            form.add(form_element)
+            self.assertEqual(form.elements[3].input_type, "radio-buttons")
 
         except AssertionError as assertErrorException:
             raise assertErrorException

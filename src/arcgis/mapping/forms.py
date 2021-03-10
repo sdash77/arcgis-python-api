@@ -542,13 +542,11 @@ class FormInfo:
     @staticmethod
     def _get_default_input_type(field):
         """Gets the default input type based on the field type."""
-        if "domain" not in field:
-            if "date" in field["type"].lower():
-                return "datetime-picker"
-            else:
-                return "text-box"
-        else:
-            return None
+        if field.get("domain", None):
+            return "combo-box"
+        if "date" in field["type"].lower():
+            return "datetime-picker"
+        return "text-box"
 
     @staticmethod
     def _validate_input(element=None, field=None):
@@ -569,7 +567,8 @@ class FormInfo:
         if element.element_type == "field":
             matching_field = self._get_matching_field(element.field_name)
             if self._is_valid_field_type(matching_field["type"]):
-                element.input_type = self._get_default_input_type(matching_field)
+                if not element.input_type:
+                    element.input_type = self._get_default_input_type(matching_field)
             else:
                 raise ValueError("Not a valid field type to add to the form")
             if self._is_geometry_field(element.field_name):
