@@ -79,8 +79,3 @@ tests/.coverage*
 
 
 /src/*.pfx
-
-# These are tracking engine files
-# These would be copied here during build time
-/src/arcgis/learn/_tracking/*.dll
-/src/arcgis/learn/_tracking/*.pyd
