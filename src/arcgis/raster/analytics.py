@@ -2711,6 +2711,12 @@ def create_image_collection(image_collection,
 
                                          Example:
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ------------------                   --------------------------------------------------------------------
+    tiles_only                           Keyword only parameter. Optional boolean. 
+                                         In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
+                                         To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+                                         
+                                         Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
     ==================                   ====================================================================
 
     :returns: The imagery layer item
@@ -3157,7 +3163,8 @@ def create_image_collection(image_collection,
         img_coll_result = create_image_collection(image_collection="imageCollection",
                                                   input_rasters="C:\\data",
                                                   raster_type_name="Raster Dataset",
-                                                  gis=gis)
+                                                  gis=gis,
+                                                  tiles_only=False)
 
     """
 
