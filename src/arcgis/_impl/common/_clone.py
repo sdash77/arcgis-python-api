@@ -382,8 +382,13 @@ class _DeepCloner():
                 for table in svc.tables:
                     properties = self._get_properties(table, data, False, is_view)
                     layers_definition['tables'].append(properties)
+                ref_def_keywords = {'Singlelayer', 'Multilayer'}
+                if any([kw in ref_def_keywords for kw in item.typeKeywords]) and self._copy_data == False:
+                    item_definition = _FeatureServiceRefDef(self.target, self._clone_mapping, dict(item), service_definition, layers_definition, features=None,
+                                                 data=data, thumbnail=None, portal_item=item, folder=self.folder, copy_data=self._copy_data, copy_global_ids=self._copy_global_ids, item_extent=self._item_extent, service_extent=self._service_extent, search_existing=self._search_existing_items, owner=self.owner)
 
-                item_definition = _FeatureServiceDefinition(self.target, self._clone_mapping, dict(item), service_definition, layers_definition, is_view, features=None, data=data, folder=self.folder,
+                else:
+                    item_definition = _FeatureServiceDefinition(self.target, self._clone_mapping, dict(item), service_definition, layers_definition, is_view, features=None, data=data, folder=self.folder,
                                                             thumbnail=None, portal_item=item, copy_data=self._copy_data, copy_global_ids=self._copy_global_ids, item_extent=self._item_extent, service_extent=self._service_extent, search_existing=self._search_existing_items, owner=self.owner)
             self._graph[item.id] = item_definition
             if 'Workforce Project' in item.typeKeywords:
@@ -903,6 +908,10 @@ class _DeepCloner():
 
             # Get the item data, for example any popup definition associated with the item
             data = item.get_data()
+            ref_def_keywords = {'Singlelayer', 'Multilayer'}
+            if any([kw in ref_def_keywords for kw in item.typeKeywords]) and self._copy_data == False:
+                return _FeatureServiceRefDef(self.target, self._clone_mapping, dict(item), service_definition, layers_definition, features=None,
+                                                 data=data, thumbnail=None, portal_item=item, folder=self.folder, copy_data=self._copy_data, copy_global_ids=self._copy_global_ids, item_extent=self._item_extent, service_extent=self._service_extent, search_existing=self._search_existing_items, owner=self.owner)
 
             return _FeatureServiceDefinition(self.target, self._clone_mapping, dict(item), service_definition, layers_definition, features=None,
                                              data=data, thumbnail=None, portal_item=item, folder=self.folder, copy_data=self._copy_data, copy_global_ids=self._copy_global_ids, item_extent=self._item_extent, service_extent=self._service_extent, search_existing=self._search_existing_items, owner=self.owner)
@@ -1374,6 +1383,54 @@ class _FeatureCollectionDefinition(_TextItemDefinition):
         except Exception as ex:
             raise _ItemCreateException("Failed to create {0} {1}: {2}".format(original_item['type'], original_item['title'], str(ex)), new_item)
 
+class _FeatureServiceRefDef(_TextItemDefinition):
+    """
+    Represents the definition of a non-hosted feature service within ArcGIS Online or Portal.
+    """
+    def __init__(self, target, clone_mapping, info, service_definition, layers_definition, is_view=False, view_sources={}, view_source_fields={}, features=None, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, copy_data=False, copy_global_ids=False, item_extent=None, service_extent=None, search_existing=True, owner=None):
+        super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing, owner)
+        self._service_definition = service_definition
+        self._service_extent = service_extent
+        self._layers_definition = layers_definition
+        self._features = features
+        self._is_view = is_view
+        self._view_sources = view_sources
+        self._view_source_fields = view_source_fields
+        self.copy_data = copy_data
+        self._copy_global_ids = copy_global_ids
+
+    def clone(self):
+        """Clone the item in the target organization.
+        Keyword arguments:
+        """
+
+        try:
+            new_item=None
+            original_item = self.info
+            if self._search_existing:
+                new_item = _search_org_for_existing_item(self.target, self.portal_item)
+            if not new_item:
+                # Get the item properties from the original item to be applied when the new item is created
+                item_properties = self._get_item_properties(self.item_extent)
+                #data = self.data
+                #if data:
+                    #if not self.copy_data:
+                        #if 'layers' in data and data['layers'] is not None:
+                            #for layer in data['layers']:
+                                #if 'featureSet' in layer and layer['featureSet'] is not None:
+                                    #layer['featureSet']['features'] = []
+                #item_properties['text'] = json.dumps(data)
+
+                # Add the new item
+                new_item = self._add_new_item(item_properties)
+
+            _share_item_with_groups(new_item, self.sharing, self._clone_mapping["Group IDs"])
+            self.resolved = True
+            self._clone_mapping['Item IDs'][original_item['id']] = new_item['id']
+            return new_item
+        except Exception as ex:
+            raise _ItemCreateException("Failed to create {0} {1}: {2}".format(original_item['type'], original_item['title'], str(ex)), new_item)
+
 
 class _FeatureServiceDefinition(_TextItemDefinition):
     """
@@ -1734,7 +1791,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 if self.target.properties.isPortal:
                     capabilities = _deep_get(service_definition, 'capabilities')
                     if capabilities is not None:
-                       service_definition['capabilities'] = ','.join([x for x in capabilities.split(',') if x in supported_capabilities])
+                        service_definition['capabilities'] = ','.join([x for x in capabilities.split(',') if x in supported_capabilities])
 
                 # Preserve layer IDs from the source definition
                 service_definition['preserveLayerIds'] = True
