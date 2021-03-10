@@ -339,6 +339,9 @@ class Geometry(BaseGeometry):
             from arcgis._impl.common._arcgis2geojson import arcgis2geojson
             return arcgis2geojson(arcgis=self)
 
+    def __hash__(self):
+        return hash(frozenset(self.items()))
+
     def __iter__(self):
         """
         Iterator for the Geometry
