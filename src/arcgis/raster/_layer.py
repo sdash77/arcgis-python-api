@@ -3717,7 +3717,9 @@ class ImageryLayer(Layer):
                                                  results will be returned asynchronously. Keyword only parameter.
         ------------------------------------     --------------------------------------------------------------------
         tiles_only                               In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
-                                                 To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                                 To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
+                                                 Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) at ArcGIS Image 9.1 release.
 
                                                  Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
         ====================================     ====================================================================
