@@ -23,7 +23,7 @@ from .layer import FeatureLayer, Table, FeatureLayerCollection
 from ._data.geodataset import SpatialDataFrame
 from ._parcel import ParcelFabricManager
 from ._utility import UtilityNetworkManager
-
+from ._validation import ValidationManager
 from . import analyze_patterns
 from . import enrich_data
 from . import find_locations
