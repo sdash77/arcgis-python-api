@@ -4,6 +4,8 @@ from arcgis.features import FeatureLayer, FeatureLayerCollection
 from arcgis.features._version import Version, VersionManager
 
 ########################################################################
+
+
 class ParcelFabricManager(object):
     """
     The Parcel Fabric Server is responsible for exposing parcel management
@@ -31,7 +33,8 @@ class ParcelFabricManager(object):
     _url = None
     _version = None
     _properties = None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
     def __init__(self,
                  url,
                  gis,
@@ -43,19 +46,24 @@ class ParcelFabricManager(object):
         self._con = gis._portal.con
         self._version = version
         self._flc = flc
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
     def __str__(self):
         return "<ParcelFabricManager @ %s>" % self._url
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
     def __repr__(self):
         return self.__str__()
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
     def __enter__(self):
         return self
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
     def __exit__(self, type, value, traceback):
         return
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
     @property
     def layer(self):
         """returns the Parcel Layer for the service"""
@@ -65,16 +73,18 @@ class ParcelFabricManager(object):
                              self._flc.properties.controllerDatasetLayers.parcelLayerId)
             return FeatureLayer(url=url, gis=self._gis)
         return None
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
     @property
     def properties(self):
         """returns the properties of the service"""
         if self._properties is None:
 
-            res = self._con.get(self._url, {'f':'json'})
+            res = self._con.get(self._url, {'f': 'json'})
             self._properties = PropertyMap(res)
         return self._properties
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
     def assign_to_record(self,
                          features,
                          record,
@@ -94,7 +104,8 @@ class ParcelFabricManager(object):
         features                 Required List. The parcel features to assign to the specified record.
                                  Can be parcels, parcel polygons, parcel points, and parcel lines.
 
-                                 Syntax: parcelFeatures=[{"id":"<guid>","layerId":"<layerID>"},{...}]
+
+                                 :Syntax: ``parcelFeatures=[{"id":"<guid>","layerId":"<layerID>"},{...}]``
 
         --------------------     --------------------------------------------------------------------
         record                   Required String. The record that will be assigned to the specified
@@ -118,19 +129,20 @@ class ParcelFabricManager(object):
         if moment is None:
             moment = int(time.time())
         params = {
-            "gdbVersion" : self._version.properties.versionName,
-            "sessionId" : self._version._guid,
-            "moment" : moment,
-            "parcelFeatures" : features,
-            "record" : record,
-            "writeAttribute" : write_attribute,
+            "gdbVersion": self._version.properties.versionName,
+            "sessionId": self._version._guid,
+            "moment": moment,
+            "parcelFeatures": features,
+            "record": record,
+            "writeAttribute": write_attribute,
             "f": "json"
         }
         res = self._con.post(url, params)
         if 'success' in res:
             return res['success']
         return res
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
     def build(self,
               extent=None,
               moment=None,
@@ -155,7 +167,8 @@ class ParcelFabricManager(object):
         --------------------     --------------------------------------------------------------------
         extent                   Optional Envelope. The extent to build.
 
-                                 Syntax: {"xmin":X min,"ymin": y min, "xmax": x max, "ymax": y max,
+
+                                 :Syntax: {"xmin":X min,"ymin": y min, "xmax": x max, "ymax": y max,
                                          "spatialReference": <wkt of spatial reference>}
 
         --------------------     --------------------------------------------------------------------
@@ -178,20 +191,21 @@ class ParcelFabricManager(object):
         if moment is None:
             moment = int(time.time())
         params = {
-            "gdbVersion" : self._version.properties.versionName,
-            "sessionId" : self._version._guid,
-            "moment" : moment,
-            "buildExtent" : extent,
-            "record" : record,
-            "async" : False,
-            #"returnErrors" : return_errors,
+            "gdbVersion": self._version.properties.versionName,
+            "sessionId": self._version._guid,
+            "moment": moment,
+            "buildExtent": extent,
+            "record": record,
+            "async": False,
+            # "returnErrors" : return_errors,
             "f": "json"
         }
-        res =  self._con.post(url, params)
+        res = self._con.post(url, params)
         if 'success' in res:
             return res['success']
         return res
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
     def clip(self,
              parent_parcels,
              clip_record=None,
@@ -211,7 +225,9 @@ class ParcelFabricManager(object):
         **Argument**                **Description**
         -----------------------     --------------------------------------------------------------------
         parent_parcels              parent parcels that will be clipped into.
-                                    Syntax:  parentParcels= <parcel (guid)+layer (name)...>
+
+
+                                    :Syntax:  ``parentParcels= <parcel (guid)+layer (name)...>``
         -----------------------     --------------------------------------------------------------------
         clip_record                 Optional String. It is the GUID for the active legal record.
         -----------------------     --------------------------------------------------------------------
@@ -220,11 +236,12 @@ class ParcelFabricManager(object):
                                     'clipping_parcels' and the parcels being clipped are of the same
                                     parcel type.
 
-                                    Syntax: clippingParcels= < id : parcel guid, layered: <layer id>...>
+
+                                    :Syntax: ``clippingParcels= <"id" : "parcel guid", "layerId": "<layer id>"...>``
 
                                     Example:
 
-                                    [{"id":"{D01D3F47-5FE2-4E39-8C07-E356B46DBC78}","layerId":"16"}]
+                                    ``[{"id":"{D01D3F47-5FE2-4E39-8C07-E356B46DBC78}","layerId":"16"}]``
 
                                     **Either clipping_parcels or geometry is required.**
         -----------------------     --------------------------------------------------------------------
@@ -261,16 +278,17 @@ class ParcelFabricManager(object):
             "gdbVersion": gdb_version,
             "sessionId": session_id,
             "parentParcels": parent_parcels,
-            "moment" : moment,
-            "record" : clip_record,
-            "clippingParcels" : clipping_parcels,
-            "clippingGeometry" : geometry,
-            "clipOption" : option,
-            "defaultAreaUnit" : area_unit,
+            "moment": moment,
+            "record": clip_record,
+            "clippingParcels": clipping_parcels,
+            "clippingGeometry": geometry,
+            "clipOption": option,
+            "defaultAreaUnit": area_unit,
             "f": "json"
         }
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
     def merge(self,
               parent_parcels,
               target_parcel_type,
@@ -301,7 +319,8 @@ class ParcelFabricManager(object):
         attribute_overrides      Optional List. A list of attributes to set on the child parcel, if
                                  they exist. Pairs of field name and value.
 
-                                 Syntax: attributeOverrides= [{ "type":"PropertySet","propertySetItems":[<field name>,<field value>]}]
+
+                                 :Syntax: ``attributeOverrides= [{ "type":"PropertySet","propertySetItems":[<field name>,<field value>]}]``
 
                                  * to set subtype, include subtype value in this list.
         --------------------     --------------------------------------------------------------------
@@ -328,9 +347,10 @@ class ParcelFabricManager(object):
         attribute_overrides      Optional Dict. Represents a list of attributes to set on the new
                                  merged parcel.
 
-                                 Syntax: attribute_overrides={"type":"PropertySet",
+
+                                 :Syntax: ``attribute_overrides={"type":"PropertySet",
                                  "propertySetItems":["<FieldName>",<value>,
-                                                    "<FieldName>",<value>,.....,"IsSeed",0]}
+                                                    "<FieldName>",<value>,.....,"IsSeed",0]}``
 
         ====================     ====================================================================
 
@@ -344,20 +364,21 @@ class ParcelFabricManager(object):
         session_id = self._version._guid
         url = "{base}/merge".format(base=self._url)
         params = {
-            "gdbVersion" : gdb_version, #
-            "sessionId" : session_id, #
-            "parentParcels" : parent_parcels, #
-            "record" : merge_record, #
-            "moment" : moment, #
-            "targetParcelType" : target_parcel_type,#
-            "mergeInto" : merge_into, #
-            #"childName" : child_name,
-            "defaultAreaUnit" : default_area_unit,#
-            "attributeOverrides" : attribute_overrides,#
+            "gdbVersion": gdb_version,
+            "sessionId": session_id,
+            "parentParcels": parent_parcels,
+            "record": merge_record,
+            "moment": moment,
+            "targetParcelType": target_parcel_type,
+            "mergeInto": merge_into,
+            # "childName" : child_name,
+            "defaultAreaUnit": default_area_unit,
+            "attributeOverrides": attribute_overrides,
             "f": "json"
         }
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
     def copy_lines_to_parcel_type(self,
                                   parent_parcels,
                                   record,
@@ -426,18 +447,19 @@ class ParcelFabricManager(object):
             "gdbVersion": gdb_version,
             "sessionId": session_id,
             "parentParcels": parent_parcels,
-            "record" : record,
-            "markParentAsHistoric" : mark_historic,
+            "record": record,
+            "markParentAsHistoric": mark_historic,
             "useSourceLineAttributes": use_source_attributes,
-            "useSourcePolygonAttributes" : use_polygon_attributes,
-            "targetParcelType" : target_type,
-            "targetParcelSubtype" : parcel_subtype,
+            "useSourcePolygonAttributes": use_polygon_attributes,
+            "targetParcelType": target_type,
+            "targetParcelSubtype": parcel_subtype,
             "attributeOverrides": attribute_overrides,
-            "moment" : moment,
+            "moment": moment,
             "f": "json"
         }
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
     def change_type(self,
                     parcels,
                     target_type,
@@ -480,17 +502,18 @@ class ParcelFabricManager(object):
         params = {
             "gdbVersion": gdb_version,
             "sessionId": session_id,
-            "parcels" : parcels,
-            "targetParcelType" : target_type,
-            "targetParcelSubtype" : parcel_subtype,
-            "moment" : moment,
+            "parcels": parcels,
+            "targetParcelType": target_type,
+            "targetParcelSubtype": parcel_subtype,
+            "moment": moment,
             "f": "json"
         }
         res = self._con.post(url, params)
         if 'success' in res:
             return res['success']
         return res
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
     def delete(self, parcels, moment=None):
         """
 
@@ -520,12 +543,13 @@ class ParcelFabricManager(object):
         params = {
             "gdbVersion": gdb_version,
             "sessionId": session_id,
-            "parcels" : parcels,
-            "moment" : moment,
+            "parcels": parcels,
+            "moment": moment,
             "f": "json"
         }
         return self._con.post(url, params)['success']
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
     def update_history(self, features, record,
                        moment=None, set_as_historic=False):
         """
@@ -542,7 +566,8 @@ class ParcelFabricManager(object):
         features                    Required List. The parcel features to be set as historic or current.
                                     Can be parcels, parcel polygons, parcel points, and parcel lines.
 
-                                    Syntax: ```features=[{"id":"<guid>","layerId":"<layerID>"},{...}]```
+
+                                    :Syntax: ``features=[{"id":"<guid>","layerId":"<layerID>"},{...}]``
         -----------------------     --------------------------------------------------------------------
         record                      Required String. A **GUID** representing the record that will be
                                     assigned to the features set as current or historic.
@@ -568,14 +593,15 @@ class ParcelFabricManager(object):
         params = {
             "gdbVersion": gdb_version,
             "sessionId": session_id,
-            "moment" : moment,
-            'record' : record,
-            'setAsHistoric' : set_as_historic,
-            'parcelFeatures' : features,
+            "moment": moment,
+            'record': record,
+            'setAsHistoric': set_as_historic,
+            'parcelFeatures': features,
             "f": "json"
         }
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
     def create_seeds(self,
                      record,
                      moment=None,
@@ -617,7 +643,8 @@ class ParcelFabricManager(object):
         elif extent is None:
             pass
         elif not extent is None:
-            raise ValueError("Parameter `extent` must be None, Envelope or dict.")
+            raise ValueError(
+                "Parameter `extent` must be None, Envelope or dict.")
         if moment is None:
             moment = int(time.time())
         gdb_version = self._version.properties.versionName
@@ -626,13 +653,14 @@ class ParcelFabricManager(object):
         params = {
             "gdbVersion": gdb_version,
             "sessionId": session_id,
-            "moment" : moment,
-            'record' : record,
-            'extent' : extent,
+            "moment": moment,
+            'record': record,
+            'extent': extent,
             "f": "json"
         }
         return self._con.post(url, params)
-    #----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+
     def duplicate(self,
                   parcels,
                   parcel_type,
@@ -655,11 +683,10 @@ class ParcelFabricManager(object):
         -----------------------     --------------------------------------------------------------------
         parcels                     Required List. A list of parcels to duplicate.
 
+
                                     :Syntax:
 
-                                    ```python
-                                    [{"id":"<parcelguid>","layerId":"16"},{...}]
-                                    ```
+                                    ``[{"id":"<parcelguid>","layerId":"16"},{...}]``
 
         -----------------------     --------------------------------------------------------------------
         parcel_type                 Required Integer. The target parcel type.
@@ -688,62 +715,67 @@ class ParcelFabricManager(object):
         params = {
             "gdbVersion": gdb_version,
             "sessionId": session_id,
-            "moment" : moment,
-            'record' : record,
-            'moment' : moment,
-            'parcels' : parcels,
-            'targetParcelType' : parcel_type,
-            'targetParcelSubtype' : parcel_subtype,
+            "moment": moment,
+            'record': record,
+            'moment': moment,
+            'parcels': parcels,
+            'targetParcelType': parcel_type,
+            'targetParcelSubtype': parcel_subtype,
             "f": "json"
         }
         return self._con.post(url, params)
     # ----------------------------------------------------------------------
+
     def analyze_least_squares_adjustment(self,
-                                    analysis_type="CONSISTENCY_CHECK",
-                                    convergence_tolerance=0.05,
-                                    parcel_features=None,
-                                    future=False):
+                                         analysis_type="CONSISTENCY_CHECK",
+                                         convergence_tolerance=0.05,
+                                         parcel_features=None,
+                                         future=False):
         """
-        Note: Least Squares Adjustment functionality introduced at version 10.8.1
+        .. note::
+            Least Squares Adjustment functionality introduced at version 10.8.1
 
         Analyzes the parcel fabric measurement network by running a least squares adjustment on the
         input parcels. A least-squares adjustment is a mathematical procedure that uses statistical
         analysis to estimate the most likely coordinates for connected points in a measurement network.
 
         Use apply_least_squares_adjustment to apply the results of a least squares adjustment to parcel fabric feature classes.
-        ====================    ====================================================================
-        **Argument**            **Description**
-        --------------------    --------------------------------------------------------------------
-        analysis_type           Optional string. Represents the type of least squares analysis that will be run on the input parcels.
 
-                                    CONSISTENCY_CHECK - A free-network least-squares adjustment will be run to check dimensions on
-                                    parcel lines for inconsistencies and mistakes. Fixed or weighted control points will not be
-                                    used by the adjustment.
+        ============================    ====================================================================
+        **Argument**                    **Description**
+        -----------------------         --------------------------------------------------------------------
+        analysis_type                   Optional string. Represents the type of least squares analysis that will be run on the input parcels.
 
-                                    WEIGHTED_LEAST_SQUARES - A weighted least-squares adjustment will be run to compute updated
-                                    coordinates for parcel points. The parcels being adjusted should connect to at least two fixed
-                                    or weighted control points.
+                                            CONSISTENCY_CHECK - A free-network least-squares adjustment will be run to check dimensions on
+                                            parcel lines for inconsistencies and mistakes. Fixed or weighted control points will not be
+                                            used by the adjustment.
 
-                                The default value is CONSISTENCY_CHECK.
-        --------------------    --------------------------------------------------------------------
-        convergence_tolerance   Optional float. Represents the maximum coordinate shift expected after iterating the least squares adjustment. A least
-                                squares adjustment is run repeatedly (in iterations) until the solution converges. The solution is
-                                considered converged when maximum coordinate shift encountered becomes less than the specified convergence
-                                tolerance.
+                                            WEIGHTED_LEAST_SQUARES - A weighted least-squares adjustment will be run to compute updated
+                                            coordinates for parcel points. The parcels being adjusted should connect to at least two fixed
+                                            or weighted control points.
 
-                                The default value is 0.05 meters or 0.164 feet.
-        --------------------    --------------------------------------------------------------------
-        parcel_features         Optional list. Represents the input parcels that will be analyzed by a least squares adjustment.
+                                        The default value is CONSISTENCY_CHECK.
+        -----------------------         --------------------------------------------------------------------
+        convergence_tolerance           Optional float. Represents the maximum coordinate shift expected after iterating the least squares adjustment. A least
+                                        squares adjustment is run repeatedly (in iterations) until the solution converges. The solution is
+                                        considered converged when maximum coordinate shift encountered becomes less than the specified convergence
+                                        tolerance.
 
-                                    Syntax: parcel_features = [{"id":"<guid>","layerId":"<layerID>"},{...}]
+                                        The default value is 0.05 meters or 0.164 feet.
+        -----------------------         --------------------------------------------------------------------
+        parcel_features                 Optional list. Represents the input parcels that will be analyzed by a least squares adjustment.
 
-                                If None, the method will analyze the entire parcel fabric.
-        --------------------    --------------------------------------------------------------------
-        future                  Optional boolean. If true, the request is processed as an asynchronous job and a URL is returned that points a location
-                                displaying the status of the job.
 
-                                The default is False.
-        ====================    ====================================================================
+                                        :Syntax: ``parcel_features = [{"id":"<guid>","layerId":"<layerID>"},{...}]``
+
+                                        If None, the method will analyze the entire parcel fabric.
+        -----------------------         --------------------------------------------------------------------
+        future                          Optional boolean. If true, the request is processed as an asynchronous job and a URL is returned that points a location
+                                        displaying the status of the job.
+
+                                        The default is False.
+        ============================    ====================================================================
+
         :return: Dictionary
 
         """
@@ -756,7 +788,7 @@ class ParcelFabricManager(object):
             "parcelFeatures": parcel_features,
             "async": future,
             "f": "json"
-            }
+        }
         if future:
             res = self._con.post(path=url, postdata=params)
             f = self._run_async(self._status_via_url, con=self._con,
@@ -768,18 +800,21 @@ class ParcelFabricManager(object):
                 return res
             return res
     # ----------------------------------------------------------------------
+
     def apply_least_squares_adjustment(self,
-              movement_tolerance=0.05,
-              update_attributes=True,
-              future=False):
+                                       movement_tolerance=0.05,
+                                       update_attributes=True,
+                                       future=False):
         """
-        Note: Least Squares Adjustment functionality introduced at version 10.8.1
+        .. note::
+            Least Squares Adjustment functionality introduced at version 10.8.1
 
         Applies the results of a least squares adjustment to parcel fabric feature classes. Least squares adjustment results stored
         in the AdjustmentLines and AdjustmentPoints feature classes are applied to the corresponding parcel line, connection line,
         and parcel fabric point feature classes.
 
         Use analyze_least_squares_adjustment to run a least-squares analysis on parcels and store the results in adjustment feature classes.
+
         ====================     ====================================================================
         **Argument**             **Description**
         --------------------     --------------------------------------------------------------------
@@ -814,11 +849,11 @@ class ParcelFabricManager(object):
             "updateAttributes": update_attributes,
             "async": future,
             "f": "json"
-            }
+        }
         if future:
             res = self._con.post(path=url, postdata=params)
             future = self._run_async(self._status_via_url, con=self._con,
-                                url=res["statusUrl"], params={"f": "json"})
+                                     url=res["statusUrl"], params={"f": "json"})
             return future
         else:
             res = self._con.post(url, params)
@@ -826,6 +861,7 @@ class ParcelFabricManager(object):
                 return res
             return res
     # ----------------------------------------------------------------------
+
     def _run_async(self, fn, **inputs):
         """runs the inputs asynchronously"""
         import concurrent.futures
@@ -834,6 +870,7 @@ class ParcelFabricManager(object):
         tp.shutdown(False)
         return future
     # ----------------------------------------------------------------------
+
     def _status_via_url(self, con, url, params):
         """
         performs the asynchronous check to see if the operation finishes
