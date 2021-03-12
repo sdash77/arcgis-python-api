@@ -38,6 +38,136 @@ class KubeOrgSecurity(object):
         if self._properties is None:
             self._properties = self._con.get(self._url, {'f' : 'json'})
         return self._properties
+    @property
+    def enterprise_user(self):
+        """
+        """
+        url = f"{self._url}/users"
+        return KubeEnterpriseUser(url, gis=self._gis)
+class KubeEnterpriseUser():
+    _url = None
+    _gis = None
+    def __init__(self, url, gis):
+        self._url = url
+        self._gis = gis
+
+    def create_user(self,
+                    username,
+                    password,
+                    first_name,
+                    last_name,
+                    email,
+                    role="org_user",
+                    level=2,
+                    provider="arcgis",
+                    idp_username=None,
+                    description=None,
+                    user_license=None):
+        """
+        This operation is used to pre-create built-in or enterprise
+        accounts within the portal. The provider parameter is used to
+        indicate the type of user account.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        username                        Required string. The name of the user account
+        ---------------------------     --------------------------------------------------------------------
+        password                        Required string. The password of the user account
+        ---------------------------     --------------------------------------------------------------------
+        first_name                      Required string. The first name for the account
+        ---------------------------     --------------------------------------------------------------------
+        last_name                       Required string. The last name for the account
+        ---------------------------     --------------------------------------------------------------------
+        email                           Required string. The email for the account
+        ---------------------------     --------------------------------------------------------------------
+        role                            Optional string. The role for the user account. The default value is
+                                        org_user.
+                                        Values org_admin | org_publisher | org_user | org_editor (Data Editor) | viewer
+        ---------------------------     --------------------------------------------------------------------
+        level                           Optional integer. The account level to assign the user.
+                                        Values 1 or 2
+        ---------------------------     --------------------------------------------------------------------
+        provider                        Optional string. The provider for the account. The default value is
+                                        arcgis. Values arcgis | enterprise
+        ---------------------------     --------------------------------------------------------------------
+        idp_username                    Optional string. The name of the user as stored by the enterprise
+                                        user store. This parameter is only required if the provider
+                                        parameter is enterprise.
+        ---------------------------     --------------------------------------------------------------------
+        description                     Optional string. A user description
+        ---------------------------     --------------------------------------------------------------------
+        user_license	                Optional string. The user type for the account. (10.7+)
+
+                                        Values: creator, editor, advanced (GIS Advanced),
+                                                basic (GIS Basic), standard (GIS Standard), viewer,
+                                                fieldworker
+
+        ===========================     ====================================================================
+
+        :returns: boolean
+
+        """
+        role_lu = {
+            "editor" : "iBBBBBBBBBBBBBBB",
+            "viewer" : "iAAAAAAAAAAAAAAA",
+            "org_editor" : "iBBBBBBBBBBBBBBB",
+            "org_viewer" : "iAAAAAAAAAAAAAAA"
+        }
+        user_license_lu = {
+            "creator" : "creatorUT",
+            "editor" : "editorUT",
+            "advanced" : "GISProfessionalAdvUT",
+            "basic" : "GISProfessionalBasicUT",
+            "standard" : "GISProfessionalStdUT",
+            "viewer" : "viewerUT",
+            "fieldworker" : "fieldWorkerUT"
+
+        }
+        if user_license.lower() in user_license_lu:
+            user_license = user_license_lu[user_license.lower()]
+        if role.lower() in role_lu:
+            role = role_lu[role.lower()]
+
+        url = "%s/createUser" % self._url
+        params = {
+            "f" : "json",
+            "username" : username,
+            "password" : password,
+            "firstname" : first_name,
+            "lastname" : last_name,
+            "email" : email,
+            "role" : role,
+            "level" : level,
+            "provider" : provider
+        }
+        if idp_username:
+            params['idpUsername'] =  idp_username
+        if description:
+            params['description'] = description
+        if user_license:
+            params['userLicenseTypeId'] = user_license
+        res = self._gis._portal.con.post(path=url, postdata=params)
+        return res['status'] == 'success'
+
+    def get_enterprise_user(self, username):
+        """gets the enterprise user"""
+        url = f"{self._url}/getEnterpriseUser"
+        params = {
+            'f' : 'json',
+            'username' : username
+        }
+        return self._gis._portal.con.post(url, params)
+
+    def refresh_membership(self, users):
+        """refreshes the user membership"""
+        url = f"{self._url}/refreshMembership"
+        params = {
+            'f' : 'json',
+            'users' : users
+        }
+        return self._gis._portal.con.post(url, params)
+
 ###########################################################################
 class KubeOrganization():
     """
