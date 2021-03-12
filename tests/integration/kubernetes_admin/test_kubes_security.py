@@ -1,13 +1,11 @@
 import sys
-sys.path.insert(0, r"C:\SVN\geosaurus_master_kubernetes_issue_security\src")
+
 import unittest
 from arcgis.gis import GIS
 from arcgis.gis.kubernetes._admin._security import KubeSecurity, KubeSecurityConfig, KubeSecurityIngress, KubeSecuritySAML
 from arcgis._impl.common._isd import InsensitiveDict
 PROFILES = ['your_kubernetes_profile']
 
-#gis = GIS(url='https://dev0014889.esri.com/gis', username='siteadmin', password='esri.agp1', profile='your_kubernetes_profile', verify_cert=False, trust_env=True)
-#del gis
 
 class TestSecutiryKubernetes(unittest.TestCase):
 

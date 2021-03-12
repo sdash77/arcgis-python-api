@@ -281,7 +281,7 @@ class ServicesManager(object):
         :returns: List[str]
 
         """
-        return self._properties['folders']
+        return self.properties.get('folders', [])
     #----------------------------------------------------------------------
     @property
     def types(self) -> dict:
@@ -371,7 +371,7 @@ class ServicesManager(object):
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
-    def create_service(self, service_json:dict, folder:str=None) -> bool:
+    def create_service(self, service_json:dict=None, input_upload_id:str=None, folder:str=None) -> bool:
         """
         Creates a new GIS service in a folder (either the root or a sub-folder) by
         submitting a JSON representation of the service to this operation.
@@ -391,6 +391,7 @@ class ServicesManager(object):
         """
         if isinstance(service_json, dict):
             service_json = json.dumps(service_json)
+
 
         if folder:
             url = f"{self._url}/{folder}/createService"
@@ -420,17 +421,17 @@ class ServicesManager(object):
 
         :return: boolean
         """
-        url = self._url
+        url = self._url + "/createFolder"
         params = {
             'f' : 'json',
-            'folderName' : name
+            'folderName' : folder
         }
         res = self._con.post(url, params)
         if 'status' in res:
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
-    def delete_folder(self, folder:str) -> bool:
+    def _delete_folder(self, folder:str) -> bool:
         """
         Removes a folder on the hosting server
 
@@ -447,10 +448,11 @@ class ServicesManager(object):
         }
         if folder in self.folders:
             u_url = self._url + "/%s/deleteFolder" % folder
-            res = self._con.post(path=u_url, postdata=params)
-            if 'status' in res:
-                return res['status'] == 'success'
-            return res
+            res = self._con.post(path=u_url, postdata=params, try_json=False)
+            return not folder in self.folders
+            #if 'status' in res:
+            #    return res['status'] == 'success'
+            #return res
         else:
             return False
     #----------------------------------------------------------------------
