@@ -56,8 +56,10 @@ class TextClassifier(ArcGISModel):
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    data                    Required text data object, returned from
-                            prepare_textdata function.
+    data                    Optional data object returned from `prepare_textdata` function.
+                            data object can be `None`, in case where someone wants to use a
+                            Hugging Face Transformer model fine-tuned on classification task.
+                            In this case the model should be used directly for inference.
     ---------------------   -------------------------------------------
     backbone                Optional string. Specifying the HuggingFace
                             transformer model name to be used to train the
@@ -66,6 +68,10 @@ class TextClassifier(ArcGISModel):
                             To learn more about the available models or
                             choose models that are suitable for your dataset,
                             kindly visit:- https://huggingface.co/transformers/pretrained_models.html
+
+                            To learn more about the available transformer models fine-tuned
+                            on Text Classification Task, kindly visit:-
+                            https://huggingface.co/models?pipeline_tag=text-classification
     =====================   ===========================================
 
     **kwargs**
@@ -122,21 +128,28 @@ class TextClassifier(ArcGISModel):
         self.thresh = kwargs.get('thresh', 0.25)
         self._mixed_precision = kwargs.get('mixed_precision', False)
         self._seq_len = kwargs.get('seq_len', transformer_seq_length)
-        self._create_text_learner_object(
-            data, backbone, kwargs.get('pretrained_path', None), mixed_precision=self._mixed_precision, seq_len=self._seq_len)
+        model_config = kwargs.get("model_config", None)
+        if data is None:
+            model = TextClassifier.from_pretrained(backbone, **kwargs)
+            self.learn = model.learn
+            self._data = model._data
+        else:
+            self._create_text_learner_object(data, backbone, kwargs.get('pretrained_path', None), config=model_config,
+                                             mixed_precision=self._mixed_precision, seq_len=self._seq_len)
 
-        self.learn.model = self.learn.model.to(self._device)
-        layer_groups = self.learn.model.get_layer_groups()
-        self.learn.split(layer_groups)
-        self._freeze()
+            self.learn.model = self.learn.model.to(self._device)
+            layer_groups = self.learn.model.get_layer_groups()
+            self.learn.split(layer_groups)
+            self._freeze()
 
     def _create_text_learner_object(self, data, backbone, pretrained_path=None, mixed_precision=False,
-                                    seq_len=transformer_seq_length):
+                                    seq_len=transformer_seq_length, config=None):
         model_type = infer_model_type(backbone, transformer_architectures)
         self.logger.info(f"Inferred Backbone: {model_type}")
         pretrained_model_name = backbone
 
-        transformer_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name)
+        if not config: config = AutoConfig.from_pretrained(pretrained_model_name)
+        transformer_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name, config=config)
 
         # pad_first = bool(model_type in ['xlnet'])
         pad_first = True if transformer_tokenizer.padding_side == 'left' else False
@@ -149,14 +162,18 @@ class TextClassifier(ArcGISModel):
 
         if data._is_empty or data._backbone != backbone:
             self.logger.info('Creating DataBunch')
+            classes = None
+            label2id, id2label = config.label2id, config.id2label
+            if id2label != {0: 'LABEL_0', 1: 'LABEL_1'}:
+                classes = [id2label[i] for i in sorted(id2label.keys())]
+
             data._prepare_databunch(tokenizer=tokenizer, vocab=vocab, pad_first=pad_first,
-                                    pad_idx=pad_idx, backbone=backbone, logger=self.logger)
+                                    pad_idx=pad_idx, backbone=backbone, classes=classes, logger=self.logger)
 
         databunch = data.get_databunch()
-
-        config = AutoConfig.from_pretrained(pretrained_model_name)
-        config.label2id = databunch.train_ds.c2i
-        config.id2label = {y: x for x, y in config.label2id.items()}
+        if config.label2id != databunch.train_ds.c2i:
+            config.label2id = databunch.train_ds.c2i
+            config.id2label = {y: x for x, y in config.label2id.items()}
 
         if pretrained_path is not None: pretrained_path = str(_get_emd_path(pretrained_path))
 
@@ -177,12 +194,12 @@ class TextClassifier(ArcGISModel):
             metrics = [accuracy_multi]
             loss_func = nn.BCEWithLogitsLoss()
             # self.learn = Learner(databunch, model, opt_func=opt_func, loss_func=loss_func, metrics=metrics)
-            self.learn = Learner(databunch, model, loss_func=loss_func, metrics=metrics)
+            self.learn = Learner(databunch, model, loss_func=loss_func, metrics=metrics, path=data.path)
         else:
             metrics = [accuracy, error_rate]
 
             # self.learn = Learner(databunch, model, opt_func=opt_func, metrics=metrics)
-            self.learn = Learner(databunch, model, metrics=metrics)
+            self.learn = Learner(databunch, model, metrics=metrics, path=data.path)
 
         if pretrained_path is not None:
             self.load(pretrained_path)
@@ -230,6 +247,41 @@ class TextClassifier(ArcGISModel):
         Freeze up to last layer group to train only the last layer group of the model.
         """
         self.learn.freeze()
+
+    @classmethod
+    def from_pretrained(cls, backbone, **kwargs):
+        """
+        Creates an TextClassifier model object from an already fine-tuned
+        Hugging Face Transformer backbone.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        backbone                Required string. Specify the Hugging Face Transformer
+                                backbone name fine-tuned on Text Classification task.
+
+                                To get more details on available transformer models
+                                fine-tuned on Text Classification Task, kindly visit:-
+                                https://huggingface.co/models?pipeline_tag=text-classification
+
+        =====================   ===========================================
+
+        :returns: `TextClassifier` Object
+        """
+        if not HAS_FASTAI:
+            from .._data import _raise_fastai_import_error
+            _raise_fastai_import_error(import_exception=import_exception)
+
+        model_config = AutoConfig.from_pretrained(backbone)
+        class_labels = list(model_config.id2label.values())
+        data = TextDataObject(task="classification")
+        data._backbone = backbone
+        data.create_empty_object_for_classification("", [], class_labels)
+
+        cls_object = cls(data, backbone, model_config=model_config, **kwargs)
+        data.emd, data.emd_path = cls_object._get_emd_params(), None
+        cls_object._data._is_empty = True
+        return cls_object
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -360,7 +412,7 @@ class TextClassifier(ArcGISModel):
             metrics["MetricsPerLabel"] = json.dumps(per_class_metric_df.transpose().to_dict())
         return metrics
 
-    def _get_emd_params(self, save_inference_file):
+    def _get_emd_params(self, save_inference_file=True):
         _emd_template = {}
         is_multilabel_problem = True if len(self._data._label_cols) > 1 else False
         _emd_template["Architecture"]= self.learn.model._transformer_architecture
@@ -495,7 +547,8 @@ class TextClassifier(ArcGISModel):
 
     def _save_df_to_html(self, path):
         if getattr(self._data, '_is_empty', False):
-            copy_metrics(self._data.emd_path, path, model_characteristics_folder)
+            if self._data.emd_path:
+                copy_metrics(self._data.emd_path, path, model_characteristics_folder)
             return
         validation_dataframe = self._data._valid_df.sample(n=5)
         if self.is_multilabel_problem:

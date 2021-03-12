@@ -828,7 +828,9 @@ class ImageryLayer(Layer):
                  return_geometry=False,
                  return_catalog_items=True,
                  return_pixel_values=True,
-                 max_item_count=None
+                 max_item_count=None,
+                 slice_id=None,
+                 process_as_multidimensional=False
                  ):
         """
 
@@ -850,66 +852,88 @@ class ImageryLayer(Layer):
         visibilities gives the percentage contribution of the item to
         overall mosaic.
 
-        ====================  ====================================================================
-        **Arguments**         **Description**
-        --------------------  --------------------------------------------------------------------
-        geometry              required dictionary/Point/Polygon.  A geometry that defines the
-                              location to be identified. The location can be a point or polygon.
-        --------------------  --------------------------------------------------------------------
-        mosaic_rule           optional string or dict. Specifies the mosaic rule when defining how
-                              individual images should be mosaicked. When a mosaic rule is not
-                              specified, the default mosaic rule of the image layer will be used
-                              (as advertised in the root resource: defaultMosaicMethod,
-                              mosaicOperator, sortField, sortValue).
-        --------------------  --------------------------------------------------------------------
-        rendering_rules       optional dictionary/list. Specifies the rendering rule for how the
-                              requested image should be rendered.
-        --------------------  --------------------------------------------------------------------
-        pixel_size            optional string or dict. The pixel level being identified (or the
-                              resolution being looked at).
-                              Syntax:
-                                - dictionary structure: pixel_size={point}
-                                - Point simple syntax: pixel_size='<x>,<y>'
-                              Examples:
-                                - pixel_size={"x": 0.18, "y": 0.18}
-                                - pixel_size='0.18,0.18'
-        --------------------  --------------------------------------------------------------------
-        time_extent           optional list of datetime objects or datetime object.  The time
-                              instant or time extent of the raster to be identified. This
-                              parameter is only valid if the image layer supports time.
-        --------------------  --------------------------------------------------------------------
-        return_geometry       optional boolean. Default is False.  Indicates whether or not to
-                              return the raster catalog item's footprint. Set it to false when the
-                              catalog item's footprint is not needed to improve the identify
-                              operation's response time.
-        --------------------  --------------------------------------------------------------------
-        return_catalog_items  optional boolean.  Indicates whether or not to return raster catalog
-                              items. Set it to false when catalog items are not needed to improve
-                              the identify operation's performance significantly. When set to
-                              false, neither the geometry nor attributes of catalog items will be
-                              returned.
-        --------------------  --------------------------------------------------------------------
-        return_pixel_values   optional boolean.  Indicates whether to return the pixel values of 
-                              all mosaicked raster catalog items under the requested geometry. 
-
-                              Set it to false when only the pixel value of mosaicked output is 
-                              needed at requested geometry. 
-
-                              The default value of this parameter is true.
-
-                              Added at 10.6.1.
-        --------------------  --------------------------------------------------------------------
-        max_item_count        optional int. If the returnCatalogItems parameter is set to true, 
-                              this parameter will take effect. The default behavior is to return 
-                              all raster catalog items within the requested geometry. 
-                              Otherwise, the number of items returned will be the value specified in the
-                              max_item_count or all eligible items, whichever is smaller.
-
-                              Added at 10.6.1.
-
-                              Example:
-                                2
-        ====================  ====================================================================
+        ============================    ====================================================================
+        **Arguments**                   **Description**
+        ----------------------------    --------------------------------------------------------------------
+        geometry                        required dictionary/Point/Polygon.  A geometry that defines the
+                                        location to be identified. The location can be a point or polygon.
+        ----------------------------    --------------------------------------------------------------------
+        mosaic_rule                     optional string or dict. Specifies the mosaic rule when defining how
+                                        individual images should be mosaicked. When a mosaic rule is not
+                                        specified, the default mosaic rule of the image layer will be used
+                                        (as advertised in the root resource: defaultMosaicMethod,
+                                        mosaicOperator, sortField, sortValue).
+        ----------------------------    --------------------------------------------------------------------
+        rendering_rules                 optional dictionary/list. Specifies the rendering rule for how the
+                                        requested image should be rendered.
+        ----------------------------    --------------------------------------------------------------------
+        pixel_size                      optional string or dict. The pixel level being identified (or the
+                                        resolution being looked at).
+                                        Syntax:
+                                          - dictionary structure: pixel_size={point}
+                                          - Point simple syntax: pixel_size='<x>,<y>'
+                                        Examples:
+                                          - pixel_size={"x": 0.18, "y": 0.18}
+                                          - pixel_size='0.18,0.18'
+        ----------------------------    --------------------------------------------------------------------
+        time_extent                     optional list of datetime objects or datetime object.  The time
+                                        instant or time extent of the raster to be identified. This
+                                        parameter is only valid if the image layer supports time.
+        ----------------------------    --------------------------------------------------------------------
+        return_geometry                 optional boolean. Default is False.  Indicates whether or not to
+                                        return the raster catalog item's footprint. Set it to false when the
+                                        catalog item's footprint is not needed to improve the identify
+                                        operation's response time.
+        ----------------------------    --------------------------------------------------------------------
+        return_catalog_items            optional boolean.  Indicates whether or not to return raster catalog
+                                        items. Set it to false when catalog items are not needed to improve
+                                        the identify operation's performance significantly. When set to
+                                        false, neither the geometry nor attributes of catalog items will be
+                                        returned.
+        ----------------------------    --------------------------------------------------------------------
+        return_pixel_values             optional boolean.  Indicates whether to return the pixel values of 
+                                        all mosaicked raster catalog items under the requested geometry. 
+                                        
+                                        Set it to false when only the pixel value of mosaicked output is 
+                                        needed at requested geometry. 
+                                        
+                                        The default value of this parameter is true.
+                                        
+                                        Added at 10.6.1.
+        ----------------------------    --------------------------------------------------------------------
+        max_item_count                  optional int. If the returnCatalogItems parameter is set to true, 
+                                        this parameter will take effect. The default behavior is to return 
+                                        all raster catalog items within the requested geometry. 
+                                        Otherwise, the number of items returned will be the value specified in the
+                                        max_item_count or all eligible items, whichever is smaller.
+                                        
+                                        Added at 10.6.1.
+                                        
+                                        Example:
+                                          2
+        ----------------------------    --------------------------------------------------------------------
+        slice_id                        optional int. The slice ID of multidimensional raster. The identify 
+                                        operation will be performed for the specified slice. To get the slice 
+                                        ID use slices method on the ImageryLayer object.
+                                        
+                                        Added at 10.9 for image services which use ArcObjects11 or ArcObjectsRasterRendering 
+                                        as the service provider.
+                                        
+                                        Example:
+                                          1
+        ----------------------------    --------------------------------------------------------------------
+        process_as_multidimensional     optional boolean. Specifies whether to process the image service as a 
+                                        multidimensional image service.
+                                        
+                                            - False - Pixel values of the specified rendering rules and mosaic \
+                                                      rule at the specified geometry will be returned. This is the default.
+                                            - True - The image service is treated as a multidimensional raster, \
+                                                     and pixel values from all slices, along with additional properties \
+                                                     describing the slices, will be returned.
+                                        
+                                        Added at 10.9 for image services which use ArcObjects11 or ArcObjectsRasterRendering 
+                                        as the service provider.
+        ============================    ====================================================================
 
         :returns: dictionary
 
@@ -964,6 +988,11 @@ class ImageryLayer(Layer):
         if max_item_count is not None:
             params['maxItemCount'] = max_item_count
 
+        if slice_id is not None:
+            params['sliceId'] = slice_id
+
+        if isinstance(process_as_multidimensional, bool):
+            params['processAsMultidimensional'] = process_as_multidimensional
 
         if self._datastore_raster:
             params["Raster"]=self._uri
@@ -2498,56 +2527,69 @@ class ImageryLayer(Layer):
                                      mosaic_rule=None,
                                      rendering_rule=None,
                                      pixel_size=None,
-                                     time=None
+                                     time=None,
+                                     process_as_multidimensional=False
                                      ):
         """
         The result of this operation contains both statistics and histograms
         computed from the given extent.
 
-        =================     ====================================================================
-        **Argument**          **Description**
-        -----------------     --------------------------------------------------------------------
-        geometry              required Polygon or Extent. A geometry that defines the geometry
-                              within which the histogram is computed. The geometry can be an
-                              envelope or a polygon
-        -----------------     --------------------------------------------------------------------
-        mosaic_rule           optional dictionary.  Specifies the mosaic rule when defining how
-                              individual images should be mosaicked. When a mosaic rule is not
-                              specified, the default mosaic rule of the image layer will be used
-                              (as advertised in the root resource: defaultMosaicMethod,
-                              mosaicOperator, sortField, sortValue).
-        -----------------     --------------------------------------------------------------------
-        rendering_rule        optional dictionary. Specifies the rendering rule for how the
-                              requested image should be rendered.
-        -----------------     --------------------------------------------------------------------
-        pixel_size            optional string or dict. The pixel level being used (or the
-                              resolution being looked at). If pixel size is not specified, then
-                              pixel_size will default to the base resolution of the dataset. The
-                              raster at the specified pixel size in the mosaic dataset will be
-                              used for histogram calculation.
-
-                              Syntax:
-                                - dictionary structure: pixel_size={point}
-                                - Point simple syntax: pixel_size='<x>,<y>'
-                              Examples:
-                                - pixel_size={"x": 0.18, "y": 0.18}
-                                - pixel_size='0.18,0.18'
-        -----------------     --------------------------------------------------------------------
-        time                  optional datetime.date, datetime.datetime or timestamp string. The
-                              time instant or the time extent of the exported image.
-                              Time instant specified as datetime.date, datetime.datetime or
-                              timestamp in milliseconds since epoch
-                              Syntax: time=<timeInstant>
-
-                              Time extent specified as list of [<startTime>, <endTime>]
-                              For time extents one of <startTime> or <endTime> could be None. A
-                              None value specified for start time or end time will represent
-                              infinity for start or end time respectively.
-                              Syntax: time=[<startTime>, <endTime>] ; specified as
-                              datetime.date, datetime.datetime or timestamp
-
-                              Added at 10.8
-        =================     ====================================================================
+        ============================    ====================================================================
+        **Argument**                    **Description**
+        ----------------------------    --------------------------------------------------------------------
+        geometry                        required Polygon or Extent. A geometry that defines the geometry
+                                        within which the histogram is computed. The geometry can be an
+                                        envelope or a polygon
+        ----------------------------    --------------------------------------------------------------------
+        mosaic_rule                     optional dictionary.  Specifies the mosaic rule when defining how
+                                        individual images should be mosaicked. When a mosaic rule is not
+                                        specified, the default mosaic rule of the image layer will be used
+                                        (as advertised in the root resource: defaultMosaicMethod,
+                                        mosaicOperator, sortField, sortValue).
+        ----------------------------    --------------------------------------------------------------------
+        rendering_rule                  optional dictionary. Specifies the rendering rule for how the
+                                        requested image should be rendered.
+        ----------------------------    --------------------------------------------------------------------
+        pixel_size                      optional string or dict. The pixel level being used (or the
+                                        resolution being looked at). If pixel size is not specified, then
+                                        pixel_size will default to the base resolution of the dataset. The
+                                        raster at the specified pixel size in the mosaic dataset will be
+                                        used for histogram calculation.
+                                        
+                                        Syntax:
+                                          - dictionary structure: pixel_size={point}
+                                          - Point simple syntax: pixel_size='<x>,<y>'
+                                        Examples:
+                                          - pixel_size={"x": 0.18, "y": 0.18}
+                                          - pixel_size='0.18,0.18'
+        ----------------------------    --------------------------------------------------------------------
+        time                            optional datetime.date, datetime.datetime or timestamp string. The
+                                        time instant or the time extent of the exported image.
+                                        Time instant specified as datetime.date, datetime.datetime or
+                                        timestamp in milliseconds since epoch
+                                        Syntax: time=<timeInstant>
+                                        
+                                        Time extent specified as list of [<startTime>, <endTime>]
+                                        For time extents one of <startTime> or <endTime> could be None. A
+                                        None value specified for start time or end time will represent
+                                        infinity for start or end time respectively.
+                                        Syntax: time=[<startTime>, <endTime>] ; specified as
+                                        datetime.date, datetime.datetime or timestamp
+                                        
+                                        Added at 10.8
+        ----------------------------    --------------------------------------------------------------------
+        process_as_multidimensional     optional boolean. Specifies whether to process the image service as 
+                                        a multidimensional image service.
+                                        
+                                            - False - Statistics and histograms of pixel values from only the \
+                                                      first slice is computed. This is the default.
+                                            - True - The image service is treated as a multidimensional raster, \
+                                                     and statistics and histograms of pixel values from all selected \
+                                                     slices are computed.
+                                        
+                                        Added at 10.9 for image services which use ArcObjects11 or ArcObjectsRasterRendering 
+                                        as the service provider.
+        ============================    ====================================================================
 
         :returns: dictionary
 
@@ -2600,6 +2642,9 @@ class ImageryLayer(Layer):
         from ._util import _set_time_param
         if time is not None:
             params['time'] = _set_time_param(time)
+        
+        if isinstance(process_as_multidimensional, bool):
+            params['processAsMultidimensional'] = process_as_multidimensional
 
         if self._datastore_raster:
             params["Raster"]=self._uri
@@ -2846,66 +2891,77 @@ class ImageryLayer(Layer):
     # ----------------------------------------------------------------------
     def compute_histograms(self, geometry, mosaic_rule=None,
                            rendering_rule=None, pixel_size=None,
-                           time=None):
+                           time=None, process_as_multidimensional=False):
         """
         The compute_histograms operation is performed on an imagery layer
         method. This operation is supported by any imagery layer published with
         mosaic datasets or a raster dataset. The result of this operation contains
         both statistics and histograms computed from the given extent.
 
-        =================     ====================================================================
-        **Arguments**         **Description**
-        -----------------     --------------------------------------------------------------------
-        geometry              required Polygon or Extent. A geometry that defines the geometry
-                              within which the histogram is computed. The geometry can be an
-                              envelope or a polygon
-        -----------------     --------------------------------------------------------------------
-        mosaic_rule           optional string. Specifies the mosaic rule when defining how
-                              individual images should be mosaicked. When a mosaic rule is not
-                              specified, the default mosaic rule of the image layer will be used
-                              (as advertised in the root resource: defaultMosaicMethod,
-                              mosaicOperator, sortField, sortValue).
-                              See Mosaic rule objects help for more information:
-                              https://developers.arcgis.com/documentation/common-data-types/mosaic-rules.htm
-        -----------------     --------------------------------------------------------------------
-        rendering_rule        Specifies the rendering rule for how the requested image should be
-                              processed. The response is updated Layer info that reflects a
-                              custom processing as defined by the rendering rule. For example, if
-                              renderingRule contains an attributeTable function, the response
-                              will indicate "hasRasterAttributeTable": true; if the renderingRule
-                              contains functions that alter the number of bands, the response will
-                              indicate a correct bandCount value.
-        -----------------     --------------------------------------------------------------------
-        pixel_size            optional list or dictionary. The pixel level being used (or the
-                              resolution being looked at). If pixel size is not specified, then
-                              pixel_size will default to the base resolution of the dataset.
-                              The structure of the pixel_size parameter is the same as the
-                              structure of the point object returned by the ArcGIS REST API.
-                              In addition to the dictionary structure, you can specify the pixel size
-                              with a comma-separated string.
-
-                              Syntax:
-                                - dictionary structure: pixel_size={point}
-                                - Point simple syntax: pixel_size='<x>,<y>'
-                              Examples:
-                                - pixel_size={"x": 0.18, "y": 0.18}
-                                - pixel_size='0.18,0.18'
-        -----------------     --------------------------------------------------------------------
-        time                  optional datetime.date, datetime.datetime or timestamp string. The
-                              time instant or the time extent of the exported image.
-                              Time instant specified as datetime.date, datetime.datetime or
-                              timestamp in milliseconds since epoch
-                              Syntax: time=<timeInstant>
-
-                              Time extent specified as list of [<startTime>, <endTime>]
-                              For time extents one of <startTime> or <endTime> could be None. A
-                              None value specified for start time or end time will represent
-                              infinity for start or end time respectively.
-                              Syntax: time=[<startTime>, <endTime>] ; specified as
-                              datetime.date, datetime.datetime or timestamp
-
-                              Added at 10.8
-        =================     ====================================================================
+        ============================    ====================================================================
+        **Arguments**                   **Description**
+        ----------------------------    --------------------------------------------------------------------
+        geometry                        required Polygon or Extent. A geometry that defines the geometry
+                                        within which the histogram is computed. The geometry can be an
+                                        envelope or a polygon
+        ----------------------------    --------------------------------------------------------------------
+        mosaic_rule                     optional string. Specifies the mosaic rule when defining how
+                                        individual images should be mosaicked. When a mosaic rule is not
+                                        specified, the default mosaic rule of the image layer will be used
+                                        (as advertised in the root resource: defaultMosaicMethod,
+                                        mosaicOperator, sortField, sortValue).
+                                        See Mosaic rule objects help for more information:
+                                        https://developers.arcgis.com/documentation/common-data-types/mosaic-rules.htm
+        ----------------------------    --------------------------------------------------------------------
+        rendering_rule                  Specifies the rendering rule for how the requested image should be
+                                        processed. The response is updated Layer info that reflects a
+                                        custom processing as defined by the rendering rule. For example, if
+                                        renderingRule contains an attributeTable function, the response
+                                        will indicate "hasRasterAttributeTable": true; if the renderingRule
+                                        contains functions that alter the number of bands, the response will
+                                        indicate a correct bandCount value.
+        ----------------------------    --------------------------------------------------------------------
+        pixel_size                      optional list or dictionary. The pixel level being used (or the
+                                        resolution being looked at). If pixel size is not specified, then
+                                        pixel_size will default to the base resolution of the dataset.
+                                        The structure of the pixel_size parameter is the same as the
+                                        structure of the point object returned by the ArcGIS REST API.
+                                        In addition to the dictionary structure, you can specify the pixel size
+                                        with a comma-separated string.
+                                        
+                                        Syntax:
+                                          - dictionary structure: pixel_size={point}
+                                          - Point simple syntax: pixel_size='<x>,<y>'
+                                        Examples:
+                                          - pixel_size={"x": 0.18, "y": 0.18}
+                                          - pixel_size='0.18,0.18'
+        ----------------------------    --------------------------------------------------------------------
+        time                            optional datetime.date, datetime.datetime or timestamp string. The
+                                        time instant or the time extent of the exported image.
+                                        Time instant specified as datetime.date, datetime.datetime or
+                                        timestamp in milliseconds since epoch
+                                        Syntax: time=<timeInstant>
+                                        
+                                        Time extent specified as list of [<startTime>, <endTime>]
+                                        For time extents one of <startTime> or <endTime> could be None. A
+                                        None value specified for start time or end time will represent
+                                        infinity for start or end time respectively.
+                                        Syntax: time=[<startTime>, <endTime>] ; specified as
+                                        datetime.date, datetime.datetime or timestamp
+                                        
+                                        Added at 10.8
+        ----------------------------    --------------------------------------------------------------------
+        process_as_multidimensional     optional boolean. Specifies whether to process the image service as a 
+                                        multidimensional image service.
+                                        
+                                            - False - The histogram of pixel values from only the first slice \
+                                                      is computed. This is the default.
+                                            - True - The image service is treated as a multidimensional raster, \
+                                                     and histograms of pixel values from all selected slices are computed.
+                                        
+                                        Added at 10.9 for image services which use ArcObjects11 or ArcObjectsRasterRendering 
+                                        as the service provider.
+        ============================    ====================================================================
 
         :returns: dict
 
@@ -2946,9 +3002,9 @@ class ImageryLayer(Layer):
 
 
         if mosaic_rule is not None:
-            params["moasiacRule"] = mosaic_rule
+            params["mosaicRule"] = mosaic_rule
         elif self._mosaic_rule is not None:
-            params["moasiacRule"] = self._mosaic_rule
+            params["mosaicRule"] = self._mosaic_rule
 
         if not rendering_rule is None:
             params["renderingRule"] = rendering_rule
@@ -2963,6 +3019,10 @@ class ImageryLayer(Layer):
 
         if time is not None:
             params['time'] = _set_time_param(time)
+
+        if isinstance(process_as_multidimensional, bool):
+            params['processAsMultidimensional'] = process_as_multidimensional
+
         if self._datastore_raster:
             params["Raster"]=self._uri
             if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
@@ -3073,7 +3133,7 @@ class ImageryLayer(Layer):
         if not mosaic_rule is None:
             params["mosaicRule"] = mosaic_rule
         elif self._mosaic_rule is not None:
-            params["moasiacRule"] = self._mosaic_rule
+            params["mosaicRule"] = self._mosaic_rule
         if not pixel_size is None:
             params["pixelSize"] = pixel_size
         if not return_first_value_only is None:
@@ -3657,7 +3717,9 @@ class ImageryLayer(Layer):
                                                  results will be returned asynchronously. Keyword only parameter.
         ------------------------------------     --------------------------------------------------------------------
         tiles_only                               In ArcGIS Online, the default output image service for this function would be a Tiled Imagery Layer. 
-                                                 To create Dynamic Imagery Layer as output in ArcGIS Online, set tiles_only parameter to False.
+
+                                                 To create Dynamic Imagery Layer as output on ArcGIS Online, set tiles_only parameter to False. This option of creating 
+                                                 Dynamic Imagery Layer is available only to the organizations that are part of the Early Adopter Program (EAP) at ArcGIS Image 9.1 release.
 
                                                  Function will not honor tiles_only parameter in ArcGIS Enterprise and will generate Dynamic Imagery Layer by default. 
         ====================================     ====================================================================
@@ -4477,26 +4539,16 @@ class ImageryLayer(Layer):
                 data[valid_mask]=np.nan
             if result != 0:
                 raise RuntimeError('decoding bytes from imagery service failed.')
-            # transpose
-            if self.properties.hasMultidimensions:
-                if len(data) == 2:
-                    data = np.expand_dims(np.expand_dims(data, axis=2), axis=0)
-                elif  len(data) == 3:                    
-                    if len(self.slices) == 1:
-                        data = np.expand_dims(np.transpose(data, [1, 2, 0]), axis=0)
-                    else:
-                        data = np.expand_dims(np.transpose(data, [2, 0, 1]), axis=3)
-                elif len(data) == 4:
-                    data = np.transpose(data, [3, 1, 2, 0])
-                else:
-                    return data
-            else:
-                if data.shape[0]>3 and len(data.shape)==3:
-                    data = data[0:3] #Extract first 3 bands
-                if len(data) == 2:
-                    data = np.expand_dims(data, axis=2)
-                elif len(data) == 3:
-                    data = np.transpose(data, axes=[1, 2, 0])
+            if data.shape[0]>3 and len(data.shape)==3:
+                data = data[0:3] #Extract first 3 bands
+            if len(data) == 2:
+                data = np.expand_dims(data, axis=2)
+            elif len(data) == 3:
+                data = np.transpose(data, axes=[1, 2, 0])
+
+            if data.dtype  == "float":
+                if data.min() < 0 or 1 < data.max():
+                    data = np.uint8(data)
             return data
 
     def _get_service_info(self, rendering_rule=None):

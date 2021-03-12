@@ -1352,7 +1352,7 @@ class GroupMigrationManager(object):
         if self._gis.users.me.role == 'org_admin':
             url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/export"
             if items and isinstance(items, (list, tuple)):
-                items = ",".join([i.id for i in items])
+                items = ",".join([i.id if isinstance(i, Item) else i for i in items])
             else:
                 items = None
             params = {
@@ -1412,6 +1412,8 @@ class GroupMigrationManager(object):
 
         """
         assert isinstance(epk_item, Item)
+        if isinstance(item_ids, list):
+            item_ids = ",".join([i.id if isinstance(i, Item) else i for i in item_ids])
         if isinstance(epk_item, Item) and \
            epk_item.type == 'Export Package':
             res = self._from_package(item=epk_item,
@@ -3219,9 +3221,8 @@ class UserManager(object):
             A few things that will be helpful to know.
 
             1. The query syntax has quite a few features that can't
-               be adequately described here.  The query syntax is
-               available in ArcGIS help.  A short version of that URL
-               is http://bitly.com/1fJ8q31.
+               be adequately described here.  Please refer the ArcGIS REST
+               API reference from here: https://developers.arcgis.com/rest/users-groups-and-items/group-search.htm.
 
             2. Searching without specifying a query parameter returns
                a list of all users in your organization.
@@ -7541,6 +7542,38 @@ class User(dict):
                                gis=self._gis)
         return None
     #----------------------------------------------------------------------
+    def generate_direct_access_url(self, store_type:str) -> str:
+        """
+        Creates a direct access URL for uploading large files to datafile share, notebook workspaces or raster stores.
+
+        **Available in ArcGIS Online Only**
+
+        =====================  =========================================================
+        **Argument**           **Description**
+        ---------------------  ---------------------------------------------------------
+        store_type             Optional String. The type of upload URL to generate.
+                               Types: `big_data_file`, 'notebook', or 'raster`.
+        =====================  =========================================================
+
+        :returns: str
+
+        """
+        if self._gis._portal.is_arcgisonline == False:
+            return None
+        _lu = {
+            'big_data_file' : 'bigDataFileShare',
+            'notebook' : 'notebookWorkspace',
+            'raster' : 'rasterStore'
+        }
+        url = f"{self._gis._portal.resturl}content/users/{self.username}/generateDirectAccessUrl"
+        params = {
+            'f' : 'json',
+            'expiration' : 1440,
+            'storeType' : _lu[store_type.lower()]
+        }
+        return self._portal.con.get(url, params)
+
+    #----------------------------------------------------------------------
     @property
     def provisions(self):
         """
@@ -10144,6 +10177,7 @@ class Item(dict):
                                      'Map2FeatureCollection', 'MobileApp2Code',
                                      'Service2Data', 'Service2Service', 'WorkforceMap2FeatureService',
                                      'TrackView2Map', 'SurveyAddIn2Data', 'Theme2Story',
+                                     'Solution2Item','APIKey2Item',
                                      'WebStyle2DesktopStyle', 'Map2FeatureCollectionMobileApp2Code'])
 
     _RELATIONSHIP_DIRECTIONS = frozenset(['forward', 'reverse'])

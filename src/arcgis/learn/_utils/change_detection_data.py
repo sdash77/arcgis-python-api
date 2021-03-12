@@ -26,6 +26,7 @@ try:
     from .common import ArcGISMSImage, ArcGISImageList
     from .._data import _extract_bands_tfm, _tensor_scaler, _tensor_scaler_tfm
     from .._data import _get_batch_stats, sniff_rgb_bands
+    from .._data import _prepare_working_dir
     HAS_FASTAI = True
 except ImportError:
     import_exception = traceback.format_exc()
@@ -65,7 +66,7 @@ def multispectral_additions(data,
                             **kwargs):
 
     # Normalize multispectral imagery by calculating stats
-    json_file = data.path / 'images_before' / 'esri_model_definition.emd'
+    json_file = data.path / 'esri_model_definition.emd'
     if json_file.exists():
         with open(json_file) as f:
             emd = json.load(f)
@@ -465,13 +466,23 @@ stats = [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]
 
 def folder_check(path):
     dirs = os.listdir(path)
-    images_before = 'images_before' in dirs
-    images_after = 'images_after' in dirs
+    images_before = 'images' in dirs or 'images_before' in dirs
+    images_after = 'images2' in dirs or 'images_after' in dirs
     labels = 'labels' in dirs
     if not all([images_before, images_after, labels]):
         raise Exception(f"Three folders must be present in the {path.name}"
-                        " directory namely 'images_before', 'images_after'"
-                        " and 'labels'.")
+                        " directory namely 'images', 'images2' and 'labels'"
+                        " or 'images_before', 'images_after' and 'labels'")
+
+def is_old_format_change_detection(path):
+    folder_check(path)
+    return os.path.exists(path/'images_before') and os.path.exists(path/'images_after')
+
+def folder_names(path):
+    if is_old_format_change_detection(path):
+        return ('images_before', 'images_after')
+    else:
+        return ('images', 'images2')
 
 
 def get_files(*args, **kwargs):
@@ -516,7 +527,7 @@ def create_train_val_sets(path,
 
         norm_stats (list of list): [[mean per channel], [std per channel]]
 
-        split_type (str, optional): If split_type='manual' will use train
+        split_type (str, optional): If split_type='folder' will use train
                                     val folders. Defaults to 'random'.
 
         tuple: train and validation dataset
@@ -527,15 +538,15 @@ def create_train_val_sets(path,
         if (path / 'train').exists() and (path / 'val').exists():
             folder_check(path / 'train')
             folder_check(path / 'val')
-            train_images_before = get_files(path / 'train' / 'images_before',
+            train_images_before = get_files(path / 'train' / 'images',
                                             extensions=image_extensions)
-            train_images_after = get_files(path / 'train' / 'images_after',
+            train_images_after = get_files(path / 'train' / 'images2',
                                            extensions=image_extensions)
             train_labels = get_files(path / 'train' / 'labels',
                                      extensions=image_extensions)
-            val_images_before = get_files(path / 'val' / 'images_before',
+            val_images_before = get_files(path / 'val' / 'images',
                                           extensions=image_extensions)
-            val_images_after = get_files(path / 'val' / 'images_after',
+            val_images_after = get_files(path / 'val' / 'images2',
                                          extensions=image_extensions)
             val_labels = get_files(path / 'val' / 'labels',
                                    extensions=image_extensions)
@@ -545,10 +556,11 @@ def create_train_val_sets(path,
 
     elif split_type == 'random':
         folder_check(path)
-        images_before = get_files(path / 'images_before',
+        images_before_dir, images_after_dir = folder_names(path)
+        images_before = get_files(path / images_before_dir,
                                   extensions=image_extensions,
                                   recurse=True)
-        images_after = get_files(path / 'images_after',
+        images_after = get_files(path / images_after_dir,
                                  extensions=image_extensions,
                                  recurse=True)
         labels = get_files(path / 'labels',
@@ -721,10 +733,9 @@ def prepare_change_detection_data(path,
     data.class_mapping = class_mapping
     data.color_mapping = color_mapping
     data.classes = list(data.class_mapping.values())
-    # fix save model path.
-    data.path = data.path / 'images_before'
     # add dataset_type
     data._dataset_type = 'ChangeDetection'
+    data._temp_folder = _prepare_working_dir(path)
     # return databunch.
     return data
 

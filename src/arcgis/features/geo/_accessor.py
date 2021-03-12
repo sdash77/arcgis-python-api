@@ -2375,7 +2375,7 @@ class GeoAccessor(object):
         ===========================     ====================================================================
         **Argument**                    **Description**
         ---------------------------     --------------------------------------------------------------------
-        location                        Required string or pathlib.Path. Full path to the feature class
+        location                        Required string or pathlib.Path. Full path to the feature class or URL (shapefile only).
         ===========================     ====================================================================
 
         *Optional parameters when ArcPy library is available in the current environment*:
@@ -2393,6 +2393,8 @@ class GeoAccessor(object):
         spatial_filter                  A `Geometry` object that will filter the results.  This requires
                                         `arcpy` to work.
         ===========================     ====================================================================
+
+        **Optional Parameters are not supported for URL based resources**
 
         :returns: pandas.core.frame.DataFrame
         """
@@ -2750,11 +2752,11 @@ class GeoAccessor(object):
                 wkid = sr['wkid']
             elif sr and \
                 'latestWkid' in sr:
-                wkid = sr['latestWkid']                  
+                wkid = sr['latestWkid']
             if sr and \
                'wkt' in sr:
                 wkt = sr['wkt']
-                  
+
             if isinstance(ref, (dict, SpatialReference)) and \
                sr is None:
                 self._data[self.name] = self._data[self.name].geom.project_as(ref)

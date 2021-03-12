@@ -432,7 +432,8 @@ class PointCloudDataset(Dataset):
             
             return retval
         else:
-            logger.warning(f"key `{self.classification_key}` could not be found in the exported files.")
+            # removing the warning as it is showing up in the GPtool
+            # logger.warning(f"key `{self.classification_key}` could not be found in the exported files.")
             retval = concatenate_tensors(read_file, self.input_keys, tile, self.max_point), None
 
         return retval
@@ -563,7 +564,7 @@ def show_point_cloud_batch(self, rows=2, figsize=(6,12), color_mapping=None, **k
             continue
         
         if apply_tfms:
-            sampled_pc = self.transform_fn.transform_tool(sampled_pc[None])[0]
+            sampled_pc = self.transform_fn._transform_tool(sampled_pc[None])[0]
         x, y, z = recenter(sampled_pc).transpose(1, 0)  # convert to 3,N so that upacking works
 
         if save_txt:
@@ -787,7 +788,7 @@ def read_xyzinumr_label_from_las(filename_las, extra_features):
     file = laspy.file.File(filename_las, mode='r')    
     h = file.header
     xyzirgb_num = h.point_records_count
-    labels = file.Classification
+    labels = file.Classification.copy()
     
     xyz = np.concatenate([file.x[:, None], file.y[:, None], file.z[:, None]] + [(np.clip(getattr(file, f[0]), None, f[1])[:, None] - f[2])/ (f[1] - f[2]) for f in extra_features],
                          axis=1)
@@ -1435,18 +1436,16 @@ def prediction_remap_classes(labels, reclassify_classes, inverse_class_mapping):
         labels = np.vectorize(reclassify_classes.get)(labels)
         return labels
 
-def prediction_selective_classify(labels, las_file, selective_classify):
+def prediction_selective_classify(labels, classification, selective_classify):
     all_indexes = list(range(len(labels)))
-    classification = las_file.classification
     return np.vectorize(lambda i:labels[i] if labels[i] in selective_classify\
                                         else classification[i])(all_indexes)
 
-def preserved_overwrite(f_out, labels, preserve_classes):
+def preserved_overwrite(orig_classf, labels, preserve_classes):
     """
     Does not write class code which is specified
     in preserve_classes param
     """
-    orig_classf = f_out.classification
     bool_mat = np.concatenate([orig_classf[:, None] == c for c in preserve_classes], axis=1)
     mask = np.any(bool_mat, axis=1)
     orig_classf[~mask] = labels[~mask]
@@ -1471,39 +1470,41 @@ def write_resulting_las(in_las_filename,
     else:
         inverse_class2idx = {v:k for k,v in data.class2idx.items()} 
     shutil.copy(in_las_filename, out_las_filename)
+
     with laspy.file.File(in_las_filename, mode='r') as f:
-        with laspy.file.File(out_las_filename, mode='rw') as f_out:
-            i = 0
-            classification = []
-            warn_flag = False
-            
-            ## remap classes
-            old_labels = labels.copy()
-            labels = prediction_remap_classes(labels, reclassify_classes, inverse_class2idx)
+        gt_classification = f.classification.copy()
 
-            if print_metrics:
-                for p in f:
-                    p = f[i]
-                    current_class = inverse_class2idx[old_labels[i]] 
-                    if reclassify_classes != {}:
-                        current_class = reclassify_classes[current_class]       
-                    try:
-                        false_positives[old_labels[i]] += int(p.classification != current_class)
-                        true_positives[old_labels[i]] += int(p.classification == current_class)
-                        false_negatives[data.class2idx[p.classification]] += int(p.classification != current_class)
-                    except (IndexError, KeyError) as _:
-                        warn_flag = True
+    with laspy.file.File(out_las_filename, mode='rw') as f_out:
+        classification = []
+        warn_flag = False
+        
+        ## remap classes
+        old_labels = labels.copy()
+        labels = prediction_remap_classes(labels, reclassify_classes, inverse_class2idx)
 
-                    i += 1
+        if print_metrics:
+            for i in range(len(gt_classification)):
+                p_classification = gt_classification[i]
+                current_class = inverse_class2idx[old_labels[i]] 
+                if reclassify_classes != {}:
+                    current_class = reclassify_classes[current_class]       
+                try:
+                    false_positives[old_labels[i]] += int(p_classification != current_class)
+                    true_positives[old_labels[i]] += int(p_classification == current_class)
+                    false_negatives[data.class2idx[p_classification]] += int(p_classification != current_class)
+                except (IndexError, KeyError) as _:
+                    warn_flag = True
 
-            if selective_classify != []:
-                #current_class if current_class in selective_classify else p.classification
-                labels = prediction_selective_classify(labels, f, selective_classify)
+                i += 1
 
-            if preserve_classes != []:
-                labels = preserved_overwrite(f_out, labels, preserve_classes)
+        if selective_classify != []:
+            #current_class if current_class in selective_classify else p.classification
+            labels = prediction_selective_classify(labels, gt_classification, selective_classify)
 
-            f_out.classification = labels.tolist()
+        if preserve_classes != []:
+            labels = preserved_overwrite(gt_classification, labels, preserve_classes)
+
+        f_out.classification = labels.tolist()
 
     # if print_metrics and warn_flag:
     #     logger.warning(f"Some classes in your las file {in_las_filename} do not match the classes the model is trained on")
@@ -1589,12 +1590,6 @@ def inference_las(path,
             out_path = path / 'results'
         else:    
             out_path = Path(out_path)
-
-        reclassify_classes = remap_classes
-        if reclassify_classes != {}:
-            if not all([k in pointcnn_model._data.classes for k in reclassify_classes.keys()]):
-                raise Exception(f"`remap_classes` dictionary keys are not present in dataset with classes {pointcnn_model._data.classes}.")
-            reclassify_classes = {k:reclassify_classes.get(k, k) for k in pointcnn_model._data.class_mapping}
 
         if selective_classify != []:
             if reclassify_classes != {}:
@@ -2161,7 +2156,7 @@ class Transform3d(object):
         else:
             return augment(x_in[:, :, :3], xforms, np.array(self.jitter))
 
-    def transform_tool(self, x_in):
+    def _transform_tool(self, x_in):
         if isinstance(x_in, torch.Tensor):
             inp = x_in.clone()
         else:

@@ -89,7 +89,7 @@ class ArcGISTransformer(nn.Module, metaclass=abc.ABCMeta):
         Loads the appropriate tokenizer for tokenizing the text
         depending on the transformer model-name parameter
         """
-        self._tokenizer = AutoTokenizer.from_pretrained(self._transformer_pretrained_model_name)
+        self._tokenizer = AutoTokenizer.from_pretrained(self._transformer_pretrained_model_name, config=self._config)
         self._set_max_seq_length()
 
     def init_model(self):

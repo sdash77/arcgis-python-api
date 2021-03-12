@@ -31,6 +31,8 @@ from arcgis.geoprocessing import import_toolbox
 from ._async.jobs import GeometryJob
 from arcgis.raster._util import _set_context as _set_raster_context
 from arcgis._impl.common._utils import inspect_function_inputs
+from arcgis.geoprocessing._job import RAJob
+
 _log = logging.getLogger(__name__)
 
 try:
@@ -5754,7 +5756,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_service = self._create_output_image_service(output_name, task, folder=folder, output_properties=output_properties)
             output_raster = {"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}
         elif isinstance(output_name, arcgis.gis.Item):
-            output_service = output_name
+            output_service = None #output_name
             output_raster = {"itemProperties":{"itemId":output_service.itemid}}
         else:
             raise TypeError("output_raster should be a string (service name) or Item")
@@ -5855,7 +5857,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             if upload_rasters_list != []:
                 from arcgis.raster._util import _upload_imagery_agol, _upload_imagery_enterprise
                 if gis._con._product == "AGOL":
-                    url_list = _upload_imagery_agol(upload_rasters_list, gis)
+                    url_list = _upload_imagery_agol(upload_rasters_list, gis, raster_type_name=raster_type_name)
                 else:
                     item_id_list = _upload_imagery_enterprise(upload_rasters_list, raster_type_name, gis)
                     items_on_server = True
@@ -6100,8 +6102,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                                     future=True)
         gpjob._is_ra = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     def build_footprints(self,
                          image_collection=None,
@@ -6158,8 +6160,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                                            future=True)
         gpjob._is_ra = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     def build_overview(self,
                        image_collection,
@@ -6202,7 +6204,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                                          future=True)
         gpjob._is_ra = True
         if future:
-            return gpjob
+            return RAJob(gpjob)
         return gpjob.result()
     #----------------------------------------------------------------------
     def calculate_density(self,
@@ -6280,8 +6282,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, output_service)
+        return RAJob(gpjob, output_service).result()
     #----------------------------------------------------------------------
     def calculate_distance(self,
                            input_source_raster_or_features, #
@@ -6393,8 +6395,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     def calculate_statistics(self,
                              image_collection,
@@ -6435,8 +6437,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                future=True)
         gpjob._is_ra = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs
     def calculate_travel_cost(self,
@@ -6512,8 +6514,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #Done: Format Inputs/ Outputs
     def classify(self,
@@ -6569,8 +6571,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, output_service)
+        return RAJob(gpjob, output_service).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs
     def classify_pixels_using_deep_learning(self,
@@ -6689,8 +6691,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, output_service)
+        return RAJob(gpjob, output_service).result()
     #----------------------------------------------------------------------
     def convert_feature_to_raster(self,
                                   input_feature,
@@ -6746,9 +6748,12 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                     future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item)
+        return RAJob(gpjob, item).result()
     #----------------------------------------------------------------------
     def convert_raster_to_feature(self,
                                   input_raster,
@@ -6863,8 +6868,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
 
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, output_service)
+        return RAJob(gpjob, output_service).result()
     #----------------------------------------------------------------------
     #Done: Format Inputs/ Outputs
     def create_image_collection(self,
@@ -6946,7 +6951,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         """
         task = "CreateImageCollection"
         gis = self._gis
-
+        output_service = None
         image_collection_properties = None
         use_input_rasters_by_ref = None
 
@@ -7012,8 +7017,9 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+
+            return RAJob(gpjob, output_service)
+        return RAJob(gpjob, output_service).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs
     def create_viewshed(self,
@@ -7052,10 +7058,11 @@ class _RasterAnalysisTools(BaseAnalytics):
         input_observer_features = self._layer_input(input_observer_features)
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
-
+        output_layers = [output_service]
         above_ground_level_raster=None
         if above_ground_level_output_name is not None:
-         above_ground_level_raster, above_ground_level_service = self._set_output_raster(output_name=above_ground_level_output_name, task=task, output_properties=kwargs)
+            above_ground_level_raster, above_ground_level_service = self._set_output_raster(output_name=above_ground_level_output_name, task=task, output_properties=kwargs)
+            output_layers.append(above_ground_level_service)
 
         gpjob = self._tbx.create_viewshed(input_elevation_surface=input_elevation_surface,
                                           input_observer_features=input_observer_features,
@@ -7079,8 +7086,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, output_layers)
+        return RAJob(gpjob, output_layers).result()
     #----------------------------------------------------------------------
     def delete_image(self,
                      image_collection,
@@ -7120,8 +7127,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                                        future=True)
         gpjob._is_ra = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #Done: Format Inputs/ Outputs, doc
     def delete_image_collection(self, image_collection, future=False, **kwargs):
@@ -7155,8 +7162,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = False
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #Done: Format Inputs/ Outputs, doc
     def detect_objects_using_deep_learning(self, input_raster, model, output_objects=None, model_arguments=None,
@@ -7320,8 +7327,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         gpjob._return_item = output_service
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, output_service)
+        return RAJob(gpjob, output_service).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def determine_optimum_travel_cost_network(self, input_regions_raster_or_features,
@@ -7431,8 +7438,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def determine_travel_cost_paths_to_destinations(self, input_destination_raster_or_features,
@@ -7459,8 +7466,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def determine_travel_costpath_as_polyline(self, input_source_raster_or_features, input_cost_raster,
@@ -7607,8 +7614,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #Done: Format Inputs/ Outputs, doc
     def export_training_data_for_deep_learning(self, input_raster, output_location,
@@ -7838,8 +7845,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def fill(self, input_surface_raster, output_name=None,
@@ -7858,8 +7865,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def flow_accumulation(self, input_flow_direction_raster,
@@ -7884,8 +7891,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def flow_direction(self, input_surface_raster,
@@ -7964,8 +7971,12 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            if output_drop_raster:
+                return RAJob(gpjob, [output_flow_direction_service, output_drop_service])
+            return RAJob(gpjob, output_flow_direction_service)
+        if output_drop_raster:
+            return RAJob(gpjob, [output_flow_direction_service, output_drop_service]).result()
+        return RAJob(gpjob, output_flow_direction_service).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def flow_distance(self, input_stream_raster, input_surface_raster, output_name=None,
@@ -7984,8 +7995,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     def generate_raster(self,
                         raster_function,
@@ -8045,9 +8056,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                                           context=context, gis=self._gis, future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item=item)
+
+        return RAJob(gpjob, item=item).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def generate_raster_collection(self, output_collection_name,
@@ -8070,8 +8085,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def generate_table(self, raster_function, output_table_name=None,
@@ -8089,8 +8104,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def install_deep_learning_model(self, model_package, future=False, **kwargs):
@@ -8118,8 +8133,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = False
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def interpolate_points(self, input_point_features,
@@ -8232,9 +8247,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                                              gis=gis, future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item=item)
+
+        return RAJob(gpjob, item=item).result()
 
     def list_datastore_content(self, data_store_name=None,
                                filter=None,
@@ -8282,7 +8301,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = False
         if future:
             return gpjob
-        return gpjob.result()
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     def list_deep_learning_models(self, future=False, **kwargs):
         """
@@ -8297,8 +8316,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = False
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
 
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
@@ -8325,8 +8344,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def query_deep_learning_model_info(self, model,
@@ -8353,8 +8372,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = False
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #Done: Format Inputs/ Outputs, doc
     def segment(self, input_raster,
@@ -8459,9 +8478,14 @@ class _RasterAnalysisTools(BaseAnalytics):
                                   context=context, gis=gis, future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item=item)
+
+        return RAJob(gpjob, item=item).result()
+
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def stream_link(self, input_stream_raster,
@@ -8486,8 +8510,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     def summarize_raster_within(self,
                                 input_zone_layer,
@@ -8616,9 +8640,14 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item=item)
+
+        return RAJob(gpjob, item=item).result()
+
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def train_classifier(self,
@@ -8679,8 +8708,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = False
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
 
     def transfer_files(self,
@@ -8732,8 +8761,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = False
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def uninstall_deep_learning_model(self, model_item_id, future=False, **kwargs):
@@ -8760,8 +8789,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = False
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs, doc
     def watershed(self,
@@ -8788,8 +8817,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
     #----------------------------------------------------------------------
     def copy_raster(self,
                     input_raster=None,
@@ -8870,9 +8899,14 @@ class _RasterAnalysisTools(BaseAnalytics):
                                       future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item=item)
+
+        return RAJob(gpjob, item=item).result()
+
 
     def aggregate_multidimensional_raster(self,
                                         input_multidimensional_raster=None,
@@ -8993,9 +9027,14 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                             future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item=item)
+
+        return RAJob(gpjob, item=item).result()
+
 
     def generate_multidimensional_anomaly(self,
                                           input_multidimensional_raster=None,
@@ -9094,9 +9133,13 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item=item)
+        return RAJob(gpjob, item=item).result()
+
 
     def build_multidimensional_transpose(self,
                                           input_multidimensional_raster=None,
@@ -9148,8 +9191,8 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         gpjob._is_ra = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
 
     def generate_trend_raster(self,
                               input_multidimensional_raster=None,
@@ -9287,9 +9330,15 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
+        else:
+            item = None
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item=item)
+        return RAJob(gpjob, item=item).result()
+
 
     def predict_using_trend_raster(self,
                                    input_multidimensional_raster=None,
@@ -9388,9 +9437,16 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                      future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
+        else:
+            item = None
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item=item)
+
+        return RAJob(gpjob, item=item).result()
+
 
     def find_argument_statistics(self,
                                  input_raster=None,
@@ -9507,9 +9563,15 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                    future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
+
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item=item)
+
+        return RAJob(gpjob, item=item).result()
+
 
     def linear_spectral_unmixing(self,
                                  input_raster=None,
@@ -9571,9 +9633,14 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                    future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item=item)
+
+        return RAJob(gpjob, item=item).result()
+
 
     def subset_multidimensional_raster(self,
                                        input_multidimensional_raster=None,
@@ -9674,9 +9741,14 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                          future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item=item)
+
+        return RAJob(gpjob, item=item).result()
+
 
 
     def cost_path_as_polyline(self,
@@ -9790,8 +9862,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
 
 
     def classify_objects_using_deep_learning(self,
@@ -9944,8 +10016,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._item_properties = True
         gpjob._return_item = output_service
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, output_service)
+        return RAJob(gpjob, output_service).result()
 
     def define_nodata(self,
                       input_raster,
@@ -9994,8 +10066,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                                         future=True)
         gpjob._is_ra = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
 
     def optimal_path_as_line(self,
                              input_destination_raster_or_features,
@@ -10132,8 +10204,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, output_polyline_service)
+        return RAJob(gpjob, output_polyline_service).result()
 
     def optimal_region_connections(self,
                                    input_region_raster_or_features,
@@ -10283,8 +10355,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, [output_optimal_lines_service, output_neighbor_connections_service])
+        return RAJob(gpjob, [output_optimal_lines_service, output_neighbor_connections_service]).result()
 
     def distance_accumulation(self,
                                input_source_raster_or_features,
@@ -10393,18 +10465,19 @@ class _RasterAnalysisTools(BaseAnalytics):
 
 
         output_distance_accumulation_raster, output_distance_accumulation_service = self._set_output_raster(output_name=output_distance_accumulation_raster_name, task=task, output_properties=kwargs)
-
+        output_layers = [output_distance_accumulation_service]
         output_source_direction_raster=None
         if output_source_direction_raster_name is not None:
             output_source_direction_raster, output_source_direction_service = self._set_output_raster(output_name=output_source_direction_raster_name, task=task, output_properties=kwargs)
-
+            output_layers.append(output_source_direction_service)
         output_source_location_raster=None
         if output_source_location_raster_name is not None:
             output_source_location_raster, out_allocation_service = self._set_output_raster(output_name=output_source_location_raster_name, task=task,  output_properties=kwargs)
-
+            output_layers.append(out_allocation_service)
         output_back_direction_raster=None
         if output_back_direction_raster_name is not None:
             output_back_direction_raster, out_back_direction_service = self._set_output_raster(output_name=output_back_direction_raster_name, task=task,  output_properties=kwargs)
+            output_layers.append(out_back_direction_service)
 
 
         gpjob = self._tbx.distance_accumulation(input_source_raster_or_features=input_source_raster_or_features,
@@ -10430,8 +10503,10 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, output_layers)
+
+        return RAJob(gpjob, output_layers).result()
+
 
     def distance_allocation(self,
                                input_source_raster_or_features,
@@ -10541,22 +10616,26 @@ class _RasterAnalysisTools(BaseAnalytics):
 
 
         output_distance_allocation_raster, output_distance_accumulation_service = self._set_output_raster(output_name=output_distance_allocation_raster_name, task=task, output_properties=kwargs)
-
+        output_layers = [output_distance_accumulation_service]
         output_distance_accumulation_raster=None
         if output_distance_accumulation_raster_name is not None:
             output_distance_accumulation_raster, output_distance_accumulation_service = self._set_output_raster(output_name=output_distance_accumulation_raster_name, task=task, output_properties=kwargs)
+            output_layers.append(output_distance_accumulation_service)
 
         output_source_direction_raster=None
         if output_source_direction_raster_name is not None:
             output_source_direction_raster, output_source_direction_service = self._set_output_raster(output_name=output_source_direction_raster_name, task=task, output_properties=kwargs)
+            output_layers.append(output_source_direction_service)
 
         output_source_location_raster=None
         if output_source_location_raster_name is not None:
             output_source_location_raster, out_allocation_service = self._set_output_raster(output_name=output_source_location_raster_name, task=task,  output_properties=kwargs)
-
+            output_layers.append(out_allocation_service)
         output_back_direction_raster=None
         if output_back_direction_raster_name is not None:
             output_back_direction_raster, out_back_direction_service = self._set_output_raster(output_name=output_back_direction_raster_name, task=task,  output_properties=kwargs)
+            output_layers.append(out_back_direction_service)
+
 
 
         gpjob = self._tbx.distance_allocation(input_source_raster_or_features=input_source_raster_or_features,
@@ -10582,9 +10661,11 @@ class _RasterAnalysisTools(BaseAnalytics):
                                              future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
+
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, output_layers)
+        return RAJob(gpjob, output_layers).result()
+
 
     def analyze_changes_using_ccdc(self,
                                    input_multidimensional_raster,
@@ -10647,24 +10728,29 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                      future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item=item)
+
+        return RAJob(gpjob, item=item).result()
+
 
     def detect_change_using_change_analysis_raster(self,
                                                   input_change_analysis_raster,
                                                   change_type="TIME_OF_LATEST_CHANGES",
                                                   max_number_of_changes=1,
-                                                  segment_date='BEGINNING_OF_SEGMENT', 
-                                                  change_direction='ALL', 
-                                                  filter_by_year=False, 
-                                                  min_year=None, 
-                                                  max_year=None, 
-                                                  filter_by_duration=False, 
-                                                  min_duration=None, 
-                                                  max_duration=None, 
-                                                  filter_by_magnitude=False, 
-                                                  min_magnitude=None, 
+                                                  segment_date='BEGINNING_OF_SEGMENT',
+                                                  change_direction='ALL',
+                                                  filter_by_year=False,
+                                                  min_year=None,
+                                                  max_year=None,
+                                                  filter_by_duration=False,
+                                                  min_duration=None,
+                                                  max_duration=None,
+                                                  filter_by_magnitude=False,
+                                                  min_magnitude=None,
                                                   max_magnitude=None,
                                                   filter_by_start_value=False,
                                                   min_start_value=None,
@@ -10681,34 +10767,34 @@ class _RasterAnalysisTools(BaseAnalytics):
 
        output_name: outputName (str). Optional parameter.
 
-       change_type: changeType (str). Optional parameter.  
+       change_type: changeType (str). Optional parameter.
           Choice list:TIME_OF_LATEST_CHANGE,TIME_OF_EARLIEST_CHANGE,TIME_OF_LARGEST_CHANGE,NUM_OF_CHANGES
 
-       max_number_of_changes: maxNumberOfChanges (int). Optional parameter.  
+       max_number_of_changes: maxNumberOfChanges (int). Optional parameter.
 
-       segment_date: segmentDate (str). Optional parameter.  
+       segment_date: segmentDate (str). Optional parameter.
           Choice list:BEGINNING_OF_SEGMENT,END_OF_SEGMENT
 
-       change_direction: changeDirection (str). Optional parameter.  
+       change_direction: changeDirection (str). Optional parameter.
           Choice list:ALL,INCREASE,DECREASE
 
-       filter_by_year: filterByYear (bool). Optional parameter.  
+       filter_by_year: filterByYear (bool). Optional parameter.
 
-       min_year: minYear (int). Optional parameter.  
+       min_year: minYear (int). Optional parameter.
 
-       max_year: maxYear (int). Optional parameter.  
+       max_year: maxYear (int). Optional parameter.
 
-       filter_by_duration: filterByDuration (bool). Optional parameter.  
+       filter_by_duration: filterByDuration (bool). Optional parameter.
 
-       min_duration: minDuration (float). Optional parameter.  
+       min_duration: minDuration (float). Optional parameter.
 
-       max_duration: maxDuration (float). Optional parameter.  
+       max_duration: maxDuration (float). Optional parameter.
 
-       filter_by_magnitude: filterByMagnitude (bool). Optional parameter.  
+       filter_by_magnitude: filterByMagnitude (bool). Optional parameter.
 
-       min_magnitude: minMagnitude (float). Optional parameter.  
+       min_magnitude: minMagnitude (float). Optional parameter.
 
-       max_magnitude: maxMagnitude (float). Optional parameter. 
+       max_magnitude: maxMagnitude (float). Optional parameter.
 
        context: context (str). Optional parameter.
 
@@ -10773,16 +10859,16 @@ class _RasterAnalysisTools(BaseAnalytics):
                 gpjob = self._tbx.detect_change_using_change_analysis_raster(input_change_analysis_raster=input_change_analysis_raster,
                                                                             change_type=change_type,
                                                                             max_number_of_changes=max_number_of_changes,
-                                                                            segment_date=segment_date, 
-                                                                            change_direction=change_direction, 
-                                                                            filter_by_year=filter_by_year, 
-                                                                            min_year=min_year, 
-                                                                            max_year=max_year, 
-                                                                            filter_by_duration=filter_by_duration, 
-                                                                            min_duration=min_duration, 
-                                                                            max_duration=max_duration, 
-                                                                            filter_by_magnitude=filter_by_magnitude, 
-                                                                            min_magnitude=min_magnitude, 
+                                                                            segment_date=segment_date,
+                                                                            change_direction=change_direction,
+                                                                            filter_by_year=filter_by_year,
+                                                                            min_year=min_year,
+                                                                            max_year=max_year,
+                                                                            filter_by_duration=filter_by_duration,
+                                                                            min_duration=min_duration,
+                                                                            max_duration=max_duration,
+                                                                            filter_by_magnitude=filter_by_magnitude,
+                                                                            min_magnitude=min_magnitude,
                                                                             max_magnitude=max_magnitude,
                                                                             filter_by_start_value=filter_by_start_value,
                                                                             min_start_value=min_start_value,
@@ -10797,9 +10883,14 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item=item)
+
+        return RAJob(gpjob, item=item).result()
+
 
 
     def manage_multidimensional_raster(self,
@@ -10867,8 +10958,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                          future=True)
         gpjob._is_ra = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
 
     def sample(self,
                in_rasters,
@@ -10987,8 +11078,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
 
     def compute_accuracyfor_object_detection(self,
                                              detected_features,
@@ -11088,8 +11179,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
 
     def merge_multidimensional_rasters(self,
                                        input_multidimensional_rasters,
@@ -11138,24 +11229,29 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                         future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item=item)
+
+        return RAJob(gpjob, item=item).result()
+
 
 
     def analyze_changes_using_landtrendr(self,
                                           input_multidimensional_raster,
-                                          processing_band=None, 
-                                          snapping_date='06-30', 
-                                          max_num_segments=5, 
-                                          vertex_count_overshoot=2, 
-                                          spike_threshold=0.9, 
-                                          recovery_threshold=0.25, 
-                                          prevent_one_year_recovery=True, 
-                                          increasing_recovery_trend=True, 
-                                          min_num_observations=6, 
-                                          best_model_proportion=1.25, 
-                                          pvalue_threshold=0.01, 
+                                          processing_band=None,
+                                          snapping_date='06-30',
+                                          max_num_segments=5,
+                                          vertex_count_overshoot=2,
+                                          spike_threshold=0.9,
+                                          recovery_threshold=0.25,
+                                          prevent_one_year_recovery=True,
+                                          increasing_recovery_trend=True,
+                                          min_num_observations=6,
+                                          best_model_proportion=1.25,
+                                          pvalue_threshold=0.01,
                                           output_other_bands=False,
                                           output_name=None,
                                           context=None,
@@ -11166,29 +11262,29 @@ class _RasterAnalysisTools(BaseAnalytics):
 
        output_name: outputName (str). Required parameter.
 
-       processing_band: processingBand (str). Optional parameter.  
+       processing_band: processingBand (str). Optional parameter.
 
-       snapping_date: snappingDate (str). Optional parameter.  
+       snapping_date: snappingDate (str). Optional parameter.
 
-       max_num_segments: maxNumSegments (int). Optional parameter.  
+       max_num_segments: maxNumSegments (int). Optional parameter.
 
-       vertex_count_overshoot: vertexCountOvershoot (int). Optional parameter.  
+       vertex_count_overshoot: vertexCountOvershoot (int). Optional parameter.
 
-       spike_threshold: spikeThreshold (float). Optional parameter.  
+       spike_threshold: spikeThreshold (float). Optional parameter.
 
-       recovery_threshold: recoveryThreshold (float). Optional parameter.  
+       recovery_threshold: recoveryThreshold (float). Optional parameter.
 
-       prevent_one_year_recovery: preventOneYearRecovery (bool). Optional parameter.  
+       prevent_one_year_recovery: preventOneYearRecovery (bool). Optional parameter.
 
-       increasing_recovery_trend: increasingRecoveryTrend (bool). Optional parameter.  
+       increasing_recovery_trend: increasingRecoveryTrend (bool). Optional parameter.
 
-       min_num_observations: minNumObservations (int). Optional parameter.  
+       min_num_observations: minNumObservations (int). Optional parameter.
 
-       best_model_proportion: bestModelProportion (float). Optional parameter.  
+       best_model_proportion: bestModelProportion (float). Optional parameter.
 
-       pvalue_threshold: pvalueThreshold (float). Optional parameter.  
+       pvalue_threshold: pvalueThreshold (float). Optional parameter.
 
-       output_other_bands: outputOtherBands (bool). Optional parameter.  
+       output_other_bands: outputOtherBands (bool). Optional parameter.
 
        context: context (str). Optional parameter.
 
@@ -11214,17 +11310,17 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
         gpjob = self._tbx.analyze_changes_using_land_trendr(input_multidimensional_raster=input_multidimensional_raster,
-                                                             processing_band=processing_band, 
-                                                             snapping_date=snapping_date, 
-                                                             max_num_segments=max_num_segments, 
-                                                             vertex_count_overshoot=vertex_count_overshoot, 
-                                                             spike_threshold=spike_threshold, 
-                                                             recovery_threshold=recovery_threshold, 
-                                                             prevent_one_year_recovery=prevent_one_year_recovery, 
-                                                             increasing_recovery_trend=increasing_recovery_trend, 
-                                                             min_num_observations=min_num_observations, 
-                                                             best_model_proportion=best_model_proportion, 
-                                                             pvalue_threshold=pvalue_threshold, 
+                                                             processing_band=processing_band,
+                                                             snapping_date=snapping_date,
+                                                             max_num_segments=max_num_segments,
+                                                             vertex_count_overshoot=vertex_count_overshoot,
+                                                             spike_threshold=spike_threshold,
+                                                             recovery_threshold=recovery_threshold,
+                                                             prevent_one_year_recovery=prevent_one_year_recovery,
+                                                             increasing_recovery_trend=increasing_recovery_trend,
+                                                             min_num_observations=min_num_observations,
+                                                             best_model_proportion=best_model_proportion,
+                                                             pvalue_threshold=pvalue_threshold,
                                                              output_other_bands=output_other_bands,
                                                              output_name=output_raster,
                                                              context=context,
@@ -11232,16 +11328,21 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                              future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
+        item = None
+        if output_service:
+            item = output_service
         if future:
-            return gpjob
-        return gpjob.result()
+            return RAJob(gpjob, item=item)
+
+        return RAJob(gpjob, item=item).result()
+
 
     def zonal_statistics_as_table(self,
-                                  input_zone_raster_or_features=None, 
-                                  input_value_raster=None, 
-                                  zone_field=None, 
+                                  input_zone_raster_or_features=None,
+                                  input_value_raster=None,
+                                  zone_field=None,
                                   ignore_nodata=True,
-                                  statistic_type='ALL', 
+                                  statistic_type='ALL',
                                   percentile_values=[90],
                                   process_as_multidimensional=False,
                                   percentile_interpolation_type="AUTO_DETECT",
@@ -11255,119 +11356,119 @@ class _RasterAnalysisTools(BaseAnalytics):
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        input_zone_raster_or_features            Required. The input that defines the zones. Both raster and feature 
+        input_zone_raster_or_features            Required. The input that defines the zones. Both raster and feature
                                                  can be used for the zone input.
         ------------------------------------     --------------------------------------------------------------------
         input_value_raster                       Required raster. Raster that contains the values on which to summarize a statistic.
         ------------------------------------     --------------------------------------------------------------------
-        zone_field                               Required parameter.  The field that defines each zone. It can be an 
+        zone_field                               Required parameter.  The field that defines each zone. It can be an
                                                  integer or a string field of the zone dataset.
         ------------------------------------     --------------------------------------------------------------------
-        ignore_nodata                            Optional boolean. Denotes whether NoData values in the value input 
+        ignore_nodata                            Optional boolean. Denotes whether NoData values in the value input
                                                  will influence the results of the zone that they fall within.
-                                                 true - Within any particular zone, only cells that have a value in 
-                                                 the input value raster will be used in determining the output value 
-                                                 for that zone. NoData cells in the value raster will be ignored in 
+                                                 true - Within any particular zone, only cells that have a value in
+                                                 the input value raster will be used in determining the output value
+                                                 for that zone. NoData cells in the value raster will be ignored in
                                                  the statistic calculation. This is the default.
-                                             
-                                                 false - Within any particular zone, if any NoData cells exist in the 
-                                                 value raster, it is deemed that there is insufficient information to 
-                                                 perform statistical calculations for all the cells in that zone; 
+
+                                                 false - Within any particular zone, if any NoData cells exist in the
+                                                 value raster, it is deemed that there is insufficient information to
+                                                 perform statistical calculations for all the cells in that zone;
                                                  therefore, the entire zone will receive the NoData value on the output raster.
         ------------------------------------     --------------------------------------------------------------------
-        statistic_type                           Optional string.  Choose the statistic to calculate.The available options 
-                                                 when the value raster is integer are ALL, MEAN, MAJORITY, MAXIMUM, MEDIAN, 
-                                                 MINIMUM, MINORITY, PERCENTILE, RANGE, STD, SUM, VARIETY,  
+        statistic_type                           Optional string.  Choose the statistic to calculate.The available options
+                                                 when the value raster is integer are ALL, MEAN, MAJORITY, MAXIMUM, MEDIAN,
+                                                 MINIMUM, MINORITY, PERCENTILE, RANGE, STD, SUM, VARIETY,
                                                  MIN_MAX, MEAN_STD, and  MIN_MAX_MEAN.
-                                                 If the value raster is float, the options are ALL, MEAN, MAXIMUM, MINIMUM, 
+                                                 If the value raster is float, the options are ALL, MEAN, MAXIMUM, MINIMUM,
                                                  RANGE, STD, and SUM.
 
-                                                 ALL- All of the statistics will be calculated. 
+                                                 ALL- All of the statistics will be calculated.
                                                  This is the default.
 
                                                  MEAN-Calculates the average of all cells in the raster layer to be summarized that
                                                  belong to the same zone as the output cell.
 
-                                                 MAJORITY- Determines the value that occurs most often of all cells in the raster 
+                                                 MAJORITY- Determines the value that occurs most often of all cells in the raster
                                                  layer to be summarized that belong to the same zone as the output cell.
 
-                                                 MAXIMUM- Determines the largest value of all cells in the raster layer 
+                                                 MAXIMUM- Determines the largest value of all cells in the raster layer
                                                  to be summarized that belong to the same zone as the output cell.
 
-                                                 MEDIAN- Determines the median value of all cells in the raster layer 
+                                                 MEDIAN- Determines the median value of all cells in the raster layer
                                                  to be summarized that belong to the same zone as the output cell.
 
-                                                 MINIMUM- Determines the smallest value of all cells in the raster 
+                                                 MINIMUM- Determines the smallest value of all cells in the raster
                                                  layer to be summarized that belong to the same zone as the output cell.
 
-                                                 MINORITY- Determines the value that occurs least often of all cells in 
-                                                 the raster layer to be summarized that belong to the same zone as the 
+                                                 MINORITY- Determines the value that occurs least often of all cells in
+                                                 the raster layer to be summarized that belong to the same zone as the
                                                  output cell.
 
-                                                 PERCENTILE - Calculates a percentile of all cells in the value raster 
-                                                 that belong to the same zone as the output cell. The 90th percentile is calculated by default. 
+                                                 PERCENTILE - Calculates a percentile of all cells in the value raster
+                                                 that belong to the same zone as the output cell. The 90th percentile is calculated by default.
                                                  You can specify other values (from 0 to 100) using the Percentile Values parameter.
 
-                                                 RANGE- Calculates the difference between the largest and smallest value of all 
-                                                 cells in the raster layer to be summarized that belong to the same zone 
+                                                 RANGE- Calculates the difference between the largest and smallest value of all
+                                                 cells in the raster layer to be summarized that belong to the same zone
                                                  as the output cell.
 
-                                                 STD - Calculates the standard deviation of all cells in 
+                                                 STD - Calculates the standard deviation of all cells in
                                                  the raster layer to be summarized that belong to the same zone as the output cell.
 
-                                                 SUM- Calculates the total value of all cells in the raster layer to be 
+                                                 SUM- Calculates the total value of all cells in the raster layer to be
                                                  summarized that belong to the same zone as the output cell.
 
-                                                 VARIETY- Calculates the number of unique values for all cells in the raster 
+                                                 VARIETY- Calculates the number of unique values for all cells in the raster
                                                  layer to be summarized that belong to the same zone as the output cell.
 
                                                  MIN_MAX - Both the minimum and maximum statistics are calculated.
 
-                                                 MEAN_STD -  Both the mean and standard deviation statistics 
+                                                 MEAN_STD -  Both the mean and standard deviation statistics
                                                  are calculated.
 
                                                  MIN_MAX_MEAN - The minimum, maximum and mean statistics are calculated.
         ------------------------------------     --------------------------------------------------------------------
         percentile_values                        Optional list of double values.
                                                  The percentile to calculate. The default is 90, for the 90th percentile.
-                                                 The values can range from 0 to 100. The 0th percentile is essentially 
-                                                 equivalent to the Minimum statistic, and the 100th Percentile is equivalent to 
+                                                 The values can range from 0 to 100. The 0th percentile is essentially
+                                                 equivalent to the Minimum statistic, and the 100th Percentile is equivalent to
                                                  Maximum. A value of 50 will produce essentially the same result as the Median statistic.
                                                  This option is only available if the Statistics Type parameter is set to PERCENTILE or ALL.
         ------------------------------------     --------------------------------------------------------------------
-        percentile_value                         Optional int. The percentile to calculate when the  
+        percentile_value                         Optional int. The percentile to calculate when the
                                                  statistics_type parameter is set to PERCENTILE.
-                                                 This value can range from 0 to 100. The default is 90. 
+                                                 This value can range from 0 to 100. The default is 90.
         ------------------------------------     --------------------------------------------------------------------
-        process_as_multidimensional              Optional bool, Determines how the input rasters will be processed if they 
+        process_as_multidimensional              Optional bool, Determines how the input rasters will be processed if they
                                                  are multidimensional.
-                                                 False - Statistics will be calculated from the current slice of a 
+                                                 False - Statistics will be calculated from the current slice of a
                                                  multidimensional image service. This is the default.
-                                                 True - Statistics will be calculated for all dimensions (such as time or depth) 
+                                                 True - Statistics will be calculated for all dimensions (such as time or depth)
                                                  of a multidimensional image service.
         ------------------------------------     --------------------------------------------------------------------
-        percentile_interpolation_type            Optional str. Determines the type of percentile interpolation type when the 
+        percentile_interpolation_type            Optional str. Determines the type of percentile interpolation type when the
                                                  number of values from the input value raster to be calculated are even.
 
-                                                    - AUTO_DETECT - If the input value raster has integer pixel type, the 
-                                                                    NEAREST method is used. If the input value raster 
-                                                                    has floating point pixel type, then the LINEAR 
+                                                    - AUTO_DETECT - If the input value raster has integer pixel type, the
+                                                                    NEAREST method is used. If the input value raster
+                                                                    has floating point pixel type, then the LINEAR
                                                                     method is used. This is the default.
-                                                    - NEAREST - Nearest value to the desired percentile. In this case, 
-                                                                the output pixel type is same as that of the input value 
+                                                    - NEAREST - Nearest value to the desired percentile. In this case,
+                                                                the output pixel type is same as that of the input value
                                                                 raster.
-                                                    - LINEAR - Weighted average of two surrounding values from the 
-                                                                desired percentile. In this case, the output pixel 
+                                                    - LINEAR - Weighted average of two surrounding values from the
+                                                                desired percentile. In this case, the output pixel
                                                                 type is floating point.
         ------------------------------------     --------------------------------------------------------------------
         output_name                              Optional string. Name of the output feature item or table item to be created.
-                                                 If not provided, a random name is generated by the method and used as 
-                                                 the output name. 
+                                                 If not provided, a random name is generated by the method and used as
+                                                 the output name.
         ------------------------------------     --------------------------------------------------------------------
         gis                                      Optional GIS object. If not specified, the currently active connection
                                                  is used.
         ------------------------------------     --------------------------------------------------------------------
-        future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+        future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
                                                  results will be returned asynchronously.
         ------------------------------------     --------------------------------------------------------------------
         folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
@@ -11438,11 +11539,11 @@ class _RasterAnalysisTools(BaseAnalytics):
         else:
             output_name = json.dumps({"serviceProperties": {"name" : output_name}})
 
-        gpjob = self._tbx.zonal_statistics_as_table(input_zone_raster_or_features=input_zone_raster_or_features, 
-                                                    input_value_raster=input_value_raster, 
-                                                    zone_field=zone_field, 
+        gpjob = self._tbx.zonal_statistics_as_table(input_zone_raster_or_features=input_zone_raster_or_features,
+                                                    input_value_raster=input_value_raster,
+                                                    zone_field=zone_field,
                                                     ignore_nodata=ignore_nodata,
-                                                    statistic_type=statistic_type, 
+                                                    statistic_type=statistic_type,
                                                     percentile_values=percentile_values,
                                                     process_as_multidimensional=process_as_multidimensional,
                                                     percentile_interpolation_type=percentile_interpolation_type,
@@ -11451,6 +11552,318 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                     gis=self._gis,
                                                     future=True)
 
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
+
+
+    def compute_change_raster(self,
+                              input_from_raster,
+                              input_to_raster,
+                              compute_change_method='DIFFERENCE',
+                              from_classes=None,
+                              to_classes=None,
+                              filter_method='CHANGED_PIXELS_ONLY',
+                              transition_class_colors='AVERAGE',
+                              output_name=None,
+                              context=None,
+                              future=False,
+                              **kwargs):
+        """
+       input_from_raster: inputFromRaster (str). Required parameter.  
+
+       input_to_raster: inputToRaster (str). Required parameter.  
+
+       output_name: outputName (str). Required parameter.  
+
+       compute_change_method: computeChangeMethod (str). Optional parameter.  
+          Choice list:DIFFERENCE,RELATIVE_DIFFERENCE,CATEGORICAL_DIFFERENCE
+
+       from_classes: fromClasses (str). Optional parameter.  
+
+       to_classes: toClasses (str). Optional parameter.  
+
+       filter_method: filterMethod (str). Optional parameter.  
+          Choice list:ALL,CHANGED_PIXELS_ONLY,UNCHANGED_PIXELS_ONLY
+
+       transition_class_colors: transitionClassColors (str). Optional parameter.  
+          Choice list:AVERAGE,FROM_COLOR,TO_COLOR
+
+       context: context (str). Optional parameter.  
+
+       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        task = "ComputeChangeRaster"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_from_raster = self._layer_input(input_layer=input_from_raster)
+        input_to_raster = self._layer_input(input_layer=input_to_raster)
+
+        if compute_change_method is not None:
+            compute_change_method_allowed_values = self._tbx.choice_list.compute_change_raster["compute_change_method"]
+            if [element.lower() for element in compute_change_method_allowed_values].count(compute_change_method.lower()) <= 0 :
+                raise RuntimeError('compute_change_method can only be one of the following: '+str(compute_change_method_allowed_values))
+            for element in compute_change_method_allowed_values:
+                if compute_change_method.lower() == element.lower():
+                    compute_change_method = element
+
+        if filter_method is not None:
+            filter_method_allowed_values = self._tbx.choice_list.compute_change_raster["filter_method"]
+            if [element.lower() for element in filter_method_allowed_values].count(filter_method.lower()) <= 0 :
+                raise RuntimeError('filter_method can only be one of the following: '+str(filter_method_allowed_values))
+            for element in filter_method_allowed_values:
+                if filter_method.lower() == element.lower():
+                    filter_method = element
+
+        if transition_class_colors is not None:
+            transition_class_colors_allowed_values = self._tbx.choice_list.compute_change_raster["transition_class_colors"]
+            if [element.lower() for element in transition_class_colors_allowed_values].count(transition_class_colors.lower()) <= 0 :
+                raise RuntimeError('transition_class_colors can only be one of the following: '+str(transition_class_colors_allowed_values))
+            for element in transition_class_colors_allowed_values:
+                if transition_class_colors.lower() == element.lower():
+                    transition_class_colors = element
+
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.compute_change_raster(input_from_raster=input_from_raster,
+                                                input_to_raster=input_to_raster,
+                                                compute_change_method=compute_change_method,
+                                                from_classes=from_classes,
+                                                to_classes=to_classes,
+                                                filter_method=filter_method,
+                                                transition_class_colors=transition_class_colors,
+                                                output_name=output_raster,
+                                                context=context,
+                                                gis=self._gis,
+                                                future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+
+    def train_deep_learning_model(self,
+                                  in_folder=None,
+                                  output_name=None, 
+                                  model_type=None, 
+                                  arguments=None, 
+                                  batch_size=2, 
+                                  max_epochs=None, 
+                                  learning_rate=None, 
+                                  backbone_model=None, 
+                                  validation_percent=None, 
+                                  pretrained_model=None, 
+                                  stop_training=True,
+                                  freeze_model=True,
+                                  overwrite_model=False,
+                                  context=None, 
+                                  future=False, 
+                                  **kwargs):
+        """
+        Function can be used to train a deep learning model using the output from the 
+        export_training_data function. 
+        It generates the deep learning model package (*.dlpk) and adds it to your enterprise portal.
+        train_model function performs the training using the Raster Analytics server.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        input_folder                             Required string. This is the input location for the training sample data. 
+                                                 It can be the path of output location on the file share raster data store or a 
+                                                 shared file system path.  
+                                                 The training sample data folder needs to be the output of export_training_data function, 
+                                                 containing "images" and "labels" folder, 
+                                                 as well as the JSON model definition file written out together by the tool.  
+                                                 File share raster store path examples: 
+                                                   -  /rasterStores/yourRasterStoreFolderName/trainingSampleData 
+                                                   - /fileShares/yourFileShareFolderName/trainingSampleData  
+                                                File share path example: 
+                                                   - \\serverName\deepLearning\trainingSampleData 
+        ------------------------------------     --------------------------------------------------------------------
+        model_type                               Required string. The model type to use for training the deep learning model.  
+                                                 Possible values: SSD, UNET, FEATURE_CLASSIFIER, PSPNET, RETINANET, MASKRCNN 
+                                                  - SSD - The Single Shot Detector (SSD) is used for object detection.  
+                                                  - UNET - U-Net is used for pixel classification.   
+                                                  - FEATURE_CLASSIFIER - The Feature Classifier is used for object classification. 
+                                                  - PSPNET - The Pyramid Scene Parsing Network (PSPNET) is used for pixel classification.                                              
+                                                  - RETINANET - The RetinaNet is used for object detection.   
+                                                  - MASKRCNN - The MarkRCNN is used for object detection
+        ------------------------------------     --------------------------------------------------------------------
+        model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
+                                             
+                                                 eg: {"name1":"value1", "name2": "value2"}
+        ------------------------------------     --------------------------------------------------------------------
+        batch_size                               Optional int.
+                                                 The number of training samples to be processed for training at one time.  
+                                                 If the server has a powerful GPU, this number can be increased to 16, 36, 64, and so on.   
+                                                 Example:
+                                                    4
+        ------------------------------------     --------------------------------------------------------------------
+        max_epochs                               Optional int. The maximum number of epochs that the model should be trained. 
+                                                 One epoch means the whole training dataset will be passed forward and backward 
+                                                 through the deep neural network one time. 
+                                             
+                                                 Example:
+                                                    20
+        ------------------------------------     --------------------------------------------------------------------
+        learning_rate                            Optional float. 
+                                                 The rate at which the weights are updated during the training. 
+                                                 It is a small positive value in the range between 0.0 and 1.0.  
+                                                 If learning rate is set to 0, it will extract the optimal learning rate 
+                                                 from the learning curve during the training process.   
+                                                 Example:
+                                                    0.0
+        ------------------------------------     --------------------------------------------------------------------
+        backbone_model                           Optional string. 
+                                                 Specifies the preconfigured neural network to be used as an architecture for training the new model.  
+                                                 Possible values: DENSENET121 , DENSENET161 , DENSENET169 , DENSENET201 , MOBILENET_V2 , MASKRCNN50_FPN , 
+                                                                  RESNET18 , RESNET34 , RESNET50 , RESNET101 , RESNET152 , VGG11 , VGG11_BN , VGG13 , 
+                                                                  VGG13_BN , VGG16 , VGG16_BN , VGG19 , VGG19_BN
+                                                 Example: 
+                                                    RESNET34 
+        ------------------------------------     --------------------------------------------------------------------
+        validation_percent                       Optional float. 
+                                                 The percentage (in %) of training sample data that will be used for validating the model.  
+                                                 Example:
+                                                    10
+        ------------------------------------     --------------------------------------------------------------------
+        pretrained_model                         Optional dlpk portal item. 
+                                             
+                                                 The pretrained model to be used for fine tuning the new model. 
+                                                 It is a deep learning model package (dlpk) portal item.  
+        ------------------------------------     --------------------------------------------------------------------
+        stop_training                            Optional bool. 
+                                                 Specifies whether early stopping will be implemented.
+
+                                                 True - The model training will stop when the model is no longer improving, 
+                                                        regardless of the maximum epochs specified. This is the default.
+                                                 False - The model training will continue until the maximum epochs is reached.
+        ------------------------------------     --------------------------------------------------------------------
+        freeze_model                             Optional bool.
+                                                 Specifies whether to freeze the backbone layers in the pretrained model, 
+                                                 so that the weights and biases in the backbone layers remain unchanged. 
+
+                                                 True - The predefined weights and biases will not be altered in the backboneModel. 
+                                                        This is the default. 
+                                                 False - The weights and biases of the backboneModel may be altered to better 
+                                                         fit your training samples. This may take more time to process but 
+                                                         usually could get better results.
+        ------------------------------------     --------------------------------------------------------------------
+        overwrite_model                          Optional bool.
+                                                 Overwrites an existing deep learning model package (.dlpk) portal item with the same name.
+
+                                                 If the output_name parameter uses the file share data store path, this overwriteModel parameter is not applied.
+
+                                                 True - The portal .dlpk item will be overwritten.
+                                                 False - The portal .dlpk item will not be overwritten. This is the default.
+        ------------------------------------     --------------------------------------------------------------------
+        output_name                              Optional. trained deep learning model package can either be added as an item 
+                                                 to the portal or can be written to a datastore.
+
+                                                 To add as an item, specify the name of the output deep learning model package (item) 
+                                                 to be created.
+                                                 Example: 
+
+                                                    "trainedModel"
+
+                                                 In order to write the dlpk to fileshare datastore, specify the datastore path.
+                                             
+                                                 Example - 
+                                                    "/fileShares/filesharename/folder"
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Context contains additional settings that affect task execution.
+                                                 Dictionary can contain value for following keys:
+                                                 - cellSize - Set the output raster cell size, or resolution
+                                                 - extent - Sets the processing extent used by the function
+                                                 - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
+                                                 - processorType - Sets the processor type. "CPU" or "GPU"
+                                                 Eg: {"processorType" : "CPU"}
+                                                 Setting context parameter will override the values set using arcgis.env 
+                                                 variable for this particular function.
+        ------------------------------------     --------------------------------------------------------------------
+        gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ====================================     ====================================================================
+
+        :return:
+            Returns the dlpk portal item that has properties for title, type, filename, file, id and folderId. 
+        """
+        task = "TrainDeepLearningModel"
+        gis = self._gis
+
+        if isinstance(in_folder, arcgis.gis.Datastore):
+            in_folder = in_folder.datapath
+
+        if pretrained_model is not None:
+            pretrained_model = self._set_param(pretrained_model)
+
+        model_arguments_value = None
+        if arguments:
+            try:
+                model_arguments_value = dict((str(k),str(v)) for k, v in arguments.items())
+            except:
+                model_arguments_value = arguments
+
+  
+        folderId = None
+        folder = None
+        if kwargs is not None:
+            if "folder" in kwargs:
+                folder = kwargs["folder"]
+            if folder is not None:
+                if isinstance(folder, dict):
+                    if "id" in folder:
+                        folderId = folder["id"]
+                        folder=folder["title"]
+                else:
+                    owner = gis.properties.user.username
+                    folderId = gis._portal.get_folder_id(owner, folder)
+                if folderId is None:
+                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder = folder_dict["title"]
+                    folderId = folder_dict["id"]
+
+        if output_name is None:
+            output_item_name = 'TrainDeepLearningModel_' + _id_generator()
+            output_name = output_item_name.replace(' ', '_')
+        
+        if '/fileShares/' in output_name or '/rasterStores/' in output_name:
+            output_name = {"uri":output_name}
+        else:
+            if folderId is not None:
+                output_name = {"name":output_name, "folderId":folderId}
+            else:
+                output_name = {"name":output_name}
+
+        gpjob = self._tbx.train_deep_learning_model(in_folder=in_folder,
+                                                    output_name=output_name, 
+                                                    model_type=model_type, 
+                                                    arguments=model_arguments_value, 
+                                                    batch_size=batch_size, 
+                                                    max_epochs=max_epochs, 
+                                                    learning_rate=learning_rate, 
+                                                    backbone_model=backbone_model, 
+                                                    validation_percent=validation_percent, 
+                                                    pretrained_model=pretrained_model, 
+                                                    stop_training=stop_training,
+                                                    freeze_model=freeze_model,
+                                                    overwrite_model=overwrite_model,
+                                                    context=context, gis=self._gis,
+                                                    future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:

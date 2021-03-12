@@ -1324,7 +1324,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                     if(timeMode === "cumulative-from-start"){
                         this._time_slider.values = [values[0],];}
                     if(timeMode === "cumulative-from-end"){
-                        this._time_slider.value = [values[0],];}}}}
+                        this._time_slider.values = [values[0],];}}}}
         catch(err){
             this._displayErrorBox("Error while updating time mode");
             console.warn("Error while trying updating time mode"); console.warn(err);}

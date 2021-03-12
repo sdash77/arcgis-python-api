@@ -1942,7 +1942,7 @@ class FeatureLayer(Layer):
         ------------------------   --------------------------------------------------------------------
         upsert                     optional boolean. Optional parameter specifying whether the edits
                                    needs to be applied as updates if the feature already exists.
-                                   Default is false.
+                                   Default is true.
         ------------------------   --------------------------------------------------------------------
         skip_updates               Optional boolean. Parameter is used only when upsert is true.
         ------------------------   --------------------------------------------------------------------

@@ -54,9 +54,13 @@ class ImageTupleList(ImageList):
     
     @classmethod
     def from_folders(cls, path, folderA, folderB, **kwargs):
-        itemsB = ImageList.from_folder(path/folderB).items
-        res = super().from_folder(path/folderA, itemsB=itemsB, **kwargs)
-        res.path = path
+        itemsB = ImageList.from_folder(folderB).items
+        res = super().from_folder(folderA, itemsB=itemsB, **kwargs)
+        # The parent dir of the path below (i.e. 'path') is the working dir for saving the model
+        if is_old_format_cyclegan(path):
+            res.path = path/'Images'
+        else:
+            res.path = path/'A'
         return res
     
     def show_xys(self, xs, ys, figsize:Tuple[int,int]=(12,6), **kwargs):
@@ -118,8 +122,9 @@ class ImageTupleListMS(ArcGISImageList):
     
     @classmethod
     def from_folders(cls, path, folderA, folderB, batch_stats_a, batch_stats_b, **kwargs):
-        itemsB = ImageList.from_folder(path/folderB).items
-        res = super().from_folder(path/folderA, itemsB=itemsB, **kwargs)
+        itemsB = ImageList.from_folder(folderB).items
+        res = super().from_folder(folderA, itemsB=itemsB, **kwargs)
+        # The path below (i.e. 'path') is the working dir for saving the model
         res.path = path
         global _batch_stats_a
         global _batch_stats_b
@@ -426,16 +431,15 @@ def _batch_stats_json(path, img_list, norm_pct, stats_file_name="esri_normalizat
 
 
 def prepare_data_ms_cyclegan(path, norm_pct, val_split_pct, seed, databunch_kwargs):
-    folder_a = 'train_a'
-    folder_b = 'train_b'
+    path_a, path_b = cyclegan_paths(path)
 
-    img_list_a = ArcGISImageList.from_folder(path/"train_a")
-    img_list_b = ArcGISImageList.from_folder(path/"train_b")
+    img_list_a = ArcGISImageList.from_folder(path_a)
+    img_list_b = ArcGISImageList.from_folder(path_b)
     
-    batch_stats_a = _batch_stats_json(path, img_list_a, norm_pct, stats_file_name="esri_normalization_stats_a.json")
-    batch_stats_b = _batch_stats_json(path, img_list_b, norm_pct, stats_file_name="esri_normalization_stats_b.json")
+    batch_stats_a = _batch_stats_json(path_a, img_list_a, norm_pct, stats_file_name="esri_normalization_stats_a.json")
+    batch_stats_b = _batch_stats_json(path_b, img_list_b, norm_pct, stats_file_name="esri_normalization_stats_b.json")
 
-    data = ImageTupleListMS.from_folders(path, folder_a, folder_b, batch_stats_a, batch_stats_b)\
+    data = ImageTupleListMS.from_folders(path, path_a, path_b, batch_stats_a, batch_stats_b)\
             .split_by_rand_pct(val_split_pct, seed=seed)\
             .label_empty()\
             .databunch(**databunch_kwargs)
@@ -458,6 +462,9 @@ def prepare_data_ms_cyclegan(path, norm_pct, val_split_pct, seed, databunch_kwar
     data._scaled_mean_values_b = batch_stats_b['scaled_mean_values']
     data._scaled_std_values_b = batch_stats_b['scaled_std_values']
 
+    # add dataset_type
+    data._dataset_type = 'CycleGAN'
+
     return data
 
 def get_files(*args, **kwargs):
@@ -466,3 +473,31 @@ def get_files(*args, **kwargs):
 image_extensions = set(k for k, v in mimetypes.types_map.items()
                        if v.startswith('image/'))
 
+def is_old_format_cyclegan(path):
+    """
+    Function that returns 'True' if the manually created dir structure is being used.
+    """
+    return os.path.exists(path/'Images'/'train_a') and os.path.exists(path/'Images'/'train_b')
+
+def cyclegan_paths(path):
+    """
+    Function to return the appropriate image dir paths in the provided dataset dir.
+    """
+    if is_old_format_cyclegan(path):
+        return (path/'Images'/'train_a', path/'Images'/'train_b')
+    else:
+        return (path/'A'/'images', path/'B'/'images')
+
+def folder_check_cyclegan(path):
+    """
+    Function to check if the correct dir structure is provided.
+    """
+    img_folder1 = os.path.exists(path/'Images'/'train_a') or os.path.exists(path/'A'/'images')
+    img_folder2 = os.path.exists(path/'Images'/'train_b') or os.path.exists(path/'B'/'images')
+    if not all([img_folder1, img_folder2]):
+        raise Exception(f"""You might be using an incorrect format to train your model. \nPlease ensure your training data has the following folder structure:
+                ├─dataset_folder_name
+                    ├─A
+                        ├─images
+                    ├─B
+                        ├─images    """)

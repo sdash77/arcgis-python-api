@@ -555,7 +555,7 @@ class TimeSeriesModel(ArcGISModel):
             for i in range(number_of_predictions):
                 orig_dataframe = orig_dataframe.append(pd.Series(), ignore_index=True)
                 if delta is not None:
-                    orig_dataframe[index_field_name].iloc[len(orig_dataframe)-1] = end_value + delta.to_timedelta64()
+                    orig_dataframe.loc[len(orig_dataframe)-1, index_field_name] = end_value + delta.to_timedelta64()
                     end_value = end_value + delta.to_timedelta64()
 
         if match_field_names and match_field_names.get(self._data._dependent_variable):
@@ -681,7 +681,15 @@ class TimeSeriesModel(ArcGISModel):
         if prediction_type == "dataframe":
             return orig_dataframe
 
-        return orig_dataframe.spatial.to_featurelayer(output_layer_name, gis)
+        if 'SHAPE' in list(orig_dataframe.columns):
+            orig_dataframe.spatial.to_featurelayer(output_layer_name, gis)
+        else:
+            import tempfile
+            with tempfile.TemporaryDirectory() as tmpdir:
+                table_file = os.path.join(tmpdir, output_layer_name + '.xlsx')
+                orig_dataframe.to_excel(table_file, index=False, header=True)
+                online_table = gis.content.add({'type': 'Microsoft Excel', 'overwrite': True}, table_file)
+                return online_table.publish(overwrite=True)
 
     def score(self):
         """

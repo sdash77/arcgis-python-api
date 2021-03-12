@@ -120,8 +120,7 @@ class CycleGAN(ArcGISModel):
         
     @property
     def _model_metrics(self):
-        fid_a, fid_b = self.compute_metrics()
-        return {'FID_A': f'{fid_a}', 'FID_B': f'{fid_b}'}
+        return self.compute_metrics() 
 
     def _get_emd_params(self, save_inference_file):
         _emd_template = {}
@@ -204,9 +203,10 @@ class CycleGAN(ArcGISModel):
         """
         if self._data._is_multispectral:
             logger.error("FID metric not supported for multispectral imagery type")
-            return(None, None)
+            return {'FID_A': 'None', 'FID_B': 'None'}
         else:
             fid_a, fid_b = compute_fid_metric(self, self._data)
-            return fid_a, fid_b
+            return {'FID_A': '{0:1.4e}'.format(fid_a), 
+                    'FID_B': '{0:1.4e}'.format(fid_b)}
 
 

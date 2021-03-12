@@ -476,12 +476,16 @@ def build_query_string(field_name, operator, field_values):
     else:
         raise ValueError('invalid operator value')
 
-def _generate_direct_access_url(gis=None):
+def _generate_direct_access_url(gis=None, expiration=None):
     """helper fn to get the direct access url for azure storage"""
     gis = _arcgis.env.active_gis if gis is None else gis
     url = "%s/sharing/rest/content/users/%s/generateDirectAccessUrl" % (gis._portal.url,
                                                                  gis._username)
     params = {"f" : "json", "storeType":"rasterStore"}
+    if expiration is not None:
+        params.update({"expiration":expiration})
+    else:
+        params.update({"expiration":1440})
     res = gis._portal.con.post(url, params)
     if isinstance(res, dict):
         if "url" in res.keys():
@@ -491,45 +495,88 @@ def _generate_direct_access_url(gis=None):
     else:
         raise RuntimeError("Couldn't generate direct access url")
     
-def _upload_imagery_agol(files, gis=None):
+def _upload_imagery_agol(files, gis=None, direct_access_url=None, raster_type_name=None):
     """uploads a file to the image layer to AGOL and returns the list of urls"""
 
     try:
         from azure.storage.blob import ContainerClient
+        from azure.core.exceptions import ClientAuthenticationError, ServiceResponseError, ServiceRequestError
     except:
         print("Install Azure library packages for Python. (version - azure-storage-blob-12.5.0) \
         (https://docs.microsoft.com/en-us/azure/developer/python/azure-sdk-install)")
-    sas_url = _generate_direct_access_url(gis)
+    gis = _arcgis.env.active_gis if gis is None else gis
+    if direct_access_url is None:
+        sas_url = _generate_direct_access_url(gis)
+    else:
+        sas_url = direct_access_url
     container = ContainerClient.from_container_url(sas_url)
     if not isinstance(files,list):
         files = [files]
 
     url_list = []
+    url=""
+    set_root=True
     for file in files:
         current_time = int(time.time())
+        current_time_str = str(current_time)
         prefix =  "_images/"+str(current_time)+"/"
-
         if os.path.exists(file):
             if(os.path.isdir(file)):
+                if raster_type_name is None:
+                    set_root = False
+                elif (file.endswith(".crf") and raster_type_name =="Raster Dataset") or raster_type_name != "Raster Dataset":
+                    set_root = True
                 folder = os.path.basename(file)
                 basename_len=len(os.path.dirname(file))
                 for root,d_names,f_names in os.walk(file):
                     for f in f_names:
                         blobname = prefix + (root+"/"+f)[basename_len+1:].replace(os.sep, '/')
                         filepath = os.path.join(root, f)
-                        blob=container.get_blob_client(blobname)
-                        url = blob.url.split("?", 1)[0]
+                        path = ("/"+root+"/"+f)[basename_len+1:].replace(os.sep, '/')
+                        while True:
+                            try:
+                                blob=container.get_blob_client(blobname)
+                                with open(filepath, "rb") as data:
+                                    blob.upload_blob(data, blob_type="BlockBlob")
+                                url = blob.url.split("?", 1)[0]
+                                if set_root:
+                                    break
+                                else:
+                                    uri_dict = {"uri":url, "path":path}
+                                    url_list.append(uri_dict)
+                            except (ClientAuthenticationError, ServiceResponseError, ServiceRequestError) as err:
+                                if direct_access_url is None:
+                                    sas_url = _generate_direct_access_url(gis)
+                                    container = ContainerClient.from_container_url(sas_url)
+                                    continue
+                                else:
+                                    raise
+                            except Exception as err:
+                                raise err
+                            break
+                if set_root:
+                    if url !="":
+                        url = url[0:url.find(current_time_str)+len(current_time_str)]
                         url_list.append(url)
-                        with open(filepath, "rb") as data:
-                            blob.upload_blob(data, blob_type="BlockBlob")
-
             else:
                 blobname = prefix+os.path.basename(file).replace(os.sep, '/')
-                blob=container.get_blob_client(blobname)
-                with open(file, "rb") as data:
-                    blob.upload_blob(data, blob_type="BlockBlob")
-                url = blob.url.split("?", 1)[0]
-                url_list.append(url)
+                while True:
+                    try:
+                        blob=container.get_blob_client(blobname)
+                        with open(file, "rb") as data:
+                            blob.upload_blob(data, blob_type="BlockBlob")
+                        url = blob.url.split("?", 1)[0]
+                        url_list.append(url)
+                    except (ClientAuthenticationError, ServiceResponseError, ServiceRequestError) as err:
+                        if direct_access_url is None:
+                            sas_url = _generate_direct_access_url(gis)
+                            container = ContainerClient.from_container_url(sas_url)
+                            continue
+                        else:
+                            raise
+                    except Exception as err:
+                        raise err
+                    break
 
     return url_list
 
@@ -572,7 +619,7 @@ def _upload_imagery_enterprise(files, raster_type_name=None, gis=None):
                             item_id = res['item']['itemID']
                             res = {}
                             if append_path:
-                                item_id_dict = {"itemId":item_id, "path":fp}
+                                item_id_dict = {"itemId":item_id, "path":path}
                                 item_ids_list.append(item_id_dict)
                                 item_id_dict={}
                             else:

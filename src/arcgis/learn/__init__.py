@@ -14,7 +14,7 @@ if not LAMBDA_TEXT_CLASSIFICATION:
       PSPNetClassifier, MaskRCNN, DeepLab, PointCNN, ModelExtension, \
       FasterRCNN, SuperResolution, FullyConnectedNetwork, MLModel, YOLOv3, HEDEdgeDetector, \
       BDCNEdgeDetector, ImageCaptioner, TimeSeriesModel, CycleGAN, MultiTaskRoadExtractor, \
-      ChangeDetector, Pix2Pix
+      ChangeDetector, Pix2Pix, ConnectNet
 
     from .text import EntityRecognizer
     from ._utils.pointcloud_data import Transform3d
@@ -1042,6 +1042,180 @@ def compute_accuracy_for_object_detection(detected_features,
                                                                           future=future,
                                                                           **kwargs)
 
+def train_model(input_folder,
+                model_type,
+                model_arguments=None,
+                batch_size=2,
+                max_epochs=None,
+                learning_rate=None,
+                backbone_model=None,
+                validation_percent=None,
+                pretrained_model=None,
+                stop_training=True,
+                freeze_model=True,
+                overwrite_model=False,
+                output_name=None,
+                context=None,
+                *,
+                gis=None,
+                future=False,
+                **kwargs):
+
+    """
+    Function can be used to train a deep learning model using the output from the 
+    export_training_data function. 
+    It generates the deep learning model package (*.dlpk) and adds it to your enterprise portal.
+    train_model function performs the training using the Raster Analytics server.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_folder                             Required string. This is the input location for the training sample data. 
+                                             It can be the path of output location on the file share raster data store or a 
+                                             shared file system path.  
+                                             The training sample data folder needs to be the output of export_training_data function, 
+                                             containing "images" and "labels" folder, 
+                                             as well as the JSON model definition file written out together by the function.  
+                                             
+                                             File share raster store and datastore path examples: 
+                                               -  /rasterStores/yourRasterStoreFolderName/trainingSampleData 
+                                               - /fileShares/yourFileShareFolderName/trainingSampleData
+
+                                             Shared path example: 
+                                               - \\serverName\deepLearning\trainingSampleData 
+    ------------------------------------     --------------------------------------------------------------------
+    model_type                               Required string. The model type to use for training the deep learning model.  
+                                             Possible values: SSD, UNET, FEATURE_CLASSIFIER, PSPNET, RETINANET, MASKRCNN 
+                                              - SSD - The Single Shot Detector (SSD) is used for object detection.  
+                                              - UNET - U-Net is used for pixel classification.   
+                                              - FEATURE_CLASSIFIER - The Feature Classifier is used for object classification. 
+                                              - PSPNET - The Pyramid Scene Parsing Network (PSPNET) is used for pixel classification.                                              
+                                              - RETINANET - The RetinaNet is used for object detection.   
+                                              - MASKRCNN - The MarkRCNN is used for object detection
+    ------------------------------------     --------------------------------------------------------------------
+    model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
+                                             
+                                             Example: 
+                                                {"name1":"value1", "name2": "value2"}
+    ------------------------------------     --------------------------------------------------------------------
+    batch_size                               Optional int.
+                                             The number of training samples to be processed for training at one time.  
+                                             If the server has a powerful GPU, this number can be increased to 16, 36, 64, and so on.   
+                                             
+                                             Example:
+                                                4
+    ------------------------------------     --------------------------------------------------------------------
+    max_epochs                               Optional int. The maximum number of epochs that the model should be trained. 
+                                             One epoch means the whole training dataset will be passed forward and backward 
+                                             through the deep neural network once. 
+                                             
+                                             Example:
+                                                20
+    ------------------------------------     --------------------------------------------------------------------
+    learning_rate                            Optional float. 
+                                             The rate at which the weights are updated during the training. 
+                                             It is a small positive value in the range between 0.0 and 1.0.  
+                                             If learning rate is set to 0, it will extract the optimal learning rate 
+                                             from the learning curve during the training process.   
+                                             
+                                             Example:
+                                                0.0
+    ------------------------------------     --------------------------------------------------------------------
+    backbone_model                           Optional string. 
+                                             Specifies the preconfigured neural network to be used as an architecture for training the new model.  
+                                             Possible values: DENSENET121 , DENSENET161 , DENSENET169 , DENSENET201 , MOBILENET_V2 , MASKRCNN50_FPN , 
+                                                              RESNET18 , RESNET34 , RESNET50 , RESNET101 , RESNET152 , VGG11 , VGG11_BN , VGG13 , 
+                                                              VGG13_BN , VGG16 , VGG16_BN , VGG19 , VGG19_BN
+                                             Example: 
+                                                RESNET34 
+    ------------------------------------     --------------------------------------------------------------------
+    validation_percent                       Optional float. 
+                                             The percentage (in %) of training sample data that will be used for validating the model.  
+                                             
+                                             Example:
+                                                10
+    ------------------------------------     --------------------------------------------------------------------
+    pretrained_model                         Optional dlpk portal item. 
+                                             
+                                             The pretrained model to be used for fine tuning the new model. 
+                                             It is a deep learning model package (dlpk) portal item.  
+    ------------------------------------     --------------------------------------------------------------------
+    stop_training                            Optional bool. 
+                                             Specifies whether early stopping will be implemented.
+
+                                             - True - The model training will stop when the model is no longer improving, 
+                                               regardless of the maximum epochs specified. This is the default.
+                                             - False - The model training will continue until the maximum epochs is reached.
+    ------------------------------------     --------------------------------------------------------------------
+    freeze_model                             Optional bool.
+                                             Specifies whether to freeze the backbone layers in the pretrained model, 
+                                             so that the weights and biases in the backbone layers remain unchanged. 
+
+                                             - True - The predefined weights and biases will not be altered in the backboneModel. 
+                                               This is the default. 
+                                             - False - The weights and biases of the backboneModel may be altered to better 
+                                               fit your training samples. This may take more time to process but 
+                                               usually could get better results.
+    ------------------------------------     --------------------------------------------------------------------
+    overwrite_model                          Optional bool.
+                                             Overwrites an existing deep learning model package (.dlpk) portal item with the same name.
+
+                                             If the output_name parameter uses the file share data store path, this overwriteModel parameter is not applied.
+
+                                             - True - The portal .dlpk item will be overwritten.
+                                             - False - The portal .dlpk item will not be overwritten. This is the default.
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional. trained deep learning model package can either be added as an item 
+                                             to the portal or can be written to a datastore.
+
+                                             To add as an item, specify the name of the output deep learning model package (item) 
+                                             to be created.
+
+                                             Example -
+                                                "trainedModel"
+
+                                             In order to write the dlpk to fileshare datastore, specify the datastore path.
+                                             
+                                             Example - 
+                                                "/fileShares/filesharename/folder"
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Optional dictionary. Context contains additional settings that affect task execution.
+                                             Dictionary can contain value for following keys:
+
+                                             - cellSize - Set the output raster cell size, or resolution
+                                             - extent - Sets the processing extent used by the function
+                                             - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
+                                             - processorType - Sets the processor type. "CPU" or "GPU"
+                                             Example - 
+                                                {"processorType" : "CPU"}
+
+                                             Setting context parameter will override the values set using arcgis.env 
+                                             variable for this particular function.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ====================================     ====================================================================
+
+    :return:
+        Returns the dlpk portal item that has properties for title, type, filename, file, id and folderId. 
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.train_deep_learning_model(in_folder=input_folder,
+                                                               output_name=output_name, 
+                                                               model_type=model_type, 
+                                                               arguments=model_arguments, 
+                                                               batch_size=batch_size, 
+                                                               max_epochs=max_epochs, 
+                                                               learning_rate=learning_rate, 
+                                                               backbone_model=backbone_model, 
+                                                               validation_percent=validation_percent, 
+                                                               pretrained_model=pretrained_model, 
+                                                               stop_training=stop_training,
+                                                               freeze_model=freeze_model,
+                                                               overwrite_model=overwrite_model,
+                                                               context=context,
+                                                               future=future,
+                                                               **kwargs)
 class Model:
     def __init__(self, model = None):
         self._model_package = False

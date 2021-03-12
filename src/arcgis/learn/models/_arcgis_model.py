@@ -1,6 +1,8 @@
 import arcgis
 from pathlib import Path
 import os
+import glob
+import shutil
 import time
 import tempfile
 import json
@@ -15,6 +17,7 @@ import socket
 from functools import wraps
 import traceback
 import inspect
+import types
 
 HAS_FASTAI = True
 HAS_TENSORBOARDX = True
@@ -42,6 +45,8 @@ try:
     from fastai.basics import partial
     import pandas as pd
     from ... import __version__ as ArcGISLearnVersion
+    from ._pointcnn_utils import AverageMetric
+    from fastai.core import camel2snake
 except ImportError as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
@@ -210,16 +215,27 @@ class SaveModelCallback(TrackerCallback):
 
     def on_epoch_end(self, epoch, **kwargs):
         "Compare the value monitored to its best score and maybe save the model."
-
+        current = self.get_monitor_value()
+        if isinstance(current, torch.Tensor):
+            if current.is_cuda:
+                current = current.cpu()
+        self.current = current
         if self.every == "epoch":
-            self.model.save('{}_{}'.format(self.name, epoch), compute_metrics=False)
+            self.model._save(f'{self.name}_epoch_{epoch}', zip_files=False, save_html=False, compute_metrics=False)
         else:  # every="improvement"
-            current = self.get_monitor_value()
             if current is not None and self.operator(current, self.best):
                 if arcgis.env.verbose:
                     print('saving checkpoint.')
+                self.best_epoch = epoch
                 self.best = current
-                self.model._save('{}'.format(self.name), zip_files=False, save_html=False, compute_metrics=False)
+                self.remove_previous()
+                self.model._save(f'{self.name}_epoch_{epoch}', zip_files=False, save_html=False, compute_metrics=False)
+
+    def remove_previous(self):
+        # to avoid creating multiple best checkpoints.
+        saved_path = os.path.join(self.model.learn.path, self.model.learn.model_dir)
+        for p in glob.glob(os.path.join(saved_path, self.name + '*')):
+            shutil.rmtree(p)
 
     def on_train_end(self, **kwargs):
         "Load the best model."
@@ -232,7 +248,7 @@ class SaveModelCallback(TrackerCallback):
                 pass
 
             try:
-                self.model.save('{}'.format(self.name), compute_metrics=False)
+                self.model.save(f'{self.name}_epoch_{self.best_epoch}', compute_metrics=False)
             except:
                 pass
 
@@ -635,7 +651,32 @@ class ArcGISModel(object):
     def _model_metrics(self):
         raise NotImplementedError
 
-    def fit(self, epochs=10, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, tensorboard=False,
+    @property
+    def available_metrics(self):
+        """
+        List of available metrics that are displayed in the training
+        table. Set `monitor` value to be one of these while calling
+        the `fit` method.
+        """
+        metrics = ['valid_loss']
+        for m in self.learn.metrics:
+            if isinstance(m, AverageMetric):
+                metrics.append(m.func.__name__)
+            elif isinstance(m, types.FunctionType):
+                metrics.append(m.__name__)
+            else:
+                metrics.append(camel2snake(m.__class__.__name__))
+
+        return metrics
+
+    def fit(self, 
+            epochs=10, 
+            lr=None, 
+            one_cycle=True, 
+            early_stopping=False, 
+            checkpoint=True,     # "all", "best", True, False ("best" and True are same.)
+            tensorboard=False,
+            monitor='valid_loss',  # whatever is passed here, earlystopping and checkpointing will use that.
             **kwargs):
         """
         Train the model for the specified number of epochs and using the
@@ -657,13 +698,17 @@ class ArcGISModel(object):
                                 learning rate schedule is used.
         ---------------------   -------------------------------------------
         early_stopping          Optional boolean. Parameter to add early stopping.
-                                If set to 'True' training will stop if validation
-                                loss stops improving for 5 epochs.
+                                If set to 'True' training will stop if parameter
+                                `monitor` value stops improving for 5 epochs.
         ---------------------   -------------------------------------------
-        checkpoint              Optional boolean. Parameter to save the best model
-                                during training. If set to `True` the best model
-                                based on validation loss will be saved during
-                                training.
+        checkpoint              Optional boolean or string.
+                                Parameter to save checkpoint during training.
+                                If set to `True` the best model
+                                based on `monitor` will be saved during
+                                training. If set to 'all', all checkpoints
+                                are saved. If set to False, checkpointing will
+                                be off. Setting this parameter loads the best
+                                model at the end of training.
         ---------------------   -------------------------------------------
         tensorboard             Optional boolean. Parameter to write the training log.
                                 If set to 'True' the log will be saved at
@@ -672,6 +717,13 @@ class ArcGISModel(object):
 
                                 The default value is 'False'.
                                 **Note - Not applicable for Text Models
+        ---------------------   -------------------------------------------
+        monitor                 Optional string. Parameter specifies
+                                which metric to monitor while checkpointing
+                                and early stopping. Defaults to 'valid_loss'. Value
+                                should be one of the metric that is displayed in
+                                the training table. Use `{model_name}.available_metrics`
+                                to list the available metrics to set here.
         =====================   ===========================================
         """
         self._check_requisites()
@@ -703,14 +755,19 @@ class ArcGISModel(object):
 
         callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
         kwargs.pop('callbacks', None)
+        monitored_names = self.available_metrics
+        if monitor not in monitored_names:
+            raise Exception(f"`monitor` must be set to one from {monitored_names}")
+        self.monitor = monitor
         if early_stopping:
-            callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor='valid_loss', min_delta=0.01, patience=5))
+            callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor=monitor, min_delta=0.01, patience=5))
         if checkpoint:
             from datetime import datetime
             now = datetime.now()
-            save_callback_params = kwargs.get("save_callback_params", {"monitor": "valid_loss", "every": "improvement"})
-            # callbacks.append(SaveModelCallback(self, monitor='valid_loss', every='improvement',
-            #                                   name=now.strftime("checkpoint_%Y-%m-%d_%H-%M-%S")))
+            if checkpoint != True and checkpoint != "all":
+                raise Exception("Checkpoint can only be set to a boolean or 'all'")
+            every = "improvement" if checkpoint is True else "epoch"
+            save_callback_params = kwargs.get("save_callback_params", {"monitor": monitor, "every": every})
             callbacks.append(SaveModelCallback(self,
                                                name=now.strftime("checkpoint_%Y-%m-%d_%H-%M-%S"),
                                                **save_callback_params))
@@ -718,7 +775,7 @@ class ArcGISModel(object):
         # If tensorboardx is installed write a log with name as timestamp
         if tensorboard and HAS_TENSORBOARDX:
             training_id = time.strftime("log_%Y-%m-%d_%H-%M-%S")
-            log_path = Path(os.path.dirname(self._data.path)) / 'training_log'
+            log_path = Path(self._data.path) / 'training_log'
             abs_path = os.path.abspath(log_path)
             training_id = type(self).__name__ + "_" + training_id
             callbacks.append(
@@ -729,6 +786,7 @@ class ArcGISModel(object):
         elif tensorboard:
             warn("Install tensorboardX 2.1 'pip install tensorboardx==2.1' to write training log")
 
+        self._fit_callbacks = callbacks
         if one_cycle:
             self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
         else:
@@ -785,9 +843,27 @@ class ArcGISModel(object):
                 backbone = self._orig_backbone.__name__
 
         _emd_template = self._get_emd_params(save_inference_file)
+        if getattr(self, '_data', None) is not None:
+            _emd_template['MinCellSize'] = getattr(self._data, '_emd', {}).get('MinCellSize', None)
+            _emd_template['MaxCellSize'] = getattr(self._data, '_emd', {}).get('MaxCellSize', None)
 
         _emd_template["SupportsVariableTileSize"] = _emd_template.get("SupportsVariableTileSize", False)
         _emd_template["ArcGISLearnVersion"] = ArcGISLearnVersion
+
+        if getattr(self, '_fit_callbacks', None) is not None:
+            checkpoint_callback = [c for c in self._fit_callbacks if isinstance(c, SaveModelCallback)]
+            if checkpoint_callback != []:
+                checkpoint_callback = checkpoint_callback[0]
+                key = getattr(self, 'monitor', 'valid_loss')
+                if checkpoint_callback.every == 'improvement':
+                    val = checkpoint_callback.best
+                else:
+                    val = checkpoint_callback.current
+                if isinstance(val, torch.Tensor):
+                    val = val.cpu().item()
+                else:
+                    val =  float(val)
+                _emd_template[f'monitored_{key}'] = val
 
         if isinstance(self._learning_rate, slice):
             _emd_lr = slice('{0:1.4e}'.format(self._learning_rate.start), '{0:1.4e}'.format(self._learning_rate.stop))
@@ -952,11 +1028,17 @@ class ArcGISModel(object):
             <p><b>Score:</b> {emd_template.get('score')}</p>
         """
 
-        if emd_template.get('psnr_metric'):
+        if emd_template.get('PSNR'):
             model_analysis = f"""
-            <p><b>PSNR Metric:</b> {emd_template.get('psnr_metric')}</p>
-            <p><b>SSIM Metric:</b> {emd_template.get('ssim_metric')}</p>
+            <p><b>PSNR Metric:</b> {emd_template.get('PSNR')}</p>
+            <p><b>SSIM Metric:</b> {emd_template.get('SSIM')}</p>
         """
+            # FID is supported for RGB only
+            if emd_template.get('FID'):
+                model_analysis = model_analysis + f"""
+                <p><b>FID Metric:</b> {emd_template.get('FID')}</p>
+                """
+
         if emd_template.get('per_class_metrics'):
             html_table = pd.read_json(emd_template.get('per_class_metrics')).to_html()
             model_analysis = f"""

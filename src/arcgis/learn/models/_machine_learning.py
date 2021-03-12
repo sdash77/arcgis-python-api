@@ -4,7 +4,9 @@ import json
 import pickle
 import warnings
 import math
+import tempfile
 from pathlib import Path
+from zipfile import ZipFile
 
 import arcgis
 from arcgis.features import FeatureLayer
@@ -255,14 +257,10 @@ class MLModel(object):
         :returns dataframe
         """
 
-        if (not self._data._is_unsupervised and (self._training_data is None or self._training_labels is None)) \
-                or (self._data._is_unsupervised and self._training_data is None):
-            raise_data_exception()
-
         if '\\' in name_or_path or '/' in name_or_path:
             path = name_or_path
         else:
-            path = os.path.join(self._data.path, 'models',name_or_path)
+            path = os.path.join(self._data.path, 'models', name_or_path)
             if not os.path.exists(os.path.dirname(path)):
                 os.mkdir(os.path.dirname(path))
 
@@ -293,7 +291,10 @@ class MLModel(object):
         emd_params = {}
         emd_params['version'] = str(sklearn.__version__)
         if not self._data._is_unsupervised:
-            emd_params['score'] = self.score()
+            if self._data._is_empty:
+                emd_params['score'] = self._data._emd['score']
+            else:
+                emd_params['score'] = self.score()
         emd_params['_is_classification'] = "classification" if self._data._is_classification else "regression"
         emd_params['ModelName'] = type(self._model).__name__
         emd_params['ModelFile'] = base_file_name + '.pkl'
@@ -329,6 +330,12 @@ class MLModel(object):
         if not HAS_SK_LEARN:
             raise Exception("This module requires scikit-learn.")
 
+        if emd_path.endswith('.dlpk'):
+            with ZipFile(emd_path, 'r') as zip_obj:
+                temp_dir = tempfile.TemporaryDirectory().name
+                zip_obj.extractall(temp_dir)
+                MLModel.from_model(temp_dir, data)
+
         if not os.path.exists(emd_path):
             raise Exception("Invalid data path.")
 
@@ -363,6 +370,8 @@ class MLModel(object):
         if data is None:
             data = TabularDataObject._empty(categorical_variables, continuous_variables, dependent_variable, encoder_mapping, column_transformer)
             data._is_classification = _is_classification
+
+        data._emd = emd
 
         model_file = os.path.join(os.path.dirname(emd_path), emd['ModelFile'])
         with open(model_file, 'rb') as f:
@@ -455,6 +464,20 @@ class MLModel(object):
         print(f"Selecting n_clusters={max_cluster}")
 
         return max_cluster
+
+    def load(self, name_or_path):
+        """
+        Loads a compatible saved model for inferencing or fine tuning from the disk.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        name_or_path            Required string. Name or Path to
+                                Esri Model Definition(EMD) file.
+        =====================   ===========================================
+        """
+        model = MLModel.from_model(name_or_path, self._data)
+        self._model = model._model
 
     def _get_number_of_components(self, **kwargs):
         print("Finding optimum number of components")
@@ -672,14 +695,22 @@ class MLModel(object):
             if column not in fields_needed:
                 processed_dataframe = processed_dataframe.drop(column, axis=1)
 
-        processed_numpy = self._data._process_data(processed_dataframe.reindex(sorted(processed_dataframe.columns), axis=1))
+        processed_numpy = self._data._process_data(processed_dataframe.reindex(sorted(processed_dataframe.columns), axis=1), fit=False)
         predictions = self._predict(processed_numpy)
         dataframe["prediction_results"] = predictions
 
         if prediction_type == "dataframe":
             return dataframe
 
-        return dataframe.spatial.to_featurelayer(output_name, gis)
+        if 'SHAPE' in list(dataframe.columns):
+            return dataframe.spatial.to_featurelayer(output_name, gis)
+        else:
+            import tempfile
+            with tempfile.TemporaryDirectory() as tmpdir:
+                table_file = os.path.join(tmpdir, output_name + '.xlsx')
+                dataframe.to_excel(table_file, index=False, header=True)
+                online_table = gis.content.add({'type': 'Microsoft Excel', 'overwrite': True}, table_file)
+                return online_table.publish(overwrite=True)
 
     def _predict_rasters(self, output_folder_path, rasters, match_field_names=None):
 
@@ -810,7 +841,7 @@ class MLModel(object):
 
         processed_df = pd.DataFrame(data=np.array(processed_data), columns=sorted(raster_data))
 
-        processed_numpy = self._data._process_data(processed_df)
+        processed_numpy = self._data._process_data(processed_df, fit=False)
 
         predictions = self._predict(processed_numpy)
 

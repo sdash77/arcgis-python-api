@@ -120,7 +120,7 @@ def show_batch_pascal_voc_rectangles(self, rows=3, alpha=1, **kwargs): # paramet
         symbology_bands.append(b_index)
 
     # Get Batch
-    x_batch, y_batch = get_nbatches(data_loader, n_items)
+    x_batch, y_batch = get_nbatches(data_loader, math.ceil(n_items/self.batch_size))
     x_batch = torch.cat(x_batch)
     # Denormalize X
     x_batch = (self._scaled_std_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._scaled_mean_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)
@@ -227,7 +227,7 @@ def show_results_multispectral(self, nrows=5, alpha=1, **kwargs): # parameters a
     label_font_size = kwargs.get('label_font_size', 16)
     
     # Get Batch
-    x_batch, y_batch = get_nbatches(data_loader, nrows)
+    x_batch, y_batch = get_nbatches(data_loader, math.ceil(nrows/self._data.batch_size))
     x_batch = torch.cat(x_batch)
     y_bboxes = []
     y_classes = []

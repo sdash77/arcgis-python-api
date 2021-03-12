@@ -5,8 +5,22 @@ import_exception = None
 try:
     from .._data import _raise_fastai_import_error 
     from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback
-    from ._pointcnn_utils import PointCNNSeg, SamplePointsCallback, CrossEntropyPC, accuracy, accuracy_non_zero, AverageMetric
-    from .._utils.pointcloud_data import get_device, inference_las, show_results, compute_precision_recall, predict_h5, show_results_tool
+    from ._pointcnn_utils import (PointCNNSeg,
+                                  SamplePointsCallback, 
+                                  CrossEntropyPC, 
+                                  accuracy, 
+                                  CalculateClassificationReport,
+                                  accuracy_non_zero, 
+                                  AverageMetric,
+                                  precision,
+                                  recall,
+                                  f1)
+    from .._utils.pointcloud_data import (get_device, 
+                                          inference_las, 
+                                          show_results, 
+                                          compute_precision_recall, 
+                                          predict_h5, 
+                                          show_results_tool)
     from ._unet_utils import is_no_color
     from fastai.basic_train import Learner
     import torch
@@ -82,10 +96,16 @@ class PointCNN(ArcGISModel):
         self._backbone = None
         self.sample_point_num = kwargs.get('sample_point_num', data.max_point)
         self.learn = Learner(data,
-                PointCNNSeg(self.sample_point_num, data.c, data.extra_dim, kwargs.get('encoder_params', None), kwargs.get('dropout', None)),
-                loss_func=CrossEntropyPC(data.c),
-                metrics=[AverageMetric(accuracy)],
-                callback_fns=[partial(SamplePointsCallback, sample_point_num=self.sample_point_num)])
+                             PointCNNSeg(self.sample_point_num, data.c, data.extra_dim, kwargs.get('encoder_params', None), kwargs.get('dropout', None)),
+                             loss_func=CrossEntropyPC(data.c),
+                             metrics=[AverageMetric(accuracy),
+                                      AverageMetric(precision), 
+                                      AverageMetric(recall), 
+                                      AverageMetric(f1)
+                                     ],
+                             callback_fns=[partial(SamplePointsCallback, sample_point_num=self.sample_point_num),
+                                           CalculateClassificationReport,
+                                          ])
         self.encoder_params = self.learn.model.encoder_params
 
         self.learn.model = self.learn.model.to(self._device)
@@ -175,7 +195,8 @@ class PointCNN(ArcGISModel):
 
         """
         Train the model for the specified number of epochs and using the
-        specified learning rates
+        specified learning rates. The precision, recall and f1 scores
+        shown in the training table are macro averaged over all classes.
         
         =====================   ===========================================
         **Argument**            **Description**
@@ -183,23 +204,27 @@ class PointCNN(ArcGISModel):
         epochs                  Required integer. Number of cycles of training
                                 on the data. Increase it if underfitting.
         ---------------------   -------------------------------------------
-        lr                      Optional float. Learning rate to be used
-                                for training the model. If ``lr=None``, an
-                                optimal learning rate is automatically deduced
+        lr                      Optional float or slice of floats. Learning rate
+                                to be used for training the model. If ``lr=None``,
+                                an optimal learning rate is automatically deduced
                                 for training the model.
         ---------------------   -------------------------------------------
         one_cycle               Optional boolean. Parameter to select 1cycle
-                                learning rate schedule. If set to `False` no 
-                                learning rate schedule is used.       
+                                learning rate schedule. If set to `False` no
+                                learning rate schedule is used.
         ---------------------   -------------------------------------------
         early_stopping          Optional boolean. Parameter to add early stopping.
-                                If set to 'True' training will stop if validation
-                                loss stops improving for 5 epochs.        
+                                If set to 'True' training will stop if parameter
+                                `monitor` value stops improving for 5 epochs.
         ---------------------   -------------------------------------------
-        checkpoint              Optional boolean. Parameter to save the best model
-                                during training. If set to `True` the best model 
-                                based on validation loss will be saved during 
-                                training.
+        checkpoint              Optional boolean or string.
+                                Parameter to save checkpoint during training.
+                                If set to `True` the best model
+                                based on `monitor` will be saved during
+                                training. If set to 'all', all checkpoints
+                                are saved. If set to False, checkpointing will
+                                be off. Setting this parameter loads the best
+                                model at the end of training.
         ---------------------   -------------------------------------------
         tensorboard             Optional boolean. Parameter to write the training log.
                                 If set to 'True' the log will be saved at
@@ -208,6 +233,13 @@ class PointCNN(ArcGISModel):
 
                                 The default value is 'False'.
                                 **Note - Not applicable for Text Models
+        ---------------------   -------------------------------------------
+        monitor                 Optional string. Parameter specifies
+                                which metric to monitor while checkpointing
+                                and early stopping. Defaults to 'valid_loss'. Value
+                                should be one of the metric that is displayed in
+                                the training table. Use `{model_name}.available_metrics`
+                                to list the available metrics to set here.
         =====================   ===========================================
 
         **kwargs**

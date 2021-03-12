@@ -83,10 +83,8 @@ class MyFasterRCNN():
         model.roi_heads.box_predictor = self.torchvision.models.detection.faster_rcnn.FastRCNNPredictor(in_features, len(data.classes))
         
         if data._is_multispectral:
-            scaled_mean_values = data._scaled_mean_values[data._extract_bands].tolist()
-            scaled_std_values = data._scaled_std_values[data._extract_bands].tolist()
-            model.transform.image_mean = scaled_mean_values
-            model.transform.image_std = scaled_std_values
+            model.transform.image_mean = [0]*len(data._extract_bands)
+            model.transform.image_std = [1]*len(data._extract_bands)
 
         self.model = model
 

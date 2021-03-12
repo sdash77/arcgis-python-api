@@ -1056,7 +1056,6 @@ def prepare_data(path,
     data_folders = None
     emd_in = kwargs.get('emd', None)
     eas_in = kwargs.get('eas', None)
-    emd = None
     eas = None
     images_df = kwargs.get('images_df', None)
     if isinstance(path, (list, tuple)):
@@ -1070,33 +1069,6 @@ def prepare_data(path,
         eas = copy.deepcopy(eas_in)
 
     has_esri_files = _check_esri_files(path)
-
-    # For change detection export data using export tiles format.
-    if dataset_type == 'ChangeDetection':
-        from ._utils.change_detection_data import folder_check
-        folder_check(path)
-        json_file = path / 'images_before' / 'esri_model_definition.emd'
-        if json_file.exists():
-            with open(json_file) as f:
-                emd = json.load(f)
-        else:
-            from ._utils.change_detection_data import get_files, image_extensions
-            files_list = get_files(path  / 'images_before',
-                                  extensions=image_extensions,
-                                  recurse=True)
-            msimage_list = ArcGISImageList(files_list)
-            if msimage_list[0].shape[0] != 3:
-                kwargs['imagery_type'] = 'ms'
-    elif dataset_type == "CycleGAN" or dataset_type == "Pix2Pix":
-        from ._utils.cyclegan import get_files, image_extensions
-        path_a = path/"Images"/"train_a"
-        path_b = path/"Images"/"train_b"
-        files_list_a = get_files(path_a, extensions=image_extensions, recurse=True)
-        files_list_b = get_files(path_b, extensions=image_extensions, recurse=True)
-        msimage_list_a = ArcGISImageList(files_list_a)
-        msimage_list_b = ArcGISImageList(files_list_b)
-        if msimage_list_a[0].shape[0] != 3 or msimage_list_b[0].shape[0] != 3:
-            kwargs['imagery_type'] = 'ms'
             
     alter_class_mapping = False
     color_mapping = None
@@ -1108,18 +1080,83 @@ def prepare_data(path,
     _show_batch_multispectral = None
     stats_file = path / 'esri_accumulated_stats.json'
 
-    if dataset_type is None and not has_esri_files:
-        raise Exception("Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid esri files")
-    elif dataset_type is None and has_esri_files:
-        if data_folders is None:
-            with open(stats_file) as f:
-                stats = json.load(f)
-        else:
-            stats = eas
-        dataset_type = stats['MetaDataMode']
+    if dataset_type is None:
+        if has_esri_files:
+            if data_folders is None:
+                with open(stats_file) as f:
+                    stats = json.load(f)
+            else:
+                stats = eas
+            dataset_type = stats['MetaDataMode']
+        # elif os.path.exists(path/'images_before') and os.path.exists(path/'images_after'):
+        #     dataset_type = 'ChangeDetection'
+        elif _check_esri_files(path/'A') and _check_esri_files(path/'B'):
+            has_esri_files = True
+            dataset_type = 'CycleGAN'
+        elif not has_esri_files:
+            raise Exception("Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid esri files")
+    
+    # Pix2Pix data is exported as Export_Tiles with 'images' and 'images2' folders
+    if dataset_type == 'Export_Tiles' and os.path.exists(path/'images2'):
+        dataset_type = 'Pix2Pix'
 
-    if dataset_type not in ["Imagenet", "superres", "Export_Tiles"] and has_esri_files:
-        dataset_type = stats['MetaDataMode']
+    # Change Detection data is exported as Classified_Tiles with 'images', 'images2' and 'labels' folders
+    if dataset_type == 'Classified_Tiles' and os.path.exists(path/'images2'):
+        dataset_type = 'ChangeDetection'
+
+    if dataset_type == 'ChangeDetection':
+        from ._utils.change_detection_data import folder_check, is_old_format_change_detection
+        folder_check(path)
+        if is_old_format_change_detection(path):
+            json_file = path / 'images_before' / 'esri_model_definition.emd'
+        else:
+            json_file = path / 'esri_model_definition.emd'
+        if json_file.exists():
+            with open(json_file) as f:
+                emd = json.load(f)
+        else:
+            from ._utils.change_detection_data import get_files, image_extensions, folder_names
+            images_before_folder, images_after_folder = folder_names(path)
+            files_list = get_files(path  / images_before_folder,
+                                  extensions=image_extensions,
+                                  recurse=True)
+            msimage_list = ArcGISImageList(files_list)
+            if msimage_list[0].shape[0] != 3:
+                kwargs['imagery_type'] = 'ms'
+
+    elif dataset_type == "CycleGAN" or dataset_type == "Pix2Pix":
+        from ._utils.cyclegan import get_files, image_extensions, cyclegan_paths, folder_check_cyclegan
+        from ._utils.pix2pix import pix2pix_paths, folder_check_pix2pix
+        if dataset_type == "CycleGAN":
+            folder_check_cyclegan(path)
+            path_a, path_b = cyclegan_paths(path)
+            if has_esri_files:
+                stats_file = path_a.parent / 'esri_accumulated_stats.json'
+                if data_folders is None:
+                    with open(stats_file) as f:
+                        stats = json.load(f)
+                else:
+                    stats = eas
+        else:
+            folder_check_pix2pix(path)
+            path_a, path_b = pix2pix_paths(path)
+
+        json_file = path_a.parent / 'esri_model_definition.emd'
+        if json_file.exists():
+            with open(json_file) as f:
+                emd = json.load(f)
+
+        files_list_a = get_files(path_a, extensions=image_extensions, recurse=True)
+        files_list_b = get_files(path_b, extensions=image_extensions, recurse=True)
+        msimage_list_a = ArcGISImageList(files_list_a)
+        msimage_list_b = ArcGISImageList(files_list_b)
+        if msimage_list_a[0].shape[0] != 3 or msimage_list_b[0].shape[0] != 3:
+            kwargs['imagery_type'] = 'ms'
+
+    if dataset_type not in ["Imagenet", "superres", "Export_Tiles", 'CycleGAN', 'Pix2Pix', 'ChangeDetection'] and has_esri_files:
+        with open(stats_file) as f:
+            stats = json.load(f)
+            dataset_type = stats['MetaDataMode']
 
         with open(path / 'map.txt') as f:
             while True:
@@ -1651,6 +1688,11 @@ def prepare_data(path,
         if resize_to is None:
             kwargs_transforms['size'] = img_size
         kwargs_transforms['tfm_y'] = True
+
+        if has_esri_files:
+            json_file = path / 'esri_model_definition.emd'
+            with open(json_file) as f:
+                emd = json.load(f)
         
     elif dataset_type in ['ner_json','BIO','IOB','LBIOU','BILUO']:
         if batch_size == 64:
@@ -1710,7 +1752,6 @@ def prepare_data(path,
                                              **kwargs)
 
     elif dataset_type == "CycleGAN":
-        path = path/"Images"
         if _is_multispectral:
             data = prepare_data_ms_cyclegan(path, norm_pct, val_split_pct, seed, databunch_kwargs)
             data.n_channel = data.x[0].data[0].shape[0]
@@ -1722,15 +1763,16 @@ def prepare_data(path,
             data._do_normalize = False
             x_shape = data.train_ds[0][0].shape
             data.chip_size = x_shape[-1]
+            data._temp_folder = _prepare_working_dir(path)
             return data
-        data = ImageTupleList.from_folders(path, 'train_a', 'train_b')\
+        data = ImageTupleList.from_folders(path, path_a, path_b)\
                 .split_by_rand_pct(val_split_pct, seed=seed)\
                 .label_empty()
+        data._dataset_type = 'CycleGAN'
         img_size = data.x[0].shape[-1]
         if resize_to is None:
             kwargs_transforms['size'] = img_size
     elif dataset_type == "Pix2Pix":
-        path = path/"Images"
         if _is_multispectral:
             data = prepare_data_ms_pix2pix(path, norm_pct, val_split_pct, seed, databunch_kwargs)
             data.n_channel = data.x[0].data[0].shape[0]
@@ -1742,10 +1784,12 @@ def prepare_data(path,
             data._do_normalize = False
             x_shape = data.train_ds[0][0].shape
             data.chip_size = x_shape[-1]
+            data._temp_folder = _prepare_working_dir(path)
             return data
-        data = (ImageTupleList2.from_folders(path, 'train_a', 'train_b')
+        data = (ImageTupleList2.from_folders(path, path_a, path_b)
                       .split_by_rand_pct(val_split_pct, seed=seed)
                       .label_empty())
+        data._dataset_type = 'Pix2Pix'
         img_size = data.x[0].shape[-1]
         if resize_to is None:
             kwargs_transforms['size'] = img_size
@@ -1863,31 +1907,8 @@ def prepare_data(path,
         data._scaled_std_values[data._scaled_std_values == 0]+=1e-02
         
         # Scaling
-        data._min_max_scaler = partial(_tensor_scaler, min_values=data._band_min_values, max_values=data._band_max_values, mode='minmax')
-        data._min_max_scaler_tfm = partial(_tensor_scaler_tfm, min_values=data._band_min_values, max_values=data._band_max_values, mode='minmax')
-        #data.add_tfm(data._min_max_scaler_tfm)
-        
-        # Transforms
-        def _scaling_tfm(x): 
-            ## Scales Fastai Image Scaling | MS Image Values -> 0 - 1 range
-            return x.__class__(data._min_max_scaler_tfm((x.data,None))[0][0])
-        
-        ## Fastai need tfm, order and resolve.
-        class dummy():
-            pass
-        _scaling_tfm.tfm = dummy()
-        _scaling_tfm.tfm.order = 0
-        _scaling_tfm.resolve = dummy
-
-        ## Scaling the images before applying any  other transform
-        if getattr(data.train_ds, 'tfms') is not None:
-            data.train_ds.tfms = [_scaling_tfm] + data.train_ds.tfms
-        else:
-            data.train_ds.tfms = [_scaling_tfm]
-        if getattr(data.valid_ds, 'tfms') is not None:
-            data.valid_ds.tfms = [_scaling_tfm] + data.valid_ds.tfms
-        else:
-            data.valid_ds.tfms = [_scaling_tfm]
+        data.valid_ds.x._div = (data._band_min_values, data._band_max_values)
+        data.train_ds.x._div = (data._band_min_values, data._band_max_values)
 
         # Normalize
         data._do_normalize = True
@@ -1955,7 +1976,7 @@ def prepare_data(path,
             """
             raise Exception(message)
 
-    if has_esri_files:
+    if has_esri_files and dataset_type not in ['CycleGAN', 'Pix2Pix', 'ChangeDetection', 'superres']:
         data._dataset_type = stats['MetaDataMode']
     else:
         data._dataset_type = dataset_type
@@ -2094,5 +2115,8 @@ def prepare_data(path,
     else:
         data.path = Path(os.path.dirname(os.path.abspath(data.path)))
     data._temp_folder = _prepare_working_dir(data.path)
+
+    if has_esri_files:
+        data._emd = emd
 
     return data

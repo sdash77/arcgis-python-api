@@ -445,8 +445,16 @@ class FeatureClassifier(ArcGISModel):
         else:
             self._check_requisites()
             learn_temp = copy.copy(self.learn)
+            
+            # Reassigning the function from vision.learner because fastai sets it from tabular.learner
+            from fastai.vision.learner import _cl_int_from_learner
+            ClassificationInterpretation.from_learner = _cl_int_from_learner
             interp = ClassificationInterpretation.from_learner(learn_temp)
-            interp.plot_confusion_matrix()
+            
+            nrows = self._data.c
+            # figsize range: 4 <= (no. of classes + 15)/4 <=20
+            fs = min(max(4, (nrows+15)/4), 20)
+            interp.plot_confusion_matrix(figsize=(fs,fs))
 
     def plot_hard_examples(self, num_examples):
         """

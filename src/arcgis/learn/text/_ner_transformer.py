@@ -1,5 +1,6 @@
 import os
 import json
+import random
 import traceback
 from pathlib import Path
 from functools import partial
@@ -153,7 +154,6 @@ class TransformerForEntityRecognition(ArcGISTransformer):
     @staticmethod
     def get_active_predictions_labels_per_batch(output, label, attention_mask):
         y_pred, y_true = [], []
-        # import pdb; pdb.set_trace()
         predictions = output[1].argmax(2)
         active_tensors = attention_mask.view(-1) == 1
 
@@ -255,9 +255,10 @@ class _TransformerEntityRecognizer(ArcGISModel):
         self._address_tag = self._data._address_tag
         self._mixed_precision = kwargs.get('mixed_precision', False)
         self._seq_len = kwargs.get('seq_len', transformer_seq_length)
+        model_config = kwargs.get("model_config", None)
         self.path = getattr(data, 'working_dir', data.path)
-        self._create_text_learner_object(
-            data, backbone, kwargs.get('pretrained_path', None), mixed_precision=self._mixed_precision, seq_len=self._seq_len)
+        self._create_text_learner_object(data, backbone, kwargs.get('pretrained_path', None), config=model_config,
+                                         mixed_precision=self._mixed_precision, seq_len=self._seq_len)
 
         self.learn.model = self.learn.model.to(self._device)
         layer_groups = self.learn.model.get_layer_groups()
@@ -279,13 +280,13 @@ class _TransformerEntityRecognizer(ArcGISModel):
         return TransformerForEntityRecognition._available_backbone_models(architecture)
 
     def _create_text_learner_object(self, data, backbone, pretrained_path=None, mixed_precision=False,
-                                    seq_len=transformer_seq_length):
+                                    seq_len=transformer_seq_length, config=None):
 
         model_type = infer_model_type(backbone, transformer_architectures)
         self.logger.info(f"Inferred Backbone: {model_type}")
         pretrained_model_name = backbone
-
-        transformer_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name)
+        if not config: config = AutoConfig.from_pretrained(pretrained_model_name)
+        transformer_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name, config=config)
         if data._is_empty or data._backbone != backbone:
             self.logger.info('Creating DataBunch')
             data._prepare_databunch(tokenizer=transformer_tokenizer, model_type=model_type,
@@ -293,9 +294,10 @@ class _TransformerEntityRecognizer(ArcGISModel):
 
         databunch = data.get_databunch()
 
-        config = AutoConfig.from_pretrained(pretrained_model_name)
-        config.label2id = data._label2id
-        config.id2label = {y: x for x, y in config.label2id.items()}
+        if config.label2id != data._label2id:
+            config.label2id = data._label2id
+            config.id2label = {y: x for x, y in config.label2id.items()}
+            config._num_labels = len(config.label2id)
 
         if pretrained_path is not None: pretrained_path = str(_get_emd_path(pretrained_path))
 
@@ -350,7 +352,8 @@ class _TransformerEntityRecognizer(ArcGISModel):
 
     def _save_df_to_html(self, path):
         if getattr(self._data, '_is_empty', False):
-            copy_metrics(self._data.emd_path, path, model_characteristics_folder)
+            if self._data.emd_path:
+                copy_metrics(self._data.emd_path, path, model_characteristics_folder)
             return
 
         metrics_per_label = self.metrics_per_label(show_progress=False)
@@ -393,7 +396,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
             metrics["metrics_per_label"] = per_class_metric_df.transpose().to_dict()
         return {"Metrics": json.dumps(metrics)}
 
-    def _get_emd_params(self, save_inference_file):
+    def _get_emd_params(self, save_inference_file=True):
         _emd_template = {}
         _emd_template["Architecture"]= self.learn.model._transformer_architecture
         _emd_template["PretrainedModel"]= self.learn.model._transformer_pretrained_model_name
@@ -424,6 +427,21 @@ class _TransformerEntityRecognizer(ArcGISModel):
         return super().load(name_or_path)
 
     @classmethod
+    def _from_pretrained(cls, backbone, label2id, **kwargs):
+        if not HAS_FASTAI:
+            from .._data import _raise_fastai_import_error
+            _raise_fastai_import_error(import_exception=import_exception)
+
+        entities = list(label2id.keys())
+        data = TextDataObject(task="ner")
+        data.create_empty_object_for_ner(entities, "Address", label2id)
+        data._is_empty, data._label2id = True, label2id
+        cls_object = cls(data, backbone, **kwargs)
+        cls_object._data._is_empty = True
+        data.emd, data.emd_path = cls_object._get_emd_params(), None
+        return cls_object
+
+    @classmethod
     def from_model(cls, emd_path, data=None):
         if not HAS_FASTAI:
             from .._data import _raise_fastai_import_error
@@ -450,6 +468,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         data._label2id = label2id
         cls_object = cls(data, pretrained_model, pretrained_path=str(emd_path), mixed_precision=mixed_precision, seq_len=seq_len)
         if data_is_none: cls_object._data._is_empty = True
+        cls_object.path = getattr(data, 'working_dir', data.path)
         return cls_object
 
     def extract_entities(self, text_list, batch_size=4, drop=True, debug=False):
@@ -497,9 +516,10 @@ class _TransformerEntityRecognizer(ArcGISModel):
         tokenizer = self.learn.model._tokenizer
         id2label = self.learn.model._config.id2label
         model_type = self.learn.model._transformer_architecture
+        columns = {x.split("-")[-1] for x in self._data._unique_tags}
+
         results = get_results(tokens, predictions, tokenizer, id2label, model_type, num_items=len(tokens))
 
-        columns = self._data._unique_tags
         columns.discard("O")
         address_tag, text_tag = self._address_tag, "Text"
         has_address = True if address_tag in self.entities else False
@@ -523,7 +543,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
                 for address in address_list:
                     data_list.append([text, file_name_column, address, *values])
             else:
-                file_name_column = file_names[index] if len(file_names) else f"Example_{index}"
+                file_name_column = file_names[index] if len(file_names) else f"Example_{index + start_index}"
                 values = [", ".join(row.get(column, "")) for column in cols]
                 data_list.append([text, file_name_column, *values])
 
@@ -537,7 +557,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         else:
             return data_list, df_columns
 
-    def show_results(self, ds_type='Valid'):
+    def show_results(self, ds_type='valid'):
         """
         Runs entity extraction on a random batch from the mentioned ds_type.
 
@@ -551,7 +571,12 @@ class _TransformerEntityRecognizer(ArcGISModel):
         """
         self._check_requisites()
         databunch = self._data.get_databunch()
-        x, y = databunch.one_batch(ds_type=ds_type, detach=False)
+        if ds_type.lower() == "valid":
+            x, y = random.sample(list(databunch.valid_dl), 1)[0]
+        elif ds_type.lower() == "train":
+            x, y = random.sample(list(databunch.train_dl), 1)[0]
+        else:
+            return "Please provide a valid ds_type:['valid'|'train']"
         output = self.learn.model.forward(*x)
         predictions = output[1].argmax(2).tolist()
         tokens = x[0].tolist()

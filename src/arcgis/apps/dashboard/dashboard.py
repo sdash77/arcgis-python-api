@@ -120,7 +120,7 @@ class Dashboard(object):
             "layout": self._layout,
             "authoringApp": "ArcGIS API for Python",
             "authoringAppVersion": arcgis.__version__,
-            "typeKeywords": "ArcGIS Dashboard(via Python)"
+            "typeKeywords": "Python"
         }
 
         if self.header:

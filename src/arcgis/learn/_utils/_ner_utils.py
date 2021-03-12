@@ -183,7 +183,7 @@ class _NERData:
         return data
 
 
-    def prepare_data_for_transformer(self):
+    def prepare_data_for_transformer(self, ignore_tag_order=True, label2id=None):
         unique_tags = set()
         path = Path(self.path)
         tags_collection, tokens_collection = [], []
@@ -228,15 +228,30 @@ class _NERData:
 
         elif self.dataset_type in ['BIO', 'IOB', 'LBIOU', 'BILUO']:
             tags_collection, tokens_collection, unique_tags = _get_tags_and_tokens_collection(
-                path, ignore_tag_order=True, encoding=self.encoding)
+                path, ignore_tag_order=ignore_tag_order, encoding=self.encoding)
+
+            if ignore_tag_order:
+                unique_tags = set({x.split("-")[-1] for x in unique_tags})
         else:
             error_message = (f"Wrong argument - {self.dataset_type} supplied for `dataset_type` parameter. "
                              "Valid values are - 'ner_json', 'BIO', 'IOB', 'LBIOU' and 'BILUO'")
             raise Exception(error_message)
 
+        # unique_tags are formed after reading the data, label2id is a mapping of tags to numbers
+        # provided by the model. If they differ then we have to initialize the model head according
+        # to the tags provided in the data
+        if label2id and unique_tags != label2id.keys():
+            # label2id = None
+            error_message = (f"Looks like the backbone is fine-tuned on the following entities - {list(label2id.keys())}"
+                             f" and your data consists of the following entities - `{unique_tags}`."
+                             f"\nPlease use a base model of the backbone and fine-tune it on your data or use a "
+                             f"model which is fine-tuned on a data having same labels as - `{unique_tags}`")
+            raise Exception(error_message)
+
         self.data = TextDataObject.prepare_data_for_entity_recognition(
             tokens_collection=tokens_collection, tags_collection=tags_collection, address_tag=address_tag,
-            unique_tags=unique_tags, seed=self.seed, batch_size=self.batch_size, val_split_pct=self.val_split_pct)
+            unique_tags=unique_tags, seed=self.seed, batch_size=self.batch_size, val_split_pct=self.val_split_pct,
+            label2id=label2id)
         self.backbone = "transformers"
 
     def prepare_data_for_spacy(self):

@@ -282,14 +282,15 @@ class AGOLAdminManager(object):
                           Values: `asc` or `desc`
         ----------------  -------------------------------------------------------------------------------
         data_format       Optional String.  The way the data is returned to the user.  The response can 
-                          be a `df` or `csv`.
+                          be a `df`, `csv`, or 'raw'.  'df' returns a DataFrame, 'csv' returns a comma 
+                          seperated file, and 'raw' returns the JSON string as a dictionary.
                           
-                          Values: `df` or `csv`
+                          Values: `df`, `csv`, 'raw'
         ----------------  -------------------------------------------------------------------------------
         save_folder       Optional String. The save location of the CSV file.
         ================  ===============================================================================
 
-        :returns: string or pd.DataFrame
+        :returns: string or pd.DataFrame or dict
 
         """
         import tempfile, json
@@ -310,8 +311,6 @@ class AGOLAdminManager(object):
             'owners' : owners,
             'actions' : actions,
             'fromDate' : json.dumps(start_date, default=_date_handler),
-            
-            'ips' : ips,
             'sortOrder' : sort_order,
             'ips' : ips
         }
@@ -331,7 +330,7 @@ class AGOLAdminManager(object):
                                        file_name="history.csv",
                                        out_folder=save_folder,
                                        try_json=False)
-        elif data_format in ['json', 'df']:
+        elif data_format in [ 'df']:
             import pandas as _pd
             params['f'] = 'json'
             data = []
@@ -346,6 +345,20 @@ class AGOLAdminManager(object):
                     data = data[:num]
                     break
             return _pd.DataFrame(data)
+        elif data_format in ['raw', 'json']:
+            params['f'] = 'json'
+            data = []
+            
+            res = self._gis._con.post(url, params)
+            data.extend(res['items'])
+            while len(res['items']) > 0 and res['nextKey']:
+                params['start'] = res['nextKey']
+                res = self._gis._con.post(url, params)
+                data.extend(res['items'])
+                if num > 0 and len(data) >= num:
+                    data = data[:num]
+                    break
+            return data
     #----------------------------------------------------------------------
     @property
     def certificates(self):
