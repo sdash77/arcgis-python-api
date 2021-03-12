@@ -2476,11 +2476,11 @@ class Test_Item_arcgis_kubernetes(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + str(testException))
 
-    def test_publish_spk(self):
-        spk_package_name = "set2_spk_SD3dbuildings.spk"
+    def test_publish_slpk(self):
+        slpk_package_name = "set2_slpk_Vancouver.slpk"
 
         #region delete old service on portal
-        service_title = os.path.splitext(spk_package_name)[0]
+        service_title = os.path.splitext(slpk_package_name)[0]
         old_sr = PortalUtils.search_portal_item(self.gis, service_title, 'Scene Service')
         if old_sr is not None:
             delete_result = PortalUtils.delete_portal_item(self.gis, old_sr)
@@ -2489,19 +2489,19 @@ class Test_Item_arcgis_kubernetes(unittest.TestCase):
         #endregion
 
         try:
-            # search for spk item
-            sr = self.gis.content.search(spk_package_name, item_type='Scene Package', max_items=1)
+            # search for slpk item
+            sr = self.gis.content.search(slpk_package_name, item_type='Scene Package', max_items=1)
             if sr is not None and len(sr) > 0:
-                spk_item = sr[0]
-                print("Old SPK item found and will be used")
+                slpk_item = sr[0]
+                print("Old SLPK item found and will be used")
 
             else:
-                print("Old SPK not found on portal. Adding new")
-                file_path = os.path.join(self.qalab_data_path, "packages", spk_package_name)
-                spk_item = self.gis.content.add({'type': 'Scene Package'}, file_path)
+                print("Old SLPK not found on portal. Adding new")
+                file_path = os.path.join(self.qalab_data_path, "packages", slpk_package_name)
+                slpk_item = self.gis.content.add({'type': 'Scene Package'}, file_path)
 
-            # publish vtpk item
-            publish_output = spk_item.publish()
+            # publish slpk item
+            publish_output = slpk_item.publish()
 
             # validate
             if publish_output is None:
@@ -2512,13 +2512,13 @@ class Test_Item_arcgis_kubernetes(unittest.TestCase):
                                                                        "an Item upon success. Instead it returns: " + str(
                     type(publish_output)))
 
-                # validate item's type is vector tile service
-                self.assertEqual(publish_output.type, 'Scene Service', 'Publishing SPK does not create an item '
+                # validate item's type is scene service
+                self.assertEqual(publish_output.type, 'Scene Service', 'Publishing SLPK does not create an item '
                                                                              'of type Scene Service')
 
                 # # validate service item has layers
                 # self.assertTrue(len(publish_output.layers) > 0, "No layers found in Scene Service")
-                print("Passed: SPK successfully published as WSL")
+                print("Passed: SLPK successfully published as Scene Layer")
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -2530,11 +2530,11 @@ class Test_Item_arcgis_kubernetes(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_publish_tpk(self):
-        tpk_package_name = "set2_tpk_SD.tpk"
+    def test_publish_tpkx(self):
+        tpkx_package_name = "Riverside.tpkx"
 
         # region delete old service on portal
-        service_title = os.path.splitext(tpk_package_name)[0]
+        service_title = os.path.splitext(tpkx_package_name)[0]
         old_sr = PortalUtils.search_portal_item(self.gis, service_title, 'Map Service')
         if old_sr is not None:
             delete_result = PortalUtils.delete_portal_item(self.gis, old_sr)
@@ -2543,23 +2543,23 @@ class Test_Item_arcgis_kubernetes(unittest.TestCase):
         # endregion
 
         try:
-            # search for spk item
-            sr = self.gis.content.search(tpk_package_name, item_type='Tile Package', max_items=1)
+            # search for tpkx item
+            sr = self.gis.content.search(tpkx_package_name, item_type='Tile Package', max_items=1)
             if sr is not None and len(sr) > 0:
-                tpk_item = sr[0]
-                print("Old TPK item found and will be used")
+                tpkx_item = sr[0]
+                print("Old TPKX item found and will be used")
 
             else:
-                print("Old TPK not found on portal. Adding new")
-                file_path = os.path.join(self.qalab_data_path, "packages", tpk_package_name)
-                tpk_item = self.gis.content.add({'type': 'Tile Package'}, file_path)
+                print("Old TPKX not found on portal. Adding new")
+                file_path = os.path.join(self.qalab_data_path, "packages", tpkx_package_name)
+                tpkx_item = self.gis.content.add({'type': 'Tile Package'}, file_path)
 
-            # publish tpk item
-            publish_output = tpk_item.publish()
+            # publish tpkx item
+            publish_output = tpkx_item.publish()
 
             # validate
             if publish_output is None:
-                self.fail("Failed to publish TPK item")
+                self.fail("Failed to publish TPKX item")
             else:
                 # validate return type
                 self.assertIsInstance(publish_output, arcgis.gis.Item, "item.publish does not return "
@@ -2567,12 +2567,12 @@ class Test_Item_arcgis_kubernetes(unittest.TestCase):
                     type(publish_output)))
 
                 # validate item's type is vector tile service
-                self.assertEqual(publish_output.type, 'Map Service', 'Publishing TPK does not create an item '
+                self.assertEqual(publish_output.type, 'Map Service', 'Publishing TPKX does not create an item '
                                                                      'of type Map Service')
 
                 # # validate service item has layers
                 # self.assertTrue(len(publish_output.layers) > 0, "No layers found in Map Service")
-                print("Passed: TPK successfully published as WTL")
+                print("Passed: TPKX successfully published as WTL")
 
         except AssertionError as assertErrorException:
             test_skip = True
