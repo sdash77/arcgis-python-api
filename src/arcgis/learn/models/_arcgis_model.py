@@ -45,6 +45,8 @@ try:
     from fastai.basics import partial
     import pandas as pd
     from ... import __version__ as ArcGISLearnVersion
+    from ._pointcnn_utils import AverageMetric
+    from fastai.core import camel2snake
 except ImportError as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
@@ -213,11 +215,14 @@ class SaveModelCallback(TrackerCallback):
 
     def on_epoch_end(self, epoch, **kwargs):
         "Compare the value monitored to its best score and maybe save the model."
-
+        current = self.get_monitor_value()
+        if isinstance(current, torch.Tensor):
+            if current.is_cuda:
+                current = current.cpu()
+        self.current = current
         if self.every == "epoch":
             self.model._save(f'{self.name}_epoch_{epoch}', zip_files=False, save_html=False, compute_metrics=False)
         else:  # every="improvement"
-            current = self.get_monitor_value()
             if current is not None and self.operator(current, self.best):
                 if arcgis.env.verbose:
                     print('saving checkpoint.')
@@ -653,8 +658,16 @@ class ArcGISModel(object):
         table. Set `monitor` value to be one of these while calling
         the `fit` method.
         """
-        return ['valid_loss'] + \
-               [m.__name__ if isinstance(m, types.FunctionType) else m.func.__name__ for m in self.learn.metrics]
+        metrics = ['valid_loss']
+        for m in self.learn.metrics:
+            if isinstance(m, AverageMetric):
+                metrics.append(m.func.__name__)
+            elif isinstance(m, types.FunctionType):
+                metrics.append(m.__name__)
+            else:
+                metrics.append(camel2snake(m.__class__.__name__))
+
+        return metrics
 
     def fit(self, 
             epochs=10, 
@@ -842,7 +855,15 @@ class ArcGISModel(object):
             if checkpoint_callback != []:
                 checkpoint_callback = checkpoint_callback[0]
                 key = getattr(self, 'monitor', 'valid_loss')
-                _emd_template[f'monitored_{key}'] = checkpoint_callback.best.item()
+                if checkpoint_callback.every == 'improvement':
+                    val = checkpoint_callback.best
+                else:
+                    val = checkpoint_callback.current
+                if isinstance(val, torch.Tensor):
+                    val = val.cpu().item()
+                else:
+                    val =  float(val)
+                _emd_template[f'monitored_{key}'] = val
 
         if isinstance(self._learning_rate, slice):
             _emd_lr = slice('{0:1.4e}'.format(self._learning_rate.start), '{0:1.4e}'.format(self._learning_rate.stop))
