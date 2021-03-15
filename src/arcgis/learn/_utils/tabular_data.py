@@ -45,7 +45,7 @@ class DummyTransform(object):
     def fit_transform(self, x):
         return x
 
-    def inverse_trasnform(self, x):
+    def inverse_transform(self, x):
         return x
 
 
