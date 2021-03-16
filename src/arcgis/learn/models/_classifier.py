@@ -168,7 +168,10 @@ class FeatureClassifier(ArcGISModel):
             if mixup:
                 # For mixup to work with multilabel call it with parameter stack_y=False
                 stack_y = getattr(data, '_dataset_type', "Labeled_Tiles") == 'Labeled_Tiles'
-                self.learn = self.learn.mixup(stack_y=stack_y)
+                if getattr(data, '_dataset_type', "Labeled_Tiles") == 'Labeled_Tiles':
+                    self.learn = self.learn.mixup(stack_y=stack_y)
+                else:
+                    self.learn = self.learn.mixup() # Fixes bug 5943
 
             self.learn.model = self.learn.model.to(self._device)
 
