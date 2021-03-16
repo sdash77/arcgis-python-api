@@ -4499,6 +4499,7 @@ class ImageryLayer(Layer):
                     #imgnew = plt.imshow(ele)
                     numarray = np.concatenate((numarray,ele), axis=0)
             num_bands = self.band_count
+            fig = plt.figure(figsize=(12,12))
             if num_bands == 1:
                 imgnew = plt.imshow(numarray, cmap = 'Greys_r')
             else:
@@ -4533,6 +4534,11 @@ class ImageryLayer(Layer):
             data, valid_mask = np.broadcast_arrays(data, valid_mask)
             data.setflags(write=True)
             valid_mask = (valid_mask == False)
+            if data.dtype != 'uint8':
+                np.seterr(divide='ignore', invalid='ignore')
+                data = data / data.max() #normalizes data in range 0 - 255
+                data = 255 * data
+                data = data.astype(np.uint8)
             if data.dtype == 'uint8':
                 data[valid_mask]=255
             elif data.dtype == 'float32':
@@ -4599,6 +4605,7 @@ class ImageryLayer(Layer):
                 plt.close(fig)
                 return data
             except:
+                raise
                 pass
 
         else:    
