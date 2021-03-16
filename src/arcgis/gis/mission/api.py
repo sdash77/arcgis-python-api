@@ -136,7 +136,7 @@ class Mission(object):
             return res.get('status') or res.get('success')
         return res
     # ---------------------------------------------------------------------
-    def add_reports(self,
+    def add_report(self,
                     title:str,
                     description:str=None,
                     tags:str=None,
@@ -151,7 +151,7 @@ class Mission(object):
         ------------------     --------------------------------------------------------------------
         title	               Required String. The name of the report.
         ------------------     --------------------------------------------------------------------
-        description	       Optional String. Mission report description.
+        description	           Optional String. Mission report description.
         ------------------     --------------------------------------------------------------------
         tags	               Optional String. Comma-separated list of user defined tags that
                                describe the mission report.
