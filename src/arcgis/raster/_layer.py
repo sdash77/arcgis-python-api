@@ -4484,10 +4484,11 @@ class ImageryLayer(Layer):
             for i in range(rowStart, rowEnd):
                 for j in range(colStart, colEnd):
                     num = self._read_tilesonly_layer(level,i,j,slice_id, as_numpy = True)
-                    if numarray is None:
-                        numarray = num
-                    else:
-                        numarray = np.concatenate((numarray, num), axis=1)
+                    if num.size != 0:
+                        if numarray is None:
+                            numarray = num
+                        else:
+                            numarray = np.concatenate((numarray, num), axis=1)
                 numpylist.append(numarray)
                 numarray = None
                     #img.append(((lyr.tiles.image_tile(2,i,j, as_numpy = True))))
@@ -4499,7 +4500,12 @@ class ImageryLayer(Layer):
                     #imgnew = plt.imshow(ele)
                     numarray = np.concatenate((numarray,ele), axis=0)
             num_bands = self.band_count
-            fig = plt.figure(figsize=(12,12))
+            return numarray
+            if numarray.dtype != 'uint8' or (numarray.dtype  == "float" and(numarray.min() < 0 or 1 < numarray.max())):
+                np.seterr(divide='ignore', invalid='ignore')
+                numarray = numarray / numarray.max()
+                numarray = 255 * numarray
+                numarray = numarray.astype(np.uint8)
             if num_bands == 1:
                 imgnew = plt.imshow(numarray, cmap = 'Greys_r')
             else:
@@ -4531,18 +4537,6 @@ class ImageryLayer(Layer):
             if not isinstance(res, bytes):
                 raise RuntimeError(res)
             result, data, valid_mask = lerc.decode(res)
-            data, valid_mask = np.broadcast_arrays(data, valid_mask)
-            data.setflags(write=True)
-            valid_mask = (valid_mask == False)
-            if data.dtype != 'uint8':
-                np.seterr(divide='ignore', invalid='ignore')
-                data = data / data.max() #normalizes data in range 0 - 255
-                data = 255 * data
-                data = data.astype(np.uint8)
-            if data.dtype == 'uint8':
-                data[valid_mask]=255
-            elif data.dtype == 'float32':
-                data[valid_mask]=np.nan
             if result != 0:
                 raise RuntimeError('decoding bytes from imagery service failed.')
             if data.shape[0]>3 and len(data.shape)==3:
@@ -4551,10 +4545,8 @@ class ImageryLayer(Layer):
                 data = np.expand_dims(data, axis=2)
             elif len(data) == 3:
                 data = np.transpose(data, axes=[1, 2, 0])
-
-            if data.dtype  == "float":
-                if data.min() < 0 or 1 < data.max():
-                    data = np.uint8(data)
+            return data, valid_mask
+            data = data[np.ix_(valid_mask.any(1), valid_mask.any(0))]
             return data
 
     def _get_service_info(self, rendering_rule=None):
