@@ -4481,16 +4481,23 @@ class ImageryLayer(Layer):
             img = []
             numarray = None
             numpylist = []
+            mask_array=None
+            masklist=[]
             for i in range(rowStart, rowEnd):
                 for j in range(colStart, colEnd):
-                    num = self._read_tilesonly_layer(level,i,j,slice_id, as_numpy = True)
-                    if num.size != 0:
-                        if numarray is None:
-                            numarray = num
-                        else:
-                            numarray = np.concatenate((numarray, num), axis=1)
+                    num, valid_mask = self._read_tilesonly_layer(level,i,j,slice_id, as_numpy = True)
+                    if numarray is None:
+                        numarray = num
+                    else:
+                        numarray = np.concatenate((numarray, num), axis=1)
+                    if mask_array is None:
+                        mask_array = valid_mask
+                    else:
+                        mask_array = np.concatenate((mask_array, valid_mask), axis=1)
                 numpylist.append(numarray)
+                masklist.append(mask_array)
                 numarray = None
+                mask_array = None
                     #img.append(((lyr.tiles.image_tile(2,i,j, as_numpy = True))))
 
             for index,ele in enumerate(numpylist):
@@ -4499,34 +4506,45 @@ class ImageryLayer(Layer):
                 else:
                     #imgnew = plt.imshow(ele)
                     numarray = np.concatenate((numarray,ele), axis=0)
-            num_bands = self.band_count
-            
-            if numarray.dtype != 'uint8' or (numarray.dtype  == "float" and(numarray.min() < 0 or 1 < numarray.max())):
-                #np.seterr(divide='ignore', invalid='ignore')
-                band_arr_list = []
-                render_bands = 1 if numarray.ndim == 2 else numarray.shape[2]
-                for i in range(render_bands):
-                    if num_bands == 1 and numarray.ndim == 2:
-                        band_arr = numarray
-                    else:
-                        band_arr = numarray[:,:,i]
-                    
-                    # percent clip stretching
-                    p005 = np.percentile(band_arr, 0.5)
-                    p995 = np.percentile(band_arr, 99.5)
-                    r = 255.0/(p995-p005+2)
-                    out = np.round(r*(band_arr-p005+1)).astype('uint8')
-                    out[band_arr<p005] = 0
-                    out[band_arr>p995] = 255
-                    band_arr_list.append(out)
 
-                if num_bands == 1 and numarray.ndim == 2:
-                    stretched_img = band_arr_list[0]
+            for index,ele in enumerate(masklist):
+                if index == 0:
+                    mask_array = ele                    
                 else:
-                    stretched_img = np.dstack(band_arr_list)
-                numarray = stretched_img
+                    #imgnew = plt.imshow(ele)
+                    mask_array = np.concatenate((mask_array,ele), axis=0)
+            num_bands = self.band_count
+            try:
+                numarray = numarray[np.ix_(mask_array.any(1), mask_array.any(0))]
 
-            imgnew = plt.imshow(numarray)
+                if numarray.dtype != 'uint8' or (numarray.dtype  == "float" and(numarray.min() < 0 or 1 < numarray.max())):
+                    #np.seterr(divide='ignore', invalid='ignore')
+                    band_arr_list = []
+                    render_bands = 1 if numarray.ndim == 2 else numarray.shape[2]
+                    for i in range(render_bands):
+                        if num_bands == 1 and numarray.ndim == 2:
+                            band_arr = numarray
+                        else:
+                            band_arr = numarray[:,:,i]
+                    
+                        # percent clip stretching
+                        p005 = np.percentile(band_arr, 0.5)
+                        p995 = np.percentile(band_arr, 99.5)
+                        r = 255.0/(p995-p005+2)
+                        out = np.round(r*(band_arr-p005+1)).astype('uint8')
+                        out[band_arr<p005] = 0
+                        out[band_arr>p995] = 255
+                        band_arr_list.append(out)
+
+                    if num_bands == 1 and numarray.ndim == 2:
+                        stretched_img = band_arr_list[0]
+                    else:
+                        stretched_img = np.dstack(band_arr_list)
+                    numarray = stretched_img
+            except:
+                pass
+
+            imgnew = plt.imshow(numarray, cmap = 'Greys_r')
             plt.axis('off')
             imgnew.axes.get_xaxis().set_visible(False)
             imgnew.axes.get_yaxis().set_visible(False)
@@ -4564,8 +4582,8 @@ class ImageryLayer(Layer):
             elif len(data) == 3:
                 data = np.transpose(data, axes=[1, 2, 0])
 
-            data = data[np.ix_(valid_mask.any(1), valid_mask.any(0))]
-            return data
+            #data = data[np.ix_(valid_mask.any(1), valid_mask.any(0))]
+            return data, valid_mask
 
     def _get_service_info(self, rendering_rule=None):
         url = self._url 
@@ -4615,7 +4633,6 @@ class ImageryLayer(Layer):
                 plt.close(fig)
                 return data
             except:
-                raise
                 pass
 
         else:    
