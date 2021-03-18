@@ -4516,11 +4516,10 @@ class ImageryLayer(Layer):
             num_bands = self.band_count
             try:
                 numarray = numarray[np.ix_(mask_array.any(1), mask_array.any(0))]
-
-                if numarray.dtype != 'uint8' or (numarray.dtype  == "float" and(numarray.min() < 0 or 1 < numarray.max())):
-                    #np.seterr(divide='ignore', invalid='ignore')
+                
+                if numarray.dtype != 'uint8' or (numarray.dtype  == 'float' and(numarray.min() < 0 or 1 < numarray.max())):
                     band_arr_list = []
-                    render_bands = 1 if numarray.ndim == 2 else numarray.shape[2]
+                    render_bands = 1 if (num_bands == 1 and numarray.ndim == 2) else numarray.shape[2]
                     for i in range(render_bands):
                         if num_bands == 1 and numarray.ndim == 2:
                             band_arr = numarray
@@ -4543,8 +4542,11 @@ class ImageryLayer(Layer):
                     numarray = stretched_img
             except:
                 pass
-
-            imgnew = plt.imshow(numarray, cmap = 'Greys_r')
+            
+            if 'hasMultidimensions' in self.properties and self.properties['hasMultidimensions']:
+                imgnew = plt.imshow(numarray)
+            else:
+                imgnew = plt.imshow(numarray, cmap = 'Greys_r')
             plt.axis('off')
             imgnew.axes.get_xaxis().set_visible(False)
             imgnew.axes.get_yaxis().set_visible(False)
