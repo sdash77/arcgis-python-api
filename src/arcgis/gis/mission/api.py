@@ -136,7 +136,7 @@ class Mission(object):
             return res.get('status') or res.get('success')
         return res
     # ---------------------------------------------------------------------
-    def add_reports(self,
+    def add_report(self,
                     title:str,
                     description:str=None,
                     tags:str=None,
@@ -151,19 +151,21 @@ class Mission(object):
         ------------------     --------------------------------------------------------------------
         title	               Required String. The name of the report.
         ------------------     --------------------------------------------------------------------
-        description	       Optional String. Mission report description.
+        description	           Optional String. A description of the report.
         ------------------     --------------------------------------------------------------------
-        tags	               Optional String. Comma-separated list of user defined tags that
-                               describe the mission report.
+        tags	               Optional. A comma-separated list of strings. Used to add tags to the report.
         ------------------     --------------------------------------------------------------------
-        questions              Optional Dict. Dictionary containing questions and their fields.
+        questions              Optional Dict. A dictionary containing questions and their fields. If an empty array is passed, the request is rejected. Used to represent the desired questions and their fields. Question types are based on Survey123 question type fields.
                                Available question types: Single Line Text, Single Choice, Number,
                                Image, Multiline Text, Dropdown, Multiple Choice, and Date/Time.
                                See https://doc.arcgis.com/en/survey123/browser/create-surveys/quickreferencecreatesurveys.htm#GUID-2D96112F-85B1-4C41-9C6F-A85BB6026A51 for details.
         ------------------     --------------------------------------------------------------------
-        display_field          Optional String. The name to display for the report
+        display_field          Optional String. The name of the report feature layer's display field. Normally this is the field name of one of the report questions. If absent, the report feature layer's display field will be the first question's field name.
         ------------------     --------------------------------------------------------------------
-        locale                 Optional String. A valid IETF BCP 47 language tag
+        drawing_info           Optional. JSON Object. Defines the report feature layer's drawing info, including a feature renderer.
+                               See: https://developers.arcgis.com/documentation/common-data-types/drawinginfo.htm
+        ------------------     --------------------------------------------------------------------
+        locale                 Optional. String. The locale used to generate the report. Must be a valid IETF BCP 47 language tag. Defaults to en
         ------------------     --------------------------------------------------------------------
         share_as_template      Optional Boolean. Shares the report as a template.
         ==================     ====================================================================
@@ -266,29 +268,29 @@ class MissionCatalog():
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        title	               Required String. The title of the mission. This is the name that's displayed to users and by which they refer to the mission. Every mission must have a title.
+        title	               Required. String. The title of the mission. This is the human readable title that is displayed to users.
         ------------------     --------------------------------------------------------------------
         snippet	               Optional String. A short summary description of the item.
         ------------------     --------------------------------------------------------------------
-        description	       Optional String. Mission description.
+        description	           Optional String. Mission description.
         ------------------     --------------------------------------------------------------------
         license_info	       Optional String. Any license information or restrictions.
         ------------------     --------------------------------------------------------------------
-        tags	               Optional String. Comma-separated list of user defined tags that
-                               describe the mission.
+        tags	               Optional. Comma-separated list of strings used to tag the mission.
+                               Format: tag1,tag2,...,tagN
         ------------------     --------------------------------------------------------------------
         extent	               Optional String. Comma-separated list that defines the bounding
                                rectangle of the mission. Should always be in WGS84. The
                                default is -180, -90, 180, 90.
 
                                **Format: <xmin>, <ymin>, <xmax>, <ymax>**
-
         ------------------     --------------------------------------------------------------------
-        templateWebMapId	Optional. String. The ID of the web map to use as a template for the mission.
+        templateWebMapId	   Optional. String. The portal item id of the web map to use as a template for the mission.
         ------------------     --------------------------------------------------------------------
-        locale	               Optional String. Default = 'en', must be a valid IETF BCP 47 language tag.
+        locale	               Optional. String. The locale in which to generate Mission assets with. Must be a valid IETF BCP 47 language tag. Defaults to en
         ------------------     --------------------------------------------------------------------
-        base_map               Optional dict. The desired base map for the mission.
+        base_map               Optional. JSON Object. The basemap to add to the mission.
+                               See: https://developers.arcgis.com/documentation/common-data-types/basemap.htm
         ------------------     --------------------------------------------------------------------
         wm_description         Optional string. The description of the web map added to the mission.
         ==================     ====================================================================

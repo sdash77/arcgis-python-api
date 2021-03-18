@@ -168,7 +168,11 @@ class FeatureClassifier(ArcGISModel):
             if mixup:
                 # For mixup to work with multilabel call it with parameter stack_y=False
                 stack_y = getattr(data, '_dataset_type', "Labeled_Tiles") == 'Labeled_Tiles'
-                self.learn = self.learn.mixup(stack_y=stack_y)
+                if ((getattr(data, '_dataset_type', "Labeled_Tiles") == 'Labeled_Tiles') or
+                        (getattr(data, '_dataset_type', "Labeled_Tiles") == 'MultiLabeled_Tiles')):
+                    self.learn = self.learn.mixup(stack_y=stack_y)
+                else:
+                    self.learn = self.learn.mixup()
 
             self.learn.model = self.learn.model.to(self._device)
 
@@ -384,6 +388,7 @@ class FeatureClassifier(ArcGISModel):
         Plots a confusion matrix of the model predictions to evaluate accuracy
         kwargs: 'thresh' - confidence score threshold for multilabel predictions, defaults to 0.5
         """
+        self._check_requisites()
         if self._data._dataset_type == 'MultiLabeled_Tiles':
             # Get x, y from validation dataset
             data_loader = self._data.valid_dl

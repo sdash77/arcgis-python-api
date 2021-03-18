@@ -45,7 +45,7 @@ class DummyTransform(object):
     def fit_transform(self, x):
         return x
 
-    def inverse_trasnform(self, x):
+    def inverse_transform(self, x):
         return x
 
 
@@ -674,8 +674,22 @@ class TabularDataObject(object):
 
     def show_batch(self, rows=5, graph=False, seq_len=None):
         """
-        Shows a batch of dataframe prepared without applying transforms.
-        In case of raster only, seq_len = number of rasters
+        Shows a chunk of data prepared without applying transforms.
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional integer. Number of rows of dataframe
+                                or graph to plot. This parameter is not used
+                                when plotting complete data.
+        ---------------------   -------------------------------------------
+        graph                   Optional boolean. Used for visualizing
+                                time series data. The index_field passed
+                                in prepare_tabulardata is used on the x-axis.
+                                Use this option to plot complete data.
+        ---------------------   -------------------------------------------
+        seq_len                 Optional integer. Used for visualizing data
+                                in the form of graph of seq_len duration.
+        =====================   ===========================================
         """
 
         if seq_len is not None or graph is True:
@@ -746,20 +760,19 @@ class TabularDataObject(object):
             else:
                 x = [i for i in range(len(self._dataframe[self._dependent_variable]))]
 
-            plt.figure(figsize=(25, 5))
-
+            fig, axs = plt.subplots(len(list(self._dataframe.columns)), 1, figsize=(25, 5*len(list(self._dataframe.columns))))
+            counter = 0
             for col in list(self._dataframe.columns):
-                plt.plot(x, self._dataframe[col], label=col)
+                if isinstance(axs, np.ndarray):
+                    axs[counter].plot(x, self._dataframe[col], label=col)
+                    axs[counter].set_title(col)
+                    axs[counter].tick_params(axis="x", labelrotation=60)
+                else:
+                    axs.plot(x, self._dataframe[col], label=col)
+                    axs.set_title(col)
+                    axs.tick_params(axis="x", labelrotation=60)
+                counter = counter + 1
 
-            # naming the x axis
-            plt.xlabel(x_field)
-            # naming the y axis
-            plt.ylabel(self._dependent_variable)
-            plt.tick_params(axis="x", labelrotation=85)
-            # giving a title to my graph
-            plt.title('Data')
-            plt.legend(loc='upper right')
-            # function to show the plot
             plt.show()
 
     @staticmethod

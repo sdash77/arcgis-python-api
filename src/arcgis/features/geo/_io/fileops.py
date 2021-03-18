@@ -466,7 +466,7 @@ def from_featureclass(filename, **kwargs):
     import json
 
     filename = _ensure_path_string(filename)
-    if filename.find("http://") > -1 or filename.find("https://"):
+    if filename.find("http://") > -1 or filename.find("https://") > -1:
         res = from_url(url=filename)
         if len(res) == 1:
             return res[0]

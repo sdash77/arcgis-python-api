@@ -374,7 +374,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
             path=self._data.orig_path, class_mapping={}, chip_size=self._data.chip_size, val_split_pct=self._data._val_split_pct,
             batch_size=self._data.batch_size, transforms=None, seed=42,
             dataset_type=self._data.dataset_type, resize_to=self._data.resize_to, **kwargs)
-        road_orient_obj = RoadOrientation(road_data_obj, **kwargs)
+        road_orient_obj = RoadOrientation(self._data,road_data_obj, **kwargs)
         orient_data = road_orient_obj.get_databunch(data,**kwargs)
         return orient_data
 

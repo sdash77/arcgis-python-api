@@ -137,7 +137,7 @@ class DiscreteAffine:
 
 
 class RoadOrientation():
-    def __init__(self, classified_tiles_data: ArcgisData, **kwargs):
+    def __init__(self, orig_data, classified_tiles_data: ArcgisData, **kwargs):
         """
         The class is used to create Fast AI Databunch for Multi-Task
         Road - Orientation learning. It internally utilizes RoadOrientation
@@ -176,19 +176,24 @@ class RoadOrientation():
             "orient_theta": 8.0,
             "multi_scale": None,
         }
-        #self.road_extractor_params = kwargs.get("road_extractor_params", default_road_params)
+        # self.road_extractor_params = kwargs.get("road_extractor_params", default_road_params)
         self.orient_bin_size = kwargs.get("orient_bin_size", default_road_params['orient_bin_size'])
         self.orient_theta = kwargs.get("orient_theta", default_road_params['orient_theta'])
         self.multi_scale = kwargs.get("multi_scale", default_road_params['multi_scale'])
 
         self.files = []
-        search_dir = os.path.join(self.base.img_root, "*.{}".format(self.base.extension[0]))
-        for image_file in glob.glob(search_dir):
-            image_file = Path(image_file)
-            image_name = image_file.stem
+        for cnt, image in enumerate(orig_data.train_ds.x.items):
             file_pair = {
-                "image": os.path.join(self.base.img_root, f"{image_name}.{self.base.extension[0]}"),
-                "label": os.path.join(self.base.gt_root, f"{image_name}.{self.base.extension[1]}"),
+                "image": image,
+                "label": orig_data.train_ds.y.items[cnt],
+            }
+            self.files.append(file_pair)
+
+        # self.valid_files = []
+        for cnt, image in enumerate(orig_data.valid_ds.x.items):
+            file_pair = {
+                "image": image,
+                "label": orig_data.valid_ds.y.items[cnt],
             }
             self.files.append(file_pair)
 
@@ -208,8 +213,10 @@ class RoadOrientation():
             [
                 # Pairwise Transforms
                 [
-                    pytorch_tfms.RandomCrop(size=self.base.chip_size, padding_mode='constant', pad_if_needed=True) if self.base.chip_size else None,
-                    pytorch_tfms.Resize(size=self.base.resize_to, interpolation=PILImage.NEAREST) if self.base.resize_to else None,
+                    pytorch_tfms.RandomCrop(size=self.base.chip_size, padding_mode='constant',
+                                            pad_if_needed=True) if self.base.chip_size else None,
+                    pytorch_tfms.Resize(size=self.base.resize_to,
+                                        interpolation=PILImage.NEAREST) if self.base.resize_to else None,
                     pytorch_tfms.RandomHorizontalFlip(),
                     pytorch_tfms.RandomVerticalFlip(),
                     pytorch_tfms.Normalize(
@@ -225,13 +232,14 @@ class RoadOrientation():
             # Validation Transforms
             [
                 # Pairwise Transforms
-                [pytorch_tfms.Resize(size=self.base.resize_to, interpolation=PILImage.NEAREST) if self.base.resize_to else None],
+                [pytorch_tfms.Resize(size=self.base.resize_to,
+                                     interpolation=PILImage.NEAREST) if self.base.resize_to else None],
                 # Image Transforms
                 [pytorch_tfms.ToTensor()],
                 [pytorch_tfms.Normalize(
-                        mean=[0.485, 0.456, 0.406],
-                        std=[0.229, 0.224, 0.225]
-                    )]
+                    mean=[0.485, 0.456, 0.406],
+                    std=[0.229, 0.224, 0.225]
+                )]
             ]
         ] if self.base.transforms is None else self.base.transforms
 

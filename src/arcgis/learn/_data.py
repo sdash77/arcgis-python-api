@@ -23,6 +23,7 @@ try:
     from fastai.vision import ImageDataBunch, parallel
     import fastai.vision
     from fastai.torch_core import data_collate
+    from fastai.core import Category
     import torch
     from .models._unet_utils import ArcGISSegmentationItemList, is_no_color
     from .models._maskrcnn_utils import ArcGISInstanceSegmentationItemList, ArcGISInstanceSegmentationMSItemList
@@ -119,7 +120,10 @@ class _ImagenetCollater():
                 data = sample[0].resize(self.chip_size).data
             _xb.append(data)
         _xb = torch.stack(_xb)
-        _yb = torch.stack([torch.tensor(sample[1].data) for sample in batch])
+        if isinstance(sample[1], Category):
+            _yb = torch.stack([torch.tensor(sample[1].data) for sample in batch])
+        else:
+            _yb = torch.stack([torch.tensor(sample[1]) for sample in batch])
         return _xb, _yb
 
 def _bb_pad_collate(samples, pad_idx=0):
