@@ -2775,7 +2775,7 @@ class UserManager(object):
         elif role.lower() in role_lookup:
             role = role_lookup[role.lower()]
 
-        if self._gis._portal.is_arcgisonline or self._gis._portal.is_kubernetes:
+        if self._gis._portal.is_arcgisonline or (self._gis._portal.is_kubernetes and provider != 'enterprise'):
             email_text = '''<html><body><p>''' + self._gis.properties.user.fullName + \
                 ''' has invited you to join an ArcGIS Online Organization, ''' + self._gis.properties.name + \
                 '''</p>
@@ -2843,6 +2843,30 @@ class UserManager(object):
                         return new_user
                     else:
                         return new_user
+        elif self._gis._portal.is_kubernetes and provider == 'enterprise':
+            createuser_url = self._portal.url + "/admin/orgs/0123456789ABCDEF/security/users/createUser"
+            params = {
+                'f': 'json',
+                'username' : username,
+                'password' : password,
+                'firstname' : firstname,
+                'lastname' : lastname,
+                'email' : email,
+                'description' : description,
+                'role' : role,
+                'provider' : provider,
+                'idpUsername' : idp_username,
+                "userLicenseTypeId": user_type
+            }
+            self._portal.con.post(createuser_url, params)
+            user = self.get(username)
+            for grp in groups:
+                grp.add_users([username])
+            if thumbnail is not None:
+                ret = user.update(thumbnail=thumbnail)
+                if not ret:
+                    _log.error('Unable to update the thumbnail for  ' + username)
+            return user
         else:
             createuser_url = self._portal.url + "/portaladmin/security/users/createUser"
             params = {
