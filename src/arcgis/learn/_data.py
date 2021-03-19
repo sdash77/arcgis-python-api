@@ -1713,8 +1713,8 @@ def prepare_data(path,
         if os.path.isfile(path):
             path = os.path.dirname(path)
         data._temp_folder = _prepare_working_dir(path)
-
         return data
+
     elif dataset_type == "PointCloud":
         from ._utils.pointcloud_data import Transform3d
         if transforms is None:
@@ -1729,6 +1729,7 @@ def prepare_data(path,
             data.path = Path(os.path.abspath(working_dir))
         data._temp_folder = _prepare_working_dir(data.path)
         return data
+
     elif dataset_type == "ImageCaptioning":
         from ._utils.image_captioning_data import prepare_captioning_dataset
         return prepare_captioning_dataset(path,
@@ -1753,6 +1754,7 @@ def prepare_data(path,
                                              bands=bands,
                                              extract_bands=kwargs.pop('extract_bands', None),
                                              norm_pct=norm_pct,
+                                             working_dir = working_dir,
                                              **kwargs)
 
     elif dataset_type == "CycleGAN":
@@ -1767,7 +1769,9 @@ def prepare_data(path,
             data._do_normalize = False
             x_shape = data.train_ds[0][0].shape
             data.chip_size = x_shape[-1]
-            data._temp_folder = _prepare_working_dir(path)
+            if working_dir is not None:
+                data.path = Path(os.path.abspath(working_dir))
+            data._temp_folder = _prepare_working_dir(data.path)
             return data
         data = ImageTupleList.from_folders(path, path_a, path_b)\
                 .split_by_rand_pct(val_split_pct, seed=seed)\
@@ -1788,7 +1792,9 @@ def prepare_data(path,
             data._do_normalize = False
             x_shape = data.train_ds[0][0].shape
             data.chip_size = x_shape[-1]
-            data._temp_folder = _prepare_working_dir(path)
+            if working_dir is not None:
+                data.path = Path(os.path.abspath(working_dir))
+            data._temp_folder = _prepare_working_dir(data.path)
             return data
         data = (ImageTupleList2.from_folders(path, path_a, path_b)
                       .split_by_rand_pct(val_split_pct, seed=seed)

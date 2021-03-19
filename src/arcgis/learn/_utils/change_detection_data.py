@@ -680,6 +680,7 @@ def prepare_change_detection_data(path,
     class_mapping = kwargs.get('class_mapping', None)
     color_mapping = kwargs.get('color_mapping', None)
     split = kwargs.get('split', 'random')
+    working_dir = kwargs.get('working_dir', None)
 
     # Hardcoded for LEVIR-CD dataset.
     if class_mapping is None:
@@ -735,7 +736,9 @@ def prepare_change_detection_data(path,
     data.classes = list(data.class_mapping.values())
     # add dataset_type
     data._dataset_type = 'ChangeDetection'
-    data._temp_folder = _prepare_working_dir(path)
+    if working_dir is not None:
+        data.path = Path(os.path.abspath(working_dir))
+    data._temp_folder = _prepare_working_dir(data.path)
     # return databunch.
     return data
 
