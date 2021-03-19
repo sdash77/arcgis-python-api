@@ -4481,15 +4481,23 @@ class ImageryLayer(Layer):
             img = []
             numarray = None
             numpylist = []
+            mask_array=None
+            masklist=[]
             for i in range(rowStart, rowEnd):
                 for j in range(colStart, colEnd):
-                    num = self._read_tilesonly_layer(level,i,j,slice_id, as_numpy = True)
+                    num, valid_mask = self._read_tilesonly_layer(level,i,j,slice_id, as_numpy = True)
                     if numarray is None:
                         numarray = num
                     else:
                         numarray = np.concatenate((numarray, num), axis=1)
+                    if mask_array is None:
+                        mask_array = valid_mask
+                    else:
+                        mask_array = np.concatenate((mask_array, valid_mask), axis=1)
                 numpylist.append(numarray)
+                masklist.append(mask_array)
                 numarray = None
+                mask_array = None
                     #img.append(((lyr.tiles.image_tile(2,i,j, as_numpy = True))))
 
             for index,ele in enumerate(numpylist):
@@ -4498,9 +4506,45 @@ class ImageryLayer(Layer):
                 else:
                     #imgnew = plt.imshow(ele)
                     numarray = np.concatenate((numarray,ele), axis=0)
+
+            for index,ele in enumerate(masklist):
+                if index == 0:
+                    mask_array = ele                    
+                else:
+                    #imgnew = plt.imshow(ele)
+                    mask_array = np.concatenate((mask_array,ele), axis=0)
             num_bands = self.band_count
-            if num_bands == 1:
-                imgnew = plt.imshow(numarray, cmap = 'Greys_r')
+            try:
+                numarray = numarray[np.ix_(mask_array.any(1), mask_array.any(0))]
+                
+                if numarray.dtype != 'uint8' or (numarray.dtype  == 'float' and(numarray.min() < 0 or 1 < numarray.max())):
+                    band_arr_list = []
+                    render_bands = 1 if (num_bands == 1 and numarray.ndim == 2) else numarray.shape[2]
+                    for i in range(render_bands):
+                        if num_bands == 1 and numarray.ndim == 2:
+                            band_arr = numarray
+                        else:
+                            band_arr = numarray[:,:,i]
+                    
+                        # percent clip stretching
+                        p005 = np.percentile(band_arr, 0.5)
+                        p995 = np.percentile(band_arr, 99.5)
+                        r = 255.0/(p995-p005+2)
+                        out = np.round(r*(band_arr-p005+1)).astype('uint8')
+                        out[band_arr<p005] = 0
+                        out[band_arr>p995] = 255
+                        band_arr_list.append(out)
+
+                    if num_bands == 1 and numarray.ndim == 2:
+                        stretched_img = band_arr_list[0]
+                    else:
+                        stretched_img = np.dstack(band_arr_list)
+                    numarray = stretched_img
+            except:
+                pass
+            
+            if 'hasMultidimensions' in self.properties and self.properties['hasMultidimensions']:
+                imgnew = plt.imshow(numarray)
             else:
                 imgnew = plt.imshow(numarray, cmap = 'Greys_r')
             plt.axis('off')
@@ -4508,6 +4552,7 @@ class ImageryLayer(Layer):
             imgnew.axes.get_yaxis().set_visible(False)
             plt.close(imgnew.figure)
             return imgnew.figure
+
     def _read_tilesonly_layer(self, level, row, column, slice_id = None, as_numpy=False):
         import tempfile, uuid
         fname = "%s.jpg" % uuid.uuid4().hex
@@ -4530,13 +4575,6 @@ class ImageryLayer(Layer):
             if not isinstance(res, bytes):
                 raise RuntimeError(res)
             result, data, valid_mask = lerc.decode(res)
-            data, valid_mask = np.broadcast_arrays(data, valid_mask)
-            data.setflags(write=True)
-            valid_mask = (valid_mask == False)
-            if data.dtype == 'uint8':
-                data[valid_mask]=255
-            elif data.dtype == 'float32':
-                data[valid_mask]=np.nan
             if result != 0:
                 raise RuntimeError('decoding bytes from imagery service failed.')
             if data.shape[0]>3 and len(data.shape)==3:
@@ -4546,10 +4584,8 @@ class ImageryLayer(Layer):
             elif len(data) == 3:
                 data = np.transpose(data, axes=[1, 2, 0])
 
-            if data.dtype  == "float":
-                if data.min() < 0 or 1 < data.max():
-                    data = np.uint8(data)
-            return data
+            #data = data[np.ix_(valid_mask.any(1), valid_mask.any(0))]
+            return data, valid_mask
 
     def _get_service_info(self, rendering_rule=None):
         url = self._url 
