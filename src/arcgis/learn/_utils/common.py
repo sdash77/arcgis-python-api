@@ -199,12 +199,14 @@ class ArcGISMSImage(Image):
                     min_values, max_values = div
                     if not isinstance(min_values, torch.Tensor):
                         min_values, max_values = torch.tensor(min_values), torch.tensor(max_values)
+                    for i in range(x.shape[0]):
+                        arr = x[i,:,:]
+                        arr[torch.isnan(arr)] = min_values[i]
                     min_values = min_values.to(x).view(-1, 1, 1)
                     max_values = max_values.to(x).view(-1, 1, 1)
                     x = (x-min_values) / (max_values-min_values+1e-04)
                 else:
                     x = x / div
-
         return cls(x)
 
 class ArcGISImageList(ImageList):
