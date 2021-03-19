@@ -194,7 +194,9 @@ class Survey():
         Creates a MS Word Report.  The `generate_report` method allows users to either save the
         report to the enterprise or export it directly to disk.
 
-        To save to disk, do not specify a `folder_id`. 
+        To save to disk, do not specify a `folder_id`.
+
+        For additional information on parameters, see `Create Report <https://developers.arcgis.com/survey123/api-reference/rest/report/#create-report>`_.
 
         ================  ===============================================================
         **Argument**      **Description**
@@ -244,7 +246,10 @@ class Survey():
         locale            Optional String. Specify the locale setting to format number and date values. 
         ================  ===============================================================
 
-        :Returns: Item or string
+        :Returns: Item or string.
+
+        For details on the return value, see `Response Parameters <https://developers.arcgis.com/survey123/api-reference/rest/report/#response-parameters>`_
+        for :func:`~arcgis.apps.survey123.Survey.generate_report` job.
 
         """
         if isinstance(where, str):
@@ -343,7 +348,6 @@ class Survey():
     #----------------------------------------------------------------------
     
     def check_template_syntax(self, template_file:str=None):
-        
         """
         A sync operation to check any syntax which will lead to a failure
         when generating reports in the given feature.
