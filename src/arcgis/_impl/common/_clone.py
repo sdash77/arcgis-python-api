@@ -25,7 +25,7 @@ _TEXT_BASED_ITEM_TYPES = ['Web Map', 'Feature Service', 'Map Service', 'Operatio
                           'Web Mapping Application', 'Mobile Application', 'Symbol Set', 'Color Set',
                           'Document Link', 'Geocode Service', 'Geodata Service', 'Application',
                           'Geometry Service', 'Geoprocessing Service', 'Network Analysis Service',
-                          'Workflow Manager Service']
+                          'Workflow Manager Service', 'StoryMap']
 
 # Regular expressions for finding fields in json
 CURLY = re.compile(r'(?<={).+?(?=})', re.IGNORECASE)
@@ -186,7 +186,9 @@ class _DeepCloner():
                 if item_definition2 is not None:
                     item_definition.add_parent(item_definition2)
                     item_definition2.sharing['groups'].append(group_id)
-
+        elif item.type == 'StoryMap':
+            item_definition = self._get_item_definition(item)
+            self._graph[item.id] = item_definition
         # If the item is an application or dashboard find the web map or group that the application referencing
         elif item['type'] in ['Web Mapping Application', 'Operation View', 'Dashboard']:
             item_definition = self._get_item_definition(item)
@@ -810,10 +812,14 @@ class _DeepCloner():
         return [i for i in self._get_created_items() if isinstance(i, arcgis.gis.Item)]
 
     def clone(self):
+        #from ._itemdef._storymaps import _StoryMapDefinition
         # If we are cloning any Pro Projects that require swizzling we need to process everyting synchronously.
         if len([node for node in self._graph.values() if isinstance(node, _ProProjectPackageDefinition) and "copy-only" not in node.info['tags']]) > 0:
             return self._clone_synchronous()
+        #elif len([node for node in self._graph.values() if isinstance(node, _StoryMapDefinition)]) > 0:
+        #    return self._clone_synchronous()
         else:
+
             with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
                 results = executor.submit(self._clone, executor).result()
                 return results
@@ -935,7 +941,19 @@ class _DeepCloner():
                 os.makedirs(temp_dir)
             pro_package = item.download(temp_dir)
             return _ProProjectPackageDefinition(self.target, self._clone_mapping, dict(item), data=pro_package, thumbnail=None, portal_item=item, folder=self.folder, search_existing=self._search_existing_items, owner=self.owner)
-
+        # story map definition
+        elif item['type'] == 'StoryMap':
+            from arcgis._impl.common._itemdef import _StoryMapDefinition
+            return _StoryMapDefinition(target=self.target,
+                                       clone_mapping=self._clone_mapping,
+                                       info=dict(item),
+                                       data=item.get_data(),
+                                       thumbnail=None,
+                                       portal_item=item,
+                                       folder=self.folder,
+                                       search_existing=self._search_existing_items,
+                                       owner=self.owner,
+                                       resources=item.resources.export())
         # For all other types get the corresponding definition
         else:
             if item['type'] in _TEXT_BASED_ITEM_TYPES:
