@@ -207,8 +207,8 @@ class StatusJob(object):
             elif 'itemsImported' in res['result']:
                 return_result = {}
                 return_result['itemsImported'] = [Item(itemid=i['itemId'], gis=self._gis) for i in res['result']['itemsImported'] if 'itemId' in i]
-                return_result['itemsSkipped'] = [Item(i['itemId'], gis=self._gis) for i in res['result']['itemsSkipped'] if 'itemId' in i]
-                return_result['itemsFailedImport'] = [Item(i['itemId'], gis=self._gis) for i in res['result']['itemsFailedImport'] if 'itemId' in i]
+                return_result['itemsSkipped'] = [Item(itemid=i['itemId'], gis=self._gis) for i in res['result']['itemsSkipped'] if 'itemId' in i]
+                return_result['itemsFailedImport'] = [Item(itemid=i['itemId'], gis=self._gis) for i in res['result']['itemsFailedImport'] if 'itemId' in i]
                 return return_result
             elif 'services' in res['result']:
                 return [Item(self._gis, t['serviceItemId']) for t in res['result']['services'] if 'serviceItemId' in t]            
