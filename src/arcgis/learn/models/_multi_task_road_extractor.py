@@ -419,16 +419,10 @@ class MultiTaskRoadExtractor(ArcGISModel):
         return ['Classified_Tiles']
 
     def fit(self, epochs=10, lr=None, **kwargs):
-        save_callback_params = {
-            "monitor": "miou",
-            "every": "improvement",
-        }
-        save_callback_params.update(kwargs.get("save_callback_params", {}))
-        kwargs.update(save_callback_params=save_callback_params)
         if isinstance(lr, slice):
             lr = lr.stop
         # setting monitor because earlystopping also uses this value.
-        super().fit(epochs, lr=lr, monitor="miou", **kwargs)
+        super().fit(epochs, lr=lr, monitor=kwargs.pop('monitor', "miou"), **kwargs)
 
     def _get_emd_params(self,save_inference_file):
         _emd_template = {}
