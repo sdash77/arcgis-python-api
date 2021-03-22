@@ -4493,7 +4493,7 @@ class ImageryLayer(Layer):
                     if mask_array is None:
                         mask_array = valid_mask
                     else:
-                        mask_array = np.concatenate((mask_array, valid_mask), axis=1)
+                        mask_array = np.concatenate((mask_array, valid_mask), axis=0)
                 numpylist.append(numarray)
                 masklist.append(mask_array)
                 numarray = None
@@ -4515,10 +4515,10 @@ class ImageryLayer(Layer):
                     mask_array = np.concatenate((mask_array,ele), axis=0)
 
             print(numarray.shape, mask_array.shape)
-            mask_array = mask_array.transpose()
+            #mask_array = mask_array.transpose()
             numarray, valid_mask = np.broadcast_arrays(numarray, mask_array)
             numarray.setflags(write=True)
-            valid_mask = (mask_array == False)
+            valid_mask = (valid_mask == False)
             from numpy import ma
             numarray = ma.masked_array(numarray, valid_mask)
 
@@ -4560,10 +4560,14 @@ class ImageryLayer(Layer):
             numarray = numarray[np.ix_(mask_array.any(1), mask_array.any(0))]
             custom_cmap=None
             if num_bands == 1:
-                colormap_list = self.colormap()
-                if colormap_list is not None and isinstance(colormap_list, list):
+                colormap_list=[]
+                colormap_dict = self.colormap()
+                if "colormap" in colormap_dict.keys():
+                    colormap_list = colormap_dict['colormap']
+
+                if colormap_list is not None and colormap_list!=[]:
                     import matplotlib.colors
-                    cmap_np = np.array(colormap_obj)
+                    cmap_np = np.array(colormap_list)
                     colors = cmap_np[:,1:]/255
                     custom_cmap = matplotlib.colors.ListedColormap(colors)
 
