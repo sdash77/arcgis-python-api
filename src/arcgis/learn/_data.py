@@ -20,7 +20,7 @@ try:
     import numpy as np
     from fastai.vision.data import imagenet_stats, ImageList, bb_pad_collate
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms, flip_lr, ResizeMethod
-    from fastai.vision import ImageDataBunch, parallel
+    from fastai.vision import ImageDataBunch, parallel, ifnone
     import fastai.vision
     from fastai.torch_core import data_collate
     from fastai.core import Category
@@ -1130,7 +1130,7 @@ def prepare_data(path,
 
     elif dataset_type == "CycleGAN" or dataset_type == "Pix2Pix":
         from ._utils.cyclegan import get_files, image_extensions, cyclegan_paths, folder_check_cyclegan
-        from ._utils.pix2pix import pix2pix_paths, folder_check_pix2pix
+        from ._utils.pix2pix import pix2pix_paths, folder_check_pix2pix, rgb_or_ms
         if dataset_type == "CycleGAN":
             folder_check_cyclegan(path)
             path_a, path_b = cyclegan_paths(path)
@@ -1154,8 +1154,11 @@ def prepare_data(path,
         files_list_b = get_files(path_b, extensions=image_extensions, recurse=True)
         msimage_list_a = ArcGISImageList(files_list_a)
         msimage_list_b = ArcGISImageList(files_list_b)
+        img_type = 'RGB'
         if msimage_list_a[0].shape[0] != 3 or msimage_list_b[0].shape[0] != 3:
-            kwargs['imagery_type'] = 'ms'
+            img_type = kwargs['imagery_type'] = 'ms'
+        imagery_type_a = ifnone(rgb_or_ms(str(files_list_a[0])), img_type)
+        imagery_type_b = ifnone(rgb_or_ms(str(files_list_b[0])), img_type)
 
     if dataset_type not in ["Imagenet", "superres", "Export_Tiles", 'CycleGAN', 'Pix2Pix', 'ChangeDetection'] and has_esri_files:
         with open(stats_file) as f:
@@ -1763,6 +1766,8 @@ def prepare_data(path,
             data.n_channel = data.x[0].data[0].shape[0]
             data._is_multispectral = _is_multispectral
             data._imagery_type = _imagery_type
+            data._imagery_type_a = imagery_type_a
+            data._imagery_type_b = imagery_type_b
             data._bands = _bands
             data._norm_pct = norm_pct
             data._extract_bands = None
@@ -1776,7 +1781,6 @@ def prepare_data(path,
         data = ImageTupleList.from_folders(path, path_a, path_b)\
                 .split_by_rand_pct(val_split_pct, seed=seed)\
                 .label_empty()
-        data._dataset_type = 'CycleGAN'
         img_size = data.x[0].shape[-1]
         if resize_to is None:
             kwargs_transforms['size'] = img_size
@@ -1786,6 +1790,8 @@ def prepare_data(path,
             data.n_channel = data.x[0].data[0].shape[0]
             data._is_multispectral = _is_multispectral
             data._imagery_type = _imagery_type
+            data._imagery_type_a = imagery_type_a
+            data._imagery_type_b = imagery_type_b
             data._bands = _bands
             data._norm_pct = norm_pct
             data._extract_bands = None
@@ -1799,7 +1805,6 @@ def prepare_data(path,
         data = (ImageTupleList2.from_folders(path, path_a, path_b)
                       .split_by_rand_pct(val_split_pct, seed=seed)
                       .label_empty())
-        data._dataset_type = 'Pix2Pix'
         img_size = data.x[0].shape[-1]
         if resize_to is None:
             kwargs_transforms['size'] = img_size
@@ -1940,6 +1945,8 @@ def prepare_data(path,
         data = (data.transform(get_transforms(), **kwargs_transforms)
             .databunch(**databunch_kwargs)) 
         data.n_channel = data.x[0].data[0].shape[0]
+        data._imagery_type_a = imagery_type_a
+        data._imagery_type_b = imagery_type_b
     
     elif dataset_type == "superres" or dataset_type == "Export_Tiles":
         data = (data.transform(get_transforms(), **kwargs_transforms)
@@ -1948,7 +1955,9 @@ def prepare_data(path,
     elif dataset_type == "CycleGAN":
         data = (data.transform(get_transforms(), **kwargs_transforms)
             .databunch(**databunch_kwargs))
-        data.n_channel = data.x[0].data[0].shape[0]       
+        data.n_channel = data.x[0].data[0].shape[0] 
+        data._imagery_type_a = imagery_type_a
+        data._imagery_type_b = imagery_type_b      
     else:
         data = (data.transform(transforms, **kwargs_transforms)
             .databunch(**databunch_kwargs)
