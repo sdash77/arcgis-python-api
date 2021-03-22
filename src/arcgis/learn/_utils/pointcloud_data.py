@@ -116,7 +116,7 @@ def concatenate_tensors(read_file, input_keys, tile, max_points):
 
             max_val = cur_tensor.new_tensor(min_max['max'])
             min_val = cur_tensor.new_tensor(min_max['min'])
-            cur_tensor = (cur_tensor - min_val) / (max_val)  ## Test with one_hot
+            cur_tensor = (cur_tensor - min_val) / (max_val - min_val)  ## Test with one_hot
             cur_tensor, cur_points = pad_tensor(cur_tensor, max_points)
             cat_tensor.append(cur_tensor)
     
@@ -227,10 +227,11 @@ class PointCloudDataset(Dataset):
         self.classes_of_interest = kwargs.get('classes_of_interest', [])
         self.background_classcode = kwargs.get('background_classcode', None)
         self.block_size = self.statistics['parameters']['tileSize']
-        self.input_keys = self.statistics['attributes']  # Keys to include in training
+        self.input_keys = kwargs.get('attributes', self.statistics['attributes'])  # Keys to include in training
         self.input_keys.pop('rgbType', None)
         features_present = list(self.input_keys.keys())
-        features_present.remove('xyz')
+        if 'xyz' in features_present:
+            features_present.remove('xyz')
         if self.features_to_keep != []:
             if not all([c in self.input_keys.keys() for c in self.features_to_keep]):
                 raise Exception(f"extra_features {self.features_to_keep} must be a subset of {features_present}")         
@@ -345,7 +346,7 @@ class PointCloudDataset(Dataset):
             self.masks = f['Masks'][:]
             # centers and scales will be required in viz.
             self.centers = f['Centers'][:]
-            self.scales = f['Scales'][:]
+
             if self.min_points is not None or filter_classes:
                 # We should not filter on valid blocks, currently its happening on both.
                 indexes, skip_block_min_points, skip_block_COI, file_indexes = get_filter_index(self.masks, 
@@ -366,7 +367,6 @@ class PointCloudDataset(Dataset):
                 self._frac_remaining = len(self.tiles) / orig_num_tiles
                 self.masks = self.masks[indexes]
                 self.centers = self.centers[indexes]
-                self.scales = self.scales[indexes]
         
         self.relative_files = files
         self.filenames = [self.path / self.folder / file.decode() for file in files]
@@ -390,17 +390,14 @@ class PointCloudDataset(Dataset):
         xyzs = []
         xyzs_scaled = []
         centers = []
-        scales = []
+        scale = self.block_size / 2
         for idx in indexes[0]:
             tile = self.tiles[idx]
             center = self.centers[idx]
-            scale = self.scales[idx]
             xyz = read_file['xyz'][tile[1]:tile[1]+tile[2]]
             xyzs.append(xyz)
             labels.append(read_file['classification'][tile[1]:tile[1]+tile[2]])
             xyzs_scaled.append(xyz * scale + center)
-            # centers.append(self.centers[tile[1]:tile[1]+tile[2]])
-            # scales.append(read_file['Scales'][tile[1]:tile[1]+tile[2]])
         xyzs = np.concatenate(xyzs, axis=0)
         labels = np.concatenate(labels, axis=0)
         xyzs_scaled = np.concatenate(xyzs_scaled, axis=0)
@@ -413,8 +410,7 @@ class PointCloudDataset(Dataset):
         read_file = self.h5files[tile[0]]
 
         # we need this in show_results of tool.
-        rescaled_xyz = read_file['xyz'][tile[1]:tile[1]+tile[2]].astype(np.float32) * self.scales[i] + self.centers[i]
-        # print("rescaled_xyz.shape", rescaled_xyz.shape, read_file['xyz'].shape, read_file['xyz'], read_file)
+        rescaled_xyz = read_file['xyz'][tile[1]:tile[1]+tile[2]].astype(np.float32) * (self.block_size / 2)
         if self.classification_key in read_file.keys():
             classification, _ = pad_tensor(torch.tensor(read_file[self.classification_key][tile[1]:tile[1]+tile[2]].astype(int)),
                                         self.max_point,
@@ -427,15 +423,15 @@ class PointCloudDataset(Dataset):
                 retval = [concatenate_tensors(read_file, self.input_keys, tile, self.max_point),
                         remap_labels(classification, self.class2idx).long()]
 
-            if return_scaled:
-                retval += [rescaled_xyz]
-            
-            return retval
         else:
-            # removing the warning as it is showing up in the GPtool
+            # removing warning as it is showing up in the tool.
             # logger.warning(f"key `{self.classification_key}` could not be found in the exported files.")
-            retval = concatenate_tensors(read_file, self.input_keys, tile, self.max_point), None
+            retval = [concatenate_tensors(read_file, self.input_keys, tile, self.max_point), None]
 
+        if return_scaled:
+            # indexed zero because pad tensor returns two things and we only want the first one.
+            retval += [pad_tensor(torch.tensor(rescaled_xyz).float(), self.max_point, to_float=True)[0]]
+        
         return retval
         
     def close(self):
@@ -2179,6 +2175,22 @@ def save_h5(filename, labels_pred, confidences_pred):
         file.create_dataset('label_seg', data=labels_pred)
         file.create_dataset('confidence', data=confidences_pred)
 
+def convert_extra_features(attributes, features_to_keep):
+    attributes_dict = {}
+
+    string_mapped_features = {
+        'numberOfReturns': 'num_returns',
+        'returnNumber' : 'return_num',
+    }
+    inverse_string_mapped_features = {v: k for k, v in string_mapped_features.items()} 
+
+    for a in attributes:
+        attributes_dict[inverse_string_mapped_features.get(a[0], a[0])] = {'max':a[1], 'min':a[2]}
+
+    features_to_keep = [inverse_string_mapped_features.get(f, f) for f in features_to_keep]
+
+    return attributes_dict, features_to_keep
+    
 
 def predict_h5(self, path, output_path, **kwargs):
     """
@@ -2193,13 +2205,24 @@ def predict_h5(self, path, output_path, **kwargs):
 
     progressor = kwargs.get('progressor', None)
 
-    features_to_keep = copy.copy(self._data.features_to_keep)
-    features_to_keep.remove('xyz')
-    point_cloud_dataset = PointCloudDataset(path, None, None, '', extra_features=features_to_keep)
+    data = self._data
+    # features to keep will be present always except for older models.
+    features_to_keep = copy.copy(getattr(data, 'features_to_keep', [f[0] for f in data.extra_features]))
+    attributes = copy.copy(data.extra_features)
+    if isinstance(attributes, list):
+        api_model = True
+        attributes, features_to_keep = convert_extra_features(attributes, features_to_keep)
+        data.pc_type = 'PointCloud'
+        data.idx2class = {i:c for i,c in enumerate(data.classes)}
+    else:
+        api_model = False
+    if 'xyz' in features_to_keep:
+        features_to_keep.remove('xyz')
+    point_cloud_dataset = PointCloudDataset(path, None, None, '', extra_features=features_to_keep, attributes=attributes)
     if progressor is not None:
         progressor.set_total_blocks(len(point_cloud_dataset))
-    batch_size = 1 * math.ceil(self._data.max_point / self.sample_point_num)   
-    max_point_num = self._data.max_point
+    batch_size = 1 * math.ceil(data.max_point / self.sample_point_num)   
+    max_point_num = data.max_point
 
     output_path.mkdir(parents=True, exist_ok=True)
 
@@ -2221,7 +2244,19 @@ def predict_h5(self, path, output_path, **kwargs):
             labels_pred = np.full(batch_num, -1, dtype=np.int8)
             confidences_pred = np.zeros(batch_num, dtype=np.float32)
 
-        (data, point_num), classification = point_cloud_dataset[i]
+        (normalized_data, point_num), classification, data = point_cloud_dataset.__getitem__(i, return_scaled=True)
+
+        if api_model:
+            # only the values thats why its indexed with zero.
+            xmin, ymin, zmin = data[:point_num].min(dim=0)[0]
+            xmax, ymax, _ = data[:point_num].max(dim=0)[0]
+            data = data - torch.tensor([(xmin + xmax)/2, (ymin + ymax)/2, zmin])
+            # z in center
+            data[:, :3] = data[:, [0,2,1]]
+            data = torch.cat((data, normalized_data[:, 3:]), axis=1)
+        else:
+            data = normalized_data
+
         data = data[None]
         points_batch = data[[0] * batch_size]
         predictions = get_predictions(self, data, 0, points_batch, self.sample_point_num, batch_size, point_num.cpu().item())
