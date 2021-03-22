@@ -2510,9 +2510,23 @@ class UserManager(object):
         :return:
             The :class:`user <arcgis.gis.User>` if successfully created, None if unsuccessful.
 
-        """
-        import copy
-        kwargs = copy.copy(locals())
+        """ 
+        kwargs = {
+            "username" : username, 
+            "password" : password, 
+            "firstname" : firstname,
+            "lastname" : lastname, 
+            "email" : email, 
+            "description" : description, 
+            "role" : role,
+            "provider" : provider, 
+            "idp_username" : idp_username, 
+            "level" : level, 
+            "thumbnail" : thumbnail, 
+            "user_type" : user_type, 
+            "credits" : credits,
+            "groups" : groups            
+        }
         if self._gis.version >= [6,4]:
             allowed_keys = {'username', 'password', 'firstname', 'lastname',
                             'email', 'description', 'role', 'provider', 'idp_username',
