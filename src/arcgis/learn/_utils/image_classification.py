@@ -20,6 +20,7 @@ try:
     import numpy as np
     import matplotlib.pyplot as plt
     from fastai.vision import imagenet_stats
+    from .._utils.env import _IS_ARCGISPRONOTEBOOK
     HAS_FASTAI = True
 except:
     HAS_FASTAI = False
@@ -164,6 +165,8 @@ def IC_show_results(self, nrows=5, **kwargs):
         ax_prediction.set_title(prediction)
         
         idx+=1
+    if _IS_ARCGISPRONOTEBOOK:
+        plt.show()
     return fig, axs
 
 ## Common section ends

@@ -35,6 +35,7 @@ try:
     from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
     import os as arcgis_os
     from .._utils.common import get_nbatches, image_batch_stretcher
+    from .._utils.env import _IS_ARCGISPRONOTEBOOK
 
     HAS_FASTAI = True
 except Exception as e:
@@ -577,6 +578,8 @@ class MaskRCNN(ArcGISModel):
         if self._device == torch.device('cuda'):
             torch.cuda.empty_cache()
 
+        if _IS_ARCGISPRONOTEBOOK:
+            plt.show()
         if return_fig:
             return fig
 

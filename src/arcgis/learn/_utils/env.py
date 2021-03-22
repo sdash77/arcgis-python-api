@@ -142,3 +142,17 @@ except Exception as e:
 def raise_gdal_import_error(import_exception=gdal_import_exception):
     message = "gdal is required to work with multispectral datasets."
     raise Exception(f"""{import_exception} \n\n{message}\n{GDAL_INSTALL_MESSAGE}""")
+
+## Ipython inside ArcGIS Pro
+def patch_arcgis_notebook():
+    get_ipython().run_line_magic('matplotlib', 'inline')
+
+_IS_ARCGISPRONOTEBOOK = False
+try:
+    from IPython import get_ipython
+    import sys
+    if os.path.basename(sys.executable) == 'ArcGISPro.exe' and get_ipython is not None:
+        _IS_ARCGISPRONOTEBOOK = True
+        patch_arcgis_notebook()
+except Exception as e:
+    pass

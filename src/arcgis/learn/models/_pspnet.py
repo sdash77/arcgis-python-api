@@ -28,6 +28,8 @@ try:
     from fastai.vision import flatten_model
     from ._deeplab_utils import compute_miou
     from ._PointRend import PointRend_target_transform
+    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from matplotlib import pyplot as plt
     HAS_FASTAI = True
 except Exception as e:
     HAS_FASTAI = False
@@ -410,6 +412,8 @@ class PSPNetClassifier(ArcGISModel):
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
         self.learn.show_results(rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs)
+        if _IS_ARCGISPRONOTEBOOK:
+            plt.show()
 
     def _show_results_multispectral(self, rows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
         return_fig = kwargs.get('return_fig', False)

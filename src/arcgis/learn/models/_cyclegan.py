@@ -14,6 +14,7 @@ try:
     from pathlib import Path
     from fastai.vision import DatasetType, Learner, partial, open_image, Image
     import torch
+    from .._utils.env import _IS_ARCGISPRONOTEBOOK
 
     HAS_FASTAI = True
 except Exception as e:
@@ -153,6 +154,9 @@ class CycleGAN(ArcGISModel):
         """
         self.learn.model.arcgis_results = True
         self.learn.show_results()
+        if _IS_ARCGISPRONOTEBOOK:
+            from matplotlib import pyplot as plt
+            plt.show()
         self.learn.model.arcgis_results = False
 
     def predict(self, img_path, convert_to):

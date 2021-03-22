@@ -8,7 +8,7 @@ import tempfile
 import json
 import logging
 from .._data import _raise_fastai_import_error
-from .._utils.env import HAS_TENSORFLOW, raise_tensorflow_import_error, LAMBDA_TEXT_CLASSIFICATION
+from .._utils.env import HAS_TENSORFLOW, raise_tensorflow_import_error, LAMBDA_TEXT_CLASSIFICATION, _IS_ARCGISPRONOTEBOOK
 from warnings import warn
 import contextlib
 import io
@@ -1175,10 +1175,18 @@ class ArcGISModel(object):
 
         if save_html:
             try:
+                if _IS_ARCGISPRONOTEBOOK:
+                    from IPython import get_ipython
+                    get_ipython().run_line_magic('matplotlib', 'auto')
                 self._save_model_characteristics(saved_path.parent.absolute() / model_characteristics_folder)
                 ArcGISModel._create_html(saved_path)
             except:
                 pass
+            finally:
+                if _IS_ARCGISPRONOTEBOOK:
+                    from IPython import get_ipython
+                    get_ipython().run_line_magic('matplotlib', 'inline')
+
 
         if _emd_template.get('ModelConfigurationFile', False):
             with open(saved_path.parent / _emd_template['ModelConfigurationFile'], 'w') as f:

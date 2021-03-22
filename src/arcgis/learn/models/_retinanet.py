@@ -34,6 +34,8 @@ try:
     from .._video_utils import VideoUtils
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from fastprogress.fastprogress import progress_bar
+    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    import matplotlib.pyplot as plt
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
@@ -269,6 +271,8 @@ class RetinaNet(ArcGISModel):
             rows = len(self._data.valid_ds)
 
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self)
+        if _IS_ARCGISPRONOTEBOOK:
+            plt.show()
 
     def _show_results_multispectral(self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs):
         return_fig = kwargs.get('return_fig', False)

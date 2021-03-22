@@ -520,7 +520,7 @@ def merge_emd_and_stats(data_folders):
     emd['Classes'] = [_class_hash[x] for x in sorted(_class_hash)]
     path = Path(data_folders[emd_keys[0]])  # First folder that has esri files
     return emd, eas, path
-
+  
 def prepare_textdata(
         path,
         task,
@@ -2126,6 +2126,18 @@ def prepare_data(path,
         data.path = Path(os.path.dirname(os.path.abspath(data.path)))
     data._temp_folder = _prepare_working_dir(data.path)
 
+    from ._utils.env import _IS_ARCGISPRONOTEBOOK
+    if _IS_ARCGISPRONOTEBOOK:        
+        from functools import wraps
+        from matplotlib import pyplot as plt
+        data._show_batch_orig = data.show_batch
+        @wraps(data.show_batch)
+        def show_batch_wrapper(rows=2, *args, **kwargs):
+            res = data._show_batch_orig(rows, *args, **kwargs)
+            plt.show()
+            return res
+        data.show_batch = show_batch_wrapper
+    
     if has_esri_files:
         data._emd = emd
 

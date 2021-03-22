@@ -36,6 +36,8 @@ try:
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
     from .._video_utils import VideoUtils
     import inspect
+    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from matplotlib import pyplot as plt
     HAS_FASTAI = True
     
 except Exception as e:
@@ -413,6 +415,8 @@ class ModelExtension(ArcGISModel):
             ys = [ds.y.reconstruct(grab_idx(y, i)) for i in range(n_items)]
             zs = [ds.y.reconstruct(z) for z in preds]
         ds.x.show_xyzs(xs, ys, zs, **kwargs)
+        if _IS_ARCGISPRONOTEBOOK:
+            plt.show()
 
     def _predict_learn_modified(self, item, **kwargs):
         "Return predicted class, label and probabilities for `item`."
