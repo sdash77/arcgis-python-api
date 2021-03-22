@@ -321,8 +321,8 @@ class Survey():
         ================  ===============================================================
 
         :returns: string
-
         """
+
         url = "https://{base}/api/featureReport/createSampleTemplate".format(base=self._baseurl)
         gis = self._si._gis
         params = {
