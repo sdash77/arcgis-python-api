@@ -18,6 +18,7 @@ from functools import wraps
 import traceback
 import inspect
 import types
+import functools
 
 HAS_FASTAI = True
 HAS_TENSORBOARDX = True
@@ -660,7 +661,7 @@ class ArcGISModel(object):
         """
         metrics = ['valid_loss']
         for m in self.learn.metrics:
-            if isinstance(m, AverageMetric):
+            if isinstance(m, AverageMetric) or isinstance(m, functools.partial):
                 metrics.append(m.func.__name__)
             elif isinstance(m, types.FunctionType):
                 metrics.append(m.__name__)
