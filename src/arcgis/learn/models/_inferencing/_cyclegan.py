@@ -155,7 +155,7 @@ class ChildImageClassifier:
                     'name': 'direction',
                     'dataType': 'string',
                     'required': True,
-                    'value': 'BtoA',
+                    'value': 'AtoB',
                     'displayName': 'Image translation direction',
                     'description': '"AtoB" or "BtoA" to generate raster of type A or B '
                 }
