@@ -1083,7 +1083,6 @@ def prepare_data(path,
     _is_multispectral = False
     _show_batch_multispectral = None
     stats_file = path / 'esri_accumulated_stats.json'
-
     if dataset_type is None:
         if has_esri_files:
             if data_folders is None:
@@ -1133,6 +1132,8 @@ def prepare_data(path,
         from ._utils.pix2pix import pix2pix_paths, folder_check_pix2pix, rgb_or_ms
         if dataset_type == "CycleGAN":
             folder_check_cyclegan(path)
+            if _check_esri_files(path/'A') and _check_esri_files(path/'B'):
+                has_esri_files = True
             path_a, path_b = cyclegan_paths(path)
             if has_esri_files:
                 stats_file = path_a.parent / 'esri_accumulated_stats.json'
@@ -1772,6 +1773,7 @@ def prepare_data(path,
             data._norm_pct = norm_pct
             data._extract_bands = None
             data._do_normalize = False
+            data._image_space_used = _image_space_used
             x_shape = data.train_ds[0][0].shape
             data.chip_size = x_shape[-1]
             if working_dir is not None:
@@ -1796,6 +1798,7 @@ def prepare_data(path,
             data._norm_pct = norm_pct
             data._extract_bands = None
             data._do_normalize = False
+            data._image_space_used = _image_space_used
             x_shape = data.train_ds[0][0].shape
             data.chip_size = x_shape[-1]
             if working_dir is not None:
