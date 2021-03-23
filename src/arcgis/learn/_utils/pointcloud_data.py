@@ -339,6 +339,7 @@ class PointCloudDataset(Dataset):
         # inverse mapping for visualization
         self.idx2class = {i:c for i, c in enumerate(sorted(self.classes))}
         self.classes_of_interest = classes_of_interest
+        self.important_classes = important_classes
         with h5py.File(self.path / folder / 'ListTable.h5', 'r') as f:
             files = f['Files'][:]
             self.tiles = f['Tiles'][:]
@@ -404,13 +405,15 @@ class PointCloudDataset(Dataset):
         return xyzs, labels, xyzs_scaled
 
     
-    def __getitem__(self, i, return_scaled=False):
+    def __getitem__(self, i, return_scaled=False, add_centers=False):
         
         tile = self.tiles[i]        
         read_file = self.h5files[tile[0]]
 
         # we need this in show_results of tool.
         rescaled_xyz = read_file['xyz'][tile[1]:tile[1]+tile[2]].astype(np.float32) * (self.block_size / 2)
+        if add_centers:
+            rescaled_xyz += self.centers[i]
         if self.classification_key in read_file.keys():
             classification, _ = pad_tensor(torch.tensor(read_file[self.classification_key][tile[1]:tile[1]+tile[2]].astype(int)),
                                         self.max_point,
@@ -456,7 +459,17 @@ def class_string(label_array, prefix='', class_mapping=None):
     label_text = np.vectorize(class_mapping.get)(label_array)
     return [f'{prefix}class: {k}' for i,k in enumerate(label_text)]
 
-def mask_classes(labels, mask_class, class2idx=None):
+def mask_classes(labels,
+                 mask_class, 
+                 classes,
+                 class2idx=None, 
+                 remap_classes=None):
+    
+    if not set(mask_class).issubset(set(classes)):
+        raise Exception(f'`mask_class` {mask_class} must be a subset of {classes}')
+    if remap_classes is not None:
+        inverse_remap_classes = {v:k for k,v in remap_classes.items()}
+        mask_class = [inverse_remap_classes.get(m,m) for m in mask_class]
     if class2idx is not None:
         mask_class = [class2idx[x] for x in mask_class]
     if mask_class == []:
@@ -552,7 +565,11 @@ def show_point_cloud_batch(self, rows=2, figsize=(6,12), color_mapping=None, **k
             unmapped_labels = remap_labels(labels.copy(), self.idx2class)
         else:
              unmapped_labels = labels.copy()
-        sample_idxs = mask_classes(labels, mask_class, self.class2idx if self.remap else None)
+        sample_idxs = mask_classes(labels=labels,
+                                   mask_class=mask_class,
+                                   classes=self.classes,
+                                   class2idx=self.class2idx if self.remap else None,
+                                   remap_classes=self.remap_classes if self.remap else None)
         sampled_pc = pc[sample_idxs]
 
         if sampled_pc.shape[0] == 0:
@@ -579,7 +596,9 @@ def show_point_cloud_batch(self, rows=2, figsize=(6,12), color_mapping=None, **k
 
         if sample_idxs.sum() > max_display_point:
             raise_maxpoint_warning(idx, kwargs, logger, max_display_point)
-            mask = np.random.randint(0, sample_idxs.sum(), max_display_point)   
+            mask = np.random.randint(0, sample_idxs.sum(), max_display_point)
+        else:
+            mask = np.arange(0, sample_idxs.sum())               
         
         color_list = color_mapping[labels[sample_idxs]][mask].tolist()
         scene=dict(aspectmode='data')
@@ -722,7 +741,11 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
         else:
             unmapped_labels = labels.copy()
 
-        sample_idxs = mask_classes(labels, mask_class, self.class2idx if self.remap else None)
+        sample_idxs = mask_classes(labels=labels,
+                                   mask_class=mask_class,
+                                   classes=self.classes,
+                                   class2idx=self.class2idx if self.remap else None,
+                                   remap_classes=self.remap_classes if self.remap else None)
         sampled_pc = pc[sample_idxs]
         if sampled_pc.shape[0] == 0:
             continue
@@ -748,7 +771,9 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
 
         if sample_idxs.sum() > max_display_point:
             raise_maxpoint_warning(idx_file, kwargs, logger, max_display_point)
-            mask = np.random.randint(0, sample_idxs.sum(), max_display_point)  
+            mask = np.random.randint(0, sample_idxs.sum(), max_display_point)
+        else:
+            mask = np.arange(0, sample_idxs.sum())              
             
         color_list =  color_mapping[labels[sample_idxs]][mask].tolist()
         
@@ -1159,9 +1184,6 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
 
 
             data.subset_classes = []
-            data.remap_dict = {}
-            data.remap_bool = False
-            data.important_classes = []
             data.remap = data.train_ds.remap
 
             # data.val_files = val_files                        
@@ -1336,6 +1358,7 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         data.meta = meta
         data.subset_classes = [classes_of_interest, background_classcode]
         data.remap_dict = remap_classes
+        data.remap_classes = remap_classes
         data.remap_bool = remap_bool
         data.classes_of_interest = classes_of_interest
         data.background_classcode = background_classcode
@@ -1896,7 +1919,11 @@ def show_results(self, rows, color_mapping=None, **kwargs):
             unmapped_labels = remap_labels(labels.copy().astype(int), self._data.idx2class)
         pred_class = np.concatenate(pred_class, axis=0).astype(int)
         unmapped_pred_class = remap_labels(pred_class.copy().astype(int), self._data.idx2class)
-        sample_idxs = mask_classes(labels, mask_class, self._data.class2idx if self._data.remap else None)
+        sample_idxs = mask_classes(labels=labels,
+                                   mask_class=mask_class,
+                                   classes=self._data.classes,
+                                   class2idx=self._data.class2idx if self._data.remap else None,
+                                   remap_classes=self._data.remap_classes if self._data.remap else None)
         sampled_pc = pc[sample_idxs]
         if sampled_pc.shape[0] == 0:
             continue
@@ -1910,7 +1937,9 @@ def show_results(self, rows, color_mapping=None, **kwargs):
 
         if sample_idxs.sum() > max_display_point:
             raise_maxpoint_warning(idx_file, kwargs, logger, max_display_point, save_html)
-            mask = np.random.randint(0, sample_idxs.sum(), max_display_point)              
+            mask = np.random.randint(0, sample_idxs.sum(), max_display_point)       
+        else:
+            mask = np.arange(0, sample_idxs.sum())                   
         
         color_list_true =  color_mapping[labels[sample_idxs]][mask].tolist()
         color_list_pred = color_mapping[pred_class[sample_idxs]][mask].tolist()
@@ -2361,7 +2390,7 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
         pc = []
         pred_class = []
         for block_idx in indices:
-            (block, point_num), classification, scaled_block = data.valid_ds.__getitem__(block_idx, return_scaled=True)
+            (block, point_num), classification, scaled_block = data.valid_ds.__getitem__(block_idx, return_scaled=True, add_centers=True)
             # print(block.shape, point_num, self.sample_point_num, scaled_block.shape)
             block = block[None]
             points_batch = block[[0] * 1]
@@ -2374,22 +2403,15 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
         labels = np.concatenate(labels)       
         pc = np.concatenate(pc)
         pred_class = np.concatenate(pred_class, axis=0)
-        # print("pc.shape", pc.shape)
-        # print(np.unique(labels), np.unique(pred_class))         
-        # filter classes between train and recalssify
-        # if self.subset_classes != []:
-        #     labels = filter_classes(labels,
-        #                 self._data.subset_classes,
-        #                 self._data.remap_dict,
-        #                 self._data.remap_bool)
         unmapped_labels = remap_labels(labels.copy().astype(int), data.idx2class)
         unmapped_predictions = remap_labels(pred_class, data.idx2class) 
-        ## remapping the labels from 0-N
-        # if self._data.remap:
-        #     labels = remap_labels(labels, self._data.class2idx)
 
         ## sample points
-        sample_idxs = mask_classes(labels, mask_class, self._data.class2idx if self._data.remap else None)
+        sample_idxs = mask_classes(labels=labels,
+                                   mask_class=mask_class,
+                                   classes=self._data.classes,
+                                   class2idx=self._data.class2idx if self._data.remap else None,
+                                   remap_classes=self._data.remap_classes if self._data.remap else None)
         sampled_pc = pc[sample_idxs]
         if sampled_pc.shape[0] == 0:
             continue  
@@ -2399,7 +2421,9 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
         ## resample points if exeeds limits.
         if sample_idxs.sum() > max_display_point:
             raise_maxpoint_warning(idx, kwargs, logger, max_display_point, save_html)
-            mask = np.random.randint(0, sample_idxs.sum(), max_display_point) 
+            mask = np.random.randint(0, sample_idxs.sum(), max_display_point)
+        else:
+            mask = np.arange(0, sample_idxs.sum())
         
         ## Apply cmap
         color_list_true =  color_mapping[labels[sample_idxs]][mask].tolist()
