@@ -972,7 +972,8 @@ def prepare_data(path,
                             The encoding to read the csv/json file.
                             Default is 'UTF-8'
     ---------------------   -------------------------------------------
-    min_points              Optional int. Filter based on minimum points in a block.
+    min_points              Optional int. Filtering based on minimum number
+                            of points in a block.
                             Set `min_points=1000` to filter out blocks with less
                             than 1000 points. Applicable only for
                             dataset_type='PointCloud'
@@ -982,8 +983,9 @@ def prepare_data(path,
                             If we have classes [1, 3, 5, 7] in our dataset,
                             but we are mainly interested in 1 and 3,
                             Set `classes_of_interest=[1,3]`. Only those blocks
-                            will be considered for training which either 1 or 3
-                            classes in them. 
+                            will be considered for training which either have
+                            class 1 or 3 in them, rest of the blocks will
+                            be filtered out.
                             If remapping of rest of the classes is required
                             set `background_classcode` to some value.
                             Applicable only for dataset_type='PointCloud'
