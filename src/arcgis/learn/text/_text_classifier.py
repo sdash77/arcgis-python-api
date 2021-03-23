@@ -20,8 +20,8 @@ try:
     from fastai.metrics import accuracy, error_rate, accuracy_thresh
     # from transformers import AdamW
     from transformers import AutoTokenizer, AutoConfig
-    from .._utils.env  import LAMBDA_TEXT_CLASSIFICATION
-    if not LAMBDA_TEXT_CLASSIFICATION:
+    from .._utils.env  import _LAMBDA_TEXT_CLASSIFICATION
+    if not _LAMBDA_TEXT_CLASSIFICATION:
         from sklearn.metrics import classification_report
     from ._arcgis_transformer import ModelBackbone, infer_model_type
     from .._utils.common import _get_emd_path

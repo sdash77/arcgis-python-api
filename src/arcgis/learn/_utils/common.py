@@ -8,12 +8,12 @@ import tempfile
 from pathlib import Path
 HAS_FASTAI = False
 try:
-    from .env import raise_fastai_import_error, HAS_GDAL, gdal_import_exception, GDAL_INSTALL_MESSAGE, LAMBDA_TEXT_CLASSIFICATION
-    if not LAMBDA_TEXT_CLASSIFICATION:
+    from .env import raise_fastai_import_error, HAS_GDAL, gdal_import_exception, GDAL_INSTALL_MESSAGE, _LAMBDA_TEXT_CLASSIFICATION
+    if not _LAMBDA_TEXT_CLASSIFICATION:
         from fastai.vision.data import ImageList
         from fastai.vision import Image, imagenet_stats, pil2tensor
         import PIL
-    elif LAMBDA_TEXT_CLASSIFICATION:
+    elif _LAMBDA_TEXT_CLASSIFICATION:
         missing_classes = ['Image', 'ImageList']
         for missing_class in missing_classes: 
             exec(f'{missing_class} = object')

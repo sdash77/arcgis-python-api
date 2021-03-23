@@ -8,7 +8,7 @@ import tempfile
 import json
 import logging
 from .._data import _raise_fastai_import_error
-from .._utils.env import HAS_TENSORFLOW, raise_tensorflow_import_error, LAMBDA_TEXT_CLASSIFICATION, _IS_ARCGISPRONOTEBOOK
+from .._utils.env import HAS_TENSORFLOW, raise_tensorflow_import_error, _LAMBDA_TEXT_CLASSIFICATION, _IS_ARCGISPRONOTEBOOK
 from warnings import warn
 import contextlib
 import io
@@ -24,7 +24,7 @@ HAS_FASTAI = True
 HAS_TENSORBOARDX = True
 
 try:
-    if not LAMBDA_TEXT_CLASSIFICATION:
+    if not _LAMBDA_TEXT_CLASSIFICATION:
         from fastai.vision.learner import model_meta, _default_meta
         from .._utils.common import get_post_processed_model
         from torchvision import models
@@ -75,7 +75,7 @@ losses_skipped = 5
 trailing_losses_skipped = 5
 model_characteristics_folder = 'ModelCharacteristics'
 
-if HAS_FASTAI and not LAMBDA_TEXT_CLASSIFICATION:
+if HAS_FASTAI and not _LAMBDA_TEXT_CLASSIFICATION:
     # Declare the family of backbones to be unpacked and used by different models as supported types
     _vgg_family = [models.vgg11.__name__, models.vgg11_bn.__name__, models.vgg13.__name__, models.vgg13_bn.__name__,
                    models.vgg16.__name__, models.vgg16_bn.__name__, models.vgg19.__name__, models.vgg19_bn.__name__]
@@ -429,7 +429,7 @@ class ArcGISModel(object):
     def __init__(self, data, backbone=None, **kwargs):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
-        if not LAMBDA_TEXT_CLASSIFICATION:
+        if not _LAMBDA_TEXT_CLASSIFICATION:
             move_to_cpu = _device_check()
         else:
             move_to_cpu = True
