@@ -1076,8 +1076,10 @@ class DataStore():
     
 class PointCloudItemList(ItemList):
     def __init__(self, items, **kwargs):
-        if DataStore.indexes is False and (not isinstance(DataStore.indexes, list)):
-                DataStore.indexes = kwargs.get('extra_feat_indexes', None)
+        if (DataStore.indexes is False and (not isinstance(DataStore.indexes, list))):
+            DataStore.indexes = kwargs.get('extra_feat_indexes')
+        elif kwargs.get('extra_feat_indexes') is not None and DataStore.indexes != kwargs.get('extra_feat_indexes'):
+            DataStore.indexes = kwargs.get('extra_feat_indexes', None)
         kwargs.pop('extra_feat_indexes', None)
         super().__init__(items, **kwargs)
         self.keys = ['data', 'label_seg', 'data_num']
@@ -1319,18 +1321,16 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         string_mapped_features = {
             'numberOfReturns': 'num_returns',
             'returnNumber' : 'return_num',
+            'nearInfrared': 'nir'
         }
         inverse_string_mapped_features = {v: k for k, v in string_mapped_features.items()}        
         extra_features_users = kwargs.get('extra_features', [])
-
-
-
-        extra_features_filtered = [f for i, f in enumerate(extra_features) if inverse_string_mapped_features.get(f[0], f[0]) in extra_features_users]
-        extra_feature_keys = [f[0] for f in extra_features_filtered]
+        extra_features_users_mapped = [inverse_string_mapped_features.get(f, f) for f in extra_features_users]
+        extra_feature_keys = [f[0] for f in extra_features]
         extra_features_keys_mapped = [inverse_string_mapped_features.get(f, f) for f in extra_feature_keys]        
         # +3 to adjust for xyz.
-        extra_feat_indexes = [i + 3 for i, f in enumerate(extra_features) if inverse_string_mapped_features.get(f[0], f[0]) in extra_features_users]
-        if not all([c in extra_features_keys_mapped for c in extra_features_users]):
+        extra_feat_indexes = [i + 3 for i, f in enumerate(extra_features) if inverse_string_mapped_features.get(f[0], f[0]) in extra_features_users_mapped]
+        if not all([c in extra_features_keys_mapped for c in extra_features_users_mapped]):
             raise Exception(f"extra_features {extra_features_users} must be a subset of {extra_features_keys_mapped}")       
         extra_feat_indexes = [0, 1, 2] + extra_feat_indexes
         src = PointCloudItemList.from_folder(path, ['.h5'], extra_feat_indexes=extra_feat_indexes)
@@ -1591,7 +1591,16 @@ def inference_las(path,
                   ):
     try_import("h5py")
     import h5py
-    import pandas as pd    
+    import pandas as pd   
+    
+    # check if the model is trained on new exported data and raise Exception.
+    if hasattr(pointcnn_model._data.pc_type):
+        if pointcnn_model._data.pc_type == 'PointCloud':
+            raise Exception("Models trained on exported data from ArcGIS Pro 2.8 onwards are not supported. "
+                            "Use `Classify Points Using Trained Model` tool available in 3D Analyst "  
+                            "extension in ArcGIS Pro 2.8 onwards."
+                            )
+
     try:
         ## Export data
         path = Path(path)
@@ -2210,6 +2219,7 @@ def convert_extra_features(attributes, features_to_keep):
     string_mapped_features = {
         'numberOfReturns': 'num_returns',
         'returnNumber' : 'return_num',
+        'nearInfrared': 'nir'
     }
     inverse_string_mapped_features = {v: k for k, v in string_mapped_features.items()} 
 

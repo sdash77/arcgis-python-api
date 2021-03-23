@@ -1500,6 +1500,11 @@ def export_point_dataset(data_path,
     """
     Exports the las files into h5 blocks.
 
+    Note: This function has been deprecated starting from `ArcGIS API for
+    Python` version 1.9.0. 
+    Export data using `Prepare Point Cloud Training Data` tool available  
+    in 3D Analyst Extension from ArcGIS Pro 2.8 onwards.
+
     ==================     ======================================================
     **Argument**           **Description**
     ------------------     ------------------------------------------------------

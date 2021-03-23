@@ -993,9 +993,14 @@ def prepare_data(path,
     extra_features          Optional List. Contains a list of strings
                             which tells which extra features to use to
                             train PointCNN. By default only x,y and z
-                            are considered for training.
-                            Set this to ['intensity', 'numberOfReturns']
-                            if these are to be used in training.
+                            are considered for training irrespective
+                            of what features were exported.
+                            Set this to be a subset of 
+                            ['intensity', 'numberOfReturns', 'returnNumber', 
+                            'red', 'green', 'blue', 'nearInfrared'].
+                            For data exported from `export_point_dataset` set
+                            this to ['intensity', 'num_returns', 'return_num', 
+                            'red', 'green', 'blue', 'nir'].
     ---------------------   -------------------------------------------
     remap_classes           Optional dictionary {int:int}. Mapping from  
                             class values to user defined values. 

@@ -400,6 +400,15 @@ class PointCNN(ArcGISModel):
         Coordinate system for the inferencing data & trained model's training
         data should be the same.
 
+        Note: This method has been deprecated starting from `ArcGIS API for
+        Python` version 1.9.0.
+        Use `Classify Points Using Trained Model` tool  available in 3D Analyst
+        extension from ArcGIS Pro 2.8 onwards.
+
+        Models trained on exported data from ArcGIS Pro 2.8 onwards are not
+        supported.
+
+        
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
