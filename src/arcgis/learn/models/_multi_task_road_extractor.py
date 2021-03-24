@@ -70,7 +70,7 @@ def safe_json(data):
 
 class MultiTaskRoadExtractor(ArcGISModel):
     """
-    Creates a Multi-Task Learning model for binary segmentation. Supports RGB
+    Creates a Multi-Task Learning model for binary segmentation of roads. Supports RGB
     and Multispectral Imagery.
     Implementation based on https://doi.org/10.1109/CVPR.2019.01063 .
 

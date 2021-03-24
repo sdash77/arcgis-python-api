@@ -93,6 +93,8 @@ class MultiTaskRoadLearner(Learner):
         total_len = len(self.dl(ds_type))
         batch_size = self.dl(ds_type).batch_size
         rows = min(total_len * batch_size, rows)
+        if batch_size == 1:
+            rows = 1
         data_iterator = iter(self.dl(ds_type))
         for index in range(1, rows + 1, batch_size):
             n_items = (rows + 1 - index) if (index + batch_size) > (rows + 1) else batch_size
@@ -140,7 +142,8 @@ class MultiTaskRoadLearner(Learner):
         fig, axs = plt.subplots(nrows=rows, ncols=2, figsize=(2 * imgsize, rows * imgsize))
         fig.suptitle(main_title)
         for x, y, z, ax in zip(xs, ys, zs, axs):
-
+            if rows ==1:
+                ax = axs
             ax[0].imshow(x)
             ax[0].imshow(y[0], alpha=self.alpha,cmap='binary')
             # _plotOrientationOnImage(ax[0], y[0], x, bin_size)
