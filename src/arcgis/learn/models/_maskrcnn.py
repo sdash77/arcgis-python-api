@@ -168,7 +168,7 @@ class MaskRCNN(ArcGISModel):
 
         self.maskrcnn_kwargs, kwargs = split_kwargs_by_func(kwargs, models.detection.MaskRCNN.__init__)
 
-        if self._backbone.__name__ is 'resnet50':
+        if self._backbone.__name__ == 'resnet50':
             model = models.detection.maskrcnn_resnet50_fpn(
                 pretrained=True,
                 min_size = 1.5*data.chip_size,
