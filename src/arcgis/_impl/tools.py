@@ -86,7 +86,7 @@ def _tempinput(data):
 ###########################################################################
 class BaseAnalytics(object):
     def _feature_input(self, input_layer):
-
+        from arcgis.features.geo._accessor import _is_geoenabled
         point_fs = {
             "layerDefinition":{
                 "currentVersion":10.11,
@@ -250,6 +250,8 @@ class BaseAnalytics(object):
             if input_layer_url.endswith("/"):
                 input_layer_url = input_layer_url[:-1]
             input_param =  {"url": input_layer_url }
+        elif isinstance(input_layer, pd.DataFrame) and _is_geoenabled(input_layer):
+            return self._feature_input(input_layer.spatial.to_feature_collection())
         else:
             raise Exception("Invalid format of input layer. url string, feature service Item, feature service instance or dict supported")
 
@@ -2462,8 +2464,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
         near_layer = self._feature_input(near_layer)
-        params["analysisLayer"] = self._feature_input(analysis_layer)
-        params["nearLayer"] = self._feature_input(near_layer)
+        params["analysisLayer"] = analysis_layer#self._feature_input(analysis_layer)
+        params["nearLayer"] = near_layer#self._feature_input(near_layer)
         if point_barrier_layer:
             point_barrier_layer = self._feature_input(point_barrier_layer)
         if line_barrier_layer:

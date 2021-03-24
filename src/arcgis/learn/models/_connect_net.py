@@ -1,7 +1,7 @@
 from ._multi_task_road_extractor import MultiTaskRoadExtractor
 class ConnectNet(MultiTaskRoadExtractor):
     """
-    Creates a ConnectNet model for binary segmentation. Supports RGB
+    Creates a ConnectNet model for binary segmentation of linear features. Supports RGB
     and Multispectral Imagery.
     Implementation based on https://doi.org/10.1109/CVPR.2019.01063 .
 

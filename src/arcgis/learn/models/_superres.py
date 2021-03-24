@@ -11,6 +11,7 @@ try:
     from fastai.callbacks import LossMetrics
     from fastai.utils.mem import Path
     from .._utils.common import _get_emd_path
+    from .._utils.env import _IS_ARCGISPRONOTEBOOK
 
     HAS_FASTAI = True
 except Exception as e:
@@ -180,6 +181,9 @@ class SuperResolution(ArcGISModel):
         
         self._check_requisites()
         self.learn.show_results(rows=rows)
+        if _IS_ARCGISPRONOTEBOOK:
+            from matplotlib import pyplot as plt
+            plt.show()
 
     def predict(self, img_path, width=None, height=None):
         """

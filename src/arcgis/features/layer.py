@@ -372,7 +372,7 @@ class FeatureLayer(Layer):
         -----------------     --------------------------------------------------------------------
         definition            required dict. The definition using the renderer that is generated.
                               Use either class breaks or unique value classification definitions.
-                              See: https://resources.arcgis.com/en/help/rest/apiref/ms_classification.html
+                              See `Classification Objects <https://developers.arcgis.com/documentation/common-data-types/classification-objects.htm>`_ for additional details.
         -----------------     --------------------------------------------------------------------
         where                 optional string. A where clause for which the data needs to be
                               classified. Any legal SQL where clause operating on the fields in

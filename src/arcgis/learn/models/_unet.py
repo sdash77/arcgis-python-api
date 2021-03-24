@@ -26,6 +26,8 @@ try:
     from ._psp_utils import accuracy
     from ._deeplab_utils import compute_miou
     import os as arcgis_os
+    from matplotlib import pyplot as plt
+    from .._utils.env import _IS_ARCGISPRONOTEBOOK
     HAS_FASTAI = True
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -353,6 +355,8 @@ class UnetClassifier(ArcGISModel):
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
         self.learn.show_results(rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs)
+        if _IS_ARCGISPRONOTEBOOK:
+            plt.show()
 
     def accuracy(self):
         try:

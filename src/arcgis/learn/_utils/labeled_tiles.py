@@ -2,6 +2,7 @@ import torch
 import matplotlib.pyplot as plt
 import math
 from .common import get_nbatches, image_batch_stretcher
+from .._utils.env import _IS_ARCGISPRONOTEBOOK
 
 def show_batch_labeled_tiles(self, rows=3, **kwargs): # parameters adjusted in kwargs   
     nrows = rows
@@ -100,3 +101,5 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs): # parameters adjusted in k
             else:
                 ax[r][c].axis('off')
             idx += 1
+    if _IS_ARCGISPRONOTEBOOK:
+        plt.show()

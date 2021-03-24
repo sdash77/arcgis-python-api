@@ -14,6 +14,7 @@ try:
     from pathlib import Path
     from fastai.vision import DatasetType, Learner, partial, open_image, Image
     import torch
+    from .._utils.env import _IS_ARCGISPRONOTEBOOK
 
     HAS_FASTAI = True
 except Exception as e:
@@ -153,6 +154,9 @@ class CycleGAN(ArcGISModel):
         """
         self.learn.model.arcgis_results = True
         self.learn.show_results()
+        if _IS_ARCGISPRONOTEBOOK:
+            from matplotlib import pyplot as plt
+            plt.show()
         self.learn.model.arcgis_results = False
 
     def predict(self, img_path, convert_to):
@@ -201,12 +205,18 @@ class CycleGAN(ArcGISModel):
         """
         Computes Frechet Inception Distance (FID) on validation set.
         """
-        if self._data._is_multispectral:
+        fid_a = 'None'
+        fid_b = 'None'
+        
+        if self._data._imagery_type_a == 'ms' and self._data._imagery_type_b == 'ms':
             logger.error("FID metric not supported for multispectral imagery type")
-            return {'FID_A': 'None', 'FID_B': 'None'}
         else:
-            fid_a, fid_b = compute_fid_metric(self, self._data)
-            return {'FID_A': '{0:1.4e}'.format(fid_a), 
-                    'FID_B': '{0:1.4e}'.format(fid_b)}
+            if self._data._imagery_type_a == 'RGB' and self._data.n_channel == 3:
+                fid_a = '{0:1.4e}'.format(compute_fid_metric(self, self._data, 'a'))
+            if self._data._imagery_type_b == 'RGB' and self._data.n_channel == 3:
+                fid_b = '{0:1.4e}'.format(compute_fid_metric(self, self._data, 'b'))
+            
+        return {'FID_A': fid_a,
+                'FID_B': fid_b}
 
 

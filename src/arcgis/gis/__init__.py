@@ -7391,7 +7391,7 @@ class User(dict):
     ---------------------    ---------------------------------------------------------
     level                    The level of the user.
     ---------------------    ---------------------------------------------------------
-    disabled                 Disables access to the organization by the user.
+    disabled                 The login access to the organization for the user.
     ---------------------    ---------------------------------------------------------
     units                    User-defined units for measurement.
     ---------------------    ---------------------------------------------------------
@@ -7560,7 +7560,9 @@ class User(dict):
         params = {
             'f': 'json',
             'start' :1,
-            'num' : 255
+            'num' : 100,
+            "returnAppClientIds" : True,
+            "returnAllProvisions" : True
         }
         res = self._portal.con.post(url, params)
         provs = [Item(gis=self._gis, itemid=i["itemId"])for i in res["provisionedListings"]]
@@ -7568,7 +7570,9 @@ class User(dict):
             params = {
                 'f': 'json',
                 'start' : res['nextStart'],
-                'num' : 255
+                'num' : 100,
+                "returnAppClientIds" : True,
+                "returnAllProvisions" : True
             }
             res = self._portal.con.post(url, params)
             provs += [Item(gis=self._gis, itemid=i["itemId"])for i in res["provisionedListings"]]
