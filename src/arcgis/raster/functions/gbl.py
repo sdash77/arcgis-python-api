@@ -4088,6 +4088,7 @@ def viewshed(input_raster,
 
     """
     layer1, input_raster, raster_ra1 = _raster_input(input_raster)
+    input_features = _layer_input(input_observer_features)
 
     template_dict = {
         "rasterFunction" : "GPAdapter",
@@ -4098,6 +4099,9 @@ def viewshed(input_raster,
             "in_raster" : input_raster
         }
     }
+
+    if input_features is not None:
+        template_dict["rasterFunctionArguments"]["input_observer_features"] = input_features
 
     if analysis_method is not None:
         analysis_method_list = ["ALL_SIGHTLINES", "PERIMETER_SIGHTLINES"]
@@ -4141,6 +4145,9 @@ def viewshed(input_raster,
 
     if horizontal_start_angle is not None:
         template_dict["rasterFunctionArguments"]["horizontal_start_angle"] = horizontal_start_angle
+
+    if horizontal_end_angle is not None:
+        template_dict["rasterFunctionArguments"]["horizontal_end_angle"] = horizontal_end_angle
 
     if vertical_upper_angle is not None:
         template_dict["rasterFunctionArguments"]["vertical_upper_angle"] = vertical_upper_angle
