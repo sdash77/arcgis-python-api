@@ -214,9 +214,10 @@ class Survey():
                           result report file. For example, if outputFormat is .pdf, input: 
                           "abc" -> output: "abc.pdf"; input: "abc.docx" -> output: "abc.docx.pdf".
                           
-                          If packageFiles is true, outputReportName will be used for report files 
-                          inside the packaged file. If mergeFiles is either nextPage or continuous, 
-                          outputReportName will be used as the merged file name.
+                          If mergeFiles is either nextPage or continuous, 
+                          outputReportName will be used as the merged file name. See
+                          `Create Report <https://developers.arcgis.com/survey123/api-reference/rest/report/#create-report>`_
+                          for detailed explanation.
         ----------------  ---------------------------------------------------------------
         package_name      Optional String. Specify the file name (without extension)of the 
                           packaged file when packageFiles is true, for example, <outputPackageName>.zip.
