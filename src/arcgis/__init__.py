@@ -4,7 +4,7 @@ from . import env
 from . import (features, geoanalytics, geocoding, geometry)
 from . import (geoprocessing, network, raster, realtime, schematics)
 import os
-if os.environ.get('DISABLE_ARCGIS_LEARN', None) is '1':
+if os.environ.get('DISABLE_ARCGIS_LEARN', None) == '1':
     from . import (mapping, apps)
 else:
     from . import (mapping, apps, learn)

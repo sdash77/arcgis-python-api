@@ -4,8 +4,8 @@ import traceback
 
 
 HAS_BACKEND_SET = False
-ARCGIS_ENABLE_TF_BACKEND = os.environ.get('ARCGIS_ENABLE_TF_BACKEND') is '1'
-_LAMBDA_TEXT_CLASSIFICATION = os.environ.get('_LAMBDA_TEXT_CLASSIFICATION') is '1'
+ARCGIS_ENABLE_TF_BACKEND = os.environ.get('ARCGIS_ENABLE_TF_BACKEND') == '1'
+_LAMBDA_TEXT_CLASSIFICATION = os.environ.get('_LAMBDA_TEXT_CLASSIFICATION') == '1'
 
 HAS_TENSORFLOW = False
 tf_import_exception = None

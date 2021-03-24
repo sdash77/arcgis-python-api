@@ -252,7 +252,7 @@ class DeepLab(ArcGISModel):
         self.dice_loss_average = kwargs.get('dice_loss_average', 'micro')
         
         self._code = image_classifier_prf
-        if self._backbone.__name__ is 'resnet101':
+        if self._backbone.__name__ == 'resnet101':
             model = _create_deeplab(data.chip_size, data.c, pointrend=self._pointrend, keep_dilation=self.keep_dilation)
             if self._is_multispectral:
                 model = _change_tail(model, data)
