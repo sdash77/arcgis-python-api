@@ -142,5 +142,6 @@ class Integration(FeatureModel):
                 if integration.integration_id == self.integration_id and integration.assignment_type.upper() == self.assignment_type.upper():
                     raise ValidationError("Cannot add an integration with the same id and assignment type", self)
         else:
-            if self.integration_id in [integration.integration_id for integration in self.project.integrations.search()]:
+            # Don't enforce this when doing an update (which means the integration already has a global_id)
+            if self.global_id is None and self.integration_id in [integration.integration_id for integration in self.project.integrations.search()]:
                 raise ValidationError("Cannot add project level integration when same id integration exists", self)
