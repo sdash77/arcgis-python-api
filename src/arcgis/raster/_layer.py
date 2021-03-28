@@ -4956,7 +4956,7 @@ class Raster():
         if not isinstance(is_multidimensional, bool):
             raise TypeError('is_multidimensional must be boolean type')
         if engine is not None:
-            if isinstance(engine, str) and engine not in ['arcpy', 'image_server']:
+            if engine not in ['arcpy', 'image_server', _ArcpyRaster, _ImageServerRaster]:
                 raise RuntimeError('Invalid engine: parameter engine should be either "arcpy" or "image_server"')
             engine = _get_engine(engine)
             self._engine=engine
