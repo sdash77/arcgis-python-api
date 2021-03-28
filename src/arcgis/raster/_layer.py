@@ -4478,6 +4478,7 @@ class ImageryLayer(Layer):
             rowStart = math.floor((origin["y"] - dataSourceExtent["ymax"]) / resolution["y"] / th)
             rowEnd = math.ceil((origin["y"] - dataSourceExtent["ymin"] - resolution["y"]) / resolution["y"]/ th)
             from matplotlib import pyplot as plt
+            from numpy import ma
             img = []
             numarray = None
             numpylist = []
@@ -4489,11 +4490,11 @@ class ImageryLayer(Layer):
                     if numarray is None:
                         numarray = num
                     else:
-                        numarray = np.concatenate((numarray, num), axis=1)
+                        numarray = np.ma.concatenate((numarray, num), axis=1)
                     if mask_array is None:
                         mask_array = valid_mask
                     else:
-                        mask_array = np.concatenate((mask_array, valid_mask), axis=0)
+                        mask_array = np.concatenate((mask_array, valid_mask), axis=1)
                 numpylist.append(numarray)
                 masklist.append(mask_array)
                 numarray = None
@@ -4505,7 +4506,7 @@ class ImageryLayer(Layer):
                     numarray = ele                    
                 else:
                     #imgnew = plt.imshow(ele)
-                    numarray = np.concatenate((numarray,ele), axis=0)
+                    numarray = np.ma.concatenate((numarray,ele), axis=0)
 
             for index,ele in enumerate(masklist):
                 if index == 0:
@@ -4513,17 +4514,9 @@ class ImageryLayer(Layer):
                 else:
                     #imgnew = plt.imshow(ele)
                     mask_array = np.concatenate((mask_array,ele), axis=0)
-
-            print(numarray.shape, mask_array.shape)
-            #mask_array = mask_array.transpose()
-            numarray, valid_mask = np.broadcast_arrays(numarray, mask_array)
-            numarray.setflags(write=True)
-            valid_mask = (valid_mask == False)
-            from numpy import ma
-            numarray = ma.masked_array(numarray, valid_mask)
-
             num_bands = self.band_count
             try:
+                
                 if numarray.dtype != 'uint8' or (numarray.dtype  == 'float' and(numarray.min() < 0 or 1 < numarray.max())):
                     band_arr_list = []
                     render_bands = 1 if (num_bands == 1 and numarray.ndim == 2) else numarray.shape[2]
@@ -4550,14 +4543,7 @@ class ImageryLayer(Layer):
             except:
                 pass
 
-            if numarray.shape[0]>3 and len(numarray.shape)==3:
-                numarray = numarray[0:3] #Extract first 3 bands
-            if len(numarray) == 2:
-                numarray = np.expand_dims(numarray, axis=2)
-            elif len(numarray) == 3:
-                numarray = np.transpose(numarray, axes=[1, 2, 0])
-
-            numarray = numarray[np.ix_(mask_array.any(1), mask_array.any(0))]
+            #numarray = numarray[np.ix_(mask_array.any(1), mask_array.any(0))]
             custom_cmap=None
             if num_bands == 1:
                 colormap_list=[]
@@ -4571,9 +4557,19 @@ class ImageryLayer(Layer):
                     colors = cmap_np[:,1:]/255
                     custom_cmap = matplotlib.colors.ListedColormap(colors)
 
+            if numarray.mask.ndim ==2:
+                mask = (numarray.mask == False)
+            else:
+                mask = (numarray.mask[:,:,1] == False)
+            numarray = numarray[np.ix_(mask.any(1), mask.any(0))]
+
             if custom_cmap is not None:
                 imgnew = plt.imshow(numarray, cmap = custom_cmap)
             else:
+                if numarray.dtype == 'uint8':
+                    numarray[numarray.mask]=255
+                elif data.dtype == 'float32':
+                    numarray[numarray.mask]=np.nan
                 if 'hasMultidimensions' in self.properties and self.properties['hasMultidimensions']:
                     imgnew = plt.imshow(numarray)
                 else:
@@ -4608,7 +4604,17 @@ class ImageryLayer(Layer):
             result, data, valid_mask = lerc.decode(res)
             if result != 0:
                 raise RuntimeError('decoding bytes from imagery service failed.')
-            return data, valid_mask
+            data, valid_mask = np.broadcast_arrays(data, valid_mask)
+            data.setflags(write=True)
+            valid_mask = (valid_mask == False)
+            from numpy import ma
+            data = ma.masked_array(data, valid_mask)
+            if data.shape[0]>3 and len(data.shape)==3:
+                data = data[0:3] #Extract first 3 bands
+            if len(data) == 2:
+                data = np.expand_dims(data, axis=2)
+            elif len(data) == 3:
+                data = np.transpose(data, axes=[1, 2, 0])
 
             #data = data[np.ix_(valid_mask.any(1), valid_mask.any(0))]
             return data, valid_mask
