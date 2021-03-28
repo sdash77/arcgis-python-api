@@ -77,10 +77,7 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
             newlyr = ImageryLayer(layer._uri, layer._gis)
 
     else:
-        if layer.tiles_only:
-            newlyr = ImageryLayer(function_chain_ra, layer._gis)
-        else:
-            newlyr = ImageryLayer(layer._url, layer._gis)
+        newlyr = ImageryLayer(layer._url, layer._gis)
 
     # if layer._fn is not None: # chain the functions
     #     old_chain = layer._fn
