@@ -46,6 +46,7 @@ class CycleGAN(ArcGISModel):
     """
     def __init__(self, data, pretrained_path=None, gen_blocks=9, lsgan=True, *args, **kwargs):
         super().__init__(data)
+        self._check_dataset_support(data)
         cycle_gan = CycleGAN_model(self._data.n_channel,self._data.n_channel, gen_blocks=gen_blocks, lsgan=lsgan)
         self.learn = Learner(data, cycle_gan, loss_func=CycleGanLoss(cycle_gan), opt_func=partial(optim.Adam, betas=(0.5,0.99)),callback_fns=[CycleGANTrainer])
         self.learn.model = self.learn.model.to(self._device)
@@ -219,4 +220,11 @@ class CycleGAN(ArcGISModel):
         return {'FID_A': fid_a,
                 'FID_B': fid_b}
 
+    @property
+    def  supported_datasets(self):
+        """ Supported dataset types for this model. """
+        return CycleGAN._supported_datasets()
 
+    @staticmethod
+    def _supported_datasets():
+        return ['CycleGAN']

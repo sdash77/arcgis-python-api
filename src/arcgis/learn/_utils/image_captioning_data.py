@@ -709,7 +709,7 @@ def show_results(self, rows, **kwargs):
             imsize=5
             )    
     plt.subplots_adjust(top=top)
-    fig.suptitle('Image Before / Image After / Ground Truth / Prediction', fontsize=16)
+    fig.suptitle('Ground Truth / Prediction', fontsize=16)
     nbatches = (rows // self._data.valid_dl.batch_size) + 1
     dls = get_nbatches(self._data.valid_dl, nbatches)
     images, captions = [], []

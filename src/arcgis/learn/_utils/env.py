@@ -151,7 +151,7 @@ _IS_ARCGISPRONOTEBOOK = False
 try:
     from IPython import get_ipython
     import sys
-    if os.path.basename(sys.executable) == 'ArcGISPro.exe' and get_ipython is not None:
+    if os.path.basename(sys.executable) == 'ArcGISPro.exe' and get_ipython() is not None:
         _IS_ARCGISPRONOTEBOOK = True
         patch_arcgis_notebook()
 except Exception as e:

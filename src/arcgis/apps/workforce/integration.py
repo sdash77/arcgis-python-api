@@ -134,13 +134,15 @@ class Integration(FeatureModel):
         elif not self.url_template:
             raise ValidationError("Assignment integration must contain a URL template", self)
         elif self.assignment_type:
-            if self.assignment_type not in [at.code for at in self.project.assignment_types.search()]:
+            if self.assignment_type.upper() not in [at.code.upper() for at in self.project.assignment_types.search()]:
                 raise ValidationError("Invalid assignment type in integration", self)
+            # Don't enforce this when doing an update (which means the integration already has a global_id)
             for integration in self.project.integrations.search():
-                if integration.integration_id == self.integration_id and not integration.assignment_type:
+                if self.global_id is None and integration.integration_id == self.integration_id and not integration.assignment_type:
                     raise ValidationError("Cannot add an integration with an assignment type when project level integration of same id exists", self)
-                if integration.integration_id == self.integration_id and integration.assignment_type.upper() == self.assignment_type.upper():
+                if self.global_id is None and integration.integration_id == self.integration_id and integration.assignment_type.upper() == self.assignment_type.upper():
                     raise ValidationError("Cannot add an integration with the same id and assignment type", self)
         else:
-            if self.integration_id in [integration.integration_id for integration in self.project.integrations.search()]:
+            # Don't enforce this when doing an update (which means the integration already has a global_id)
+            if self.global_id is None and self.integration_id in [integration.integration_id for integration in self.project.integrations.search()]:
                 raise ValidationError("Cannot add project level integration when same id integration exists", self)

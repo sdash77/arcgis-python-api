@@ -180,7 +180,7 @@ class MaskRCNN(ArcGISModel):
                 model.backbone = _change_tail(model.backbone, data)
                 model.transform.image_mean = scaled_mean_values
                 model.transform.image_std = scaled_std_values
-        elif self._backbone.__name__ in ['resnet18','resnet34']:
+        elif self._backbone.__name__ in ['resnet18','resnet34'] and not pointrend:
             if self._is_multispectral:
                 backbone_small = create_body(self._backbone_ms, cut=_get_backbone_meta(self._backbone.__name__)['cut'])
                 backbone_small.out_channels = 512
