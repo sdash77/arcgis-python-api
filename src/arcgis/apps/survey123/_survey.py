@@ -247,8 +247,7 @@ class Survey():
         locale            Optional String. Specify the locale setting to format number and date values. 
         ================  ===============================================================
 
-        :Returns: Item or string.
-
+        :Returns: Item or string upon completion of `Job <https://developers.arcgis.com/survey123/api-reference/rest/report/#jobs>`_.
         For details on the return value, see `Response Parameters <https://developers.arcgis.com/survey123/api-reference/rest/report/#response-parameters>`_
         for :func:`~arcgis.apps.survey123.Survey.generate_report` job.
 
