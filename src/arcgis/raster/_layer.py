@@ -4548,14 +4548,15 @@ class ImageryLayer(Layer):
             if num_bands == 1:
                 colormap_list=[]
                 colormap_dict = self.colormap()
-                if "colormap" in colormap_dict.keys():
-                    colormap_list = colormap_dict['colormap']
+                if colormap_dict is not None:
+                    if "colormap" in colormap_dict.keys():
+                        colormap_list = colormap_dict['colormap']
 
-                if colormap_list is not None and colormap_list!=[]:
-                    import matplotlib.colors
-                    cmap_np = np.array(colormap_list)
-                    colors = cmap_np[:,1:]/255
-                    custom_cmap = matplotlib.colors.ListedColormap(colors)
+                    if colormap_list is not None and colormap_list!=[]:
+                        import matplotlib.colors
+                        cmap_np = np.array(colormap_list)
+                        colors = cmap_np[:,1:]/255
+                        custom_cmap = matplotlib.colors.ListedColormap(colors)
 
             if numarray.mask.ndim ==2:
                 mask = (numarray.mask == False)
