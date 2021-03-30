@@ -1142,16 +1142,19 @@ def prepare_data(path,
             if _check_esri_files(path/'A') and _check_esri_files(path/'B'):
                 has_esri_files = True
             path_a, path_b = cyclegan_paths(path)
-            if has_esri_files:
-                stats_file = path_a.parent / 'esri_accumulated_stats.json'
-                if data_folders is None:
-                    with open(stats_file) as f:
-                        stats = json.load(f)
-                else:
-                    stats = eas
+            stats_path = path_a.parent
         else:
             folder_check_pix2pix(path)
             path_a, path_b = pix2pix_paths(path)
+            stats_path = path
+
+        if has_esri_files:
+            stats_file = stats_path / 'esri_accumulated_stats.json'
+            if data_folders is None:
+                with open(stats_file) as f:
+                    stats = json.load(f)
+            else:
+                stats = eas
 
         json_file = path_a.parent / 'esri_model_definition.emd'
         if json_file.exists():
