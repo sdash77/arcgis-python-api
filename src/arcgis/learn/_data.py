@@ -1932,6 +1932,7 @@ def prepare_data(path,
         data._scaled_std_values[data._scaled_std_values == 0]+=1e-02
         
         # Scaling
+        data._min_max_scaler = partial(_tensor_scaler, min_values=data._band_min_values, max_values=data._band_max_values, mode='minmax')
         data.valid_ds.x._div = (data._band_min_values, data._band_max_values)
         data.train_ds.x._div = (data._band_min_values, data._band_max_values)
 
