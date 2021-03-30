@@ -654,7 +654,7 @@ def _upload(path, description=None, gis=None):
 
     """
     ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
-    if (os.path.getsize(path)) < 2147483647:
+    if (os.path.getsize(path)) < 1000000000:
         url = ra_url + "/uploads/upload"
         params = {
             "f" : "json",
