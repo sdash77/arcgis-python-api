@@ -703,7 +703,7 @@ def _upload_by_parts(item_id, file_path, gis=None):
     }
     with open(file_path, 'rb') as f:
         mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-        size = 1000000
+        size = 100000000
         steps =  int(os.fstat(f.fileno()).st_size / size)
         if os.fstat(f.fileno()).st_size % size > 0:
             steps += 1
@@ -745,22 +745,6 @@ def _commit_upload(item_id, gis=None):
         raise Exception(res)
     else:
         return res['item']['itemID']
-#----------------------------------------------------------------------
-def _delete_upload(item_id, gis=None):
-    """commits an upload by parts upload"""
-
-    ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
-    b_url = "%s/uploads/%s" % (ra_url, item_id)
-    delete_part_url = "%s/delete" % b_url
-    params = {
-            'f':'json',
-    }
-    res = gis._con.post(delete_part_url,
-                            params)
-    if 'error' in res:
-        raise Exception(res)
-    else:
-        return res
 #----------------------------------------------------------------------
 def _uploaded_parts(itemid, gis=None):
     """
