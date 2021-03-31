@@ -216,6 +216,8 @@ class PointCNN(ArcGISModel):
         early_stopping          Optional boolean. Parameter to add early stopping.
                                 If set to 'True' training will stop if parameter
                                 `monitor` value stops improving for 5 epochs.
+                                A minimum difference of 0.001 is required for
+                                it to be considered an improvement.
         ---------------------   -------------------------------------------
         checkpoint              Optional boolean or string.
                                 Parameter to save checkpoint during training.

@@ -350,6 +350,9 @@ class PointCloudDataset(Dataset):
 
             if self.min_points is not None or filter_classes:
                 # We should not filter on valid blocks, currently its happening on both.
+                if folder == 'val':
+                    self.min_points = None
+                    classes_of_interest = None
                 indexes, skip_block_min_points, skip_block_COI, file_indexes = get_filter_index(self.masks, 
                                                                                 self.tiles, 
                                                                                 self.min_points,
@@ -359,8 +362,9 @@ class PointCloudDataset(Dataset):
                 self._skip_block_min_points = skip_block_min_points
                 self._skip_block_COI = skip_block_COI
                 self._total_blocks = len(self.tiles)
-
-                files = files[file_indexes]
+            
+                if folder != 'val':
+                    files = files[file_indexes]
                 self.tiles = self.tiles[indexes]
                 if len(self.tiles) == 0:
                     raise Exception(f"The {folder} set is empty because everything "
@@ -1167,6 +1171,8 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
 
 
     extra_features = kwargs.get('extra_features', None)
+    if class_mapping is not None:
+        class_mapping = {int(k):v for k,v in class_mapping.items()}
 
     if dataset_type == 'PointCloud':
         if already_split:
