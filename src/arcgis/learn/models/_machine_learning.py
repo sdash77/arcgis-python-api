@@ -330,11 +330,16 @@ class MLModel(object):
         if not HAS_SK_LEARN:
             raise Exception("This module requires scikit-learn.")
 
+        emd_path = str(emd_path)
+
         if emd_path.endswith('.dlpk'):
             with ZipFile(emd_path, 'r') as zip_obj:
                 temp_dir = tempfile.TemporaryDirectory().name
                 zip_obj.extractall(temp_dir)
                 MLModel.from_model(temp_dir, data)
+
+        if not emd_path.endswith('.emd'):
+            emd_path = os.path.join(emd_path, (str(os.path.basename(emd_path))+'.emd'))
 
         if not os.path.exists(emd_path):
             raise Exception("Invalid data path.")
@@ -476,6 +481,8 @@ class MLModel(object):
                                 Esri Model Definition(EMD) file.
         =====================   ===========================================
         """
+        if not ('\\' in str(name_or_path) or '/' in str(name_or_path)):
+            name_or_path = self._data.path / 'models' / name_or_path
         model = MLModel.from_model(name_or_path, self._data)
         self._model = model._model
 
