@@ -402,19 +402,19 @@ class Geocoder(_GISResource):
 
             matches = [None] * len(addresses)
             locations = resp['locations']
-            for location in locations:
+            for idx, location in enumerate(locations):
                 geom = copy.copy(location['location'])
                 if 'spatialReference' not in geom:
                     geom['spatialReference'] = sr
                 att = location['attributes']
-                matches[location['attributes']['ResultID']] = {'geometry': Geometry(geom),
-                                                               "attributes" : att }
+                matches[idx] = {'geometry': Geometry(geom),
+                                "attributes" : att }
             return FeatureSet(features=matches, spatial_reference=sr)
         elif resp is not None and as_featureset == False:
             matches = [None] * len(addresses)
             locations = resp['locations']
-            for location in locations:
-                matches[location['attributes']['ResultID']] = location
+            for idx, location in enumerate(locations):
+                matches[idx] = location
             return matches
         else:
             return []

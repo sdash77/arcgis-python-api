@@ -61,7 +61,7 @@ def _import_code(code, name, verbose=False, add_to_sys_modules=False, choice_lis
     exec(code, module.__dict__)
     if add_to_sys_modules:
         sys.modules[name] = module
-        
+
     if choice_list:
         setattr(module, "choice_list", choice_list)
         module.__dict__['choice_list'] = choice_list
@@ -339,7 +339,7 @@ def _process_parameter(param, map_as_result):
         if param_chcs is not None and len(param_chcs) > 0:
             if isinstance(param_chcs, (tuple, list)):
                 helpstring = helpstring + '\n      Choice list:' + ",".join(param_chcs)
-            else:    
+            else:
                 helpstring = helpstring + '\n      Choice list:' + str(param_chcs)
 
     elif param_drtn == 'esriGPParameterDirectionOutput':
@@ -435,6 +435,8 @@ _log = _logging.getLogger(__name__)
                 raise
             elif str(e).lower().find("User does not have permissions to access".lower()) > -1:
                 raise
+            elif str(e).lower().find("(Error Code: 500)".lower()) > -1:
+                raise
             else:
                 from arcgis.gis import GIS
                 tbx = import_toolbox(url_or_item=url_or_item,
@@ -471,7 +473,7 @@ _log = _logging.getLogger(__name__)
         listed_params = None
     else:
         listed_params = PropertyMap(listed_params)
-    
+
     return _import_code(src_code, 'name', verbose, choice_list=listed_params)
     #print(src_code)
 
@@ -809,7 +811,7 @@ class Toolbox(_AsyncResource):
                     taskprops = self._con.post(taskurl, {"f":"json"})
                 else:
                     raise ex
-                
+
             execution_type = taskprops['executionType']
             task_params = taskprops['parameters']
 
