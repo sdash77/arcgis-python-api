@@ -8,6 +8,7 @@ import shutil
 import logging
 import datetime
 import tempfile
+import warnings
 import pandas as pd
 import numpy as np
 from collections.abc import Iterable
@@ -1228,9 +1229,12 @@ class GeoAccessor(object):
                 except:
                     self._sr = SpatialReference({'wkid' : 4326})
             self._name = col
-            q = self._data[col].isna()
+            #q = self._data[col].isna()
             #self._data.loc[q, "SHAPE"] = None
-            self._data[col] = GeoArray(self._data[col])
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self._data[col] = GeoArray(self._data[col])
         elif isinstance(col, str) and  \
              col in self._data.columns and \
              self._data[col].dtype.name.lower() == 'geometry':
@@ -2281,9 +2285,9 @@ class GeoAccessor(object):
                     res = batch_geocode(list(df[start:stop][address_column]), geocoder=geocoder)
                     for index in range(len(res)):
                         try:
-                            address = df.loc[start + index, address_column]
-                        except: # for older versions, fall back to `df.ix`
-                            address = df.ix[start + index, address_column]
+                            address = df.iloc[index][address_column]
+                        except: # for older versions, fall back to `df.loc`
+                            address = df.loc[df.index[index]][address_column]
                         try:
                             loc = res[index]['location']
                             x = loc['x']
@@ -2302,8 +2306,10 @@ class GeoAccessor(object):
                             geoms.append(None)
             else:
                 raise ValueError("Address column not found in dataframe")
-            df['SHAPE'] = geoms
-            df.spatial.set_geometry("SHAPE")
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                df['SHAPE'] = geoms
+                df.spatial.set_geometry("SHAPE")
             return df
     # ----------------------------------------------------------------------
     @staticmethod
