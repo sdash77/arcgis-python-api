@@ -182,9 +182,9 @@ class ChangeDetector(ArcGISModel):
         _emd_template["ModelType"] = "ImageClassification"
         # Inference function of object classifier.
         if save_inference_file:
-            _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+            _emd_template["InferenceFunction"] = "ArcGISChangeDetector.py"
         else:
-            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageClassifier.py"
+            _emd_template["InferenceFunction"] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISChangeDetector.py"
         if self._is_multispectral:
             # change this when we start to honour extract bands parameter.
             _emd_template["ExtractBands"] = list(range(len(self._data._extract_bands) * 2))
