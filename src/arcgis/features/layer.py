@@ -1912,9 +1912,10 @@ class FeatureLayer(Layer):
                upload_id=None
                ):
         """
-        Only available in ArcGIS Online
+        Only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
 
-        Update an existing hosted feature layer using append.
+        Update an existing hosted feature layer using append. See ArcGIS REST API documentation for
+        details: https://developers.arcgis.com/rest/services-reference/append-feature-service-layer-.htm
 
         ========================   ====================================================================
         **Argument**               **Description**
