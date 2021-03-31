@@ -4101,7 +4101,7 @@ def viewshed(input_raster,
     }
 
     if input_features is not None:
-        template_dict["rasterFunctionArguments"]["input_observer_features"] = input_features
+        template_dict["rasterFunctionArguments"]["in_observer_features"] = input_features
 
     if analysis_method is not None:
         analysis_method_list = ["ALL_SIGHTLINES", "PERIMETER_SIGHTLINES"]
