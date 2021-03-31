@@ -510,11 +510,11 @@ class CalculateClassificationReport(LearnerCallback):
         for k, v in new_val.items():
             self.val.setdefault(k, {})
             if k not in ['accuracy', 'macro avg', 'weighted avg']:
-                self.val[k].setdefault('precision', v['precision'])
+                self.val[k].setdefault('precision', 0.0)
                 self.val[k]['precision'] += v['precision']
-                self.val[k].setdefault('recall', v['recall'])
+                self.val[k].setdefault('recall', 0.0)
                 self.val[k]['recall'] += v['recall']
-                self.val[k].setdefault('f1-score', v['f1-score'])
+                self.val[k].setdefault('f1-score', 0.0)
                 self.val[k]['f1-score'] += v['f1-score']
                 self.val[k].setdefault('count', 0)
                 self.val[k]['count'] += 1
