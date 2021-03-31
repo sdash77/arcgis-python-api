@@ -365,6 +365,7 @@ class SequenceToSequence(ArcGISModel):
         :returns: dataframe
         """
         self._check_requisites()
+        rows = rows if (rows <= self.learn.data.batch_size) else self.learn.data.batch_size
         return self.learn.show_results(rows=rows, **kwargs)
 
     def get_model_metrics(self):
