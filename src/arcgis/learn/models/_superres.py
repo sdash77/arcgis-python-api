@@ -159,6 +159,7 @@ class SuperResolution(ArcGISModel):
         Structural Similarity Index Measure (SSIM) on validation set.
 
         """
+        self._check_requisites()
         psnr, ssim = compute_metrics(self, self._data.valid_dl, show_progress)
         return {'PSNR': '{0:1.4e}'.format(psnr),
                 'SSIM': '{0:1.4e}'.format(ssim)}
