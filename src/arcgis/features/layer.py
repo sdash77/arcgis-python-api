@@ -2037,6 +2037,7 @@ class FeatureLayer(Layer):
                 sres = self._con.get(path=surl, params={'f' : 'json'})
                 if sres['status'].lower() in "failed":
                     break
+                time.sleep(.5)
             return True
         return res
     # ----------------------------------------------------------------------
