@@ -495,5 +495,99 @@ class PointCNN(ArcGISModel):
         :returns: Path where files are dumped.
         """
         
-        return predict_h5(self, path, output_path, **kwargs)        
+        return predict_h5(self, path, output_path, **kwargs)
+
+    def _get_name_path(self, name_or_path):
+        if '\\' in name_or_path or '/' in name_or_path:
+            path = Path(name_or_path)
+            # to make fastai from both path and with name
+            if path.is_file():
+                name = path.stem
+            else:
+                name = path.parts[-1]
+        else:
+            name = name_or_path
+
+        return name        
+
+    def load(self, name_or_path):
+        """
+        Loads a compatible saved model for inferencing or fine tuning from the disk.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        name_or_path            Required string. Name or Path to
+                                Deep Learning Package (DLPK) or
+                                Esri Model Definition(EMD) file.
+        =====================   ===========================================
+        """
+        name = self._get_name_path(name_or_path)
+        if Path(name_or_path).is_absolute() and name_or_path.endswith('.emd'):
+            emd_path = Path(name_or_path)
+        elif Path(name_or_path).is_absolute() and name_or_path.endswith('.pth'):
+            emd_path = Path(name_or_path).with_suffix('.emd')
+        else:
+            emd_path = self.learn.path / 'models' / name / f'{name}.emd'
+
+        # from_model
+        if not emd_path.exists():
+            super().load(name_or_path)
+            return
+        with open(emd_path) as f:
+            emd = json.load(f)
+
+        try:
+            class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
+            color_mapping = {i['Value'] : i['Color'] for i in emd['Classes']}
+        except KeyError:
+            class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']} 
+            color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}   
+
+        dummy_data = _EmptyData(path=emd_path.parent, loss_func=None, c=len(class_mapping), chip_size=emd['ImageHeight'])
+        dummy_data.emd_path = emd_path
+        dummy_data.emd = emd
+        for key, value in emd['DataAttributes'].items():
+            setattr(dummy_data, key, value)
+
+        # old models
+        if not hasattr(dummy_data, 'pc_type'):
+            dummy_data.pc_type = 'PointCloud_TF'
+
+        string_mapped_features = {
+            'numberOfReturns': 'num_returns',
+            'returnNumber' : 'return_num',
+            'nearInfrared': 'nir'
+        }
+        inverse_string_mapped_features = {v: k for k, v in string_mapped_features.items()} 
+
+        if not hasattr(dummy_data, 'features_to_keep'):
+            dummy_data.features_to_keep = [inverse_string_mapped_features.get(f[0], f[0]) for f in dummy_data.extra_features]
+
+        # for message
+        api_fn_name = '`export_point_dataset` function'
+        tool_name = '`Prepare Point Cloud Training Data` tool'
+        exported_by = api_fn_name if  dummy_data.pc_type == 'PointCloud_TF' else tool_name
+        training_on = api_fn_name if  self._data.pc_type == 'PointCloud_TF' else tool_name
+
+        if dummy_data.pc_type != self._data.pc_type:
+            raise Exception("Models trained on one type of exported data cannot be trained on other. "
+                            f"Model was trained on exported data from {exported_by} "
+                            f"and you are trying to load it on model with data exported by {training_on}. "
+                            )
+
+        if dummy_data.max_point != self._data.max_point:
+            raise Exception("Max points do not match. Please export the data again "
+                            f"and set max points to same as loaded model i.e. {dummy_data.max_point}."
+                            )        
+        
+        if dummy_data.features_to_keep != self._data.features_to_keep:
+            raise Exception(f"Extra features of your data and the model to be loaded do not match. "
+                            f"Set `extra_features` attribute in `prepare_data` to be {dummy_data.features_to_keep}"
+                            )
+
+        if dummy_data.classes != self._data.classes:
+            raise Exception(f"Classes in your data and loaded model do not match. Got {self._data.classes}, required {dummy_data.classes}")
+
+        super().load(name_or_path)
         
