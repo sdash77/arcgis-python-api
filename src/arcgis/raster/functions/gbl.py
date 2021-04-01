@@ -3957,26 +3957,25 @@ def viewshed(input_raster,
                                          This option allows you to trade some accuracy for increased performance.
 
                                           - ALL_SIGHTLINES - A sightline is performed on every pixel in the raster 
-                                                             in order to establish visible areas. 
-                                                             This is the default method.
+                                            in order to establish visible areas. This is the default method.
 
                                           - PERIMETER_SIGHTLINES - Sightlines are only performed to the pixels on 
-                                                                   the perimeter of the visible areas in order to 
-                                                                   establish visibility areas. This method has a 
-                                                                   better performance than the ALL_SIGHTLINES method 
-                                                                   since less sightlines are in the calculation.
+                                            the perimeter of the visible areas in order to 
+                                            establish visibility areas. This method has a 
+                                            better performance than the ALL_SIGHTLINES method 
+                                            since less sightlines are in the calculation.
     --------------------------------     --------------------------------------------------------------------
     analysis_type                        Choose which type of visibility analysis you wish to perform, 
                                          either determining how visible each cell is to the observers, or 
                                          identifying for each surface location which observers are visible.
 
                                          - FREQUENCY - The number of times that each pixel location in the input 
-                                                       surface raster can be seen by the input observation locations 
-                                                       (as points or as vertices for polyline observer features). 
-                                                       This is the default.
+                                           surface raster can be seen by the input observation locations 
+                                           (as points or as vertices for polyline observer features). 
+                                           This is the default.
                                          - OBSERVERS - The output identifies exactly which observer points are 
-                                                       visible from each raster surface location. The allowed 
-                                                       maximum number of input observers is 32 with this analysis type.
+                                           visible from each raster surface location. The allowed 
+                                           maximum number of input observers is 32 with this analysis type.
     --------------------------------     --------------------------------------------------------------------
     vertical_error                       The amount of uncertainty, measured as Root Mean Square error (RMSE), 
                                          in the surface elevation values. It is a floating-point value representing 
