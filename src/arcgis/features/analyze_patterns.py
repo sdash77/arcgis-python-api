@@ -442,7 +442,7 @@ def find_hot_spots(
         "cell_size_unit" : cell_size_unit,
         "distance_band" : distance_band,
         "distance_band_units" : distance_band_units,
-        "futurue" : future
+        "future" : future
     }
     params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_hot_spots,
                                      **kwargs)
