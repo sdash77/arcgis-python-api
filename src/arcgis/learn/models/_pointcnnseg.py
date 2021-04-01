@@ -572,22 +572,25 @@ class PointCNN(ArcGISModel):
 
         if dummy_data.pc_type != self._data.pc_type:
             raise Exception("Models trained on one type of exported data cannot be trained on other. "
-                            f"Model was trained on exported data from {exported_by} "
-                            f"and you are trying to load it on model with data exported by {training_on}. "
+                            f"Model was trained on exported data from {exported_by}. "
+                            f"Usage with data exported by {training_on} is not supported. "
+                            f"Export the data with {exported_by} for fine-tuning."
                             )
 
         if dummy_data.max_point != self._data.max_point:
             raise Exception("Max points do not match. Please export the data again "
                             f"and set max points to same as loaded model i.e. {dummy_data.max_point}."
-                            )        
-        
+                            )
+
         if dummy_data.features_to_keep != self._data.features_to_keep:
+            if 'xyz' in dummy_data.features_to_keep: dummy_data.features_to_keep.remove('xyz')
             raise Exception(f"Extra features of your data and the model to be loaded do not match. "
                             f"Set `extra_features` attribute in `prepare_data` to be {dummy_data.features_to_keep}"
                             )
 
         if dummy_data.classes != self._data.classes:
-            raise Exception(f"Classes in your data and loaded model do not match. Got {self._data.classes}, required {dummy_data.classes}")
+            raise Exception(
+                f"Classes in your data and loaded model do not match. Got {self._data.classes}, required {dummy_data.classes}")
 
         super().load(name_or_path)
         
