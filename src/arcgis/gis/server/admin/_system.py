@@ -757,7 +757,9 @@ class ConfigurationStore(BaseServer):
              type_value,
              connection,
              move=True,
-             run_async=False):
+             run_async=False,
+             *,
+             local_path=None):
         """
         You can use this operation to update the configuration store.
         Typically, this operation is used to change the location of the
@@ -784,6 +786,10 @@ class ConfigurationStore(BaseServer):
         ------------------     --------------------------------------------------------------------
         run_async              Optional string. Determines if this operation must run asynchronously.
                                The default is False (doesn not have to run asynchronously).
+        ------------------     --------------------------------------------------------------------
+        local_path             Optional String. A file path or connection URL to the physical
+                               location of the local repository for when the site is in read-only
+                               mode.
         ==================     ====================================================================
 
 
@@ -799,6 +805,8 @@ class ConfigurationStore(BaseServer):
             "move" : move,
             "runAsync" : run_async
         }
+        if local_path:
+            params['localRepositoryPath'] = local_path
         res = self._con.post(path=url,
                              postdata=params)
         if 'status' in res:
@@ -1263,7 +1271,10 @@ class ServerDirectory(BaseServer):
              physical_path,
              cleanup_mode,
              max_age,
-             description):
+             description,
+             *,
+             use_local_dir=None,
+             local_dir=None):
         """
         The server directory's edit operation allows you to change the path
         and clean up properties of the directory. This operation updates
@@ -1290,6 +1301,13 @@ class ServerDirectory(BaseServer):
         ------------------     --------------------------------------------------------------------
         description            Optional string. An optional description for the server directory.
                                The default is None.
+        ------------------     --------------------------------------------------------------------
+        use_local_dir          Optional Boolean. When `True` the local directory will be used to
+                               store results.  This is useful for `HA` configurations to reduce
+                               copying over the local network.  The directory must exist on the
+                               server already.
+        ------------------     --------------------------------------------------------------------
+        local_dir              Optional String. The local directory path to be used for the service.
         ==================     ====================================================================
 
 
@@ -1305,6 +1323,10 @@ class ServerDirectory(BaseServer):
             "maxFileAge" : max_age,
             "description" : description
         }
+        if not use_local_dir is None and isinstance(use_local_dir, bool):
+            params['useLocalDir'] = use_local_dir
+        if not local_dir is None:
+            params['localDirectoryPath'] = local_dir
         res = self._con.post(path=url,
                              postdata=params)
         if 'status' in res:

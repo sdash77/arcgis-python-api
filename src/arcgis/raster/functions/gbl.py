@@ -3913,3 +3913,248 @@ def boundary_clean(input_raster, sort_type = "NO_SORT", number_of_runs="TWO_WAY"
     function_chain_ra["rasterFunctionArguments"]["in_raster"] = raster_ra1
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
+
+
+def viewshed(input_raster, 
+             input_observer_features, 
+             analysis_method="ALL_SIGHTLINES", 
+             analysis_type="FREQUENCY", 
+             vertical_error="0 Meters", 
+             refractivity_coefficient=0.13, 
+             surface_offset="0 Meters", 
+             observer_elevation=None, 
+             observer_offset="1 Meters", 
+             inner_radius=None, 
+             inner_radius_is_3d=False,
+             outer_radius=None, 
+             outer_radius_is_3d=False, 
+             horizontal_start_angle=0, 
+             horizontal_end_angle=360,
+             vertical_upper_angle=90, 
+             vertical_lower_angle=-90):
+    """
+    Determines the raster surface locations visible to a set of observer features using geodesic methods.
+
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    input_raster                         Required. The input surface raster. It can be an integer or a 
+                                         floating-point raster. 
+
+                                         The input is transformed into a 3D geocentric coordinate system 
+                                         during the visibility calculation. NoData cells on the input raster 
+                                         do not block the visibility determination.
+    --------------------------------     --------------------------------------------------------------------
+    input_observer_features              Required. The input feature class that identifies the observer locations. 
+                                         It can be point, multipoint, or polyline features.
+
+                                         The input feature class is transformed into a 3D geocentric coordinate 
+                                         system during the visibility calculation. Observers outside of the 
+                                         extent of the surface raster, or located on NoData cells, will be 
+                                         ignored in the calculation.
+    --------------------------------     --------------------------------------------------------------------
+    analysis_method                      Choose the method by which the visibility will be calculated. 
+                                         This option allows you to trade some accuracy for increased performance.
+
+                                          - ALL_SIGHTLINES - A sightline is performed on every pixel in the raster 
+                                            in order to establish visible areas. This is the default method.
+
+                                          - PERIMETER_SIGHTLINES - Sightlines are only performed to the pixels on 
+                                            the perimeter of the visible areas in order to 
+                                            establish visibility areas. This method has a 
+                                            better performance than the ALL_SIGHTLINES method 
+                                            since less sightlines are in the calculation.
+    --------------------------------     --------------------------------------------------------------------
+    analysis_type                        Choose which type of visibility analysis you wish to perform, 
+                                         either determining how visible each cell is to the observers, or 
+                                         identifying for each surface location which observers are visible.
+
+                                         - FREQUENCY - The number of times that each pixel location in the input 
+                                           surface raster can be seen by the input observation locations 
+                                           (as points or as vertices for polyline observer features). 
+                                           This is the default.
+                                         - OBSERVERS - The output identifies exactly which observer points are 
+                                           visible from each raster surface location. The allowed 
+                                           maximum number of input observers is 32 with this analysis type.
+    --------------------------------     --------------------------------------------------------------------
+    vertical_error                       The amount of uncertainty, measured as Root Mean Square error (RMSE), 
+                                         in the surface elevation values. It is a floating-point value representing 
+                                         the expected error of the input elevation values. When this parameter 
+                                         is assigned a value greater than 0, the output visibility raster will be 
+                                         floating point. In this case, each pixel value on the output visibility 
+                                         raster represents the sum of probabilities that the cell is visible to 
+                                         any of the observers.
+
+                                         When the Analysis Type is OBSERVERS or the Analysis Method is 
+                                         PERIMETER_SIGHTLINES, this parameter is not honoured.
+    --------------------------------     --------------------------------------------------------------------
+    refractivity_coefficient             Optional integer. Coefficient of the refraction of visible light in air.
+
+                                         The default value is 0.13.
+    --------------------------------     --------------------------------------------------------------------
+    surface_offset                       This value indicates a vertical distance (in surface units) to be added 
+                                         to the z-value of each target pixel as it is considered for visibility. 
+                                         It should be a positive integer or floating-point value.
+
+                                         It can be a field in the input_observer_features or a numerical value. 
+                                         If this parameter is set to a value, that value will be applied to all 
+                                         the observers. To specify different values for each observer, set this 
+                                         parameter to a field in the input_observer_features.
+    --------------------------------     --------------------------------------------------------------------
+    observer_elevation                   This value is used to define the surface elevations of the observer points or vertices.
+
+                                         It can be a field in the input input_observer_features or a numerical value. 
+                                         If this parameter is not specified, the observer elevation will be obtained 
+                                         from the surface raster using bilinear interpolation. If this parameter is 
+                                         set to a value, then that value will be applied to all the observers. 
+                                         To specify different values for each observer, set this parameter to a 
+                                         field in the input_observer_features.
+    --------------------------------     --------------------------------------------------------------------
+    observer_offset                      This value indicates a vertical distance (in surface units) to be added 
+                                         to observer elevation. It should be a positive integer or floating-point value.
+
+                                         It can be a field in the input_observer_features or a numerical value. 
+                                         If this parameter is set to a value, that value will be applied to all the observers. 
+                                         To specify different values for each observer, set this parameter to a field in 
+                                         the input_observer_features.
+    --------------------------------     --------------------------------------------------------------------
+    inner_radius                         This value defines the start (minimum) distance from which visibility is 
+                                         determined. Pixels closer than this distance are considered not visible in 
+                                         the output but can still block visibility of the pixels between the 
+                                         inner_radius and the outer_radius. The default value is 0.
+
+                                         It can be a field in the input_observer_features or a numerical value. 
+                                         If this parameter is set to a value, that value will be applied to all 
+                                         the observers. To specify different values for each observer, set this 
+                                         parameter to a field in the input_observer_features.
+    --------------------------------     --------------------------------------------------------------------
+    inner_radius_is_3d                   Type of distance for the inner radius parameter.
+
+                                            - False - Inner Radius is to be interpreted as a 2D distance. This is the default.
+                                            - True - Inner Radius is to be interpreted as a 3D distance.
+    --------------------------------     --------------------------------------------------------------------
+    outer_radius                         This value defines the maximum distance from which visibility is determined. 
+                                         Pixels beyond this distance are excluded from the analysis.
+
+                                         It can be a field in the input_observer_features or a numerical value. 
+                                         If this parameter is set to a value, that value will be applied to all the 
+                                         observers. To specify different values for each observer, set this parameter 
+                                         to a field in the input_observer_features.
+    --------------------------------     --------------------------------------------------------------------
+    outer_radius_is_3d                   Type of distance for the outer_radius parameter.
+
+                                            - False - outer_radius is to be interpreted as a 2D distance. This is the default.
+                                            - True - outer_radius is to be interpreted as a 3D distance.
+    --------------------------------     --------------------------------------------------------------------
+    horizontal_start_angle               This value defines the start angle of the horizontal scan range. 
+                                         The value should be specified in degrees from 0 to 360.0, where 0 is oriented to north. 
+                                         The default value is 0.
+
+                                         It can be a field in the input_observer_features or a numerical value. 
+                                         If this parameter is set to a value, that value will be applied to all the 
+                                         observers. To specify different values for each observer, set this parameter 
+                                         to a field in the input_observer_features.
+    --------------------------------     --------------------------------------------------------------------
+    horizontal_end_angle                 This value defines the end angle of the horizontal scan range. 
+                                         The value should be specified in degrees from 0 to 360.0, where 0 is oriented to north. 
+                                         The default value is 360.
+
+                                         It can be a field in the input_observer_features or a numerical value. 
+                                         If this parameter is set to a value, that value will be applied to all the 
+                                         observers. To specify different values for each observer, set this parameter 
+                                         to a field in the input_observer_features.
+    --------------------------------     --------------------------------------------------------------------
+    vertical_upper_angle                 This value defines the upper vertical angle limit of the scan above a horizontal plane. 
+                                         The value should be specified in degrees from 0 to 90.0, which can be integer or 
+                                         floating point. The default value is 90.0.
+
+                                         It can be a field in the input_observer_features or a numerical value. 
+                                         If this parameter is set to a value, that value will be applied to all 
+                                         the observers. To specify different values for each observer, 
+                                         set this parameter to a field in the input_observer_features.
+    --------------------------------     --------------------------------------------------------------------
+    vertical_lower_angle                 This value defines the lower vertical angle limit of the scan below a horizontal plane. 
+                                         The value should be specified in degrees from -90.0 to 0, which can be integer or 
+                                         floating point. The default value is -90.0.
+
+                                         It can be a field in the input_observer_features or a numerical value. 
+                                         If this parameter is set to a value, that value will be applied to all the observers. 
+                                         To specify different values for each observer, set this parameter to a field in the 
+                                         input_observer_features.
+    ================================     ====================================================================
+ 
+    :returns: output raster with function applied
+
+    """
+    layer1, input_raster, raster_ra1 = _raster_input(input_raster)
+    input_features = _layer_input(input_observer_features)
+
+    template_dict = {
+        "rasterFunction" : "GPAdapter",
+        "rasterFunctionArguments" : {
+            "toolName" : "Viewshed2_sa",
+            "PrimaryInputParameterName" : "in_raster",
+            "OutputRasterParameterName" : "out_raster",
+            "in_raster" : input_raster
+        }
+    }
+
+    if input_features is not None:
+        template_dict["rasterFunctionArguments"]["in_observer_features"] = input_features
+
+    if analysis_method is not None:
+        analysis_method_list = ["ALL_SIGHTLINES", "PERIMETER_SIGHTLINES"]
+        if analysis_method.upper() not in analysis_method_list:
+            raise RuntimeError('analysis_method should be one of the following '+ str(analysis_method_list))
+        template_dict["rasterFunctionArguments"]["analysis_method"] = analysis_method
+
+
+    if analysis_type is not None:
+        analysis_type_list = ["FREQUENCY", "OBSERVERS"]
+        if analysis_type.upper() not in analysis_type_list:
+            raise RuntimeError('analysis_type should be one of the following '+ str(analysis_type_list))
+        template_dict["rasterFunctionArguments"]["analysis_type"] = analysis_type
+
+    if vertical_error is not None:
+        template_dict["rasterFunctionArguments"]["vertical_error"] = vertical_error
+
+    if refractivity_coefficient is not None:
+        template_dict["rasterFunctionArguments"]["refractivity_coefficient"] = refractivity_coefficient
+
+    if surface_offset is not None:
+        template_dict["rasterFunctionArguments"]["surface_offset"] = surface_offset
+
+    if observer_elevation is not None:
+        template_dict["rasterFunctionArguments"]["observer_elevation"] = observer_elevation
+
+    if observer_offset is not None:
+        template_dict["rasterFunctionArguments"]["observer_offset"] = observer_offset
+
+    if inner_radius is not None:
+        template_dict["rasterFunctionArguments"]["inner_radius"] = inner_radius
+
+    if inner_radius_is_3d is not None:
+        template_dict["rasterFunctionArguments"]["inner_radius_is_3d"] = inner_radius_is_3d
+
+    if outer_radius is not None:
+        template_dict["rasterFunctionArguments"]["outer_radius"] = outer_radius
+
+    if outer_radius_is_3d is not None:
+        template_dict["rasterFunctionArguments"]["outer_radius_is_3d"] = outer_radius_is_3d
+
+    if horizontal_start_angle is not None:
+        template_dict["rasterFunctionArguments"]["horizontal_start_angle"] = horizontal_start_angle
+
+    if horizontal_end_angle is not None:
+        template_dict["rasterFunctionArguments"]["horizontal_end_angle"] = horizontal_end_angle
+
+    if vertical_upper_angle is not None:
+        template_dict["rasterFunctionArguments"]["vertical_upper_angle"] = vertical_upper_angle
+
+    if vertical_lower_angle is not None:
+        template_dict["rasterFunctionArguments"]["vertical_lower_angle"] = vertical_lower_angle
+
+    function_chain_ra = copy.deepcopy(template_dict)
+    function_chain_ra["rasterFunctionArguments"]["in_raster"] = raster_ra1
+
+    return _gbl_clone_layer(layer1, template_dict, function_chain_ra)

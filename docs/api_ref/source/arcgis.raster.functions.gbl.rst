@@ -135,6 +135,10 @@ stream_order
 ____________
 .. autofunction:: arcgis.raster.functions.gbl.stream_order
 
+viewshed
+________
+.. autofunction:: arcgis.raster.functions.gbl.viewshed
+
 watershed
 _______________
 .. autofunction:: arcgis.raster.functions.gbl.watershed

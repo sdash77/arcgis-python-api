@@ -1337,7 +1337,12 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         # +3 to adjust for xyz.
         extra_feat_indexes = [i + 3 for i, f in enumerate(extra_features) if inverse_string_mapped_features.get(f[0], f[0]) in extra_features_users_mapped]
         if not all([c in extra_features_keys_mapped for c in extra_features_users_mapped]):
-            raise Exception(f"extra_features {extra_features_users} must be a subset of {extra_features_keys_mapped}")       
+            raise Exception(f"extra_features {extra_features_users} must be a subset of {extra_features_keys_mapped}")     
+
+        # filter features to keep  
+        extra_features_keys_mapped = [k for k in extra_features_keys_mapped if k in extra_features_users_mapped]
+        extra_features = [e for e in extra_features if inverse_string_mapped_features.get(e[0], e[0]) in extra_features_users_mapped]
+        
         extra_feat_indexes = [0, 1, 2] + extra_feat_indexes
         src = PointCloudItemList.from_folder(path, ['.h5'], extra_feat_indexes=extra_feat_indexes)
         if classes_of_interest != [] or min_points > 0:
@@ -1380,7 +1385,7 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         data.idx2class = idx2class
         data.max_point = data.meta['max_point']
         data.extra_dim = len(extra_features_users)
-        data.extra_features = data.meta['extra_features']
+        data.extra_features = extra_features
         data.extra_feat_indexes = extra_feat_indexes
         data.features_to_keep = extra_features_keys_mapped
         data.block_size = data.meta['block_size']
