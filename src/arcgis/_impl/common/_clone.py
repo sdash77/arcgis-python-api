@@ -342,8 +342,13 @@ class _DeepCloner():
                                 for layer_source in layer_sources['layers']:
                                     if not os.path.exists(layer_source['url']):
                                         layer_flc = source.content.get(layer_source['serviceItemId'])
-                                        layer_id = int(layer_source['url'][-1])
-                                        layer_url_dict = {'url':layer_flc.layers[layer_id].url}
+                                        layer_id = int(urlparse(layer_source['url']).path.split("/")[-1])
+                                        try:
+                                            layer_url_dict = {'url':layer_flc.layers[layer_id].url}
+                                        except IndexError:
+                                            # Layer could be a table
+                                            table_index = layer_id - (len(svc.layers))
+                                            layer_url_dict = {'url':layer_flc.tables[table_index].url}
                                         layer_source.update(layer_url_dict)
                                         _sources.append(layer_source)
                         properties = self._get_properties(layer, data, len(_sources) > 1, is_view)
