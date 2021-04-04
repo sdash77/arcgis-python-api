@@ -437,6 +437,7 @@ class ImageryLayer(Layer):
         self._raster_info = {}
         self._tiles_only = None
         self._extent_set = False
+        self._original_info = {}
 
     @property
     def rasters(self):
@@ -4588,39 +4589,44 @@ class ImageryLayer(Layer):
             return data, valid_mask
 
     def _get_service_info(self, rendering_rule=None):
-        url = self._url 
+        if self._original_info !={}:
+            return self._original_info 
+        else:
+            url = self._url 
 
-        params = {
-            "f": "json"
-        }
-        if rendering_rule is not None:
-            params['renderingRule'] = rendering_rule
+            params = {
+                "f": "json"
+            }
+            if rendering_rule is not None:
+                params['renderingRule'] = rendering_rule
 
-        if self._datastore_raster:
-            params["Raster"]=self._uri
-            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
-                del params['renderingRule']
+            if self._datastore_raster:
+                params["Raster"]=self._uri
+                if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
+                    del params['renderingRule']
 
-        dictdata = {}
-        token=None
-        try:
-            dictdata = self._con.post(self.url, params)
-        except Exception as e:
+            dictdata = {}
+            token=None
             try:
-                if ((hasattr(self, "_lazy_token")) and self._lazy_token is None) or not hasattr(self, "_lazy_token"):
-                    token = self._gis._con.generate_portal_server_token(serverUrl=self._url)
+                dictdata = self._con.post(self.url, params)
             except Exception as e:
-                token = self._token
-            try:
-                dictdata = self._con.post(self.url, params, token=token)
-            except Exception as e:
-                if hasattr(e, 'msg') and e.msg == "Method Not Allowed":
-                    dictdata = self._con.get(self.url, params, token=token)
-                elif str(e).lower().find("token required") > -1:
-                    dictdata = self._con.get(self.url, params)
-                else:
-                    raise e
-        return dictdata
+                try:
+                    if ((hasattr(self, "_lazy_token")) and self._lazy_token is None) or not hasattr(self, "_lazy_token"):
+                        token = self._gis._con.generate_portal_server_token(serverUrl=self._url)
+                        self._lazy_token = token
+                except Exception as e:
+                    token = self._token
+                try:
+                    dictdata = self._con.post(self.url, params, token=token)
+                except Exception as e:
+                    if hasattr(e, 'msg') and e.msg == "Method Not Allowed":
+                        dictdata = self._con.get(self.url, params, token=token)
+                    elif str(e).lower().find("token required") > -1:
+                        dictdata = self._con.get(self.url, params)
+                    else:
+                        raise e
+            self._original_info = dictdata
+            return self._original_info 
 
     def _repr_jpeg_(self):
         if self._uses_gbl_function:
