@@ -3312,7 +3312,8 @@ class FeatureLayerCollection(_GISResource):
                         return_attachments=False,
                         attachments_by_url=False,
                         data_format="json",
-                        change_extent_grid_cell=None):
+                        change_extent_grid_cell=None,
+                        return_geometry_updates=None):
         """
         Feature service change tracking is an efficient change tracking
         mechanism for applications. Applications can use change tracking to
@@ -3449,6 +3450,16 @@ class FeatureLayerCollection(_GISResource):
                                              medium is an 8x8 grid that bound the changes extent. Used only when
                                              `return_extent_only` is true. The default is none.
                                              Values: None, large, medium, or small
+        --------------------------------     --------------------------------------------------------------------
+        return_geometry_updates              Optional Boolean. If true, the response includes a
+                                             'hasGeometryUpdates' property set as true for each layer with
+                                             updates that have geometry changes. The default is false.
+
+                                             If a layer's edits include only inserts, deletes, or updates to
+                                             fields other than geometry, hasGeometryUpdates is not set or is
+                                             returned as false. When a layer has multiple rows with updates,
+                                             only one needs to include a geometry changes for
+                                             `hasGeometryUpdates` to be set as true.
         ================================     ====================================================================
 
         :returns: dictionary containing the layerServerGens and an array of edits
@@ -3508,7 +3519,8 @@ class FeatureLayerCollection(_GISResource):
             "layerServerGens" : servergen,
             "changesExtentGridCell" : change_extent_grid_cell
         }
-
+        if not return_geometry_updates is None:
+            params['returnHasGeometryUpdates'] = return_geometry_updates
         res = self._con.post(url, params)
         if 'statusUrl' in res:
             surl = res['statusUrl']
