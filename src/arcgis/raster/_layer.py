@@ -387,8 +387,10 @@ class _RasterRenderingService(Layer):
                 elif hosting_server_url:
                     url = hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
         self.url = url
-        if url is not None:
+        if url:
             self.token = gis._con.generate_portal_server_token(serverUrl=url)
+        else:
+            self.token = None
 
 
 class ImageryLayer(Layer):
