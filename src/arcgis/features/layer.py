@@ -1582,7 +1582,12 @@ class FeatureLayer(Layer):
             if "geometryType" in self.properties and \
                not self.properties.geometryType is None:
                 columns['SHAPE'] = object
+            if return_geometry == False:
+                columns.pop("SHAPE", None)
             df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
+            if out_fields != "*":
+                df = df[out_fields.split(',')].copy()
+
             if 'SHAPE' in df.columns:
                 df['SHAPE'] = GeoArray([])
                 df.spatial.set_geometry("SHAPE")
