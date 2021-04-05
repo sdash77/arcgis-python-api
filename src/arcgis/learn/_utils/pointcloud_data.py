@@ -116,7 +116,7 @@ def concatenate_tensors(read_file, input_keys, tile, max_points):
 
             max_val = cur_tensor.new_tensor(min_max['max'])
             min_val = cur_tensor.new_tensor(min_max['min'])
-            cur_tensor = (cur_tensor - min_val) / (max_val)  ## Test with one_hot
+            cur_tensor = (cur_tensor - min_val) / (max_val - min_val)  ## Test with one_hot
             cur_tensor, cur_points = pad_tensor(cur_tensor, max_points)
             cat_tensor.append(cur_tensor)
     
@@ -227,10 +227,11 @@ class PointCloudDataset(Dataset):
         self.classes_of_interest = kwargs.get('classes_of_interest', [])
         self.background_classcode = kwargs.get('background_classcode', None)
         self.block_size = self.statistics['parameters']['tileSize']
-        self.input_keys = self.statistics['attributes']  # Keys to include in training
+        self.input_keys = kwargs.get('attributes', self.statistics['attributes'])  # Keys to include in training
         self.input_keys.pop('rgbType', None)
         features_present = list(self.input_keys.keys())
-        features_present.remove('xyz')
+        if 'xyz' in features_present:
+            features_present.remove('xyz')
         if self.features_to_keep != []:
             if not all([c in self.input_keys.keys() for c in self.features_to_keep]):
                 raise Exception(f"extra_features {self.features_to_keep} must be a subset of {features_present}")         
@@ -338,6 +339,7 @@ class PointCloudDataset(Dataset):
         # inverse mapping for visualization
         self.idx2class = {i:c for i, c in enumerate(sorted(self.classes))}
         self.classes_of_interest = classes_of_interest
+        self.important_classes = important_classes
         with h5py.File(self.path / folder / 'ListTable.h5', 'r') as f:
             files = f['Files'][:]
             self.tiles = f['Tiles'][:]
@@ -345,9 +347,12 @@ class PointCloudDataset(Dataset):
             self.masks = f['Masks'][:]
             # centers and scales will be required in viz.
             self.centers = f['Centers'][:]
-            self.scales = f['Scales'][:]
+
             if self.min_points is not None or filter_classes:
                 # We should not filter on valid blocks, currently its happening on both.
+                if folder == 'val':
+                    self.min_points = None
+                    classes_of_interest = None
                 indexes, skip_block_min_points, skip_block_COI, file_indexes = get_filter_index(self.masks, 
                                                                                 self.tiles, 
                                                                                 self.min_points,
@@ -357,8 +362,9 @@ class PointCloudDataset(Dataset):
                 self._skip_block_min_points = skip_block_min_points
                 self._skip_block_COI = skip_block_COI
                 self._total_blocks = len(self.tiles)
-
-                files = files[file_indexes]
+            
+                if folder != 'val':
+                    files = files[file_indexes]
                 self.tiles = self.tiles[indexes]
                 if len(self.tiles) == 0:
                     raise Exception(f"The {folder} set is empty because everything "
@@ -366,7 +372,6 @@ class PointCloudDataset(Dataset):
                 self._frac_remaining = len(self.tiles) / orig_num_tiles
                 self.masks = self.masks[indexes]
                 self.centers = self.centers[indexes]
-                self.scales = self.scales[indexes]
         
         self.relative_files = files
         self.filenames = [self.path / self.folder / file.decode() for file in files]
@@ -390,31 +395,29 @@ class PointCloudDataset(Dataset):
         xyzs = []
         xyzs_scaled = []
         centers = []
-        scales = []
+        scale = self.block_size / 2
         for idx in indexes[0]:
             tile = self.tiles[idx]
             center = self.centers[idx]
-            scale = self.scales[idx]
             xyz = read_file['xyz'][tile[1]:tile[1]+tile[2]]
             xyzs.append(xyz)
             labels.append(read_file['classification'][tile[1]:tile[1]+tile[2]])
             xyzs_scaled.append(xyz * scale + center)
-            # centers.append(self.centers[tile[1]:tile[1]+tile[2]])
-            # scales.append(read_file['Scales'][tile[1]:tile[1]+tile[2]])
         xyzs = np.concatenate(xyzs, axis=0)
         labels = np.concatenate(labels, axis=0)
         xyzs_scaled = np.concatenate(xyzs_scaled, axis=0)
         return xyzs, labels, xyzs_scaled
 
     
-    def __getitem__(self, i, return_scaled=False):
+    def __getitem__(self, i, return_scaled=False, add_centers=False):
         
         tile = self.tiles[i]        
         read_file = self.h5files[tile[0]]
 
         # we need this in show_results of tool.
-        rescaled_xyz = read_file['xyz'][tile[1]:tile[1]+tile[2]].astype(np.float32) * self.scales[i] + self.centers[i]
-        # print("rescaled_xyz.shape", rescaled_xyz.shape, read_file['xyz'].shape, read_file['xyz'], read_file)
+        rescaled_xyz = read_file['xyz'][tile[1]:tile[1]+tile[2]].astype(np.float32) * (self.block_size / 2)
+        if add_centers:
+            rescaled_xyz += self.centers[i]
         if self.classification_key in read_file.keys():
             classification, _ = pad_tensor(torch.tensor(read_file[self.classification_key][tile[1]:tile[1]+tile[2]].astype(int)),
                                         self.max_point,
@@ -427,15 +430,15 @@ class PointCloudDataset(Dataset):
                 retval = [concatenate_tensors(read_file, self.input_keys, tile, self.max_point),
                         remap_labels(classification, self.class2idx).long()]
 
-            if return_scaled:
-                retval += [rescaled_xyz]
-            
-            return retval
         else:
-            # removing the warning as it is showing up in the GPtool
+            # removing warning as it is showing up in the tool.
             # logger.warning(f"key `{self.classification_key}` could not be found in the exported files.")
-            retval = concatenate_tensors(read_file, self.input_keys, tile, self.max_point), None
+            retval = [concatenate_tensors(read_file, self.input_keys, tile, self.max_point), None]
 
+        if return_scaled:
+            # indexed zero because pad tensor returns two things and we only want the first one.
+            retval += [pad_tensor(torch.tensor(rescaled_xyz).float(), self.max_point, to_float=True)[0]]
+        
         return retval
         
     def close(self):
@@ -460,7 +463,17 @@ def class_string(label_array, prefix='', class_mapping=None):
     label_text = np.vectorize(class_mapping.get)(label_array)
     return [f'{prefix}class: {k}' for i,k in enumerate(label_text)]
 
-def mask_classes(labels, mask_class, class2idx=None):
+def mask_classes(labels,
+                 mask_class, 
+                 classes,
+                 class2idx=None, 
+                 remap_classes=None):
+    
+    if not set(mask_class).issubset(set(classes)):
+        raise Exception(f'`mask_class` {mask_class} must be a subset of {classes}')
+    if remap_classes is not None:
+        inverse_remap_classes = {v:k for k,v in remap_classes.items()}
+        mask_class = [inverse_remap_classes.get(m,m) for m in mask_class]
     if class2idx is not None:
         mask_class = [class2idx[x] for x in mask_class]
     if mask_class == []:
@@ -556,7 +569,11 @@ def show_point_cloud_batch(self, rows=2, figsize=(6,12), color_mapping=None, **k
             unmapped_labels = remap_labels(labels.copy(), self.idx2class)
         else:
              unmapped_labels = labels.copy()
-        sample_idxs = mask_classes(labels, mask_class, self.class2idx if self.remap else None)
+        sample_idxs = mask_classes(labels=labels,
+                                   mask_class=mask_class,
+                                   classes=self.classes,
+                                   class2idx=self.class2idx if self.remap else None,
+                                   remap_classes=self.remap_classes if self.remap else None)
         sampled_pc = pc[sample_idxs]
 
         if sampled_pc.shape[0] == 0:
@@ -583,7 +600,9 @@ def show_point_cloud_batch(self, rows=2, figsize=(6,12), color_mapping=None, **k
 
         if sample_idxs.sum() > max_display_point:
             raise_maxpoint_warning(idx, kwargs, logger, max_display_point)
-            mask = np.random.randint(0, sample_idxs.sum(), max_display_point)   
+            mask = np.random.randint(0, sample_idxs.sum(), max_display_point)
+        else:
+            mask = np.arange(0, sample_idxs.sum())               
         
         color_list = color_mapping[labels[sample_idxs]][mask].tolist()
         scene=dict(aspectmode='data')
@@ -726,7 +745,11 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
         else:
             unmapped_labels = labels.copy()
 
-        sample_idxs = mask_classes(labels, mask_class, self.class2idx if self.remap else None)
+        sample_idxs = mask_classes(labels=labels,
+                                   mask_class=mask_class,
+                                   classes=self.classes,
+                                   class2idx=self.class2idx if self.remap else None,
+                                   remap_classes=self.remap_classes if self.remap else None)
         sampled_pc = pc[sample_idxs]
         if sampled_pc.shape[0] == 0:
             continue
@@ -752,7 +775,9 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
 
         if sample_idxs.sum() > max_display_point:
             raise_maxpoint_warning(idx_file, kwargs, logger, max_display_point)
-            mask = np.random.randint(0, sample_idxs.sum(), max_display_point)  
+            mask = np.random.randint(0, sample_idxs.sum(), max_display_point)
+        else:
+            mask = np.arange(0, sample_idxs.sum())              
             
         color_list =  color_mapping[labels[sample_idxs]][mask].tolist()
         
@@ -1055,8 +1080,10 @@ class DataStore():
     
 class PointCloudItemList(ItemList):
     def __init__(self, items, **kwargs):
-        if DataStore.indexes is False and (not isinstance(DataStore.indexes, list)):
-                DataStore.indexes = kwargs.get('extra_feat_indexes', None)
+        if (DataStore.indexes is False and (not isinstance(DataStore.indexes, list))):
+            DataStore.indexes = kwargs.get('extra_feat_indexes')
+        elif kwargs.get('extra_feat_indexes') is not None and DataStore.indexes != kwargs.get('extra_feat_indexes'):
+            DataStore.indexes = kwargs.get('extra_feat_indexes', None)
         kwargs.pop('extra_feat_indexes', None)
         super().__init__(items, **kwargs)
         self.keys = ['data', 'label_seg', 'data_num']
@@ -1144,6 +1171,8 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
 
 
     extra_features = kwargs.get('extra_features', None)
+    if class_mapping is not None:
+        class_mapping = {int(k):v for k,v in class_mapping.items()}
 
     if dataset_type == 'PointCloud':
         if already_split:
@@ -1163,9 +1192,6 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
 
 
             data.subset_classes = []
-            data.remap_dict = {}
-            data.remap_bool = False
-            data.important_classes = []
             data.remap = data.train_ds.remap
 
             # data.val_files = val_files                        
@@ -1301,19 +1327,22 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         string_mapped_features = {
             'numberOfReturns': 'num_returns',
             'returnNumber' : 'return_num',
+            'nearInfrared': 'nir'
         }
         inverse_string_mapped_features = {v: k for k, v in string_mapped_features.items()}        
         extra_features_users = kwargs.get('extra_features', [])
-
-
-
-        extra_features_filtered = [f for i, f in enumerate(extra_features) if inverse_string_mapped_features.get(f[0], f[0]) in extra_features_users]
-        extra_feature_keys = [f[0] for f in extra_features_filtered]
+        extra_features_users_mapped = [inverse_string_mapped_features.get(f, f) for f in extra_features_users]
+        extra_feature_keys = [f[0] for f in extra_features]
         extra_features_keys_mapped = [inverse_string_mapped_features.get(f, f) for f in extra_feature_keys]        
         # +3 to adjust for xyz.
-        extra_feat_indexes = [i + 3 for i, f in enumerate(extra_features) if inverse_string_mapped_features.get(f[0], f[0]) in extra_features_users]
-        if not all([c in extra_features_keys_mapped for c in extra_features_users]):
-            raise Exception(f"extra_features {extra_features_users} must be a subset of {extra_features_keys_mapped}")       
+        extra_feat_indexes = [i + 3 for i, f in enumerate(extra_features) if inverse_string_mapped_features.get(f[0], f[0]) in extra_features_users_mapped]
+        if not all([c in extra_features_keys_mapped for c in extra_features_users_mapped]):
+            raise Exception(f"extra_features {extra_features_users} must be a subset of {extra_features_keys_mapped}")     
+
+        # filter features to keep  
+        extra_features_keys_mapped = [k for k in extra_features_keys_mapped if k in extra_features_users_mapped]
+        extra_features = [e for e in extra_features if inverse_string_mapped_features.get(e[0], e[0]) in extra_features_users_mapped]
+        
         extra_feat_indexes = [0, 1, 2] + extra_feat_indexes
         src = PointCloudItemList.from_folder(path, ['.h5'], extra_feat_indexes=extra_feat_indexes)
         if classes_of_interest != [] or min_points > 0:
@@ -1340,6 +1369,7 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         data.meta = meta
         data.subset_classes = [classes_of_interest, background_classcode]
         data.remap_dict = remap_classes
+        data.remap_classes = remap_classes
         data.remap_bool = remap_bool
         data.classes_of_interest = classes_of_interest
         data.background_classcode = background_classcode
@@ -1355,7 +1385,7 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         data.idx2class = idx2class
         data.max_point = data.meta['max_point']
         data.extra_dim = len(extra_features_users)
-        data.extra_features = data.meta['extra_features']
+        data.extra_features = extra_features
         data.extra_feat_indexes = extra_feat_indexes
         data.features_to_keep = extra_features_keys_mapped
         data.block_size = data.meta['block_size']
@@ -1572,7 +1602,16 @@ def inference_las(path,
                   ):
     try_import("h5py")
     import h5py
-    import pandas as pd    
+    import pandas as pd   
+    
+    # check if the model is trained on new exported data and raise Exception.
+    if hasattr(pointcnn_model._data.pc_type):
+        if pointcnn_model._data.pc_type == 'PointCloud':
+            raise Exception("Models trained on exported data from ArcGIS Pro 2.8 onwards are not supported. "
+                            "Use `Classify Points Using Trained Model` tool available in 3D Analyst "  
+                            "extension in ArcGIS Pro 2.8 onwards."
+                            )
+
     try:
         ## Export data
         path = Path(path)
@@ -1900,7 +1939,11 @@ def show_results(self, rows, color_mapping=None, **kwargs):
             unmapped_labels = remap_labels(labels.copy().astype(int), self._data.idx2class)
         pred_class = np.concatenate(pred_class, axis=0).astype(int)
         unmapped_pred_class = remap_labels(pred_class.copy().astype(int), self._data.idx2class)
-        sample_idxs = mask_classes(labels, mask_class, self._data.class2idx if self._data.remap else None)
+        sample_idxs = mask_classes(labels=labels,
+                                   mask_class=mask_class,
+                                   classes=self._data.classes,
+                                   class2idx=self._data.class2idx if self._data.remap else None,
+                                   remap_classes=self._data.remap_classes if self._data.remap else None)
         sampled_pc = pc[sample_idxs]
         if sampled_pc.shape[0] == 0:
             continue
@@ -1914,7 +1957,9 @@ def show_results(self, rows, color_mapping=None, **kwargs):
 
         if sample_idxs.sum() > max_display_point:
             raise_maxpoint_warning(idx_file, kwargs, logger, max_display_point, save_html)
-            mask = np.random.randint(0, sample_idxs.sum(), max_display_point)              
+            mask = np.random.randint(0, sample_idxs.sum(), max_display_point)       
+        else:
+            mask = np.arange(0, sample_idxs.sum())                   
         
         color_list_true =  color_mapping[labels[sample_idxs]][mask].tolist()
         color_list_pred = color_mapping[pred_class[sample_idxs]][mask].tolist()
@@ -2179,6 +2224,23 @@ def save_h5(filename, labels_pred, confidences_pred):
         file.create_dataset('label_seg', data=labels_pred)
         file.create_dataset('confidence', data=confidences_pred)
 
+def convert_extra_features(attributes, features_to_keep):
+    attributes_dict = {}
+
+    string_mapped_features = {
+        'numberOfReturns': 'num_returns',
+        'returnNumber' : 'return_num',
+        'nearInfrared': 'nir'
+    }
+    inverse_string_mapped_features = {v: k for k, v in string_mapped_features.items()} 
+
+    for a in attributes:
+        attributes_dict[inverse_string_mapped_features.get(a[0], a[0])] = {'max':a[1], 'min':a[2]}
+
+    features_to_keep = [inverse_string_mapped_features.get(f, f) for f in features_to_keep]
+
+    return attributes_dict, features_to_keep
+    
 
 def predict_h5(self, path, output_path, **kwargs):
     """
@@ -2193,13 +2255,24 @@ def predict_h5(self, path, output_path, **kwargs):
 
     progressor = kwargs.get('progressor', None)
 
-    features_to_keep = copy.copy(self._data.features_to_keep)
-    features_to_keep.remove('xyz')
-    point_cloud_dataset = PointCloudDataset(path, None, None, '', extra_features=features_to_keep)
+    data = self._data
+    # features to keep will be present always except for older models.
+    features_to_keep = copy.copy(getattr(data, 'features_to_keep', [f[0] for f in data.extra_features]))
+    attributes = copy.copy(data.extra_features)
+    if isinstance(attributes, list):
+        api_model = True
+        attributes, features_to_keep = convert_extra_features(attributes, features_to_keep)
+        data.pc_type = 'PointCloud'
+        data.idx2class = {i:c for i,c in enumerate(data.classes)}
+    else:
+        api_model = False
+    if 'xyz' in features_to_keep:
+        features_to_keep.remove('xyz')
+    point_cloud_dataset = PointCloudDataset(path, None, None, '', extra_features=features_to_keep, attributes=attributes)
     if progressor is not None:
         progressor.set_total_blocks(len(point_cloud_dataset))
-    batch_size = 1 * math.ceil(self._data.max_point / self.sample_point_num)   
-    max_point_num = self._data.max_point
+    batch_size = 1 * math.ceil(data.max_point / self.sample_point_num)   
+    max_point_num = data.max_point
 
     output_path.mkdir(parents=True, exist_ok=True)
 
@@ -2221,7 +2294,19 @@ def predict_h5(self, path, output_path, **kwargs):
             labels_pred = np.full(batch_num, -1, dtype=np.int8)
             confidences_pred = np.zeros(batch_num, dtype=np.float32)
 
-        (data, point_num), classification = point_cloud_dataset[i]
+        (normalized_data, point_num), classification, data = point_cloud_dataset.__getitem__(i, return_scaled=True)
+
+        if api_model:
+            # only the values thats why its indexed with zero.
+            xmin, ymin, zmin = data[:point_num].min(dim=0)[0]
+            xmax, ymax, _ = data[:point_num].max(dim=0)[0]
+            data = data - torch.tensor([(xmin + xmax)/2, (ymin + ymax)/2, zmin])
+            # z in center
+            data[:, :3] = data[:, [0,2,1]]
+            data = torch.cat((data, normalized_data[:, 3:]), axis=1)
+        else:
+            data = normalized_data
+
         data = data[None]
         points_batch = data[[0] * batch_size]
         predictions = get_predictions(self, data, 0, points_batch, self.sample_point_num, batch_size, point_num.cpu().item())
@@ -2326,7 +2411,7 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
         pc = []
         pred_class = []
         for block_idx in indices:
-            (block, point_num), classification, scaled_block = data.valid_ds.__getitem__(block_idx, return_scaled=True)
+            (block, point_num), classification, scaled_block = data.valid_ds.__getitem__(block_idx, return_scaled=True, add_centers=True)
             # print(block.shape, point_num, self.sample_point_num, scaled_block.shape)
             block = block[None]
             points_batch = block[[0] * 1]
@@ -2339,22 +2424,15 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
         labels = np.concatenate(labels)       
         pc = np.concatenate(pc)
         pred_class = np.concatenate(pred_class, axis=0)
-        # print("pc.shape", pc.shape)
-        # print(np.unique(labels), np.unique(pred_class))         
-        # filter classes between train and recalssify
-        # if self.subset_classes != []:
-        #     labels = filter_classes(labels,
-        #                 self._data.subset_classes,
-        #                 self._data.remap_dict,
-        #                 self._data.remap_bool)
         unmapped_labels = remap_labels(labels.copy().astype(int), data.idx2class)
         unmapped_predictions = remap_labels(pred_class, data.idx2class) 
-        ## remapping the labels from 0-N
-        # if self._data.remap:
-        #     labels = remap_labels(labels, self._data.class2idx)
 
         ## sample points
-        sample_idxs = mask_classes(labels, mask_class, self._data.class2idx if self._data.remap else None)
+        sample_idxs = mask_classes(labels=labels,
+                                   mask_class=mask_class,
+                                   classes=self._data.classes,
+                                   class2idx=self._data.class2idx if self._data.remap else None,
+                                   remap_classes=self._data.remap_classes if self._data.remap else None)
         sampled_pc = pc[sample_idxs]
         if sampled_pc.shape[0] == 0:
             continue  
@@ -2364,7 +2442,9 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
         ## resample points if exeeds limits.
         if sample_idxs.sum() > max_display_point:
             raise_maxpoint_warning(idx, kwargs, logger, max_display_point, save_html)
-            mask = np.random.randint(0, sample_idxs.sum(), max_display_point) 
+            mask = np.random.randint(0, sample_idxs.sum(), max_display_point)
+        else:
+            mask = np.arange(0, sample_idxs.sum())
         
         ## Apply cmap
         color_list_true =  color_mapping[labels[sample_idxs]][mask].tolist()

@@ -1,6 +1,6 @@
 "Functions for calling the Deep Learning Tools."
 from . import _utils
-from ._utils.env import LAMBDA_TEXT_CLASSIFICATION
+from ._utils.env import _LAMBDA_TEXT_CLASSIFICATION
 from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, \
      _analysis_job_status, _layer_input
 import json as _json
@@ -9,7 +9,7 @@ from arcgis.raster._layer import ImageryLayer as _ImageryLayer
 from arcgis.raster._util import _set_context, _id_generator
 from ._scannedmapdigitizer import ScannedMapDigitizer
 
-if not LAMBDA_TEXT_CLASSIFICATION:
+if not _LAMBDA_TEXT_CLASSIFICATION:
     from .models import SingleShotDetector, UnetClassifier, FeatureClassifier, RetinaNet, \
       PSPNetClassifier, MaskRCNN, DeepLab, PointCNN, ModelExtension, \
       FasterRCNN, SuperResolution, FullyConnectedNetwork, MLModel, YOLOv3, HEDEdgeDetector, \
@@ -1499,6 +1499,11 @@ def export_point_dataset(data_path,
 
     """
     Exports the las files into h5 blocks.
+
+    Note: This function has been deprecated starting from `ArcGIS API for
+    Python` version 1.9.0. 
+    Export data using `Prepare Point Cloud Training Data` tool available  
+    in 3D Analyst Extension from ArcGIS Pro 2.8 onwards.
 
     ==================     ======================================================
     **Argument**           **Description**

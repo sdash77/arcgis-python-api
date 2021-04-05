@@ -4,8 +4,8 @@ import traceback
 
 
 HAS_BACKEND_SET = False
-ARCGIS_ENABLE_TF_BACKEND = os.environ.get('ARCGIS_ENABLE_TF_BACKEND') is '1'
-LAMBDA_TEXT_CLASSIFICATION = os.environ.get('LAMBDA_TEXT_CLASSIFICATION') is '1'
+ARCGIS_ENABLE_TF_BACKEND = os.environ.get('ARCGIS_ENABLE_TF_BACKEND') == '1'
+_LAMBDA_TEXT_CLASSIFICATION = os.environ.get('_LAMBDA_TEXT_CLASSIFICATION') == '1'
 
 HAS_TENSORFLOW = False
 tf_import_exception = None
@@ -18,7 +18,7 @@ class FakeImport():
     def __call__(self, *args, **kwargs):
         return self
 
-if LAMBDA_TEXT_CLASSIFICATION:
+if _LAMBDA_TEXT_CLASSIFICATION:
     default_module = FakeImport()
     missing_modules = ['scipy','scipy.stats', 'spacy','spacy.symbols','spacy.blank', 'matplotlib',\
         'matplotlib.pyplot', 'matplotlib.patches', 'matplotlib.cm', 'scipy.special', 'PIL']
@@ -142,3 +142,17 @@ except Exception as e:
 def raise_gdal_import_error(import_exception=gdal_import_exception):
     message = "gdal is required to work with multispectral datasets."
     raise Exception(f"""{import_exception} \n\n{message}\n{GDAL_INSTALL_MESSAGE}""")
+
+## Ipython inside ArcGIS Pro
+def patch_arcgis_notebook():
+    get_ipython().run_line_magic('matplotlib', 'inline')
+
+_IS_ARCGISPRONOTEBOOK = False
+try:
+    from IPython import get_ipython
+    import sys
+    if os.path.basename(sys.executable) == 'ArcGISPro.exe' and get_ipython() is not None:
+        _IS_ARCGISPRONOTEBOOK = True
+        patch_arcgis_notebook()
+except Exception as e:
+    pass

@@ -45,6 +45,7 @@ try:
     import PIL.ExifTags
     from torch.nn import Module as NnModule
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path, image_batch_stretcher
+    from .._utils.env import _IS_ARCGISPRONOTEBOOK
     from matplotlib import pyplot as plt
     import copy
 
@@ -210,6 +211,9 @@ class FeatureClassifier(ArcGISModel):
         """
         self._check_requisites()
         self.learn.show_results(rows=rows, **kwargs)
+        if _IS_ARCGISPRONOTEBOOK:
+            plt.show()
+
 
     def _show_results_multispectral(self, rows=5, **kwargs):
         from .._utils.image_classification import IC_show_results

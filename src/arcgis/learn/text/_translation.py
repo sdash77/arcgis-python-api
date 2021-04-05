@@ -1,8 +1,12 @@
 import traceback
 from .._data import _raise_fastai_import_error
+from ._inference_only_models import InferenceOnlyModel
 HAS_TRANSFORMER = True
 
 try:
+    from pathlib import Path
+    import json
+    import os    
     import torch
     from transformers import pipeline, logging
     from .._utils.common import _get_device_id
@@ -13,7 +17,7 @@ except Exception as e:
     HAS_TRANSFORMER = False
 
 
-class TextTranslator:
+class TextTranslator(InferenceOnlyModel):
     """
     Creates a `TextTranslator` Object.
     Based on the Hugging Face transformers library
@@ -29,10 +33,23 @@ class TextTranslator:
     ---------------------   -------------------------------------------
     target_language         Optional string. The language into which one
                             wishes to translate the input text.
-                            Default value is 'en' (English)
+                            Default value is 'en' (English)                         
+    =====================   ===========================================
+
+    **kwargs**
+
+    =====================   ===========================================
+    **Argument**            **Description**
     ---------------------   -------------------------------------------
-    pretrained_path         Optional string. Path to load the model from
-                            offline model files located on the local disk.                             
+    pretrained_path         Option str. Path to a directory, where pretrained
+                            model files are saved. 
+                            If pretrained_path is provided, the model is
+                            loaded from that path on the local disk.
+    ---------------------   -------------------------------------------
+    working_dir             Option str. Path to a directory on local filesystem.
+                            If directory is not present, it will be created.
+                            This directory is used as the location to save the 
+                            model.
     =====================   ===========================================
 
     :returns: `TextTranslator` Object
@@ -41,7 +58,9 @@ class TextTranslator:
     #: supported transformer backbones
     supported_backbones = ["MarianMT"]
 
-    def __init__(self, source_language="es", target_language="en", pretrained_path=None):
+    def __init__(self, source_language="es", target_language="en", **kwargs):
+        self.kwargs = kwargs
+        super().__init__()
         if not HAS_TRANSFORMER:
             _raise_fastai_import_error(import_exception=transformer_exception)
 
@@ -49,11 +68,12 @@ class TextTranslator:
         logger.setLevel(logging.ERROR)
         self._source_lang = source_language
         self._target_lang = target_language
-
         self._device_id = _get_device_id()
         self._device = torch.device("cpu" if self._device_id < 0 else "cuda:{}".format(self._device_id))
         self._task = f"translation_{self._source_lang}_to_{self._target_lang}"
-        if pretrained_path:
+
+        if kwargs.get('pretrained_path'):
+            pretrained_path = r"{}".format(kwargs.get('pretrained_path'))
             self._tokenizer = AutoTokenizer.from_pretrained(pretrained_path)
             self.model = AutoModelForSeq2SeqLM.from_pretrained(pretrained_path)
         else:
@@ -124,19 +144,38 @@ class TextTranslator:
             results.append(result)
         return results
 
-    def save(self, path):
-        """Saves the translator model files on a specified path on the local disk.
+
+    def _create_emd(self, name_or_path):
+        emd_template = {}
+        emd_template.update({'ModelName':self.__class__.__name__})
+        emd_template.update({'architectures':self.model.config.architectures})
+        emd_template.update({'source_lang':self._source_lang})
+        emd_template.update({'target_lang':self._target_lang})
+        path = Path(name_or_path)
+        name = path.parts[-1]
+        with open(os.path.join(path,f'{name}.emd'), 'w') as f:
+            f.write(json.dumps(emd_template))
+
+
+    def save(self, name_or_path):
+        """
+        Saves the translator model files on a specified path on the local disk.
+        
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        path                    Required string or list. Path to save  
+        name_or_path            Required string. Path to save  
                                 model files on the local disk.
         =====================   ===========================================
+        
+        :returns: Absolute path for the saved model
         """
-        import os
-        if not os.path.exists(path):
-            os.makedirs(path)
+        if '\\' in name_or_path or '/' in name_or_path:
+            path = name_or_path
+        else:
+            path = os.path.join(self.working_dir, 'models', name_or_path)
         self.model.save_pretrained(path)
         self.model.config.save_pretrained(path)
-        self._tokenizer.save_pretrained(path)
-        return f"Helsinki-NLP/opus-mt-{self._source_lang}-{self._target_lang} has been saved to {path}"
+        self._tokenizer.save_pretrained(path)       
+        self._create_emd(path)
+        return Path(path).absolute()

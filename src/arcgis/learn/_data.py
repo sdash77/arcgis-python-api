@@ -20,7 +20,7 @@ try:
     import numpy as np
     from fastai.vision.data import imagenet_stats, ImageList, bb_pad_collate
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms, flip_lr, ResizeMethod
-    from fastai.vision import ImageDataBunch, parallel
+    from fastai.vision import ImageDataBunch, parallel, ifnone
     import fastai.vision
     from fastai.torch_core import data_collate
     from fastai.core import Category
@@ -520,7 +520,7 @@ def merge_emd_and_stats(data_folders):
     emd['Classes'] = [_class_hash[x] for x in sorted(_class_hash)]
     path = Path(data_folders[emd_keys[0]])  # First folder that has esri files
     return emd, eas, path
-
+  
 def prepare_textdata(
         path,
         task,
@@ -972,7 +972,8 @@ def prepare_data(path,
                             The encoding to read the csv/json file.
                             Default is 'UTF-8'
     ---------------------   -------------------------------------------
-    min_points              Optional int. Filter based on minimum points in a block.
+    min_points              Optional int. Filtering based on minimum number
+                            of points in a block.
                             Set `min_points=1000` to filter out blocks with less
                             than 1000 points. Applicable only for
                             dataset_type='PointCloud'
@@ -982,8 +983,9 @@ def prepare_data(path,
                             If we have classes [1, 3, 5, 7] in our dataset,
                             but we are mainly interested in 1 and 3,
                             Set `classes_of_interest=[1,3]`. Only those blocks
-                            will be considered for training which either 1 or 3
-                            classes in them. 
+                            will be considered for training which either have
+                            class 1 or 3 in them, rest of the blocks will
+                            be filtered out.
                             If remapping of rest of the classes is required
                             set `background_classcode` to some value.
                             Applicable only for dataset_type='PointCloud'
@@ -991,9 +993,14 @@ def prepare_data(path,
     extra_features          Optional List. Contains a list of strings
                             which tells which extra features to use to
                             train PointCNN. By default only x,y and z
-                            are considered for training.
-                            Set this to ['intensity', 'numberOfReturns']
-                            if these are to be used in training.
+                            are considered for training irrespective
+                            of what features were exported.
+                            Set this to be a subset of 
+                            ['intensity', 'numberOfReturns', 'returnNumber', 
+                            'red', 'green', 'blue', 'nearInfrared'].
+                            For data exported from `export_point_dataset` set
+                            this to ['intensity', 'num_returns', 'return_num', 
+                            'red', 'green', 'blue', 'nir'].
     ---------------------   -------------------------------------------
     remap_classes           Optional dictionary {int:int}. Mapping from  
                             class values to user defined values. 
@@ -1083,7 +1090,6 @@ def prepare_data(path,
     _is_multispectral = False
     _show_batch_multispectral = None
     stats_file = path / 'esri_accumulated_stats.json'
-
     if dataset_type is None:
         if has_esri_files:
             if data_folders is None:
@@ -1130,20 +1136,25 @@ def prepare_data(path,
 
     elif dataset_type == "CycleGAN" or dataset_type == "Pix2Pix":
         from ._utils.cyclegan import get_files, image_extensions, cyclegan_paths, folder_check_cyclegan
-        from ._utils.pix2pix import pix2pix_paths, folder_check_pix2pix
+        from ._utils.pix2pix import pix2pix_paths, folder_check_pix2pix, rgb_or_ms
         if dataset_type == "CycleGAN":
             folder_check_cyclegan(path)
+            if _check_esri_files(path/'A') and _check_esri_files(path/'B'):
+                has_esri_files = True
             path_a, path_b = cyclegan_paths(path)
-            if has_esri_files:
-                stats_file = path_a.parent / 'esri_accumulated_stats.json'
-                if data_folders is None:
-                    with open(stats_file) as f:
-                        stats = json.load(f)
-                else:
-                    stats = eas
+            stats_path = path_a.parent
         else:
             folder_check_pix2pix(path)
             path_a, path_b = pix2pix_paths(path)
+            stats_path = path
+
+        if has_esri_files:
+            stats_file = stats_path / 'esri_accumulated_stats.json'
+            if data_folders is None:
+                with open(stats_file) as f:
+                    stats = json.load(f)
+            else:
+                stats = eas
 
         json_file = path_a.parent / 'esri_model_definition.emd'
         if json_file.exists():
@@ -1154,8 +1165,11 @@ def prepare_data(path,
         files_list_b = get_files(path_b, extensions=image_extensions, recurse=True)
         msimage_list_a = ArcGISImageList(files_list_a)
         msimage_list_b = ArcGISImageList(files_list_b)
+        img_type = 'RGB'
         if msimage_list_a[0].shape[0] != 3 or msimage_list_b[0].shape[0] != 3:
-            kwargs['imagery_type'] = 'ms'
+            img_type = kwargs['imagery_type'] = 'ms'
+        imagery_type_a = ifnone(rgb_or_ms(str(files_list_a[0])), img_type)
+        imagery_type_b = ifnone(rgb_or_ms(str(files_list_b[0])), img_type)
 
     if dataset_type not in ["Imagenet", "superres", "Export_Tiles", 'CycleGAN', 'Pix2Pix', 'ChangeDetection'] and has_esri_files:
         with open(stats_file) as f:
@@ -1763,10 +1777,13 @@ def prepare_data(path,
             data.n_channel = data.x[0].data[0].shape[0]
             data._is_multispectral = _is_multispectral
             data._imagery_type = _imagery_type
+            data._imagery_type_a = imagery_type_a
+            data._imagery_type_b = imagery_type_b
             data._bands = _bands
             data._norm_pct = norm_pct
             data._extract_bands = None
             data._do_normalize = False
+            data._image_space_used = _image_space_used
             x_shape = data.train_ds[0][0].shape
             data.chip_size = x_shape[-1]
             if working_dir is not None:
@@ -1776,7 +1793,6 @@ def prepare_data(path,
         data = ImageTupleList.from_folders(path, path_a, path_b)\
                 .split_by_rand_pct(val_split_pct, seed=seed)\
                 .label_empty()
-        data._dataset_type = 'CycleGAN'
         img_size = data.x[0].shape[-1]
         if resize_to is None:
             kwargs_transforms['size'] = img_size
@@ -1786,10 +1802,13 @@ def prepare_data(path,
             data.n_channel = data.x[0].data[0].shape[0]
             data._is_multispectral = _is_multispectral
             data._imagery_type = _imagery_type
+            data._imagery_type_a = imagery_type_a
+            data._imagery_type_b = imagery_type_b
             data._bands = _bands
             data._norm_pct = norm_pct
             data._extract_bands = None
             data._do_normalize = False
+            data._image_space_used = _image_space_used
             x_shape = data.train_ds[0][0].shape
             data.chip_size = x_shape[-1]
             if working_dir is not None:
@@ -1799,7 +1818,6 @@ def prepare_data(path,
         data = (ImageTupleList2.from_folders(path, path_a, path_b)
                       .split_by_rand_pct(val_split_pct, seed=seed)
                       .label_empty())
-        data._dataset_type = 'Pix2Pix'
         img_size = data.x[0].shape[-1]
         if resize_to is None:
             kwargs_transforms['size'] = img_size
@@ -1917,6 +1935,7 @@ def prepare_data(path,
         data._scaled_std_values[data._scaled_std_values == 0]+=1e-02
         
         # Scaling
+        data._min_max_scaler = partial(_tensor_scaler, min_values=data._band_min_values, max_values=data._band_max_values, mode='minmax')
         data.valid_ds.x._div = (data._band_min_values, data._band_max_values)
         data.train_ds.x._div = (data._band_min_values, data._band_max_values)
 
@@ -1940,6 +1959,8 @@ def prepare_data(path,
         data = (data.transform(get_transforms(), **kwargs_transforms)
             .databunch(**databunch_kwargs)) 
         data.n_channel = data.x[0].data[0].shape[0]
+        data._imagery_type_a = imagery_type_a
+        data._imagery_type_b = imagery_type_b
     
     elif dataset_type == "superres" or dataset_type == "Export_Tiles":
         data = (data.transform(get_transforms(), **kwargs_transforms)
@@ -1948,7 +1969,9 @@ def prepare_data(path,
     elif dataset_type == "CycleGAN":
         data = (data.transform(get_transforms(), **kwargs_transforms)
             .databunch(**databunch_kwargs))
-        data.n_channel = data.x[0].data[0].shape[0]       
+        data.n_channel = data.x[0].data[0].shape[0] 
+        data._imagery_type_a = imagery_type_a
+        data._imagery_type_b = imagery_type_b      
     else:
         data = (data.transform(transforms, **kwargs_transforms)
             .databunch(**databunch_kwargs)
@@ -2126,6 +2149,18 @@ def prepare_data(path,
         data.path = Path(os.path.dirname(os.path.abspath(data.path)))
     data._temp_folder = _prepare_working_dir(data.path)
 
+    from ._utils.env import _IS_ARCGISPRONOTEBOOK
+    if _IS_ARCGISPRONOTEBOOK:        
+        from functools import wraps
+        from matplotlib import pyplot as plt
+        data._show_batch_orig = data.show_batch
+        @wraps(data.show_batch)
+        def show_batch_wrapper(rows=2, *args, **kwargs):
+            res = data._show_batch_orig(rows, *args, **kwargs)
+            plt.show()
+            return res
+        data.show_batch = show_batch_wrapper
+    
     if has_esri_files:
         data._emd = emd
 

@@ -7463,7 +7463,7 @@ class User(dict):
     ---------------------    ---------------------------------------------------------
     level                    The level of the user.
     ---------------------    ---------------------------------------------------------
-    disabled                 Disables access to the organization by the user.
+    disabled                 The login access to the organization for the user.
     ---------------------    ---------------------------------------------------------
     units                    User-defined units for measurement.
     ---------------------    ---------------------------------------------------------

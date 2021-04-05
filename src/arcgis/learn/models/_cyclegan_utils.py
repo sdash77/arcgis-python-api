@@ -191,28 +191,25 @@ class CycleGANTrainer(LearnerCallback):
         return add_metrics(last_metrics, [s.smooth for s in [self.id_smter,self.gen_smter,self.cyc_smter,
                                                              self.da_smter,self.db_smter]])
 
-def compute_fid_metric(model, data):
-    input_a = []
-    input_b = []
-    pred_a = []
-    pred_b = []
+def compute_fid_metric(model, data, a_or_b):
+    if a_or_b == 'a':
+        idx = 0
+    else:
+        idx = 1
+    input_idx = []
+    pred_idx = []
+    
     for input, target in data.valid_dl:
-        input_a.append(input[0]/2+0.5)
-        input_b.append(input[1]/2+0.5)
+        input_idx.append(input[idx]/2+0.5)
         pred = model.learn.pred_batch(batch=(input,target))
-        pred_a.append(pred[0]/2+0.5)
-        pred_b.append(pred[1]/2+0.5)
+        pred_idx.append(pred[idx]/2+0.5)
     
     data_len = len(data.valid_ds)
     batch_size = data.batch_size
 
-    m1_a, s1_a = calculate_activation_statistics(batch_size, data_len, input_a)
-    m2_a, s2_a = calculate_activation_statistics(batch_size, data_len, pred_a)
+    m1, s1 = calculate_activation_statistics(batch_size, data_len, input_idx)
+    m2, s2 = calculate_activation_statistics(batch_size, data_len, pred_idx)
 
-    m1_b, s1_b = calculate_activation_statistics(batch_size, data_len, input_b)
-    m2_b, s2_b = calculate_activation_statistics(batch_size, data_len, pred_b)
+    fid_value = calculate_frechet_distance(m1, s1, m2, s2)
 
-    fid_value_a = calculate_frechet_distance(m1_a, s1_a, m2_a, s2_a)
-    fid_value_b = calculate_frechet_distance(m1_b, s1_b, m2_b, s2_b)
-
-    return fid_value_a, fid_value_b
+    return fid_value

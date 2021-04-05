@@ -9,6 +9,7 @@ from .._utils.common import ArcGISMSImage, get_top_padding, kwarg_fill_none, \
     get_symbology_bands, predict_batch, denorm_x, get_nbatches, GDAL_INSTALL_MESSAGE, image_batch_stretcher
 from .._utils.env import HAS_GDAL
 from .._utils.pixel_classification import analyze_pred_pixel_classification
+from .._utils.env import _IS_ARCGISPRONOTEBOOK
 import torch
 import warnings
 import PIL
@@ -393,5 +394,7 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
         axi[0].axis('off')
         axi[1].axis('off')
     #
+    if _IS_ARCGISPRONOTEBOOK:
+        plt.show()
     if return_fig:
         return fig, axs

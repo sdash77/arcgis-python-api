@@ -39,6 +39,7 @@ class Pix2Pix(ArcGISModel):
     
     def __init__(self, data, pretrained_path=None, *args, **kwargs):
         super().__init__(data)
+        self._check_dataset_support(data)
         pix2pix_gan = pix2pix_model(self._data.n_channel,self._data.n_channel)
         self.learn = Learner(data, 
                              pix2pix_gan, 
@@ -189,12 +190,21 @@ class Pix2Pix(ArcGISModel):
 
         """
         psnr, ssim = compute_metrics(self, self._data.valid_dl, show_progress)
-        if self._data._is_multispectral:
-            fid = None
-            return {"PSNR":'{0:1.4e}'.format(psnr), 
-                    "SSIM":'{0:1.4e}'.format(ssim)}
-        else:
+        if self._data._imagery_type_b == 'RGB' and self._data.n_channel == 3:
             fid = compute_fid_metric(self, self._data)
             return {"PSNR":'{0:1.4e}'.format(psnr), 
                     "SSIM":'{0:1.4e}'.format(ssim), 
                     "FID":'{0:1.4e}'.format(fid)}
+        else:
+            fid = None
+            return {"PSNR":'{0:1.4e}'.format(psnr),
+                    "SSIM":'{0:1.4e}'.format(ssim)}
+
+    @property
+    def  supported_datasets(self):
+        """ Supported dataset types for this model. """
+        return Pix2Pix._supported_datasets()
+
+    @staticmethod
+    def _supported_datasets():
+        return ['Pix2Pix']

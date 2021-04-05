@@ -35,6 +35,7 @@ try:
     from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
     import os as arcgis_os
     from .._utils.common import get_nbatches, image_batch_stretcher
+    from .._utils.env import _IS_ARCGISPRONOTEBOOK
 
     HAS_FASTAI = True
 except Exception as e:
@@ -167,7 +168,7 @@ class MaskRCNN(ArcGISModel):
 
         self.maskrcnn_kwargs, kwargs = split_kwargs_by_func(kwargs, models.detection.MaskRCNN.__init__)
 
-        if self._backbone.__name__ is 'resnet50':
+        if self._backbone.__name__ == 'resnet50':
             model = models.detection.maskrcnn_resnet50_fpn(
                 pretrained=True,
                 min_size = 1.5*data.chip_size,
@@ -179,7 +180,7 @@ class MaskRCNN(ArcGISModel):
                 model.backbone = _change_tail(model.backbone, data)
                 model.transform.image_mean = scaled_mean_values
                 model.transform.image_std = scaled_std_values
-        elif self._backbone.__name__ in ['resnet18','resnet34']:
+        elif self._backbone.__name__ in ['resnet18','resnet34'] and not pointrend:
             if self._is_multispectral:
                 backbone_small = create_body(self._backbone_ms, cut=_get_backbone_meta(self._backbone.__name__)['cut'])
                 backbone_small.out_channels = 512
@@ -577,6 +578,8 @@ class MaskRCNN(ArcGISModel):
         if self._device == torch.device('cuda'):
             torch.cuda.empty_cache()
 
+        if _IS_ARCGISPRONOTEBOOK:
+            plt.show()
         if return_fig:
             return fig
 

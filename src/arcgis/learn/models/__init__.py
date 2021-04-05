@@ -1,6 +1,6 @@
-from .._utils.env import LAMBDA_TEXT_CLASSIFICATION
+from .._utils.env import _LAMBDA_TEXT_CLASSIFICATION
 
-if not LAMBDA_TEXT_CLASSIFICATION:
+if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._ssd import SingleShotDetector
     from ._inferencing import _DynamicSSD
     from ._unet import UnetClassifier

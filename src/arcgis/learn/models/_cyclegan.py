@@ -14,6 +14,7 @@ try:
     from pathlib import Path
     from fastai.vision import DatasetType, Learner, partial, open_image, Image
     import torch
+    from .._utils.env import _IS_ARCGISPRONOTEBOOK
 
     HAS_FASTAI = True
 except Exception as e:
@@ -45,6 +46,7 @@ class CycleGAN(ArcGISModel):
     """
     def __init__(self, data, pretrained_path=None, gen_blocks=9, lsgan=True, *args, **kwargs):
         super().__init__(data)
+        self._check_dataset_support(data)
         cycle_gan = CycleGAN_model(self._data.n_channel,self._data.n_channel, gen_blocks=gen_blocks, lsgan=lsgan)
         self.learn = Learner(data, cycle_gan, loss_func=CycleGanLoss(cycle_gan), opt_func=partial(optim.Adam, betas=(0.5,0.99)),callback_fns=[CycleGANTrainer])
         self.learn.model = self.learn.model.to(self._device)
@@ -153,6 +155,9 @@ class CycleGAN(ArcGISModel):
         """
         self.learn.model.arcgis_results = True
         self.learn.show_results()
+        if _IS_ARCGISPRONOTEBOOK:
+            from matplotlib import pyplot as plt
+            plt.show()
         self.learn.model.arcgis_results = False
 
     def predict(self, img_path, convert_to):
@@ -201,12 +206,25 @@ class CycleGAN(ArcGISModel):
         """
         Computes Frechet Inception Distance (FID) on validation set.
         """
-        if self._data._is_multispectral:
+        fid_a = 'None'
+        fid_b = 'None'
+        
+        if self._data._imagery_type_a == 'ms' and self._data._imagery_type_b == 'ms':
             logger.error("FID metric not supported for multispectral imagery type")
-            return {'FID_A': 'None', 'FID_B': 'None'}
         else:
-            fid_a, fid_b = compute_fid_metric(self, self._data)
-            return {'FID_A': '{0:1.4e}'.format(fid_a), 
-                    'FID_B': '{0:1.4e}'.format(fid_b)}
+            if self._data._imagery_type_a == 'RGB' and self._data.n_channel == 3:
+                fid_a = '{0:1.4e}'.format(compute_fid_metric(self, self._data, 'a'))
+            if self._data._imagery_type_b == 'RGB' and self._data.n_channel == 3:
+                fid_b = '{0:1.4e}'.format(compute_fid_metric(self, self._data, 'b'))
+            
+        return {'FID_A': fid_a,
+                'FID_B': fid_b}
 
+    @property
+    def  supported_datasets(self):
+        """ Supported dataset types for this model. """
+        return CycleGAN._supported_datasets()
 
+    @staticmethod
+    def _supported_datasets():
+        return ['CycleGAN']

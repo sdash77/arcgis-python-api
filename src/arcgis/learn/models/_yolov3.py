@@ -29,6 +29,7 @@ try:
     from ._yolov3_utils import download_yolo_weights, parse_yolo_weights, postprocess, coco_config, coco_class_mapping
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
     from .._video_utils import VideoUtils
+    from .._utils.env import _IS_ARCGISPRONOTEBOOK
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
@@ -193,6 +194,9 @@ class YOLOv3(ArcGISModel):
 
         self.learn.predicting = True
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self)
+        if _IS_ARCGISPRONOTEBOOK:
+            import matplotlib.pyplot as plt
+            plt.show()
     
     def _show_results_multispectral(self, rows=5, thresh=0.1, nms_overlap=0.1, alpha=1, **kwargs):
         return_fig = kwargs.get('return_fig', False)

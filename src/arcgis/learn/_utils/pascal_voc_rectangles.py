@@ -10,6 +10,7 @@ from matplotlib import pyplot as plt
 from matplotlib import patheffects
 from fastai.basic_data import DatasetType
 from fastai.torch_core import grab_idx
+from .._utils.env import _IS_ARCGISPRONOTEBOOK
 
 
 class ObjectDetectionCategoryList(ObjectCategoryList):
@@ -185,6 +186,8 @@ def show_batch_pascal_voc_rectangles(self, rows=3, alpha=1, **kwargs): # paramet
             else:
                 axi.axis('off')
             idx+=1
+    if _IS_ARCGISPRONOTEBOOK:
+        plt.show()
 
 def show_results_multispectral(self, nrows=5, alpha=1, **kwargs): # parameters adjusted in kwargs
     from matplotlib import pyplot as plt
@@ -394,4 +397,6 @@ def show_results_multispectral(self, nrows=5, alpha=1, **kwargs): # parameters a
                     ax_prediction.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), lblp, size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=1, foreground='black'), patheffects.Normal()])
             
         idx+=1
+    if _IS_ARCGISPRONOTEBOOK:
+        plt.show()
     return fig,axs

@@ -372,7 +372,7 @@ class FeatureLayer(Layer):
         -----------------     --------------------------------------------------------------------
         definition            required dict. The definition using the renderer that is generated.
                               Use either class breaks or unique value classification definitions.
-                              See: https://resources.arcgis.com/en/help/rest/apiref/ms_classification.html
+                              See `Classification Objects <https://developers.arcgis.com/documentation/common-data-types/classification-objects.htm>`_ for additional details.
         -----------------     --------------------------------------------------------------------
         where                 optional string. A where clause for which the data needs to be
                               classified. Any legal SQL where clause operating on the fields in
@@ -1912,9 +1912,10 @@ class FeatureLayer(Layer):
                upload_id=None
                ):
         """
-        Only available in ArcGIS Online
+        Only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
 
-        Update an existing hosted feature layer using append.
+        Update an existing hosted feature layer using append. See ArcGIS REST API documentation for
+        details: https://developers.arcgis.com/rest/services-reference/append-feature-service-layer-.htm
 
         ========================   ====================================================================
         **Argument**               **Description**

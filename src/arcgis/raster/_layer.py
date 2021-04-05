@@ -4994,8 +4994,10 @@ class Raster():
         if not isinstance(is_multidimensional, bool):
             raise TypeError('is_multidimensional must be boolean type')
         if engine is not None:
-             engine = _get_engine(engine)
-             self._engine=engine
+            if engine not in ['arcpy', 'image_server', _ArcpyRaster, _ImageServerRaster]:
+                raise RuntimeError('Invalid engine: parameter engine should be either "arcpy" or "image_server"')
+            engine = _get_engine(engine)
+            self._engine=engine
         else:
             if isinstance(path, RasterInfo):
                 engine=_ArcpyRaster
@@ -7312,7 +7314,7 @@ class _ArcpyRaster(Raster,ImageryLayer):
         else:
             if isinstance(path, str):
                 if ("https://"  in path or "http://"  in path): #To provide access to secured service
-                    if self._token is not None:
+                    if "ImageServer" in path and self._token is not None:
                         self._raster = arcpy.ia.Raster(path+"?token="+self._token, is_multidimensional)
                     else:
                         self._raster = arcpy.ia.Raster(path, is_multidimensional)
@@ -7334,7 +7336,7 @@ class _ArcpyRaster(Raster,ImageryLayer):
 
         lyr_dict =  { 'type' : type(self).__name__, 'url' : url }
         if ("https://"  in url or "http://"  in url):
-            if self._token is not None:
+            if "ImageServer" in url and self._token is not None:
                 lyr_dict['serviceToken'] = self._token
 
         return lyr_dict
@@ -8220,6 +8222,9 @@ class RasterCollection():
 
         #self._do_not_hydrate=False
         local_class=True
+    
+        if engine is not None and engine not in ['arcpy', 'image_server']:
+            raise RuntimeError('Invalid engine: parameter engine should be either "arcpy" or "image_server"')   
         engine = _get_raster_collection_engine(engine)
 
         if context is None:
@@ -8232,7 +8237,7 @@ class RasterCollection():
             self._ras_coll_engine_obj=engine(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry, engine=engine, gis=gis, context = context)
         else:
             if isinstance(rasters, str):
-                if ("https://"  in rasters or "http://"  in rasters):
+                if ("https://"  in rasters or "http://"  in rasters) and "ImageServer" in rasters:
                     self._ras_coll_engine = _ImageServerRasterCollection
                     self._ras_coll_engine_obj=_ImageServerRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry,engine= _ImageServerRasterCollection, gis=gis, context=context)
                 else:
@@ -9120,7 +9125,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
             pass
         if isinstance(rasters, str):
             if ("https://"  in rasters or "http://"  in rasters): #To provide access to secured service
-                if self._token is not None:
+                if "ImageServer" in rasters and self._token is not None:
                     self._raster_collection = arcpy.ia.RasterCollection(rasters+"?token="+self._token, attribute_dict)
                 else:
                     self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)

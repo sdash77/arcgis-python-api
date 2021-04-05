@@ -44,6 +44,8 @@ try:
     from ._arcgis_model import _set_multigpu_callback
     from .._data_utils._pixel_classifier_data import ClassifiedTilesData
     from .._data_utils._road_orient_data import RoadOrientation
+    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from matplotlib import pyplot as plt
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -68,7 +70,7 @@ def safe_json(data):
 
 class MultiTaskRoadExtractor(ArcGISModel):
     """
-    Creates a Multi-Task Learning model for binary segmentation. Supports RGB
+    Creates a Multi-Task Learning model for binary segmentation of roads. Supports RGB
     and Multispectral Imagery.
     Implementation based on https://doi.org/10.1109/CVPR.2019.01063 .
 
@@ -551,6 +553,8 @@ class MultiTaskRoadExtractor(ArcGISModel):
         self._check_requisites()
         self.return_fig = kwargs.get("return_fig", False)
         fig=self.learn.show_results(rows=rows, **kwargs)
+        if _IS_ARCGISPRONOTEBOOK:
+            plt.show()
         if self.return_fig:
             return fig
 

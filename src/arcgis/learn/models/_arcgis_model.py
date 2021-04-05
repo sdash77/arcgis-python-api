@@ -8,7 +8,7 @@ import tempfile
 import json
 import logging
 from .._data import _raise_fastai_import_error
-from .._utils.env import HAS_TENSORFLOW, raise_tensorflow_import_error, LAMBDA_TEXT_CLASSIFICATION
+from .._utils.env import HAS_TENSORFLOW, raise_tensorflow_import_error, _LAMBDA_TEXT_CLASSIFICATION, _IS_ARCGISPRONOTEBOOK
 from warnings import warn
 import contextlib
 import io
@@ -24,7 +24,7 @@ HAS_FASTAI = True
 HAS_TENSORBOARDX = True
 
 try:
-    if not LAMBDA_TEXT_CLASSIFICATION:
+    if not _LAMBDA_TEXT_CLASSIFICATION:
         from fastai.vision.learner import model_meta, _default_meta
         from .._utils.common import get_post_processed_model
         from torchvision import models
@@ -75,7 +75,7 @@ losses_skipped = 5
 trailing_losses_skipped = 5
 model_characteristics_folder = 'ModelCharacteristics'
 
-if HAS_FASTAI and not LAMBDA_TEXT_CLASSIFICATION:
+if HAS_FASTAI and not _LAMBDA_TEXT_CLASSIFICATION:
     # Declare the family of backbones to be unpacked and used by different models as supported types
     _vgg_family = [models.vgg11.__name__, models.vgg11_bn.__name__, models.vgg13.__name__, models.vgg13_bn.__name__,
                    models.vgg16.__name__, models.vgg16_bn.__name__, models.vgg19.__name__, models.vgg19_bn.__name__]
@@ -429,7 +429,7 @@ class ArcGISModel(object):
     def __init__(self, data, backbone=None, **kwargs):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
-        if not LAMBDA_TEXT_CLASSIFICATION:
+        if not _LAMBDA_TEXT_CLASSIFICATION:
             move_to_cpu = _device_check()
         else:
             move_to_cpu = True
@@ -701,6 +701,8 @@ class ArcGISModel(object):
         early_stopping          Optional boolean. Parameter to add early stopping.
                                 If set to 'True' training will stop if parameter
                                 `monitor` value stops improving for 5 epochs.
+                                A minimum difference of 0.001 is required for
+                                it to be considered an improvement.
         ---------------------   -------------------------------------------
         checkpoint              Optional boolean or string.
                                 Parameter to save checkpoint during training.
@@ -761,7 +763,7 @@ class ArcGISModel(object):
             raise Exception(f"`monitor` must be set to one from {monitored_names}")
         self.monitor = monitor
         if early_stopping:
-            callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor=monitor, min_delta=0.01, patience=5))
+            callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor=monitor, min_delta=0.001, patience=5))
         if checkpoint:
             from datetime import datetime
             now = datetime.now()
@@ -1175,10 +1177,18 @@ class ArcGISModel(object):
 
         if save_html:
             try:
+                if _IS_ARCGISPRONOTEBOOK:
+                    from IPython import get_ipython
+                    get_ipython().run_line_magic('matplotlib', 'auto')
                 self._save_model_characteristics(saved_path.parent.absolute() / model_characteristics_folder)
                 ArcGISModel._create_html(saved_path)
             except:
                 pass
+            finally:
+                if _IS_ARCGISPRONOTEBOOK:
+                    from IPython import get_ipython
+                    get_ipython().run_line_magic('matplotlib', 'inline')
+
 
         if _emd_template.get('ModelConfigurationFile', False):
             with open(saved_path.parent / _emd_template['ModelConfigurationFile'], 'w') as f:

@@ -258,7 +258,11 @@ def compute_fid_metric(model, data):
         input_a.append(input[0]/2+0.5)
         input_b.append(input[1]/2+0.5)
         pred = model.learn.pred_batch(batch=(input,target))
-        pred_b.append(pred[0]/2+0.5)
+        if isinstance(pred, list):
+            pred = pred[0]
+        else:
+            pred = pred[:,0,:,:,:]
+        pred_b.append(pred/2+0.5)
     
     data_len = len(data.valid_ds)
     batch_size = data.batch_size
@@ -277,6 +281,10 @@ def compute_metrics(model, dl, show_progress):
     with torch.no_grad():
         for input, target in progress_bar(dl, display=False):
             prediction = model.learn.model(input[0], input[1])
-            avg_psnr += psnr(prediction[0], input[1])
-            avg_ssim += ssim(prediction[0], input[1])
+            if isinstance(prediction, list):
+                prediction = prediction[0]
+            else:
+                prediction = prediction[:,0,:,:,:]
+            avg_psnr += psnr(prediction, input[1])
+            avg_ssim += ssim(prediction, input[1])
     return avg_psnr/len(dl), avg_ssim.item()/len(dl)

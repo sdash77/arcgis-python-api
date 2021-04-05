@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import math
 import torch.nn.functional as F
+from .._utils.env import _IS_ARCGISPRONOTEBOOK
 
 
 def calculate_intersection(preds, targs, mode): 
@@ -291,4 +292,5 @@ def show_batch_classified_tiles(self, rows=3, alpha=0.7, **kwargs):
                 y_rgb = color_array[y_batch[idx][0]].cpu().numpy()
                 axi.imshow(y_rgb, alpha=alpha)
             idx+=1
-
+    if _IS_ARCGISPRONOTEBOOK:
+        plt.show()

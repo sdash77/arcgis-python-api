@@ -1,5 +1,6 @@
 import traceback
 from .._data import _raise_fastai_import_error
+from ._inference_only_models import InferenceOnlyModel
 HAS_TRANSFORMER = True
 
 try:
@@ -15,7 +16,7 @@ except Exception as e:
     EXPECTED_MODEL_TYPES = []
 
 
-class TextGenerator:
+class TextGenerator(InferenceOnlyModel):
     """
     Creates a `TextGenerator` Object.
     Based on the Hugging Face transformers library
@@ -32,22 +33,44 @@ class TextGenerator:
                             https://huggingface.co/models?search=&filter=lm-head
     =====================   ===========================================
 
+    **kwargs**
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    pretrained_path         Option str. Path to a directory, where pretrained
+                            model files are saved. 
+                            If pretrained_path is provided, the model is
+                            loaded from that path on the local disk.
+    ---------------------   -------------------------------------------
+    working_dir             Option str. Path to a directory on local filesystem.
+                            If directory is not present, it will be created.
+                            This directory is used as the location to save the 
+                            model.
+    =====================   ===========================================
+
     :returns: `TextGenerator` Object
     """
 
     #: supported transformer backbones
     supported_backbones = EXPECTED_MODEL_TYPES
 
-    def __init__(self, backbone=None):
+    def __init__(self, backbone=None, **kwargs):
+        self.kwargs = kwargs
+        super().__init__()        
         if not HAS_TRANSFORMER:
             _raise_fastai_import_error(import_exception=transformer_exception)
 
         logger = logging.get_logger()
         logger.setLevel(logging.ERROR)
-        self._device = _get_device_id()
         self._task = "text-generation"
+            
         try:
-            self.model = pipeline(self._task, model=backbone, device=self._device)
+            if 'pretrained_path' in kwargs.keys():
+                self.model = pipeline(self._task, model=r"{}".format(kwargs.get('pretrained_path')), device=self._device)
+            else:
+                self.model = pipeline(self._task, model=backbone, device=self._device)
+
         except Exception as e:
             error_message = (f"Model - `{backbone}` cannot be used for {self._task} task.\n"
                              f"Model type should be one of {EXPECTED_MODEL_TYPES}.")

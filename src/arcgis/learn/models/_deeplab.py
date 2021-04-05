@@ -35,6 +35,8 @@ try:
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from ._psp_utils import accuracy
     from ._PointRend import PointRendSemSegHead, PointRend_target_transform
+    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    import matplotlib.pyplot as plt
 
     HAS_FASTAI = True
 except Exception as e:
@@ -250,7 +252,7 @@ class DeepLab(ArcGISModel):
         self.dice_loss_average = kwargs.get('dice_loss_average', 'micro')
         
         self._code = image_classifier_prf
-        if self._backbone.__name__ is 'resnet101':
+        if self._backbone.__name__ == 'resnet101':
             model = _create_deeplab(data.chip_size, data.c, pointrend=self._pointrend, keep_dilation=self.keep_dilation)
             if self._is_multispectral:
                 model = _change_tail(model, data)
@@ -481,6 +483,8 @@ class DeepLab(ArcGISModel):
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
         self.learn.show_results(rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs)
+        if _IS_ARCGISPRONOTEBOOK:
+            plt.show()
 
     def _show_results_multispectral(self, rows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
         return_fig = kwargs.get('return_fig', False)
