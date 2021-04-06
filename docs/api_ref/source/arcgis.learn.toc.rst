@@ -174,20 +174,6 @@ Transform3d
     :members:
     :undoc-members:
 
-Object Tracking Models
-------------------------
-SiamMask
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.learn.SiamMask
-    :members:
-    :inherited-members:
-
-Track
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoclass:: arcgis.learn.Track
-    :members:
-    :inherited-members:
-
 Scanned Maps
 ------------
 ScannedMapDigitizer

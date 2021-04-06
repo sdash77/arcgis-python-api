@@ -28,8 +28,6 @@ try:
         from fastai.vision.learner import model_meta, _default_meta
         from .._utils.common import get_post_processed_model
         from torchvision import models
-        from ._siammask_utils import Custom
-        from ._siammask_utils import load_pretrain
 
     from fastai.callbacks import TrackerCallback, EarlyStoppingCallback
     from fastai.basic_train import LearnerCallback
@@ -1155,73 +1153,7 @@ class ArcGISModel(object):
 
             self._create_tfonnx_emd_template(_emd_template, saved_path.with_suffix('.onnx'), batch_size)
             os.remove(saved_path.with_suffix('.pth'))
-        if framework.lower() == "torchscript":
-            siammask = Custom(anchors=self.anchors)
-            if '\\' in name_or_path or '/' in name_or_path:
-                models_path = os.path.join(name_or_path)
-            else:
-                models_path = os.path.join(self.learn.path, self.learn.model_dir, name)
-            if not os.path.exists(models_path):
-                os.makedirs(models_path)
 
-            siammask = load_pretrain(siammask, os.path.join(models_path, name + ".pth"))
-            outdir = os.path.join(models_path, 'torch_scripts')
-            if not os.path.isdir(outdir):
-                os.mkdir(outdir)
-
-            scripted_feature_extractor = torch.jit.script(siammask.features.features)
-            scripted_feature_extractor.save(os.path.join(outdir, 'feature_extractor.pt'))
-
-            scripted_feature_downsampler = torch.jit.script(siammask.features.downsample)
-            scripted_feature_downsampler.save(os.path.join(outdir, 'feature_downsampler.pt'))
-
-            scripted_rpn_model = torch.jit.script(siammask.rpn_model)
-            scripted_rpn_model.save(os.path.join(outdir, 'rpn_model.pt'))
-
-            scripted_mask_conv_kernel = torch.jit.script(siammask.mask_model.mask.conv_kernel)
-            scripted_mask_conv_kernel.save(os.path.join(outdir, 'mask_conv_kernel.pt'))
-
-            scripted_mask_conv_search = torch.jit.script(siammask.mask_model.mask.conv_search)
-            scripted_mask_conv_search.save(os.path.join(outdir, 'mask_conv_search.pt'))
-
-            scripted_mask_depthwise_conv = torch.jit.script(siammask.mask_model.mask.conv2d_dw_group)
-            scripted_mask_depthwise_conv.save(os.path.join(outdir, 'mask_depthwise_conv.pt'))
-
-            scripted_refine_model = torch.jit.script(siammask.refine_model)
-            scripted_refine_model.save(os.path.join(outdir, 'refine_model.pt'))
-            temp_emd_template = _emd_template.copy()
-            temp_emd_template["ModelFile"] = "."
-            temp_emd_template["ModelFiles"] = [
-                "feature_extractor.pt",
-                "feature_downsampler.pt",
-                "rpn_model.pt",
-                "mask_conv_kernel.pt",
-                "mask_conv_search.pt",
-                "mask_depthwise_conv.pt",
-                "refine_model.pt"
-            ]
-
-            if os.path.exists(os.path.join(outdir, name + ".emd")):
-                os.remove(os.path.join(outdir, name + ".emd"))
-
-            import zipfile
-            dlpk_Name = os.path.join(outdir, name + '.dlpk')
-            if os.path.exists(dlpk_Name):
-                os.remove(dlpk_Name)
-
-            out_file = open(os.path.join(outdir, name + ".emd"), "w")
-            json.dump(temp_emd_template, out_file, indent=4)
-            out_file.close()
-            dlpk_Name = os.path.join(outdir, name + '.dlpk')
-            f = zipfile.ZipFile(dlpk_Name, 'w')
-            cwd = os.getcwd()
-            os.chdir(outdir)
-            for files in temp_emd_template["ModelFiles"]:
-                f.write(files)
-
-            f.write(name + ".emd")
-            f.close()
-            os.chdir(cwd)
 
         if _emd_template.get('InferenceFunction', False):
             if _emd_template['ModelType'] not in ["ObjectDetection", "ImageClassification", "InstanceDetection", \

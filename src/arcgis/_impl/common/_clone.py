@@ -172,6 +172,10 @@ class _DeepCloner():
         if item.id in self._graph:
             return self._graph[item.id]
 
+        # Check if the item is specified in the mapping, if so don't process it
+        if item.id in self._clone_mapping['Item IDs']:
+            return None
+
         # if the item is a group find all the web maps that are shared with the group
         if isinstance(item, gis.Group):
             item_definition = self._get_group_definition(item)
@@ -342,8 +346,13 @@ class _DeepCloner():
                                 for layer_source in layer_sources['layers']:
                                     if not os.path.exists(layer_source['url']):
                                         layer_flc = source.content.get(layer_source['serviceItemId'])
-                                        layer_id = int(layer_source['url'][-1])
-                                        layer_url_dict = {'url':layer_flc.layers[layer_id].url}
+                                        layer_id = int(urlparse(layer_source['url']).path.split("/")[-1])
+                                        try:
+                                            layer_url_dict = {'url':layer_flc.layers[layer_id].url}
+                                        except IndexError:
+                                            # Layer could be a table
+                                            table_index = layer_id - (len(svc.layers))
+                                            layer_url_dict = {'url':layer_flc.tables[table_index].url}
                                         layer_source.update(layer_url_dict)
                                         _sources.append(layer_source)
                         properties = self._get_properties(layer, data, len(_sources) > 1, is_view)
@@ -356,7 +365,8 @@ class _DeepCloner():
                             if layer_source['serviceItemId'] not in source_item_ids:
                                 source_item = source.content.get(layer_source['serviceItemId'])
                                 source_fs_definition = self._get_item_definitions(source_item)
-                                source_fs_definitions.append(source_fs_definition)
+                                if source_fs_definition is not None:
+                                    source_fs_definitions.append(source_fs_definition)
                                 source_item_ids.append(layer_source['serviceItemId'])
                             _view_sources.append(layer_source['url'])
                             feature_layer = FeatureLayer(layer_source['url'], source)
@@ -416,18 +426,19 @@ class _DeepCloner():
                     if item_id is not None:
                         web_map_item = source.content.get(item_id)
                         map_item_definition = self._get_item_definitions(web_map_item)
-                        # WF layer is the parent of the maps, so remove it from the children
-                        for child in map_item_definition._children:
-                            try:
-                                if child._service_definition["serviceItemId"] == item.id:
-                                    map_item_definition._children.remove(child)
-                                    break
-                            except Exception:
-                                # this is not the layer we want since it doesn't have a service definition
-                                continue
-                        map_item_definition.sharing['groups'].append(group_id)
-                        item_definition.add_child(map_item_definition)
-                        map_item_definition.add_child(group_item_definition)
+                        if map_item_definition is not None:
+                            # WF layer is the parent of the maps, so remove it from the children
+                            for child in map_item_definition._children:
+                                try:
+                                    if child._service_definition["serviceItemId"] == item.id:
+                                        map_item_definition._children.remove(child)
+                                        break
+                                except Exception:
+                                    # this is not the layer we want since it doesn't have a service definition
+                                    continue
+                            map_item_definition.sharing['groups'].append(group_id)
+                            item_definition.add_child(map_item_definition)
+                            map_item_definition.add_child(group_item_definition)
 
                 # add integration as dependency
                 integrations_fl = FeatureLayer(url=item.url+"/4", gis=self.target)
@@ -439,9 +450,10 @@ class _DeepCloner():
                         integration_item = source.content.get(item_id)
                         if integration_item:
                             integration_item_definition = self._get_item_definitions(integration_item)
-                            self._graph[item_id] = integration_item_definition
-                            item_definition.add_child(integration_item_definition)
-                            integration_item_definition.add_child(group_item_definition)
+                            if integration_item_definition is not None:
+                                self._graph[item_id] = integration_item_definition
+                                item_definition.add_child(integration_item_definition)
+                                integration_item_definition.add_child(group_item_definition)
                     except KeyError:
                         # if item id doesn't exist, try at the next one
                         continue
@@ -469,10 +481,11 @@ class _DeepCloner():
                 if item_id is not None:
                     service_item = source.content.get(item_id)
                     layer_item_definition = self._get_item_definitions(service_item)
-                    self._graph[item_id] = layer_item_definition
-                    item_definition.add_child(layer_item_definition)
-                    layer_item_definition.sharing['groups'].append(group_id)
-                    layer_item_definition.add_child(group_item_definition)
+                    if layer_item_definition is not None:
+                        self._graph[item_id] = layer_item_definition
+                        item_definition.add_child(layer_item_definition)
+                        layer_item_definition.sharing['groups'].append(group_id)
+                        layer_item_definition.add_child(group_item_definition)
 
 
             # Process the web maps
@@ -482,9 +495,10 @@ class _DeepCloner():
                 if item_id is not None:
                     web_map_item = source.content.get(item_id)
                     map_item_definition = self._get_item_definitions(web_map_item)
-                    map_item_definition.sharing['groups'].append(group_id)
-                    item_definition.add_child(map_item_definition)
-                    map_item_definition.add_child(group_item_definition)
+                    if map_item_definition is not None:
+                        map_item_definition.sharing['groups'].append(group_id)
+                        item_definition.add_child(map_item_definition)
+                        map_item_definition.add_child(group_item_definition)
 
             # Handle any app integrations
             integrations = _deep_get(workforce_json, 'assignmentIntegrations')
@@ -507,8 +521,9 @@ class _DeepCloner():
                         for item_id in item_ids:
                             integration_item = source.content.get(item_id[7:])
                             integration_item_definition = self._get_item_definitions(integration_item)
-                            self._graph[item_id[7:]] = integration_item_definition
-                            item_definition.add_child(integration_item_definition)
+                            if integration_item_definition is not None:
+                                self._graph[item_id[7:]] = integration_item_definition
+                                item_definition.add_child(integration_item_definition)
 
         # If the item is a form find the feature service that supports it
         elif item['type'] == 'Form':
@@ -517,7 +532,8 @@ class _DeepCloner():
 
             for related_item in item_definition.related_items:
                 item_def = self._get_item_definitions(source.content.get(related_item['id']))
-                item_definition.add_child(item_def)
+                if item_def is not None:
+                    item_definition.add_child(item_def)
 
         # If the item is a quick capture project find the feature services that supports it
         elif item['type'] == 'QuickCapture Project':
@@ -585,7 +601,8 @@ class _DeepCloner():
                             feature_service = _get_feature_service_related_item(service_url, source)
                             if feature_service:
                                 fs_definition = self._get_item_definitions(feature_service)
-                                item_definition.add_child(fs_definition)
+                                if fs_definition is not None:
+                                    item_definition.add_child(fs_definition)
 
         # If the item is a pro project find the feature services that supports it
         elif item['type'] == 'Project Package':
@@ -629,7 +646,8 @@ class _DeepCloner():
                                             feature_service = _get_feature_service_related_item(service_url, source)
                                             if feature_service:
                                                 fs_definition = self._get_item_definitions(feature_service)
-                                                item_definition.add_child(fs_definition)
+                                                if fs_definition is not None:
+                                                    item_definition.add_child(fs_definition)
 
 
                 except ImportError:
@@ -999,9 +1017,10 @@ class CloneNode:
         :param node: <Node> The child node to add
         :return:
         """
-        self._children.add(node)
-        if self not in node.parents:
-            node.add_parent(self)
+        if node is not None:
+            self._children.add(node)
+            if self not in node.parents:
+                node.add_parent(self)
 
     def add_parent(self, node):
         """
