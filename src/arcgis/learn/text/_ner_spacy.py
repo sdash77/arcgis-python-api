@@ -17,6 +17,7 @@ import random, os
 import datetime
 from copy import deepcopy
 from collections.abc import Iterable
+import tempfile
 from .._utils._ner_utils import even_mults, _timelapsed
 from ..models._arcgis_model import ArcGISModel, _create_zip
 
@@ -94,33 +95,33 @@ class _SpacyEntityRecognizer(ArcGISModel):
         num_it = 10
         smoothening = 4
 
-        checkpoint_path = os.path.join(self.path, os.path.basename(self._data._temp_folder.name), 'tmp')
-        if not os.path.exists(os.path.dirname(checkpoint_path)):
-            os.mkdir(os.path.dirname(checkpoint_path))
-        self.model.to_disk(checkpoint_path)  # caches the current model state
-        if self._trained:
-            temp_optimizer = self.optimizer  # preserving the current state of the model for later load
-        trained = self._trained  # preserving the current state of the model for later load
-        recorder = deepcopy(self.recorder)  # preserving the current state of the model for later load
-        self.recorder.losses, self.recorder.val_loss, self.recorder.lrs = [], [], []  # resetting the recorder
-        lrs = even_mults(start_lr, end_lr, 14)
-        epochs = int(np.ceil(num_it / (len(self.data.train_ds) / self.data.batch_size)))
-        self.fit(lr=list(lrs), epochs=epochs * len(lrs), from_lr_find=True, num_it=num_it)
-        from IPython.display import clear_output
-        clear_output()
+        with tempfile.TemporaryDirectory(prefix='arcgisTemp_') as _tempfolder:
+            checkpoint_path = os.path.join(_tempfolder, 'tmp')
+            if not os.path.exists(os.path.dirname(checkpoint_path)):
+                os.mkdir(os.path.dirname(checkpoint_path))
+            self.model.to_disk(checkpoint_path)  # caches the current model state
+            if self._trained:
+                temp_optimizer = self.optimizer  # preserving the current state of the model for later load
+            trained = self._trained  # preserving the current state of the model for later load
+            recorder = deepcopy(self.recorder)  # preserving the current state of the model for later load
+            self.recorder.losses, self.recorder.val_loss, self.recorder.lrs = [], [], []  # resetting the recorder
+            lrs = even_mults(start_lr, end_lr, 14)
+            epochs = int(np.ceil(num_it / (len(self.data.train_ds) / self.data.batch_size)))
+            self.fit(lr=list(lrs), epochs=epochs * len(lrs), from_lr_find=True, num_it=num_it)
+            from IPython.display import clear_output
+            clear_output()
 
-        N = smoothening  # smoothening factor
-        self.recorder.losses = np.convolve(self.recorder.losses, np.ones((N,)) / N, mode='valid').tolist()
-        self.recorder.lrs = np.convolve(self.recorder.lrs, np.ones((N,)) / N, mode='valid').tolist()
-        lr, index = self._find_lr(losses_skipped=0, trailing_losses_skipped=0, section_factor=2)
+            N = smoothening  # smoothening factor
+            self.recorder.losses = np.convolve(self.recorder.losses, np.ones((N,)) / N, mode='valid').tolist()
+            self.recorder.lrs = np.convolve(self.recorder.lrs, np.ones((N,)) / N, mode='valid').tolist()
+            lr, index = self._find_lr(losses_skipped=0, trailing_losses_skipped=0, section_factor=2)
 
-        if allow_plot:
-            self._show_lr_plot(index, losses_skipped=0, trailing_losses_skipped=1)
-        self._trained = trained
-        self.recorder = recorder
-        import spacy, shutil
-        self.model = spacy.load(checkpoint_path)
-        shutil.rmtree(checkpoint_path, ignore_errors=True)
+            if allow_plot:
+                self._show_lr_plot(index, losses_skipped=0, trailing_losses_skipped=1)
+            self._trained = trained
+            self.recorder = recorder
+            import spacy
+            self.model = spacy.load(checkpoint_path)
         return lr
 
     def unfreeze(self):

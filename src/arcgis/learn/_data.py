@@ -438,10 +438,7 @@ def _make_folder(path):
 
 _models_dir = 'models'
 def _prepare_working_dir(path):
-    path = os.path.abspath(path)
-    _make_folder(os.path.join(path, _models_dir))
-    temp_folder = tempfile.TemporaryDirectory(prefix=os.path.join(path, 'arcgisTemp_'))
-    return temp_folder
+    _make_folder(os.path.join(os.path.abspath(path), _models_dir))
 
 def merge_emd_and_stats(data_folders):
     emd_store = {}
@@ -651,9 +648,8 @@ def prepare_textdata(
 
     if working_dir is None:
         working_dir = ''
-    temp_folder = _prepare_working_dir(working_dir)
+    _prepare_working_dir(working_dir)
     data.path = Path(os.path.abspath(working_dir))
-    data._temp_folder = temp_folder
     return data
 
 def prepare_tabulardata(
@@ -829,9 +825,8 @@ def prepare_tabulardata(
 
     if working_dir is None:
         working_dir = ''
-    temp_folder = _prepare_working_dir(working_dir)
+    _prepare_working_dir(working_dir)
     data.path = Path(os.path.abspath(working_dir))
-    data._temp_folder = temp_folder
 
     return data
 
@@ -1726,7 +1721,8 @@ def prepare_data(path,
             data.working_dir = None
         if os.path.isfile(path):
             path = os.path.dirname(path)
-        data._temp_folder = _prepare_working_dir(path)
+        _prepare_working_dir(path)
+
         return data
 
     elif dataset_type == "PointCloud":
@@ -1741,7 +1737,7 @@ def prepare_data(path,
         data._data_path = data.path
         if working_dir is not None:
             data.path = Path(os.path.abspath(working_dir))
-        data._temp_folder = _prepare_working_dir(data.path)
+        _prepare_working_dir(data.path)
         return data
 
     elif dataset_type == "ImageCaptioning":
@@ -2147,7 +2143,7 @@ def prepare_data(path,
         data.path = Path(os.path.abspath(working_dir))
     else:
         data.path = Path(os.path.dirname(os.path.abspath(data.path)))
-    data._temp_folder = _prepare_working_dir(data.path)
+    _prepare_working_dir(data.path)
 
     from ._utils.env import _IS_ARCGISPRONOTEBOOK
     if _IS_ARCGISPRONOTEBOOK:        

@@ -561,27 +561,24 @@ class ArcGISModel(object):
         Helps in choosing the optimum learning rate for training the model.
         """
         self._check_requisites()
-        temp = self.learn.model_dir
-        self.learn.model_dir = os.path.basename(self._data._temp_folder.name)
+        temp1 = self.learn.path
+        metrics = None
         try:
             metrics = self.learn.metrics
             self.learn.metrics = []
-            self.learn.lr_find()
+            with tempfile.TemporaryDirectory(prefix='arcgisTemp_') as _tempfolder:
+                self.learn.path = Path(_tempfolder)
+                self.learn.lr_find()
         except Exception as e:
             # if some error comes in lr_find
             raise e
         finally:
-            self.learn.model_dir = temp
             self.learn.metrics = metrics
-            tmp_file = os.path.join(self.learn.path, os.path.basename(self._data._temp_folder.name), 'tmp.pth')
-            try:
-                if os.path.exists(tmp_file):
-                    os.remove(tmp_file)
-            except Exception as e:
-                raise e
+            # Revert
+            self.learn.path = temp1
 
         #
-        self.learn.model_dir = temp
+        self.learn.path = temp1
 
         from IPython.display import clear_output
         clear_output()
