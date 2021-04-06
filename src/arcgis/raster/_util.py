@@ -613,7 +613,10 @@ def _upload_imagery_enterprise(files, raster_type_name=None, gis=None):
                         try:
                             item_id  = _upload(path=fp, gis=gis)
                         except Exception as e:
-                            _LOGGER.warning('file: '+str(fp)+ " "+ str(e))
+                            if "(Error Code: 403)" in str(e):
+                                pass
+                            else:
+                                _LOGGER.warning('file: '+str(fp)+ " "+ str(e))
 
                         if item_id is not None:
                             if append_path:
