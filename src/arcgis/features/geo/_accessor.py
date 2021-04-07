@@ -1459,7 +1459,7 @@ class GeoAccessor(object):
         """
 
         Plot draws the data on a web map. The user can describe in simple terms how to
-        renderer spatial data using symbol.  To make the process simplier a pallette
+        renderer spatial data using symbol.  To make the process simplier a palette
         for which colors are drawn from can be used instead of explicit colors.
 
 
@@ -1535,8 +1535,8 @@ class GeoAccessor(object):
         col                     optional string/list. Field or fields used for heatmap,
                                 class breaks, or unique renderers.
         ----------------------  ---------------------------------------------------------
-        pallette                optional string. The color map to draw from in order to
-                                visualize the data.  The default pallette is 'jet'. To
+        palette                optional string. The color map to draw from in order to
+                                visualize the data.  The default palette is 'jet'. To
                                 get a visual representation of the allowed color maps,
                                 use the **display_colormaps** method.
         ----------------------  ---------------------------------------------------------
@@ -2052,7 +2052,7 @@ class GeoAccessor(object):
                  symbol_type=kwargs.pop('symbol_type', None),
                  symbol_style=kwargs.pop('symbol_style', None),
                  col=kwargs.pop('col', None),
-                 colors=kwargs.pop('cmap', None) or kwargs.pop('colors', None) or kwargs.pop('pallette', 'jet'),
+                 colors=kwargs.pop('cmap', None) or kwargs.pop('colors', None) or kwargs.pop('pallette', None) or kwargs.pop('palette', 'jet'),
                  alpha=kwargs.pop('alpha', 1),
                  **kwargs)
 
