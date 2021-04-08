@@ -84,8 +84,8 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
         if layer.tiles_only or not allow_raster_function:
             newlyr = ImageryLayer(function_chain_ra, layer._gis)
         else:
-            newlyr._tiles_only = layer._tiles_only
             newlyr = ImageryLayer(layer._url, layer._gis)
+            newlyr._tiles_only = layer._tiles_only
 
     # if layer._fn is not None: # chain the functions
     #     old_chain = layer._fn
@@ -138,8 +138,8 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
         if layer.tiles_only or not allow_raster_function:
             newlyr = ImageryLayer(function_chain_ra, layer._gis)
         else:
-            newlyr._tiles_only = layer._tiles_only
             newlyr = ImageryLayer(layer._url, layer._gis)
+            newlyr._tiles_only = layer._tiles_only
 
     # if layer._fn is not None: # chain the functions
     #     old_chain = layer._fn
@@ -190,8 +190,8 @@ def _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2=None, varia
         if layer.tiles_only or not allow_raster_function:
             newlyr= Raster(function_chain_ra, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
         else:
-            newlyr._engine_obj._tiles_only = layer._tiles_only
             newlyr = Raster(layer._url, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+            newlyr._engine_obj._tiles_only = layer._tiles_only
 
     if layer._engine==_ArcpyRaster:
         try:            
@@ -244,8 +244,8 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
         if layer.tiles_only or not allow_raster_function:
             newlyr = Raster(function_chain_ra, is_multidimensional= layer._is_multidimensional, engine= layer._engine,  gis=layer._gis)
         else:
-            newlyr._engine_obj._tiles_only = layer._tiles_only
             newlyr = Raster(layer._url, is_multidimensional= layer._is_multidimensional, engine= layer._engine,  gis=layer._gis)
+            newlyr._engine_obj._tiles_only = layer._tiles_only
 
     if layer._engine==_ArcpyRaster:
         try:
