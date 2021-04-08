@@ -750,8 +750,17 @@ class Server(BaseServer):
             return None
     #----------------------------------------------------------------------
     @property
-    def _mode(self):
-        """Gets the class that works with Mode."""
+    def mode(self):
+        """
+        ArcGIS Server site mode that allows you to control changes to your site.
+        You can set the site mode to READ_ONLY to disallow the publishing of new
+        services and block most administrative operations. Your existing services
+        will continue to function as they did previously. Note that certain
+        administrative operations such as adding and removing machines from a
+        site are still available in READ_ONLY mode.
+        
+        :returns: `Mode` class
+        """
         if self.resources is None:
             self._init()
         if isinstance(self.resources, list) and \
