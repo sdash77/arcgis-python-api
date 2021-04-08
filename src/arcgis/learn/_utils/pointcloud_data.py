@@ -368,7 +368,7 @@ class PointCloudDataset(Dataset):
                 self.tiles = self.tiles[indexes]
                 if len(self.tiles) == 0:
                     raise Exception(f"The {folder} set is empty because everything "
-                                     "got filtered out based on `classes_of_interest`")
+                                     "got filtered out.")
                 self._frac_remaining = len(self.tiles) / orig_num_tiles
                 self.masks = self.masks[indexes]
                 self.centers = self.centers[indexes]
