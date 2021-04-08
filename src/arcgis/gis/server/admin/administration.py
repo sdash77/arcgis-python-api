@@ -30,7 +30,7 @@ class Server(BaseServer):
 
         gis = GIS(profile="your_ent_admin_profile")
 
-        hosting_server = gis.servers.get(role="HOSTING_SERVER")
+        hosting_server = gis.admin.servers.get(role="HOSTING_SERVER")
 
 
     For stand-alone ArcGIS Server sites, directly create a :class:`Server` instance.
