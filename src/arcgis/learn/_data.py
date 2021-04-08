@@ -872,8 +872,9 @@ def prepare_data(path,
 
     ---------------------   -------------------------------------------
     chip_size               Optional integer, default 224. Size of the image to train the
-                            model. Images are cropped to the specified chip_size. If image size is less
-                            than chip_size, the image size is used as chip_size. Not supported for superres.
+                            model. Images are cropped to the specified chip_size.
+                            If image size is less than chip_size, the image size is
+                            used as chip_size. Not supported for superres and siammask.
     ---------------------   -------------------------------------------
     val_split_pct           Optional float. Percentage of training data to keep
                             as validation.
@@ -908,7 +909,7 @@ def prepare_data(path,
                             This parameter is mandatory for data which are not
                             exported by ArcGIS Pro / Enterprise which includes
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
-                            'CycleGAN' and 'Pix2Pix'.
+                            'CycleGAN' and 'Pix2Pix' and 'ObjectTracking'.
                             This parameter is also mandatory while preparing data
                             for 'EntityRecognizer' model. Accepted data format
                             for this model are - ['ner_json','BIO', 'LBIOU'].
@@ -1817,6 +1818,15 @@ def prepare_data(path,
         img_size = data.x[0].shape[-1]
         if resize_to is None:
             kwargs_transforms['size'] = img_size
+    elif dataset_type == "ObjectTracking":
+        from ._utils.object_tracking_data import prepare_object_tracking_data
+        data = prepare_object_tracking_data(path, batch_size, val_split_pct)
+        data._is_multispectral = False
+        data._extract_bands = None
+        data._do_normalize = False
+        data.chip_size = 127
+        data._temp_folder = _prepare_working_dir(path)
+        return data
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
     
