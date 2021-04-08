@@ -192,3 +192,10 @@ Job
     :members:
     :undoc-members:
     :show-inheritance:
+
+Mode
+----------------
+.. autoclass:: arcgis.gis.server.Mode
+    :members:
+    :undoc-members:
+    :show-inheritance:
