@@ -9499,7 +9499,8 @@ class Item(dict):
                         raise Exception("Cannot find group with id: " + group)
                 else:
                     raise Exception("Invalid group(s)")
-
+        elif isinstance(groups, Group):
+            group_ids = groups.id
         elif isinstance(groups, str):
             #old API - groups sent as comma separated group ids
             group_ids = groups
@@ -9512,10 +9513,11 @@ class Item(dict):
                 'items' : self.id,
                 "groups": group_ids,
                 "everyone": everyone,
-                "account": org
+                "account": org,
+                'confirmItemControl' : allow_members_to_edit
+
             }
             if allow_members_to_edit:
-                params['owner'] = self.owner
                 params['confirmItemControl'] = allow_members_to_edit  # True
         else:
             url = "{resturl}/content/items/{itemid}/share".format(resturl=self._gis._portal.resturl,
