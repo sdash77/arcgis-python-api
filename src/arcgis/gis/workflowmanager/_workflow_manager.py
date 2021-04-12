@@ -345,6 +345,10 @@ class JobManager:
             url = '{base}/jobs/{jobId}/update?token={token}'.format(base=self._url, jobId=job_id,
                                                                     token=self._gis._con.token)
             new_job = Job(current_job, self._gis, url)
+            # temporary fix for error in privileges
+            delattr(new_job, "percent_complete")
+            delattr(new_job, "notes")
+            delattr(new_job, "parent_job")
             return new_job.post()
         except:
             self._handle_error(sys.exc_info())
@@ -676,7 +680,6 @@ class WorkflowManager:
         :return: Workflow Manager Job Template Object
         """
         try:
-            print(id)
             return JobTemplate.get(self._gis, '{base}/jobTemplates/{jobTemplate}'.format(base=self._url, jobTemplate=id),
                                    {"token": self._gis._con.token})
         except:
@@ -849,7 +852,6 @@ class WorkflowManager:
                 last_updated_date = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
             url = '{base}/jobTemplates?token={token}'.format(base=self._url, token=self._gis._con.token)
             post_job_template = JobTemplate({
-                "jobTemplateId": id,
                 "jobTemplateName": name,
                 "category": category,
                 "defaultJobDuration": job_duration,
@@ -868,6 +870,8 @@ class WorkflowManager:
                 "lastUpdatedBy": last_updated_by,
                 "lastUpdatedDate": last_updated_date
             })
+            if id != "":
+                post_job_template.__setattr__(self, _camelCase_to_underscore("jobTemplateId"), id)
             return post_job_template.post(self._gis, url)
         except:
             self._handle_error(sys.exc_info())
@@ -923,7 +927,6 @@ class WorkflowManager:
         try:
             url = '{base}/diagrams?token={token}'.format(base=self._url, token=self._gis._con.token)
             post_diagram = JobDiagram({
-                "diagramId": "",
                 "diagramName": name,
                 "description": description,
                 "active": active,

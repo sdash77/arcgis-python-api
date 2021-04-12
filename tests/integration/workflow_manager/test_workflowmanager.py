@@ -94,7 +94,6 @@ class TestWorkflowManager(unittest.TestCase):
                                                             priority='High',
                                                             description='hopefully this works...',
                                                             owner=self.connection.portal_username,
-                                                            group='Unassigned',
                                                             assigned=self.connection.portal_username,
                                                             complete=42,
                                                             notes='testing notes',
@@ -336,8 +335,6 @@ class TestWorkflowManager(unittest.TestCase):
         # Act
         groups = self.connection.workflow_manager.assignable_groups
         found_group = [x for x in groups if x['title'] == default_group_name]
-        pprint(groups)
-        print(default_group_name)
 
         # Assert
         self.assertIsInstance(groups, list, "Incorrect return type")
@@ -410,19 +407,30 @@ class TestWorkflowManager(unittest.TestCase):
 
     def test_get_valid_searches(self):
         # Arrange
-        valid_search = {'definition':
-                            {'fields':
-                                 ['assignedTo',
-                                  'jobName',
-                                  'currentStep',
-                                  'jobTemplateName',
-                                  'priority',
-                                  'dueDate'],
-                             'num': 50,
-                             'q': '"assignedType=\'User\' AND closed=0 AND assignedTo=\'" + $currentUser + "\' "',
-                             'start': 0},
+        valid_search = {'definition': {'displayNames': ['Assigned To',
+                                                        'Name',
+                                                        'Current Step',
+                                                        'Type',
+                                                        'Priority',
+                                                        'Due Date',
+                                                        'Status'],
+                                       'fields': ['assignedTo',
+                                                  'jobName',
+                                                  'currentStep',
+                                                  'jobTemplateName',
+                                                  'priority',
+                                                  'dueDate',
+                                                  'jobStatus'],
+                                       'num': 50,
+                                       'q': '"assignedType=\'User\' AND closed=0 AND assignedTo=\'" '
+                                            '+ $currentUser + "\' "',
+                                       'sortFields': [{'field': 'jobName', 'sortOrder': 'Asc'},
+                                                      {'field': 'priority', 'sortOrder': 'Asc'}],
+                                       'start': 0},
                         'name': 'My Jobs',
-                        'searchId': 'rrUF60TFQCe2K0vtgSsYpA'}
+                        'searchId': 'rrUF60TFQCe2K0vtgSsYpA',
+                        'searchType': 'Standard',
+                        'sortIndex': 1000}
 
         # Act
         searches = self.connection.workflow_manager.searches
@@ -869,7 +877,6 @@ class TestWorkflowManager(unittest.TestCase):
 
         # Act
         actual = self.connection.workflow_manager.jobs.get(test_id).history
-        print(actual)
 
         # Arrange
         self.assertIsInstance(actual, dict, "Incorrect return type")
@@ -893,7 +900,6 @@ class TestWorkflowManager(unittest.TestCase):
         job_id = self.create_job()[0]
         diagram = self.connection.workflow_manager.jobs.diagram(job_id)
         step_id = diagram.initial_step_id
-        print(self.connection.workflow_manager.users)
 
         actual = self.connection.workflow_manager.jobs.get(job_id).update_step(step_id=step_id,
                                                                                assigned_type='User',
@@ -1270,7 +1276,8 @@ class TestWorkflowManager(unittest.TestCase):
         job_diagram = self.connection.workflow_manager.jobs.diagram(job_id)
 
         # Assert
-        self.assertEqual('Introduction to Workflow Manager', job_diagram.diagram_name, "Incorrect diagram name returned")
+        self.assertEqual('Introduction to Workflow Manager', job_diagram.diagram_name,
+                         "Incorrect diagram name returned")
         self.assertEqual('99o2QTePTqq-BHRHK_Aeag', job_diagram.diagram_id, "Incorrect diagram id returned")
 
     def test_get_job_diagram_returns_not_found(self):

@@ -18,14 +18,14 @@ class WorkflowManagerSetup:
         Check if ArcGIS.com can be reached
         :return:
         """
-        custom_testing = False
+        custom_testing = True
 
         if custom_testing:
-            self.portal_url = 'https://ps0008227.esri.com/portal'
+            self.portal_url = 'https://ps0010392.esri.com/portal'
             self.portal_username = 'admin'
             self.portal_password = 'esri.agp'
             self.item_name = 'Testing Item'
-            self.workflow_item_id = '29673015106c44fdbb30d04c9cc60ef0'
+            self.workflow_item_id = '4c7c1441bf8444339419581a200043ab'
 
             self._gis = GIS(url=self.portal_url,
                             username=self.portal_username,
