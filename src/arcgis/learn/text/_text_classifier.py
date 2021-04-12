@@ -30,6 +30,7 @@ try:
     from ._transformer_text_classifier import TransformerForTextClassification, backbone_models_reverse_map, \
         transformer_architectures, transformer_seq_length
     from transformers import logging
+    logging.get_logger('filelock').setLevel(logging.ERROR)
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False

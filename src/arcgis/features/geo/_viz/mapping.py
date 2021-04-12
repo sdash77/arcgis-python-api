@@ -52,7 +52,7 @@ def plot(df,
     """
 
     Plot draws the data on a web map. The user can describe in simple terms how to
-    renderer spatial data using symbol.  To make the process simplier a pallette
+    renderer spatial data using symbol.  To make the process simplier a palette
     for which colors are drawn from can be used instead of explicit colors.
 
 
@@ -147,16 +147,16 @@ def plot(df,
 
     """
     renderer = kwargs.pop("renderer", None)
-    
+
     if not hasattr(df, 'spatial') and \
        not hasattr(df, 'geom'):
         raise ValueError("DataFrame or Series must be spatially enabled.")
-    
+
     if renderer_type is None and \
        renderer is None and \
        df.spatial.renderer:
-        renderer = json.loads(df.spatial.renderer.json)    
-        
+        renderer = json.loads(df.spatial.renderer.json)
+
     if isinstance(df, pd.Series) and \
        df.dtype.name == 'geometry':
         fid = df.index.tolist()

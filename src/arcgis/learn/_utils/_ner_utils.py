@@ -174,11 +174,9 @@ class _NERData:
                 path = Path(os.path.dirname(os.path.abspath(path)))
             data.working_dir = path
             from .._data import _prepare_working_dir
-            data._temp_folder = _prepare_working_dir(path)
+            _prepare_working_dir(path)
         else:
             data.working_dir = self.working_dir
-            data._temp_folder = self._temp_folder
-            data._temp_folder_name = os.path.basename(self._temp_folder.name)
 
         return data
 

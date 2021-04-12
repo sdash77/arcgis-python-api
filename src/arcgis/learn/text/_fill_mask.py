@@ -6,14 +6,11 @@ HAS_TRANSFORMER = True
 try:
     import torch
     from transformers import pipeline, logging
-    from .._utils.common import _get_device_id
     from fastprogress.fastprogress import progress_bar
-    from transformers.modeling_auto import MODEL_FOR_MASKED_LM_MAPPING
-    EXPECTED_MODEL_TYPES = [x.__name__.replace('Config', '') for x in MODEL_FOR_MASKED_LM_MAPPING.keys()]
 except Exception as e:
     transformer_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_TRANSFORMER = False
-    EXPECTED_MODEL_TYPES = []
+
 
 class FillMask(InferenceOnlyModel):
     """
@@ -29,7 +26,7 @@ class FillMask(InferenceOnlyModel):
 
                             To learn more about the available models for
                             fill-mask task, kindly visit:-
-                            https://huggingface.co/models?filter=lm-head
+                            https://huggingface.co/models?pipeline_tag=fill-mask
     =====================   ===========================================
 
     **kwargs**
@@ -52,30 +49,27 @@ class FillMask(InferenceOnlyModel):
     """
 
     #: supported transformer backbones
-    supported_backbones = EXPECTED_MODEL_TYPES
+    supported_backbones = (f"Supported backbones for `fill-mask` task can be found at - "
+                           "https://huggingface.co/models?pipeline_tag=fill-mask ")
 
     def __init__(self, backbone=None, **kwargs):
-        self.kwargs = kwargs
-        super().__init__()        
         if not HAS_TRANSFORMER:
             _raise_fastai_import_error(import_exception=transformer_exception)
+        super().__init__(backbone=backbone, task="fill-mask", **kwargs)
 
-        logger = logging.get_logger()
-        logger.setLevel(logging.ERROR)
-        self._task = "fill-mask"
-            
+    def _load_model(self):
         try:
-            if 'pretrained_path' in kwargs.keys():
-                self.model = pipeline(self._task, model=r"{}".format(kwargs.get('pretrained_path')), device=self._device, topk=10)
+            if self._pretrained_path:
+                self.model = pipeline(self._task, model=self._pretrained_path, device=self._device, topk=10)
             else:
-                self.model = pipeline(self._task, model=backbone, device=self._device, topk=10)
-
+                self.model = pipeline(self._task, model=self._backbone, device=self._device, topk=10)
         except Exception as e:
-            error_message = (f"Model - `{backbone}` cannot be used for {self._task} task.\n"
-                             f"Model type should be one of {EXPECTED_MODEL_TYPES}.")
+            error_message = (f"`{self._backbone}` is not valid backbone name for {self._task} task.\n"
+                             f"For selecting backbone name for {self._task} task, kindly visit:- "
+                             f"https://huggingface.co/models?pipeline_tag={self._task} ")
             raise Exception(error_message)
 
-    def predict_token(self, text_or_list, num_suggestions=5):
+    def predict_token(self, text_or_list, num_suggestions=5, show_progress=True):
         """
         Summarize the given text or list of text
 
@@ -85,6 +79,13 @@ class FillMask(InferenceOnlyModel):
         text_or_list            Required string or list. A text/sentence
                                 or a list of texts/sentences for which on wishes
                                 to generate the recommendations for masked-token.
+        ---------------------   -------------------------------------------
+        num_suggestions         Optional Integer. The number of suggestions to
+                                return. The maximum number of suggestion that
+                                can be generated for a `missing-token` is 10.
+        ---------------------   -------------------------------------------
+        show_progress           optional Bool. If set to True, will display a
+                                progress bar depicting the items processed so far.
         =====================   ===========================================
 
         :returns: A list or a list of list of :obj:`dict`: Each result comes as list of dictionaries with the following keys:
@@ -94,9 +95,11 @@ class FillMask(InferenceOnlyModel):
             - **token_str** (:obj:`str`) -- The predicted token (to replace the masked one).
         """
         results = []
-        if not isinstance(text_or_list, (list, tuple)): text_or_list = [text_or_list]
+        if not isinstance(text_or_list, (list, tuple)):
+            text_or_list = [text_or_list]
         self._do_sanity(text_or_list)
-        for i in progress_bar(range(len(text_or_list))):
+
+        for i in progress_bar(range(len(text_or_list)), display=show_progress):
             text = text_or_list[i].replace('__', self.model.tokenizer.mask_token)
             result = self._process_result(self.model(text)[:num_suggestions])
             if num_suggestions == 1: result = result[0]
@@ -117,6 +120,8 @@ class FillMask(InferenceOnlyModel):
         for item in result_list:
             _ = item.pop("token", -1)
             token = item["token_str"]
+            if isinstance(token, (str, bytes)):
+                token = [token]
             sequence = item["sequence"]
             item["token_str"] = self.model.tokenizer.convert_tokens_to_string(token).strip()
             item["sequence"] = self.model.tokenizer.decode(

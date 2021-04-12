@@ -166,10 +166,10 @@ class PointCNN(ArcGISModel):
                     data.class2idx = class_mapping   
             if not hasattr(data, 'color_mapping'):
                 data.color_mapping = color_mapping
-            if not hasattr(data, 'classes'):
-                data.classes = list(class2idx.values())    
             if not hasattr(data, 'class2idx'):
-                data.class2idx = data.class_mapping                        
+                data.class2idx = data.class_mapping 
+            if not hasattr(data, 'classes'):
+                data.classes = list(data.class2idx.values())                           
 
 
             data.class2idx = {int(k): int(v) for k, v in data.class2idx.items()}
@@ -498,7 +498,8 @@ class PointCNN(ArcGISModel):
         return predict_h5(self, path, output_path, **kwargs)
 
     def _get_name_path(self, name_or_path):
-        if '\\' in name_or_path or '/' in name_or_path:
+        ispath_like = '\\' in name_or_path or '/' in name_or_path
+        if ispath_like:
             path = Path(name_or_path)
             # to make fastai from both path and with name
             if path.is_file():
@@ -508,7 +509,7 @@ class PointCNN(ArcGISModel):
         else:
             name = name_or_path
 
-        return name        
+        return name, ispath_like
 
     def load(self, name_or_path):
         """
@@ -522,7 +523,11 @@ class PointCNN(ArcGISModel):
                                 Esri Model Definition(EMD) file.
         =====================   ===========================================
         """
-        name = self._get_name_path(name_or_path)
+        name, ispath_like = self._get_name_path(name_or_path)
+
+        if not Path(name_or_path).is_absolute() and ispath_like:
+            name_or_path = str(Path(name_or_path).absolute())
+
         if Path(name_or_path).is_absolute() and name_or_path.endswith('.emd'):
             emd_path = Path(name_or_path)
         elif Path(name_or_path).is_absolute() and name_or_path.endswith('.pth'):
@@ -551,8 +556,14 @@ class PointCNN(ArcGISModel):
             setattr(dummy_data, key, value)
 
         # old models
+        if not hasattr(dummy_data, 'classes'):
+            dummy_data.classes = [k for k in list(class_mapping.keys())]
+
         if not hasattr(dummy_data, 'pc_type'):
             dummy_data.pc_type = 'PointCloud_TF'
+
+        if not hasattr(self._data, 'pc_type'):
+            self._data.pc_type = 'PointCloud_TF'
 
         string_mapped_features = {
             'numberOfReturns': 'num_returns',
@@ -563,6 +574,9 @@ class PointCNN(ArcGISModel):
 
         if not hasattr(dummy_data, 'features_to_keep'):
             dummy_data.features_to_keep = [inverse_string_mapped_features.get(f[0], f[0]) for f in dummy_data.extra_features]
+
+        if not hasattr(self._data, 'features_to_keep'):
+            self._data.features_to_keep = [inverse_string_mapped_features.get(f[0], f[0]) for f in self._data.extra_features]
 
         # for message
         api_fn_name = '`export_point_dataset` function'

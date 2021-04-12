@@ -1474,7 +1474,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
     Represents the definition of a hosted feature service within ArcGIS Online or Portal.
     """
 
-    def __init__(self, target, clone_mapping, info, service_definition, layers_definition, is_view=False, view_sources={}, view_source_fields={}, features=None, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, copy_data=False, copy_global_ids=False, item_extent=None, service_extent=None, search_existing=True, owner=None):
+    def __init__(self, target, clone_mapping, info, service_definition, layers_definition, is_view=False, view_sources={}, view_source_fields={}, features=None, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, copy_data=False, copy_global_ids=False, item_extent=None, service_extent=None, search_existing=True, owner=None, verbose=True):
         super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing, owner)
         self._service_definition = service_definition
         self._service_extent = service_extent
@@ -1485,6 +1485,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
         self._view_source_fields = view_source_fields
         self.copy_data = copy_data
         self._copy_global_ids = copy_global_ids
+        self._logger = None
+        if verbose:
+            self._logger = logging.getLogger()
 
     @property
     def service_definition(self):
@@ -1596,6 +1599,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             add_results = []
             for features_chunk in [layer_features[i:i+chunk_size] for i in range(0, len(layer_features), chunk_size)]:
                 edits = layer.edit_features(adds=features_chunk, use_global_ids=self._copy_global_ids)
+                if self._logger:
+                    self._logger.debug(edits)
                 add_results += edits['addResults']
                 time.sleep(1)
             layer_ids.remove(layer_id)
@@ -1631,6 +1636,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 add_results = []
                 for features_chunk in [related_layer_features[i:i+chunk_size] for i in range(0, len(related_layer_features), chunk_size)]:
                     edits = layers[related_layer_id].edit_features(adds=features_chunk)
+                    if self._logger:
+                        self._logger.debug(edits)
                     add_results += edits['addResults']
                     time.sleep(1)
                 layer_ids.remove(related_layer_id)
@@ -1646,6 +1653,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             for features_chunk in [layer_features[i:i+chunk_size] for i in range(0, len(layer_features), chunk_size)]:
                 try:
                     edits = layers[layer_id].edit_features(adds=features_chunk, use_global_ids=self._copy_global_ids)
+                    if self._logger:
+                        self._logger.debug(edits)
                     add_results += edits['addResults']
                     time.sleep(1)
                 except Exception as e:
