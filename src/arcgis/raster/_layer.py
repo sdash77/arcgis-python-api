@@ -1456,7 +1456,7 @@ class ImageryLayer(Layer):
                                 image should be rendered.
         ----------------------  --------------------------------------------------------------------
         f                       optional string. The response format.  default is json
-                                Values: json,image,kmz
+                                Values: json,image,kmz,numpy_array
                                 If image format is chosen, the bytes of the exported image are
                                 returned unless save_folder and save_file parameters are also
                                 passed, in which case the image is written to the specified file
@@ -1659,6 +1659,47 @@ class ImageryLayer(Layer):
             return self._con.post(url, params,
                                   out_folder=save_folder,
                                  file_name=save_file, token=self._token)
+        elif f == "numpy_array":
+            params['f'] = 'image'
+            params['format'] = 'lerc'
+            params['lercVersion'] = 2
+            res = self._con.post(url, params,
+                                      try_json=False, force_bytes=True,
+                                     token=self._token)
+
+            try:
+                import lerc
+            except ImportError:
+                raise ImportError('lerc not found. Install lerc to export image service as numpy array')
+
+            if not isinstance(res, bytes):
+                raise RuntimeError(res)
+            result, data, valid_mask = lerc.decode(res)
+            if result != 0:
+                raise RuntimeError('decoding bytes from imagery service failed.')
+
+            # transpose
+            if "hasMultidimensions" in self.properties:
+                is_multidimensional  = self.properties.hasMultidimensions
+            if is_multidimensional:
+                if len(data) == 2:
+                    data = np.expand_dims(np.expand_dims(data, axis=2), axis=0)
+                elif len(data) == 3:
+                    if len(self.slices) == 1:
+                        data = np.expand_dims(np.transpose(data, [1, 2, 0]), axis=0)
+                    else:
+                        data = np.expand_dims(np.transpose(data, [2, 0, 1]), axis=3)
+                else:
+                    assert (len(data.shape) == 4)
+                    data = np.transpose(data, [3, 1, 2, 0])
+            else:
+                if len(data) == 2:
+                    data = np.expand_dims(data, axis=2)
+                else:
+                    data = np.transpose(data, axes=[1, 2, 0])
+
+            return data
+
         else:
             print('Unsupported output format')
 
