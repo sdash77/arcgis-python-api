@@ -1685,7 +1685,7 @@ class FeatureLayerCollectionManager(_GISResource):
         """
         # check for outstanding replicas
         if bool(self._fs.replicas.get_list()):
-           return {'error': 'Service cannot be overwritten if Sync is enabled and replicas exist.'}
+           raise Exception("Service cannot be overwritten if Sync is enabled and replicas exist.")
 
         # region Get Item associated with the service
         if 'serviceItemId' in self.properties.keys():
