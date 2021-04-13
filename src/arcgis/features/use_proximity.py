@@ -7,10 +7,12 @@ create_drive_time_areas finds areas around locations that can be reached within 
 find_nearest identifies those places that are the closest to known locations.
 plan_routes determines the best way to route a fleet of vehicles to visit many stops.
 """
+import logging
 import arcgis as _arcgis
 from arcgis._impl.common._utils import _date_handler
 import arcgis.network as network
 from .._impl.common._utils import inspect_function_inputs
+_logger = logging.getLogger()
 #--------------------------------------------------------------------------
 def connect_origins_to_destinations(origins_layer,
                                     destinations_layer,
@@ -236,16 +238,21 @@ def connect_origins_to_destinations(origins_layer,
     }
     params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.connect_origins_to_destinations,
                                      **kwargs)
+    try:
 
-    if isinstance(measurement_type, str):
-        route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-        travelmodes = route_service.retrieve_travel_modes()
+        if isinstance(measurement_type, str):
+            route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
+            travelmodes = route_service.retrieve_travel_modes()
 
-        for tm in travelmodes['supportedTravelModes']:
-            if tm['name'] == measurement_type:
-                tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
-                measurement_type = tm
-                params['measurement_type'] = measurement_type
+            for tm in travelmodes['supportedTravelModes']:
+                if tm['name'] == measurement_type:
+                    tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
+                    measurement_type = tm
+                    params['measurement_type'] = measurement_type
+    except Exception as e:
+        msg = f"Using the given measurement_type without validation due to the following error: {str(e)}"
+        _logger.warn(msg)
+        params['measurement_type'] = measurement_type
 
     return gis._tools.featureanalysis.connect_origins_to_destinations(**params)
 #--------------------------------------------------------------------------
@@ -865,15 +872,20 @@ def find_nearest(
     params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.find_nearest,
                                      **kwargs)
     params['estimate'] = estimate
-    if isinstance(measurement_type, str):
-        route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-        travelmodes = route_service.retrieve_travel_modes()
+    try:
+        if isinstance(measurement_type, str):
+            route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
+            travelmodes = route_service.retrieve_travel_modes()
 
-        for tm in travelmodes['supportedTravelModes']:
-            if tm['name'] == measurement_type:
-                tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
-                measurement_type = tm
-                params['measurement_type'] = measurement_type
+            for tm in travelmodes['supportedTravelModes']:
+                if tm['name'] == measurement_type:
+                    tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
+                    measurement_type = tm
+                    params['measurement_type'] = measurement_type
+    except Exception as e:
+        msg = f"Using the given measurement_type without validation due to the following error: {str(e)}"
+        _logger.warn(msg)
+        params['measurement_type'] = measurement_type
     params['time_of_day'] = _date_handler(time_of_day)
     return gis._tools.featureanalysis.find_nearest(**params)
 #--------------------------------------------------------------------------
@@ -1185,14 +1197,19 @@ def plan_routes(
     params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.plan_routes,
                                      **kwargs)
     params['estimate'] = estimate
+    try:
 
-    if isinstance(travel_mode, str):
-        route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-        travelmodes = route_service.retrieve_travel_modes()
-        for tm in travelmodes['supportedTravelModes']:
-            if tm['name'] == travel_mode:
-                tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
-                travel_mode = tm
-                params['travel_mode'] = travel_mode
+        if isinstance(travel_mode, str):
+            route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
+            travelmodes = route_service.retrieve_travel_modes()
+            for tm in travelmodes['supportedTravelModes']:
+                if tm['name'] == travel_mode:
+                    tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
+                    travel_mode = tm
+                    params['travel_mode'] = travel_mode
+    except Exception as e:
+        msg = f"Using the given travel_mode without validation due to the following error: {str(e)}"
+        _logger.warn(msg)
+        params['travel_mode'] = travel_mode
     params['route_start_time'] = _date_handler(route_start_time)
     return gis._tools.featureanalysis.plan_routes(**params)
