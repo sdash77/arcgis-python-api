@@ -9956,7 +9956,11 @@ class Item(dict):
             params['name'] = self.title.replace(' ', '_')
         if self.type == 'Map Service':
             params['name'] = self.title.replace(' ', '_')
-        if date_range.lower() in ['24h', '1d']:
+        if isinstance(date_range, (tuple, list)) and len(date_range) == 2:
+            params['period'] = '1d'
+            params['startTime'] = int(date_range[0].timestamp() * 1000)
+            params['endTime'] = int(date_range[1].timestamp() * 1000)
+        elif date_range.lower() in ['24h', '1d']:
             params['period'] = '1h'
             params['startTime'] = int((end_date - timedelta(days=1)).timestamp() * 1000)
         elif date_range.lower() == '7d':
