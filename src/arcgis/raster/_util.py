@@ -609,15 +609,16 @@ def _upload_imagery_enterprise(files, raster_type_name=None, gis=None):
                     for f in f_names:
                         fp =os.path.join(root, f)
                         path = ("/"+root+"/"+f)[basename_len+1:].replace(os.sep, '/')
-                        files_param = {'file' : fp }
+                        item_id = None
                         try:
-                            res = gis._con.post(path=url, postdata=params, files=files_param)
+                            item_id  = _upload(path=fp, gis=gis)
                         except Exception as e:
-                            _LOGGER.warning('file: '+str(fp)+ " "+ str(e))
+                            if "(Error Code: 403)" in str(e):
+                                pass
+                            else:
+                                _LOGGER.warning('file: '+str(fp)+ " "+ str(e))
 
-                        if 'success' in res and res['success']:
-                            item_id = res['item']['itemID']
-                            res = {}
+                        if item_id is not None:
                             if append_path:
                                 item_id_dict = {"itemId":item_id, "path":path}
                                 item_ids_list.append(item_id_dict)
@@ -627,17 +628,145 @@ def _upload_imagery_enterprise(files, raster_type_name=None, gis=None):
 
             else:
                 files_param = {'file' : file}
+                item_id=None
                 try:
-                    res = gis._con.post(path=url, postdata=params, files=files_param)
+                    item_id  = _upload(path=file, gis=gis)
                 except Exception as e:
                     _LOGGER.warning('file: '+str(file)+ " "+ str(e))
-                if 'success' in res and res['success']:
-                    item_id = res['item']['itemID']
-                    res = {}
                 if item_id is not None:
                     item_ids_list.append(item_id)
 
     return item_ids_list
+
+    #----------------------------------------------------------------------
+def _upload(path, description=None, gis=None):
+    """
+    Uploads a new item to the server. Once the operation is completed
+    successfully, the following is returned as a 2 element tuple:
+    the success Boolean, and the JSON structure of the uploaded item
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    path                Optional string. Filepath of the file to upload.
+    ---------------     --------------------------------------------------------------------
+    description         Optional string. Descriptive text for the uploaded item.
+    ===============     ====================================================================
+
+    :returns: A tuple of (Boolean, dict)
+
+    """
+    ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
+    if (os.path.getsize(path)) < 1000000000:
+        url = ra_url + "/uploads/upload"
+        params = {
+            "f" : "json",
+            'filename' : os.path.basename(path),
+            'overwrite' : True
+        }
+        files = {}
+        files['file'] = path
+        if description:
+            params['description'] = description
+        res = gis._con.post(path=url,
+                                postdata=params,
+                                files=files)
+        if 'error' in res:
+            raise Exception(res)
+        else:
+            return res['item']['itemID']
+    else:
+        file_path = path
+        item_id = _register_upload(file_path, gis=gis)
+        _upload_by_parts(item_id, file_path, gis=gis)
+        return _commit_upload(item_id, gis=gis)
+#----------------------------------------------------------------------
+def _register_upload(file_path, gis=None):
+    """returns the itemid for the upload by parts logic"""
+    ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
+    r_url = "%s/uploads/register" % ra_url
+    params = {'f' : 'json',
+                'itemName' : os.path.basename(file_path)
+                }
+    reg_res = gis._con.post(r_url, params)
+    if 'item' in reg_res and \
+        'itemID' in reg_res['item']:
+        return reg_res['item']['itemID']
+    return None
+#----------------------------------------------------------------------
+def _upload_by_parts(item_id, file_path, gis=None):
+    """loads a file for attachmens by parts"""
+    import mmap, tempfile
+
+    ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
+    b_url = "%s/uploads/%s" % (ra_url, item_id)
+    upload_part_url = "%s/uploadPart" % b_url
+    params = {
+        "f" : "json"
+    }
+    with open(file_path, 'rb') as f:
+        mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+        size = 100000000
+        steps =  int(os.fstat(f.fileno()).st_size / size)
+        if os.fstat(f.fileno()).st_size % size > 0:
+            steps += 1
+        for i in range(steps):
+            files = {}
+            tempFile = os.path.join(tempfile.gettempdir(), "split.part%s" % i)
+            if os.path.isfile(tempFile):
+                os.remove(tempFile)
+            with open(tempFile, 'wb') as writer:
+                writer.write(mm.read(size))
+                writer.flush()
+                writer.close()
+            del writer
+            files['file'] = tempFile
+            params['partId'] = i + 1
+            res = gis._con.post(upload_part_url,
+                                    postdata=params,
+                                    files=files)
+            if 'error' in res:
+                raise Exception(res)
+            os.remove(tempFile)
+            del files
+        del mm
+    return True
+#----------------------------------------------------------------------
+def _commit_upload(item_id, gis=None):
+    """commits an upload by parts upload"""
+
+    ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
+    b_url = "%s/uploads/%s" % (ra_url, item_id)
+    commit_part_url = "%s/commit" % b_url
+    params = {
+            'f':'json',
+            'parts' : _uploaded_parts(itemid=item_id, gis=gis)
+    }
+    res = gis._con.post(commit_part_url,
+                            params)
+    if 'error' in res:
+        raise Exception(res)
+    else:
+        return res['item']['itemID']
+#----------------------------------------------------------------------
+def _uploaded_parts(itemid, gis=None):
+    """
+    returns the parts uploaded for a given item
+
+    ==================   ==============================================
+    Arguments           Description
+    ------------------   ----------------------------------------------
+    itemid               required string. Id of the uploaded by parts item.
+    ==================   ==============================================
+
+    """
+    ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
+    url = ra_url + "/uploads/%s/parts" % itemid
+    params = {
+        "f" : "json"
+    }
+    res = gis._con.get(url, params)
+    return ",".join(res['parts'])
 
 def _get_extent(extdict=None):
     """
