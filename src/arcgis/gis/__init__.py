@@ -209,7 +209,7 @@ class GIS(object):
         # Usage Exmaple 7: Login with token (actual token abbreviated for this illustration)
 
         gis = GIS(token="3G_e-FSoJdwxBgSA0RiOZg7zJVVqlOG-ENw83UtoUzDdz4 ... _L2aQMrthrEq7vKYBn39HGSc.",
-                  refere="https://www.arcgis.com")
+                  referer="https://www.arcgis.com")
 
     """
     _server_list = None
