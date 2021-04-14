@@ -265,7 +265,7 @@ class GIS(object):
                 if not self._config_is_in_new_format(config):
                     answer = input("Warning: profiles in {} appear to be in "\
                                    "the <v1.3 format, and must be deleted before "\
-                        "continuing. Delete? [y/n]".format(cfg_file_path))
+                                   "continuing. Delete? [y/n]".format(cfg_file_path))
                     if "y" in answer.lower():
                         os.remove(cfg_file_path)
                         config = configparser.ConfigParser()
@@ -337,7 +337,7 @@ class GIS(object):
             self._expiration = 60
         try:
             self._portal = _portalpy.Portal(self._url, self._username,
-                                           self._password, self._key_file,
+                                            self._password, self._key_file,
                                            self._cert_file,
                                            proxy_host=self._proxy_host,
                                            proxy_port=self._proxy_port,
@@ -389,7 +389,7 @@ class GIS(object):
                                       props['customBaseUrl'])
                 self._url = url
                 pp =  _portalpy.Portal(url,
-                                      self._username,
+                                       self._username,
                                       self._password,
                                       self._key_file,
                                       self._cert_file,
@@ -631,7 +631,7 @@ class GIS(object):
             "a GIS() object with the standard user/password, cert_file, etc. "\
             "See https://bit.ly/2DT1156 for more information."
         _log.warning('Authenticating in GIS("home") mode failed.'\
-                    '{}'.format(mitigation_msg))
+                     '{}'.format(mitigation_msg))
         raise RuntimeError("{}\n-----\n{}".format(err_msg, mitigation_msg))
 
     def _uri_validator(self, x):
@@ -889,7 +889,7 @@ class GIS(object):
     #----------------------------------------------------------------------
     def __str__(self):
         return 'GIS @ {url} version:{version}'.format(url=self.url,
-                                    version=".".join([str(i) for i in self._product_version]))
+                                                      version=".".join([str(i) for i in self._product_version]))
     #----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
@@ -1330,8 +1330,8 @@ class GroupMigrationManager(object):
             else:
                 items = None
             params = {
-                      'itemIdList' : items
-                      }
+                'itemIdList' : items
+            }
 
             params['async'] = json.dumps(True)
             res = self._gis._con.post(url, params)
@@ -1391,7 +1391,7 @@ class GroupMigrationManager(object):
         if isinstance(epk_item, Item) and \
            epk_item.type == 'Export Package':
             res = self._from_package(item=epk_item,
-                                      item_id_list=item_ids,
+                                     item_id_list=item_ids,
                                       preview_only=False,
                                       run_async=True,
                                       overwrite=overwrite,
@@ -1815,7 +1815,7 @@ class DatastoreManager(object):
             cs['info']['folder'] = folder
         params = {
             'f' : 'json',
-        'item' : json.dumps(cs)
+            'item' : json.dumps(cs)
         }
 
         status, msg = self._validate_item(item=params['item'])
@@ -2177,7 +2177,7 @@ class UserManager(object):
             "fieldWorkerUT" : "fieldWorkerUT"
         }
         role_lu = {
-             "administrator" : "org_admin",
+            "administrator" : "org_admin",
              "org_admin" : "org_admin",
              "publisher" : "org_publisher",
              "org_publisher" : "org_publisher",
@@ -2190,7 +2190,7 @@ class UserManager(object):
         if self._gis.version > [7, 3]:
             if settings is None or \
                (isinstance(settings, dict) and \
-               len(settings) == 0):
+                len(settings) == 0):
                 cs = self.user_settings
                 if cs and len(cs) > 0:
                     self._delete_user_settings()
@@ -2308,7 +2308,7 @@ class UserManager(object):
         """
         if self._gis.version < [6,4]:
             raise NotImplementedError("`counts` is not implemented at version %s of Enterprise" % \
-                                 ".".join([str(i) for i in self._gis.version]))
+                                      ".".join([str(i) for i in self._gis.version]))
 
         url = "portals/self/users/counts"
         lu = {
@@ -2567,7 +2567,7 @@ class UserManager(object):
         if self._gis._portal.is_arcgisonline:
             email_text = '''<html><body><p>''' + self._gis.properties.user.fullName + \
                 ''' has invited you to join an ArcGIS Online Organization, ''' + self._gis.properties.name + \
-                         '''</p>
+                '''</p>
 <p>Please click this link to finish setting up your account and establish your password: <a href="https://www.arcgis.com/home/newuser.html?invitation=@@invitation.id@@">https://www.arcgis.com/home/newuser.html?invitation=@@invitation.id@@</a></p>
 <p>Note that your account has already been created for you with the username, <strong>@@touser.username@@</strong>.  </p>
 <p>If you have difficulty signing in, please contact ''' + self._gis.properties.user.fullName + \
@@ -2760,7 +2760,7 @@ class UserManager(object):
 <p style="color:gray;">This is an automated email. Please do not reply.</p>
 </body></html>'''
             if credits == -1 and self._gis.version >= [7,2] and \
-                self._gis.properties['defaultUserCreditAssignment'] != -1:
+               self._gis.properties['defaultUserCreditAssignment'] != -1:
                 credits = self._gis.properties['defaultUserCreditAssignment']
             if not groups and \
                self.user_settings and \
@@ -2772,7 +2772,7 @@ class UserManager(object):
                 'f': 'json',
                 'invitationList': {'invitations': [
                     {
-                    'username': username,
+                        'username': username,
                     'firstname': firstname,
                     'lastname': lastname,
                     'fullname': firstname + ' ' + lastname,
@@ -2784,9 +2784,9 @@ class UserManager(object):
 
                     }
                     ],
-                        "apps":[],
+                                   "apps":[],
                         "appBundles":[]
-                },
+                        },
                 #'message' : email_text
             }
             if idp_username is not None:
@@ -2806,8 +2806,8 @@ class UserManager(object):
                 else:
                     new_user = self.get(username)
                     if self.user_settings and \
-                    'userType' in self.user_settings and \
-                       not self.user_settings['userType'] == 'arcgisonly':
+                       'userType' in self.user_settings and \
+                    not self.user_settings['userType'] == 'arcgisonly':
                         update_url = "community/users/" + username + "/update"
                         user_params = {"f":"json",
                                        "token":"token",
@@ -3119,7 +3119,7 @@ class UserManager(object):
         group_id = None
         if max_items == -1:
             max_items = _search(gis=self._gis, query=query, stype=stype,
-                          max_items=0, start=start, sort_field=sort_field,
+                                max_items=0, start=start, sort_field=sort_field,
                           sort_order=sort_order, group_id=group_id, as_dict=as_dict)['total']
         so = {
             'DESC' : 'DESC',
@@ -3391,7 +3391,7 @@ class RoleManager(object):
                 role_data = {
                     "id": role_id,
                     "name": name,
-                  "description": description
+                    "description": description
                 }
                 role = Role(self._gis, role_id, role_data)
                 role.privileges = privileges
@@ -3986,7 +3986,7 @@ class ContentManager(object):
             path += '/' + folder_id
 
         url = "{base}{path}/items/{itemid}/addPart".format(base=self._gis._portal.resturl,
-                                                                          path=path,
+                                                           path=path,
                                                                           itemid=itemid)
         file = {'file': None}
         params = {
@@ -4037,7 +4037,7 @@ class ContentManager(object):
         if all(messages):
             # commit the addition
             url = "{base}{path}/items/{itemid}/commit".format(base=self._gis._portal.resturl,
-                                                                             path=path,
+                                                              path=path,
                                                                              itemid=itemid)
             params = {
                 'f' : "json",
@@ -4049,7 +4049,7 @@ class ContentManager(object):
             res = self._gis._con.post(url, params)
             if 'success' in res:
                 url = "{base}{path}/items/{itemid}/status".format(base=self._gis._portal.resturl,
-                                                                                path=path,
+                                                                  path=path,
                                                                                 itemid=itemid)
                 import time
                 params = {'f' : 'json'}
@@ -4105,7 +4105,7 @@ class ContentManager(object):
         """
         params = {'f' : 'json'}
         url = "{resturl}content/users/{username}/items/{itemid}/canDelete".format(resturl=self._portal.resturl,
-                                                                           username=item.owner,
+                                                                                  username=item.owner,
                                                                            itemid=item.itemid)
         try:
             res = self._portal.con.post(url, params)
@@ -4742,7 +4742,7 @@ class ContentManager(object):
         group_id = None
         if max_items == -1:
             max_items = _search(gis=self._gis, query=query, stype=stype,
-                          max_items=0, bbox=bbox,
+                                max_items=0, bbox=bbox,
                           categories=categories, category_filter=category_filter,
                           start=start, sort_field=sort_field,
                           sort_order=sort_order, count_fields=count_fields,
@@ -4906,7 +4906,7 @@ class ContentManager(object):
             elif accountid:
                 query = 'accountid:' + accountid
         itemlist = self.advanced_search(query=query, max_items=max_items,
-                             categories=categories,
+                                        categories=categories,
                              start=1, sort_field=sort_field,
                              sort_order=sort_order)['results']
         return itemlist
@@ -5013,7 +5013,7 @@ class ContentManager(object):
                                             self._gis.users.me.username)
         params = {
             'f' : 'json',
-        'items' : ""
+            'items' : ""
         }
         ditems = []
         for item in items:
@@ -5885,14 +5885,14 @@ class ContentManager(object):
             params['items'] = ",".join(sitems)
             res = self._gis._con.post(url, params)
         if everyone is not None and \
-            org is not None:
+           org is not None:
             for item in items:
                 if isinstance(item, Item):
                     item.share(everyone=everyone, org=org)
                 elif isinstance(item, str):
                     Item(gis=self._gis, itemid=item).share(everyone=everyone, org=org)
         elif everyone is not None and \
-            org is None:
+             org is None:
             for item in items:
                 if isinstance(item, Item):
                     org = item.shared_with['org']
@@ -5902,7 +5902,7 @@ class ContentManager(object):
                     org = usitem.shared_with['org']
                     usitem.share(everyone=everyone, org=org)
         elif everyone is None and \
-            org is not None:
+             org is not None:
             for item in items:
                 if isinstance(item, Item):
                     everyone = item.shared_with['everyone']
@@ -6119,7 +6119,7 @@ class ResourceManager(object):
     def export(self, save_path=None, file_name=None):
         """Export's the data's resources as a zip file"""
         url = 'content/users/'+ self._user_id +\
-                    '/items/' + self._item.itemid + "/resources/export"
+            '/items/' + self._item.itemid + "/resources/export"
         if save_path is None:
             save_path = tempfile.gettempdir()
         if file_name is None:
@@ -6520,7 +6520,7 @@ class Group(dict):
         from ._impl._search import _search
         if return_count:
             return _search(gis=self._gis,
-                       query=query, stype="group_content",
+                           query=query, stype="group_content",
                        max_items=max_items,
                        bbox=bbox,
                        categories=categories,
@@ -6760,8 +6760,8 @@ class Group(dict):
                     users.append(u.username)
         n = 25
         results = {
-                "notAdded": [ ]
-            }
+            "notAdded": [ ]
+        }
         if users:
             users_added = [self._portal.add_group_users(users[i * n:(i + 1) * n], self.groupid, [])['notAdded'] for i in range((len(users) + n - 1) // n )]
             [results['notAdded'].extend(a) for a in users_added]
@@ -6819,7 +6819,7 @@ class Group(dict):
 
         """
         params = {
-           "admins" : managers or [],
+            "admins" : managers or [],
            "users" : users or [],
            "f" : "json"
         }
@@ -7498,7 +7498,7 @@ class User(dict):
         """
         if self._gis.version < [6,4]:
             raise NotImplementedError("`user_types` is not implemented at version %s" % \
-                                 ".".join([str(i) for i in self._gis.version]))
+                                      ".".join([str(i) for i in self._gis.version]))
 
         url = "%s/community/users/%s/userLicenseType" % (self._portal.resturl, self.username)
         params = {'f' : 'json'}
@@ -7560,7 +7560,7 @@ class User(dict):
         """
         if self._gis.version < [6,4]:
             raise NotImplementedError("Provisions is not implemented at version %s" % \
-                                 ".".join([str(i) for i in self._gis.version]))
+                                      ".".join([str(i) for i in self._gis.version]))
 
         provs = []
         url = "%s/community/users/%s/provisionedListings" % (self._portal.resturl, self.username)
@@ -7597,7 +7597,7 @@ class User(dict):
         """
         if self._gis.version < [6,4]:
             raise NotImplementedError("`bundles` is not implemented at version %s" % \
-                                 ".".join([str(i) for i in self._gis.version]))
+                                      ".".join([str(i) for i in self._gis.version]))
 
         from arcgis.gis.admin._license import Bundle
         url = "%s/community/users/%s/appBundles" % (self._portal.resturl, self.username)
@@ -7616,7 +7616,7 @@ class User(dict):
         return [Bundle(url="{base}content/listings/{id}".format(base=self._gis._portal.resturl,
                                                                 id=b["id"]),
                        properties=b,
-                    gis=self._gis)
+                       gis=self._gis)
                 for b in bundles]
     #----------------------------------------------------------------------
     def get_thumbnail_link(self):
@@ -8283,7 +8283,7 @@ class User(dict):
                 entitle = []
             if len(entitle) > 0:
                 l.revoke(username=self.username,
-                             entitlements="*",
+                         entitlements="*",
                              suppress_email=True)
         for bundle in self._gis.admin.license.bundles:
             bundle.revoke(users=self.username)
@@ -8523,7 +8523,7 @@ class Item(dict):
         return self.type ==  'Feature Collection' or \
                self.type == 'Feature Service' or \
                self.type == 'Big Data File Share' or \
-            self.type == 'Image Service' or \
+               self.type == 'Image Service' or \
             self.type == 'Map Service' or \
             self.type == 'Globe Service' or \
             self.type == 'Scene Service' or \
@@ -9514,7 +9514,7 @@ class Item(dict):
         if self.owner == self._gis.users.me.username:
 
             url = "{resturl}content/users/{owner}/shareItems".format(resturl=self._gis._portal.resturl,
-                                                                      owner=self.owner)
+                                                                     owner=self.owner)
             params = {
                 'f' : 'json',
                 'items' : self.id,
@@ -10354,7 +10354,14 @@ class Item(dict):
         params = {
             "f" : "json"
         }
-
+        if str(output_type).lower() in ['ogc', 'ogcfeatureservice']:
+            output_type = "OGCFeatureService"
+            file_type = 'featureService'
+            scrubbed = re.sub('\W+','', self.title)
+            if publish_parameters is None:
+                publish_parameters = {}
+            publish_parameters.update({"name" : publish_parameters.get("name", scrubbed)})
+            build_initial_cache = False
         buildInitialCache = build_initial_cache
         if file_type is None:
             if self['type'] == "GeoPackage":
@@ -10679,7 +10686,7 @@ class Item(dict):
     def create_tile_service(self,
                             title,
                             min_scale,
-                             max_scale,
+                            max_scale,
                              cache_info=None,
                              build_cache=False):
         """
@@ -10745,7 +10752,7 @@ class Item(dict):
                   "tilingSchema":{"tileCacheInfo": cache_info,
                                   "tileImageInfo":{"format":"PNG32","compressionQuality":0,"antialiasing":True},
                                   "cacheStorageInfo":{"storageFormat":"esriMapCacheStorageModeExploded",
-                                      "packetSize":128}},"cacheOnDemand":True,
+                                                      "packetSize":128}},"cacheOnDemand":True,
                   "cacheOnDemandMinScale":144448,
                   "capabilities":"Map,ChangeTracking"}
             params = {
@@ -10975,7 +10982,7 @@ class Item(dict):
         """
         url = "%s/sharing/rest/content/users/%s/items/%s/proxies" % (self._portal.url,
                                                                      self._user_id,
-                                                        self.id)
+                                                                     self.id)
         params = {"f" : "json"}
         ps = []
         try:
@@ -10989,7 +10996,7 @@ class Item(dict):
     #----------------------------------------------------------------------
     def _create_proxy(self,
                       url:str=None,
-                     hit_interval:int=None,
+                      hit_interval:int=None,
                      interval_length:int=60,
                      proxy_params:dict=None) -> dict:
         """
