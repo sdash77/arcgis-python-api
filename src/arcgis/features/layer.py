@@ -1918,9 +1918,9 @@ class FeatureLayer(Layer):
                ):
         """
         Only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
-https://developers.arcgis.com/rest/services-reference/append-feature-service-layer-.htm
+
         Update an existing hosted feature layer using append. See ArcGIS REST API documentation for
-        details:
+        details: `Append (Feature Service/Layer) <https://developers.arcgis.com/rest/services-reference/append-feature-service-layer-.htm>`_
 
         ========================   ====================================================================
         **Argument**               **Description**
