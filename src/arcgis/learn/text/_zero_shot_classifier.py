@@ -7,9 +7,12 @@ try:
     import torch
     from transformers import pipeline, logging
     from fastprogress.fastprogress import progress_bar
+    from transformers.modeling_auto import MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING
+    EXPECTED_MODEL_TYPES = [x.__name__.replace('Config', '') for x in MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING.keys()]
 except Exception as e:
     transformer_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_TRANSFORMER = False
+    EXPECTED_MODEL_TYPES = []
 
 
 class ZeroShotClassifier(InferenceOnlyModel):
@@ -48,9 +51,8 @@ class ZeroShotClassifier(InferenceOnlyModel):
     :returns: `ZeroShotClassifier` Object
     """
 
-    #: supported transformer backbones
-    supported_backbones = ("Supported backbones for `zero-shot-classification` task can be found at - "
-                           "https://huggingface.co/models?pipeline_tag=zero-shot-classification ")
+    #: supported transformer architectures
+    supported_backbones = EXPECTED_MODEL_TYPES
 
     def __init__(self, backbone=None, **kwargs):
         if not HAS_TRANSFORMER:
