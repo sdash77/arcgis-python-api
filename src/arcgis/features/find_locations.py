@@ -14,10 +14,12 @@ create_viewshed creates areas that are visible based on locations you specify.
 create_watersheds creates catchment areas based on locations you specify.
 trace_downstream determines the flow paths in a downstream direction from the locations you specify
 """
+import logging
 import arcgis as _arcgis
-
 import arcgis.network as network
 from .._impl.common._utils import inspect_function_inputs
+
+_logger = logging.getLogger()
 #--------------------------------------------------------------------------
 def find_existing_locations(
         input_layers=None,
@@ -1046,15 +1048,18 @@ def choose_best_facilities(goal='Allocate',
               'future': future}
     params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.choose_best_facilities,
                                      **kwargs)
-
-    if isinstance(travel_mode, str):
-        route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-        travelmodes = route_service.retrieve_travel_modes()
-        for tm in travelmodes['supportedTravelModes']:
-            if tm['name'] == travel_mode:
-                tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
-                travel_mode = tm
-                params['travel_mode'] = travel_mode
+    try:
+        if isinstance(travel_mode, str):
+            route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
+            travelmodes = route_service.retrieve_travel_modes()
+            for tm in travelmodes['supportedTravelModes']:
+                if tm['name'] == travel_mode:
+                    tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
+                    travel_mode = tm
+                    params['travel_mode'] = travel_mode
+    except Exception as e:
+        msg = f"Using the given travel_mode without validation due to the following error: {str(e)}"
+        _logger.warn(msg)
 
     return gis._tools.featureanalysis.choose_best_facilities(**params)
 #--------------------------------------------------------------------------

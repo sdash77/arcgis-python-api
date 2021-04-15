@@ -659,14 +659,19 @@ def create_drive_time_areas(input_layer,
     params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.create_drive_time_areas,
                                      **kwargs)
 
-    if isinstance(travel_mode, str):
-        route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-        travelmodes = route_service.retrieve_travel_modes()
-        for tm in travelmodes['supportedTravelModes']:
-            if tm['name'] == travel_mode:
-                tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
-                travel_mode = tm
-                params['travel_mode'] = travel_mode
+    try:        
+        if isinstance(travel_mode, str):
+            route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
+            travelmodes = route_service.retrieve_travel_modes()
+            for tm in travelmodes['supportedTravelModes']:
+                if tm['name'] == travel_mode:
+                    tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
+                    travel_mode = tm
+                    params['travel_mode'] = travel_mode
+    except Exception as e:
+        msg = f"Using the given travel_mode without validation due to the following error: {str(e)}"
+        _logger.warn(msg)
+        params['travel_mode'] = travel_mode    
     if time_of_day:
         params['time_of_day'] = _date_handler(time_of_day)
     if include_reachable_streets:
@@ -1198,7 +1203,6 @@ def plan_routes(
                                      **kwargs)
     params['estimate'] = estimate
     try:
-
         if isinstance(travel_mode, str):
             route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
             travelmodes = route_service.retrieve_travel_modes()
