@@ -240,7 +240,7 @@ def connect_origins_to_destinations(origins_layer,
                                      **kwargs)
     try:
 
-        if isinstance(measurement_type, str):
+        if isinstance(measurement_type, str) and str(measurement_type).lower() == "straightline":
             route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
             travelmodes = route_service.retrieve_travel_modes()
 
@@ -873,7 +873,7 @@ def find_nearest(
                                      **kwargs)
     params['estimate'] = estimate
     try:
-        if isinstance(measurement_type, str):
+        if isinstance(measurement_type, str) and str(measurement_type).lower() == "straightline":
             route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
             travelmodes = route_service.retrieve_travel_modes()
 
