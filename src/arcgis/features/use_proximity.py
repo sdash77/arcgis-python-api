@@ -240,15 +240,14 @@ def connect_origins_to_destinations(origins_layer,
                                      **kwargs)
     try:
 
-        if isinstance(measurement_type, str) and str(measurement_type).lower() == "straightline":
+        if isinstance(measurement_type, str) and str(measurement_type).lower() != "straightline":
             route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-            travelmodes = route_service.retrieve_travel_modes()
-
-            for tm in travelmodes['supportedTravelModes']:
-                if tm['name'] == measurement_type:
-                    tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
-                    measurement_type = tm
-                    params['measurement_type'] = measurement_type
+            travelmodes = route_service.retrieve_travel_modes().get('supportedTravelModes', [])
+            tm = [i for i in travelmodes if i['name'].lower() == str(measurement_type).lower()]
+            if tm:
+                params['measurement_type'] = tm[0]
+            else:
+                params['measurement_type'] = measurement_type
     except Exception as e:
         msg = f"Using the given measurement_type without validation due to the following error: {str(e)}"
         _logger.warn(msg)
@@ -662,12 +661,12 @@ def create_drive_time_areas(input_layer,
     try:        
         if isinstance(travel_mode, str):
             route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-            travelmodes = route_service.retrieve_travel_modes()
-            for tm in travelmodes['supportedTravelModes']:
-                if tm['name'] == travel_mode:
-                    tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
-                    travel_mode = tm
-                    params['travel_mode'] = travel_mode
+            travelmodes = route_service.retrieve_travel_modes().get('supportedTravelModes', [])
+            tm = [i for i in travelmodes if i['name'] == travel_mode]
+            if tm:
+                params['travel_mode'] = tm[0]
+            else:
+                params['travel_mode'] = travel_mode
     except Exception as e:
         msg = f"Using the given travel_mode without validation due to the following error: {str(e)}"
         _logger.warn(msg)
@@ -878,15 +877,14 @@ def find_nearest(
                                      **kwargs)
     params['estimate'] = estimate
     try:
-        if isinstance(measurement_type, str) and str(measurement_type).lower() == "straightline":
+        if isinstance(measurement_type, str) and str(measurement_type).lower() != "straightline":
             route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-            travelmodes = route_service.retrieve_travel_modes()
-
-            for tm in travelmodes['supportedTravelModes']:
-                if tm['name'] == measurement_type:
-                    tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
-                    measurement_type = tm
-                    params['measurement_type'] = measurement_type
+            travelmodes = route_service.retrieve_travel_modes().get('supportedTravelModes', [])
+            tm = [i for i in travelmodes if i['name'].lower() == str(measurement_type).lower()]
+            if tm:
+                params['measurement_type'] = tm[0]
+            else:
+                params['measurement_type'] = measurement_type
     except Exception as e:
         msg = f"Using the given measurement_type without validation due to the following error: {str(e)}"
         _logger.warn(msg)
@@ -1205,12 +1203,12 @@ def plan_routes(
     try:
         if isinstance(travel_mode, str):
             route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-            travelmodes = route_service.retrieve_travel_modes()
-            for tm in travelmodes['supportedTravelModes']:
-                if tm['name'] == travel_mode:
-                    tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
-                    travel_mode = tm
-                    params['travel_mode'] = travel_mode
+            travelmodes = route_service.retrieve_travel_modes().get('supportedTravelModes', [])
+            tm = [i for i in travelmodes if i['name'] == travel_mode]
+            if tm:
+                params['travel_mode'] = tm[0]
+            else:
+                params['travel_mode'] = travel_mode
     except Exception as e:
         msg = f"Using the given travel_mode without validation due to the following error: {str(e)}"
         _logger.warn(msg)

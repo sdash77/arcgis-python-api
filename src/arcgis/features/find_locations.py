@@ -1051,12 +1051,12 @@ def choose_best_facilities(goal='Allocate',
     try:
         if isinstance(travel_mode, str):
             route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-            travelmodes = route_service.retrieve_travel_modes()
-            for tm in travelmodes['supportedTravelModes']:
-                if tm['name'] == travel_mode:
-                    tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
-                    travel_mode = tm
-                    params['travel_mode'] = travel_mode
+            travelmodes = route_service.retrieve_travel_modes().get('supportedTravelModes', [])
+            tm = [i for i in travelmodes if i['name'] == travel_mode]
+            if tm:
+                params['travel_mode'] = tm[0]
+            else:
+                params['travel_mode'] = travel_mode
     except Exception as e:
         msg = f"Using the given travel_mode without validation due to the following error: {str(e)}"
         _logger.warn(msg)
