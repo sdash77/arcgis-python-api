@@ -1650,6 +1650,12 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             if len(layer_features) == 0:
                 continue
             add_results = []
+            is_generalized = False
+            if 'multiScaleGeometryInfo' in layers[layer_id].properties:
+                is_generalized = True
+                layers[layer_id].container.manager.layers[layer_id].update_definition({"multiScaleGeometryInfo": None})
+                layers[layer_id]._refresh()
+
             for features_chunk in [layer_features[i:i+chunk_size] for i in range(0, len(layer_features), chunk_size)]:
                 try:
                     edits = layers[layer_id].edit_features(adds=features_chunk, use_global_ids=self._copy_global_ids)
@@ -1667,6 +1673,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         add_results += edits['addResults']
             object_id_field = layers[layer_id].properties['objectIdField']
             object_id_mapping[layer_id] = {layer_features[i]['attributes'][object_id_field] : add_results[i]['objectId'] for i in range(0, len(layer_features))}
+            if is_generalized:
+                layers[layer_id].container.manager.layers[layer_id].update_definition({"multiScaleGeometryInfo":{"levels":[]}})
+                layers[layer_id]._refresh()
 
         # Add attachments
         for original_layer in original_layers:
