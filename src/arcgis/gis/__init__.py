@@ -210,7 +210,14 @@ class GIS(object):
 
         gis = GIS(token="3G_e-FSoJdwxBgSA0RiOZg7zJVVqlOG-ENw83UtoUzDdz4 ... _L2aQMrthrEq7vKYBn39HGSc.",
                   referer="https://www.arcgis.com")
+    
+    .. code-block:: python
 
+        # Usage Exmaple 8: Login with API Key (actual token abbreviated for this illustration)
+
+        gis = GIS(api_key="APKSoJdwxBgSA0RiOZg7zJVVqlOG-ENw83UtoUzDdz4 ... _L2aQMrth39HGSc.",
+                  referer="https")
+                  
     """
     _server_list = None
     _is_hosted_nb_home = False
