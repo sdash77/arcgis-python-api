@@ -480,7 +480,7 @@ def _generate_direct_access_url(gis=None, expiration=None):
     """helper fn to get the direct access url for azure storage"""
     gis = _arcgis.env.active_gis if gis is None else gis
     url = "%s/sharing/rest/content/users/%s/generateDirectAccessUrl" % (gis._portal.url,
-                                                                 gis._username)
+                                                                 gis.users.me.username)
     params = {"f" : "json", "storeType":"rasterStore"}
     if expiration is not None:
         params.update({"expiration":expiration})
