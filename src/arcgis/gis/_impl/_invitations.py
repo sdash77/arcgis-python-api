@@ -67,6 +67,31 @@ class InvitationManager(object):
         return self._gis._con.get(url, params)
 
     #----------------------------------------------------------------------
+    def _accept(self, invite_id):
+        """Accepts the Invitation"""
+        url = f"{self._url}/{invite_id}/accept"
+        return self._gis._con.post(url, params={'f' : 'json'})
+    #----------------------------------------------------------------------
+    def _decline(self, invite_id):
+        """Reject the Invitation"""
+        url = f"{self._url}/{invite_id}/decline"
+        return self._gis._con.post(url, params={'f' : 'json'})
+    #----------------------------------------------------------------------
+    def manage_invitations(self, accepts:list=None, declines:list=None) -> dict:
+        """
+        Allows users to Accept/Decline invitations by providing a list of invitation IDs.
+
+        """
+        results = []
+        if accepts and isinstance(accepts, (list, tuple)):
+            accepts = [self._accept(invid) for invid in accepts]
+        if declines and isinstance(declines, (list, tuple)):
+            declines = [self._decline(invid) for invid in declines]
+        return {
+            "accepts" : accepts,
+            "declines" : declines
+        }
+    #----------------------------------------------------------------------
     def delete(self, invite_id):
         """
         deletes an invitation by ID
