@@ -24,7 +24,7 @@ import json
 from arcgis.geometry import Geometry
 
 # -----------------------------------------------------------------------------
-# pandas version checker 
+# pandas version checker
 # -----------------------------------------------------------------------------
 PANDAS_GE_024 = str(pd.__version__) >= LooseVersion("0.24.0")
 PANDAS_GE_025 = str(pd.__version__) >= LooseVersion("0.25.0")
@@ -47,9 +47,9 @@ def _isna(value):
 def _unary_geo(op, left, *args, **kwargs):
     """
     Unary operation that returns new geometries
-    
+
     **used for accessing properties on objects**
-    
+
     :returns: GeoArray
     """
     data = np.empty(len(left), dtype=object)
@@ -59,11 +59,11 @@ def _unary_geo(op, left, *args, **kwargs):
 def _unary_op(op, left, null_value=False):
     """
     Unary operation that returns a Series
-    
+
     **used for accessing properties on objects**
-    
+
     :returns: pd.Series
-    
+
     """
     data = np.empty(len(left), dtype=object)
     data[:] = [getattr(geom, op, null_value) for geom in left]
@@ -71,28 +71,28 @@ def _unary_op(op, left, null_value=False):
 #--------------------------------------------------------------------------
 def _binary_predicate(name, left, right, *args, **kwargs):
     """
-    
+
     Binary operation performed on the GeoArray that returns only boolean ndarray.
-    
+
     Supports:
     -  contains
-    -  disjoint 
+    -  disjoint
     -  intersect
     -  touches
     -  crosses
     -  within
     -  overlaps
     -  equals
-    
+
     Parameters
     ----------
-    
+
          name: string
          left : GeoArray
          right: GeoArray or Geometry
-         
+
     :returns: np.array (should be dtype bool)
-    
+
     """
     if isinstance(right, pd.Series):
         right = right.values
@@ -121,16 +121,16 @@ def _binary_predicate(name, left, right, *args, **kwargs):
 #--------------------------------------------------------------------------
 def _binary_op(name, left, right=None, *args, **kwargs):
     """Binary operation on GeoArray that returns a ndarray of dtype object"""
-    
+
     if isinstance(right, pd.Series):
-        right = right.values   
+        right = right.values
     null_value = None
     if right is None:
         data = np.empty(len(left), dtype=object)
         data[:] = [
             getattr(s, name)(*args, **kwargs) \
             if s is not None else null_value
-            for s in left]     
+            for s in left]
         return data
     elif isinstance(right, Geometry):
         data = np.empty(len(left), dtype=object)
@@ -154,19 +154,19 @@ def _binary_op(name, left, right=None, *args, **kwargs):
         return data
     else:
         raise TypeError("Type not known: {0} vs {1}".format(type(left), type(right)))
-#--------------------------------------------------------------------------    
+#--------------------------------------------------------------------------
 def _binary_op_geo(name, left, right=None, *args, **kwargs):
     """Binary operation on GeoArray that returns a GeoArray"""
-    
+
     if isinstance(right, pd.Series):
-        right = right.values   
+        right = right.values
     null_value = None
     if right is None:
         data = np.empty(len(left), dtype=object)
         data[:] = [
             getattr(s, name)(*args, **kwargs) \
             if s is not None else null_value
-            for s in left]     
+            for s in left]
         return GeoArray(data)
     elif isinstance(right, Geometry):
         data = np.empty(len(left), dtype=object)
@@ -246,32 +246,32 @@ class GeoArray(ExtensionArray):
             )
         self.data = data
         self._validate_data()
-        
+
     def _validate_data(self):
         data = self.data
         check = np.where(self.data != None)[0]
         if len(check) > 0:
             vindx = check[0]
             if isinstance(data[vindx], Geometry) == False:
-                self.data[:] = [Geometry(d) for d in data if d]        
+                self.data[:] = [Geometry(d) if d else None for d in data]
 
-        
+
     def __arrow_array__(self, type=None):
         """converts the data to a pyarrow array"""
         import pyarrow
-        
+
         return pyarrow.array([d.EWKT \
-                              for d in self.data if d], type=type)        
-        
+                              for d in self.data if d], type=type)
+
 
     def _formatting_values_backport(self):
-        return np.array(self._format_values(), dtype='object')  
-    
+        return np.array(self._format_values(), dtype='object')
+
     def _format_values(self):
         if self.data.ndim == 0:
             return ""
         return [_format(x) if x else None for x in self.data]
-    
+
     @property
     def dtype(self):
         return self._dtype
@@ -286,7 +286,7 @@ class GeoArray(ExtensionArray):
         new = GeoArray([])
         new.data = np.array(data)
         return new
-    
+
     def __getitem__(self, idx):
         if isinstance(idx, numbers.Integral):
             return self.data[idx]
@@ -326,11 +326,11 @@ class GeoArray(ExtensionArray):
                 self.data[key] = value
         elif (isinstance(value, str) and value != ""):
             value = Geometry(value)
-            self.data[key] = value            
+            self.data[key] = value
         else:
             raise TypeError(
                 "Value should be either a Geometry or None, got %s" % str(value)
-            )    
+            )
     # -------------------------------------------------------------------------
     # general array like compat
     # -------------------------------------------------------------------------
@@ -452,7 +452,7 @@ class GeoArray(ExtensionArray):
 
     @property
     def na_value(self):
-        return self.dtype.na_value    
+        return self.dtype.na_value
 
     def isna(self):
         """
@@ -620,18 +620,18 @@ class GeoArray(ExtensionArray):
         -------
         values : numpy array
         """
-        return self.data    
-    
+        return self.data
+
     #----------------------------------------------------------------------
     @property
     def area(self):
         """returns the geometry area"""
-        return _unary_op('area', self.data, None)    
+        return _unary_op('area', self.data, None)
     #----------------------------------------------------------------------
     @property
     def as_arcpy(self):
         """returns the geometry area"""
-        return _unary_op('as_arcpy', self.data, None) 
+        return _unary_op('as_arcpy', self.data, None)
     #----------------------------------------------------------------------
     @property
     def as_shapely(self):
@@ -641,43 +641,43 @@ class GeoArray(ExtensionArray):
     @property
     def centroid(self):
         """returns Geometry centroid"""
-        return _unary_op('centroid', self.data, None) 
+        return _unary_op('centroid', self.data, None)
     #----------------------------------------------------------------------
     @property
     def extent(self):
         """returns the extent of the geometry"""
-        return _unary_op('extent', self.data, None) 
+        return _unary_op('extent', self.data, None)
     #----------------------------------------------------------------------
     @property
     def first_point(self):
         """
         The first coordinate point of the geometry for each entry.
         """
-        return _unary_geo('first_point', self.data, None) 
+        return _unary_geo('first_point', self.data, None)
     #----------------------------------------------------------------------
     @property
     def geoextent(self):
-        return _unary_op('geoextent', self.data, None) 
+        return _unary_op('geoextent', self.data, None)
     #----------------------------------------------------------------------
     @property
     def geometry_type(self):
-        return _unary_op('geometry_type', self.data, None) 
+        return _unary_op('geometry_type', self.data, None)
     #----------------------------------------------------------------------
     @property
     def has_z(self):
-        return _unary_op('has_z', self.data, None)     
+        return _unary_op('has_z', self.data, None)
     #----------------------------------------------------------------------
     @property
     def has_m(self):
-        return _unary_op('has_m', self.data, None)         
+        return _unary_op('has_m', self.data, None)
     #----------------------------------------------------------------------
     @property
     def hull_rectangle(self):
-        return _unary_op('hull_rectangle', self.data, None) 
+        return _unary_op('hull_rectangle', self.data, None)
     #----------------------------------------------------------------------
     @property
     def is_empty(self):
-        return _unary_op('is_empty', self.data, False) 
+        return _unary_op('is_empty', self.data, False)
     #----------------------------------------------------------------------
     @property
     def is_multipart(self):
@@ -685,8 +685,8 @@ class GeoArray(ExtensionArray):
     #----------------------------------------------------------------------
     @property
     def is_valid(self):
-        return _binary_op(name='is_valid', 
-                          left=self.data, 
+        return _binary_op(name='is_valid',
+                          left=self.data,
                           right=None)
     #----------------------------------------------------------------------
     @property
@@ -752,9 +752,9 @@ class GeoArray(ExtensionArray):
 
         :returns: a tuple of angle and distance to another point using a measurement type.
         """
-        return _binary_op(name='angle_distance_to', 
-                          left=self.data, 
-                          right=second_geometry, 
+        return _binary_op(name='angle_distance_to',
+                          left=self.data,
+                          right=second_geometry,
                           **{'method' : method})
     #----------------------------------------------------------------------
     def boundary(self):
@@ -844,8 +844,8 @@ class GeoArray(ExtensionArray):
         :returns: boolean
 
         """
-        return _binary_predicate(name='crosses', 
-                                 left=self.data, 
+        return _binary_predicate(name='crosses',
+                                 left=self.data,
                                  right=second_geometry)
     #----------------------------------------------------------------------
     def cut(self, cutter):
@@ -891,8 +891,8 @@ class GeoArray(ExtensionArray):
         :returns: arcgis.geometry.Geometry
 
         """
-        return _binary_op_geo(name='densify', 
-                              left=self.data, 
+        return _binary_op_geo(name='densify',
+                              left=self.data,
                               **{'method' : method,
                                  'distance' : distance,
                                  'deviation' : deviation})
@@ -913,8 +913,8 @@ class GeoArray(ExtensionArray):
         :returns: arcgis.geometry.Geometry
 
         """
-        return _binary_op_geo(name='difference', 
-                              left=self.data, 
+        return _binary_op_geo(name='difference',
+                              left=self.data,
                               right=second_geometry)
     #----------------------------------------------------------------------
     def disjoint(self, second_geometry):
@@ -951,8 +951,8 @@ class GeoArray(ExtensionArray):
         :returns: float
 
         """
-        return _binary_op(name='distance_to', 
-                              left=self.data, 
+        return _binary_op(name='distance_to',
+                              left=self.data,
                               right=second_geometry,
                               **{})
     #----------------------------------------------------------------------
@@ -972,8 +972,8 @@ class GeoArray(ExtensionArray):
 
 
         """
-        return _binary_predicate(name='equals', 
-                                 left=self.data, 
+        return _binary_predicate(name='equals',
+                                 left=self.data,
                                  right=second_geometry)
     #----------------------------------------------------------------------
     def generalize(self, max_offset):
@@ -990,8 +990,8 @@ class GeoArray(ExtensionArray):
         :returns: arcgis.geometry.Geometry
 
         """
-        return _binary_op_geo(name='generalize', 
-                              left=self.data, 
+        return _binary_op_geo(name='generalize',
+                              left=self.data,
                               **{'max_offset' : max_offset})
     #----------------------------------------------------------------------
     def get_area(self, method, units=None):
@@ -1016,8 +1016,8 @@ class GeoArray(ExtensionArray):
         :returns: float
 
         """
-        return _binary_op(name='get_area', 
-                          left=self.data, 
+        return _binary_op(name='get_area',
+                          left=self.data,
                           **{'method' : method,
                              'units' : units})
     #----------------------------------------------------------------------
@@ -1042,8 +1042,8 @@ class GeoArray(ExtensionArray):
         :returns: float
 
         """
-        return _binary_op(name='get_length', 
-                          left=self.data, 
+        return _binary_op(name='get_length',
+                          left=self.data,
                           **{'method' : method,
                              'units' : units})
     #----------------------------------------------------------------------
@@ -1064,8 +1064,8 @@ class GeoArray(ExtensionArray):
 
         """
         return _binary_op(name='get_part',
-                          left=self.data, 
-                          **{'index' : index})        
+                          left=self.data,
+                          **{'index' : index})
     #----------------------------------------------------------------------
     def intersect(self, second_geometry, dimension=1):
         """
@@ -1092,8 +1092,8 @@ class GeoArray(ExtensionArray):
         :returns: boolean array
 
         """
-        return _binary_predicate(name='intersect', 
-                                 left=self.data, 
+        return _binary_predicate(name='intersect',
+                                 left=self.data,
                                  right=second_geometry,
                                  **{'dimension' : dimension})
     #----------------------------------------------------------------------
@@ -1114,9 +1114,9 @@ class GeoArray(ExtensionArray):
 
         """
         return _binary_op(name='measure_on_line',
-                          left=self.data, 
+                          left=self.data,
                           right=second_geometry,
-                          **{'as_percentage' : as_percentage})          
+                          **{'as_percentage' : as_percentage})
     #----------------------------------------------------------------------
     def overlaps(self, second_geometry):
         """
@@ -1133,8 +1133,8 @@ class GeoArray(ExtensionArray):
         :return: boolean
 
         """
-        return _binary_predicate(name='overlaps', 
-                                 left=self.data, 
+        return _binary_predicate(name='overlaps',
+                                 left=self.data,
                                  right=second_geometry)
     #----------------------------------------------------------------------
     def point_from_angle_and_distance(self, angle, distance, method='GEODESCIC'):
@@ -1160,8 +1160,8 @@ class GeoArray(ExtensionArray):
 
 
         """
-        return _binary_op_geo(name='point_from_angle_and_distance', 
-                              left=self.data, 
+        return _binary_op_geo(name='point_from_angle_and_distance',
+                              left=self.data,
                               **{'angle' : angle,
                                  'distance' : distance,
                                  'method' : method})
@@ -1187,7 +1187,7 @@ class GeoArray(ExtensionArray):
 
         """
         return _binary_op_geo(name='position_along_line',
-                              left=self.data, 
+                              left=self.data,
                               **{'value' : value,
                                  'use_percentage' : use_percentage})
     #----------------------------------------------------------------------
@@ -1207,7 +1207,7 @@ class GeoArray(ExtensionArray):
         :returns: arcgis.geometry.Geometry
         """
         return _binary_op_geo(name='project_as',
-                              left=self.data, 
+                              left=self.data,
                               **{'spatial_reference' : spatial_reference,
                                  'transformation_name' : transformation_name})
     #----------------------------------------------------------------------
@@ -1232,7 +1232,7 @@ class GeoArray(ExtensionArray):
 
         """
         return _binary_op(name='query_point_and_distance',
-                              left=self.data, 
+                              left=self.data,
                               right=second_geometry,
                               **{'use_percentage' : use_percentage})
     #----------------------------------------------------------------------
@@ -1262,7 +1262,7 @@ class GeoArray(ExtensionArray):
 
         """
         return _binary_op_geo(name='segment_along_line',
-                              left=self.data, 
+                              left=self.data,
                               **{'start_measure' : start_measure,
                                  'end_measure' : end_measure,
                                  'use_percentage' : use_percentage})
@@ -1281,7 +1281,7 @@ class GeoArray(ExtensionArray):
 
         """
         return _binary_op_geo(name='snap_to_line',
-                              left=self.data, 
+                              left=self.data,
                               right=second_geometry)
     #----------------------------------------------------------------------
     def symmetric_difference (self, second_geometry):
@@ -1300,8 +1300,8 @@ class GeoArray(ExtensionArray):
         :return: arcgis.gis.Geometry
         """
         return _binary_op_geo(name='symmetric_difference',
-                              left=self.data, 
-                              right=second_geometry)        
+                              left=self.data,
+                              right=second_geometry)
     #----------------------------------------------------------------------
     def touches(self, second_geometry):
         """
@@ -1316,8 +1316,8 @@ class GeoArray(ExtensionArray):
 
         :return: boolean
         """
-        return _binary_predicate(name='touches', 
-                                 left=self.data, 
+        return _binary_predicate(name='touches',
+                                 left=self.data,
                                  right=second_geometry)
     #----------------------------------------------------------------------
     def union(self, second_geometry):
@@ -1335,8 +1335,8 @@ class GeoArray(ExtensionArray):
         :return: arcgis.gis.Geometry
         """
         return _binary_op_geo(name='union',
-                              left=self.data, 
-                              right=second_geometry)        
+                              left=self.data,
+                              right=second_geometry)
     #----------------------------------------------------------------------
     def within(self, second_geometry, relation=None):
         """
@@ -1358,8 +1358,8 @@ class GeoArray(ExtensionArray):
         :return: boolean
 
         """
-        return _binary_predicate(name='within', 
-                                 left=self.data, 
+        return _binary_predicate(name='within',
+                                 left=self.data,
                                  right=second_geometry,
                                  **{'relation' : relation})
 
