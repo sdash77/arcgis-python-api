@@ -6,6 +6,7 @@ import urllib.parse
 import arcgis.gis
 import re
 
+
 def _camelCase_to_underscore(name):
     """PEP8ify name"""
     name = name.replace(" ", "_")
@@ -14,14 +15,16 @@ def _camelCase_to_underscore(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
+
 def _underscore_to_camelcase(name):
-    def camelcase(): 
+    def camelcase():
         yield str.lower
         while True:
             yield str.capitalize
 
     c = camelcase()
     return "".join(next(c)(x) if x else '_' for x in name.split("_"))
+
 
 class WorkflowManagerAdmin:
     """
@@ -80,6 +83,7 @@ class WorkflowManagerAdmin:
         
         :returns: string (item_id)
         """
+
         url = '{base}/admin/createWorkflowItem?token={token}&name={name}'.format(base=self._url,
                                                                                  token=self._gis._con.token, name=name)
         params = {
@@ -91,8 +95,64 @@ class WorkflowManagerAdmin:
         if 'error' in return_obj:
             self._gis._con._handle_json_error(return_obj['error'], 0)
         elif 'success' in return_obj:
-            return res['success']
+            return return_obj['success']
         return return_obj
+
+    def update_item(self, id) -> tuple:
+        """
+        Upgrades an outdated Workflow Manager schema. Requires the Workflow Manager
+        Advanced Administrator privilege or the Portal Admin Update Content privilege.
+
+        ==================  =========================================================
+        **Argument**        **Description**
+        ------------------  ---------------------------------------------------------
+        id                  Required String. The id of the existing schema.
+        ==================  =========================================================
+
+        :returns: success object
+        """
+
+        url = '{base}/admin/{id}/upgrade?token={token}'.format(base=self._url, id=id, token=self._gis._con.token)
+        params = {
+            'itemId': id
+        }
+        return_obj = json.loads(
+            self._gis._con.post(url, params=params, try_json=False, add_token=False, json_encode=False,
+                                post_json=True))['itemId']
+        if 'error' in return_obj:
+            self._gis._con._handle_json_error(return_obj['error'], 0)
+        elif 'success' in return_obj:
+            return return_obj['success']
+        return return_obj
+
+    def delete_item(self, id):
+        """
+        Delete a Workflow Manager schema. Does not delete the Workflow Manager Admin group.
+        Requires the administrator or publisher role. If the user has the publisher role,
+        the user must also be the owner of the item to delete.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        id                  Required String. The id of the existing schema.
+        ===============     ====================================================================
+
+        :return: success object
+        """
+
+        try:
+            url = '{base}/admin/{id}?token={token}'.format(base=self._url, id=id, token=self._gis._con.token)
+
+            return_obj = json.loads(self._gis._con.delete(url, add_token=False, try_json=False))
+            if 'error' in return_obj:
+                self._gis._con._handle_json_error(return_obj['error'], 0)
+            elif 'success' in return_obj:
+                return return_obj['success']
+            return_obj = {_camelCase_to_underscore(k): v for k, v in return_obj.items() if
+                          v is not None and not k.startswith('_')}
+            return return_obj
+        except:
+            self._handle_error(sys.exc_info())
 
 
 class JobManager:
@@ -121,7 +181,7 @@ class JobManager:
             raise ValueError("No WorkflowManager Registered with your Organization")
         if not any(prov.itemid == '50a5f00bcc574358b15eab0e2bdadf39' for prov in self._gis.users.me.provisions):
             raise ValueError("No Workflow Manager license is available for the current user")
-        
+
     def _handle_error(self, info):
         """Basic error handler - separated into a function to allow for expansion in future releases"""
         error_class = info[0]
@@ -164,7 +224,8 @@ class JobManager:
             self._handle_error(sys.exc_info())
 
     def create(self, template, count=1, name=None, start=None, end=None, priority=None, description=None,
-                   owner=None, group=None, assigned=None, complete=None, notes=None, parent=None):
+               owner=None, group=None, assigned=None, complete=None, notes=None, parent=None,
+               location=None, extended_properties=None, related_properties=None, job_id=None):
         """
         Adds a job to the Workflow Manager instance given a user-defined template
 
@@ -196,6 +257,14 @@ class JobManager:
         notes               Job Notes
         ---------------     --------------------------------------------------------------------
         parent              Parent Job
+        ---------------     --------------------------------------------------------------------
+        location            Optional. Define an area of location for your job.
+        ---------------     --------------------------------------------------------------------
+        extended_properties Optional. Define additional properties on a job template specific to your business needs.
+        ---------------     --------------------------------------------------------------------
+        related_properties  Optional. Define additional 1-M properties on a job template specific to your business needs.
+        ---------------     --------------------------------------------------------------------
+        job_id              Optional. Define the unique jobId of the job to be created. Once defined, only one job can be created.
         ===============     ====================================================================
 
         :return: Workflow Manager Job Object
@@ -212,7 +281,11 @@ class JobManager:
             "assignedTo": assigned,
             "percentComplete": complete,
             "notes": notes,
-            "parentJob": parent
+            "parentJob": parent,
+            "location": location,
+            "extendedProperties": extended_properties,
+            "relatedProperties": related_properties,
+            "jobId": job_id
         }
         filtered_object = {}
         for key in job_object:
@@ -240,9 +313,9 @@ class JobManager:
         """
         try:
             res = Job.delete_attachment(self._gis,
-                                         '{base}/jobs/{jobId}/attachments/{attachmentId}?token={token}'.format(
-                                             base=self._url, jobId=job_id, attachmentId=attachment_id,
-                                             item=self._item.id, token=self._gis._con.token))
+                                        '{base}/jobs/{jobId}/attachments/{attachmentId}?token={token}'.format(
+                                            base=self._url, jobId=job_id, attachmentId=attachment_id,
+                                            item=self._item.id, token=self._gis._con.token))
             return res
         except:
             self._handle_error(sys.exc_info())
@@ -276,16 +349,18 @@ class JobManager:
         ===============     ====================================================================
 
         :return: Workflow Manager Job Object
-        """    
+        """
         try:
             url = f'{self._url}/jobs/{id}'
-            job_dict = ast.literal_eval(str(self._gis._con.get(url, {"token": self._gis._con.token})).encode('cp850', 'replace').decode('utf-8'))
+            job_dict = ast.literal_eval(
+                str(self._gis._con.get(url, {"token": self._gis._con.token})).encode('cp850', 'replace').decode(
+                    'utf-8'))
             return Job(job_dict, self._gis, self._url)
         except:
             self._handle_error(sys.exc_info())
 
     def search(self, query=None, search_string=None, fields=None, display_names=[], sort_by=[], num=10,
-                    start_num=0):
+               start_num=0):
         """
         Runs a search against the jobs stored inside the Workflow Manager instance
 
@@ -345,9 +420,15 @@ class JobManager:
             url = '{base}/jobs/{jobId}/update?token={token}'.format(base=self._url, jobId=job_id,
                                                                     token=self._gis._con.token)
             new_job = Job(current_job, self._gis, url)
+
+            # remove existing properties if not updating.
+            if "extended_properties" not in update_object:
+                new_job.extended_properties = None
+            if "related_properties" not in update_object:
+                new_job.related_properties = None
+
             # temporary fix for error in privileges
             delattr(new_job, "percent_complete")
-            delattr(new_job, "notes")
             delattr(new_job, "parent_job")
             return new_job.post()
         except:
@@ -368,6 +449,40 @@ class JobManager:
         try:
             url = '{base}/jobs/manage?token={token}'.format(base=self._url, token=self._gis._con.token)
             return Job.manage_jobs(self._gis, url, job_ids, 'Upgrade')
+        except:
+            self._handle_error(sys.exc_info())
+
+    def set_job_location(self, job_id, location):
+        """
+        Set a location of work for an existing job. jobUpdateLocation privilege is required to set a location on a job.
+
+        ===============     ====================================================================
+        **Arguments**        **Description**
+        ---------------     --------------------------------------------------------------------
+        job_id              ID for the job to update
+        ---------------     --------------------------------------------------------------------
+        location            Job location object - the location geometry and geometry type.
+        ===============     ====================================================================
+
+        :return: success object
+        """
+        try:
+            url = '{base}/jobs/{jobId}/location?token={token}'.format(base=self._url,
+                                                                      jobId=job_id,
+                                                                      item=self._item,
+                                                                      token=self._gis._con.token)
+            location_obj = {
+                "location": location
+            }
+            return_obj = json.loads(self._gis._con.put(url, location_obj, add_token=False, post_json=True, try_json=False,
+                                                 json_encode=False))
+            if 'error' in return_obj:
+                self._gis._con._handle_json_error(return_obj['error'], 0)
+            elif 'success' in return_obj:
+                return return_obj['success']
+            return_obj = {_camelCase_to_underscore(k): v for k, v in return_obj.items() if
+                          v is not None and not k.startswith('_')}
+            return return_obj
         except:
             self._handle_error(sys.exc_info())
 
@@ -454,7 +569,7 @@ class WorkflowManager:
 
         return self.job_manager
 
-    def evaluate_arcade(self, expression, context = None, context_type = "BaseContext", mode = "Standard"):
+    def evaluate_arcade(self, expression, context=None, context_type="BaseContext", mode="Standard"):
         """
         Evaluates an arcade expression
         
@@ -491,7 +606,8 @@ class WorkflowManager:
         """
         try:
             role_array = ast.literal_eval(str(self._gis._con.get('{base}/community/roles'.format(base=self._url),
-                                                           params={"token": self._gis._con.token})['roles']).encode(
+                                                                 params={"token": self._gis._con.token})[
+                                                  'roles']).encode(
                 'cp850', 'replace').decode('utf-8'))
             return_array = [WMRole(r) for r in role_array]
             return return_array
@@ -507,7 +623,8 @@ class WorkflowManager:
         """
         try:
             user_array = ast.literal_eval(str(self._gis._con.get('{base}/community/users'.format(base=self._url),
-                                                           params={"token": self._gis._con.token})['users']).encode(
+                                                                 params={"token": self._gis._con.token})[
+                                                  'users']).encode(
                 'cp850', 'replace').decode('utf-8'))
             return_array = [self.user(u['username']) for u in user_array]
             return return_array
@@ -537,7 +654,8 @@ class WorkflowManager:
         """
         try:
             user_array = ast.literal_eval(str(self._gis._con.get('{base}/community/usersAssign'.format(base=self._url),
-                                                           params={"token": self._gis._con.token})['users']).encode(
+                                                                 params={"token": self._gis._con.token})[
+                                                  'users']).encode(
                 'cp850', 'replace').decode('utf-8'))
             return_array = [self.user(u['username']) for u in user_array]
             return return_array
@@ -553,7 +671,8 @@ class WorkflowManager:
         """
         try:
             group_array = ast.literal_eval(str(self._gis._con.get('{base}/community/groups'.format(base=self._url),
-                                                           params={"token": self._gis._con.token})['groups']).encode(
+                                                                  params={"token": self._gis._con.token})[
+                                                   'groups']).encode(
                 'cp850', 'replace').decode('utf-8'))
             return_array = [self.group(g['id']) for g in group_array]
             return return_array
@@ -569,24 +688,37 @@ class WorkflowManager:
         :return: A list of the assignable group objects
         """
         try:
-            group_array = ast.literal_eval(str(self._gis._con.get('{base}/community/groupsAssign'.format(base=self._url),
-                                                           params={"token": self._gis._con.token})['groups']).encode(
-                'cp850', 'replace').decode('utf-8'))
+            group_array = ast.literal_eval(
+                str(self._gis._con.get('{base}/community/groupsAssign'.format(base=self._url),
+                                       params={"token": self._gis._con.token})['groups']).encode(
+                    'cp850', 'replace').decode('utf-8'))
             return_array = [self.group(g['id']) for g in group_array]
             return return_array
         except:
             self._handle_error(sys.exc_info())
 
-    @property
-    def searches(self):
+    def searches(self, search_type=None):
         """
         Returns an array of all saved searches.
 
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        search_type         Optional. The search type for returned saved searches.
+                            The accepted values are Standard, Chart and All. If not defined, the Standard searches are returned.
+        ===============     ====================================================================
+
         :return: List
         """
+        params = {
+            "token": self._gis._con.token
+        }
+        if search_type is not None:
+            params["searchType"] = search_type
+
         try:
             return ast.literal_eval(str(
-                self._gis._con.get('{base}/searches'.format(base=self._url), params={"token": self._gis._con.token})[
+                self._gis._con.get('{base}/searches'.format(base=self._url), params=params)[
                     'searches']).encode('cp850', 'replace').decode('utf-8'))
         except:
             self._handle_error(sys.exc_info())
@@ -600,8 +732,8 @@ class WorkflowManager:
         """
         try:
             template_array = ast.literal_eval(str(self._gis._con.get('{base}/jobTemplates'.format(base=self._url),
-                                                            params={"token": self._gis._con.token})[
-                                            'jobTemplates']).encode('cp850', 'replace').decode('utf-8'))
+                                                                     params={"token": self._gis._con.token})[
+                                                      'jobTemplates']).encode('cp850', 'replace').decode('utf-8'))
             return_array = [JobTemplate(t, self._gis, self._url) for t in template_array]
             return return_array
         except:
@@ -662,8 +794,9 @@ class WorkflowManager:
         """
         try:
             return WMRole.get(self._gis,
-                            '{base}/community/roles/{role}'.format(base=self._url, role=urllib.parse.quote(name),
-                                                                   item=self._item.id), {"token": self._gis._con.token})
+                              '{base}/community/roles/{role}'.format(base=self._url, role=urllib.parse.quote(name),
+                                                                     item=self._item.id),
+                              {"token": self._gis._con.token})
         except:
             self._handle_error(sys.exc_info())
 
@@ -680,7 +813,8 @@ class WorkflowManager:
         :return: Workflow Manager Job Template Object
         """
         try:
-            return JobTemplate.get(self._gis, '{base}/jobTemplates/{jobTemplate}'.format(base=self._url, jobTemplate=id),
+            return JobTemplate.get(self._gis,
+                                   '{base}/jobTemplates/{jobTemplate}'.format(base=self._url, jobTemplate=id),
                                    {"token": self._gis._con.token})
         except:
             self._handle_error(sys.exc_info())
@@ -699,10 +833,10 @@ class WorkflowManager:
         """
         try:
             res = JobTemplate.delete(self._gis,
-                                      '{base}/jobTemplates/{jobTemplate}?token={token}'.format(base=self._url,
-                                                                                               jobTemplate=id,
-                                                                                               item=self._item.id,
-                                                                                               token=self._gis._con.token))
+                                     '{base}/jobTemplates/{jobTemplate}?token={token}'.format(base=self._url,
+                                                                                              jobTemplate=id,
+                                                                                              item=self._item.id,
+                                                                                              token=self._gis._con.token))
             return res
         except:
             self._handle_error(sys.exc_info())
@@ -737,9 +871,10 @@ class WorkflowManager:
         :return: Workflow Manager Group Object
         """
         try:
-            wmx_group = Group.get(self._gis, '{base}/community/groups/{groupid}'.format(base=self._url, groupid=group_id,
-                                                                                   item=self._item.id),
-                             {"token": self._gis._con.token})
+            wmx_group = Group.get(self._gis,
+                                  '{base}/community/groups/{groupid}'.format(base=self._url, groupid=group_id,
+                                                                             item=self._item.id),
+                                  {"token": self._gis._con.token})
             arcgis_group = arcgis.gis.Group(self._gis, group_id)
             arcgis_group.roles = wmx_group.roles
             return arcgis_group
@@ -1008,16 +1143,24 @@ class Job(object):
     _underscore_to_camelcase = _underscore_to_camelcase
 
     def __init__(self, init_data, gis=None, url=None):
-        self.job_status = self.notes = self.attachments = self.diagram_id = self.end_date = self.due_date = self.description = self.started_date = self.current_steps = self.job_template_name = self.job_template_id = self.extended_properties = self.diagram_name = self.parent_job = self.job_name = self.diagram_version = self.active_versions = self.percent_complete = self.priority = self.job_id = self.created_date = self.created_by = self.closed = self.owned_by = self.start_date = None
+        self.job_status = self.notes = self.attachments = self.diagram_id = self.end_date = self.due_date = \
+            self.description = self.started_date = self.current_steps = self.job_template_name = self.job_template_id \
+            = self.extended_properties = self.diagram_name = self.parent_job = self.job_name = self.diagram_version \
+            = self.active_versions = self.percent_complete = self.priority = self.job_id = self.created_date = \
+            self.created_by = self.closed = self.owned_by = self.start_date = self._location = self.related_properties = None
         for key in init_data:
             setattr(self, _camelCase_to_underscore(key), init_data[key])
         self._gis = gis
         self._url = url
 
     def post(self):
-        post_dict = {_underscore_to_camelcase(k): v for k, v in self.__dict__.items() if v is not None and not k.startswith('_')}
+        post_dict = {_underscore_to_camelcase(k): v for k, v in self.__dict__.items() if
+                     v is not None and not k.startswith('_')}
+        if self._location is not None:
+            post_dict["location"] = self.location
         return_obj = json.loads(
-            self._gis._con.post(self._url, post_dict, add_token=False, post_json=True, try_json=False, json_encode=False))
+            self._gis._con.post(self._url, post_dict, add_token=False, post_json=True, try_json=False,
+                                json_encode=False))
         if 'error' in return_obj:
             self._gis._con._handle_json_error(return_obj['error'], 0)
         elif 'success' in return_obj:
@@ -1031,7 +1174,8 @@ class Job(object):
             gis._con._handle_json_error(return_obj['error'], 0)
         elif 'success' in return_obj:
             return return_obj['success']
-        return_obj = { _camelCase_to_underscore(k): v for k, v in return_obj.items() if v is not None and not k.startswith('_')}
+        return_obj = {_camelCase_to_underscore(k): v for k, v in return_obj.items() if
+                      v is not None and not k.startswith('_')}
         return return_obj
 
     def get_attachment(self, attachment_id):
@@ -1048,7 +1192,7 @@ class Job(object):
         """
 
         url = '{base}/jobs/{jobId}/attachments/{attachmentId}'.format(base=self._url, jobId=self.job_id,
-                                                            attachmentId=attachment_id)
+                                                                      attachmentId=attachment_id)
         return_obj = self._gis._con.get(url, {"token": self._gis._con.token}, try_json=False)
         if 'error' in return_obj:
             self._gis._con._handle_json_error(return_obj['error'], 0)
@@ -1070,7 +1214,8 @@ class Job(object):
         """
         url = '{base}/jobs/{jobId}/attachments'.format(base=self._url, jobId=self.job_id)
         return_obj = json.loads(
-            self._gis._con.post(url, files={'attachment': attachment}, add_token=True, try_json=False, json_encode=False))
+            self._gis._con.post(url, files={'attachment': attachment}, add_token=True, try_json=False,
+                                json_encode=False))
         if 'error' in return_obj:
             self._gis._con._handle_json_error(return_obj['error'], 0)
         return {
@@ -1093,7 +1238,7 @@ class Job(object):
         :return: success
         """
         url = '{base}/jobs/{jobId}/attachments/{attachmentid}'.format(base=self._url, jobId=self.job_id,
-                                                                          attachmentid=attachment_id)
+                                                                      attachmentid=attachment_id)
         post_object = {
             'alias': alias
         }
@@ -1102,7 +1247,8 @@ class Job(object):
             self._gis._con._handle_json_error(return_obj['error'], 0)
         elif 'success' in return_obj:
             return return_obj['success']
-        return_obj = { _camelCase_to_underscore(k): v for k, v in return_obj.items() if v is not None and not k.startswith('_')}
+        return_obj = {_camelCase_to_underscore(k): v for k, v in return_obj.items() if
+                      v is not None and not k.startswith('_')}
         return return_obj
 
     def delete_attachment(gis, url):
@@ -1111,7 +1257,8 @@ class Job(object):
             gis._con._handle_json_error(return_obj['error'], 0)
         elif 'success' in return_obj:
             return return_obj['success']
-        return_obj = { _camelCase_to_underscore(k): v for k, v in return_obj.items() if v is not None and not k.startswith('_')}
+        return_obj = {_camelCase_to_underscore(k): v for k, v in return_obj.items() if
+                      v is not None and not k.startswith('_')}
         return return_obj
 
     def update_step(self, step_id, assigned_type, assigned_to):
@@ -1134,7 +1281,7 @@ class Job(object):
         if step_id is None:
             step_id = self.currentSteps[0]['step_id']
         url = '{base}/jobs/{jobId}/{stepId}?token={token}'.format(base=self._url, jobId=self.job_id, stepId=step_id,
-                                                                      token=self._gis._con.token)
+                                                                  token=self._gis._con.token)
         post_object = {
             'assignedType': assigned_type,
             'assignedTo': assigned_to
@@ -1145,7 +1292,8 @@ class Job(object):
             self._gis._con._handle_json_error(return_obj['error'], 0)
         elif 'success' in return_obj:
             return return_obj['success']
-        return_obj = { _camelCase_to_underscore(k): v for k, v in return_obj.items() if v is not None and not k.startswith('_')}
+        return_obj = {_camelCase_to_underscore(k): v for k, v in return_obj.items() if
+                      v is not None and not k.startswith('_')}
         return return_obj
 
     def set_current_step(self, step_id):
@@ -1162,7 +1310,7 @@ class Job(object):
         """
 
         url = '{base}/jobs/{jobId}/action?token={token}'.format(base=self._url, jobId=self.job_id,
-                                                                    token=self._gis._con.token)
+                                                                token=self._gis._con.token)
         post_object = {
             'type': 'SetCurrentStep',
             'stepIds': [
@@ -1175,7 +1323,8 @@ class Job(object):
             self._gis._con._handle_json_error(return_obj['error'], 0)
         elif 'success' in return_obj:
             return return_obj['success']
-        return_obj = { _camelCase_to_underscore(k): v for k, v in return_obj.items() if v is not None and not k.startswith('_')}
+        return_obj = {_camelCase_to_underscore(k): v for k, v in return_obj.items() if
+                      v is not None and not k.startswith('_')}
         return return_obj
 
     @property
@@ -1187,11 +1336,12 @@ class Job(object):
         """
 
         url = '{base}/jobs/{jobId}/history?token={token}'.format(base=self._url, jobId=self.job_id,
-                                                                    token=self._gis._con.token)
+                                                                 token=self._gis._con.token)
         return_obj = ast.literal_eval(str(self._gis._con.get(url)).encode('cp850', 'replace').decode('utf-8'))
         if 'success' in return_obj:
             return return_obj['success']
-        return_obj = { _camelCase_to_underscore(k): v for k, v in return_obj.items() if v is not None and not k.startswith('_')}
+        return_obj = {_camelCase_to_underscore(k): v for k, v in return_obj.items() if
+                      v is not None and not k.startswith('_')}
         return return_obj
 
     @property
@@ -1202,8 +1352,15 @@ class Job(object):
         :return: Workflow Manager Job Location Object
         """
 
-        return JobLocation.get(self._gis, '{base}/jobs/{job}/location'.format(base=self._url, job=self.job_id),
-                                {"token": self._gis._con.token})
+        if self._location is None:
+            self._location = JobLocation.get(self._gis,
+                                             '{base}/jobs/{job}/location'.format(base=self._url, job=self.job_id),
+                                             {"token": self._gis._con.token})
+        return self._location
+
+    @location.setter
+    def location(self, value):
+        self._location = value
 
     def manage_jobs(gis, url, ids, action):
         post_object = {
@@ -1216,7 +1373,8 @@ class Job(object):
             gis._con._handle_json_error(return_obj['error'], 0)
         elif 'success' in return_obj:
             return return_obj['success']
-        return_obj = { _camelCase_to_underscore(k): v for k, v in return_obj.items() if v is not None and not k.startswith('_')}
+        return_obj = {_camelCase_to_underscore(k): v for k, v in return_obj.items() if
+                      v is not None and not k.startswith('_')}
         return return_obj
 
 
@@ -1269,13 +1427,18 @@ class JobTemplate(object):
             setattr(self, _camelCase_to_underscore(key), init_data[key])
         self._gis = gis
         self._url = url
-    
+
     def __getattr__(self, item):
-        possible_fields = ['default_assigned_to', 'last_updated_by', 'diagram_id', 'extended_property_table_definitions', 'description', 'job_template_name', 'job_template_id', 'default_start_date', 'default_priority_name', 'last_updated_date', 'job_start_date_type', 'diagram_name', 'default_job_duration', 'default_due_date', 'state', 'category', 'default_assigned_type', 'default_description']
+        possible_fields = ['default_assigned_to', 'last_updated_by', 'diagram_id',
+                           'extended_property_table_definitions', 'description', 'job_template_name', 'job_template_id',
+                           'default_start_date', 'default_priority_name', 'last_updated_date', 'job_start_date_type',
+                           'diagram_name', 'default_job_duration', 'default_due_date', 'state', 'category',
+                           'default_assigned_type', 'default_description']
         gis = object.__getattribute__(self, '_gis')
         url = object.__getattribute__(self, '_url')
         id = object.__getattribute__(self, 'job_template_id')
-        full_object = ast.literal_eval(str(gis._con.get(url, {"token": gis._con.token})).encode('cp850', 'replace').decode('utf-8'))
+        full_object = ast.literal_eval(
+            str(gis._con.get(url, {"token": gis._con.token})).encode('cp850', 'replace').decode('utf-8'))
         try:
             setattr(self, _camelCase_to_underscore(item), full_object[item])
             return full_object[item]
@@ -1293,12 +1456,13 @@ class JobTemplate(object):
     def put(self, gis, url):
         put_dict = {_underscore_to_camelcase(k): v for k, v in self.__dict__.items() if v is not None}
         return_obj = json.loads(gis._con.put(url, put_dict, add_token=False, post_json=True, try_json=False,
-                                  json_encode=False))
+                                             json_encode=False))
         if 'error' in return_obj:
             gis._con._handle_json_error(return_obj['error'], 0)
         elif 'success' in return_obj:
             return return_obj['success']
-        return_obj = { _camelCase_to_underscore(k): v for k, v in return_obj.items() if v is not None and not k.startswith('_')}
+        return_obj = {_camelCase_to_underscore(k): v for k, v in return_obj.items() if
+                      v is not None and not k.startswith('_')}
         return return_obj
 
     def post(self, gis, url):
@@ -1317,7 +1481,8 @@ class JobTemplate(object):
             gis._con._handle_json_error(return_obj['error'], 0)
         elif 'success' in return_obj:
             return return_obj['success']
-        return_obj = { _camelCase_to_underscore(k): v for k, v in return_obj.items() if v is not None and not k.startswith('_')}
+        return_obj = {_camelCase_to_underscore(k): v for k, v in return_obj.items() if
+                      v is not None and not k.startswith('_')}
         return return_obj
 
 
@@ -1357,13 +1522,15 @@ class JobDiagram(object):
             setattr(self, _camelCase_to_underscore(key), init_data[key])
         self._gis = gis
         self._url = url
-    
+
     def __getattr__(self, item):
-        possible_fields = ['display_grid', 'diagram_version', 'diagram_name', 'diagram_id', 'description', 'annotations', 'initial_step_id', 'data_sources', 'steps', 'initial_step_name']
+        possible_fields = ['display_grid', 'diagram_version', 'diagram_name', 'diagram_id', 'description',
+                           'annotations', 'initial_step_id', 'data_sources', 'steps', 'initial_step_name']
         gis = object.__getattribute__(self, '_gis')
         url = object.__getattribute__(self, '_url')
         id = object.__getattribute__(self, 'diagram_id')
-        full_object = ast.literal_eval(str(gis._con.get(url, {"token": gis._con.token})).encode('cp850', 'replace').decode('utf-8'))
+        full_object = ast.literal_eval(
+            str(gis._con.get(url, {"token": gis._con.token})).encode('cp850', 'replace').decode('utf-8'))
         try:
             setattr(self, _camelCase_to_underscore(item), full_object[item])
             return full_object[item]
@@ -1386,7 +1553,8 @@ class JobDiagram(object):
             gis._con._handle_json_error(return_obj['error'], 0)
         elif 'success' in return_obj:
             return return_obj['success']
-        return_obj = { _camelCase_to_underscore(k): v for k, v in return_obj.items() if v is not None and not k.startswith('_')}
+        return_obj = {_camelCase_to_underscore(k): v for k, v in return_obj.items() if
+                      v is not None and not k.startswith('_')}
         return return_obj
 
     def update(self, gis, url, delete_draft):
@@ -1401,7 +1569,8 @@ class JobDiagram(object):
             gis._con._handle_json_error(return_obj['error'], 0)
         elif 'success' in return_obj:
             return return_obj['success']
-        return_obj = { _camelCase_to_underscore(k): v for k, v in return_obj.items() if v is not None and not k.startswith('_')}
+        return_obj = {_camelCase_to_underscore(k): v for k, v in return_obj.items() if
+                      v is not None and not k.startswith('_')}
         return return_obj
 
     def delete(gis, url):
@@ -1410,7 +1579,8 @@ class JobDiagram(object):
             gis._con._handle_json_error(return_obj['error'], 0)
         elif 'success' in return_obj:
             return return_obj['success']
-        return_obj = { _camelCase_to_underscore(k): v for k, v in return_obj.items() if v is not None and not k.startswith('_')}
+        return_obj = {_camelCase_to_underscore(k): v for k, v in return_obj.items() if
+                      v is not None and not k.startswith('_')}
         return return_obj
 
 
@@ -1424,11 +1594,13 @@ class JobLocation(object):
     ===============     ====================================================================
     """
     _camelCase_to_underscore = _camelCase_to_underscore
+
     def __init__(self, init_data):
-        self.geometry = self.geometryType = None
+        self.geometry = self.geometry_type = None
         for key in init_data:
             setattr(self, _camelCase_to_underscore(key), init_data[key])
 
     def get(gis, url, params):
         job_location_dict = ast.literal_eval(str(gis._con.get(url, params)).encode('cp850', 'replace').decode('utf-8'))
         return JobLocation(job_location_dict)
+
