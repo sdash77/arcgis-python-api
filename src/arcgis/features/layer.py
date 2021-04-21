@@ -2736,6 +2736,8 @@ class FeatureLayer(Layer):
         if len(rows) == 0:
             return None
         df = pd.DataFrame.from_records(data=rows)
+        if 'SHAPE' in df.columns:
+            df.loc[df.SHAPE.isna(), 'SHAPE'] = None
         if 'fields' in featureset_dict:
             dtypes = {}
             names = []
