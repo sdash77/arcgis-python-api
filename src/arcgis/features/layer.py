@@ -2037,6 +2037,7 @@ class FeatureLayer(Layer):
         del cparams
         res = self._con.post(path=url,
                              postdata=params)
+        n = 1
         if 'statusUrl' in res:
             time.sleep(1)
             surl = res['statusUrl']
@@ -2047,7 +2048,8 @@ class FeatureLayer(Layer):
                     if return_messages:
                         return (False, sres)
                     return False
-                time.sleep(.5)
+                time.sleep(.5 * n)
+                n += 1
             if return_messages:
                 return (True, sres)
             else:
