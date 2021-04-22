@@ -2064,6 +2064,8 @@ class FeatureLayer(Layer):
                     if return_messages:
                         return (False, sres)
                     return False
+                if n >= 40:
+                    n = 40
                 time.sleep(.5 * n)
                 n += 1
             if return_messages:
