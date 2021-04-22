@@ -1914,7 +1914,9 @@ class FeatureLayer(Layer):
                rollback=False,
                skip_inserts=None,
                upsert_matching_field=None,
-               upload_id=None
+               upload_id=None,
+               *,
+               return_messages=None
                ):
         """
         Only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
@@ -1998,10 +2000,16 @@ class FeatureLayer(Layer):
                                    :func:`~FeatureLayerCollection.upload` response, corresponding with
                                    the `appendUploadId` REST API argument. This argument should not be
                                    used along side the `item_id` argument.
+        ------------------------   --------------------------------------------------------------------
+        return_messages            Optional Boolean.  When set to `True`, the messages returned from 
+                                   the append will be returned. If `False`, the response messages will
+                                   not be returned.  This alters the output to be a tuple consisting of 
+                                   a (Boolean, Dictionary).
         ========================   ====================================================================
 
 
-        :return: boolean
+        :return: boolean (True when successful, False when failed). When `return_messages` is True, the
+                 response messages will be return in addition to the boolean as a `tuple`.
 
         """
         import copy
@@ -2045,6 +2053,7 @@ class FeatureLayer(Layer):
         del cparams
         res = self._con.post(path=url,
                              postdata=params)
+        n = 1
         if 'statusUrl' in res:
             time.sleep(1)
             surl = res['statusUrl']
@@ -2052,8 +2061,15 @@ class FeatureLayer(Layer):
             while sres['status'].lower() != "completed":
                 sres = self._con.get(path=surl, params={'f' : 'json'})
                 if sres['status'].lower() in "failed":
-                    break
-            return True
+                    if return_messages:
+                        return (False, sres)
+                    return False
+                time.sleep(.5 * n)
+                n += 1
+            if return_messages:
+                return (True, sres)
+            else:
+                return True
         return res
     # ----------------------------------------------------------------------
     def delete_features(self,
