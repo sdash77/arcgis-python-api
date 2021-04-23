@@ -24,6 +24,7 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._multi_task_road_extractor import MultiTaskRoadExtractor
     from ._change_detector import ChangeDetector
     from ._pix2pix import Pix2Pix
+    from ._embeddings import Embeddings
     from ._connect_net import ConnectNet
     from ._siammask import SiamMask, Track
 

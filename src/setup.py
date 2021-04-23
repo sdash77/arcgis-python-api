@@ -64,7 +64,9 @@ else:
         'requests-negotiate-sspi;platform_system=="Windows"',
         'requests-kerberos;platform_system=="Windows"',
         'winkerberos;platform_system=="Windows"',
-        'esri_requests']
+        #'arcgis_auth'
+        ]
+
 
 def _post_install():
     """This function will run after 'pip install' finishes. It has 2 parts:

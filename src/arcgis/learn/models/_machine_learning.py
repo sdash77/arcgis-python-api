@@ -244,7 +244,7 @@ class MLModel(object):
 
         return self._model.feature_importances_
 
-    def save(self, name_or_path):
+    def save(self, name_or_path, publish=False, gis=None, **kwargs):
         """
         Saves the model, creates an Esri Model Definition. Uses pickle to save the model.
         Using protocol level 2. Protocol level is backward compatible.
@@ -253,6 +253,15 @@ class MLModel(object):
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Folder path to save the model.
+        ---------------------   -------------------------------------------
+        publish                 Optional boolean. Publishes the DLPK as an item.
+        ---------------------   -------------------------------------------
+        gis                     Optional GIS Object. Used for publishing the item.
+                                If not specified then active gis user is taken.
+        ---------------------   -------------------------------------------
+        kwargs                  Optional Parameters:
+                                Boolean `overwrite` if True, it will overwrite
+                                the item on ArcGIS Online/Enterprise, default False.
         =====================   ===========================================
         :returns dataframe
         """
@@ -283,8 +292,61 @@ class MLModel(object):
             MLModel._save_transforms(self._data._procs, path, base_file_name)
 
         self._write_emd(path, base_file_name)
+        zip_files = kwargs.pop('zip_files', True)
+
+        if zip_files:
+            from ._arcgis_model import _create_zip
+            _create_zip(Path(path).name, str(path))
+
+        if publish:
+            self._publish_dlpk((Path(path) / Path(path).stem).with_suffix('.dlpk'), gis=gis,
+                               overwrite=kwargs.get('overwrite', False))
 
         return Path(path)
+
+    def _publish_dlpk(self, dlpk_path, gis=None, overwrite=False):
+        model_characteristics_folder = 'ModelCharacteristics'
+        gis_user = arcgis.env.active_gis if gis is None else gis
+        if not gis_user:
+            warnings.warn('No active gis user found!')
+            return
+
+        if not os.path.exists(dlpk_path):
+            warnings.warn('DLPK file not found!')
+            return
+
+        emd_path = os.path.join(dlpk_path.parent, dlpk_path.stem + '.emd')
+
+        if not os.path.exists(emd_path):
+            warnings.warn('EMD File not found!')
+            return
+
+        emd_data = json.load(open(emd_path, 'r'))
+        formatted_description = f"""
+                <p><b> {emd_data.get('ModelName').replace('>', '').replace('<', '')} </b></p>
+                <p><b>Backbone:</b> {emd_data.get('ModelParameters', {}).get('backbone')}</p>
+                <p><b>Learning Rate:</b> {emd_data.get('LearningRate')}</p>
+        """
+
+        if emd_data.get('accuracy'):
+            formatted_description = formatted_description + f"""
+                <p><b>Analysis of the model</b></p>
+                <p><b>Accuracy:</b> {emd_data.get('accuracy')}</p>
+            """
+
+        if emd_data.get('average_precision_score'):
+            formatted_description = formatted_description + f"""
+                <p><b>Analysis of the model</b></p>
+                <p><b>Average Precision Score:</b> {emd_data.get('average_precision_score')}</p>
+            """
+
+        item = gis_user.content.add(
+            {'type': 'Deep Learning Package', 'description': formatted_description, 'title': dlpk_path.stem,
+             'overwrite': True if overwrite else False},
+            data=str(dlpk_path.absolute())
+        )
+
+        print(f"Published DLPK Item Id: {item.itemid}")
 
     def _write_emd(self, path, base_file_name):
         emd_file = os.path.join(path, base_file_name + '.emd')

@@ -3550,14 +3550,16 @@ class MapImageLayer(Layer):
     def _populate_layers(self):
         layers = []
         tables = []
-        if self.properties.layers:
+        if 'layers'in self.properties and \
+           self.properties.layers:
             for lyr in self.properties.layers:
                 if 'subLayerIds' in lyr and lyr.subLayerIds is not None: # Group Layer
                     lyr = Layer(self.url + '/' + str(lyr.id), self._gis)
                 else:
                     lyr = arcgis.mapping._msl.MapServiceLayer(self.url + '/' + str(lyr.id), self._gis)
                 layers.append(lyr)
-        if self.properties.tables:
+        if 'tables' in self.properties and \
+           self.properties.tables:
             for lyr in self.properties.tables:
                 lyr = arcgis.mapping._msl.MapServiceLayer(self.url + '/' + str(lyr.id), self._gis, self)
                 tables.append(lyr)
@@ -4620,9 +4622,9 @@ class MapImageLayer(Layer):
                 raise Exception("No job results.")
 
             if 'results' in job_response:
-                
+
                 allResults = job_response['results']
-    
+
                 for k, v in allResults.items():
                     if k == "out_service_url":
                         value = v.value

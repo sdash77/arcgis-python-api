@@ -1914,30 +1914,44 @@ class FeatureLayer(Layer):
                rollback=False,
                skip_inserts=None,
                upsert_matching_field=None,
-               upload_id=None
+               upload_id=None,
+               *,
+               return_messages=None
                ):
         """
         Only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
 
         Update an existing hosted feature layer using append. See ArcGIS REST API documentation for
-        details: https://developers.arcgis.com/rest/services-reference/append-feature-service-layer-.htm
+        details: `Append (Feature Service/Layer) <https://developers.arcgis.com/rest/services-reference/append-feature-service-layer-.htm>`_
 
         ========================   ====================================================================
         **Argument**               **Description**
-        ------------------------   --------------------------------------------------------------------
-        source_table_name          optional string. Required only when the source data contains more
-                                   than one tables, e.g., for file geodatabase.
-                                   Example: source_table_name=  "Building"
         ------------------------   --------------------------------------------------------------------
         item_id                    optional string. The ID for the Portal item that contains the source
                                    file.
                                    Used in conjunction with editsUploadFormat.
         ------------------------   --------------------------------------------------------------------
+        upload_format              required string. The source append data format. The default is
+                                   featureCollection.
+                                   Values: sqlite | shapefile | filegdb | featureCollection |
+                                   geojson | csv | excel
+        ------------------------   --------------------------------------------------------------------
+        source_table_name          required string. Required even when the source data contains only
+                                   one table, e.g., for file geodatabase.
+
+                                   .. code-block:: python
+
+                                       # Example usage:
+                                       source_table_name=  "Building"
+        ------------------------   --------------------------------------------------------------------
         field_mappings             optional list. Used to map source data to a destination layer.
-                                   Syntax: fieldMappings=[{"name" : <"targerName">,
+                                   Syntax: fieldMappings=[{"name" : <"targetName">,
                                                            "sourceName" : < "sourceName">}, ...]
-                                   Examples: fieldMappings=[{"name" : "CountyID",
-                                                             "sourceName" : "GEOID10"}]
+                                   .. code-block:: python
+
+                                       # Example usage:
+                                       fieldMappings=[{"name" : "CountyID",
+                                                       "sourceName" : "GEOID10"}]
         ------------------------   --------------------------------------------------------------------
         edits                      optional string. Only feature collection json is supported. Append
                                    supports all format through the upload_id or item_id.
@@ -1962,12 +1976,11 @@ class FeatureLayer(Layer):
         ------------------------   --------------------------------------------------------------------
         append_fields              Optional list. The list of destination fields to append to. This is
                                    supported when upsert=true or false.
-                                   Values:  ["fieldName1", "fieldName2",....]
-        ------------------------   --------------------------------------------------------------------
-        upload_format              required string. The source append data format. The default is
-                                   featureCollection format.
-                                   Values: sqlite | shapefile | filegdb | featureCollection |
-                                   geojson | csv | excel
+
+                                   .. code-block:: python
+
+                                       #Values:
+                                       ["fieldName1", "fieldName2",....]
         ------------------------   --------------------------------------------------------------------
         rollback                   Optional boolean. Optional parameter specifying whether the upsert
                                    edits needs to be rolled back in case of failure. Default is false.
@@ -1987,10 +2000,16 @@ class FeatureLayer(Layer):
                                    :func:`~FeatureLayerCollection.upload` response, corresponding with
                                    the `appendUploadId` REST API argument. This argument should not be
                                    used along side the `item_id` argument.
+        ------------------------   --------------------------------------------------------------------
+        return_messages            Optional Boolean.  When set to `True`, the messages returned from 
+                                   the append will be returned. If `False`, the response messages will
+                                   not be returned.  This alters the output to be a tuple consisting of 
+                                   a (Boolean, Dictionary).
         ========================   ====================================================================
 
 
-        :return: boolean
+        :return: boolean (True when successful, False when failed). When `return_messages` is True, the
+                 response messages will be return in addition to the boolean as a `tuple`.
 
         """
         import copy
@@ -2034,6 +2053,7 @@ class FeatureLayer(Layer):
         del cparams
         res = self._con.post(path=url,
                              postdata=params)
+        n = 1
         if 'statusUrl' in res:
             time.sleep(1)
             surl = res['statusUrl']
@@ -2041,8 +2061,17 @@ class FeatureLayer(Layer):
             while sres['status'].lower() != "completed":
                 sres = self._con.get(path=surl, params={'f' : 'json'})
                 if sres['status'].lower() in "failed":
-                    break
-            return True
+                    if return_messages:
+                        return (False, sres)
+                    return False
+                if n >= 40:
+                    n = 40
+                time.sleep(.5 * n)
+                n += 1
+            if return_messages:
+                return (True, sres)
+            else:
+                return True
         return res
     # ----------------------------------------------------------------------
     def delete_features(self,
@@ -2725,6 +2754,8 @@ class FeatureLayer(Layer):
         if len(rows) == 0:
             return None
         df = pd.DataFrame.from_records(data=rows)
+        if 'SHAPE' in df.columns:
+            df.loc[df.SHAPE.isna(), 'SHAPE'] = None
         if 'fields' in featureset_dict:
             dtypes = {}
             names = []

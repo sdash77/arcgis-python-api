@@ -202,7 +202,7 @@ ScannedMapDigitizer
 .. autoclass:: arcgis.learn.ScannedMapDigitizer
     :members:
 
-Tabular and Feature Data Models
+Feature, Tabular and Timeseries models
 -------------------------------
 FullyConnectedNetwork
 ^^^^^^^^^^^^^^^^^^^^^
@@ -235,7 +235,7 @@ arcgis.learn.text module
    arcgis.learn.text
 
 
-Inferencing Methods (Image Server)
+Inferencing Methods
 ----------------------------------
 detect_objects
 ^^^^^^^^^^^^^^
@@ -252,6 +252,13 @@ classify_pixels
 compute_accuracy_for_object_detection
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: arcgis.learn.compute_accuracy_for_object_detection
+
+Embeddings
+^^^^^^^^^^
+.. autoclass:: arcgis.learn.Embeddings
+    :members:
+    :inherited-members:
+    :undoc-members:
 
 Model Management
 ----------------
