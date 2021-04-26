@@ -1280,7 +1280,13 @@ class FeatureLayerCollectionManager(_GISResource):
                     updateable=True,
                     capabilities="Query",
                     view_layers=None,
-                    view_tables=None):
+                    view_tables=None,
+                    *,
+                    description=None,
+                    tags=None,
+                    snippet=None,
+                    overwrite=None,
+                    set_item_id=None):
         """
         Creates a view of an existing feature service. You can create a view, if you need a different view of the data
         represented by a hosted feature layer, for example, you want to apply different editor settings, apply different
@@ -1319,6 +1325,16 @@ class FeatureLayerCollectionManager(_GISResource):
         --------------------     --------------------------------------------------------------------
         view_tables              Optional list. Specify list of tables present in the FeatureLayerCollection
                                  that you want in the view.
+        --------------------     --------------------------------------------------------------------
+        description              Optional String. A user-friendly description for the published dataset.
+        --------------------     --------------------------------------------------------------------
+        tags                     Optional String. The comma separated string of descriptive words.
+        --------------------     --------------------------------------------------------------------
+        snippet                  Optional String. A short description of the view item.
+        --------------------     --------------------------------------------------------------------
+        overwrite                Optional Boolean.  If true, the view is overwritten, False is the default.
+        --------------------     --------------------------------------------------------------------
+        set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
         ====================     ====================================================================
 
         .. code-block:: python  (optional)
@@ -1380,6 +1396,16 @@ class FeatureLayerCollectionManager(_GISResource):
                                             "capabilities":capabilities or fs.properties['capabilties']}),
             "outputType" : "featureService"
         }
+        if set_item_id:
+            params['itemIdToCreate'] = set_item_id
+        if tags:
+            params['tags'] = tags
+        if snippet:
+            params['snippet'] = snippet
+        if not overwrite is None:
+            params['overwrite'] = overwrite
+        if description:
+            params['description'] = description
         res = gis._con.post(path=url, postdata=params)
         view = content.get(res['itemId'])
         fs_view = FeatureLayerCollection(url=view.url, gis=gis)
