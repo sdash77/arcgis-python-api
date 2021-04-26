@@ -99,15 +99,26 @@ imagery_type_lib = {
 
 
 def get_installation_command():
-    installation_steps = ('Install all of them using: "conda install -c esri arcgis_learn"')
-    return installation_steps 
+    installation_steps = ('\nPlease install all required dependencies by following the'
+                          ' instructions at: \nhttps://developers.arcgis.com/python/guide/install-and-set-up/#Install'
+                          '-deep-learning-dependencies\n')
+    return installation_steps
 
 
 def _raise_fastai_import_error(import_exception=import_exception):
     installation_steps = get_installation_command()
-    raise Exception(f"{import_exception} \n\nThis module requires fastai, PyTorch, torchvision "
-                    f"as its dependencies.\n{installation_steps}")
+    raise Exception(f"{import_exception} \n\nDeep learning dependencies are missing. This module requires fastai, "
+                    f"PyTorch, torchvision. "
+                    f"\n{installation_steps}")
 
+
+def _raise_conda_import_error(import_exception=import_exception):
+    installation_steps = ('\nAdditionally, please ensure all required deep learning dependencies are installed by '
+                          'following the '
+                          'instructions at: \nhttps://developers.arcgis.com/python/guide/install-and-set-up/#Install'
+                          '-deep-learning-dependencies\n')
+    raise Exception(f"{import_exception} \n\nThis module requires conda, python 3.7 "
+                    f"and is currently supported on Windows.\n{installation_steps}\n")
 
 class _ImagenetCollater():
     def __init__(self, chip_size):
