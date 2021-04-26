@@ -726,7 +726,8 @@ def zonal_statistics(in_zone_data,
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
-
+@deprecated(deprecated_in="1.9.0", details="Please use arcgis.raster.functions.gbl.distance_accumulation()"
+ " and arcgis.raster.gbl.optimal_path_as_raster() instead. ")
 def least_cost_path(in_source_data,
                     in_cost_raster,
                     in_destination_data,
