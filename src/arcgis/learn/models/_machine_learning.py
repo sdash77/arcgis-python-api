@@ -215,7 +215,7 @@ class MLModel(object):
             kwargs['X'] = self._training_data
 
         if n_neighbors:
-            kwargs['n_neigbors'] = n_neighbors
+            kwargs['n_neighbors'] = n_neighbors
 
         kwargs['return_distance'] = return_distance
 
