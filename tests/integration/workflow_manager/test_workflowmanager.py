@@ -146,7 +146,7 @@ class TestWorkflowManager(unittest.TestCase):
                                                                                  "required": True,
                                                                                  "fieldLength": 50
                                                                                  },
-                                                                                {"propertyOrder": 0,
+                                                                                {"propertyOrder": 1,
                                                                                  "visible": True,
                                                                                  "propertyName": "prop2",
                                                                                  "editable": True,
@@ -154,7 +154,33 @@ class TestWorkflowManager(unittest.TestCase):
                                                                                  "propertyAlias": "prop2",
                                                                                  "required": True,
                                                                                  "fieldLength": 50
+                                                                                 },
+                                                                                {"propertyOrder": 2,
+                                                                                 "visible": True,
+                                                                                 "propertyName": "string",
+                                                                                 "editable": True,
+                                                                                 "domain": {
+                                                                                     "type": "codedValue",
+                                                                                     "codedValues": [
+                                                                                         {
+                                                                                             "code": "123",
+                                                                                             "name": "123"
+                                                                                         },
+                                                                                         {
+                                                                                             "code": "456",
+                                                                                             "name": "456"
+                                                                                         }
+                                                                                     ],
+                                                                                     "range": [
+                                                                                         "string"
+                                                                                     ]
+                                                                                 },
+                                                                                 "dataType": "String",
+                                                                                 "propertyAlias": "string",
+                                                                                 "required": True,
+                                                                                 "fieldLength": 0
                                                                                  }
+
                                                                             ],
                                                                         }
                                                                     ]
@@ -197,6 +223,10 @@ class TestWorkflowManager(unittest.TestCase):
                                                                     "identifier": table_name + ".prop2",
                                                                     "value": "newly_created456"
                                                                 },
+                                                                {
+                                                                    "identifier": table_name + ".prop4",
+                                                                    "value": "1"
+                                                                }
 
                                                             ],
                                                             related_properties=[
@@ -259,12 +289,37 @@ class TestWorkflowManager(unittest.TestCase):
                                                                                  "required": True,
                                                                                  "fieldLength": 50
                                                                                  },
-                                                                                {"propertyOrder": 0,
+                                                                                {"propertyOrder": 1,
                                                                                  "visible": True,
                                                                                  "propertyName": "prop2",
                                                                                  "editable": True,
                                                                                  "dataType": "String",
                                                                                  "propertyAlias": "prop2",
+                                                                                 "required": True,
+                                                                                 "fieldLength": 50
+                                                                                 },
+                                                                                {"propertyOrder": 2,
+                                                                                 "visible": True,
+                                                                                 "propertyName": "prop4",
+                                                                                 "editable": True,
+                                                                                 "domain": {
+                                                                                     "type": "codedValue",
+                                                                                     "codedValues": [
+                                                                                         {
+                                                                                             "code": "1",
+                                                                                             "name": "Uno"
+                                                                                         },
+                                                                                         {
+                                                                                             "code": "2",
+                                                                                             "name": "Dos"
+                                                                                         }
+                                                                                     ],
+                                                                                     "range": [
+                                                                                         "string"
+                                                                                     ]
+                                                                                 },
+                                                                                 "dataType": "Integer",
+                                                                                 "propertyAlias": "prop4",
                                                                                  "required": True,
                                                                                  "fieldLength": 50
                                                                                  }
@@ -875,7 +930,7 @@ class TestWorkflowManager(unittest.TestCase):
     def test_update_job_with_extended_properties_successfully_returns(self):
         # Arrange
         job_id = self.create_job_robust()[0]
-        job = self.connection.workflow_manager.jobs.get(job_id)
+        job = self.connection.workflow_manager.jobs.get(job_id, True)
         job.priority = 'Updated'
         delattr(job, "related_properties")
         delattr(job, "extended_properties")
@@ -890,9 +945,9 @@ class TestWorkflowManager(unittest.TestCase):
     def test_update_job_with_updated_extended_properties_successfully_returns(self):
         # Arrange
         job_id = self.create_job_robust()[0]
-        job = self.connection.workflow_manager.jobs.get(job_id)
+        job = self.connection.workflow_manager.jobs.get(job_id, True)
         job.priority = 'Updated'
-        delattr(job, "related_properties")
+
         table_name = job.extended_properties[0]["tableName"]
         job.extended_properties = [
                 {
@@ -902,6 +957,35 @@ class TestWorkflowManager(unittest.TestCase):
                 {
                     "identifier": table_name + ".prop2",
                     "value": "updated_456"
+                },
+        ]
+
+        # Act
+        actual = self.connection.workflow_manager.jobs.update(job_id, vars(job))
+
+        # Assert
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertNotEqual(job, self.connection.workflow_manager.jobs.get(job_id), "Job did not update")
+
+    def test_update_job_with_updated_extended_properties_with_domain_successfully_returns(self):
+        # Arrange
+        job_id = self.create_job_robust()[0]
+        job = self.connection.workflow_manager.jobs.get(job_id, True)
+        job.priority = 'Updated'
+
+        table_name = job.extended_properties[0]["tableName"]
+        job.extended_properties = [
+                {
+                    "identifier": table_name + ".prop1",
+                    "value": "updated_123"
+                },
+                {
+                    "identifier": table_name + ".prop2",
+                    "value": "updated_456"
+                },
+                {
+                    "identifier": table_name + ".prop4",
+                    "value": "2"
                 },
         ]
 
@@ -1007,6 +1091,7 @@ class TestWorkflowManager(unittest.TestCase):
         job_location = self.connection.workflow_manager.jobs.get(test_id).location
         actual = self.connection.workflow_manager.jobs.set_job_location(test_id, new_location)
         new_job_location = self.connection.workflow_manager.jobs.get(test_id).location
+        a = vars(new_job_location)
 
         # Assert
         self.assertEqual(default_job_location['geometry_type'], str(job_location.geometry_type),

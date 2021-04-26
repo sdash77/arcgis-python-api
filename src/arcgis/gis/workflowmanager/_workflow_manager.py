@@ -98,7 +98,7 @@ class WorkflowManagerAdmin:
             return return_obj['success']
         return return_obj
 
-    def update_item(self, id) -> tuple:
+    def upgrade_item(self, id) -> tuple:
         """
         Upgrades an outdated Workflow Manager schema. Requires the Workflow Manager
         Advanced Administrator privilege or the Portal Admin Update Content privilege.
@@ -118,7 +118,7 @@ class WorkflowManagerAdmin:
         }
         return_obj = json.loads(
             self._gis._con.post(url, params=params, try_json=False, add_token=False, json_encode=False,
-                                post_json=True))['itemId']
+                                post_json=True))
         if 'error' in return_obj:
             self._gis._con._handle_json_error(return_obj['error'], 0)
         elif 'success' in return_obj:
@@ -140,19 +140,16 @@ class WorkflowManagerAdmin:
         :return: success object
         """
 
-        try:
-            url = '{base}/admin/{id}?token={token}'.format(base=self._url, id=id, token=self._gis._con.token)
+        url = '{base}/admin/{id}?token={token}'.format(base=self._url, id=id, token=self._gis._con.token)
 
-            return_obj = json.loads(self._gis._con.delete(url, add_token=False, try_json=False))
-            if 'error' in return_obj:
-                self._gis._con._handle_json_error(return_obj['error'], 0)
-            elif 'success' in return_obj:
-                return return_obj['success']
-            return_obj = {_camelCase_to_underscore(k): v for k, v in return_obj.items() if
-                          v is not None and not k.startswith('_')}
-            return return_obj
-        except:
-            self._handle_error(sys.exc_info())
+        return_obj = json.loads(self._gis._con.delete(url, add_token=False, try_json=False))
+        if 'error' in return_obj:
+            self._gis._con._handle_json_error(return_obj['error'], 0)
+        elif 'success' in return_obj:
+            return return_obj['success']
+        return_obj = {_camelCase_to_underscore(k): v for k, v in return_obj.items() if
+                      v is not None and not k.startswith('_')}
+        return return_obj
 
 
 class JobManager:
@@ -338,7 +335,7 @@ class JobManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def get(self, id):
+    def get(self, id, get_ext_props=False):
         """
         Returns an active job with the given ID
 
@@ -346,6 +343,8 @@ class JobManager:
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         id                  Job ID
+        ---------------     --------------------------------------------------------------------
+        get_ext_props        Boolean. If set to true will show the jobs extended properties.
         ===============     ====================================================================
 
         :return: Workflow Manager Job Object
@@ -353,7 +352,7 @@ class JobManager:
         try:
             url = f'{self._url}/jobs/{id}'
             job_dict = ast.literal_eval(
-                str(self._gis._con.get(url, {"token": self._gis._con.token})).encode('cp850', 'replace').decode(
+                str(self._gis._con.get(url, {"token": self._gis._con.token, "extProps": get_ext_props})).encode('cp850', 'replace').decode(
                     'utf-8'))
             return Job(job_dict, self._gis, self._url)
         except:
