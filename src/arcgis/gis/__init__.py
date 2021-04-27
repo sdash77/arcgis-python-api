@@ -674,6 +674,29 @@ class GIS(object):
         return ContentManager(self)
 
     @_lazy_property
+    def velocity(self):
+        """
+        The resource manager for ArcGIS Velocity. See :class:`~arcgis.realtime.velocity.Velocity`
+        :return: :class:`~arcgis.realtime.velocity.Velocity`
+        """
+        if self._portal.is_arcgisonline and self._subscription_information is not None :
+            _velocity_url = None
+            org_capabilities = self._subscription_information['orgCapabilities']
+            for capabilities in org_capabilities:
+                if capabilities['id'] == 'velocity':
+                    _velocity_url = capabilities['velocityUrl']
+                    if '/iot' not in _velocity_url:
+                        _velocity_url += '/iot/'
+
+            if _velocity_url is not None:
+                velocity = arcgis.realtime.velocity.Velocity(url=_velocity_url, gis=self)
+                return velocity
+            else:
+                raise Exception("Velocity is not available on this organizaiton.")
+        else:
+            raise Exception("ArcGIS Enterprise does not support Velocity")
+
+    @_lazy_property
     def hub(self):
         """
         The resource manager for GIS hub. See :class:`~arcgis.apps.hub.Hub`.
