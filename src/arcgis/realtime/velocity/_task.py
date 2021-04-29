@@ -18,6 +18,11 @@ class Task(metaclass=ABCMeta):
         raise NotImplemented()
 
     @abstractmethod
+    def metrics(self):
+        """Fetch current status of a task instance"""
+        raise NotImplemented()
+
+    @abstractmethod
     def delete(self):
         """Delete a task instance"""
         raise NotImplemented()
