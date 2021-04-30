@@ -801,23 +801,56 @@ class TabularDataObject(object):
                 continuous_variables.append(field)
 
         rasters = []
-        for raster in raster_variables:
+        bands=[]
+        for i, raster in enumerate(raster_variables):
             if isinstance(raster, tuple):
+                len_tuple = len(raster)
                 rasters.append(raster[0])
-                if raster[1]:
-                    band_count = raster[0].band_count
-                    for index in range(band_count):
-                        if index == 0:
-                            categorical_variables.append(raster[0].name)
+                if len_tuple == 2:
+                    if isinstance(raster[1], tuple):
+                        bands.append(raster[1])
+                        band_count = len(raster[1])
+                        if band_count > raster[0].band_count:
+                            raise ('Incorrect band ids passed. The input raster has only '+str(band_count)+' bands')
+                        for index,band in enumerate(raster[1]):
+                            if band == 0:
+                                continuous_variables.append(raster[0].name)
+                            else:
+                                continuous_variables.append(raster[0].name + f'_{band}')
+                    elif isinstance(raster[1], bool):
+                        band_count = raster[0].band_count
+                        if raster[1]:
+                            for index in range(band_count):
+                                if index == 0:
+                                    categorical_variables.append(raster[0].name)
+                                else:
+                                    categorical_variables.append(raster[0].name + f'_{index}')
                         else:
-                            categorical_variables.append(raster[0].name + f'_{index}')
-                else:
-                    band_count = raster[0].band_count
-                    for index in range(band_count):
-                        if index == 0:
-                            continuous_variables.append(raster[0].name)
-                        else:
-                            continuous_variables.append(raster[0].name + f'_{index}')
+                            for index in range(band_count):
+                                if index == 0:
+                                    continuous_variables.append(raster[0].name)
+                                else:
+                                    continuous_variables.append(raster[0].name + f'_{index}')
+                    else:
+                        raise Exception("The format of the raster variable passed is incorrect.")
+                elif len_tuple == 3:
+                    if not isinstance(raster[1], bool):
+                        raise Exception ("The format of the raster variable passed is incorrect.")
+                    if not isinstance(raster[2], tuple):
+                        raise Exception ("The format of the raster variable passed is incorrect.")
+                    bands[i] = raster[2]
+                    if raster[1]:
+                        for index,band in enumerate(raster[2]):
+                            if band == 0:
+                                categorical_variables.append(raster[0].name)
+                            else:
+                                categorical_variables.append(raster[0].name + f'_{band}')
+                    else:
+                        for index,band in enumerate(raster[2]):
+                            if band == 0:
+                                continuous_variables.append(raster[0].name)
+                            else:
+                                continuous_variables.append(raster[0].name + f'_{band}')
             else:
                 rasters.append(raster)
                 band_count = raster.band_count

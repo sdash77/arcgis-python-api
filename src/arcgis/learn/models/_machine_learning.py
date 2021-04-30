@@ -1,4 +1,5 @@
 import os
+import re
 import random
 import json
 import pickle
@@ -808,6 +809,9 @@ class MLModel(object):
             raise Exception("This function requires fastprogress.")
 
         fields_needed = self._data._categorical_variables + self._data._continuous_variables
+        raster_names = [r.name for r in rasters] # Removing duplicate rasters if same raster is passed twice.
+        unique_indexes = [raster_names.index(x) for x in set(raster_names)]
+        rasters = [rasters[i] for i in unique_indexes]
 
         try:
             arcpy.env.outputCoordinateSystem = rasters[0].extent['spatialReference']['wkt']
@@ -859,11 +863,13 @@ class MLModel(object):
         cell_size = arcgis.geometry.Point({'x': min_cell_size_x, 'y': min_cell_size_y, 'sr': default_sr})
 
         raster_data = {}
+        #fields_needed.append(raster.name)# Change
         for raster in rasters:
             field_name = raster.name
             point_upper_translated = arcgis.geometry.project([point_upper], default_sr, raster.extent['spatialReference'])[0]
             cell_size_translated = arcgis.geometry.project([cell_size], default_sr, raster.extent['spatialReference'])[0]
-            if field_name in fields_needed:
+            #if field_name in fields_needed:
+            if field_name == re.search("(?s:.*)_", fields_needed[-1]).group(0)[:-1]:
                 raster_read = raster.read(origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns, nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -874,11 +880,15 @@ class MLModel(object):
                             if index != 0:
                                 key = key + f'_{index}'
                             if not raster_data.get(key):
-                                raster_data[key] = []
+                                if key in fields_needed:
+                                    raster_data[key] = []
                             index = index + 1
-                            raster_data[key].append(value)
-            elif match_field_names and match_field_names.get(raster.name):
-                field_name = match_field_names.get(raster.name)
+                            if key in fields_needed:
+                                raster_data[key].append(value)
+            elif match_field_names:
+                field_name = list(match_field_names.values())[-1]
+                field_name = re.search("(?s:.*)_", field_name).group(0)[:-1]
+                #field_name = match_field_names.get(raster.name)
                 raster_read = raster.read(origin_coordinate=(point_upper_translated.x, point_upper_translated.y), ncols=max_raster_columns, nrows=max_raster_rows, cell_size=(cell_size_translated.x, cell_size_translated.y))
                 for row in range(max_raster_rows):
                     for column in range(max_raster_columns):
@@ -889,9 +899,11 @@ class MLModel(object):
                             if index != 0:
                                 key = key + f'_{index}'
                             if not raster_data.get(key):
-                                raster_data[key] = []
+                                if key in fields_needed:
+                                    raster_data[key] = []
                             index = index + 1
-                            raster_data[key].append(value)
+                            if key in fields_needed:
+                                raster_data[key].append(value)
             else:
                 continue
 
