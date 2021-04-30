@@ -26,7 +26,7 @@ class TestRealTimeAnalyticsMethods(unittest.TestCase):
     @unittest.skipIf(SKIP_SOME_TESTS, 'test_get_all_realtime_analytics skipping')
     def test_get_all_realtime_analytics(self):
         print('\n ---- test_get_all_realtime_analytics ----')
-        realtime_tasks = self.realtime_analytics_manager.tasks
+        realtime_tasks = self.realtime_analytics_manager.items
         try:
             print(realtime_tasks)
 

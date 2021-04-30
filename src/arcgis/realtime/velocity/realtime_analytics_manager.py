@@ -22,10 +22,10 @@ class RealTimeAnalyticsManager:
 
     # ----------------------------------------------------------------------
     @property
-    def tasks(self):
+    def items(self):
         """
-        Get all Real-Time Analytics tasks
-        :return: returns a collection of all configured Real-Time Analytics tasks
+        Get all Real-Time Analytics items
+        :return: returns a collection of all configured Real-Time Analytics items
         """
         all_realtime_analytics_response = self._util._get_request('analytics/realtime')
         realtime_analytics_items = [

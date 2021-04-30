@@ -23,10 +23,10 @@ class BigDataAnalyticsManager:
 
     # ----------------------------------------------------------------------
     @property
-    def tasks(self):
+    def items(self):
         """
-        Get all Big Data Analytics tasks
-        :return: returns a collection of all configured Big Data Analytics tasks
+        Get all Big Data Analytics items
+        :return: returns a collection of all configured Big Data Analytics items
         """
         all_bigdata_analytics_response = self._util._get_request('analytics/bigdata')
         bigdata_analytics_items = [

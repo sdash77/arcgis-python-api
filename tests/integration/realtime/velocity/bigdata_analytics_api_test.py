@@ -26,7 +26,7 @@ class TestBigDataAnalyticsMethods(unittest.TestCase):
     @unittest.skipIf(SKIP_SOME_TESTS, 'test_get_all_bigdata_analytics skipping')
     def test_get_all_bigdata_analytics(self):
         print('\n ---- test_get_all_bigdata_analytics ----')
-        bigdata_tasks = self.bigdata_analytics_manager.tasks
+        bigdata_tasks = self.bigdata_analytics_manager.items
         try:
             print(bigdata_tasks)
 
