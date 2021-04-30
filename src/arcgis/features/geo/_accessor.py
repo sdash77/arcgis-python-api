@@ -2568,6 +2568,7 @@ class GeoAccessor(object):
         }
         # Ensure all number values are 0 so errors do not occur.
         df = self._data.where(pd.notnull(self._data), None)
+        date_cols = [col for col in df.columns if df[col].dtype == 'datetime64[ns]']
         cols_norm = [col for col in df.columns]
         cols_lower = [col.lower() for col in df.columns]
         old_series = None
@@ -2633,7 +2634,8 @@ class GeoAccessor(object):
                 col_val = df[col].loc[idx]
             except:
                 col_val = ""
-            if isinstance(col_val, (str, np.str)):
+            if isinstance(col_val, (str, np.str)) and \
+               not col in date_cols:
                 l = df[col].str.len().max()
                 if str(l) == 'nan':
                     l = 255
@@ -2649,32 +2651,37 @@ class GeoAccessor(object):
             elif isinstance(col_val, (datetime.datetime,
                                       pd.Timestamp,
                                       np.datetime64,
-                                      )):#pd.datetime
+                                      )) or \
+                 col in date_cols:#pd.datetime
                 fields.append({
                     "name" : col,
                     "type" : "esriFieldTypeDate",
                     "alias" : col
                 })
                 date_fields.append(col)
-            elif isinstance(col_val, (np.int32, np.int16, np.int8)):
+            elif isinstance(col_val, (np.int32, np.int16, np.int8)) and \
+                 not col in date_cols:
                 fields.append({
                     "name" : col,
                     "type" : "esriFieldTypeSmallInteger",
                     "alias" : col
                 })
-            elif isinstance(col_val, (int, np.int, np.int64)):
+            elif isinstance(col_val, (int, np.int, np.int64)) and \
+                 not col in date_cols:
                 fields.append({
                     "name" : col,
                     "type" : "esriFieldTypeInteger",
                     "alias" : col
                 })
-            elif isinstance(col_val, (float, np.float64)):
+            elif isinstance(col_val, (float, np.float64)) and \
+                 not col in date_cols:
                 fields.append({
                     "name" : col,
                     "type" : "esriFieldTypeDouble",
                     "alias" : col
                 })
-            elif isinstance(col_val, (np.float32)):
+            elif isinstance(col_val, (np.float32)) and \
+                 not col in date_cols:
                 fields.append({
                     "name" : col,
                     "type" : "esriFieldTypeSingle",
