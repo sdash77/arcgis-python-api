@@ -739,7 +739,8 @@ class FeatureSet(object):
         index = 0
         sr = None
         try:
-            cols = [col for col in df.columns if col != df.spatial.name]
+            date_cols = [col for col in df.columns if df[col].dtype == 'datetime64[ns]']
+            cols = [col for col in df.columns if col != df.spatial.name and col not in date_cols]
             df = df.fillna('')
         except:
             pass
