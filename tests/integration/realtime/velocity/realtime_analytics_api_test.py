@@ -1,6 +1,7 @@
 import unittest
 
 from arcgis.gis import GIS
+from arcgis.realtime.velocity.realtime_analytics_manager import RealTimeAnalytics
 
 try:
     # Use your ArcGIS enterprise url and credentials to run the test
@@ -26,9 +27,11 @@ class TestRealTimeAnalyticsMethods(unittest.TestCase):
     @unittest.skipIf(SKIP_SOME_TESTS, 'test_get_all_realtime_analytics skipping')
     def test_get_all_realtime_analytics(self):
         print('\n ---- test_get_all_realtime_analytics ----')
-        realtime_tasks = self.realtime_analytics_manager.items
+
         try:
-            print(realtime_tasks)
+            items = self.realtime_analytics_manager.items
+            for item in items:
+                assert isinstance(item, RealTimeAnalytics)
 
         except AssertionError as assertErrorException:
             self.SKIP_TESTS = True
@@ -44,9 +47,9 @@ class TestRealTimeAnalyticsMethods(unittest.TestCase):
     def test_get_realtime_analytics(self):
         print('\n ---- test_get_realtime_analytics ----')
 
-        response = self.realtime_analytics_manager.get('7a8f2100aedb47be85d57d4969757a16')
         try:
-            print(response)
+            response = self.realtime_analytics_manager.get('7a8f2100aedb47be85d57d4969757a16')
+            assert isinstance(response, RealTimeAnalytics)
 
         except AssertionError as assertErrorException:
             self.SKIP_TESTS = True
@@ -63,9 +66,9 @@ class TestRealTimeAnalyticsMethods(unittest.TestCase):
     def test_start_realtime_analytics(self):
         print('\n ---- test_start_realtime_analytics ----')
 
-        response = self.realtime_analytics_item.start()
         try:
-            print_result(response)
+            response = self.realtime_analytics_item.start()
+            assert response and response.get('status') == 'success'
 
         except AssertionError as assertErrorException:
             self.SKIP_TESTS = True
@@ -82,9 +85,9 @@ class TestRealTimeAnalyticsMethods(unittest.TestCase):
     def test_stop_realtime_analytics(self):
         print('\n ---- test_stop_realtime_analytics ----')
 
-        response = self.realtime_analytics_item.stop()
         try:
-            print_result(response)
+            response = self.realtime_analytics_item.stop()
+            assert response and response.get('status') == 'success'
 
         except AssertionError as assertErrorException:
             self.SKIP_TESTS = True
@@ -99,9 +102,9 @@ class TestRealTimeAnalyticsMethods(unittest.TestCase):
     # ----------------------------------------------------------------------
     def test_realtime_analytics_status(self):
         print('\n ---- test_realtime_analytics_status ----')
-        response = self.realtime_analytics_item.status()
         try:
-            print_result(response)
+            response = self.realtime_analytics_item.status()
+            assert response and response.get('status')
 
         except AssertionError as assertErrorException:
             self.SKIP_TESTS = True
@@ -117,9 +120,9 @@ class TestRealTimeAnalyticsMethods(unittest.TestCase):
     @unittest.skipIf(SKIP_SOME_TESTS, 'test_realtime_analytics_metrics skipping')
     def test_realtime_analytics_metrics(self):
         print('\n ---- test_realtime_analytics_metrics ----')
-        response = self.realtime_analytics_item.metrics()
         try:
-            print_result(response)
+            response = self.realtime_analytics_item.metrics()
+            assert response and response.get('itemId')
 
         except AssertionError as assertErrorException:
             self.SKIP_TESTS = True
@@ -139,7 +142,7 @@ class TestRealTimeAnalyticsMethods(unittest.TestCase):
             realtime_analytics_to_delete = self.realtime_analytics_manager.get('e6a8caa0e38f44fab569cebbaf5fea2a')
             try:
                 response = realtime_analytics_to_delete.delete()
-                print_result(response)
+                assert response and response.get('id')
 
             except AssertionError as assertErrorException:
                 self.SKIP_TESTS = True

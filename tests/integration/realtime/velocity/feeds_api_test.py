@@ -1,6 +1,7 @@
 import unittest
 
 from arcgis.gis import GIS
+from arcgis.realtime.velocity.feeds_manager import Feed
 
 try:
     # Use your ArcGIS enterprise url and credentials to run the test
@@ -26,9 +27,11 @@ class TestFeedsApiMethods(unittest.TestCase):
     @unittest.skipIf(SKIP_SOME_TESTS, 'test_get_all_feeds skipping')
     def test_get_all_feeds(self):
         print('\n ---- test_get_all_feeds ----')
-        response = self.feed_manager.items
+
         try:
-            print(response)
+            items = self.feed_manager.items
+            for item in items:
+                assert isinstance(item, Feed)
 
         except AssertionError as assertErrorException:
             self.SKIP_TESTS = True
@@ -43,10 +46,9 @@ class TestFeedsApiMethods(unittest.TestCase):
     # ----------------------------------------------------------------------
     def test_get_feed(self):
         print('\n ---- test_get_feed ----')
-
-        response = self.feed_manager.get('334dfcf1d7184dcc8c92207643bfe65d')
         try:
-            print(response)
+            feed = self.feed_manager.get('334dfcf1d7184dcc8c92207643bfe65d')
+            assert isinstance(feed, Feed)
 
         except AssertionError as assertErrorException:
             self.SKIP_TESTS = True
@@ -62,10 +64,9 @@ class TestFeedsApiMethods(unittest.TestCase):
     @unittest.skipIf(SKIP_SOME_TESTS, 'test_start_feed skipping')
     def test_start_feed(self):
         print('\n ---- test_start_feed ----')
-
-        response = self.feed_item.start()
         try:
-            print_result(response)
+            response = self.feed_item.start()
+            assert response and response.get('status') == 'success'
 
         except AssertionError as assertErrorException:
             self.SKIP_TESTS = True
@@ -81,10 +82,9 @@ class TestFeedsApiMethods(unittest.TestCase):
     @unittest.skipIf(SKIP_SOME_TESTS, 'test_stop_feed skipping')
     def test_stop_feed(self):
         print('\n ---- test_stop_feed ----')
-
-        response = self.feed_item.stop()
         try:
-            print_result(response)
+            response = self.feed_item.stop()
+            assert response and response.get('status') == 'success'
 
         except AssertionError as assertErrorException:
             self.SKIP_TESTS = True
@@ -99,9 +99,9 @@ class TestFeedsApiMethods(unittest.TestCase):
     # ----------------------------------------------------------------------
     def test_feed_status(self):
         print('\n ---- test_feed_status ----')
-        response = self.feed_item.status()
         try:
-            print_result(response)
+            response = self.feed_item.status()
+            assert response and response.get('status')
 
         except AssertionError as assertErrorException:
             self.SKIP_TESTS = True
@@ -117,9 +117,9 @@ class TestFeedsApiMethods(unittest.TestCase):
     @unittest.skipIf(SKIP_SOME_TESTS, 'test_feed_metrics skipping')
     def test_feed_metrics(self):
         print('\n ---- test_feed_metrics ----')
-        response = self.feed_item.metrics()
         try:
-            print_result(response)
+            response = self.feed_item.metrics()
+            assert response and response.get('itemId')
 
         except AssertionError as assertErrorException:
             self.SKIP_TESTS = True
@@ -136,10 +136,10 @@ class TestFeedsApiMethods(unittest.TestCase):
     def test_delete_feed(self):
         print('\n ---- test_delete_feed ----')
         try:
-            feed_to_delete = self.feed_manager.get('60960140049c41179a38cc996d8f2957')
+            feed_to_delete = self.feed_manager.get('3a3ef00fce904fe78f014243241b0da6')
             try:
                 response = feed_to_delete.delete()
-                print_result(response)
+                assert response and response.get('id')
 
             except AssertionError as assertErrorException:
                 self.SKIP_TESTS = True
