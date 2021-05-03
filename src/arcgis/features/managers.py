@@ -11,7 +11,7 @@ import collections
 from typing import Tuple
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import _GISResource
-
+import concurrent.futures as _cf
 # pylint: disable=protected-access
 
 class AttachmentManager(object):
@@ -1195,6 +1195,7 @@ class FeatureLayerCollectionManager(_GISResource):
         self._fs = fs
         self._populate_layers()
         self._wh = None
+        self._tp = _cf.ThreadPoolExecutor(5)
 
     def _populate_layers(self):
         """
@@ -1555,7 +1556,58 @@ class FeatureLayerCollectionManager(_GISResource):
         })
         return content.get(res['itemId'])
     # ----------------------------------------------------------------------
-    def add_to_definition(self, json_dict):
+    def _check_status(self, url:str) -> dict:
+        """ Internal method to check the status of the definition change.
+
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        url                 Required String. The URL endpoint to check the status
+        ===============     ====================================================================
+
+
+        :return:
+           The status dictionary
+        """
+        sleep_time = 1
+        count = 1
+
+        params = {
+            "f" : "json"
+        }
+        con = self._gis._con
+        job_response = con.post(url, params)
+        if "status" in job_response:
+            while 'status' in job_response and \
+                  not job_response.get("status") in ["completed", 'Completed']:
+                time.sleep(sleep_time * count)
+                job_response = con.post(url, params)
+                if job_response.get("status") in ("esriJobFailed","failed") or \
+                   job_response.get('status').lower().find('error') > -1:
+                    if 'error' in job_response:
+                        raise Exception(job_response['error'])
+                    else:
+                        raise Exception(f"Job failed: {job_response}")
+                elif job_response.get("status") == "esriJobCancelled":
+                    raise Exception("Job cancelled.")
+                elif job_response.get("status") == "esriJobTimedOut":
+                    raise Exception("Job timed out.")
+                count += 1
+
+        else:
+            raise Exception("No job results.")
+        return job_response
+    # ----------------------------------------------------------------------
+    def _refresh_callback(self, *args, **kwargs):
+        """function to refresh the service post add or update definition for async operations"""
+        try:
+            self._hydrated = False
+            self.refresh()
+        except:
+            self._hydrated = False
+    # ----------------------------------------------------------------------
+    def add_to_definition(self, json_dict, future=False):
         """
            The add_to_definition operation supports adding a definition
            property to a hosted feature layer collection service. The result of this
@@ -1572,22 +1624,30 @@ class FeatureLayerCollectionManager(_GISResource):
                           individual feature service layer object.
            Output:
               JSON message as dictionary
+              when `future=True`, concurrent.futures.Future is returned.
         """
+
         if isinstance(json_dict, PropertyMap):
             json_dict = dict(json_dict)
 
         params = {
             "f": "json",
             "addToDefinition": json.dumps(json_dict),
-            "async": json.dumps(False)
+            "async": json.dumps(future)
         }
         adddefn_url = self._url + "/addToDefinition"
         res = self._con.post(adddefn_url, params)
+        if future and 'statusURL' in res:
+            executor = _cf.ThreadPoolExecutor(1)
+            futureobj = executor.submit(self._check_status, **{"url" : res.get('statusURL')})
+            futureobj.add_done_callback(self._refresh_callback)
+            executor.shutdown(False)
+            return futureobj
         self.refresh()
         return res
 
     # ----------------------------------------------------------------------
-    def update_definition(self, json_dict):
+    def update_definition(self, json_dict, future=False):
         """
            The update_definition operation supports updating a definition
            property in a hosted feature layer collection service. The result of this
@@ -1651,15 +1711,21 @@ class FeatureLayerCollectionManager(_GISResource):
         params = {
             "f": "json",
             "updateDefinition": json.dumps(obj=definition, separators=(',', ':')),
-            "async": False
+            "async": json.dumps(future)
         }
         u_url = self._url + "/updateDefinition"
         res = self._con.post(u_url, params)
+        if future and 'statusURL' in res:
+            executor = _cf.ThreadPoolExecutor(1)
+            futureobj = executor.submit(self._check_status, **{"url" : res.get('statusURL')})
+            futureobj.add_done_callback(self._refresh_callback)
+            executor.shutdown(False)
+            return futureobj
         self.refresh()
         return res
 
     # ----------------------------------------------------------------------
-    def delete_from_definition(self, json_dict):
+    def delete_from_definition(self, json_dict, future=False):
         """
         The delete_from_definition operation supports deleting a
         definition property from a hosted feature layer collection service. The result of
@@ -1682,11 +1748,17 @@ class FeatureLayerCollectionManager(_GISResource):
         params = {
             "f": "json",
             "deleteFromDefinition": json.dumps(json_dict),
-            "async": False
+            "async": json.dumps(future)
         }
         u_url = self._url + "/deleteFromDefinition"
 
         res = self._con.post(u_url, params)
+        if future and 'statusURL' in res:
+            executor = _cf.ThreadPoolExecutor(1)
+            futureobj = executor.submit(self._check_status, **{"url" : res.get('statusURL')})
+            futureobj.add_done_callback(self._refresh_callback)
+            executor.shutdown(False)
+            return futureobj
         self.refresh()
         return res
 
@@ -1970,7 +2042,7 @@ class FeatureLayerManager(_GISResource):
         return res
 
     # ----------------------------------------------------------------------
-    def add_to_definition(self, json_dict):
+    def add_to_definition(self, json_dict, future=False):
         """
            The addToDefinition operation supports adding a definition
            property to a hosted feature layer. The result of this
@@ -1995,16 +2067,22 @@ class FeatureLayerManager(_GISResource):
         params = {
             "f": "json",
             "addToDefinition": json.dumps(json_dict),
-            # "async" : False
+            "async" : json.dumps(future)
         }
         u_url = self._url + "/addToDefinition"
 
         res = self._con.post(u_url, params)
+        if future and 'statusURL' in res:
+            executor = _cf.ThreadPoolExecutor(1)
+            futureobj = executor.submit(self._check_status, **{"url" : res.get('statusURL')})
+            futureobj.add_done_callback(self._refresh_callback)
+            executor.shutdown(False)
+            return futureobj
         self.refresh()
         return res
 
     # ----------------------------------------------------------------------
-    def update_definition(self, json_dict):
+    def update_definition(self, json_dict, future=False):
         """
            The updateDefinition operation supports updating a definition
            property in a hosted feature layer. The result of this
@@ -2026,17 +2104,23 @@ class FeatureLayerManager(_GISResource):
         params = {
             "f": "json",
             "updateDefinition": json.dumps(json_dict),
-            "async": False
+            "async": json.dumps(future)
         }
 
         u_url = self._url + "/updateDefinition"
 
         res = self._con.post(u_url, params)
+        if future and 'statusURL' in res:
+            executor = _cf.ThreadPoolExecutor(1)
+            futureobj = executor.submit(self._check_status, **{"url" : res.get('statusURL')})
+            futureobj.add_done_callback(self._refresh_callback)
+            executor.shutdown(False)
+            return futureobj
         self.refresh()
         return res
 
     # ----------------------------------------------------------------------
-    def delete_from_definition(self, json_dict):
+    def delete_from_definition(self, json_dict, future=False):
         """
            The deleteFromDefinition operation supports deleting a
            definition property from a hosted feature layer. The result of
@@ -2062,11 +2146,18 @@ class FeatureLayerManager(_GISResource):
 
         params = {
             "f": "json",
-            "deleteFromDefinition": json.dumps(json_dict)
+            "deleteFromDefinition": json.dumps(json_dict),
+            'async' : json.dumps(future)
         }
         u_url = self._url + "/deleteFromDefinition"
 
         res = self._con.post(u_url, params)
+        if future and 'statusURL' in res:
+            executor = _cf.ThreadPoolExecutor(1)
+            futureobj = executor.submit(self._check_status, **{"url" : res.get('statusURL')})
+            futureobj.add_done_callback(self._refresh_callback)
+            executor.shutdown(False)
+            return futureobj
         self.refresh()
         return res
 
@@ -2120,7 +2211,58 @@ class FeatureLayerManager(_GISResource):
             res = self._con.post(u_url, params)
             self.refresh()
         return res
+    # ----------------------------------------------------------------------
+    def _check_status(self, url:str) -> dict:
+        """ Internal method to check the status of the definition change.
 
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        url                 Required String. The URL endpoint to check the status
+        ===============     ====================================================================
+
+
+        :return:
+           The status dictionary
+        """
+        sleep_time = 1
+        count = 1
+
+        params = {
+            "f" : "json"
+        }
+        con = self._gis._con
+        job_response = con.post(url, params)
+        if "status" in job_response:
+            while 'status' in job_response and \
+                  not job_response.get("status") in ["completed", "Completed"]:
+                if count > 10:
+                    count = 10
+                time.sleep(sleep_time * count)
+                job_response = con.post(url, params)
+                if job_response.get("status") in ("esriJobFailed","failed"):
+                    if 'error' in job_response:
+                        raise Exception(job_response['error'])
+                    else:
+                        raise Exception("Job failed.")
+                elif job_response.get("status") == "esriJobCancelled":
+                    raise Exception("Job cancelled.")
+                elif job_response.get("status") == "esriJobTimedOut":
+                    raise Exception("Job timed out.")
+                count += 1
+
+        else:
+            raise Exception("No job results.")
+        return job_response
+    # ----------------------------------------------------------------------
+    def _refresh_callback(self, *args, **kwargs):
+        """function to refresh the service post add or update definition for async operations"""
+        try:
+            self._hydrated = False
+            self.refresh()
+        except:
+            self._hydrated = False
     # ----------------------------------------------------------------------
     def _get_status(self, url):
         """gets the status when exported async set to True"""
