@@ -299,7 +299,6 @@ def commonTestCases(model_type, model_test, data_path, preparedata, regression_p
                 import sklearn.metrics as metrics
                 result = r2_score(sdf_forecasted['actual'],sdf_forecasted['prcp_mm__results'])
                 success_flag = True
-                return
             else:
                 result = 0.0
 

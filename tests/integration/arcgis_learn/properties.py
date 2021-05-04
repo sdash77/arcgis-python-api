@@ -934,7 +934,7 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "r2_score",
         "regression_test_score": 0.1,
-        "regression_epochs": 1,
+        "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "pass",
         },
