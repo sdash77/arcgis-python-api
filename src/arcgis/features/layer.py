@@ -1916,7 +1916,8 @@ class FeatureLayer(Layer):
                upsert_matching_field=None,
                upload_id=None,
                *,
-               return_messages=None
+               return_messages=None,
+               future=False
                ):
         """
         Only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
