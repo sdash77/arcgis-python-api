@@ -2001,15 +2001,19 @@ class FeatureLayer(Layer):
                                    the `appendUploadId` REST API argument. This argument should not be
                                    used along side the `item_id` argument.
         ------------------------   --------------------------------------------------------------------
-        return_messages            Optional Boolean.  When set to `True`, the messages returned from 
+        return_messages            Optional Boolean.  When set to `True`, the messages returned from
                                    the append will be returned. If `False`, the response messages will
-                                   not be returned.  This alters the output to be a tuple consisting of 
+                                   not be returned.  This alters the output to be a tuple consisting of
                                    a (Boolean, Dictionary).
+        ------------------------   --------------------------------------------------------------------
+        future                     Optional Boolean.  When true, the response is returned as a
+                                   `concurrent.futures.Future` object.
         ========================   ====================================================================
 
 
         :return: boolean (True when successful, False when failed). When `return_messages` is True, the
                  response messages will be return in addition to the boolean as a `tuple`.
+                 If future=True, then the result is a `Future` object. Call `result()` to get the response.
 
         """
         import copy
@@ -2053,6 +2057,15 @@ class FeatureLayer(Layer):
         del cparams
         res = self._con.post(path=url,
                              postdata=params)
+        if future:
+            executor =  concurrent.futures.ThreadPoolExecutor(1)
+            future = executor.submit(self._check_append_status, *(res, return_messages))
+            executor.shutdown(False)
+            return future
+        return self._check_append_status(res, return_messages)
+    # ----------------------------------------------------------------------
+    def _check_append_status(self, res, return_messages):
+        """checks the append status"""
         n = 1
         if 'statusUrl' in res:
             time.sleep(1)
