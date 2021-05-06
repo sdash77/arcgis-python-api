@@ -12,14 +12,20 @@ from zipfile import ZipFile
 import arcgis
 from arcgis.features import FeatureLayer
 
-from .._utils.tabular_data import TabularDataObject
+from .._utils.tabular_data import TabularDataObject , explain_prediction
 
 HAS_SK_LEARN = True
+HAS_SHAP=True
 try:
     import sklearn
     from sklearn import *
 except:
     HAS_SK_LEARN = False
+
+try:
+    import shap
+except:
+    HAS_SHAP = False
 
 HAS_FAST_PROGRESS = True
 try:
@@ -243,12 +249,20 @@ class MLModel(object):
     @property
     def feature_importances_(self):
         """
-        :returns output from scikit-learn's model.feature_importances_
+        :Returns the global feature importance summary plot from SHAP.
+        Most of the sklearn models are supported by this method.
         """
-        if not hasattr(self._model, 'feature_importances_'):
-            raise Exception("Property not implemented for this model.")
+        #if not hasattr(self._model, 'feature_importances_'):
+            #raise Exception("Property not implemented for this model.")
+        processed_dataframe= None
+        explain_index = None
+        random_index = None
+        explain_prediction(self, processed_dataframe, index=explain_index, random_index=random_index,
+                               predictor=None,
+                               global_pred=True)
+        return
 
-        return self._model.feature_importances_
+        #return self._model.feature_importances_
 
     def save(self, name_or_path, publish=False, gis=None, **kwargs):
         """
@@ -620,7 +634,9 @@ class MLModel(object):
             gis=None,
             prediction_type='features',
             output_raster_path=None,
-            match_field_names=None):
+            match_field_names=None,
+            explain=False,
+            explain_index=None):
         """
 
         Predict on data from feature layer, dataframe and or raster data.
@@ -671,6 +687,17 @@ class MLModel(object):
                                                     "Field_Name_1": "Field_1",
                                                     "Field_Name_2": "Field_2"
                                                 }
+        ---------------------------------   -------------------------------------------------------------------------
+        explain                             Optional Bool.
+                                            Setting this parameter to true generates prediction explaination plot.
+                                            Plot is generated using model interpretability library called SHAP.
+                                            (https://github.com/slundberg/shap)
+        ---------------------------------   -------------------------------------------------------------------------
+        explain_index                       Optional Int.
+                                            The index of the dataframe passed to the predict function for which model
+                                            interpretability is desired. If the parameter is not passed and if the
+                                            explain parameter is set to true, the SHAP plot will be generated for a
+                                            random index of the dataframe.
         =================================   =========================================================================
 
         :returns Feature Layer if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.
@@ -678,13 +705,18 @@ class MLModel(object):
         """
 
         rasters = explanatory_rasters if explanatory_rasters else []
+        if explain:
+            if not HAS_SHAP:
+                warnings.warn('Prediction cannot be explained as SHAP is not installed. Please install SHAP to get explainability working.')
+                explain = False
+                explain_index = None
         if prediction_type in ['features', 'dataframe']:
 
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 
             gis = gis if gis else arcgis.env.active_gis
-            return self._predict_features(input_features, rasters, datefield, distance_features, output_layer_name, gis, match_field_names, prediction_type)
+            return self._predict_features(input_features, rasters, datefield, distance_features, output_layer_name, gis, match_field_names, prediction_type,explain,explain_index)
         else:
             if not rasters:
                 raise Exception("Rasters required for predict_features=False")
@@ -692,7 +724,7 @@ class MLModel(object):
             if not output_raster_path:
                 raise Exception("Please specify output_raster_folder_path to save the output.")
 
-            return self._predict_rasters(output_raster_path, rasters, match_field_names)
+            return self._predict_rasters(output_raster_path, rasters, match_field_names,explain,explain_index)
 
     def _predict_features(
             self,
@@ -703,7 +735,9 @@ class MLModel(object):
             output_name="Prediction Layer",
             gis=None,
             match_field_names=None,
-            prediction_type="features"
+            prediction_type="features",
+            explain = False,
+            explain_index = None
     ):
         if isinstance(input_features, FeatureLayer):
             dataframe = input_features.query().sdf
@@ -773,7 +807,13 @@ class MLModel(object):
         processed_numpy = self._data._process_data(processed_dataframe.reindex(sorted(processed_dataframe.columns), axis=1), fit=False)
         predictions = self._predict(processed_numpy)
         dataframe["prediction_results"] = predictions
-
+        if explain:
+            if explain_index is None:
+                random_index = True
+            else:
+                random_index = False
+            explain_prediction(self,processed_dataframe,index=explain_index,random_index=random_index,predictor=None,
+                               global_pred=False)
         if prediction_type == "dataframe":
             return dataframe
 
@@ -787,7 +827,7 @@ class MLModel(object):
                 online_table = gis.content.add({'type': 'Microsoft Excel', 'overwrite': True}, table_file)
                 return online_table.publish(overwrite=True)
 
-    def _predict_rasters(self, output_folder_path, rasters, match_field_names=None):
+    def _predict_rasters(self, output_folder_path, rasters, match_field_names=None,explain=False,explain_index=None):
 
         if not os.path.exists(os.path.dirname(output_folder_path)):
             raise Exception("Output directory doesn't exist")
@@ -928,6 +968,14 @@ class MLModel(object):
         processed_df = pd.DataFrame(data=np.array(processed_data), columns=sorted(raster_data))
 
         processed_numpy = self._data._process_data(processed_df, fit=False)
+
+        if explain:
+            if explain_index is None:
+                random_index = True
+            else:
+                random_index = False
+            explain_prediction(self,processed_df,index=explain_index,random_index=random_index,predictor=None,
+                               global_pred=False)
 
         predictions = self._predict(processed_numpy)
 

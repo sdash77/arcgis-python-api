@@ -6,10 +6,12 @@ import math
 import os
 from pathlib import Path
 
+
 import arcgis
 from arcgis.features import FeatureLayer
 
 HAS_FASTAI = True
+HAS_SHAP=True
 try:
     from fastai.tabular import TabularList
     from fastai.tabular import TabularDataBunch
@@ -21,6 +23,12 @@ try:
     import torch
 except Exception as e:
     HAS_FASTAI = False
+
+try:
+    import shap
+    import pandas as pd
+except:
+    HAS_SHAP = False
 
 HAS_NUMPY = True
 try:
@@ -661,6 +669,7 @@ class TabularDataObject(object):
 
         _procs = self._procs
 
+        #if hasattr(self,'_encoder_mapping'):
         if self._encoder_mapping:
             for variable, encoder in self._encoder_mapping.items():
                 dataframe[variable] = np.array(encoder.fit_transform(dataframe[variable]), dtype='int64')
@@ -1183,3 +1192,171 @@ class TabularDataObject(object):
         class_object.path = Path(os.path.abspath('.'))
 
         return class_object
+
+def explain_prediction(model,processed_df,index=0,random_index=False,predictor=None,global_pred=False):
+    tree_models=['RandomForestRegressor','RandomForestClassifier','AdaBoostClassifier','AdaBoostRegressor',
+                 'BaggingClassifier','BaggingRegressor','ExtraTreesClassifier','ExtraTreesRegressor',
+                 'GradientBoostingClassifier','GradientBoostingRegressor','IsolationForest','RandomTreesEmbedding',
+                 'StackingClassifier','StackingRegressor','VotingClassifier','VotingRegressor',
+                 'HistGradientBoostingRegressor','HistGradientBoostingClassifier','DecisionTreeClassifier',
+                'DecisionTreeRegressor','ExtraTreeClassifier','ExtraTreeRegressor']
+    sklearn_regressors = ['LinearRegression','Ridge','RidgeCV','SGDRegressor','ARDRegression','BayesianRidge',
+                         'PoissonRegressor','TweedieRegressor','GammaRegressor','HuberRegressor','RANSACRegressor',
+                         'TheilSenRegressor','LinearSVR','NuSVR','SVR','KernelRidge']
+    sklearn_classifiers = ['LogisticRegression','LogisticRegressionCV','PassiveAggressiveClassifier',
+                          'Perceptron','RidgeClassifier','RidgeClassifierCV','SGDClassifier','LinearSVC',
+                          'NuSVC','OneClassSVM','SVC']
+    if global_pred:
+        if hasattr(model,'learn'): # FCN
+            global_interpretation(model, plot_type='bar', method='FCN')
+        elif type(model._model).__name__ in sklearn_regressors:
+            global_interpretation(model,plot_type='bar',method='KernelRegressor')
+        elif type(model._model).__name__ in sklearn_classifiers:
+            global_interpretation(model, plot_type='bar', method='KernelClassifier')
+        elif type(model._model).__name__ in tree_models:
+            global_interpretation(model,plot_type='bar', method='Tree')
+        else:
+            warnings.warn("Feature importance plot cannot be generated for this model as it is not yet supported.")
+            return
+    else:
+        if hasattr(model,'_model'): # ML Models
+            if type(model._model).__name__ in tree_models:
+                show_local_interpretation(model,processed_df,index,random_index,method='Tree')
+            elif type(model._model).__name__ in sklearn_regressors:
+                show_local_interpretation(model,processed_df,index,random_index,method='KernelRegressor')
+            elif type(model._model).__name__ in sklearn_classifiers:
+                show_local_interpretation(model,processed_df,index,random_index,method='KernelClassifier')
+            elif predictor=='Classifier':
+                show_local_interpretation(model,processed_df,index,random_index,method='KernelClassifier')
+            elif predictor=='Regressor':
+                show_local_interpretation(model,processed_df,index,random_index,method='KernelRegressor')
+            else:
+                warnings.warn("Unrecognised Model: Explanation is not supported for this model yet!")
+        elif hasattr(model,'learn'): # FCN
+            show_local_interpretation(model,processed_df,index,random_index,method='FCN')
+
+def show_local_interpretation(model,processed_df,index=0,random_index=False,method='Tree'):
+    if method=='Tree':
+        explainer = shap.TreeExplainer(model._model,algorithm='Tree')
+    elif method == 'KernelRegressor':
+        if hasattr(model._data, '_training_indexes'):
+            explainer = shap.KernelExplainer(model._model.predict, shap.sample(model._data._ml_data[0],500))
+        else:
+            warnings.warn("To visualize the explanation of non tree models from sklearn, the model must be instantiated"
+                          " with the training data.")
+            return
+    elif method == 'KernelClassifier':
+        if hasattr(model._data, '_training_indexes'):
+            explainer = shap.KernelExplainer(model._model.predict_proba, shap.sample(model._data._ml_data[0],500),link="logit")
+        else:
+            warnings.warn("To visualize the explanation of non tree models from sklearn, the model must be instantiated"
+                          " with the training data.")
+            return
+    elif method == 'FCN':
+        if hasattr(model._data, '_training_indexes'):
+            df=pd.DataFrame()
+            for cnt,item in enumerate(np.random.choice(model._data._databunch.train_ds.x.items,500)):
+                row=np.array(model._data._databunch.train_ds.x[item].data[1])
+                df[cnt]=row
+            explainer = shap.DeepExplainer(model.learn.model.layers, torch.tensor(df.transpose().values).cuda())
+        else:
+            warnings.warn("To visualize the explanation of fully connected network, the model must be instantiated"
+                          " with the training data.")
+            return
+    try:
+        #feature_variables = model._data._feature_variables # If model is initialised with data
+        feature_variables= model._data._categorical_variables + model._data._continuous_variables
+    except:
+        feature_variables = processed_df.columns # In case when model is initialised only for prediction
+    if random_index==False:
+        #index_int=model._data._training_indexes.index(index)
+        if method=='FCN':
+            #train_tensor=torch.stack((torch.tensor(processed_df.iloc[[index]].to_numpy()).float(),
+            #                          torch.tensor(processed_df.iloc[[index]].to_numpy()).float()),dim=0)
+            processed_df = processed_df.iloc[[index]][feature_variables]
+            train_tensor = torch.stack((torch.tensor(processed_df.values).squeeze().float(),
+                                        torch.tensor(processed_df.values).squeeze().float()), dim=0)
+        else:
+            processed_df = processed_df.iloc[[index]]
+            processed_numpy = model._data._process_data(
+                processed_df.reindex(sorted(processed_df.columns), axis=1), fit=False)
+    else:
+        txt = "The SHAP explanation is generated for {}th row of the dataframe. " \
+              "This row was randomly chosen since the parameter explain_index was passed as None"
+        if method=='FCN':
+            processed_df = processed_df.sample(n=1)[feature_variables]
+            print(txt.format(processed_df.index.values[0]))
+            train_tensor = torch.stack((torch.tensor(processed_df.values).squeeze().float(),
+                                        torch.tensor(processed_df.values).squeeze().float()), dim=0)
+        else:
+            processed_df = processed_df.sample(n=1)
+            print(txt.format(processed_df.index.values[0]))
+            processed_numpy = model._data._process_data(
+                processed_df.reindex(sorted(processed_df.columns), axis=1), fit=False)
+    #df_index = model._data._dataframe.iloc[index,:][feature_variables]
+    if method == 'Tree':
+        shap_values = explainer.shap_values(processed_numpy)
+        if isinstance(shap_values, list):
+            shap.force_plot(explainer.expected_value[0], shap_values[0], processed_df, matplotlib=True)
+        else:
+            shap.force_plot(explainer.expected_value, shap_values, processed_df, matplotlib=True)
+    elif method == 'KernelRegressor':
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            shap_values = explainer.shap_values(processed_numpy, nsamples=100)
+        if isinstance(shap_values, list):
+            shap.force_plot(explainer.expected_value[0], shap_values[0], processed_df, matplotlib=True)
+        else:
+            shap.force_plot(explainer.expected_value, shap_values, processed_df, matplotlib=True)
+    elif method == 'KernelClassifier':
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            shap_values = explainer.shap_values(processed_numpy, nsamples=100)
+        if isinstance(shap_values, list):
+            shap.force_plot(explainer.expected_value[0], shap_values[0], processed_df, matplotlib=True, link="logit")
+        else:
+            shap.force_plot(explainer.expected_value, shap_values, processed_df, matplotlib=True, link="logit")
+    elif method == 'FCN':
+        shap_values = explainer.shap_values(train_tensor)
+        shap.force_plot(explainer.expected_value,  shap_values[0], processed_df,matplotlib=True)
+
+def global_interpretation(model,plot_type='bar',method='KernelRegressor'):
+
+    #explainer = shap.TreeExplainer(model._model)
+    if hasattr(model._data, '_training_indexes'):
+        feature_variables = model._data._categorical_variables + model._data._continuous_variables
+        df = pd.DataFrame(shap.sample(model._data._ml_data[0], 500), columns=feature_variables)
+        if method == 'KernelRegressor':
+            explainer = shap.KernelExplainer(model._model.predict, shap.sample(model._data._ml_data[0],100))
+        elif method=='Tree':
+            explainer = shap.TreeExplainer(model._model)
+        elif method == 'KernelClassifier':
+            explainer = shap.KernelExplainer(model._model.predict_proba, shap.sample(model._data._ml_data[0],100),link="logit")
+        elif method == 'FCN':
+            df = pd.DataFrame()
+            for cnt, item in enumerate(np.random.choice(model._data._databunch.train_ds.x.items, 500)):
+                row = np.array(model._data._databunch.train_ds.x[item].data[1])
+                df[cnt] = row
+            explainer = shap.DeepExplainer(model.learn.model.layers, torch.tensor(df.transpose().values).cuda())
+            feature_variables = model._data._categorical_variables + model._data._continuous_variables
+            processed_df = df.transpose()
+            processed_df.columns=feature_variables
+            processed_df = processed_df.sample(n=1)[feature_variables]
+            train_tensor = torch.stack((torch.tensor(processed_df.values).squeeze().float(),
+                                        torch.tensor(processed_df.values).squeeze().float()), dim=0)
+
+            shap_values = explainer.shap_values(train_tensor)
+            shap.summary_plot(shap_values, processed_df, plot_type="bar")
+            return
+    else:
+        warnings.warn("To visualize the explanation of non tree models from sklearn, the model must be instantiated"
+                  " with the training data.")
+        return
+
+
+
+    shap_values = explainer.shap_values(df,approximate=True)
+    if plot_type == 'bar':
+        return shap.summary_plot(shap_values, df, plot_type="bar")
+    else:
+        return shap.force_plot(explainer.expected_value[0], shap_values, df,matplotlib=True)
