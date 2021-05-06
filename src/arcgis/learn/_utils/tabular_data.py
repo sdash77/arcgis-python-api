@@ -702,7 +702,7 @@ class TabularDataObject(object):
             rows = len(self._training_indexes)
 
         random_batch = random.sample(self._training_indexes, rows)
-        return self._dataframe.loc[random_batch].sort_index()
+        return self._dataframe.iloc[random_batch].sort_index()
 
     def _show_graph(self, seq_len=None, rows=5):
         """

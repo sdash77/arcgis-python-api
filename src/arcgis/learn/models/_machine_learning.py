@@ -26,6 +26,10 @@ try:
     from fastprogress.fastprogress import progress_bar
 except:
     HAS_FAST_PROGRESS = False
+try:
+    import pandas as pd
+except:
+    pass
 
 _PROTOCOL_LEVEL = 2
 
@@ -150,7 +154,8 @@ class MLModel(object):
         sample_indexes = [self._data._validation_indexes[i] for i in sample_batch]
 
         output_labels = self._predict(validation_data_batch)
-        df = self._data._dataframe.loc[sample_indexes]#.loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
+        pd.options.mode.chained_assignment = None
+        df = self._data._dataframe.iloc[sample_indexes]#.loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
 
         if self._data._dependent_variable:
             df[self._data._dependent_variable + '_results'] = output_labels
