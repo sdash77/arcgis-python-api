@@ -1,5 +1,8 @@
 import unittest
 import datetime
+
+from arcgis.gis.workflowmanager import WorkflowManagerAdmin
+
 from tests.integration.workflow_manager.workflowmanager_setup import WorkflowManagerSetup
 
 
@@ -91,6 +94,17 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager_admin.upgrade_item("unknown_item")
         except Exception as testException:
             assert True, "Expected error returned during test: " + testException.__str__()
+
+    # endregion
+
+    # region Check Server Status
+
+    def test_check_server_status_returns_successfully(self):
+        # Act
+        actual = self.connection.workflow_manager_admin.server_status
+
+        # Assert
+        self.assertTrue(actual, "Incorrect return type")
 
     # endregion
 

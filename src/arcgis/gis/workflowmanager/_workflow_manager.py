@@ -98,7 +98,7 @@ class WorkflowManagerAdmin:
             return return_obj['success']
         return return_obj
 
-    def upgrade_item(self, id) -> tuple:
+    def upgrade_item(self, id):
         """
         Upgrades an outdated Workflow Manager schema. Requires the Workflow Manager
         Advanced Administrator privilege or the Portal Admin Update Content privilege.
@@ -151,6 +151,18 @@ class WorkflowManagerAdmin:
                       v is not None and not k.startswith('_')}
         return return_obj
 
+    @property
+    def server_status(self):
+        """
+        Gets the current status of the Workflow Manager Server
+
+        :return: boolean
+        """
+
+        url = '{base}/checkStatus?token={token}'.format(base=self._url, token=self._gis._con.token)
+
+        return_obj = ast.literal_eval(str(self._gis._con.get(url)).encode('cp850', 'replace').decode('utf-8'))
+        return return_obj['success']
 
 class JobManager:
     """
@@ -352,7 +364,8 @@ class JobManager:
         try:
             url = f'{self._url}/jobs/{id}'
             job_dict = ast.literal_eval(
-                str(self._gis._con.get(url, {"token": self._gis._con.token, "extProps": get_ext_props})).encode('cp850', 'replace').decode(
+                str(self._gis._con.get(url, {"token": self._gis._con.token, "extProps": get_ext_props})).encode('cp850',
+                                                                                                                'replace').decode(
                     'utf-8'))
             return Job(job_dict, self._gis, self._url)
         except:
@@ -411,6 +424,33 @@ class JobManager:
         ===============     ====================================================================
 
         :return: success object
+
+
+     .. code-block:: python
+
+        # USAGE EXAMPLE: Updating a Job's properties
+
+        # create a WorkflowManager object from the workflow item
+        workflow_manager = WorkflowManager(wf_item)
+
+        job = workflow_manager.jobs.get(job_id)
+        job.priority = 'Updated'
+
+        table_name = job.extended_properties[0]["tableName"]
+        job.extended_properties = [
+            {
+                "identifier": table_name + ".prop1",
+                "value": "updated_123"
+            },
+            {
+                "identifier": table_name + ".prop2",
+                "value": "updated_456"
+            },
+        ]
+
+        workflow_manager.jobs.update(job_id, vars(job))
+
+
         """
         try:
             current_job = self.get(job_id).__dict__
@@ -473,8 +513,9 @@ class JobManager:
             location_obj = {
                 "location": location
             }
-            return_obj = json.loads(self._gis._con.put(url, location_obj, add_token=False, post_json=True, try_json=False,
-                                                 json_encode=False))
+            return_obj = json.loads(
+                self._gis._con.put(url, location_obj, add_token=False, post_json=True, try_json=False,
+                                   json_encode=False))
             if 'error' in return_obj:
                 self._gis._con._handle_json_error(return_obj['error'], 0)
             elif 'success' in return_obj:
@@ -482,6 +523,24 @@ class JobManager:
             return_obj = {_camelCase_to_underscore(k): v for k, v in return_obj.items() if
                           v is not None and not k.startswith('_')}
             return return_obj
+        except:
+            self._handle_error(sys.exc_info())
+
+    def delete(self, job_ids):
+        """
+        Deletes a single or multiple jobs with specific JobIDs
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        job_ids             A list of job ID strings
+        ===============     ====================================================================
+
+        :return: success object
+        """
+        try:
+            url = '{base}/jobs/manage?token={token}'.format(base=self._url, token=self._gis._con.token)
+            return Job.manage_jobs(self._gis, url, job_ids, 'Delete')
         except:
             self._handle_error(sys.exc_info())
 
@@ -645,23 +704,6 @@ class WorkflowManager:
             self._handle_error(sys.exc_info())
 
     @property
-    def assignable_users(self):
-        """
-        Get all assignable users for a user in the workflow system
-
-        :return: A list of the assignable user objects
-        """
-        try:
-            user_array = ast.literal_eval(str(self._gis._con.get('{base}/community/usersAssign'.format(base=self._url),
-                                                                 params={"token": self._gis._con.token})[
-                                                  'users']).encode(
-                'cp850', 'replace').decode('utf-8'))
-            return_array = [self.user(u['username']) for u in user_array]
-            return return_array
-        except:
-            self._handle_error(sys.exc_info())
-
-    @property
     def groups(self):
         """
         Returns an array of all user groups stored in Workflow Manager
@@ -673,24 +715,6 @@ class WorkflowManager:
                                                                   params={"token": self._gis._con.token})[
                                                    'groups']).encode(
                 'cp850', 'replace').decode('utf-8'))
-            return_array = [self.group(g['id']) for g in group_array]
-            return return_array
-        except:
-            self._handle_error(sys.exc_info())
-
-    @property
-    def assignable_groups(self):
-        """
-        Get portal groups associated with Workflow Manager roles, to which the current user
-        can assign work based on their Workflow Manager assignment privileges.
-
-        :return: A list of the assignable group objects
-        """
-        try:
-            group_array = ast.literal_eval(
-                str(self._gis._con.get('{base}/community/groupsAssign'.format(base=self._url),
-                                       params={"token": self._gis._con.token})['groups']).encode(
-                    'cp850', 'replace').decode('utf-8'))
             return_array = [self.group(g['id']) for g in group_array]
             return return_array
         except:
@@ -880,6 +904,34 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
+    def update_group(self, group_id, update_object):
+        """
+        Update the information to the portal group. The adminAdvanced privilege is required.
+        New roles can be added to the portal group. Existing roles can be deleted from the portal group.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        group_id            Workflow Manager Group ID
+        ---------------     --------------------------------------------------------------------
+        update_object       Object containing the updated actions of the information to be taken to the portal group.
+        ===============     ====================================================================
+
+        :return: boolean
+        """
+        url = '{base}/community/groups/{groupid}?token={token}'.format(base=self._url, groupid=group_id,
+                                                                       token=self._gis._con.token)
+
+        return_obj = json.loads(
+            self._gis._con.post(url, update_object, add_token=False, post_json=True, try_json=False, json_encode=False))
+
+        if 'error' in return_obj:
+            self._gis._con._handle_json_error(return_obj['error'], 0)
+        elif 'success' in return_obj:
+            return return_obj['success']
+
+        return return_obj
+
     def diagram(self, id):
         """
         Returns the diagram with the given ID
@@ -1022,6 +1074,7 @@ class WorkflowManager:
         ===============     ====================================================================
 
         :return: success object
+
         """
         try:
             url = '{base}/jobTemplates/{jobTemplate}?token={token}'.format(base=self._url,
@@ -1130,6 +1183,168 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
+    def create_saved_search(self, name, folder=None, definition=None, search_type=None, color_ramp=None,
+                            sort_index=None, search_id=None):
+        """
+        Create a saved search or chart by specifying the search parameters in the json body.
+        All search properties except for optional properties must be passed in the body to save the search or chart.
+        The adminAdvanced or adminBasic privilege is required.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        name                Required. The display name for the saved search or chart.
+        ---------------     --------------------------------------------------------------------
+        folder              Optional. The folder the saved search or chart will be categorized under.
+        ---------------     --------------------------------------------------------------------
+        definition          Required if the searchType is Standard. The search definition to be saved. For details on search definition syntax, see Search for jobs in the system.
+        ---------------     --------------------------------------------------------------------
+        search_type         Optional. The type for the saved search or chart. The accepted values are Standard, Chart and All. If not defined, the default search type is Standard.
+        ---------------     --------------------------------------------------------------------
+        color_ramp          Required if the searchType is Chart. The color ramp for the saved chart.
+        ---------------     --------------------------------------------------------------------
+        sort_index          Optional. The sorting order for the saved search or chart.
+        ---------------     --------------------------------------------------------------------
+        search_id           Optional. The unique ID of the search or chart to be created.
+        ===============     ====================================================================
+
+        :return: Saved Search ID
+        """
+        try:
+            url = '{base}/searches?token={token}'.format(base=self._url, id=search_id, token=self._gis._con.token)
+            post_dict = {
+                "name": name,
+                "folder": folder,
+                "definition": definition,
+                "searchType": search_type,
+                "colorRamp": color_ramp,
+                "sortIndex": sort_index,
+                "searchId": search_id
+            }
+            post_dict = {k: v for k, v in post_dict.items() if v is not None}
+            return_obj = json.loads(
+                self._gis._con.post(url, post_dict, add_token=False, post_json=True, try_json=False, json_encode=False))
+
+            if 'error' in return_obj:
+                self._gis._con._handle_json_error(return_obj['error'], 0)
+            elif 'success' in return_obj:
+                return return_obj['success']
+
+            return return_obj['searchId']
+        except:
+            self._handle_error(sys.exc_info())
+
+    def delete_saved_search(self, id):
+        """
+        Deletes a saved search by ID
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        id                  Saved Search id (required)
+        ===============     ====================================================================
+
+        :return: boolean
+        """
+        try:
+            url = '{base}/searches/{searchid}?token={token}'.format(base=self._url, searchid=id,
+                                                                    token=self._gis._con.token)
+
+            return_obj = json.loads(self._gis._con.delete(url, add_token=False, try_json=False))
+
+            if 'error' in return_obj:
+                self._gis._con._handle_json_error(return_obj['error'], 0)
+            elif 'success' in return_obj:
+                return return_obj['success']
+        except:
+            self._handle_error(sys.exc_info())
+
+    def update_saved_search(self, search):
+        """
+        Update a saved search or chart by specifying the update values in the json body.
+        All the properties except for optional properties must be passed in the body to update the search or chart.
+        The searchId cannot be updated once it is created. The adminAdvanced or adminBasic privilege is required.
+
+        ===============     ====================================================================
+        **Arguments**        **Description**
+        ---------------     --------------------------------------------------------------------
+        search              An object defining the properties of the search to be updated.
+        ===============     ====================================================================
+
+        :return: success object
+
+    .. code-block:: python
+
+    # USAGE EXAMPLE: Updating a Job's properties
+
+    # create a WorkflowManager object from the workflow item
+    workflow_manager = WorkflowManager(wf_item)
+
+    workflow_manager.create_saved_search(name="name",
+                                         definition={
+                                             "start": 0,
+                                             "fields": [
+                                                 "job_status"
+                                             ],
+                                             "displayNames": [
+                                                 "Status"
+                                             ],
+                                             "sortFields": [
+                                                 {
+                                                     "field": "job_status",
+                                                     "sortOrder": "Asc"
+                                                 }
+                                             ]
+                                         },
+                                         search_type='Chart',
+                                         color_ramp='Flower Field Inverse',
+                                         sort_index=2000)
+
+    search_lst = workflow_manager.searches("All")
+    search = [x for x in search_lst if x["searchId"] == searchid][0]
+
+    search["colorRamp"] = "Default"
+    search["name"] = "Updated search"
+
+    actual = workflow_manager.update_saved_search(search)
+
+        """
+        try:
+            url = '{base}/searches/{searchId}?token={token}'.format(base=self._url,
+                                                                    searchId=search["searchId"],
+                                                                    token=self._gis._con.token)
+            return_obj = json.loads(
+                self._gis._con.put(url, search, add_token=False, post_json=True, try_json=False,
+                                   json_encode=False))
+
+            if 'error' in return_obj:
+                self._gis._con._handle_json_error(return_obj['error'], 0)
+            elif 'success' in return_obj:
+                return return_obj['success']
+            return return_obj
+        except:
+            self._handle_error(sys.exc_info())
+
+    @property
+    def table_definitions(self):
+        """
+        Get the definitions of each extended properties table in a workflow item. The response will consist of an array
+        of table definitions. If the extended properties table is a feature service, its definition will include a
+        dictionary of feature service properties. Each table definition will also include definitions of the properties
+        it contains and list the associated job templates. This requires the adminBasic or adminAdvanced privileges.
+
+        :returns list
+        """
+
+        url = '{base}/tableDefinitions?token={token}'.format(base=self._url, token=self._gis._con.token)
+
+        return_obj = ast.literal_eval(str(self._gis._con.get(url)).encode('cp850', 'replace').decode('utf-8'))
+        if 'error' in return_obj:
+            self._gis._con._handle_json_error(return_obj['error'], 0)
+        elif 'success' in return_obj:
+            return return_obj['success']
+
+        return return_obj['tableDefinitions']
 
 class Job(object):
     """
@@ -1142,7 +1357,7 @@ class Job(object):
     _underscore_to_camelcase = _underscore_to_camelcase
 
     def __init__(self, init_data, gis=None, url=None):
-        self.job_status = self.notes = self.attachments = self.diagram_id = self.end_date = self.due_date = \
+        self.job_status = self.notes = self.diagram_id = self.end_date = self.due_date = \
             self.description = self.started_date = self.current_steps = self.job_template_name = self.job_template_id \
             = self.extended_properties = self.diagram_name = self.parent_job = self.job_name = self.diagram_version \
             = self.active_versions = self.percent_complete = self.priority = self.job_id = self.created_date = \
@@ -1179,7 +1394,7 @@ class Job(object):
 
     def get_attachment(self, attachment_id):
         """
-        Returns a job attachment given an attachment ID
+        Returns an embedded job attachment given an attachment ID
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1221,6 +1436,33 @@ class Job(object):
             'id': return_obj['url'].split('/')[-1],
             'alias': return_obj['alias']
         }
+
+    def add_linked_attachment(self, attachments):
+        """
+        Add linked attachments to a job to provide additional or support information related to the job.
+        Linked attachments can be links to a file on a local or shared file system or a URL.
+        jobUpdateAttachments privilege is required to add an attachment to a job.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        attachments         List of linked attachments to associate with the job.
+                            Each attachment should define the url, alias and folder
+        ===============     ====================================================================
+
+        :return: list of job attachments
+        """
+        url = '{base}/jobs/{jobId}/attachmentslinked?token={token}'.format(base=self._url, jobId=self.job_id,
+                                                                           token=self._gis._con.token)
+
+        post_object = {
+            'attachments': attachments
+        }
+        return_obj = json.loads(
+            self._gis._con.post(url, params=post_object, post_json=True, try_json=False, json_encode=False))
+        if 'error' in return_obj:
+            self._gis._con._handle_json_error(return_obj['error'], 0)
+        return return_obj['attachments']
 
     def update_attachment(self, attachment_id, alias):
         """
@@ -1325,6 +1567,19 @@ class Job(object):
         return_obj = {_camelCase_to_underscore(k): v for k, v in return_obj.items() if
                       v is not None and not k.startswith('_')}
         return return_obj
+
+    @property
+    def attachments(self):
+        """
+        Gets the attachments of a job given job ID
+
+        :return: list of attachments
+        """
+
+        url = '{base}/jobs/{jobId}/attachments?token={token}'.format(base=self._url, jobId=self.job_id,
+                                                                     token=self._gis._con.token)
+        return_obj = ast.literal_eval(str(self._gis._con.get(url)).encode('cp850', 'replace').decode('utf-8'))
+        return return_obj['attachments']
 
     @property
     def history(self):
@@ -1602,4 +1857,3 @@ class JobLocation(object):
     def get(gis, url, params):
         job_location_dict = ast.literal_eval(str(gis._con.get(url, params)).encode('cp850', 'replace').decode('utf-8'))
         return JobLocation(job_location_dict)
-
