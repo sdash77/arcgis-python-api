@@ -682,6 +682,33 @@ class GIS(object):
             return arcgis.apps.hub.Hub(self)
         else:
             raise Exception("Hub is currently only compatible with ArcGIS Online.")
+    
+    @_lazy_property
+    def notebook_server(self) -> "NotebookServer":
+        """
+        Gets the Notebook Server on the System if Present
+        
+        :returns: NotebookServer is on the system, else None
+        """
+        if self._portal.is_arcgisonline:
+            urls = self._registered_servers()
+            url = urls.get("urls", {}).get("notebooks", {}).get("https", None)
+            if url:
+                from arcgis.gis.nb import NotebookServer
+                url = f"https://{url[0]}/admin"
+                return NotebookServer(url=url, gis=self)
+        else:
+            try:
+                from arcgis.gis.nb import NotebookServer
+                                
+                servers = [server for server in self.admin.servers.list() \
+                           if isinstance(server, NotebookServer)]
+                if len(servers) > 0:
+                    return servers[0]
+                return None
+            except:
+                return None
+        return
 
     @property
     def datastore(self):
@@ -809,7 +836,10 @@ class GIS(object):
     def _registered_servers(self):
         """returns servers registered with enterprise/portal"""
         params = {'f' : 'json'}
-        url = f"{self._portal.resturl}portals/self/servers"
+        if self._portal.is_arcgisonline == False:
+            url = f"{self._portal.resturl}portals/self/servers"
+        else:
+            url = f"{self._portal.resturl}portals/self/urls"
         return self._con.get(url, params=params)
     #----------------------------------------------------------------------
     @property
@@ -8473,7 +8503,8 @@ class Item(dict):
     """
 
     _uid = None
-
+    _snapeshots = None
+    
     def __init__(self, gis, itemid, itemdict=None):
         dict.__init__(self)
         self._portal = gis._portal
@@ -8498,7 +8529,33 @@ class Item(dict):
             self.tables = None
             self['layers'] = None
             self['tables'] = None
-
+            
+        if self._is_notebook and gis.notebook_server:
+            tool = functools.partial(self._gis.notebook_server.notebooks.snapshots.list, item=self)
+            tool.__doc__ = "Provides access to the Notebook Item's Snapshots \n :returns: List[SnapShot]"
+            self.snapshots = tool
+    #----------------------------------------------------------------------
+    @property
+    def _snapshots(self) -> list:
+        """
+        Provides access to the Notebook Item's Snapshots
+        
+        :returns: List[SnapShot]
+        """
+        return self._gis.notebook_server.notebooks.snapshots.list(self)
+    #----------------------------------------------------------------------
+    @_lazy_property
+    def _is_notebook(self) -> bool:
+        return self.type.lower() == "notebook"
+    #----------------------------------------------------------------------
+    @_lazy_property
+    def _get_nbs_server(self):        
+        urls = self._gis._registered_servers()
+        if self._gis._portal.is_arcgisonline:
+            return urls
+        else:
+            return urls
+    #----------------------------------------------------------------------
     @_lazy_property
     def resources(self):
         """
