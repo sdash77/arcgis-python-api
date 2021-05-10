@@ -1087,7 +1087,7 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def create_diagram(self, name, steps, display_grid, description="", active=False, annotations=[], data_sources=[]):
+    def create_diagram(self, name, steps, display_grid, description="", active=False, annotations=[], data_sources=[], diagram_id=None):
         """
         Adds a diagram to the Workflow Manager instance given a user-defined name and array of steps
 
@@ -1107,6 +1107,8 @@ class WorkflowManager:
         annotations         List of Annotation objects associated with the Diagram
         ---------------     --------------------------------------------------------------------
         data_sources        List of Data Source objects associated with the Diagram
+        ---------------     --------------------------------------------------------------------
+        diagram_id          Optional. The unique ID of the diagram to be created.
         ===============     ====================================================================
 
         :return: Workflow Manager Diagram ID
@@ -1124,6 +1126,9 @@ class WorkflowManager:
                 "annotations": annotations,
                 "displayGrid": display_grid
             })
+            if diagram_id is not None:
+                post_diagram["diagram_id"] = diagram_id
+
             return post_diagram.post(self._gis, url)['diagram_id']
         except:
             self._handle_error(sys.exc_info())
