@@ -18,6 +18,9 @@ class SnapShot(object):
     def __str__(self):
         return f"<SnapShot {self.properties['properties']['name']}>"
     #----------------------------------------------------------------------
+    def __repr__(self):
+        return f"<SnapShot {self.properties['properties']['name']}>"       
+    #----------------------------------------------------------------------
     def download(self):
         """
         Retrieves a snap shot locally on disk.

@@ -684,11 +684,11 @@ class GIS(object):
             raise Exception("Hub is currently only compatible with ArcGIS Online.")
     
     @_lazy_property
-    def notebook_server(self) -> "NotebookServer":
+    def notebook_server(self) -> "List[NotebookServer]":
         """
-        Gets the Notebook Server on the System if Present
+        Provide access to the Notebook Server registerd with the organization or enterprise.
         
-        :returns: NotebookServer is on the system, else None
+        :returns: List[`NotebookServer`] 
         """
         if self._portal.is_arcgisonline:
             urls = self._registered_servers()
@@ -696,19 +696,15 @@ class GIS(object):
             if url:
                 from arcgis.gis.nb import NotebookServer
                 url = f"https://{url[0]}/admin"
-                return NotebookServer(url=url, gis=self)
+                return [NotebookServer(url=url, gis=self)]
         else:
             try:
                 from arcgis.gis.nb import NotebookServer
-                                
-                servers = [server for server in self.admin.servers.list() \
+                return [server for server in self.admin.servers.list() \
                            if isinstance(server, NotebookServer)]
-                if len(servers) > 0:
-                    return servers[0]
-                return None
             except:
-                return None
-        return
+                return []
+        return []
 
     @property
     def datastore(self):
@@ -8529,20 +8525,22 @@ class Item(dict):
             self.tables = None
             self['layers'] = None
             self['tables'] = None
-            
-        if self._is_notebook and gis.notebook_server:
-            tool = functools.partial(self._gis.notebook_server.notebooks.snapshots.list, item=self)
-            tool.__doc__ = "Provides access to the Notebook Item's Snapshots \n :returns: List[SnapShot]"
-            self.snapshots = tool
     #----------------------------------------------------------------------
     @property
-    def _snapshots(self) -> list:
+    def snapshots(self) -> list:
         """
-        Provides access to the Notebook Item's Snapshots
+        Provides access to the Notebook Item's Snapshots. If the user is not
+        the owner of the `Item`, the snapshots will be an empty list.
         
         :returns: List[SnapShot]
         """
-        return self._gis.notebook_server.notebooks.snapshots.list(self)
+        if self._is_notebook and \
+           self._gis.notebook_server and \
+           self.owner == self._gis.users.me.username and \
+           len(self._gis.notebook_server) > 0:
+            nbs = self._gis.notebook_server[0]
+            return nbs.notebooks.snapshots.list(self)
+        return []
     #----------------------------------------------------------------------
     @_lazy_property
     def _is_notebook(self) -> bool:
