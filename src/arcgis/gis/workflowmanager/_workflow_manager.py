@@ -64,6 +64,9 @@ class WorkflowManagerAdmin:
                 self._url += f"/workflow"
                 self._private_url += f"/workflow"
                 return self._url, self._private_url
+            else:
+                raise RuntimeError("Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
+                                   "Administrator to ensure Workflow Manager Server is properly configured.")
         return None
 
     def create_item(self, name) -> tuple:
@@ -212,6 +215,9 @@ class JobManager:
                 self._url += f"/workflow/{self._item.id}"
                 self._private_url += f"/workflow/{self._item.id}"
                 return self._url, self._private_url
+            else:
+                raise RuntimeError("Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
+                                   "Administrator to ensure Workflow Manager Server is properly configured.")
         return None
 
     def close(self, job_ids):
@@ -617,6 +623,9 @@ class WorkflowManager:
                 self._url += f"/workflow/{self._item.id}"
                 self._private_url += f"/workflow/{self._item.id}"
                 return self._url, self._private_url
+            else:
+                raise RuntimeError("Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
+                                   "Administrator to ensure Workflow Manager Server is properly configured.")
         return None
 
     @property
@@ -978,7 +987,7 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def create_job_template(self, name, priority, id="", category="", job_duration=0,
+    def create_job_template(self, name, priority, id=None, category="", job_duration=0,
                             assigned_to="", default_due_date=None, default_start_date=None,
                             start_date_type="CreationDate", diagram_id="", diagram_name="",
                             assigned_type="Unassigned", description="", default_description="",
@@ -1037,7 +1046,9 @@ class WorkflowManager:
             if last_updated_date is None:
                 last_updated_date = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
             url = '{base}/jobTemplates?token={token}'.format(base=self._url, token=self._gis._con.token)
+
             post_job_template = JobTemplate({
+                "jobTemplateId": id,
                 "jobTemplateName": name,
                 "category": category,
                 "defaultJobDuration": job_duration,
@@ -1056,8 +1067,7 @@ class WorkflowManager:
                 "lastUpdatedBy": last_updated_by,
                 "lastUpdatedDate": last_updated_date
             })
-            if id != "":
-                post_job_template.__setattr__(self, _camelCase_to_underscore("jobTemplateId"), id)
+
             return post_job_template.post(self._gis, url)
         except:
             self._handle_error(sys.exc_info())
@@ -1115,7 +1125,9 @@ class WorkflowManager:
         """
         try:
             url = '{base}/diagrams?token={token}'.format(base=self._url, token=self._gis._con.token)
+
             post_diagram = JobDiagram({
+                "diagramId": diagram_id,
                 "diagramName": name,
                 "description": description,
                 "active": active,
@@ -1126,9 +1138,6 @@ class WorkflowManager:
                 "annotations": annotations,
                 "displayGrid": display_grid
             })
-            if diagram_id is not None:
-                post_diagram["diagram_id"] = diagram_id
-
             return post_diagram.post(self._gis, url)['diagram_id']
         except:
             self._handle_error(sys.exc_info())

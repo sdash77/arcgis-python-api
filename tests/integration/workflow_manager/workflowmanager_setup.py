@@ -25,7 +25,7 @@ class WorkflowManagerSetup:
             self.portal_username = 'admin'
             self.portal_password = 'esri.agp'
             self.item_name = 'Testing Item'
-            self.workflow_item_id = 'e12fce06ff2641b68d7ec739267ed974'
+            self.workflow_item_id = 'dc9f3adb76f64f258a736c6412acf142'
 
             self._gis = GIS(url=self.portal_url,
                             username=self.portal_username,

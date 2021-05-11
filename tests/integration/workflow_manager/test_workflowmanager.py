@@ -33,8 +33,11 @@ class TestWorkflowManager(unittest.TestCase):
         print("\n==================================================================")
 
     def create_diagram(self):
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+        d_id = uniqueness[0:22]
         return self.connection.workflow_manager.create_diagram(
-            name='Test New Diagram123 ' + str(datetime.datetime.now().timestamp()),
+            name='Test New Diagram123 ' + uniqueness,
+            diagram_id=d_id,
             display_grid=True,
             description='Test Description',
             active=True,
@@ -106,6 +109,7 @@ class TestWorkflowManager(unittest.TestCase):
 
         name = 'Testing Template  ' + uniqueness
         table_name = 'testing_table_' + uniqueness
+        template_id = uniqueness[0:22]
 
         diagrams = self.connection.workflow_manager.diagrams
         diagram = {}
@@ -115,6 +119,7 @@ class TestWorkflowManager(unittest.TestCase):
                 break
 
         return self.connection.workflow_manager.create_job_template(name=name,
+                                                                    id=template_id,
                                                                     diagram_id=diagram.diagram_id,
                                                                     diagram_name=diagram.diagram_name,
                                                                     priority='high',
