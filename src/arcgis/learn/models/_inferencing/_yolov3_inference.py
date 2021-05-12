@@ -324,20 +324,21 @@ class ChildObjectDetector:
         else:
             batch = batch/255.
 
-        batch_output = self.model.learn.model(torch.tensor(batch).to(self.device).float())
+        with torch.no_grad():
+            batch_output = (self.model.learn.model(torch.tensor(batch).to(self.device).float())).cpu()
 
         num_boxes = 0
-        for chip_idx, output in enumerate(batch_output):            
+        for chip_idx, output in enumerate(batch_output):
             pp_output = self.model._analyze_pred(pred=output, thresh=self.thres, nms_overlap=self.nms_overlap)
             image_bbox = _reconstruct(pp_output, dummy_x, pad_idx=0, classes=['background'] + class_names)
-            if not image_bbox is None:            
+            if not image_bbox is None:
                 for feature_idx in range(len(image_bbox.data[0])):
-                    to_append = pred2dict(((image_bbox.data[0][feature_idx] + 1) / 2).detach().cpu().numpy(),
+                    to_append = pred2dict(((image_bbox.data[0][feature_idx] + 1) / 2).numpy(),
                                                 image_bbox.scores[feature_idx],
                                                 str(image_bbox.labels[feature_idx]),
                                                 image_bbox.data[1][feature_idx],
                                                 )
-                    
+
                     try:
                         preds[chip_idx].append(to_append)
                     except KeyError:
