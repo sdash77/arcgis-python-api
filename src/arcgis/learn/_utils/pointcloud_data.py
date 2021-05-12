@@ -1375,7 +1375,7 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         data.background_classcode = background_classcode
         data.important_classes = classes_of_interest
         data.remap = remap
-        data.classes =  list(class_mapping.keys())
+        data.classes = classes
         data.c = len(class_mapping)
         data.show_batch = types.MethodType(show_point_cloud_batch_TF, data)
         data.color_mapping = color_mapping
@@ -1605,7 +1605,7 @@ def inference_las(path,
     import pandas as pd   
     
     # check if the model is trained on new exported data and raise Exception.
-    if hasattr(pointcnn_model._data.pc_type):
+    if hasattr(pointcnn_model._data, 'pc_type'):
         if pointcnn_model._data.pc_type == 'PointCloud':
             raise Exception("Models trained on exported data from ArcGIS Pro 2.8 onwards are not supported. "
                             "Use `Classify Points Using Trained Model` tool available in 3D Analyst "  
@@ -1660,8 +1660,6 @@ def inference_las(path,
             with h5py.File(filename, 'r') as data_h5:
                 has_indices = 'indices_split_to_full' in data_h5
                 data = data_h5['data'][...].astype(np.float32)  
-                if hasattr(pointcnn_model._data, 'extra_feat_indexes'):
-                    data = data[:,:, pointcnn_model._data.extra_feat_indexes]
                 data_num =  data_h5['data_num'][...].astype(np.int32)
                 indices_split_to_full = data_h5['indices_split_to_full'][...]
             batch_num = data.shape[0]
@@ -2263,7 +2261,8 @@ def predict_h5(self, path, output_path, **kwargs):
         api_model = True
         attributes, features_to_keep = convert_extra_features(attributes, features_to_keep)
         data.pc_type = 'PointCloud'
-        data.idx2class = {i:c for i,c in enumerate(data.classes)}
+        if not hasattr(data, 'idx2class'):
+            data.idx2class = {i:c for i,c in enumerate(sorted(data.classes))}
     else:
         api_model = False
     if 'xyz' in features_to_keep:

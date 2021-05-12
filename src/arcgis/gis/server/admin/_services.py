@@ -1428,6 +1428,7 @@ class Service(BaseServer):
             params['service'] = json.dumps(service)
         res = self._con.post(path=url, postdata=params)
         if 'status' in res:
+            self._properties = None
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------

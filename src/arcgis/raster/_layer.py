@@ -8223,7 +8223,7 @@ class RasterCollection():
         #self._do_not_hydrate=False
         local_class=True
     
-        if engine is not None and engine not in ['arcpy', 'image_server']:
+        if engine is not None and engine not in ['arcpy', 'image_server', _ArcpyRasterCollection, _ImageServerRasterCollection, _LocalRasterCollection]:
             raise RuntimeError('Invalid engine: parameter engine should be either "arcpy" or "image_server"')   
         engine = _get_raster_collection_engine(engine)
 
@@ -8237,7 +8237,7 @@ class RasterCollection():
             self._ras_coll_engine_obj=engine(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry, engine=engine, gis=gis, context = context)
         else:
             if isinstance(rasters, str):
-                if ("https://"  in rasters or "http://"  in rasters) and "ImageServer" in rasters:
+                if ("https://"  in rasters or "http://"  in rasters):
                     self._ras_coll_engine = _ImageServerRasterCollection
                     self._ras_coll_engine_obj=_ImageServerRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry,engine= _ImageServerRasterCollection, gis=gis, context=context)
                 else:
@@ -8864,7 +8864,7 @@ class RasterCollection():
         """
         return self._ras_coll_engine_obj.sum(ignore_nodata=ignore_nodata)
 
-    def mosaic(self, mosaic_method):
+    def mosaic(self, mosaic_method="FIRST"):
         """
         Returns a Raster object in which all items in a raster collection 
         have been mosaicked into a single raster.
@@ -8872,7 +8872,7 @@ class RasterCollection():
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        mosaic_method                            Required string. The method used to handle overlapping areas 
+        mosaic_method                            Optional string. The method used to handle overlapping areas 
                                                  between adjacent raster items. Mosaic method options include the following:
 
                                                    - FIRST -  Determines the pixel value from the first raster that is overlapping.
@@ -8881,13 +8881,13 @@ class RasterCollection():
 
                                                    - MEAN - Determines the average pixel value from the two rasters that are overlapping.
 
-                                                   - MINIMUM - Determines the lower pixel value from the two raster datasets that are overlapping.
+                                                   - MIN - Determines the lower pixel value from the two raster datasets that are overlapping.
 
-                                                   - MAXIMUM - Determines the higher pixel value from the two raster datasets that are overlapping.
+                                                   - MAX - Determines the higher pixel value from the two raster datasets that are overlapping.
 
                                                    - SUM - Determines the sum of pixel values from the two rasters that are overlapping.
 
-                                                    (The default value is First)
+                                                    (The default value is FIRST)
         ====================================     ====================================================================
 
         :returns: a Raster object
@@ -9330,7 +9330,10 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
     def select_bands(self, band_ids_or_names, context=None):
         if context is None:
             context = self._context
-        return RasterCollection(self._raster_collection.selectBands(band_ids_or_names), context=context)
+        newcollection = self._clone_raster_collection(context=context)
+        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.selectBands(band_ids_or_names)
+        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj._as_df()
+        return newcollection
 
 
     def map(self, func, context=None):
@@ -9357,8 +9360,8 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
             try:
                 value = self.get_field_values(field)
                 if field=="Raster":
-                    for ele in value:
-                        value_rasters.append(Raster(self._raster_collection[index]['Raster']))
+                    for i, ele in enumerate(value):
+                        value_rasters.append(Raster(self._raster_collection[i]['Raster']))
                     data[field] = value_rasters
                 elif field=="Shape":
                     for ele in value:
@@ -9782,7 +9785,10 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
 
 
     def mosaic(self, mosaic_method):
-        return (super().mosaic_by(op=mosaic_method))
+        from arcgis.raster.functions import raster_collection_function
+        ras = raster_collection_function(self)
+        ras._engine_obj.mosaic_by(op=mosaic_method)
+        return ras
 
     def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
         from arcgis.raster.functions import arg_statistics, _pick

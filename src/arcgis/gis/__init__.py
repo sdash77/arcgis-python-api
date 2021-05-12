@@ -9606,7 +9606,7 @@ class Item(dict):
             if allow_members_to_edit:
                 params['confirmItemControl'] = allow_members_to_edit  # True
         else:
-            url = "{resturl}/content/items/{itemid}/share".format(resturl=self._gis._portal.resturl,
+            url = "{resturl}content/items/{itemid}/share".format(resturl=self._gis._portal.resturl,
                                                                   itemid=self.itemid)
             params = {
                 'f' : 'json',
@@ -9614,6 +9614,10 @@ class Item(dict):
                 "everyone": everyone,
                 "account": org
             }
+
+            if allow_members_to_edit:
+                if 'portal:admin:createUpdateCapableGroup' in self._gis.users.me.privileges:
+                    params['confirmItemControl'] = allow_members_to_edit  # True
 
         res = self._portal.con.post(url, params)
         self._hydrated = False
