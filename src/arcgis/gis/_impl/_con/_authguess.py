@@ -72,7 +72,7 @@ class GuessAuth(auth.AuthBase):
         return self.auth.response_hook(r, **kwargs)
 
     def _handle_kerb_auth_401(self, r, kwargs):
-        self.auth = HTTPKerberosAuth()
+        self.auth = EsriKerberosAuth()
         try:
             self.auth.init_per_thread_state()
         except AttributeError:

@@ -313,16 +313,14 @@ class Connection(object):
 
         else:
             try:
-                from requests_negotiate_sspi import HttpNegotiateAuth
                 HAS_KERBEROS = True
             except:
                 HAS_KERBEROS = False
             if HAS_KERBEROS:
-                self._session.auth = HttpNegotiateAuth()
+                self._session.auth = EsriWindowsAuth()
             else:
                 try:
-                    from requests_kerberos import HTTPKerberosAuth, DISABLED
-                    self._session.auth = HTTPKerberosAuth(DISABLED)
+                    self._session.auth = EsriKerberosAuth()
                 except ImportError:
                     pass
                 except Exception as e:
