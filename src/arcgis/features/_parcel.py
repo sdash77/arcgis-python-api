@@ -862,6 +862,77 @@ class ParcelFabricManager(object):
             return res
     # ----------------------------------------------------------------------
 
+    def divide(self,
+               divide_parcel_guid,
+               divide_parcel_type,
+               divide_record,
+               divide_option,
+               divide_number_of_parts,
+               divide_part_area,
+               divide_line_bearing,
+               divide_left_side,
+               divide_distribute_remainder,
+               default_area_unit,
+               divide_cogo_line_bearing=None):
+        """
+
+        Divide a polygon feature into multiple features that have proportional or equal areas, or equal widths.
+
+        =========================== ====================================================================
+        **Argument**                **Description**
+        --------------------------- --------------------------------------------------------------------
+        divide_parcel_guid          Required String. GlobalId (guid) of parcel to be divided.
+        --------------------------- --------------------------------------------------------------------
+        divide_parcel_type          Required Integer. Layer ID of parcel type polygon feature.
+        --------------------------- --------------------------------------------------------------------
+        divide_record               Required String: Record identifier (guid). If missing, no history is created.
+        --------------------------- --------------------------------------------------------------------
+        divide_option               Required String. The type of division to be performed: 
+                                        - ProportionalArea
+                                        - EqualArea
+                                        - EqualWidth
+        --------------------------- --------------------------------------------------------------------
+        divide_number_of_parts      Required Integer. The number of parts the parcel is to be divided into.
+        --------------------------- --------------------------------------------------------------------
+        divide_part_area            Required Float. Area of each part (parcel fabric GDB units squared).
+        --------------------------- --------------------------------------------------------------------
+        divide_line_bearing         Required Float. Bearing of the divide line (decimal degrees north azimuth).
+        --------------------------- --------------------------------------------------------------------
+        divide_left_side            Required Boolean. Does the division start from the left side of the divide line?
+        --------------------------- --------------------------------------------------------------------
+        divide_distribute_remainder Required Boolean. Distribute any remaining area among areas created.
+        --------------------------- --------------------------------------------------------------------
+        default_area_unit           Required Integer. Represents the default area units.
+        --------------------------- --------------------------------------------------------------------
+        divide_cogo_line_bearing    Optional Float. Bearing of the divide line (decimal degrees north azimuth).
+        =========================== ====================================================================
+
+        :returns: Dictionary
+
+
+        """
+        gdb_version = self._version.properties.versionName
+        session_id = self._version._guid
+        url = "{base}/divide".format(base=self._url)
+        params = {
+            "gdbVersion": gdb_version,
+            "sessionId": session_id,
+            "divideParcelGuid": divide_parcel_guid,
+            "divideParcelType": divide_parcel_type,
+            "record": divide_record,
+            "divideOption": divide_option,
+            "divideNumberOfParts": divide_number_of_parts,
+            "dividePartArea": divide_part_area,
+            "divideLineBearing": divide_line_bearing,
+            "divideLeftSide": divide_left_side,
+            "divideDistributeRemainder": divide_distribute_remainder,
+            "defaultAreaUnit": default_area_unit,
+            "divideCogoLineBearing": divide_cogo_line_bearing,
+            "f": "json"
+        }
+        return self._con.post(url, params)
+    # ----------------------------------------------------------------------
+
     def _run_async(self, fn, **inputs):
         """runs the inputs asynchronously"""
         import concurrent.futures
