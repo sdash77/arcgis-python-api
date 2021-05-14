@@ -875,6 +875,8 @@ class ParcelFabricManager(object):
                default_area_unit,
                divide_cogo_line_bearing=None):
         """
+        .. note::
+            Divide functionality introduced at version 10.9.1
 
         Divide a polygon feature into multiple features that have proportional or equal areas, or equal widths.
 
