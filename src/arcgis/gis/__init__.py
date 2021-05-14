@@ -456,7 +456,7 @@ class GIS(object):
                     warnings.warn("You are logged on as %s with an administrator role, proceed with caution." % \
                                   self.users.me.username)
                 if self.properties.isPortal and self._portal.is_kubernetes:
-                    from arcgis.gis.kubernetes._admin.qadmin import KubernetesAdmin
+                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 elif self.properties.isPortal == True and self._portal.is_kubernetes == False:

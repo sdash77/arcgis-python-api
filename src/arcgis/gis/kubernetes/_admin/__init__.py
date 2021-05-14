@@ -1,1 +1,1 @@
-from .qadmin import KubernetesAdmin
+from .kadmin import KubernetesAdmin
