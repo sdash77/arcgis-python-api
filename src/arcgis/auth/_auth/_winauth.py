@@ -53,7 +53,7 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
             elif username and password:
                 self.auth = requests_ntlm.HttpNtlmAuth(username, password)
             else:
-                raise ValueError("")
+                self.auth = None
         except ImportError:
             raise Exception(
                 "NTLM authentication requires requests_negotiate_sspi module."
@@ -114,8 +114,9 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
 
     # ----------------------------------------------------------------------
     def __call__(self, r):
-        self.auth.__call__(r)
-        r.register_hook("response", self.generate_portal_server_token)
+        if self.auth:        
+            self.auth.__call__(r)
+            r.register_hook("response", self.generate_portal_server_token)
         return r
 
 
