@@ -14,6 +14,7 @@ requirements:
   - ujson >=3
   - setuptools
   - six
+  - cryptography
   - notebook
   - ipywidgets >=7
   - widgetsnbextension >=3
@@ -23,6 +24,8 @@ requirements:
   - keyring >=19
   - pytest
   - pyshp >=2
+  - lxml
+  - certifi
   - requests
   - requests-toolbelt
   - requests-kerberos
@@ -35,6 +38,9 @@ requirements:
   run:
   - python
   - six
+  - cryptography
+  - lxml
+  - certifi
   - notebook
   - ipywidgets >=7
   - widgetsnbextension >=3

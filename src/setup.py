@@ -45,6 +45,8 @@ if conda_install_mode:
 else:
     dependencies = [
         'six',
+        'lxml',
+        "cryptography",
         'ipywidgets >=7',
         'widgetsnbextension >=3',
         'pandas >=1',
@@ -64,7 +66,7 @@ else:
         'requests-negotiate-sspi;platform_system=="Windows"',
         'requests-kerberos;platform_system=="Windows"',
         'winkerberos;platform_system=="Windows"',
-        #'arcgis_auth'
+        'requests-gssapi',
         ]
 
 
