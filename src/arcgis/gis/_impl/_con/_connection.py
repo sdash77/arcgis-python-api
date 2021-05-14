@@ -27,6 +27,7 @@ import uuid
 import datetime
 import mimetypes
 import tempfile
+from functools import lru_cache
 from urllib.request import urlparse, unquote, urljoin
 import requests
 from requests import Session
@@ -36,10 +37,13 @@ from ._helpers import _filename_from_headers, _filename_from_url
 from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
-
+from arcgis.auth import EsriWindowsAuth, EsriKerberosAuth, EsriBasicAuth
 __version__ = "1.9.0"
 
 _DEFAULT_TOKEN = uuid.uuid4()
+
+def _handle_basic_auth(self, r, kwargs):
+    ...
 
 class Connection(object):
     """
@@ -147,12 +151,24 @@ class Connection(object):
         self._client_id = kwargs.pop('client_id', None)
         self._client_secret = kwargs.pop('client_secret', None)
         self._token_url = kwargs.pop('token_url', None)
-
+        auth_check = self._auth_check(baseurl)
         if username is None and password is None and self._portal_connection is None:
             self._auth = "ANON"
-        elif ((not username is None and not password is None) or self._portal_connection):
+        elif ((not username is None and not password is None) and len(username.split('\\')) > 1):
+            self._auth = "IWA"
+        elif not username is None and not password is None and \
+             any([ac.lower().find('basic')> -1 for ac in auth_check]):
+            self._auth = "BASIC_REALM"
+        elif not username is None and not password is None and \
+             any([ac.lower().find('ntlm')> -1 for ac in auth_check]):
+            self._auth = "NTLM"
+        elif ((not username is None and not password is None) or self._portal_connection._auth == 'BUILTIN'):
             self._auth = "BUILTIN"
-        if (username and password) and \
+        elif ((not username is None and not password is None) or self._portal_connection._auth == 'BASIC_REALM'):
+            self._auth = "BASIC_REALM"
+        elif ((not username is None and not password is None) or self._portal_connection._auth == 'NTLM'):
+            self._auth = "NTLM"
+        elif (username and password) and \
            self._client_id is None and \
            str(baseurl).lower() != "pro":
             self._auth = "BUILTIN"
@@ -165,7 +181,10 @@ class Connection(object):
              (self._cert_file and self._key_file):
             self._auth = "PKI"
 
-        self._create_session()
+        if self._portal_connection and self._portal_connection._auth in ["BASIC_REALM", "IWA", "NTLM"]:
+            self._session = self._portal_connection._session
+        else:
+            self._create_session()
 
         #  Product Info
         if self._token:
@@ -199,6 +218,18 @@ class Connection(object):
             self._product = self._check_product()
         self._baseurl = self._validate_url(self._baseurl)
         self.baseurl = self._baseurl
+    #----------------------------------------------------------------------
+    @lru_cache(maxsize=10)
+    def _parsed(self, url:str):
+        return urlparse(url)
+    #----------------------------------------------------------------------
+    def _auth_check(self, url):
+        import requests
+        parsed = self._parsed(url)
+        root = fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
+        params = {"f" : "json"}
+        return list(set([requests.get(root + pt, params=params).headers.get('www-authenticate', "") \
+                         for pt in ['/info', '/rest/info', '/sharing/rest/info']]))
     #----------------------------------------------------------------------
     def _validate_url(self, url):
         """ensures the base url has the /sharing/rest"""
@@ -266,11 +297,20 @@ class Connection(object):
         if self._custom_auth:
             self._session.auth = self._custom_auth
             self._auth = "CUSTOM"
-        elif self._username and self._password:
+        elif self._auth.lower() == 'basic_realm':
+            self._session.auth = EsriBasicAuth(username=self._username,
+                                               password=self._password,
+                                               referer=self._referer,
+                                               verify_cert=self._verify_cert)
+        elif self._username and self._password and self._auth.lower() != 'iwa':
             self._session.auth = GuessAuth(username=self._username,
                                            password=self._password)
+        elif self._auth.lower() in ['iwa', 'ntlm']:
+            self._session.auth = EsriWindowsAuth(username=self._username,
+                                                 password=self._password)
         elif self._auth.lower() == "pro":
             self._session.auth = GuessAuth(None, None)
+
         else:
             try:
                 from requests_negotiate_sspi import HttpNegotiateAuth
@@ -1423,7 +1463,10 @@ class Connection(object):
             if baseurl.endswith("/"):
                 res = self.get(baseurl + 'info', params={'f' : 'json'}, add_token=False)
             else:
-                res = self.get(baseurl + '/info', params={'f' : 'json'}, add_token=False)
+                if self._session and self._session.auth:
+                    res = self.get(baseurl + '/info', params={'f' : 'json'}, add_token=False, auth=self._session.auth)
+                else:
+                    res = self.get(baseurl + '/info', params={'f' : 'json'}, add_token=False)
             if self._token_url is None and \
                res is not None and \
                isinstance(res, dict) and \
@@ -1465,7 +1508,7 @@ class Connection(object):
             for pt in parts:
                 try:
                     #print(pt)
-                    res = self.get(root + pt, params=params, add_token=False)
+                    res = self.get(root + pt, params=params, add_token=False, allow_redirects=False)
                     if self._token_url is None and \
                        res is not None and \
                        isinstance(res, dict) and \
@@ -1518,4 +1561,3 @@ class Connection(object):
                 del pt
                 del res
         return "PORTAL"
-

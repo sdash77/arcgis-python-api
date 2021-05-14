@@ -5,18 +5,18 @@ Modified from requests_toolbelt's GuesAuth to handle NTLM and Kerbos
 from requests import auth
 from requests import cookies
 try:
-    from requests_negotiate_sspi import HttpNegotiateAuth
+    from arcgis.auth import EsriWindowsAuth
     HAS_SSPI = True
 except ImportError:
     HAS_SSPI = False
     
 try:
 
-    from requests_kerberos import HTTPKerberosAuth
+    from arcgis.auth import EsriKerberosAuth
     HAS_KERBEROS = True
 except ImportError:
     HAS_KERBEROS = False
-from requests_ntlm import HttpNtlmAuth
+from arcgis.auth import EsriBasicAuth
 from requests_toolbelt.auth import _digest_auth_compat as auth_compat, http_proxy_digest
 
 class GuessAuth(auth.AuthBase):
@@ -44,7 +44,7 @@ class GuessAuth(auth.AuthBase):
         cookies.extract_cookies_to_jar(prep._cookies, r.request, r.raw)
         prep.prepare_cookies(prep._cookies)
 
-        self.auth = auth.HTTPBasicAuth(self.username, self.password)
+        self.auth = EsriBasicAuth(self.username, self.password, "http", False)
         prep = self.auth(prep)
         _r = r.connection.send(prep, **kwargs)
         _r.history.append(r)
@@ -53,7 +53,7 @@ class GuessAuth(auth.AuthBase):
         return _r
 
     def _handle_ntlm_auth_401(self, r, kwargs):
-        self.auth = HttpNtlmAuth(self.username, self.password)
+        self.auth =  EsriWindowsAuth(self.username, self.password)
         try:
             self.auth.init_per_thread_state()
         except AttributeError:
@@ -127,10 +127,10 @@ class GuessAuth(auth.AuthBase):
         if www_authenticate.find('ntlm') > -1 and self.username and self.password:
             if self._try_auth_count == 0:
                 self._try_auth_count += 1
-                self.auth = HttpNtlmAuth(self.username, self.password)
+                self.auth = EsriWindowsAuth(self.username, self.password)
                 return self._handle_ntlm_auth_401(r, kwargs)
             elif self._try_auth_count == 1 and HAS_KERBEROS:
-                self.auth = HTTPKerberosAuth()
+                self.auth = EsriKerberosAuth()
                 self._try_auth_count += 1
                 return self._handle_kerb_auth_401(r, kwargs)
             else:
@@ -138,11 +138,11 @@ class GuessAuth(auth.AuthBase):
         elif www_authenticate.find('ntlm') > -1:
             if HAS_SSPI:
 
-                self.auth = HttpNegotiateAuth(username=self.username,
+                self.auth = EsriWindowsAuth(username=self.username,
                                               password=self.password)
             else:
-                self.auth = HttpNtlmAuth(username=self.username,
-                                         password=self.password)
+                self.auth = EsriWindowsAuth(username=self.username,
+                                              password=self.password)
 
 
     def __call__(self, request):
