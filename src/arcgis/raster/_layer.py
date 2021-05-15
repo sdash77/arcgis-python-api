@@ -4,6 +4,8 @@ import datetime
 import tempfile
 import numbers
 import warnings
+import copy
+import requests as _requests
 
 from arcgis._impl.common._utils import _date_handler
 from arcgis.gis import Layer
@@ -5309,6 +5311,81 @@ class Raster():
         """
         return self._engine_obj.raster_info
 
+    @staticmethod
+    def from_stac_item(stac_item, request_params=None, *, gis=None):
+        """
+        Create a Raster object from a `SpatioTemporal Asset Catalog (STAC) Item <https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md>`__.
+
+        **Note:** This function is available when RasterRendering service is enabled in the active GIS connection.
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        stac_item             Required string or `pystac.Item <https://pystac.readthedocs.io/en/latest/api.html#item>`__ object. If string, then it should be
+                              the URL of the STAC item. It can be a Static STAC item URL or a STAC
+                              API Item URL.
+
+                              | Note: Currently only Landsat-8 STAC Items are supported for this method.
+
+                              Example:
+                                    "https://landsat-stac.s3.amazonaws.com/landsat-8-l1/010/117/2015-01-02/LC80101172015002LGN00.json"
+        -----------------     --------------------------------------------------------------------
+        request_params        Optional dictionary. This parameter can be used to set the properties
+                              for making the STAC Item request. These are the `requests.get() method <https://requests.readthedocs.io/en/master/api/#requests.get>`__
+                              parameters and values will be specified in dictionary format.
+
+                              | This parameter is honoured when the stac_item parameter is set to a string (URL).
+
+                              Example:
+                                    {"verify":False}
+        -----------------     --------------------------------------------------------------------
+        gis                   Optional arcgis.gis.GIS object. The GIS of the Raster object.
+        =================     ====================================================================
+
+        :returns: A Raster object
+
+        .. code-block:: python
+
+            # Usage Example: Creating a Raster object from a STAC Item.
+
+            ras = Raster.from_stac_item(stac_item=stac_item_url,
+                                        gis=gis)
+
+        """
+        if isinstance(stac_item, str):
+            if request_params is None:
+                request_params = {}
+            if not isinstance(request_params, dict):
+                raise RuntimeError('request_params should be of type dictionary')
+            if any(key in request_params for key in ['url', 'params', 'data', 'json']):
+                raise RuntimeError('request_params cannot contain these keys : url, params, data or json') 
+
+            data = _requests.get(stac_item, **request_params)
+            if data.status_code != 200 or data.headers.get('content-type') not in ['application/json', 'application/geo+json', 'application/json;charset=utf-8']:
+                raise RuntimeError(f"Invalid Response: Please verify that the stac_item URL is correct-\n{data.text}")
+                
+            json_data = data.json()
+        else:
+            try:
+                import pystac
+                json_data = stac_item.to_dict()
+            except ImportError:
+                raise ImportError("pystac not found, parameter stac_item accepts either a STAC Item URL or a pystac.Item object")
+            except Exception:
+                raise RuntimeError(f"Invalid/Unsupported STAC Item-\n{stac_item}")
+
+        if 'type' not in json_data or json_data['type'] != 'Feature':
+            raise RuntimeError(f"Invalid STAC Item-\n{json_data}")    
+        item = json_data
+
+        from ._util import _get_stac_metadata_file
+        metadata_file = _get_stac_metadata_file(item)
+        if not metadata_file:
+            raise RuntimeError("STAC Item not supported")
+
+        ras = Raster(metadata_file, gis=gis)
+        return ras
+
     def get_raster_bands(self, band_ids_or_names=None):
         """
         Returns a Raster object for each band specified in a multiband raster.
@@ -8298,6 +8375,351 @@ class RasterCollection():
 
     def __getitem__(self, item):
         return self._ras_coll_engine_obj.__getitem__(item)
+
+    @staticmethod
+    def from_stac_api(stac_api, query=None, attribute_dict=None, request_method="POST", request_params=None, *, gis=None):
+        """
+        Create a RasterCollection object from a `SpatioTemporal Asset Catalog (STAC) API <https://github.com/radiantearth/stac-api-spec>`__ `search <https://github.com/radiantearth/stac-api-spec/tree/master/item-search>`__ query.
+
+        **Note:** This function is available when RasterRendering service is enabled in the active GIS connection.
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        stac_api              Required string. URL of the STAC API root endpoint. The STAC API where
+                              the search needs to be performed.
+
+                              | Note: Currently only Landsat-8 STAC Item queries are supported for this method.
+
+                              Example:
+                                    "https://earth-search.aws.element84.com/v0"
+        -----------------     --------------------------------------------------------------------
+        query                 Optional dictionary. The GET/POST request query dictionary that can be
+                              used to query a STAC API’s search endpoint. (keys/values would depend
+                              on the specification of the STAC API in use and the request_method
+                              parameter value).
+
+                              For the “bbox” query parameter, `arcgis.geometry.Envelope <https://developers.arcgis.com/python/api-reference/arcgis.geometry.html#envelope>`__ 
+                              and `arcgis.geometry.Polygon <https://developers.arcgis.com/python/api-reference/arcgis.geometry.html#polygon>`__
+                              objects are also accepted (in any spatial reference).
+
+                              Example:
+                                    | {
+                                    |   "collections": ["landsat-8-l1-c1"],
+                                    |   "bbox": [-110,39.5,-105,40.5],
+                                    |   "query": {"eo:cloud_cover": {"lt": 30}},
+                                    |   "datetime": "2020-10-05T00:00:00Z/2020-10-18T12:31:12Z",
+                                    |   "limit": 10
+                                    | }
+        -----------------     --------------------------------------------------------------------
+        attribute_dict        Optional dictionary. The attribute information to be added to each
+                              (STAC Item) raster returned from the query. For each key-value pair, the key is
+                              the attribute name, and the value is a list of values that represent
+                              the attribute value for each raster.
+
+                              Attribute values can also be collected from the STAC Items automatically
+                              using the STAC Item metadata information. It can be done by specifying
+                              the STAC Item property name for the Attribute of interest in this format:
+                                    - key : value -> Attribute display name : STAC item property name
+
+                              Example:
+                                    | {
+                                    |   "Name":"id",
+                                    |   "Sensor":"platform",
+                                    |   "StdTime":"datetime",
+                                    |   "Cloud Cover":"eo:cloud_cover",
+                                    |   "Extent":"bbox"
+                                    | }
+
+                              **Note:** If ‘Geometry’ is not specified in the attribute_dict then it would
+                              be automatically added for each Raster in the RasterCollection based
+                              on its STAC Item ‘geometry’ property and would be in Spatial reference: ``{'wkid':4326}``.
+        -----------------     --------------------------------------------------------------------
+        request_method        Optional string. The HTTP request method used with the STAC API for making the search.
+
+                              Acceptable methods:
+
+                                    - GET
+                                    - POST (This is the default)
+
+                              Example:
+                                    "POST"
+        -----------------     --------------------------------------------------------------------
+        request_params        This parameter can be used to set the properties for making the STAC
+                              API search request. These are the `requests.post() <https://requests.readthedocs.io/en/master/api/#requests.post>`__ 
+                              or `requests.get() <https://requests.readthedocs.io/en/master/api/#requests.get>`__
+                              method parameters and values will be specified in dictionary format.
+
+                              Example:
+                                    | {
+                                    |   "verify":True,
+                                    |   "headers":{"Authorization": "Bearer access_token_string"}
+                                    | }
+        -----------------     --------------------------------------------------------------------
+        gis                   Optional arcgis.gis.GIS object. The GIS of the RasterCollection object.
+        =================     ====================================================================
+
+        :returns: A RasterCollection object
+
+        .. code-block:: python
+
+            # Usage Example: Creating a RasterCollection object from making a query to a STAC API.
+
+            rc = RasterCollection.from_stac_api(stac_api=stac_api_url,
+                                                query={
+                                                        "collections": ["landsat-8-l1-c1"],
+                                                        "bbox": [-110,39.5,-105,40.5],
+                                                        "query": {"eo:cloud_cover": {"lt": 30}},
+                                                        "datetime": "2020-10-05T00:00:00Z/2020-10-18T12:31:12Z",
+                                                        "limit": 10
+                                                      },
+                                                attribute_dict={
+                                                                "Name":"id",
+                                                                "Sensor":"platform",
+                                                                "StdTime":"datetime",
+                                                                "Cloud Cover":"eo:cloud_cover",
+                                                                "Spatial Reference":"proj:epsg",
+                                                                "Extent":"bbox"
+                                                               },
+                                                request_method="POST",
+                                                gis=gis)
+
+        """
+        if not isinstance(stac_api, str):
+            raise RuntimeError(f"Invalid STAC API URL-\n{stac_api}")
+        api_search_endpoint = stac_api + 'search' if stac_api.endswith('/') else stac_api + '/search'
+
+        if request_params is None:
+            request_params = {}
+        if not isinstance(request_params, dict):
+            raise RuntimeError('request_params should be of type dictionary')
+        if any(key in request_params for key in ['url', 'params', 'data', 'json']):
+            raise RuntimeError('request_params cannot contain these keys : url, params, data or json')
+
+        if not isinstance(request_method, str) or request_method.upper() not in ['GET', 'POST']:
+            raise RuntimeError('request_method can only be one of the following: GET or POST')
+        
+        new_query = None
+        if query is not None:
+            if not isinstance(query, dict):
+                raise RuntimeError('parameter query should be of type dictionary')
+            new_query = copy.deepcopy(query)
+            if 'bbox' in new_query:
+                query_extent = new_query['bbox']
+                from arcgis.geometry import Envelope, Polygon, project
+                if isinstance(query_extent, (Envelope, Polygon)):
+                    envelope_dict = json.loads(query_extent.envelope.JSON)
+                    if envelope_dict['spatialReference'] is None:
+                        raise RuntimeError('Invalid bbox: Polygon/Envelope object should contain spatialReference')
+                    try:
+                        projected_envelope = project(geometries=[envelope_dict], in_sr=envelope_dict['spatialReference'], out_sr=4326)
+                    except Exception:
+                        RuntimeError('Unsupported bbox: project operation failed for the given Polygon/Envelope object')
+                    bbox_list = []
+                    bbox_list.append(projected_envelope[0]['xmin'])
+                    bbox_list.append(projected_envelope[0]['ymin'])
+                    bbox_list.append(projected_envelope[0]['xmax'])
+                    bbox_list.append(projected_envelope[0]['ymax'])
+
+                    if request_method.upper() == 'GET':
+                        bbox_str = ','.join(str(e) for e in bbox_list)
+                        new_query['bbox'] = bbox_str
+                    else:
+                        new_query['bbox'] = bbox_list
+
+        if request_method.upper() == 'GET':
+            data = _requests.get(api_search_endpoint, params=new_query, **request_params)
+        else:
+            data = _requests.post(api_search_endpoint, json=new_query, **request_params)
+        
+        if data.status_code != 200 or data.headers.get('content-type') not in ['application/json', 'application/geo+json', 'application/json;charset=utf-8']:
+            raise RuntimeError(f"Invalid Response: Please verify that the STAC API URL and the specified query are correct-\n{data.text}")
+
+        json_data = data.json()
+        if 'type' not in json_data or json_data['type'] != 'FeatureCollection':
+            raise RuntimeError(f"Invalid JSON Response from the STAC API: Please verify that the STAC API URL and the specified query are correct-\n{json_data}")
+        items = json_data['features']
+
+        rc_attribute_dict = {}
+        attribute_dict = {} if attribute_dict is None else attribute_dict
+        for key in attribute_dict:
+            if isinstance(attribute_dict[key], list):
+                rc_attribute_dict[key] = attribute_dict[key]
+            else:
+                rc_attribute_dict[key] = [item[attribute_dict[key]] if attribute_dict[key] in item \
+                else item['properties'][attribute_dict[key]] if attribute_dict[key] in item['properties'] \
+                else key for item in items]
+        
+        from ._util import _get_stac_metadata_file
+        raster_list = []
+        for item in items:
+            metadata_file = _get_stac_metadata_file(item)
+            if not metadata_file:
+                raise RuntimeError(f"STAC Item not supported-\n{item}")
+
+            ras = Raster(metadata_file, gis=gis)
+            raster_list.append(ras)
+        
+        if 'Geometry' not in rc_attribute_dict:
+            geometry_list = []
+            for item in items:
+                coordinates = item['geometry']['coordinates']
+                polygon_geometry = Geometry({
+                    "rings" : coordinates,
+                    "spatialReference" : {"wkid" : 4326} 
+                    })
+                geometry_list.append(polygon_geometry)
+                rc_attribute_dict['Geometry'] = geometry_list
+
+        rc = RasterCollection(raster_list, rc_attribute_dict, context={"query_boundary" : False}, gis=gis)
+        return rc
+
+    @staticmethod
+    def from_stac_catalog(stac_catalog, attribute_dict=None, request_params=None, *, gis=None):
+        """
+        Create a RasterCollection object from a `Static SpatioTemporal Asset Catalog (STAC) <https://github.com/radiantearth/stac-spec/blob/master/catalog-spec/catalog-spec.md>`__.
+
+        **Note:** This function is available when RasterRendering service is enabled in the active GIS connection.
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        stac_catalog          Required string or `pystac.Catalog <https://pystac.readthedocs.io/en/latest/api.html#catalog>`__ object. If string, then it should
+                              be the URL of the Static STAC (Catalog).
+
+                              | Note: Currently only Landsat-8 STAC (Catalogs) are supported for this method.
+
+                              Example:
+                                    "https://landsat-stac.s3.amazonaws.com/landsat-8-l1/010/117/catalog.json"
+        -----------------     --------------------------------------------------------------------
+        attribute_dict        Optional dictionary. The attribute information to be added to each
+                              (STAC Item) raster of the catalog. For each key-value pair, the key is
+                              the attribute name, and the value is a list of values that represent
+                              the attribute value for each raster.
+
+                              Attribute values can also be collected from the STAC Items automatically
+                              using the STAC Item metadata information. It can be done by specifying
+                              the STAC Item property name for the Attribute of interest in this format:
+                                    - key : value -> Attribute display name : STAC item property name
+
+                              Example:
+                                    | {
+                                    |   "Name":"id",
+                                    |   "Sensor":"platform",
+                                    |   "StdTime":"datetime",
+                                    |   "Cloud Cover":"eo:cloud_cover",
+                                    |   "Extent":"bbox"
+                                    | }
+
+                              **Note:** If ‘Geometry’ is not specified in the attribute_dict then it would
+                              be automatically added for each Raster in the RasterCollection based
+                              on its STAC Item ‘geometry’ property and would be in Spatial reference: ``{'wkid':4326}``.
+        -----------------     --------------------------------------------------------------------
+        request_params        Optional dictionary. This parameter can be used to set the properties
+                              for making the STAC Item/Catalog requests. These are the `requests.get() method <https://requests.readthedocs.io/en/master/api/#requests.get>`__
+                              method parameters and values will be specified in dictionary format.
+
+                              | This parameter is honoured when the stac_catalog parameter is set to a string (URL).
+
+                              Example:
+                                    {"verify":False}
+        -----------------     --------------------------------------------------------------------
+        gis                   Optional arcgis.gis.GIS object. The GIS of the RasterCollection object.
+        =================     ====================================================================
+
+        :returns: A RasterCollection object
+
+        .. code-block:: python
+
+            # Usage Example: Creating a RasterCollection object from a Static STAC.
+
+            rc = RasterCollection.from_stac_catalog(stac_catalog=stac_catalog_url,
+                                                    attribute_dict={
+                                                                    "Name":"id",
+                                                                    "Sensor":"collection",
+                                                                    "StdTime":"datetime",
+                                                                    "Cloud Cover":"eo:cloud_cover",
+                                                                    "Extent":"bbox"
+                                                                   },
+                                                    gis=gis)
+
+        """
+        is_pystac_cat = False
+        if isinstance(stac_catalog, str):
+            if request_params is None:
+                request_params = {}
+            if not isinstance(request_params, dict):
+                raise RuntimeError('request_params should be of type dictionary')
+            if any(key in request_params for key in ['url', 'params', 'data', 'json']):
+                raise RuntimeError('request_params cannot contain these keys : url, params, data or json') 
+
+            data = _requests.get(stac_catalog, **request_params)
+            if data.status_code != 200 or data.headers.get('content-type') not in ['application/json', 'application/geo+json', 'application/json;charset=utf-8']:
+                raise RuntimeError(f"Invalid Response: Please verify that the stac_catalog URL is correct-\n{data.text}")
+                
+            json_data = data.json()
+
+            from ._util import _get_stac_links, _get_all_stac_catalog_items
+            if not _get_stac_links(json_data, 'item') and not _get_stac_links(json_data, 'child'):
+                raise RuntimeError(f"Invalid STAC catalog-\n{stac_catalog}")
+
+            items = _get_all_stac_catalog_items(json_data, request_params)
+        else:
+            try:
+                import pystac
+                items = stac_catalog.get_all_items()
+                is_pystac_cat = True
+            except ImportError:
+                raise ImportError("pystac not found, parameter stac_catalog accepts either a Static STAC URL or a pystac.Catalog object")
+            except Exception:
+                raise RuntimeError(f"Invalid/Unsupported STAC Catalog-\n{stac_catalog}")
+
+        rc_attribute_dict = {}
+        attribute_dict = {} if attribute_dict is None else attribute_dict
+        for key in attribute_dict:
+            if isinstance(attribute_dict[key], list):
+                rc_attribute_dict[key] = attribute_dict[key]
+            else:
+                rc_attribute_dict[key] = []
+        if 'Geometry' not in rc_attribute_dict:
+            rc_attribute_dict['Geometry'] = []
+
+        from ._util import _get_stac_metadata_file
+        raster_list = []
+        for item in items:
+            if is_pystac_cat:
+                item_dict = item.to_dict()
+            else:
+                item_dict = item
+
+            for key in attribute_dict:
+                if isinstance(attribute_dict[key], list):
+                    pass
+                else:
+                    if attribute_dict[key] in item_dict:
+                        rc_attribute_dict[key].append(item_dict[attribute_dict[key]])
+                    elif attribute_dict[key] in item_dict['properties']:
+                        rc_attribute_dict[key].append(item_dict['properties'][attribute_dict[key]])
+                    else:
+                        rc_attribute_dict[key].append(key)
+
+            metadata_file = _get_stac_metadata_file(item_dict)
+            if not metadata_file:
+                raise RuntimeError(f"STAC Item not supported-\n{item_dict}")
+
+            ras = Raster(metadata_file, gis=gis)
+            raster_list.append(ras)
+
+            if 'Geometry' not in attribute_dict:
+                coordinates = item_dict['geometry']['coordinates']
+                polygon_geometry = Geometry({
+                    "rings" : coordinates,
+                    "spatialReference" : {"wkid" : 4326} 
+                    })
+                rc_attribute_dict['Geometry'].append(polygon_geometry)
+
+        rc = RasterCollection(raster_list, rc_attribute_dict, context={"query_boundary" : False}, gis=gis)
+        return rc
 
     def filter_by(self, where_clause=None, query_geometry_or_extent=None, raster_query=None, context=None):
         """
