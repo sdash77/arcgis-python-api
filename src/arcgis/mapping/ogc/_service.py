@@ -1,72 +1,40 @@
+import os, copy
+from typing import Dict, List, Any, Union, Iterator
+import pandas as pd
 from arcgis.gis import GIS
+from arcgis.geometry import Geometry
 from arcgis import env as _env
 from arcgis._impl.common._isd import InsensitiveDict
 from functools import lru_cache
-class OGCFeatureService:
-    """
-    Represents the Hosted OGC Feature Server
-    """
-    _gis = None
-    _url = None
-    _properties = None
-    
-    def __init__(self, url, gis=None):
-        """Constructor"""
-        assert str(url).lower().endswith("ogcfeatureserver")
-        if gis is None:            
-            gis = _env.active_gis or GIS()
-        self._gis = gis
-        self._url = url
-        
-    @property
-    def properties(self):
-        """returns the service properties"""
-        params = {'f' : 'json'}
-        try:
-            res = self._gis._con.get(self._url, params)
-            return InsensitiveDict(res)
-        except:
-            res = self._gis._con.post(self._url, params)
-            return InsensitiveDict(res)
-    
-    
-    @property
-    @lru_cache(maxsize=100)
-    def conformance(self) -> dict:
-        """
-        Provides the API conformance with the OGC standard.
-        
-        :returns: dict
-        """
-        url = f"{self._url}/conformance" 
-        params = {'f' : 'json'}
-        return self._con.get(url, params)
-    
-    @property
-    def collections(self):
-        """
-        returns the OGC feature service layers within the collection
-        
-        :returns: List[OGCCollection]
-        """
-        ...
-    
+###########################################################################
 class OGCCollection:
     """
+    Represents a single OGC dataset
+    
+    ================  ===============================================================================
+    **Argument**      **Description**
+    ----------------  -------------------------------------------------------------------------------
+    url               Required String. The web address endpoint.
+    ----------------  -------------------------------------------------------------------------------
+    gis               Optional GIS. The connection object.
+    ================  ===============================================================================
+    
     """
     _gis = None
     _url = None
     _properties = None
-    def __init__(self, url, gis=None):
+    
+    # ---------------------------------------------------------------------
+    def __init__(self, url:str, gis:GIS=None) -> "OGCCollection":
         """Constructor"""
-        assert str(url).lower().endswith("ogcfeatureserver")
+        assert str(url).lower().find("ogcfeatureserver") > -1 and os.path.basename(url).isdigit()
         if gis is None:            
             gis = _env.active_gis or GIS()
         self._gis = gis
         self._url = url
-        
+    # ---------------------------------------------------------------------
     @property
-    def properties(self):
+    def properties(self) -> InsensitiveDict:
         """returns the service properties"""
         params = {'f' : 'json'}
         try:
@@ -75,22 +43,162 @@ class OGCCollection:
         except:
             res = self._gis._con.post(self._url, params)
             return InsensitiveDict(res)        
+    # ---------------------------------------------------------------------
+    def _process_row(self, feature:Dict[str, Any]) -> Dict[str, Any]:
+        """Converts the GeoJSON Geometry to Esri JSON and format the row accordingly"""
+        row = {"SHAPE": Geometry(feature["geometry"]) if feature["geometry"] else None}                            
+        row.update(feature['properties'])
+        return row        
+    # ---------------------------------------------------------------------    
+    def query(self, 
+              query:str=None, 
+              limit:int=10000,
+              bbox:List[float]=None,
+              bbox_sr:int=None,
+              time_file:str=None,
+              return_all=False,
+              **kwargs) -> Union[Dict[str, Any], pd.DataFrame]:
+        """
+        Queries the OGC Feature Service Layer and Returns back the information as a Spatially Enabled DataFrame.
         
-    def query(self, **kwargs):
-        """"""
-        ...
-    
-    def get(self, feature_id:int) -> dict:
+        :returns: Pandas' DataFrame
+        """
+        url = f"{self._url}/items"
+        params = {
+            'f' : 'json'
+        }
+        if query:
+            params['filter'] = query
+        if isinstance(limit, int) and \
+           limit >= 0:
+            params['limit'] = limit
+        if bbox and bbox_sr:
+            params['bbox'] = bbox
+            params['bbox-crs'] = bbox_sr
+        if kwargs.get('crs', None):
+            params['crs'] = kwargs.pop('crs')
+        params['offset'] = kwargs.pop('offset', 0)
+        for k,v in kwargs.items():
+            params[k] = v
+        as_dict = kwargs.pop('as_dict', False)
+        if as_dict == False: # returns all records as sedf
+            res = self._gis._con.get(url, params)
+            if len(res['features']) == 0:
+                return pd.DataFrame([])
+            results = [self._process_row(feature) for feature in res['features'] if feature]
+            params['offset'] += limit
+            while True:
+                res = self._gis._con.get(url, params)
+                if res['numberReturned'] == 0:
+                   
+                    break
+                elif (return_all == False and len(results) >= limit):
+                    results = results[:limit]
+                    break
+                elif res['numberReturned'] < limit:
+                    r1 = [self._process_row(feature) for feature in res['features'] if feature]
+                    results.extend(r1)
+                    break
+                else:
+                    r1 = [self._process_row(feature) for feature in res['features'] if feature]
+                    results.extend(r1)
+                params['offset'] += limit
+            df = pd.DataFrame(results)
+            df.spatial.name
+            return df
+        else:
+            results = self._gis._con.get(url, params)
+            if len(results['features']) == 0:
+                return results
+            res = copy.deepcopy(results)
+            params['offset'] += limit
+            while res['numberReturned'] > 0:
+                res = self._gis._con.get(url, params)
+                results['features'].extend(res['features'])
+                if results['numberReturned'] == 0:   
+                    break
+                elif (return_all == False and len(results['features']) >= limit):
+                    results['features'] = results['features'][:limit]
+                    break
+                elif res['numberReturned'] < limit:
+                    break
+                params['offset'] += limit
+            return results        
+        return {}
+            
+    # ---------------------------------------------------------------------
+    def get(self, feature_id:int) -> Dict[str, Any]:
         """
         Gets an individual feature on the service
+        
+        :returns: Dict[str, Any]
         """
-        ...
-    
+        assert isinstance(feature_id, int)
+        url = f"{self._url}/items/{feature_id}"
+        params = {'f' : 'json'}
+        return self._gis._con.get(url, params)
 
-if __name__ == "__main__":
-    url = "https://servicesdev.arcgis.com/01ClFLufh9nZafWR/ArcGIS/rest/services/TRAN_Alaska_State_Shape/OGCFeatureServer"
-    ogc = OGCFeatureService(url=url)
-    print(ogc.properties)
-    #https://servicesdev.arcgis.com/01ClFLufh9nZafWR/ArcGIS/rest/services/TRAN_Alaska_State_Shape/OGCFeatureServer/api?f=html#/Features/getFeature
-    # query
-    # 
+###########################################################################
+class OGCFeatureService:
+    """
+    Represents the Hosted OGC Feature Server
+    
+    ================  ===============================================================================
+    **Argument**      **Description**
+    ----------------  -------------------------------------------------------------------------------
+    url               Required String. The web address endpoint.
+    ----------------  -------------------------------------------------------------------------------
+    gis               Optional GIS. The connection object.
+    ================  ===============================================================================
+    
+    """
+    _gis = None
+    _url = None
+    _properties = None
+    # ---------------------------------------------------------------------
+    def __init__(self, url, gis=None) -> "OGCFeatureService":
+        """Constructor"""
+        assert str(url).lower().endswith("ogcfeatureserver")
+        if gis is None:            
+            gis = _env.active_gis or GIS()
+        self._gis = gis
+        self._url = url
+    # ---------------------------------------------------------------------
+    @property
+    def properties(self) -> InsensitiveDict:
+        """returns the service properties"""
+        params = {'f' : 'json'}
+        if self._properties is None:            
+            try:
+                res = self._gis._con.get(self._url, params)
+                self._properties = InsensitiveDict(res)
+            except:
+                res = self._gis._con.post(self._url, params)
+                self._properties = InsensitiveDict(res)
+        return self._properties
+    # ---------------------------------------------------------------------
+    @property
+    @lru_cache(maxsize=100)
+    def conformance(self) -> Dict[str, Any]:
+        """
+        Provides the API conformance with the OGC standard.
+        
+        :returns: Dict[str, Any]
+        """
+        url = f"{self._url}/conformance" 
+        params = {'f' : 'json'}
+        return self._gis._con.get(url, params)
+    # ---------------------------------------------------------------------
+    @property
+    def collections(self) -> Iterator[OGCCollection]:
+        """
+        Yields all the OGC Feature Service Layers within the service.
+        
+        :returns: Iterator[OGCCollection]
+        """
+        url = f"{self._url}/collections"
+        params = {'f' : 'json'}
+        for idx, lyr in enumerate(self._gis._con.get(url, params)['collections']):
+            service_url = f"{url}/{lyr['id']}"
+            yield OGCCollection(url=service_url, gis=self._gis)
+            
