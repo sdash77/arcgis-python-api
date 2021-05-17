@@ -277,7 +277,7 @@ class KubeOrgFederations():
     def __init__(self,
                  url:str,
                  gis:"GIS"
-                 ) -> "KuberOrgFederations":
+                 ) -> "KubeOrgFederations":
         self._url = url
         self._gis = gis
         self._con = gis._con
@@ -298,6 +298,18 @@ class KubeOrgFederations():
         if self._properties is None:
             self._properties = self._con.get(self._url, {'f' : 'json'})
         return self._properties
+
+    @property
+    def servers(self):
+        """
+        This resource returns detailed information about the ArcGIS Servers
+        federated with ArcGIS on Kubernetes. Information such as the ID and
+        name of the server, ArcGIS Web Adaptor URL, administration URL, and
+        role of the server.
+        """
+        url = f"{self._url}/servers"
+        params = {"f": "json"}
+        return self._con.get(path=url, params=params)
 
 
 ###########################################################################
@@ -437,7 +449,7 @@ class KubeOrganizations():
                 url:str,
                 gis:"GIS",
                 initialize:bool=True
-                ) -> "KuberOrganizations":
+                ) -> "KubeOrganizations":
         """
         Kubernetes Organization
         """
@@ -493,10 +505,9 @@ class KubeOrganizations():
     @property
     def orgs(self) -> tuple:
         """
-        Returns a list of registerd organizations with the Kubernetes deployment
+        Returns a list of registered organizations with the Kubernetes deployment
 
         :returns: tuple
         """
-        return tuple([KubeOrganization(url=f"{self._url}/{org}",
-                                 gis=self._gis)\
-                for org in self.properties['organizations']])
+        return tuple([KubeOrganization(url=f"{self._url}/{org}", gis=self._gis)
+                      for org in self.properties['organizations']])
