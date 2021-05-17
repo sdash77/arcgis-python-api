@@ -19,6 +19,7 @@ class AGOLAdminManager(object):
     :param metadata: the metadata manager object (optional)
     :param collaborations: the CollaborationManager object (optional)
     """
+    _con = None
     _gis = None
     _ux = None
     _idp = None
@@ -40,6 +41,7 @@ class AGOLAdminManager(object):
                  collaborations=None):
         """initializer"""
         self._gis = gis
+        self._con = gis._con
         self._ux = ux
         self._collaborations = collaborations
         self._metadata = metadata
@@ -218,6 +220,52 @@ class AGOLAdminManager(object):
                                                               self._gis.properties.id),
                                       params={'f': 'json'})
         return res
+    #----------------------------------------------------------------------
+    def scheduled_tasks(self, item:"Item"=None, active:bool=None, user:"User"=None, types:str=None):
+        """
+        This property allows `org_admins` to be able to see all scheduled tasks on the enterprise
+
+        ================  ===============================================================================
+        **Argument**      **Description**
+        ----------------  -------------------------------------------------------------------------------
+        item              Optional Item. The item to query tasks about.
+        ----------------  -------------------------------------------------------------------------------
+        active            Optional Bool. Queries tasks based on active status.
+        ----------------  -------------------------------------------------------------------------------
+        user              Optional User. Search for tasks for a single user.
+        ----------------  -------------------------------------------------------------------------------
+        types             Optional String. The type of notebook execution for the item.  This can be
+                          `ExecuteNotebook`, or `UpdateInsightsWorkbook`.
+        ================  ===============================================================================
+
+
+        :returns: List of Tasks
+
+        """
+        _tasks = []
+        num = 100
+        url = f"{self._gis._portal.resturl}portals/self/allScheduledTasks"
+        params = {'f' : 'json', 'start' : 1, 'num' : num }
+        if item:
+            params['itemId'] = item.itemid
+        if not active is None:
+            params['active'] = active
+        if user:
+            params['userFilter'] = user.username
+        if types:
+            params['types'] = types
+        res = self._con.get(url, params)
+        start = res['nextStart']
+        _tasks.extend(res['tasks'])
+        while start != -1:
+            params['start'] = start
+            params['num'] = num
+            res = self._con.get(url, params)
+            if len(res['tasks']) == 0:
+                break
+            _tasks.extend(res['tasks'])
+            start = res['nextStart']
+        return _tasks    
     #----------------------------------------------------------------------
     def history(self, 
                 start_date, 
