@@ -75,7 +75,7 @@ class OGCCollection:
         time_filter       Optional String. The dates to filter time by.
         ================  ===============================================================================
         
-        :returns: Pandas' DataFrame
+        :returns: Union[Dict[str, Any], pd.DataFrame]
         """
         url = f"{self._url}/items"
         params = {
