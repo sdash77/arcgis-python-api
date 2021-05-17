@@ -55,11 +55,25 @@ class OGCCollection:
               limit:int=10000,
               bbox:List[float]=None,
               bbox_sr:int=None,
-              time_file:str=None,
+              time_filter:str=None,
               return_all=False,
               **kwargs) -> Union[Dict[str, Any], pd.DataFrame]:
         """
         Queries the OGC Feature Service Layer and Returns back the information as a Spatially Enabled DataFrame.
+        
+        ================  ===============================================================================
+        **Argument**      **Description**
+        ----------------  -------------------------------------------------------------------------------
+        query             Optional String. A SQL based query applied to the service.
+        ----------------  -------------------------------------------------------------------------------
+        limit             Optional Integer. The number of records to limit to.  The default is 10,000.
+        ----------------  -------------------------------------------------------------------------------
+        bbox              Optional List[float]. The bounding box to limit search in.
+        ----------------  -------------------------------------------------------------------------------
+        bbox_sr           Optional Integer. The coordinate reference system as a WKID.
+        ----------------  -------------------------------------------------------------------------------
+        time_filter       Optional String. The dates to filter time by.
+        ================  ===============================================================================
         
         :returns: Pandas' DataFrame
         """
@@ -78,6 +92,8 @@ class OGCCollection:
         if kwargs.get('crs', None):
             params['crs'] = kwargs.pop('crs')
         params['offset'] = kwargs.pop('offset', 0)
+        if time_filter:
+            params['datetime'] = time_filter
         for k,v in kwargs.items():
             params[k] = v
         as_dict = kwargs.pop('as_dict', False)
