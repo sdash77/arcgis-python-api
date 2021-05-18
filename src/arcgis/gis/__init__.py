@@ -7870,7 +7870,9 @@ class User(dict):
         ---------------------  ---------------------------------------------------------
         new_security_answer    Optional string. The new security question answer if desired.
         ---------------------  ---------------------------------------------------------
-        reset_by_email         Optional Boolean.  If True, the `user` will be reset by email. The default is False.
+        reset_by_email         | Optional Boolean.  If True, the `user` will be reset by email. The default is False.
+
+                               **NOTE:** Not available with ArcGIS on Kubernetes.
         =====================  =========================================================
 
         :return:
