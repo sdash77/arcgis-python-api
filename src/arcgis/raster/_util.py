@@ -11,6 +11,8 @@ from arcgis.geometry import Geometry  as _Geometry
 import numbers
 import time
 import os
+from urllib.parse import urljoin
+import requests
 
 
 import logging as _logging
@@ -480,7 +482,7 @@ def _generate_direct_access_url(gis=None, expiration=None):
     """helper fn to get the direct access url for azure storage"""
     gis = _arcgis.env.active_gis if gis is None else gis
     url = "%s/sharing/rest/content/users/%s/generateDirectAccessUrl" % (gis._portal.url,
-                                                                 gis._username)
+                                                                 gis.users.me.username)
     params = {"f" : "json", "storeType":"rasterStore"}
     if expiration is not None:
         params.update({"expiration":expiration})
@@ -805,3 +807,72 @@ def _get_extent(extdict=None):
         return outext, extsr
     except:
         return outext, extsr
+
+def _get_stac_metadata_file(item):
+    """
+    This method is used to retrieve the metadata file of a valid STAC item.
+    :param item: input STAC Item (JSON dictionary)
+    :return string (URL of the STAC Item metadata file)
+    """
+    if 'metadata' in item['assets']:
+        href = item['assets']['metadata']['href']
+        return href
+    elif 'MTL' in item['assets']:
+        href = item['assets']['MTL']['href']
+        return href
+    elif 'data' in item['assets']:
+        data_href = item['assets']['data']['href']
+        mtl_file = item['id'] + '_MTL.txt'
+        href = data_href.replace('index.html', mtl_file)
+        return href
+    else:
+        links = item['links']
+        for i in range(len(links)):
+            if links[i]['rel'] == 'metadata':
+                href = links[i]['href']
+                return href
+        return None
+
+def _get_stac_links(stac_json, rel):    
+    """
+    This method is used to retrieve all the links matching the specified relation type from a STAC Item or Catalog.
+    :param stac_json: input STAC Item or Catalog (JSON dictionary).
+    :param rel: relationship type used to filter  the links.
+    :return list (of URLs matching the rel filter)
+    """
+    if 'links' not in stac_json:
+        raise RuntimeError(f"Invalid STAC Item/Catalog-\n{stac_json}")
+    links = stac_json['links']
+    rel_links = [l for l in links if l['rel'] == rel]
+    link_hrefs = [l['href'] for l in rel_links]
+    
+    all_links=[]
+    for l in link_hrefs:
+        if l.startswith('http'):
+            link = l
+        else:
+            link = urljoin(os.path.dirname(stac_json['links'][0]['href']) + '/', l)
+        all_links.append(link)
+    return all_links
+
+def _get_all_stac_catalog_items(stac_json, request_params={}):
+    """
+    This method is used to get all items from a STAC catalog and all its subcatalogs. Will traverse any subcatalogs recursively.
+    :param stac_json: input Static STAC (Catalog - JSON dictionary)
+    :param request_params: requests.get() method parameters used for the STAC Item and Catalog requests (passed through the RasterCollection.from_stac_catalog() method call).
+    :return generator (of all items retrived in the Catalog)
+    """
+    for item_link in _get_stac_links(stac_json, 'item'):
+        item_res = requests.get(item_link, **request_params)
+        if item_res.status_code != 200 or item_res.headers.get('content-type') not in ['application/json', 'application/geo+json', 'application/json;charset=utf-8']:
+            raise RuntimeError(f"Invalid STAC Item-\n{item_res.text}")
+        item_json = item_res.json()
+        yield item_json
+    
+    children = _get_stac_links(stac_json, 'child')
+    for child in children:
+        child_res = requests.get(child, **request_params)
+        if child_res.status_code != 200 or child_res.headers.get('content-type') not in ['application/json', 'application/geo+json', 'application/json;charset=utf-8']:
+            raise RuntimeError(f"Invalid STAC Catalog-\n{child_res.text}")
+        child_json = child_res.json()
+        yield from _get_all_stac_catalog_items(child_json, request_params)

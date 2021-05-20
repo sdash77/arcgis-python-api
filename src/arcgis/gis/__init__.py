@@ -699,6 +699,29 @@ class GIS(object):
             return arcgis.apps.hub.Hub(self)
         else:
             raise Exception("Hub is currently only compatible with ArcGIS Online.")
+    
+    @_lazy_property
+    def notebook_server(self) -> "List[NotebookServer]":
+        """
+        Provide access to the Notebook Server registerd with the organization or enterprise.
+        
+        :returns: List[`NotebookServer`] 
+        """
+        if self._portal.is_arcgisonline:
+            urls = self._registered_servers()
+            url = urls.get("urls", {}).get("notebooks", {}).get("https", None)
+            if url:
+                from arcgis.gis.nb import NotebookServer
+                url = f"https://{url[0]}/admin"
+                return [NotebookServer(url=url, gis=self)]
+        else:
+            try:
+                from arcgis.gis.nb import NotebookServer
+                return [server for server in self.admin.servers.list() \
+                           if isinstance(server, NotebookServer)]
+            except:
+                return []
+        return []
 
     @property
     def datastore(self):
@@ -826,7 +849,10 @@ class GIS(object):
     def _registered_servers(self):
         """returns servers registered with enterprise/portal"""
         params = {'f' : 'json'}
-        url = f"{self._portal.resturl}portals/self/servers"
+        if self._portal.is_arcgisonline == False:
+            url = f"{self._portal.resturl}portals/self/servers"
+        else:
+            url = f"{self._portal.resturl}portals/self/urls"
         return self._con.get(url, params=params)
     #----------------------------------------------------------------------
     @property
@@ -2940,7 +2966,8 @@ class UserManager(object):
                           Other possible values are org_publisher, org_admin, org_viewer.
         ----------------  -------------------------------------------------------------------------------
         level             Optional string. The account level. The default is 2.
-                          See http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm
+                          See `User types, roles, and privileges <http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm>`_
+                          for full details.
         ----------------  -------------------------------------------------------------------------------
         provider          Optional string. The provider for the account. The default value is arcgis.
                           The other possible value is enterprise.
@@ -3276,8 +3303,9 @@ class UserManager(object):
             A few things that will be helpful to know.
 
             1. The query syntax has quite a few features that can't
-               be adequately described here.  Please refer the ArcGIS REST
-               API reference from here: https://developers.arcgis.com/rest/users-groups-and-items/group-search.htm.
+               be adequately described here.  Please refer to the ArcGIS REST
+               API `Search Reference <https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm>`_
+               for details on the search engine used with this method.
 
             2. Searching without specifying a query parameter returns
                a list of all users in your organization.
@@ -4677,7 +4705,7 @@ class ContentManager(object):
         =================  =====================================================================
 
         :return:
-             The item for the service if successfully created, None if unsuccessful.
+             The :class:`~arcgis.gis.Item` for the service if successfully created, None if unsuccessful.
         """
         if capabilities is None:
             if service_type == 'imageService':
@@ -4899,8 +4927,9 @@ class ContentManager(object):
             A few things that will be helpful to know...
 
             1. The query syntax has many features that can't be adequately
-               described here.  The query syntax is available in ArcGIS Help.
-               A short version of that URL is http://bitly.com/1fJ8q31.
+               described here.  Please see the ArcGIS REST API `Search
+               Reference <https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm>`_
+               for full details on search engine used with this method.
 
             2. Most of the time when searching for items, you'll want to
                search within your organization in ArcGIS Online
@@ -4914,8 +4943,8 @@ class ContentManager(object):
         ----------------  --------------------------------------------------------------------------
         query             Required string. A query string.  See notes above.
         ----------------  --------------------------------------------------------------------------
-        item_type         Optional string. Set type of item to search.
-                          https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm
+        item_type         Optional string. The type of item to search. See `Items and item types <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm>`_
+                          for comprehensive list of values (the type column).
         ----------------  --------------------------------------------------------------------------
         sort_field        Optional string. Valid values can be title, uploaded, type, owner, modified,
                           avgRating, numRatings, numComments, and numViews.
@@ -4937,7 +4966,7 @@ class ContentManager(object):
         ================  ==========================================================================
 
         :return:
-            A list of items matching the specified query.
+            A list of :class:`items <arcgis.gis.Item>` matching the specified query.
         """
         if max_items > 10000:
             raise Exception(("Use `advanced_search` fo"
@@ -5399,8 +5428,8 @@ class ContentManager(object):
 
 
         :return:
-           A feature collection or feature layer that can be used for analysis,
-           visualization, or published to the GIS as an item.
+           A :class:`feature collection <arcgis.features.FeatureCollection>` or :class:`feature layer <arcgis.features.FeatureLayer>`
+           that can be used for analysis, visualization, or published to the GIS as an :class:`~arcgis.gis.Item`.
         """
         if item_id and self._gis.version <= [7,1]:
             item_id = None
@@ -8549,7 +8578,8 @@ class Item(dict):
     """
 
     _uid = None
-
+    _snapeshots = None
+    
     def __init__(self, gis, itemid, itemdict=None):
         dict.__init__(self)
         self._portal = gis._portal
@@ -8574,7 +8604,35 @@ class Item(dict):
             self.tables = None
             self['layers'] = None
             self['tables'] = None
-
+    #----------------------------------------------------------------------
+    @property
+    def snapshots(self) -> list:
+        """
+        Provides access to the Notebook Item's Snapshots. If the user is not
+        the owner of the `Item`, the snapshots will be an empty list.
+        
+        :returns: List[SnapShot]
+        """
+        if self._is_notebook and \
+           self._gis.notebook_server and \
+           self.owner == self._gis.users.me.username and \
+           len(self._gis.notebook_server) > 0:
+            nbs = self._gis.notebook_server[0]
+            return nbs.notebooks.snapshots.list(self)
+        return []
+    #----------------------------------------------------------------------
+    @_lazy_property
+    def _is_notebook(self) -> bool:
+        return self.type.lower() == "notebook"
+    #----------------------------------------------------------------------
+    @_lazy_property
+    def _get_nbs_server(self):        
+        urls = self._gis._registered_servers()
+        if self._gis._portal.is_arcgisonline:
+            return urls
+        else:
+            return urls
+    #----------------------------------------------------------------------
     @_lazy_property
     def resources(self):
         """
