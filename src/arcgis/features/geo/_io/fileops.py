@@ -5,7 +5,7 @@ import io
 import os
 import sys
 import uuid
-from pathlib import Path
+from pathlib import Path, PurePath
 import shutil
 import datetime
 import ujson as _ujson
@@ -466,6 +466,10 @@ def from_featureclass(filename, **kwargs):
     import json
 
     filename = _ensure_path_string(filename)
+    if not isinstance(filename, (str, Path, PurePath)):
+        raise ValueError(
+            f"filename must be a `str`, `Path`, or `PurePath`, not {type(filename)}"
+        )
     if filename.find("http://") > -1 or filename.find("https://") > -1:
         res = from_url(url=filename)
         if len(res) == 1:
