@@ -34,6 +34,54 @@ class TestWorkflowManager(unittest.TestCase):
 
     def create_diagram(self):
         uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+        return self.connection.workflow_manager.create_diagram(
+            name='Test New Diagram123 ' + uniqueness,
+            display_grid=True,
+            description='Test Description',
+            active=True,
+            annotations=[
+                {
+                    "position": "0,0,100,250",
+                    "color": "130, 202, 237",
+                    "outlineColor": "130, 202, 237",
+                    "labelColor": "black",
+                    "text": "test annotations"
+                }
+            ],
+            data_sources=[
+                {
+                    "name": "dsource",
+                    "url": "string",
+                    "sourceType": "string"
+                }
+            ],
+            steps=[{'action': {'actionType': 'Manual'},
+                    'automatic': False,
+                    'canSkip': False,
+                    'color': '130, 202, 237',
+                    'description': 'Start and end of a workflow',
+                    'helpText': 'Start/End help text',
+                    'helpUrl': 'Start/End help url',
+                    'id': '1640baf9-f934-fd12-2b62-af6bfc2d0e87',
+                    'labelColor': 'black',
+                    'name': 'Start/End',
+                    'outlineColor': '130, 202, 237',
+                    'paths': [{'assignedType': 'Unassigned',
+                               'lineColor': 'black',
+                               'nextStep': '21bff5ee-1586-a635-30ea'
+                                           '-86769f01ac93',
+                               'notifications': [],
+                               'points': [{'x': 0, 'y': 26},
+                                          {'x': 0, 'y': 74}],
+                               'ports': ['BOTTOM', 'TOP']}],
+                    'position': '0,0,100,50',
+                    'proceedNext': True,
+                    'shape': 3,
+                    'stepTemplateId': 'AVw8d6MdyiKjHtuS9dJ6'}]
+        )
+
+    def create_diagram_robust(self):
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
         d_id = uniqueness[0:22]
         return self.connection.workflow_manager.create_diagram(
             name='Test New Diagram123 ' + uniqueness,
@@ -464,6 +512,56 @@ class TestWorkflowManager(unittest.TestCase):
                                                             )
         except Exception as testException:
             assert True, "Expected error returned during test: " + testException.__str__()
+
+    # endregion
+
+    # region Assignable
+
+    def test_get_assignable_users(self):
+        # Act
+        assignable_users = self.connection.workflow_manager.assignable_users
+
+        # Assertions
+        self.assertIsInstance(assignable_users, list, "Incorrect return type")
+        self.assertEqual(len(assignable_users), 1, "Incorrect number of items downloaded")
+        self.assertIsInstance(assignable_users[0], dict, "Incorrect type")
+
+    def test_get_valid_assignable_users(self):
+        # Arrange
+        valid_assignable_user = {'email': 'admin@mydomain.com', 'fullName': 'Administrator', 'username': 'admin'}
+
+        # Act
+        assignable_users = self.connection.workflow_manager.assignable_users
+
+        # Assert
+        self.assertIsInstance(assignable_users, list, "Incorrect return type")
+        self.assertEqual(len(assignable_users), 1, "Incorrect number of items downloaded")
+        self.assertIsInstance(assignable_users[0], dict, "Incorrect type")
+
+    def test_get_assignable_groups(self):
+        # Act
+        assignable_groups = self.connection.workflow_manager.assignable_groups
+
+        # Assertions
+        self.assertIsInstance(assignable_groups, list, "Incorrect return type")
+        self.assertEqual(len(assignable_groups), 1, "Incorrect number of items downloaded")
+        self.assertIsInstance(assignable_groups[0], dict, "Incorrect type")
+
+    def test_get_valid_assignable_groups(self):
+        # Arrange
+        default_group_name = 'Workflow Manager Admin ' + self.connection.item_name
+
+        # Act
+        groups = self.connection.workflow_manager.assignable_groups
+        found_group = [x for x in groups if x['title'] == default_group_name]
+        pprint(groups)
+        print(default_group_name)
+
+        # Assert
+        self.assertIsInstance(groups, list, "Incorrect return type")
+        self.assertEqual(len(groups), 1, "Incorrect number of items downloaded")
+        self.assertIsInstance(groups[0], dict, "Incorrect type")
+        self.assertTrue(found_group, 'Does not contain default group')
 
     # endregion
 
@@ -1106,7 +1204,7 @@ class TestWorkflowManager(unittest.TestCase):
         # Arrange
         job_id = self.create_job()[0]
         job = self.connection.workflow_manager.jobs.get(job_id)
-        a = vars(job).keys()
+        a = job.location
         job.priority = 'Updated'
 
         # Act
@@ -1119,7 +1217,7 @@ class TestWorkflowManager(unittest.TestCase):
     def test_update_job_with_extended_properties_successfully_returns(self):
         # Arrange
         job_id = self.create_job_robust()[0]
-        job = self.connection.workflow_manager.jobs.get(job_id, True)
+        job = self.connection.workflow_manager.jobs.get(job_id)
         job.priority = 'Updated'
         delattr(job, "related_properties")
         delattr(job, "extended_properties")
@@ -1134,7 +1232,7 @@ class TestWorkflowManager(unittest.TestCase):
     def test_update_job_with_updated_extended_properties_successfully_returns(self):
         # Arrange
         job_id = self.create_job_robust()[0]
-        job = self.connection.workflow_manager.jobs.get(job_id, True)
+        job = self.connection.workflow_manager.jobs.get(job_id)
         job.priority = 'Updated'
 
         table_name = job.extended_properties[0]["tableName"]
@@ -1159,7 +1257,7 @@ class TestWorkflowManager(unittest.TestCase):
     def test_update_job_with_updated_extended_properties_with_domain_successfully_returns(self):
         # Arrange
         job_id = self.create_job_robust()[0]
-        job = self.connection.workflow_manager.jobs.get(job_id, True)
+        job = self.connection.workflow_manager.jobs.get(job_id)
         job.priority = 'Updated'
 
         table_name = job.extended_properties[0]["tableName"]
@@ -1766,6 +1864,16 @@ class TestWorkflowManager(unittest.TestCase):
         self.assertIsInstance(actual, str, "Incorrect return type")
         self.assertEqual(len(actual), 22, "Incorrect size")
 
+    def test_create_diagram_with_Custom_Id_successfully_returns(self):
+        # Arrange
+
+        # Act
+        actual = self.create_diagram_robust()
+
+        # Assert
+        self.assertIsInstance(actual, str, "Incorrect return type")
+        self.assertEqual(len(actual), 22, "Incorrect size")
+
     def test_create_diagram_returns_error(self):
         # Arrange
 
@@ -1917,11 +2025,28 @@ class TestWorkflowManager(unittest.TestCase):
     # region Get Table Definitions
 
     def test_table_definitions_returns_successfully(self):
+        # Arrange
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+
+        template_name = 'Testing Template  ' + uniqueness
+        table_name = 'testing_table_' + uniqueness
+
+        # Create Job Template with specific table
+        self.create_job_template_robust(template_name=template_name, table_name=table_name)
+
+
         # Act
         actual = self.connection.workflow_manager.table_definitions
+        contains_table = False
+        for table in actual:
+            b = table['tableName']
+            if table['tableName'] == table_name:
+                contains_table = True
+                break
 
         # Assert
         self.assertIsInstance(actual, list, "Incorrect return type")
+        self.assertTrue(contains_table, "Incorrect return type")
 
     # endregion
 

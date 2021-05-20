@@ -116,11 +116,8 @@ class WorkflowManagerAdmin:
         """
 
         url = '{base}/admin/{id}/upgrade?token={token}'.format(base=self._url, id=id, token=self._gis._con.token)
-        params = {
-            'itemId': id
-        }
         return_obj = json.loads(
-            self._gis._con.post(url, params=params, try_json=False, add_token=False, json_encode=False,
+            self._gis._con.post(url, try_json=False, add_token=False, json_encode=False,
                                 post_json=True))
         if 'error' in return_obj:
             self._gis._con._handle_json_error(return_obj['error'], 0)
@@ -353,7 +350,7 @@ class JobManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def get(self, id, get_ext_props=False):
+    def get(self, id, get_ext_props=True):
         """
         Returns an active job with the given ID
 
@@ -694,6 +691,39 @@ class WorkflowManager:
                                                   'users']).encode(
                 'cp850', 'replace').decode('utf-8'))
             return_array = [self.user(u['username']) for u in user_array]
+            return return_array
+        except:
+            self._handle_error(sys.exc_info())
+
+    @property
+    def assignable_users(self):
+        """
+        Get all assignable users for a user in the workflow system
+
+        :return: A list of the assignable user objects
+        """
+        try:
+            user_array = ast.literal_eval(str(self._gis._con.get('{base}/community/users'.format(base=self._url),
+                                                           params={"token": self._gis._con.token})['users']).encode(
+                'cp850', 'replace').decode('utf-8'))
+            return_array = [self.user(u['username']) for u in user_array if u['isAssignable']]
+            return return_array
+        except:
+            self._handle_error(sys.exc_info())
+
+    @property
+    def assignable_groups(self):
+        """
+        Get portal groups associated with Workflow Manager roles, to which the current user
+        can assign work based on their Workflow Manager assignment privileges.
+
+        :return: A list of the assignable group objects
+        """
+        try:
+            group_array = ast.literal_eval(str(self._gis._con.get('{base}/community/groups'.format(base=self._url),
+                                                           params={"token": self._gis._con.token})['groups']).encode(
+                'cp850', 'replace').decode('utf-8'))
+            return_array = [self.group(g['id']) for g in group_array if g['isAssignable']]
             return return_array
         except:
             self._handle_error(sys.exc_info())
@@ -1197,7 +1227,7 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def create_saved_search(self, name, folder=None, definition=None, search_type=None, color_ramp=None,
+    def create_saved_search(self, name, search_type, folder=None, definition=None, color_ramp=None,
                             sort_index=None, search_id=None):
         """
         Create a saved search or chart by specifying the search parameters in the json body.
@@ -1209,11 +1239,11 @@ class WorkflowManager:
         ---------------     --------------------------------------------------------------------
         name                Required. The display name for the saved search or chart.
         ---------------     --------------------------------------------------------------------
+        search_type         The type for the saved search or chart. The accepted values are Standard, Chart and All.
+        ---------------     --------------------------------------------------------------------
         folder              Optional. The folder the saved search or chart will be categorized under.
         ---------------     --------------------------------------------------------------------
-        definition          Required if the searchType is Standard. The search definition to be saved. For details on search definition syntax, see Search for jobs in the system.
-        ---------------     --------------------------------------------------------------------
-        search_type         Optional. The type for the saved search or chart. The accepted values are Standard, Chart and All. If not defined, the default search type is Standard.
+        definition          Required if the searchType is Standard. The search definition to be saved.
         ---------------     --------------------------------------------------------------------
         color_ramp          Required if the searchType is Chart. The color ramp for the saved chart.
         ---------------     --------------------------------------------------------------------
