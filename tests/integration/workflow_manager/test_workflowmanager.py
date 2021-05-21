@@ -3,6 +3,7 @@ import datetime
 from tests.integration.workflow_manager.workflowmanager_setup import WorkflowManagerSetup
 import re
 from pprint import pprint
+from arcgis.geometry import Geometry
 
 
 ###########################################################################
@@ -1390,18 +1391,18 @@ class TestWorkflowManager(unittest.TestCase):
 
         default_job_location = {'geometry': '{}',
                                 'geometry_type': 'None'}
-        new_location = {"geometryType": "Polygon",
+        new_location = {'geometryType': 'Polygon',
                         "geometry": "{\"rings\":[[[-6848757.734349992,3330625.6782390587],"
                                     "[-2256822.369376309,6774572.424655061],"
                                     "[-2935181.886149995,1973920.9766344912],"
                                     "[-6848757.734349992,3330625.6782390587]]],"
                                     "\"spatialReference\":{\"latestWkid\":3857,\"wkid\":102100}}"}
+        geo = Geometry(new_location['geometry'])
 
         # Act
         job_location = self.connection.workflow_manager.jobs.get(test_id).location
-        actual = self.connection.workflow_manager.jobs.set_job_location(test_id, new_location)
+        actual = self.connection.workflow_manager.jobs.set_job_location(test_id, geo)
         new_job_location = self.connection.workflow_manager.jobs.get(test_id).location
-        a = vars(new_job_location)
 
         # Assert
         self.assertEqual(default_job_location['geometry_type'], str(job_location.geometry_type),
@@ -1416,17 +1417,18 @@ class TestWorkflowManager(unittest.TestCase):
 
         default_job_location = {'geometry': '{}',
                                 'geometry_type': 'None'}
-        new_location = {"geometryType": "Polyline",
+        new_location = {'geometryType': 'Polyline',
                         "geometry": '{"paths":[[[-5283327.395069996,-1730934.0112043545],'
                                     '[1500210.4448956922,1921738.3728870638],'
                                     '[-10397060.1336323,4739512.983591061],'
                                     '[-10449247.514693994,4739512.983591061]]],'
                                     '"spatialReference":{"latestWkid":3857,"wkid":102100}}'
                         }
+        geo = Geometry(new_location['geometry'])
 
         # Act
         job_location = self.connection.workflow_manager.jobs.get(test_id).location
-        actual = self.connection.workflow_manager.jobs.set_job_location(test_id, new_location)
+        actual = self.connection.workflow_manager.jobs.set_job_location(test_id, geo)
         new_job_location = self.connection.workflow_manager.jobs.get(test_id).location
 
         # Assert
@@ -1442,14 +1444,14 @@ class TestWorkflowManager(unittest.TestCase):
 
         default_job_location = {'geometry': '{}',
                                 'geometry_type': 'None'}
-        new_location = {"geometryType": "Multipoint",
+        new_location = {'geometryType': 'Multipoint',
                         "geometry": '{"spatialReference":{"latestWkid":3857,"wkid":102100},'
                                     '"points":[[15067267.015569989,-2983278.2826283537]]}'
                         }
-
+        geo = Geometry(new_location['geometry'])
         # Act
         job_location = self.connection.workflow_manager.jobs.get(test_id).location
-        actual = self.connection.workflow_manager.jobs.set_job_location(test_id, new_location)
+        actual = self.connection.workflow_manager.jobs.set_job_location(test_id, geo)
         new_job_location = self.connection.workflow_manager.jobs.get(test_id).location
 
         # Assert

@@ -503,7 +503,7 @@ class JobManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def set_job_location(self, job_id, location):
+    def set_job_location(self, job_id, geometry):
         """
         Set a location of work for an existing job. jobUpdateLocation privilege is required to set a location on a job.
 
@@ -512,7 +512,8 @@ class JobManager:
         ---------------     --------------------------------------------------------------------
         job_id              ID for the job to update
         ---------------     --------------------------------------------------------------------
-        location            Job location object - the location geometry and geometry type.
+        geometry            The ArcGIS.Geometry.Geometry that describes a Job's Location.
+                            Must be a Polygon, Polyline, or Multipoint geometry type
         ===============     ====================================================================
 
         :return: success object
@@ -522,11 +523,19 @@ class JobManager:
                                                                       jobId=job_id,
                                                                       item=self._item,
                                                                       token=self._gis._con.token)
-            location_obj = {
-                "location": location
+            location = {
+                "geometryType": geometry.type
             }
+            if geometry.type == 'Polygon':
+                location['geometry'] = json.dumps({ 'rings': geometry.rings, 'spatialReference': geometry.spatial_reference})
+            elif geometry.type == 'Polyline':
+                location['geometry'] = json.dumps({ 'paths': geometry.paths, 'spatialReference': geometry.spatial_reference})
+            elif geometry.type == 'Multipoint':
+                location['geometry'] = json.dumps({ 'points': geometry.points, 'spatialReference': geometry.spatial_reference})
+
+
             return_obj = json.loads(
-                self._gis._con.put(url, location_obj, add_token=False, post_json=True, try_json=False,
+                self._gis._con.put(url, {'location': location}, add_token=False, post_json=True, try_json=False,
                                    json_encode=False))
             if 'error' in return_obj:
                 self._gis._con._handle_json_error(return_obj['error'], 0)
