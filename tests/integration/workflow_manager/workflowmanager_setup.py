@@ -18,7 +18,7 @@ class WorkflowManagerSetup:
         Check if ArcGIS.com can be reached
         :return:
         """
-        custom_testing = True
+        custom_testing = False
 
         if custom_testing:
             self.portal_url = 'https://ps0010886.esri.com/portal'
