@@ -310,8 +310,13 @@ class JobManager:
                 filtered_object[key] = job_object[key]
         url = '{base}/jobTemplates/{template}/job?token={token}'.format(base=self._url, template=template,
                                                                         token=self._gis._con.token)
-        post_job = Job(filtered_object, self._gis, url)
-        return_obj = post_job.post()
+        return_obj = json.loads(
+                self._gis._con.post(url, filtered_object, add_token=False, post_json=True, try_json=False,
+                                    json_encode=False))
+        if 'error' in return_obj:
+            self._gis._con._handle_json_error(return_obj['error'], 0)
+        elif 'success' in return_obj:
+            return return_obj['success']
         return return_obj['jobIds']
 
     def delete_attachment(self, job_id, attachment_id):
@@ -1480,9 +1485,6 @@ class Job(object):
     def post(self):
         post_dict = {_underscore_to_camelcase(k): v for k, v in self.__dict__.items() if
                      v is not None and not k.startswith('_')}
-        if self._location is not None:
-            post_dict["location"] = self.location
-            self._is_updating = False
         return_obj = json.loads(
             self._gis._con.post(self._url, post_dict, add_token=False, post_json=True, try_json=False,
                                 json_encode=False))
